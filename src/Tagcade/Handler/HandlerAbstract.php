@@ -7,7 +7,6 @@ use ReflectionMethod;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormTypeInterface;
-use Tagcade\Bundle\AdminApiBundle\Event\HandlerEventLog;
 use Tagcade\DomainManager\ManagerInterface as DummyManagerInterface;
 use Tagcade\Exception\InvalidArgumentException;
 use Tagcade\Exception\InvalidFormException;
@@ -102,12 +101,6 @@ abstract class HandlerAbstract implements HandlerInterface
     public function delete(ModelInterface $entity)
     {
         $this->domainManager->delete($entity);
-
-        // now dispatch a HandlerEventLog for handling event, for example ActionLog handler...
-        if ($this->eventDispatcher !== null && $this->handlerEvent != null) {
-            $event = new HandlerEventLog('DELETE', $entity);
-            $this->dispatchEvent($event);
-        }
     }
 
     /**
@@ -186,12 +179,6 @@ abstract class HandlerAbstract implements HandlerInterface
             $entity = $form->getData();
 
             $this->domainManager->save($entity);
-
-            // now dispatch a HandlerEventLog for handling event, for example ActionLog handler...
-            if ($this->eventDispatcher !== null && $this->handlerEvent != null) {
-                $event = new HandlerEventLog($method, $oldEntity, $entity);
-                $this->dispatchEvent($event);
-            }
 
             return $entity;
         }
