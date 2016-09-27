@@ -1,0 +1,29 @@
+parameters:
+    database_driver:   pdo_mysql
+    database_host:     127.0.0.1
+    database_port:     null
+    database_name:     unified_reports_api
+    database_user:     tagcadedev
+    database_password: tagcadedev
+
+    mailer_transport:  smtp
+    mailer_host:       127.0.0.1
+    mailer_user:       ~
+    mailer_password:   ~
+
+    mailer_port: 1025
+    mailer_sender: tagcade.dev@gmail.com
+    mailer_sender_name: Tagcade.dev
+    password_resetting_link: http://localhost:9010/#/reset/changePassword
+
+    locale:            en
+    secret:            ThisTokenIsNotSoSecretChangeIt
+
+    tc.default_tag_url:
+        domain: 'tags.tagcade.dev'
+        secure: true
+
+    jwt_private_key_path: %kernel.root_dir%/var/jwt/private.pem   # ssh private key path
+    jwt_public_key_path:  %kernel.root_dir%/var/jwt/public.pem    # ssh public key path
+    jwt_key_pass_phrase:  'tagcade'                               # ssh key pass phrase
+    jwt_token_ttl:        86400

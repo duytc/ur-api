@@ -1,0 +1,218 @@
+imports:
+    - { resource: parameters.yml }
+    - { resource: security.yml }
+    - { resource: services.yml }
+
+framework:
+    #esi: ~
+    translator: { fallback: "%locale%" }
+    secret: "%secret%"
+    router:
+        resource: "%kernel.root_dir%/config/routing.yml"
+        strict_requirements: ~
+    form: ~
+    csrf_protection:
+        enabled: false
+    validation:
+        api: 2.4
+        enable_annotations: false
+    templating:
+        engines: ['twig']
+        #assets_version: SomeVersionScheme
+    default_locale: "%locale%"
+    trusted_hosts: ~
+    trusted_proxies: ~
+    session:
+        # handler_id set to null will use default session handler from php.ini
+        handler_id: ~
+    fragments: ~
+    http_method_override: true
+
+# Twig Configuration
+twig:
+    debug:                  "%kernel.debug%"
+    strict_variables:       "%kernel.debug%"
+    exception_controller:   'FOS\RestBundle\Controller\ExceptionController::showAction'
+
+# SwiftMailer Configuration
+swiftmailer:
+    transport:  "%mailer_transport%"
+    host:       "%mailer_host%"
+    username:   "%mailer_user%"
+    password:   "%mailer_password%"
+    port :      "%mailer_port%"
+    #encryption: ssl
+    #auth_mode:  login
+    spool:      { type: memory }
+
+# Doctrine Configuration
+doctrine:
+    dbal:
+        default_connection: default
+        connections:
+            default:
+                driver:     "%database_driver%"
+                host:       "%database_host%"
+                port:       "%database_port%"
+                dbname:     "%database_name%"
+                user:       "%database_user%"
+                password:   "%database_password%"
+                charset:    UTF8
+                options:
+                    1002:  "SET NAMES 'UTF8'"
+                mapping_types:
+                    enum: string
+                logging: false
+                profiling: false
+
+    orm:
+        default_entity_manager:         default
+        auto_generate_proxy_classes:    "%kernel.debug%"
+
+        entity_managers:
+            default:
+                connection:         default
+                naming_strategy:    doctrine.orm.naming_strategy.underscore
+                #metadata_cache_driver: redis
+                #query_cache_driver: redis
+                #result_cache_driver: redis
+                filters:
+                    softdeleteable:
+                        class: Gedmo\SoftDeleteable\Filter\SoftDeleteableFilter
+                        enabled: true
+                mappings:
+                    # bundles
+                    FOSUserBundle:      ~
+                    TagcadeUserBundle:  ~
+                    TagcadeAdminApiBundle:  ~
+                    TagcadeUserSystemAdminBundle:  ~
+                    TagcadeUserSystemPublisherBundle:  ~
+                    # custom
+                    CoreEntities:
+                        type:       yml
+                        dir:        %kernel.root_dir%/../src/Tagcade/Resources/config/doctrine/Core
+                        prefix:     Tagcade\Entity\Core
+                        alias:      TagcadeCoreEntity
+                        is_bundle:  false
+
+# JMS Serializer Configuration
+jms_serializer:
+    metadata:
+        directories:
+            entity_core:
+                namespace_prefix:   "Tagcade\\Entity\Core\\"
+                path:               %kernel.root_dir%/../src/Tagcade/Resources/config/serializer/Entity/Core
+            model_core:
+                namespace_prefix:   "Tagcade\\Model\Core\\"
+                path:               %kernel.root_dir%/../src/Tagcade/Resources/config/serializer/Model/Core
+            tagcade:
+                namespace_prefix:   "Tagcade\\"
+                path:               %kernel.root_dir%/../src/Tagcade/Resources/config/serializer
+            FOSUserBundle:
+                namespace_prefix:   "FOS\\UserBundle"
+                path:               "@TagcadeUserBundle/Resources/config/serializer/fos"
+
+# gfreeau_custom_validation_path Configuration
+gfreeau_custom_validation_path:
+    directories:
+        -
+            path:       %kernel.root_dir%/../src/Tagcade/Resources/config/validation
+            type:       yml
+            recursive:  true
+
+# fos_user Configuration - do not use because we are using RollerworksMultiUser that included FOS:
+#    db_driver:      orm
+#    firewall_name:  api
+#    user_class:     Tagcade\Bundle\UserBundle\Entity\User
+
+
+# User system configuration required by RollerworksMultiUser
+tagcade_user_system_admin:
+    # we don't want to do any request matching to our user types, so we use a request matcher that never
+    # matches any requests. The bundle doesn't have an option to disable request matching.
+    request_matcher: tagcade_user.request.user_system.request_matcher
+    # firewall_name isn't really used. FosUserBundle uses it to automatically login a user after registration
+    # however our application is a stateless api so it doesn't apply
+    # just doing this here for completeness
+    firewall_name: api
+
+tagcade_user_system_publisher:
+    request_matcher: tagcade_user.request.user_system.request_matcher
+    firewall_name: api
+    resetting:
+        token_ttl: 86400
+        email:
+            from_email:
+                address:        "%mailer_sender%"
+                sender_name:    "%mailer_sender_name%"
+        template:
+            email: TagcadeApiBundle:Resetting:email.txt.twig
+
+# sensio_framework_extra configuration
+sensio_framework_extra:
+    view:
+        annotations: false
+
+# fos_rest configuration
+fos_rest:
+    serializer:
+        serialize_null: true
+
+    routing_loader:
+        default_format: json
+        include_format: false
+
+    body_listener:              true
+    param_fetcher_listener:     true
+
+    format_listener:
+        rules:
+            - { path: '^/api/', fallback_format: json, prefer_extension: false, priorities: ['json', 'xml'] }
+            - { path: '^/', priorities: [ 'html', '*/*'], fallback_format: json, prefer_extension: false }
+
+    access_denied_listener:
+        json:   true
+        xml:    true
+        html:   true
+
+    view:
+        view_response_listener: force
+        formats:
+            json:   true
+            xml:    true
+        templating_formats:
+            html:   true
+
+    exception:
+        codes:
+            'Tagcade\Exception\InvalidUserRoleException': 400
+            'Tagcade\Exception\InvalidArgumentException': 400
+            'Tagcade\Exception\LogicException': 400
+
+# lexik_jwt_authentication Configuration
+lexik_jwt_authentication:
+    private_key_path:   '%jwt_private_key_path%'
+    public_key_path:    '%jwt_public_key_path%'
+    pass_phrase:        '%jwt_key_pass_phrase%'
+    token_ttl:          %jwt_token_ttl%
+
+# nelmio_cors Configuration
+nelmio_cors:
+    defaults:
+        allow_origin:   ['*']
+        allow_headers:  ['authorization', 'content-type']
+        max_age:        3600
+    paths:
+        '^/api/':
+            allow_methods: ['POST', 'PUT', 'PATCH', 'GET', 'DELETE']
+
+# stof_doctrine_extensions Configuration
+stof_doctrine_extensions:
+    orm:
+        default:
+            timestampable: true
+            softdeleteable: true
+
+# all parameters
+parameters:
+    jms_serializer.json_serialization_visitor.class: Tagcade\Behaviors\JsonSerializationVisitor

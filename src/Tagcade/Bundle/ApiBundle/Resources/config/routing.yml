@@ -1,0 +1,14 @@
+api_get_token:
+    path:      /getToken
+    defaults:  { _controller: TagcadeApiBundle:Token:getToken }
+    methods:  [POST]
+
+api_check_token:
+    path:      /checkToken
+    defaults:  { _controller: TagcadeApiBundle:Token:checkToken }
+    methods:  [POST]
+
+api_ad_network:
+    type: rest
+    resource: Tagcade\Bundle\ApiBundle\Controller\AdNetworkController
+    name_prefix:  api_1_

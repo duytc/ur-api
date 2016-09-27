@@ -1,0 +1,4 @@
+account_api_user:
+    type: rest
+    resource: Tagcade\Bundle\UserSystem\PublisherBundle\Controller\PublisherController
+    name_prefix: publisher_api_1_

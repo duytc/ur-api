@@ -1,0 +1,15 @@
+This folder contains custom doctrine mappings. The config is in app/config/config.yml.
+
+The folders contain mappings that mirror the files in src/Tagcade/Entity.
+
+The naming of the files is important and takes into account the prefix defined in the configuration file mentioned above.
+
+For example, the entity class "Tagcade\Entity\Report\SourceReport\Report" has a prefix of "Tagcade\Entity\Report" and a path of
+"src/Tagcade/Resources/config/doctrine/Report".
+
+The remaining class name "SourceReport\Report" is then taken and the namespace separator is replaced with a period, the resulting mapping
+file is:
+
+src/Tagcade/Resources/config/doctrine/Report/SourceReport.Report.orm.yml
+
+orm.yml is a default file extension for mapping files.

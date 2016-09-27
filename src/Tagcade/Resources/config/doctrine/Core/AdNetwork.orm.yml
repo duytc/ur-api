@@ -1,0 +1,19 @@
+Tagcade\Entity\Core\AdNetwork:
+    type: entity
+    table: core_ad_network
+    repositoryClass: Tagcade\Repository\Core\AdNetworkRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: 100
+        url:
+            type: string
+            nullable: true
+    manyToOne:
+        publisher:
+            targetEntity: Tagcade\Bundle\UserSystem\PublisherBundle\Entity\User

@@ -1,0 +1,61 @@
+security:
+    access_decision_manager:
+        strategy: unanimous
+
+    encoders:
+        Tagcade\Bundle\UserBundle\Entity\User: sha512
+
+    role_hierarchy:
+        ROLE_PUBLISHER: ROLE_USER
+        ROLE_ADMIN:     ROLE_USER
+
+    providers:
+        tagcade_user_publisher:
+            id: tagcade_user_system_publisher.user_provider.username
+        tagcade_user_admin:
+            id: tagcade_user_system_admin.user_provider.username
+        tagcade_user:
+            chain:
+                providers: [tagcade_user_publisher, tagcade_user_admin]
+        # fos userbundle user provider
+        fos_userbundle:
+            id: fos_user.user_manager
+
+    firewalls:
+        dev:
+            pattern:    ^/(_(profiler|wdt)|css|images|js)/
+            security:   false
+
+        apidoc:
+            pattern:    ^/docs/?$
+            security:   false
+
+        gettoken:
+            pattern:    ^/api/v1/getToken$
+            stateless:  true
+            gfreeau_get_jwt:
+                username_parameter: username
+                password_parameter: password
+                post_only:          true
+                success_handler:    tagcade_user.handler.authentication_success
+                failure_handler:    lexik_jwt_authentication.handler.authentication_failure
+            provider: tagcade_user
+
+        resetting:
+            pattern: ^/api/v1/resetting/
+            stateless: true
+            security: false
+            anonymous: ~
+            provider:  tagcade_user_publisher
+
+        api:
+            pattern:    ^/api/
+            stateless:  true
+            lexik_jwt:
+                throw_exceptions:   true
+                create_entry_point: false
+            provider:  tagcade_user
+
+    access_control:
+        - { path: ^/api/admin/, roles: ROLE_ADMIN }
+        - { path: ^/api/, roles: ROLE_USER }

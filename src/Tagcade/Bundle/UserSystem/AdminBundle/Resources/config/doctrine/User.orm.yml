@@ -1,0 +1,8 @@
+Tagcade\Bundle\UserSystem\AdminBundle\Entity\User:
+    type:  entity
+    table: core_user_admin
+#    id:
+#        id:
+#            type: integer
+#            generator:
+#                strategy: AUTO

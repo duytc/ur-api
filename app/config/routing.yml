@@ -1,0 +1,14 @@
+tagcade_admin_api:
+    resource: "@TagcadeAdminApiBundle/Resources/config/routing.yml"
+    type:   rest
+    prefix: /api/admin/v1
+
+tagcade_publisher_api:
+    resource: "@TagcadeUserSystemPublisherBundle/Resources/config/routing.yml"
+    type:   rest
+    prefix: /api/publisher/v1
+
+tagcade_api:
+    resource: "@TagcadeApiBundle/Resources/config/routing.yml"
+    type:   rest
+    prefix: /api/v1

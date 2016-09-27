@@ -1,0 +1,59 @@
+parameters:
+    # https://github.com/schmittjoh/JMSSerializerBundle/pull/270
+    # not really happy about doing this, but there is no proper config
+    # for setting camelcase, so we overwrite the default naming strategy here to match the name
+    # of the property in the php class
+    jms_serializer.cache_naming_strategy.class: JMS\Serializer\Naming\IdenticalPropertyNamingStrategy
+
+    tagcade.security.auth.voter.ad_network.class: Tagcade\Security\Authorization\Voter\AdNetworkVoter
+    tagcade.security.auth.voter.user.class: Tagcade\Security\Authorization\Voter\PublisherVoter
+
+    # event dispatched on user action such as add, remove, delete
+    tagcade.events.handler_event: 'tagcade.events.handler_event'
+
+services:
+    tagcade.security.auth.voter.ad_network:
+        class:  %tagcade.security.auth.voter.ad_network.class%
+        public: false
+        tags:
+            - { name: security.voter }
+
+    tagcade.security.auth.voter.user:
+        class:  %tagcade.security.auth.voter.user.class%
+        public: false
+        tags:
+            - { name: security.voter }
+
+    tagcade.service.console_output:
+        class: Symfony\Component\Console\Output\ConsoleOutput
+
+    tagcade.handler.handler_abstract:
+        class: Tagcade\Handler\HandlerAbstract
+        abstract: true
+        public: false
+        calls:
+            - [setEventDispatcher, ["@event_dispatcher"]]
+            - [setEvent, [%tagcade.events.handler_event%]]
+
+    tagcade.service.date_util:
+        class: Tagcade\Service\DateUtil
+
+    tagcade.service.array_util:
+        class: Tagcade\Service\ArrayUtil
+
+    monolog.formatter.session_request:
+        class: Monolog\Formatter\LineFormatter
+        arguments:
+            - "[%%datetime%%] [%%extra.user%%] %%channel%%.%%level_name%%: %%message%% %%context%% %%extra%%\n"
+
+    monolog.processor.web:
+        class: Monolog\Processor\WebProcessor
+        tags:
+            - { name: monolog.processor }
+
+    monolog.processor.session_request:
+        class: Tagcade\Bundle\ApiBundle\Service\SessionRequestProcessor
+        arguments:
+            - @security.token_storage
+        tags:
+            - { name: monolog.processor, method: processRecord }

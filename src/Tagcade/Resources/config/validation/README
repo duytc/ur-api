@@ -1,0 +1,10 @@
+These files are loaded by the custom gfreeau/custom-validation-path-bundle.
+The configuration is in app/config/config.yml.
+
+The naming of these files does not matter, as long as they have the correct file extension.
+
+I used a similar naming convention to jms serializer bundle to keep things standardized. You could use any name.
+
+For example, the class Tagcade\Entity\Core\Site has validation metadata in a file named Entity.Core.Site.yml.
+
+Simple take away the Tagcade prefix and replace the namespace separated with periods to get the correct name.

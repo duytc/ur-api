@@ -1,0 +1,13 @@
+
+tagcade_user_system_publisher_security_login:
+    path: /login
+    defaults: { _controller: "FOSUserBundle:Security:login" }
+
+tagcade_user_system_publisher_security_check:
+    path: /login_check
+    defaults: { _controller: "FOSUserBundle:Security:check" }
+    methods: "POST"
+
+tagcade_user_system_publisher_security_logout:
+    path: /logout
+    defaults: { _controller: "FOSUserBundle:Security:logout" }

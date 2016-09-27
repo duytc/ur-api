@@ -1,0 +1,43 @@
+imports:
+    - { resource: config.yml }
+
+doctrine:
+    orm:
+        metadata_cache_driver:
+            type: service
+            id: doctrine_cache.providers.tagcade_filesystem_metadata_cache
+        result_cache_driver:
+            type: service
+            id: doctrine_cache.providers.tagcade_filesystem_result_cache
+        query_cache_driver:
+            type: service
+            id: doctrine_cache.providers.tagcade_filesystem_query_cache
+
+doctrine_cache:
+    providers:
+        tagcade_filesystem_metadata_cache:
+            file_system:
+                extension: cache
+                directory: %kernel.root_dir%/cache/doctrine
+        tagcade_filesystem_result_cache:
+            file_system:
+                extension: cache
+                directory: %kernel.root_dir%/cache/doctrine
+        tagcade_filesystem_query_cache:
+            file_system:
+                extension: cache
+                directory: %kernel.root_dir%/cache/doctrine
+
+monolog:
+    handlers:
+        main:
+            type: fingers_crossed
+            handler: nested
+            excluded_404s:
+                - ^/
+        nested:
+            type:   stream
+            path:   "%kernel.logs_dir%/%kernel.environment%.log"
+            level:  debug
+        console:
+            type:   console

@@ -1,0 +1,8 @@
+Tagcade\Bundle\UserSystem\PublisherBundle\Entity\User:
+    properties:
+        billingRate:
+            - Type:
+                type: numeric
+                message: "The value {{ value }} is not a valid number."
+            - GreaterThan:
+                value: 0

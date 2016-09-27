@@ -1,0 +1,4 @@
+These core handlers are used in the TagcadeApiBundle, usually there is a handler for different roles.
+
+i.e for site entities, there is an admin handler that allows them to manage all sites and a publisher handler that
+only allows the publisher to edit their own sites

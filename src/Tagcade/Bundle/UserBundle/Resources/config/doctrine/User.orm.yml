@@ -1,0 +1,33 @@
+Tagcade\Bundle\UserBundle\Entity\User:
+    type: entity
+    table: core_user
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    attributeOverride:
+        email:
+            nullable: true
+        emailCanonical:
+            nullable: true
+            unique: false
+    fields:
+        joinDate:
+            type: date
+            gedmo:
+                timestampable:
+                    on: create
+        testAccount:
+            type: boolean
+            nullable: true
+            options:
+                default: false
+    inheritanceType: JOINED
+
+    discriminatorColumn:
+        name: type
+        type: string
+    discriminatorMap:
+        admin: Tagcade\Bundle\UserSystem\AdminBundle\Entity\User
+        publisher: Tagcade\Bundle\UserSystem\PublisherBundle\Entity\User

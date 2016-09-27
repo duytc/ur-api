@@ -1,0 +1,60 @@
+parameters:
+    # entity class
+    tagcade.entity.core.ad_network.class: Tagcade\Entity\Core\AdNetwork
+    # form class
+    tagcade.form.type.ad_network.class: Tagcade\Form\Type\AdNetworkFormType
+
+services:
+    tagcade_api.handler.ad_network:
+        class: Tagcade\Handler\HandlerInterface
+        factory_service: tagcade.handler.handler_manager.ad_network
+        factory_method: getHandler
+        arguments:
+            - @tagcade.user_role
+
+    tagcade.repository.ad_network:
+        class: Tagcade\Repository\Core\AdNetworkRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %tagcade.entity.core.ad_network.class%
+
+    tagcade.domain_manager.ad_network:
+        class: Tagcade\DomainManager\AdNetworkManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @tagcade.repository.ad_network
+
+    tagcade.form.type.ad_network:
+        class: %tagcade.form.type.ad_network.class%
+        tags:
+            - { name: form.type, alias: tagcade_form_ad_network }
+
+    tagcade.handler.handlers.ad_network.abstract:
+        class: Tagcade\Handler\Handlers\Core\AdNetworkHandlerAbstract
+        parent: tagcade.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @tagcade.form.type.ad_network
+            - @tagcade.domain_manager.ad_network
+
+    tagcade.handler.handlers.ad_network.admin:
+        class: Tagcade\Handler\Handlers\Core\Admin\AdNetworkHandler
+        parent: tagcade.handler.handlers.ad_network.abstract
+        public: false
+        arguments:
+            - @tagcade_user.domain_manager.publisher
+
+    tagcade.handler.handlers.ad_network.publisher:
+        class: Tagcade\Handler\Handlers\Core\Publisher\AdNetworkHandler
+        parent: tagcade.handler.handlers.ad_network.abstract
+        public: false
+
+    tagcade.handler.handler_manager.ad_network:
+        class: Tagcade\Handler\HandlerManager
+        arguments:
+            - %tagcade.entity.core.ad_network.class%
+            -
+                - @tagcade.handler.handlers.ad_network.admin
+                - @tagcade.handler.handlers.ad_network.publisher

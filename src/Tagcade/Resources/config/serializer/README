@@ -1,0 +1,6 @@
+These files are loaded from a custom jms serializer mapping. Check app/config/config.yml.
+
+The naming of the files is important. Simply remove the Tagcade\ prefix and then replace namespace separators with
+periods in the remaining class name.
+
+For example, the class Tagcade\Model\Site has serializer metadata in a file named Model.Site.yml.
