@@ -10,7 +10,8 @@ Tagcade\Entity\Core\DataSourceEntry:
     fields:
         valid:
             type: boolean
-            nullable: true
+            option:
+                default: false
         path:
             type: string
         metaData:
