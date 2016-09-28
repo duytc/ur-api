@@ -11,6 +11,9 @@ Tagcade\Entity\Core\DataSource:
         name:
             type: string
             length: 100
+        format:
+            type: string
+            length: 100
     manyToOne:
         publisher:
             targetEntity: Tagcade\Bundle\UserSystem\PublisherBundle\Entity\User

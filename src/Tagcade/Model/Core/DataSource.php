@@ -9,6 +9,7 @@ class DataSource implements DataSourceInterface
 {
     protected $id;
     protected $name;
+    protected $format;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -78,4 +79,22 @@ class DataSource implements DataSourceInterface
     {
         return $this->name;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFormat()
+    {
+        return $this->format;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setFormat($format)
+    {
+        $this->format = $format;
+    }
+
+
 }
