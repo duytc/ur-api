@@ -9,6 +9,7 @@ class DataSource extends DataSourceModel
     protected $id;
     protected $publisher;
     protected $name;
+    protected $format;
 
     /**
      * @inheritdoc

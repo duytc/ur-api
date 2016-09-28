@@ -19,6 +19,17 @@ interface DataSourceInterface extends ModelInterface
     public function setName($name);
 
     /**
+     * @return string|null
+     */
+    public function getFormat();
+
+    /**
+     * @param string $format
+     * @return self
+     */
+    public function setFormat($format);
+
+    /**
      * @return PublisherInterface|null
      */
     public function getPublisher();
