@@ -40,6 +40,6 @@ class DataSourceEntryFormType extends AbstractRoleSpecificFormType
 
     public function getName()
     {
-        return 'tagcade_form_ad_network';
+        return 'tagcade_form_data_source_entry';
     }
 }
