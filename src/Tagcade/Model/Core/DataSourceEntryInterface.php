@@ -3,7 +3,6 @@
 namespace Tagcade\Model\Core;
 
 use Tagcade\Model\ModelInterface;
-use Tagcade\Model\User\Role\PublisherInterface;
 
 interface DataSourceEntryInterface extends ModelInterface
 {
@@ -14,6 +13,7 @@ interface DataSourceEntryInterface extends ModelInterface
 
     /**
      * @param mixed $receivedDate
+     * @return self
      */
     public function setReceivedDate($receivedDate);
 
@@ -24,6 +24,7 @@ interface DataSourceEntryInterface extends ModelInterface
 
     /**
      * @param boolean $valid
+     * @return self
      */
     public function setValid($valid);
 
@@ -34,6 +35,7 @@ interface DataSourceEntryInterface extends ModelInterface
 
     /**
      * @param string $path
+     * @return self
      */
     public function setPath($path);
 
@@ -44,6 +46,7 @@ interface DataSourceEntryInterface extends ModelInterface
 
     /**
      * @param array $metaData
+     * @return self
      */
     public function setMetaData($metaData);
 
@@ -54,6 +57,7 @@ interface DataSourceEntryInterface extends ModelInterface
 
     /**
      * @param DataSourceInterface $dataSource
+     * @return self
      */
-    public function setDataSource($dataSource);
+    public function setDataSource(DataSourceInterface $dataSource);
 }

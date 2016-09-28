@@ -40,6 +40,7 @@ class Integration implements IntegrationInterface
     public function setName($name)
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -57,6 +58,8 @@ class Integration implements IntegrationInterface
     public function setType($type)
     {
         $this->type = $type;
+
+        return $this;
     }
 
     /**
@@ -73,6 +76,8 @@ class Integration implements IntegrationInterface
     public function setUrl($url)
     {
         $this->url = $url;
+
+        return $this;
     }
 
     /**
@@ -86,8 +91,10 @@ class Integration implements IntegrationInterface
     /**
      * @inheritdoc
      */
-    public function setIntegrationGroup($integrationGroup)
+    public function setIntegrationGroup(IntegrationGroupInterface $integrationGroup)
     {
         $this->integrationGroup = $integrationGroup;
+
+        return $this;
     }
 }

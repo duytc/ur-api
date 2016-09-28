@@ -28,7 +28,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     }
 
     /**
-     * @return mixed
+     * @inheritdoc
      */
     public function getReceivedDate()
     {
@@ -36,7 +36,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     }
 
     /**
-     * @param mixed $receivedDate
+     * @inheritdoc
      */
     public function setReceivedDate($receivedDate)
     {
@@ -44,7 +44,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     }
 
     /**
-     * @return mixed
+     * @inheritdoc
      */
     public function getValid()
     {
@@ -52,15 +52,17 @@ class DataSourceEntry implements DataSourceEntryInterface
     }
 
     /**
-     * @param mixed $valid
+     * @inheritdoc
      */
     public function setValid($valid)
     {
         $this->valid = $valid;
+
+        return $this;
     }
 
     /**
-     * @return mixed
+     * @inheritdoc
      */
     public function getPath()
     {
@@ -68,15 +70,16 @@ class DataSourceEntry implements DataSourceEntryInterface
     }
 
     /**
-     * @param mixed $path
+     * @inheritdoc
      */
     public function setPath($path)
     {
         $this->path = $path;
-    }
 
+        return $this;
+    }
     /**
-     * @return mixed
+     * @inheritdoc
      */
     public function getMetaData()
     {
@@ -84,15 +87,17 @@ class DataSourceEntry implements DataSourceEntryInterface
     }
 
     /**
-     * @param mixed $metaData
+     * @inheritdoc
      */
     public function setMetaData($metaData)
     {
         $this->metaData = $metaData;
+
+        return $this;
     }
 
     /**
-     * @return DataSourceInterface
+     * @inheritdoc
      */
     public function getDataSource()
     {
@@ -100,10 +105,12 @@ class DataSourceEntry implements DataSourceEntryInterface
     }
 
     /**
-     * @param DataSourceInterface $dataSource
+     * @inheritdoc
      */
-    public function setDataSource($dataSource)
+    public function setDataSource(DataSourceInterface $dataSource)
     {
         $this->dataSource = $dataSource;
+
+        return $this;
     }
 }

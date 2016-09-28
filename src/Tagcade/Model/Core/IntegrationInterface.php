@@ -24,6 +24,7 @@ interface IntegrationInterface extends ModelInterface
 
     /**
      * @param string $type
+     * @return self
      */
     public function setType($type);
 
@@ -34,6 +35,7 @@ interface IntegrationInterface extends ModelInterface
 
     /**
      * @param string $url
+     * @return self
      */
     public function setUrl($url);
 
@@ -44,6 +46,7 @@ interface IntegrationInterface extends ModelInterface
 
     /**
      * @param IntegrationGroupInterface $integrationGroup
+     * @return self
      */
-    public function setIntegrationGroup($integrationGroup);
+    public function setIntegrationGroup(IntegrationGroupInterface $integrationGroup);
 }

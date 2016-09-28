@@ -11,19 +11,24 @@ interface DataSourceIntegrationInterface extends ModelInterface
      * @return DataSourceInterface
      */
     public function getDataSource();
+
     /**
      * @param DataSourceInterface $dataSource
+     * @return self
      */
-    public function setDataSource($dataSource);
+
+    public function setDataSource(DataSourceInterface $dataSource);
     /**
      * @return IntegrationInterface
      */
+
     public function getIntegration();
 
     /**
      * @param IntegrationInterface $integration
+     * @return self
      */
-    public function setIntegration($integration);
+    public function setIntegration(IntegrationInterface $integration);
 
     /**
      * @return string
@@ -32,16 +37,20 @@ interface DataSourceIntegrationInterface extends ModelInterface
 
     /**
      * @param string $username
+     * @return self
      */
     public function setUsername($username);
 
     /**
      * @return string
      */
+
     public function getPassword();
     /**
      * @param string $password
+     * @return self
      */
+
     public function setPassword($password);
 
     /**
@@ -51,6 +60,7 @@ interface DataSourceIntegrationInterface extends ModelInterface
 
     /**
      * @param int $schedule
+     * @return self
      */
     public function setSchedule($schedule);
 }

@@ -2,9 +2,6 @@
 
 namespace Tagcade\Model\Core;
 
-use Tagcade\Model\User\Role\PublisherInterface;
-use Tagcade\Model\User\UserEntityInterface;
-
 class DataSourceIntegration implements DataSourceIntegrationInterface
 {
     protected $id;
@@ -46,9 +43,11 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     /**
      * @inheritdoc
      */
-    public function setDataSource($dataSource)
+    public function setDataSource(DataSourceInterface $dataSource)
     {
         $this->dataSource = $dataSource;
+
+        return $this;
     }
 
     /**
@@ -62,9 +61,11 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     /**
      * @inheritdoc
      */
-    public function setIntegration($integration)
+    public function setIntegration(IntegrationInterface $integration)
     {
         $this->integration = $integration;
+
+        return $this;
     }
 
     /**
@@ -81,6 +82,8 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     public function setUsername($username)
     {
         $this->username = $username;
+
+        return $this;
     }
 
     /**
@@ -97,6 +100,8 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     public function setPassword($password)
     {
         $this->password = $password;
+
+        return $this;
     }
 
     /**
@@ -113,5 +118,7 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     public function setSchedule($schedule)
     {
         $this->schedule = $schedule;
+
+        return $this;
     }
 }

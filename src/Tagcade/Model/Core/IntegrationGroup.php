@@ -34,6 +34,7 @@ class IntegrationGroup implements IntegrationGroupInterface
     public function setName($name)
     {
         $this->name = $name;
+
         return $this;
     }
 }
