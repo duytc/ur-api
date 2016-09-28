@@ -1,0 +1,13 @@
+Tagcade\Entity\Core\IntegrationGroup:
+    type: entity
+    table: core_integration_group
+    repositoryClass: Tagcade\Repository\Core\IntegrationGroupRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: 100

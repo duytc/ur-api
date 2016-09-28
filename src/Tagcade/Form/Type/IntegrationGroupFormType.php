@@ -4,35 +4,29 @@ namespace Tagcade\Form\Type;
 
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
-use Tagcade\Entity\Core\DataSourceEntry;
+use Tagcade\Entity\Core\AdNetwork;
+use Tagcade\Entity\Core\IntegrationGroup;
 use Tagcade\Form\DataTransformer\RoleToUserEntityTransformer;
 use Tagcade\Model\User\Role\AdminInterface;
 
-class DataSourceEntryFormType extends AbstractRoleSpecificFormType
+class IntegrationGroupFormType extends AbstractRoleSpecificFormType
 {
-    function __construct()
-    {
-    }
-
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('dataSource')
-            ->add('metaData')
-            ->add('valid')
-            ->add('path');
+            ->add('name');
     }
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)
     {
         $resolver
             ->setDefaults([
-                'data_class' => DataSourceEntry::class,
+                'data_class' => IntegrationGroup::class,
             ]);
     }
 
     public function getName()
     {
-        return 'tagcade_form_data_source_entry';
+        return 'tagcade_form_integration_group';
     }
 }
