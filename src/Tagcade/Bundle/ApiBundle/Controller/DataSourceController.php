@@ -9,65 +9,63 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tagcade\Exception\InvalidArgumentException;
-use Tagcade\Model\Core\AdNetworkInterface;
+use Tagcade\Handler\HandlerInterface;
+use Tagcade\Model\Core\DataSourceInterface;
 use Tagcade\Model\User\Role\AdminInterface;
 use Tagcade\Model\User\Role\PublisherInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 
-
 /**
- * @Rest\RouteResource("Adnetwork")
+ * @Rest\RouteResource("DataSource")
  */
-class AdNetworkController extends RestControllerAbstract implements ClassResourceInterface
+class DataSourceController extends RestControllerAbstract implements ClassResourceInterface
 {
     /**
-     * Get all ad networks
+     * Get all data sources
      *
-     * @Rest\View(serializerGroups={"adnetwork.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"datasource.detail", "user.summary"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      *
      * @ApiDoc(
-     *  section = "Ad Networks",
+     *  section = "Data Source",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful"
      *  }
      * )
      *
-     * @return AdNetworkInterface[]
+     * @return DataSourceInterface[]
      */
     public function cgetAction()
     {
         $paramFetcher = $this->get('fos_rest.request.param_fetcher');
         $publisher = $paramFetcher->get('publisher');
-        $adNetworkManager = $this->get('tagcade.domain_manager.ad_network');
+        $dataSourceManager = $this->get('tagcade.domain_manager.data_source');
 
-        if ($publisher != null && $this->getUser() instanceof AdminInterface) {
+        if($publisher!=null && $this->getUser() instanceof AdminInterface){
             $publisher = $this->get('tagcade_user.domain_manager.publisher')->findPublisher($publisher);
 
-            if (!$publisher instanceof PublisherInterface) {
+            if(!$publisher instanceof PublisherInterface){
                 throw new NotFoundHttpException('That publisher does not exist');
             }
-
-            $all = $adNetworkManager->getAdNetworksForPublisher($publisher);
+            $all = $dataSourceManager->getDataSourceForPublisher($publisher);
         }
 
-        $all = isset($all) ? $all : $this->all();
+        $all = isset($all)? $all: $this->all();
 
         $this->checkUserPermission($all);
-
         return $all;
     }
 
     /**
-     * Get a single ad network for the given id
+     * Get a single data source for the given id
      *
-     * @Rest\View(serializerGroups={"adnetwork.detail", "user.summary", "adtag.summary", "partner.summary"})
+     * @Rest\View(serializerGroups={"datasource.detail", "user.summary", "adtag.summary", "partner.summary"})
      *
      * @ApiDoc(
-     *  section = "Ad Networks",
+     *  section = "Data Source",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful"
@@ -76,7 +74,7 @@ class AdNetworkController extends RestControllerAbstract implements ClassResourc
      *
      * @param int $id the resource id
      *
-     * @return \Tagcade\Model\Core\AdNetworkInterface
+     * @return \Tagcade\Model\Core\DataSourceInterface
      * @throws NotFoundHttpException when the resource does not exist
      */
     public function getAction($id)
@@ -85,10 +83,10 @@ class AdNetworkController extends RestControllerAbstract implements ClassResourc
     }
 
     /**
-     * Create a ad network from the submitted data
+     * Create a data source from the submitted data
      *
      * @ApiDoc(
-     *  section = "Ad Networks",
+     *  section = "Data Sources",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful",
@@ -106,10 +104,10 @@ class AdNetworkController extends RestControllerAbstract implements ClassResourc
     }
 
     /**
-     * Update an existing ad network from the submitted data or create a new ad network
+     * Update an existing data source from the submitted data or create a new ad network
      *
      * @ApiDoc(
-     *  section = "Ad Networks",
+     *  section = "Data Sources",
      *  resource = true,
      *  statusCodes = {
      *      201 = "Returned when the resource is created",
@@ -131,10 +129,10 @@ class AdNetworkController extends RestControllerAbstract implements ClassResourc
     }
 
     /**
-     * Update an existing ad network from the submitted data or create a new ad network at a specific location
+     * Update an existing data source from the submitted data or create a new data source at a specific location
      *
      * @ApiDoc(
-     *  section = "Ad Networks",
+     *  section = "Data Sources",
      *  resource = true,
      *  statusCodes = {
      *      204 = "Returned when successful",
@@ -151,12 +149,12 @@ class AdNetworkController extends RestControllerAbstract implements ClassResourc
      */
     public function patchAction(Request $request, $id)
     {
-        /** @var AdNetworkInterface $adNetwork */
-        $adNetwork = $this->one($id);
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
 
         if (array_key_exists('publisher', $request->request->all())) {
             $publisher = (int)$request->get('publisher');
-            if ($adNetwork->getPublisherId() != $publisher) {
+            if ($dataSource->getPublisherId() != $publisher) {
                 throw new InvalidArgumentException('publisher in invalid');
             }
         }
@@ -165,10 +163,10 @@ class AdNetworkController extends RestControllerAbstract implements ClassResourc
     }
 
     /**
-     * Delete an existing ad network
+     * Delete an existing data source
      *
      * @ApiDoc(
-     *  section = "Ad Networks",
+     *  section = "Data Sources",
      *  resource = true,
      *  statusCodes = {
      *      204 = "Returned when successful",
@@ -187,23 +185,29 @@ class AdNetworkController extends RestControllerAbstract implements ClassResourc
         return $this->delete($id);
     }
 
-    protected function getLogger()
-    {
-        return $this->get('logger');
-    }
-
+    /**
+     * @return string
+     */
     protected function getResourceName()
     {
-        return 'adnetwork';
+        return 'datasource';
     }
 
+    /**
+     * The 'get' route name to redirect to after resource creation
+     *
+     * @return string
+     */
     protected function getGETRouteName()
     {
-        return 'api_1_get_adnetwork';
+        return 'api_1_get_datasource';
     }
 
+    /**
+     * @return HandlerInterface
+     */
     protected function getHandler()
     {
-        return $this->container->get('tagcade_api.handler.ad_network');
+        return $this->container->get('tagcade_api.handler.data_source');
     }
 }

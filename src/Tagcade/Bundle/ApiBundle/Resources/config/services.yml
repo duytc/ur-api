@@ -1,6 +1,7 @@
 imports:
     - { resource: services/listeners.yml }
     - { resource: services/service.adnetwork.yml }
+    - { resource: services/service.datasource.yml }
 
 
 parameters:

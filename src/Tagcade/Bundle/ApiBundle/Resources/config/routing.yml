@@ -12,3 +12,8 @@ api_ad_network:
     type: rest
     resource: Tagcade\Bundle\ApiBundle\Controller\AdNetworkController
     name_prefix:  api_1_
+
+api_data_source:
+    type: rest
+    resource: Tagcade\Bundle\ApiBundle\Controller\DataSourceController
+    name_prefix:  api_1_
