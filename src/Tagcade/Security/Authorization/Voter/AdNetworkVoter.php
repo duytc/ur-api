@@ -15,13 +15,13 @@ class AdNetworkVoter extends EntityVoterAbstract
     }
 
     /**
-     * @param AdNetworkInterface $dataSource
+     * @param AdNetworkInterface $adNetwork
      * @param UserEntityInterface $user
      * @param $action
      * @return bool
      */
-    protected function isPublisherActionAllowed($dataSource, UserEntityInterface $user, $action)
+    protected function isPublisherActionAllowed($adNetwork, UserEntityInterface $user, $action)
     {
-        return $user->getId() == $dataSource->getPublisherId();
+        return $user->getId() == $adNetwork->getPublisherId();
     }
 }
