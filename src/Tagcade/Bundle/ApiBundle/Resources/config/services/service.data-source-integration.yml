@@ -1,0 +1,60 @@
+parameters:
+    # entity class
+    tagcade.entity.core.data_source_integration.class: Tagcade\Entity\Core\DataSourceIntegration
+    # form class
+    tagcade.form.type.data_source_integration.class: Tagcade\Form\Type\DataSourceIntegrationFormType
+
+services:
+    tagcade_api.handler.data_source_integration:
+        class: Tagcade\Handler\HandlerInterface
+        factory_service: tagcade.handler.handler_manager.data_source_integration
+        factory_method: getHandler
+        arguments:
+            - @tagcade.user_role
+
+    tagcade.repository.data_source_integration:
+        class: Tagcade\Repository\Core\DataSourceIntegrationRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %tagcade.entity.core.data_source_integration.class%
+
+    tagcade.domain_manager.data_source_integration:
+        class: Tagcade\DomainManager\DataSourceIntegrationManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @tagcade.repository.data_source_integration
+
+    tagcade.form.type.data_source_integration:
+        class: %tagcade.form.type.data_source_integration.class%
+        tags:
+            - { name: form.type, alias: tagcade_form_data_source_integration }
+
+    tagcade.handler.handlers.data_source_integration.abstract:
+        class: Tagcade\Handler\Handlers\Core\DataSourceIntegrationHandlerAbstract
+        parent: tagcade.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @tagcade.form.type.data_source_integration
+            - @tagcade.domain_manager.data_source_integration
+
+    tagcade.handler.handlers.data_source_integration.admin:
+        class: Tagcade\Handler\Handlers\Core\Admin\DataSourceIntegrationHandler
+        parent: tagcade.handler.handlers.data_source_integration.abstract
+        public: false
+        arguments:
+            - @tagcade_user.domain_manager.publisher
+
+    tagcade.handler.handlers.data_source_integration.publisher:
+        class: Tagcade\Handler\Handlers\Core\Publisher\DataSourceIntegrationHandler
+        parent: tagcade.handler.handlers.data_source_integration.abstract
+        public: false
+
+    tagcade.handler.handler_manager.data_source_integration:
+        class: Tagcade\Handler\HandlerManager
+        arguments:
+            - %tagcade.entity.core.data_source_integration.class%
+            -
+                - @tagcade.handler.handlers.data_source_integration.admin
+                - @tagcade.handler.handlers.data_source_integration.publisher
