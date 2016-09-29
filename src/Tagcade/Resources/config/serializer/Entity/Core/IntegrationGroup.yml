@@ -1,0 +1,9 @@
+Tagcade\Entity\Core\IntegrationGroup:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [integrationgroup.detail, integrationgroup.summary]
+        name:
+            expose: true
+            groups: [integrationgroup.detail, integrationgroup.summary]
