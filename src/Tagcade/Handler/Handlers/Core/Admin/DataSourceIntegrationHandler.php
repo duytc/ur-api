@@ -5,11 +5,11 @@ namespace Tagcade\Handler\Handlers\Core\Admin;
 use Symfony\Component\Form\FormFactoryInterface;
 use Tagcade\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use Tagcade\Form\Type\RoleSpecificFormTypeInterface;
-use Tagcade\Handler\Handlers\Core\DataSourceEntryHandlerAbstract;
+use Tagcade\Handler\Handlers\Core\DataSourceIntegrationHandlerAbstract;
 use Tagcade\Model\User\Role\AdminInterface;
 use Tagcade\Model\User\Role\UserRoleInterface;
 
-class DataSourceEntryHandler extends DataSourceEntryHandlerAbstract
+class DataSourceIntegrationHandler extends DataSourceIntegrationHandlerAbstract
 {
     /** @var PublisherManagerInterface */
     private $publisherManager;

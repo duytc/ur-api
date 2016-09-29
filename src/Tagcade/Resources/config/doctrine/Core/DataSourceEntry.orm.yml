@@ -1,7 +1,7 @@
 Tagcade\Entity\Core\DataSourceEntry:
     type: entity
     table: core_data_source_entry
-    repositoryClass: Tagcade\Repository\Core\DataSourceEntrtRepository
+    repositoryClass: Tagcade\Repository\Core\DataSourceEntryRepository
     id:
         id:
             type: integer
