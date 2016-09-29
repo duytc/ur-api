@@ -1,0 +1,27 @@
+Tagcade\Entity\Core\DataSourceEntry:
+    type: entity
+    table: core_data_source_entry
+    repositoryClass: Tagcade\Repository\Core\DataSourceEntrtRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        valid:
+            type: boolean
+            option:
+                default: false
+        path:
+            type: string
+        metaData:
+            type: json_array
+            nullable: true
+        receivedDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+    manyToOne:
+        dataSource:
+            targetEntity: Tagcade\Entity\Core\DataSource
