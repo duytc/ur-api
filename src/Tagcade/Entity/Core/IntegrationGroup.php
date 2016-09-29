@@ -8,6 +8,7 @@ class IntegrationGroup extends IntegrationGroupModel
 {
     protected $id;
     protected $name;
+    protected $integrations;
 
     /**
      * @inheritdoc

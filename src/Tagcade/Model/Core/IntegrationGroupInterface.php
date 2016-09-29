@@ -16,4 +16,14 @@ interface IntegrationGroupInterface extends ModelInterface
      * @return self
      */
     public function setName($name);
+
+    /**
+     * @return array|IntegrationInterface[]
+     */
+    public function getIntegrations();
+
+    /**
+     * @param array|IntegrationInterface[] $integrations
+     */
+    public function setIntegrations(array $integrations);
 }

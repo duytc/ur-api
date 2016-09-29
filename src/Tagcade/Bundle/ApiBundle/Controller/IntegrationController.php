@@ -10,32 +10,30 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tagcade\Exception\InvalidArgumentException;
 use Tagcade\Handler\HandlerInterface;
-use Tagcade\Model\Core\IntegrationGroupInterface;
+use Tagcade\Model\Core\IntegrationInterface;
 use Tagcade\Model\User\Role\AdminInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 
 /**
- * @Rest\RouteResource("IntegrationGroup")
+ * @Rest\RouteResource("Integration")
  */
-class IntegrationGroupController extends RestControllerAbstract implements ClassResourceInterface
+class IntegrationController extends RestControllerAbstract implements ClassResourceInterface
 {
     /**
-     * Get all integration group
+     * Get all integration
      *
-     * @Rest\View(serializerGroups={"integrationgroup.detail", "integration.detail"})
-     *
-     * @Rest\QueryParam()
+     * @Rest\View(serializerGroups={"integration.detail", "integrationgroup.detail"})
      *
      * @ApiDoc(
-     *  section = "Integration Group",
+     *  section = "Integration",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful"
      *  }
      * )
      *
-     * @return IntegrationGroupInterface[]
+     * @return IntegrationInterface[]
      */
     public function cgetAction()
     {
@@ -47,10 +45,10 @@ class IntegrationGroupController extends RestControllerAbstract implements Class
     /**
      * Get a single integration group for the given id
      *
-     * @Rest\View(serializerGroups={"integrationgroup.detail", "integration.detail"})
+     * @Rest\View(serializerGroups={"integration.detail", "integrationgroup.detail"})
      *
      * @ApiDoc(
-     *  section = "Integration Group",
+     *  section = "Integration",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful"
@@ -59,7 +57,7 @@ class IntegrationGroupController extends RestControllerAbstract implements Class
      *
      * @param int $id the resource id
      *
-     * @return \Tagcade\Model\Core\IntegrationGroupInterface
+     * @return \Tagcade\Model\Core\IntegrationInterface
      * @throws NotFoundHttpException when the resource does not exist
      */
     public function getAction($id)
@@ -68,10 +66,10 @@ class IntegrationGroupController extends RestControllerAbstract implements Class
     }
 
     /**
-     * Create a integration group from the submitted data
+     * Create a integration from the submitted data
      *
      * @ApiDoc(
-     *  section = "Integration Group",
+     *  section = "Integration",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful",
@@ -93,10 +91,10 @@ class IntegrationGroupController extends RestControllerAbstract implements Class
     }
 
     /**
-     * Update an existing integration group from the submitted data or create a new ad network
+     * Update an existing integration from the submitted data or create a new ad network
      *
      * @ApiDoc(
-     *  section = "Integration Groups",
+     *  section = "Integration",
      *  resource = true,
      *  statusCodes = {
      *      201 = "Returned when the resource is created",
@@ -118,10 +116,10 @@ class IntegrationGroupController extends RestControllerAbstract implements Class
     }
 
     /**
-     * Update an existing integration group from the submitted data or create a new integration group at a specific location
+     * Update an existing integration from the submitted data or create a new integration at a specific location
      *
      * @ApiDoc(
-     *  section = "Integration Groups",
+     *  section = "Integration",
      *  resource = true,
      *  statusCodes = {
      *      204 = "Returned when successful",
@@ -142,10 +140,10 @@ class IntegrationGroupController extends RestControllerAbstract implements Class
     }
 
     /**
-     * Delete an existing integration group
+     * Delete an existing integration
      *
      * @ApiDoc(
-     *  section = "Integration Groups",
+     *  section = "Integration",
      *  resource = true,
      *  statusCodes = {
      *      204 = "Returned when successful",
@@ -169,7 +167,7 @@ class IntegrationGroupController extends RestControllerAbstract implements Class
      */
     protected function getResourceName()
     {
-        return 'integrationgroup';
+        return 'integration';
     }
 
     /**
@@ -179,7 +177,7 @@ class IntegrationGroupController extends RestControllerAbstract implements Class
      */
     protected function getGETRouteName()
     {
-        return 'api_1_get_integrationgroup';
+        return 'api_1_get_integration';
     }
 
     /**
@@ -187,6 +185,6 @@ class IntegrationGroupController extends RestControllerAbstract implements Class
      */
     protected function getHandler()
     {
-        return $this->container->get('tagcade_api.handler.integration_group');
+        return $this->container->get('tagcade_api.handler.integration');
     }
 }

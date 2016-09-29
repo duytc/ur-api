@@ -11,3 +11,8 @@ Tagcade\Entity\Core\IntegrationGroup:
         name:
             type: string
             length: 100
+
+    oneToMany:
+        integrations:
+            targetEntity: Tagcade\Entity\Core\Integration
+            mappedBy: integrationGroup

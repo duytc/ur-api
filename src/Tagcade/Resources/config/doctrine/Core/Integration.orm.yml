@@ -19,3 +19,4 @@ Tagcade\Entity\Core\Integration:
     manyToOne:
         integrationGroup:
             targetEntity: Tagcade\Entity\Core\IntegrationGroup
+            inversedBy: integrations

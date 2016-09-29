@@ -7,3 +7,6 @@ Tagcade\Entity\Core\IntegrationGroup:
         name:
             expose: true
             groups: [integrationgroup.detail, integrationgroup.summary]
+        integrations:
+            expose: true
+            groups: [integrationgroup.detail, integrationgroup.summary]

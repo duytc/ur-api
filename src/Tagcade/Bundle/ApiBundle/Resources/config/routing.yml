@@ -27,3 +27,8 @@ api_integration_group:
     type: rest
     resource: Tagcade\Bundle\ApiBundle\Controller\IntegrationGroupController
     name_prefix:  api_1_
+
+api_integration:
+    type: rest
+    resource: Tagcade\Bundle\ApiBundle\Controller\IntegrationController
+    name_prefix:  api_1_
