@@ -6,6 +6,7 @@ parameters:
     jms_serializer.cache_naming_strategy.class: JMS\Serializer\Naming\IdenticalPropertyNamingStrategy
 
     tagcade.security.auth.voter.ad_network.class: Tagcade\Security\Authorization\Voter\AdNetworkVoter
+    tagcade.security.auth.voter.data_source.class: Tagcade\Security\Authorization\Voter\DataSourceVoter
     tagcade.security.auth.voter.user.class: Tagcade\Security\Authorization\Voter\PublisherVoter
 
     # event dispatched on user action such as add, remove, delete
@@ -17,6 +18,12 @@ services:
         public: false
         tags:
             - { name: security.voter }
+
+    tagcade.security.auth.voter.data_source:
+        class:  %tagcade.security.auth.voter.data_source.class%
+        public: false
+        tags:
+            - { name: security.voter}
 
     tagcade.security.auth.voter.user:
         class:  %tagcade.security.auth.voter.user.class%

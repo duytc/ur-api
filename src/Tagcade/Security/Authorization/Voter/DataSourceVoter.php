@@ -2,20 +2,20 @@
 
 namespace Tagcade\Security\Authorization\Voter;
 
-use Tagcade\Model\Core\AdNetworkInterface;
+use Tagcade\Model\Core\DataSourceInterface;
 use Tagcade\Model\User\UserEntityInterface;
 
-class AdNetworkVoter extends EntityVoterAbstract
+class DataSourceVoter extends EntityVoterAbstract
 {
     public function supportsClass($class)
     {
-        $supportedClass = AdNetworkInterface::class;
+        $supportedClass = DataSourceInterface::class;
 
         return $supportedClass === $class || is_subclass_of($class, $supportedClass);
     }
 
     /**
-     * @param AdNetworkInterface $dataSource
+     * @param DataSourceInterface $dataSource
      * @param UserEntityInterface $user
      * @param $action
      * @return bool
