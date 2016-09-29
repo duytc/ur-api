@@ -1,0 +1,21 @@
+Tagcade\Entity\Core\DataSourceIntegration:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [dataSourceIntegration.detail]
+        dataSource:
+            expose: true
+            groups: [dataSourceIntegration.detail]
+        integration:
+            expose: true
+            groups: [dataSourceIntegration.detail]
+        username:
+            expose: true
+            groups: [dataSourceIntegration.detail]
+        password:
+            expose: true
+            groups: [dataSourceIntegration.detail]
+        schedule:
+            expose: true
+            groups: [dataSourceIntegration.detail]

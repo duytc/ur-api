@@ -23,6 +23,11 @@ api_data_source_entry:
     resource: Tagcade\Bundle\ApiBundle\Controller\DataSourceEntryController
     name_prefix:  api_1_
 
+api_data_source_integration:
+    type: rest
+    resource: Tagcade\Bundle\ApiBundle\Controller\DataSourceIntegrationController
+    name_prefix:  api_1_
+
 api_integration_group:
     type: rest
     resource: Tagcade\Bundle\ApiBundle\Controller\IntegrationGroupController
