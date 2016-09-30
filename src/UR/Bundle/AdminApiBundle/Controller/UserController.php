@@ -12,7 +12,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\AdminApiBundle\Handler\UserHandlerInterface;
 use UR\Bundle\ApiBundle\Controller\RestControllerAbstract;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
-use UR\Model\Core\AdNetworkInterface;
 use UR\Model\User\Role\PublisherInterface;
 
 class UserController extends RestControllerAbstract implements ClassResourceInterface
@@ -64,33 +63,6 @@ class UserController extends RestControllerAbstract implements ClassResourceInte
     public function getAction($id)
     {
         return $this->one($id);
-    }
-
-    /**
-     * Get ad networks for publisher
-     *
-     * @ApiDoc(
-     *  section = "admin",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful"
-     *  }
-     * )
-     *
-     * @param $publisherId
-     * @return array|AdNetworkInterface[]
-     */
-    public function getAdnetworksAction($publisherId)
-    {
-        $adNetworkManager = $this->get('ur.domain_manager.ad_network');
-        $publisherManager = $this->get('ur_user.domain_manager.publisher');
-
-        $publisher = $publisherManager->findPublisher($publisherId);
-        if (!$publisher) {
-            throw new NotFoundHttpException('That publisher does not exist');
-        }
-
-        return $adNetworkManager->getAdNetworksForPublisher($publisher);
     }
 
     /**

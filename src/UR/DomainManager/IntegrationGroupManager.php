@@ -31,22 +31,22 @@ class IntegrationGroupManager implements IntegrationGroupManagerInterface
     /**
      * @inheritdoc
      */
-    public function save(ModelInterface $adNetwork)
+    public function save(ModelInterface $integrationGroup)
     {
-        if (!$adNetwork instanceof IntegrationGroupInterface) throw new InvalidArgumentException('expect IntegrationGroupInterface object');
+        if (!$integrationGroup instanceof IntegrationGroupInterface) throw new InvalidArgumentException('expect IntegrationGroupInterface object');
 
-        $this->om->persist($adNetwork);
+        $this->om->persist($integrationGroup);
         $this->om->flush();
     }
 
     /**
      * @inheritdoc
      */
-    public function delete(ModelInterface $adNetwork)
+    public function delete(ModelInterface $integrationGroup)
     {
-        if (!$adNetwork instanceof IntegrationGroupInterface) throw new InvalidArgumentException('expect IntegrationGroupInterface object');
+        if (!$integrationGroup instanceof IntegrationGroupInterface) throw new InvalidArgumentException('expect IntegrationGroupInterface object');
 
-        $this->om->remove($adNetwork);
+        $this->om->remove($integrationGroup);
         $this->om->flush();
     }
 

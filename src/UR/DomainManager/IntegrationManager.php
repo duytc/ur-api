@@ -31,22 +31,22 @@ class IntegrationManager implements IntegrationManagerInterface
     /**
      * @inheritdoc
      */
-    public function save(ModelInterface $adNetwork)
+    public function save(ModelInterface $integration)
     {
-        if (!$adNetwork instanceof IntegrationInterface) throw new InvalidArgumentException('expect IntegrationInterface object');
+        if (!$integration instanceof IntegrationInterface) throw new InvalidArgumentException('expect IntegrationInterface object');
 
-        $this->om->persist($adNetwork);
+        $this->om->persist($integration);
         $this->om->flush();
     }
 
     /**
      * @inheritdoc
      */
-    public function delete(ModelInterface $adNetwork)
+    public function delete(ModelInterface $integration)
     {
-        if (!$adNetwork instanceof IntegrationInterface) throw new InvalidArgumentException('expect IntegrationInterface object');
+        if (!$integration instanceof IntegrationInterface) throw new InvalidArgumentException('expect IntegrationInterface object');
 
-        $this->om->remove($adNetwork);
+        $this->om->remove($integration);
         $this->om->flush();
     }
 

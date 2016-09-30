@@ -8,11 +8,6 @@ api_check_token:
     defaults:  { _controller: URApiBundle:Token:checkToken }
     methods:  [POST]
 
-api_ad_network:
-    type: rest
-    resource: UR\Bundle\ApiBundle\Controller\AdNetworkController
-    name_prefix:  api_1_
-
 api_data_source:
     type: rest
     resource: UR\Bundle\ApiBundle\Controller\DataSourceController

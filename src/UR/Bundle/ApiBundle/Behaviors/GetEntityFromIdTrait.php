@@ -4,28 +4,12 @@ namespace UR\Bundle\ApiBundle\Behaviors;
 
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use UR\DomainManager\AdNetworkManagerInterface;
 use UR\DomainManager\ManagerInterface;
 use UR\Exception\InvalidArgumentException;
-use UR\Model\Core\AdNetworkInterface;
 use UR\Model\ModelInterface;
 
 trait GetEntityFromIdTrait
 {
-    /**
-     * Get ad network of id ad network array
-     * @param $ids
-     * @return array|\UR\Model\ModelInterface[]
-     */
-    protected function getAdNetworks($ids)
-    {
-        $myIds = $this->convertInputToArray($ids);
-        /** @var AdNetworkManagerInterface $channelManager */
-        $adSlotManager = $this->get('ur.domain_manager.ad_network');
-
-        return $this->createEntitiesObject($adSlotManager, $myIds, AdNetworkInterface::class);
-    }
-
     /**
      * create entity objects from manager and ids with expected class
      *

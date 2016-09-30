@@ -4,10 +4,7 @@ namespace UR\Form\Type;
 
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
-use UR\Entity\Core\AdNetwork;
 use UR\Entity\Core\IntegrationGroup;
-use UR\Form\DataTransformer\RoleToUserEntityTransformer;
-use UR\Model\User\Role\AdminInterface;
 
 class IntegrationGroupFormType extends AbstractRoleSpecificFormType
 {
