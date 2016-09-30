@@ -1,0 +1,19 @@
+UR\Entity\Core\AdNetwork:
+    type: entity
+    table: core_ad_network
+    repositoryClass: UR\Repository\Core\AdNetworkRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: 100
+        url:
+            type: string
+            nullable: true
+    manyToOne:
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

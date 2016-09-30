@@ -1,0 +1,18 @@
+UR\Entity\Core\IntegrationGroup:
+    type: entity
+    table: core_integration_group
+    repositoryClass: UR\Repository\Core\IntegrationGroupRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: 100
+
+    oneToMany:
+        integrations:
+            targetEntity: UR\Entity\Core\Integration
+            mappedBy: integrationGroup

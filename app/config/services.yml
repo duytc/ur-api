@@ -5,62 +5,62 @@ parameters:
     # of the property in the php class
     jms_serializer.cache_naming_strategy.class: JMS\Serializer\Naming\IdenticalPropertyNamingStrategy
 
-    tagcade.security.auth.voter.ad_network.class: Tagcade\Security\Authorization\Voter\AdNetworkVoter
-    tagcade.security.auth.voter.data_source.class: Tagcade\Security\Authorization\Voter\DataSourceVoter
-    tagcade.security.auth.voter.data_source_entry.class: Tagcade\Security\Authorization\Voter\DataSourceEntryVoter
-    tagcade.security.auth.voter.data_source_integration.class: Tagcade\Security\Authorization\Voter\DataSourceIntegrationVoter
-    tagcade.security.auth.voter.user.class: Tagcade\Security\Authorization\Voter\PublisherVoter
+    ur.security.auth.voter.ad_network.class: UR\Security\Authorization\Voter\AdNetworkVoter
+    ur.security.auth.voter.data_source.class: UR\Security\Authorization\Voter\DataSourceVoter
+    ur.security.auth.voter.data_source_entry.class: UR\Security\Authorization\Voter\DataSourceEntryVoter
+    ur.security.auth.voter.data_source_integration.class: UR\Security\Authorization\Voter\DataSourceIntegrationVoter
+    ur.security.auth.voter.user.class: UR\Security\Authorization\Voter\PublisherVoter
 
     # event dispatched on user action such as add, remove, delete
-    tagcade.events.handler_event: 'tagcade.events.handler_event'
+    ur.events.handler_event: 'ur.events.handler_event'
 
 services:
-    tagcade.security.auth.voter.ad_network:
-        class:  %tagcade.security.auth.voter.ad_network.class%
+    ur.security.auth.voter.ad_network:
+        class:  %ur.security.auth.voter.ad_network.class%
         public: false
         tags:
             - { name: security.voter }
 
-    tagcade.security.auth.voter.data_source:
-        class:  %tagcade.security.auth.voter.data_source.class%
+    ur.security.auth.voter.data_source:
+        class:  %ur.security.auth.voter.data_source.class%
         public: false
         tags:
             - { name: security.voter}
 
-    tagcade.security.auth.voter.data_source_entry:
-        class:  %tagcade.security.auth.voter.data_source_entry.class%
+    ur.security.auth.voter.data_source_entry:
+        class:  %ur.security.auth.voter.data_source_entry.class%
         public: false
         tags:
             - { name: security.voter}
 
-    tagcade.security.auth.voter.data_source_integration:
-        class:  %tagcade.security.auth.voter.data_source_integration.class%
+    ur.security.auth.voter.data_source_integration:
+        class:  %ur.security.auth.voter.data_source_integration.class%
         public: false
         tags:
             - { name: security.voter}
 
-    tagcade.security.auth.voter.user:
-        class:  %tagcade.security.auth.voter.user.class%
+    ur.security.auth.voter.user:
+        class:  %ur.security.auth.voter.user.class%
         public: false
         tags:
             - { name: security.voter }
 
-    tagcade.service.console_output:
+    ur.service.console_output:
         class: Symfony\Component\Console\Output\ConsoleOutput
 
-    tagcade.handler.handler_abstract:
-        class: Tagcade\Handler\HandlerAbstract
+    ur.handler.handler_abstract:
+        class: UR\Handler\HandlerAbstract
         abstract: true
         public: false
         calls:
             - [setEventDispatcher, ["@event_dispatcher"]]
-            - [setEvent, [%tagcade.events.handler_event%]]
+            - [setEvent, [%ur.events.handler_event%]]
 
-    tagcade.service.date_util:
-        class: Tagcade\Service\DateUtil
+    ur.service.date_util:
+        class: UR\Service\DateUtil
 
-    tagcade.service.array_util:
-        class: Tagcade\Service\ArrayUtil
+    ur.service.array_util:
+        class: UR\Service\ArrayUtil
 
     monolog.formatter.session_request:
         class: Monolog\Formatter\LineFormatter
@@ -73,7 +73,7 @@ services:
             - { name: monolog.processor }
 
     monolog.processor.session_request:
-        class: Tagcade\Bundle\ApiBundle\Service\SessionRequestProcessor
+        class: UR\Bundle\ApiBundle\Service\SessionRequestProcessor
         arguments:
             - @security.token_storage
         tags:

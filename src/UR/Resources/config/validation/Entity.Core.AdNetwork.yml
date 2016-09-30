@@ -1,0 +1,13 @@
+UR\Entity\Core\AdNetwork:
+    properties:
+        name:
+            - NotBlank:
+                message: "Name should not be blank"
+            - Length:
+                min: 2
+                minMessage: "Name must be at least {{ limit }} characters in length"
+        url:
+            - Url: ~
+        publisher:
+            - NotBlank: ~
+            - Valid: ~

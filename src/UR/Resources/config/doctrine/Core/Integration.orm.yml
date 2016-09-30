@@ -1,0 +1,22 @@
+UR\Entity\Core\Integration:
+    type: entity
+    table: core_integration
+    repositoryClass: UR\Repository\Core\IntegrationRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: 100
+        url:
+            type: string
+        type:
+            type: string
+
+    manyToOne:
+        integrationGroup:
+            targetEntity: UR\Entity\Core\IntegrationGroup
+            inversedBy: integrations

@@ -1,0 +1,33 @@
+UR\Bundle\UserBundle\Entity\User:
+    type: entity
+    table: core_user
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    attributeOverride:
+        email:
+            nullable: true
+        emailCanonical:
+            nullable: true
+            unique: false
+    fields:
+        joinDate:
+            type: date
+            gedmo:
+                timestampable:
+                    on: create
+        testAccount:
+            type: boolean
+            nullable: true
+            options:
+                default: false
+    inheritanceType: JOINED
+
+    discriminatorColumn:
+        name: type
+        type: string
+    discriminatorMap:
+        admin: UR\Bundle\UserSystem\AdminBundle\Entity\User
+        publisher: UR\Bundle\UserSystem\PublisherBundle\Entity\User

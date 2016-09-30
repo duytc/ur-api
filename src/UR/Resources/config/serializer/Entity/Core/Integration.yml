@@ -1,0 +1,18 @@
+UR\Entity\Core\Integration:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [integration.detail, integration.summary]
+        name:
+            expose: true
+            groups: [integration.detail, integration.summary]
+        url:
+            expose: true
+            groups: [integration.detail]
+        type:
+            expose: true
+            groups: [integration.detail]
+        integrationGroup:
+            expose: true
+            groups: [integration.detail]

@@ -1,0 +1,19 @@
+UR\Entity\Core\DataSource:
+    type: entity
+    table: core_data_source
+    repositoryClass: UR\Repository\Core\DataSourceRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: 100
+        format:
+            type: string
+            length: 100
+    manyToOne:
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

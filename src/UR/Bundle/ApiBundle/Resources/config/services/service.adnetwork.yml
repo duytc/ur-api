@@ -1,0 +1,60 @@
+parameters:
+    # entity class
+    ur.entity.core.ad_network.class: UR\Entity\Core\AdNetwork
+    # form class
+    ur.form.type.ad_network.class: UR\Form\Type\AdNetworkFormType
+
+services:
+    ur_api.handler.ad_network:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.ad_network
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.ad_network:
+        class: UR\Repository\Core\AdNetworkRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.ad_network.class%
+
+    ur.domain_manager.ad_network:
+        class: UR\DomainManager\AdNetworkManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.ad_network
+
+    ur.form.type.ad_network:
+        class: %ur.form.type.ad_network.class%
+        tags:
+            - { name: form.type, alias: ur_form_ad_network }
+
+    ur.handler.handlers.ad_network.abstract:
+        class: UR\Handler\Handlers\Core\AdNetworkHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.ad_network
+            - @ur.domain_manager.ad_network
+
+    ur.handler.handlers.ad_network.admin:
+        class: UR\Handler\Handlers\Core\Admin\AdNetworkHandler
+        parent: ur.handler.handlers.ad_network.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.ad_network.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\AdNetworkHandler
+        parent: ur.handler.handlers.ad_network.abstract
+        public: false
+
+    ur.handler.handler_manager.ad_network:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.ad_network.class%
+            -
+                - @ur.handler.handlers.ad_network.admin
+                - @ur.handler.handlers.ad_network.publisher

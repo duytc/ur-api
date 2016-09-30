@@ -1,0 +1,25 @@
+UR\Entity\Core\DataSourceIntegration:
+    type: entity
+    table: core_data_source_integration
+    repositoryClass: UR\Repository\Core\DataSourceIntegrationRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        username:
+            type: string
+            length: 100
+        password:
+            type: string
+            length: 100
+        schedule:
+            type: integer
+
+    manyToOne:
+        dataSource:
+            targetEntity: UR\Entity\Core\DataSource
+
+        integration:
+            targetEntity: UR\Entity\Core\Integration

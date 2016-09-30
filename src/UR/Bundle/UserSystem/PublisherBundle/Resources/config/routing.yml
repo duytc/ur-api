@@ -1,0 +1,4 @@
+account_api_user:
+    type: rest
+    resource: UR\Bundle\UserSystem\PublisherBundle\Controller\PublisherController
+    name_prefix: publisher_api_1_

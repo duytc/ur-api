@@ -28,12 +28,12 @@ class AppKernel extends Kernel
             new Stof\DoctrineExtensionsBundle\StofDoctrineExtensionsBundle(),
             new Leezy\PheanstalkBundle\LeezyPheanstalkBundle(),
 
-            new Tagcade\Bundle\UserBundle\TagcadeUserBundle(),
-            new Tagcade\Bundle\ApiBundle\TagcadeApiBundle(),
-            new Tagcade\Bundle\AdminApiBundle\TagcadeAdminApiBundle(),
-            new Tagcade\Bundle\AppBundle\TagcadeAppBundle(),
-            new Tagcade\Bundle\UserSystem\PublisherBundle\TagcadeUserSystemPublisherBundle(),
-            new Tagcade\Bundle\UserSystem\AdminBundle\TagcadeUserSystemAdminBundle(),
+            new UR\Bundle\UserBundle\URUserBundle(),
+            new UR\Bundle\ApiBundle\URApiBundle(),
+            new UR\Bundle\AdminApiBundle\URAdminApiBundle(),
+            new UR\Bundle\AppBundle\URAppBundle(),
+            new UR\Bundle\UserSystem\PublisherBundle\URUserSystemPublisherBundle(),
+            new UR\Bundle\UserSystem\AdminBundle\URUserSystemAdminBundle(),
 
             new Doctrine\Bundle\DoctrineCacheBundle\DoctrineCacheBundle(),
         );
@@ -58,7 +58,7 @@ class AppKernel extends Kernel
     public function getCacheDir()
     {
         if ($this->isRunningOnDevelopmentVM()) {
-            return '/dev/shm/tagcade-api/cache/' . $this->environment;
+            return '/dev/shm/unified-reports-api/cache/' . $this->environment;
         }
 
         return parent::getCacheDir();
@@ -67,7 +67,7 @@ class AppKernel extends Kernel
     public function getLogDir()
     {
         if ($this->isRunningOnDevelopmentVM()) {
-            return '/dev/shm/tagcade-api/logs';
+            return '/dev/shm/unified-reports-api/logs';
         }
 
         return parent::getLogDir();

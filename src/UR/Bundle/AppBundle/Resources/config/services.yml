@@ -1,0 +1,15 @@
+imports:
+    #- { resource: services/.yml }
+
+parameters:
+    # params
+
+services:
+#    ur_app.event_listener.adnetwork_change_listener:
+#        class: UR\Bundle\AppBundle\EventListener\AdNetworkChangeListener
+#        arguments:
+#            - @event_dispatcher
+#        tags:
+#            - { name: doctrine.event_listener, event: onFlush }
+#            - { name: doctrine.event_listener, event: postFlush }
+#            - { name: doctrine.event_listener, event: preSoftDelete }

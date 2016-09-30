@@ -83,16 +83,16 @@ doctrine:
                 mappings:
                     # bundles
                     FOSUserBundle:      ~
-                    TagcadeUserBundle:  ~
-                    TagcadeAdminApiBundle:  ~
-                    TagcadeUserSystemAdminBundle:  ~
-                    TagcadeUserSystemPublisherBundle:  ~
+                    URUserBundle:  ~
+                    URAdminApiBundle:  ~
+                    URUserSystemAdminBundle:  ~
+                    URUserSystemPublisherBundle:  ~
                     # custom
                     CoreEntities:
                         type:       yml
-                        dir:        %kernel.root_dir%/../src/Tagcade/Resources/config/doctrine/Core
-                        prefix:     Tagcade\Entity\Core
-                        alias:      TagcadeCoreEntity
+                        dir:        %kernel.root_dir%/../src/UR/Resources/config/doctrine/Core
+                        prefix:     UR\Entity\Core
+                        alias:      URCoreEntity
                         is_bundle:  false
 
 # JMS Serializer Configuration
@@ -100,44 +100,44 @@ jms_serializer:
     metadata:
         directories:
             entity_core:
-                namespace_prefix:   "Tagcade\\Entity\Core\\"
-                path:               %kernel.root_dir%/../src/Tagcade/Resources/config/serializer/Entity/Core
+                namespace_prefix:   "UR\\Entity\Core\\"
+                path:               %kernel.root_dir%/../src/UR/Resources/config/serializer/Entity/Core
             model_core:
-                namespace_prefix:   "Tagcade\\Model\Core\\"
-                path:               %kernel.root_dir%/../src/Tagcade/Resources/config/serializer/Model/Core
-            tagcade:
-                namespace_prefix:   "Tagcade\\"
-                path:               %kernel.root_dir%/../src/Tagcade/Resources/config/serializer
+                namespace_prefix:   "UR\\Model\Core\\"
+                path:               %kernel.root_dir%/../src/UR/Resources/config/serializer/Model/Core
+            ur:
+                namespace_prefix:   "UR\\"
+                path:               %kernel.root_dir%/../src/UR/Resources/config/serializer
             FOSUserBundle:
                 namespace_prefix:   "FOS\\UserBundle"
-                path:               "@TagcadeUserBundle/Resources/config/serializer/fos"
+                path:               "@URUserBundle/Resources/config/serializer/fos"
 
 # gfreeau_custom_validation_path Configuration
 gfreeau_custom_validation_path:
     directories:
         -
-            path:       %kernel.root_dir%/../src/Tagcade/Resources/config/validation
+            path:       %kernel.root_dir%/../src/UR/Resources/config/validation
             type:       yml
             recursive:  true
 
 # fos_user Configuration - do not use because we are using RollerworksMultiUser that included FOS:
 #    db_driver:      orm
 #    firewall_name:  api
-#    user_class:     Tagcade\Bundle\UserBundle\Entity\User
+#    user_class:     UR\Bundle\UserBundle\Entity\User
 
 
 # User system configuration required by RollerworksMultiUser
-tagcade_user_system_admin:
+ur_user_system_admin:
     # we don't want to do any request matching to our user types, so we use a request matcher that never
     # matches any requests. The bundle doesn't have an option to disable request matching.
-    request_matcher: tagcade_user.request.user_system.request_matcher
+    request_matcher: ur_user.request.user_system.request_matcher
     # firewall_name isn't really used. FosUserBundle uses it to automatically login a user after registration
     # however our application is a stateless api so it doesn't apply
     # just doing this here for completeness
     firewall_name: api
 
-tagcade_user_system_publisher:
-    request_matcher: tagcade_user.request.user_system.request_matcher
+ur_user_system_publisher:
+    request_matcher: ur_user.request.user_system.request_matcher
     firewall_name: api
     resetting:
         token_ttl: 86400
@@ -146,7 +146,7 @@ tagcade_user_system_publisher:
                 address:        "%mailer_sender%"
                 sender_name:    "%mailer_sender_name%"
         template:
-            email: TagcadeApiBundle:Resetting:email.txt.twig
+            email: URApiBundle:Resetting:email.txt.twig
 
 # sensio_framework_extra configuration
 sensio_framework_extra:
@@ -185,9 +185,9 @@ fos_rest:
 
     exception:
         codes:
-            'Tagcade\Exception\InvalidUserRoleException': 400
-            'Tagcade\Exception\InvalidArgumentException': 400
-            'Tagcade\Exception\LogicException': 400
+            'UR\Exception\InvalidUserRoleException': 400
+            'UR\Exception\InvalidArgumentException': 400
+            'UR\Exception\LogicException': 400
 
 # lexik_jwt_authentication Configuration
 lexik_jwt_authentication:
@@ -215,4 +215,4 @@ stof_doctrine_extensions:
 
 # all parameters
 parameters:
-    jms_serializer.json_serialization_visitor.class: Tagcade\Behaviors\JsonSerializationVisitor
+    jms_serializer.json_serialization_visitor.class: UR\Behaviors\JsonSerializationVisitor

@@ -1,0 +1,6 @@
+services:
+#    ur_api.event_listener.update_ad_network_listener:
+#        class: UR\Bundle\ApiBundle\EventListener\UpdateAdNetworkListener
+#        tags:
+#            - { name: doctrine.event_listener, event: prePersist }
+#            - { name: doctrine.event_listener, event: preUpdate }

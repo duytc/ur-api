@@ -1,0 +1,60 @@
+parameters:
+    # entity class
+    ur.entity.core.integration_group.class: UR\Entity\Core\IntegrationGroup
+    # form class
+    ur.form.type.core.integration_group.class: UR\Form\Type\IntegrationGroupFormType
+
+services:
+    ur_api.handler.integration_group:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.integration_group
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.integration_group:
+        class: UR\Repository\Core\IntegrationGroupRepository
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.integration_group.class%
+
+    ur.domain_manager.integration_group:
+        class: UR\DomainManager\IntegrationGroupManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.integration_group
+
+    ur.form.type.integration_group:
+        class: %ur.form.type.core.integration_group.class%
+        tags:
+            - { name: form.type, alias: ur_form_integration_group }
+
+    ur.handler.handlers.integration_group.abstract:
+        class: UR\Handler\Handlers\Core\IntegrationGroupHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.integration_group
+            - @ur.domain_manager.integration_group
+
+    ur.handler.handlers.integration_group.admin:
+        class: UR\Handler\Handlers\Core\Admin\IntegrationGroupHandler
+        parent: ur.handler.handlers.integration_group.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.integration_group.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\IntegrationGroupHandler
+        parent: ur.handler.handlers.integration_group.abstract
+        public: false
+
+    ur.handler.handler_manager.integration_group:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.integration_group.class%
+            -
+                - @ur.handler.handlers.integration_group.admin
+                - @ur.handler.handlers.integration_group.publisher
