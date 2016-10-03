@@ -6,11 +6,11 @@ namespace UR\Handler\Handlers\Core\Admin;
 use Symfony\Component\Form\FormFactoryInterface;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\Form\Type\RoleSpecificFormTypeInterface;
-use UR\Handler\Handlers\Core\IntegrationHandlerAbstract;
+use UR\Handler\Handlers\Core\AlertHandlerAbstract;
 use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\UserRoleInterface;
 
-class IntegrationHandler extends IntegrationHandlerAbstract
+class AlertHandler extends AlertHandlerAbstract
 {
     /** @var PublisherManagerInterface */
     private $publisherManager;

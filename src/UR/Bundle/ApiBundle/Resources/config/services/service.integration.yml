@@ -13,7 +13,7 @@ services:
             - @ur.user_role
 
     ur.repository.integration:
-        class: UR\Repository\Core\IntegrationRepository
+        class: UR\Repository\Core\IntegrationRepositoryInterface
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:

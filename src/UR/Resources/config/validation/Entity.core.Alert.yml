@@ -1,0 +1,22 @@
+UR\Entity\Core\Alert:
+    properties:
+        type:
+            - Choice:
+                choices:  ["info", "warn", "error"]
+                message:  "Not supported that alert type"
+#        isRead:
+#            -
+        title:
+            - Length:
+                min: 5
+                max: 100
+                minMessage: 'Title must be at least {{ limit }} characters long'
+                maxMessage: 'Title cannot be longer than {{ limit }} characters'
+#        message:
+#            -
+#        createdDate:
+#            -
+        dataSourceEntry:
+            - NotBlank:
+                message: "DataSource Entry should not be blank"
+            - Valid: ~

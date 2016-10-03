@@ -3,7 +3,6 @@
 namespace UR\Handler\Handlers\Core;
 
 
-use UR\DomainManager\DataSourceManagerInterface;
 use UR\DomainManager\IntegrationGroupManagerInterface;
 use UR\Handler\RoleHandlerAbstract;
 

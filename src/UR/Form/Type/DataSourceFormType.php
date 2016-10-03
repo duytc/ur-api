@@ -2,6 +2,9 @@
 
 namespace UR\Form\Type;
 
+
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\DataSource;
@@ -18,14 +21,14 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
     {
         $builder
             ->add('name')
-            ->add('format', 'choice', [
+            ->add('format', ChoiceType::class, [
                 'choices' => [
                     'csv'   => 'csv',
                     'excel' => 'excel',
                     'json'  => 'json'
                 ],
             ])
-            ->add('dataSourceIntegrations', 'collection', array(
+            ->add('dataSourceIntegrations', CollectionType::class, array(
                 'mapped' => true,
                 'type' => new DataSourceIntegrationFormType(),
                 'allow_add' => true,

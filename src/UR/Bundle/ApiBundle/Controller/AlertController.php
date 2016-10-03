@@ -9,28 +9,29 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Handler\HandlerInterface;
-use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\AlertInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
+use Psr\Log\LoggerInterface;
 
 /**
- * @Rest\RouteResource("datasourceentry")
+ * @Rest\RouteResource("Alert")
  */
-class DataSourceEntryController extends RestControllerAbstract implements ClassResourceInterface
+class AlertController extends RestControllerAbstract implements ClassResourceInterface
 {
     /**
-     * Get all data sources
+     * Get all alert
      *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceEntry.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"alert.detail"})
      *
      * @ApiDoc(
-     *  section = "Data Source Entry",
+     *  section = "Alert",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful"
      *  }
      * )
      *
-     * @return DataSourceEntryInterface[]
+     * @return AlertInterface[]
      */
     public function cgetAction()
     {
@@ -38,12 +39,12 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     }
 
     /**
-     * Get a single data source entry for the given id
+     * Get a single alert group for the given id
      *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceEntry.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"alert.detail"})
      *
      * @ApiDoc(
-     *  section = "Data Source",
+     *  section = "Alert",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful"
@@ -52,7 +53,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      *
      * @param int $id the resource id
      *
-     * @return \UR\Model\Core\DataSourceInterface
+     * @return AlertInterface
      * @throws NotFoundHttpException when the resource does not exist
      */
     public function getAction($id)
@@ -61,10 +62,10 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     }
 
     /**
-     * Create a data source entry from the submitted data
+     * Create a alert from the submitted data
      *
      * @ApiDoc(
-     *  section = "Data Sources Entry",
+     *  section = "Alert",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful",
@@ -78,14 +79,15 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      */
     public function postAction(Request $request)
     {
+
         return $this->post($request);
     }
 
     /**
-     * Update an existing data source entry from the submitted data or create a new ad network
+     * Update an existing alert from the submitted data or create a new ad network
      *
      * @ApiDoc(
-     *  section = "Data Sources Entry",
+     *  section = "Alert",
      *  resource = true,
      *  statusCodes = {
      *      201 = "Returned when the resource is created",
@@ -107,10 +109,10 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     }
 
     /**
-     * Update an existing data source entry from the submitted data or create a new data source at a specific location
+     * Update an existing alert from the submitted data or create a new alert at a specific location
      *
      * @ApiDoc(
-     *  section = "Data Sources Entry",
+     *  section = "Alert",
      *  resource = true,
      *  statusCodes = {
      *      204 = "Returned when successful",
@@ -131,10 +133,10 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     }
 
     /**
-     * Delete an existing data source entry
+     * Delete an existing alert
      *
      * @ApiDoc(
-     *  section = "Data Sources Entry",
+     *  section = "Alert",
      *  resource = true,
      *  statusCodes = {
      *      204 = "Returned when successful",
@@ -158,7 +160,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      */
     protected function getResourceName()
     {
-        return 'data_source_entry';
+        return 'alert';
     }
 
     /**
@@ -168,7 +170,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      */
     protected function getGETRouteName()
     {
-        return 'api_1_get_datasourceentries';
+        return 'api_1_get_alert';
     }
 
     /**
@@ -176,6 +178,6 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      */
     protected function getHandler()
     {
-        return $this->container->get('ur_api.handler.data_source_entry');
+        return $this->container->get('ur_api.handler.alert');
     }
 }
