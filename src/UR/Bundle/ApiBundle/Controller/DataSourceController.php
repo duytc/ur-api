@@ -62,7 +62,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     /**
      * Get a single data source for the given id
      *
-     * @Rest\View(serializerGroups={"datasource.detail", "user.summary", "adtag.summary", "partner.summary"})
+     * @Rest\View(serializerGroups={"datasource.detail", "user.summary", "dataSourceIntegration.summary", "integration.summary", "integrationgroup.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",

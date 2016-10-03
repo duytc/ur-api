@@ -9,4 +9,4 @@ UR\Entity\Core\IntegrationGroup:
             groups: [integrationgroup.detail, integrationgroup.summary]
         integrations:
             expose: true
-            groups: [integrationgroup.detail, integrationgroup.summary]
+            groups: [integrationgroup.detail]
