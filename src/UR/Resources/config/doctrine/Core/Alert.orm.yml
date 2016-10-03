@@ -1,0 +1,29 @@
+UR\Entity\Core\Alert:
+    type: entity
+    table: core_alert
+    repositoryClass: UR\Repository\Core\AlertRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        isRead:
+            type: boolean
+            option:
+                default: false
+        title:
+            type: string
+        type:
+            type: string
+        message:
+            type: string
+            nullable: true
+        createdDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+    manyToOne:
+        dataSourceEntry:
+            targetEntity: UR\Entity\Core\DataSourceEntry

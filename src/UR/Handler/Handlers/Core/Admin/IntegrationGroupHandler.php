@@ -7,7 +7,6 @@ use Symfony\Component\Form\FormFactoryInterface;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\Form\Type\RoleSpecificFormTypeInterface;
 use UR\Handler\Handlers\Core\IntegrationGroupHandlerAbstract;
-use UR\Model\ModelInterface;
 use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\UserRoleInterface;
 
@@ -36,13 +35,4 @@ class IntegrationGroupHandler extends IntegrationGroupHandlerAbstract
     {
         return $role instanceof AdminInterface;
     }
-
-    /**
-     * @inheritdoc
-     */
-    protected function processForm(ModelInterface $integrationGroup, array $parameters, $method = "PUT")
-    {
-        return parent::processForm($integrationGroup, $parameters, $method);
-    }
-
 }

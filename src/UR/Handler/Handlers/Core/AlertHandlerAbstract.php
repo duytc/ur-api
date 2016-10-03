@@ -3,13 +3,13 @@
 namespace UR\Handler\Handlers\Core;
 
 
-use UR\DomainManager\IntegrationManagerInterface;
+use UR\DomainManager\AlertManagerInterface;
 use UR\Handler\RoleHandlerAbstract;
 
-abstract class IntegrationHandlerAbstract extends RoleHandlerAbstract
+abstract class AlertHandlerAbstract extends RoleHandlerAbstract
 {
     /**
-     * @return IntegrationManagerInterface
+     * @return AlertManagerInterface
      */
     protected function getDomainManager()
     {
