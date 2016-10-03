@@ -19,3 +19,6 @@ UR\Entity\Core\DataSourceIntegration:
         schedule:
             expose: true
             groups: [dataSourceIntegration.detail]
+        active:
+            expose: true
+            groups: [dataSourceIntegration.detail]

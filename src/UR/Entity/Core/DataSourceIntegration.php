@@ -23,6 +23,7 @@ class DataSourceIntegration extends DataSourceIntegrationModel
     protected $username;
     protected $password;
     protected $schedule;
+    protected $active;
 
     /**
      * @inheritdoc

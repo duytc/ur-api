@@ -15,7 +15,9 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
             ->add('integration')
             ->add('username')
             ->add('password')
-            ->add('schedule');
+            ->add('schedule')
+            ->add('active')
+        ;
     }
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)

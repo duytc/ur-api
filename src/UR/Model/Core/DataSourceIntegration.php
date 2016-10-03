@@ -19,6 +19,7 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     protected $username;
     protected $password;
     protected $schedule;
+    protected $active;
 
     public function __construct()
     {
@@ -121,4 +122,23 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
 
         return $this;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getActive()
+    {
+        return $this->active;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setActive($active)
+    {
+        $this->active = $active;
+
+        return $this;
+    }
+
 }

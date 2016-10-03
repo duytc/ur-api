@@ -16,7 +16,10 @@ UR\Entity\Core\DataSourceIntegration:
             length: 100
         schedule:
             type: integer
-
+        active:
+            type: boolean
+            option:
+                default: true
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

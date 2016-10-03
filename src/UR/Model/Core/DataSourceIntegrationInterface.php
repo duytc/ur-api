@@ -63,4 +63,15 @@ interface DataSourceIntegrationInterface extends ModelInterface
      * @return self
      */
     public function setSchedule($schedule);
+
+    /**
+     * @return boolean
+     */
+    public function getActive();
+
+    /**
+     * @param boolean $active
+     * @return self
+     */
+    public function setActive($active);
 }
