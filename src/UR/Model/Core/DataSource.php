@@ -14,6 +14,11 @@ class DataSource implements DataSourceInterface
     /** @var UserEntityInterface */
     protected $publisher;
 
+    /**
+     * @var IntegrationInterface[]
+     */
+    protected $dataSourceIntegrations;
+
     public function __construct()
     {
     }
@@ -96,5 +101,20 @@ class DataSource implements DataSourceInterface
         $this->format = $format;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceIntegrations()
+    {
+        return $this->dataSourceIntegrations;
+    }
 
+    /**
+     * @inheritdoc
+     */
+    public function setDataSourceIntegrations($dataSourceIntegrations)
+    {
+        $this->dataSourceIntegrations = $dataSourceIntegrations;
+        return $this;
+    }
 }

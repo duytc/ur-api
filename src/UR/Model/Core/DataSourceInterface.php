@@ -44,4 +44,15 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setPublisher(PublisherInterface $publisher);
+
+    /**
+     * @return IntegrationInterface[]
+     */
+    public function getDataSourceIntegrations();
+
+    /**
+     * @param IntegrationInterface[] $dataSourceIntegrations
+     * @return self
+     */
+    public function setDataSourceIntegrations($dataSourceIntegrations);
 }

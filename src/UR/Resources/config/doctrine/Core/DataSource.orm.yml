@@ -17,3 +17,10 @@ UR\Entity\Core\DataSource:
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
+
+    oneToMany:
+        dataSourceIntegrations:
+            targetEntity: UR\Entity\Core\DataSourceIntegration
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: dataSource
+            orphanRemoval: true
