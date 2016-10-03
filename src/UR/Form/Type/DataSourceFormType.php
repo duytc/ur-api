@@ -2,12 +2,11 @@
 
 namespace UR\Form\Type;
 
-
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\DataSource;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
-use UR\Model\Core\DataSourceInterface;
+use UR\Model\User\Role\AdminInterface;
 
 class DataSourceFormType extends AbstractRoleSpecificFormType
 {
@@ -16,7 +15,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
         $builder
             ->add('name')
             ->add('format');
-        if ($this->userRole instanceof DataSourceInterface) {
+        if ($this->userRole instanceof AdminInterface) {
             $builder->add(
                 $builder->create('publisher')
                     ->addModelTransformer(new RoleToUserEntityTransformer(), false
