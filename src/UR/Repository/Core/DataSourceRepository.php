@@ -26,8 +26,10 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
     {
         $publisherId = $publisher->getId();
 
-        $qb = $this->createQueryBuilder('n')->where('n.publisher = :publisherId')
+        $qb = $this->createQueryBuilder('n')
+            ->where('n.publisher = :publisherId')
             ->setParameter('publisherId', $publisherId, Type::INTEGER);
+
         if (is_int($limit)) {
             $qb->setMaxResults($limit);
         }
