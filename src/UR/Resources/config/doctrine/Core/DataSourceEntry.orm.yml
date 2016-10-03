@@ -17,6 +17,9 @@ UR\Entity\Core\DataSourceEntry:
         metaData:
             type: json_array
             nullable: true
+        format:
+            type: string
+            length: 100
         receivedDate:
             type: datetime
             gedmo:

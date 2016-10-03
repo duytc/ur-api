@@ -18,7 +18,13 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
     {
         $builder
             ->add('name')
-            ->add('format')
+            ->add('format', 'choice', [
+                'choices' => [
+                    'csv'   => 'csv',
+                    'excel' => 'excel',
+                    'json'  => 'json'
+                ],
+            ])
             ->add('dataSourceIntegrations', 'collection', array(
                 'mapped' => true,
                 'type' => new DataSourceIntegrationFormType(),

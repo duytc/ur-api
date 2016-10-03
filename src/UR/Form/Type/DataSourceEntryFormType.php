@@ -19,6 +19,13 @@ class DataSourceEntryFormType extends AbstractRoleSpecificFormType
         $builder
             ->add('dataSource')
             ->add('metaData')
+            ->add('format', 'choice', [
+                'choices' => [
+                    'csv'   => 'csv',
+                    'excel' => 'excel',
+                    'json'  => 'json'
+                ],
+            ])
             ->add('valid')
             ->add('path');
     }
