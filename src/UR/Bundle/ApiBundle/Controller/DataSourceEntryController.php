@@ -11,6 +11,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
+use Psr\Log\LoggerInterface;
 
 /**
  * @Rest\RouteResource("datasourceentry")
@@ -158,7 +159,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      */
     protected function getResourceName()
     {
-        return 'data_source_entry';
+        return 'datasourceentry';
     }
 
     /**
@@ -168,7 +169,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      */
     protected function getGETRouteName()
     {
-        return 'api_1_get_datasourceentries';
+        return 'api_1_get_datasourceentry';
     }
 
     /**

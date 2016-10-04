@@ -3,7 +3,7 @@ UR\Entity\Core\Alert:
         type:
             - Choice:
                 choices:  ["info", "warn", "error"]
-                message:  "Not supported that alert type"
+                message:  "not valid type"
 #        isRead:
 #            -
         title:

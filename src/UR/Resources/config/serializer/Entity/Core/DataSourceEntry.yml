@@ -19,6 +19,3 @@ UR\Entity\Core\DataSourceEntry:
         receivedDate:
             expose: true
             groups: [dataSourceEntry.detail]
-        format:
-            expose: true
-            groups: [dataSourceEntry.detail]

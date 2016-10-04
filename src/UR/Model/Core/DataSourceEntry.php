@@ -9,7 +9,6 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $valid;
     protected $path;
     protected $metaData;
-    protected $format;
 
     /**
      * @var DataSourceInterface
@@ -95,22 +94,6 @@ class DataSourceEntry implements DataSourceEntryInterface
         $this->metaData = $metaData;
 
         return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getFormat()
-    {
-        return $this->format;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setFormat($format)
-    {
-        $this->format = $format;
     }
 
     /**

@@ -3,7 +3,6 @@
 namespace UR\Form\Type;
 
 
-use Doctrine\ORM\EntityRepository;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\DataSourceEntry;
@@ -11,7 +10,6 @@ use UR\Model\Core\Alert;
 use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\DataSourceEntryRepository;
-use UR\Repository\Core\DataSourceRepository;
 
 class AlertFormType extends AbstractRoleSpecificFormType
 {

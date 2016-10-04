@@ -1,0 +1,24 @@
+UR\Entity\Core\Alert:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [alert.detail, alert.summary]
+        type:
+            expose: true
+            groups: [alert.detail, alert.summary]
+        isRead:
+            expose: true
+            groups: [alert.detail, alert.summary]
+        message:
+            expose: true
+            groups: [alert.detail, alert.summary]
+        createdDate:
+            expose: true
+            groups: [alert.detail, alert.summary]
+        title:
+            expose: true
+            groups: [alert.detail, alert.summary]
+        dataSourceEntry:
+            expose: true
+            groups: [alert.detail]

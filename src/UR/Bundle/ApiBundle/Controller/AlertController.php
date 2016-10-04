@@ -21,7 +21,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     /**
      * Get all alert
      *
-     * @Rest\View(serializerGroups={"alert.detail"})
+     * @Rest\View(serializerGroups={"alert.detail","dataSourceEntry.detail", "datasource.detail"})
      *
      * @ApiDoc(
      *  section = "Alert",

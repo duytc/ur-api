@@ -51,17 +51,6 @@ interface DataSourceEntryInterface extends ModelInterface
     public function setMetaData($metaData);
 
     /**
-     * @return string|null
-     */
-    public function getFormat();
-
-    /**
-     * @param string $format
-     * @return self
-     */
-    public function setFormat($format);
-
-    /**
      * @return DataSourceInterface
      */
     public function getDataSource();
