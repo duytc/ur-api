@@ -1,9 +1,9 @@
 UR\Entity\Core\DataSourceIntegration:
     exclusion_policy: ALL
     properties:
-        id:
-            expose: true
-            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
+#        id:
+#            expose: true
+#            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
         dataSource:
             expose: true
             groups: [dataSourceIntegration.detail]
