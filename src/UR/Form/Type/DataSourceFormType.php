@@ -5,28 +5,36 @@ namespace UR\Form\Type;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormError;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\DataSource;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\AdminInterface;
-use Symfony\Component\Form\FormEvent;
-use Symfony\Component\Form\FormEvents;
 
 class DataSourceFormType extends AbstractRoleSpecificFormType
 {
+    static $SUPPORTED_ALERT_SETTING_KEYS = [
+        'wrongFormat',
+        'dataReceived',
+        'notReceived'
+    ];
+
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
             ->add('name')
             ->add('format', ChoiceType::class, [
                 'choices' => [
-                    'csv'   => 'csv',
+                    'csv' => 'csv',
                     'excel' => 'excel',
-                    'json'  => 'json'
+                    'json' => 'json'
                 ],
             ])
+            ->add('alertSetting')
             ->add('dataSourceIntegrations', CollectionType::class, array(
                 'mapped' => true,
                 'type' => new DataSourceIntegrationFormType(),
@@ -48,6 +56,13 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
                 /** @var DataSourceInterface $dataSource */
                 $dataSource = $event->getData();
 
+                // validate alert setting if has
+                $form = $event->getForm();
+                if (!$this->validateAlertSetting($dataSource->getAlertSetting())) {
+                    $form->get('alertSetting')->addError(new FormError('alert setting invalid: not supported key or duplicate'));
+                    return;
+                }
+
                 $dataSourceIntegrations = $dataSource->getDataSourceIntegrations();
 
                 /** @var DataSourceIntegrationInterface $dataSourceIntegration */
@@ -66,5 +81,35 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
     public function getName()
     {
         return 'ur_form_data_source';
+    }
+
+    /**
+     * validate AlertSetting
+     *
+     * @param $alertSetting
+     * @return bool
+     */
+    private function validateAlertSetting($alertSetting)
+    {
+        if ($alertSetting === null) {
+            return true;
+        }
+
+        if (!is_array($alertSetting)) {
+            return false;
+        }
+
+        $checkedAlertKeys = [];
+        foreach ($alertSetting as $value) {
+            if (!in_array($value, self::$SUPPORTED_ALERT_SETTING_KEYS)
+                || in_array($value, $checkedAlertKeys)
+            ) {
+                return false;
+            }
+
+            $checkedAlertKeys[] = $value;
+        }
+
+        return true;
     }
 }

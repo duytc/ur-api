@@ -11,6 +11,7 @@ class DataSource extends DataSourceModel
     protected $id;
     protected $name;
     protected $format;
+    protected $alertSetting;
 
     /** @var UserEntityInterface */
     protected $publisher;

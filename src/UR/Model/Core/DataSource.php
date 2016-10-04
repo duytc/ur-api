@@ -10,9 +10,26 @@ class DataSource implements DataSourceInterface
     protected $id;
     protected $name;
     protected $format;
+    protected $alertSetting;
 
     /** @var UserEntityInterface */
     protected $publisher;
+
+    /**
+     * @inheritdoc
+     */
+    public function getAlertSetting()
+    {
+        return $this->alertSetting;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setAlertSetting($alertSetting)
+    {
+        $this->alertSetting = $alertSetting;
+    }
 
     /**
      * @var IntegrationInterface[]

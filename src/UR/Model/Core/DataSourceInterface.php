@@ -8,6 +8,16 @@ use UR\Model\User\Role\PublisherInterface;
 interface DataSourceInterface extends ModelInterface
 {
     /**
+     * @return mixed
+     */
+    public function getAlertSetting();
+    /**
+     * @param mixed $alertSetting
+     */
+
+    public function setAlertSetting($alertSetting);
+
+    /**
      * @return string|null
      */
     public function getName();
