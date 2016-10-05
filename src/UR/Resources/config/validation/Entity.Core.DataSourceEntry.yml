@@ -1,0 +1,12 @@
+UR\Entity\Core\DataSourceEntry:
+    properties:
+        dataSource:
+            - NotNull: ~
+            - NotBlank: ~
+        valid:
+            - NotNull: ~
+            - NotBlank: ~
+        path:
+            - NotNull: ~
+            - NotBlank:
+                message: "path should not be null or blank"

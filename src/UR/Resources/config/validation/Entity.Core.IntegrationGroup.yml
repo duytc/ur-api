@@ -1,0 +1,10 @@
+UR\Entity\Core\IntegrationGroup:
+    properties:
+        name:
+            - NotBlank: ~
+            - NotNull: ~
+            - Length:
+                min: 5
+                max: 50
+                minMessage: 'Integration name must be at least {{ limit }} characters long'
+                maxMessage: 'Integration name cannot be longer than {{ limit }} characters'
