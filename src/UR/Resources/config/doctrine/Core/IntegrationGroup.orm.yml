@@ -16,3 +16,4 @@ UR\Entity\Core\IntegrationGroup:
         integrations:
             targetEntity: UR\Entity\Core\Integration
             mappedBy: integrationGroup
+            cascade: ["persist"]
