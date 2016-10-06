@@ -51,7 +51,7 @@ class CreateIntegrationCommand extends ContainerAwareCommand
             }
 
             $integrationEntities = [];
-
+            $integrationGroupManager->save($integrationGroupEntity);
             foreach ($integrations as $integration) {
                 // validate
                 if (!is_array($integration) || !array_key_exists('name', $integration) || !array_key_exists('url', $integration) || !array_key_exists('type', $integration)) {
@@ -62,9 +62,9 @@ class CreateIntegrationCommand extends ContainerAwareCommand
                 $integration = (new Integration())
                     ->setName($integration['name'])
                     ->setType($integration['type'])
-                    ->setUrl($integration['url'])//->setIntegrationGroup()
+                    ->setUrl($integration['url'])
                 ;
-
+                $integration->setIntegrationGroup(($integrationGroupEntity));
                 $integrationEntities[] = $integration;
             }
 
