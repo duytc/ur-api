@@ -222,7 +222,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             // create new data source entry
             $dataSourceEntry= (new DataSourceEntry())
                 ->setDataSource($dataSource)
-                ->setPath($uploadPath)
+                ->setPath($uploadPath . '/' . $name)
                 //->setValid() // set later by parser module
                 //->setMetaData() // only for email...
                 //->setReceivedDate() // auto
