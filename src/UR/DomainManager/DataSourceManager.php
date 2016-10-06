@@ -81,4 +81,12 @@ class DataSourceManager implements DataSourceManagerInterface
     {
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceByApiKey($apiKey)
+    {
+        return $this->repository->getDataSourceByApiKey($apiKey);
+    }
 }

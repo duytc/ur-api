@@ -14,4 +14,10 @@ interface DataSourceManagerInterface extends ManagerInterface
      * @return DataSourceInterface[]
      */
     public function getDataSourceForPublisher(PublisherInterface $publisher, $limit = null, $offset = null);
+
+    /**
+     * @param string $apiKey
+     * @return DataSourceInterface
+     */
+    public function getDataSourceByApiKey($apiKey);
 }

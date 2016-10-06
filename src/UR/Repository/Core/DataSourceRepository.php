@@ -39,4 +39,16 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
 
         return $qb;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceByApiKey($apiKey)
+    {
+        $qb = $this->createQueryBuilder('ds')
+            ->where('ds.apiKey = :apiKeyParam')
+            ->setParameter('apiKeyParam', $apiKey, Type::STRING);
+
+        return $qb->getQuery()->getResult();
+    }
 }

@@ -4,6 +4,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\PublisherInterface;
 
 interface DataSourceRepositoryInterface extends ObjectRepository
@@ -23,4 +24,11 @@ interface DataSourceRepositoryInterface extends ObjectRepository
      * @return QueryBuilder
      */
     public function getDataSourcesForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null);
+
+    /**
+     * @param string $apiKey
+     * @return DataSourceInterface
+     */
+    public function getDataSourceByApiKey($apiKey);
+
 }

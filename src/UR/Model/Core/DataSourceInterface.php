@@ -65,4 +65,19 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setDataSourceIntegrations($dataSourceIntegrations);
+
+    /**
+     * @return mixed
+     */
+    public function getApiKey();
+
+    /**
+     * @param mixed $apiKey
+     */
+    public function setApiKey($apiKey);
+
+    /**
+     * @return mixed
+     */
+    public function generateApiKey();
 }

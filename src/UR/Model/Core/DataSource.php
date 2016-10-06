@@ -11,6 +11,7 @@ class DataSource implements DataSourceInterface
     protected $name;
     protected $format;
     protected $alertSetting;
+    protected $apiKey;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -133,5 +134,32 @@ class DataSource implements DataSourceInterface
     {
         $this->dataSourceIntegrations = $dataSourceIntegrations;
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getApiKey()
+    {
+        return $this->apiKey;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setApiKey($apiKey)
+    {
+        $this->apiKey = $apiKey;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function generateApiKey(){
+        if($this->apiKey==null){
+            $tokenString = $this->getPublisher()->getUsername() . md5(uniqid(rand(),true));
+            $this->apiKey=$tokenString;
+        }
+        return $this->apiKey;
     }
 }

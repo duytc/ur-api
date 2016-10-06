@@ -7,6 +7,7 @@ use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
@@ -44,16 +45,16 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $publisher = $paramFetcher->get('publisher');
         $dataSourceManager = $this->get('ur.domain_manager.data_source');
 
-        if($publisher!=null && $this->getUser() instanceof AdminInterface){
+        if ($publisher != null && $this->getUser() instanceof AdminInterface) {
             $publisher = $this->get('ur_user.domain_manager.publisher')->findPublisher($publisher);
 
-            if(!$publisher instanceof PublisherInterface){
+            if (!$publisher instanceof PublisherInterface) {
                 throw new NotFoundHttpException('That publisher does not exist');
             }
             $all = $dataSourceManager->getDataSourceForPublisher($publisher);
         }
 
-        $all = isset($all)? $all: $this->all();
+        $all = isset($all) ? $all : $this->all();
 
         $this->checkUserPermission($all);
         return $all;
@@ -61,6 +62,8 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
 
     /**
      * Get a single data source for the given id
+     *
+     * @Rest\Get("/datasources/{id}", requirements={"id" = "\d+"})
      *
      * @Rest\View(serializerGroups={"datasource.detail", "user.summary"})
      *
@@ -80,6 +83,70 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     public function getAction($id)
     {
         return $this->one($id);
+    }
+
+    /**
+     * Generate API token for DataSource
+     *
+     * @Rest\Get("/datasources/{id}/apikey" )
+     *
+     * @Rest\View(serializerGroups={"datasource.apikey"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @return string
+     * @throws NotFoundHttpException when the resource does not exist
+     */
+    public function getApiKeyAction($id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+
+        $apiKey = $dataSource->generateApiKey();
+        $em = $this->get('ur.domain_manager.data_source');
+        $em->save($dataSource);
+
+        return $apiKey;
+    }
+
+    /**
+     * Get data sources by API Key
+     *
+     * @Rest\Get("/datasources/byapitoken")
+     *
+     * @Rest\View(serializerGroups={"datasource.detail", "user.summary"})
+     *
+     * @Rest\QueryParam(name="apiKey", nullable=true, description="The API Key")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return DataSourceInterface
+     */
+    public function getDataSourceByTokenAction(Request $request)
+    {
+        $apiKey = $request->query->get('apiKey', null);
+        if (null === $apiKey) {
+            throw new BadRequestHttpException('missing API Key');
+        }
+
+        $em = $this->get('ur.domain_manager.data_source');
+
+        return $em->getDataSourceByApiKey($apiKey);
     }
 
     /**
