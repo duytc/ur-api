@@ -3,19 +3,19 @@ UR\Entity\Core\DataSourceEntry:
     properties:
         id:
             expose: true
-            groups: [dataSourceEntry.detail]
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary]
         dataSource:
             expose: true
-            groups: [dataSourceEntry.detail]
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary]
         valid:
             expose: true
-            groups: [dataSourceEntry.detail]
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary]
         path:
             expose: true
             groups: [dataSourceEntry.detail]
         metaData:
             expose: true
-            groups: [dataSourceEntry.detail]
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary]
         receivedDate:
             expose: true
-            groups: [dataSourceEntry.detail]
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary]

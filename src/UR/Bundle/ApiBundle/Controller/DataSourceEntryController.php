@@ -21,7 +21,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     /**
      * Get all data sources
      *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceEntry.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceEntry.summary", "user.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source Entry",
@@ -41,7 +41,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     /**
      * Get a single data source entry for the given id
      *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceEntry.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceEntry.summary", "user.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",
