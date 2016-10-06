@@ -6,9 +6,12 @@ use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceInterface;
@@ -120,7 +123,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     /**
      * Get data sources by API Key
      *
-     * @Rest\Get("/datasources/byapitoken")
+     * @Rest\Get("/datasources/byapikey")
      *
      * @Rest\View(serializerGroups={"datasource.detail", "user.summary"})
      *
@@ -137,7 +140,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      * @param Request $request
      * @return DataSourceInterface
      */
-    public function getDataSourceByTokenAction(Request $request)
+    public function getDataSourceByApiKeyAction(Request $request)
     {
         $apiKey = $request->query->get('apiKey', null);
         if (null === $apiKey) {
@@ -168,6 +171,69 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     public function postAction(Request $request)
     {
         return $this->post($request);
+    }
+
+    /**
+     * Upload
+     *
+     * @ApiDoc(
+     *  section = "Data Sources",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request the request object
+     *
+     * @return mixed
+     */
+    public function postUploadAction(Request $request, $id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+
+        /* format as
+         * [
+         *      file_name => status,
+         *      ...
+         * ]
+         */
+        $result = [];
+
+        $uploadRootDir = $this->container->getParameter('upload_file_dir');
+        $uploadPath = $uploadRootDir . '/' . (date_create('today')->format('Ymd'));
+
+        /** @var FileBag $files */
+        $files = $request->files;
+        $keys = $files->keys();
+        $em = $this->get('ur.domain_manager.data_source_entry');
+
+        foreach ($keys as $key) {
+            /**@var UploadedFile $file */
+            $file = $files->get($key);
+            $origin_name = $file->getClientOriginalName();
+
+            // save file to upload dir
+            $name = $file->getClientOriginalName() . '_' . round(microtime(true));
+            $file->move($uploadPath, $name);
+
+            // create new data source entry
+            $dataSourceEntry= (new DataSourceEntry())
+                ->setDataSource($dataSource)
+                ->setPath($uploadPath)
+                //->setValid() // set later by parser module
+                //->setMetaData() // only for email...
+                //->setReceivedDate() // auto
+            ;
+
+            $em->save($dataSourceEntry);
+
+            $result[$origin_name]='success';
+        }
+
+        return $result;
     }
 
     /**

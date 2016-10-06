@@ -17,6 +17,7 @@ class DataSourceEntry implements DataSourceEntryInterface
 
     public function __construct()
     {
+        $this->valid = false;
     }
 
     /**
