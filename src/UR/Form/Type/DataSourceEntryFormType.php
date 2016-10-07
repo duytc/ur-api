@@ -2,6 +2,7 @@
 
 namespace UR\Form\Type;
 
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
@@ -33,7 +34,15 @@ class DataSourceEntryFormType extends AbstractRoleSpecificFormType
             ))
             ->add('metaData')
             ->add('valid')
-            ->add('path');
+            ->add('path')
+            ->add('receivedVia', ChoiceType::class, [
+                'choices' => [
+                    DataSourceEntryInterface::RECEIVED_VIA_API => DataSourceEntryInterface::RECEIVED_VIA_API,
+                    DataSourceEntryInterface::RECEIVED_VIA_EMAIL => DataSourceEntryInterface::RECEIVED_VIA_EMAIL,
+                    DataSourceEntryInterface::RECEIVED_VIA_SELENIUM => DataSourceEntryInterface::RECEIVED_VIA_SELENIUM,
+                    DataSourceEntryInterface::RECEIVED_VIA_UPLOAD => DataSourceEntryInterface::RECEIVED_VIA_UPLOAD
+                ],
+            ]);
 
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,

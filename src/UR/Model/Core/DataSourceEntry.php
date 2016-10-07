@@ -9,6 +9,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $valid;
     protected $path;
     protected $metaData;
+    protected $receivedVia;
 
     /**
      * @var DataSourceInterface
@@ -114,4 +115,21 @@ class DataSourceEntry implements DataSourceEntryInterface
 
         return $this;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getReceivedVia()
+    {
+        return $this->receivedVia;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setReceivedVia($receivedVia)
+    {
+        $this->receivedVia = $receivedVia;
+    }
+
 }

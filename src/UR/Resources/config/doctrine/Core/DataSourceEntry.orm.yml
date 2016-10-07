@@ -22,6 +22,8 @@ UR\Entity\Core\DataSourceEntry:
             gedmo:
                 timestampable:
                     on: create
+        receivedVia:
+            type: string
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

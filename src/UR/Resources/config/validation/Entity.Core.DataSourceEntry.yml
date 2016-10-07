@@ -10,3 +10,7 @@ UR\Entity\Core\DataSourceEntry:
             - NotNull: ~
             - NotBlank:
                 message: "path should not be null or blank"
+        receivedVia:
+            - NotNull: ~
+            - NotBlank:
+                message: "receivedVia should not be null or blank"

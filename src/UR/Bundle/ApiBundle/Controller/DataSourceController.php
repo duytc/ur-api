@@ -14,6 +14,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
@@ -227,7 +228,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
                 //->setMetaData() // only for email...
                 //->setReceivedDate() // auto
             ;
-
+            $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
             $em->save($dataSourceEntry);
 
             $result[$origin_name] = 'success';

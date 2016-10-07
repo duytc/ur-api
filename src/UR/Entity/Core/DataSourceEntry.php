@@ -12,6 +12,7 @@ class DataSourceEntry extends DataSourceEntryModel
     protected $valid;
     protected $path;
     protected $metaData;
+    protected $receivedVia;
 
     /**
      * @var DataSourceInterface
