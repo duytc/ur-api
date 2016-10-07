@@ -5,8 +5,11 @@ namespace UR\Bundle\ApiBundle\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormTypeInterface;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -19,7 +22,7 @@ use Psr\Log\LoggerInterface;
 class DataSourceEntryController extends RestControllerAbstract implements ClassResourceInterface
 {
     /**
-     * Get all data sources
+     * Get all data source entries
      *
      * @Rest\View(serializerGroups={"datasource.detail", "dataSourceEntry.summary", "user.summary"})
      *
@@ -44,7 +47,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      * @Rest\View(serializerGroups={"datasource.detail", "dataSourceEntry.summary", "user.summary"})
      *
      * @ApiDoc(
-     *  section = "Data Source",
+     *  section = "Data Source Entry",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful"
@@ -53,12 +56,47 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      *
      * @param int $id the resource id
      *
-     * @return \UR\Model\Core\DataSourceInterface
+     * @return \UR\Model\Core\DataSourceEntryInterface
      * @throws NotFoundHttpException when the resource does not exist
      */
     public function getAction($id)
     {
         return $this->one($id);
+    }
+
+    /**
+     * Download a DataSource Entry
+     *
+     * @Rest\Get("/datasourceentries/{id}/download" )
+     *
+     * @ApiDoc(
+     *  section = "Data Source Entry",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @return mixed
+     * @throws NotFoundHttpException when the resource does not exist
+     */
+    public function downloadFileAction($id)
+    {
+        /**@var DataSourceEntryInterface $dataSourceEntry */
+        $dataSourceEntry = $this->one($id);
+        $filePath = $dataSourceEntry->getPath();
+        $fs = new Filesystem();
+
+        if (!$fs->exists($filePath)) {
+            throw $this->createNotFoundException();
+        }
+
+        $response = new BinaryFileResponse($filePath);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT);
+
+        return $response;
     }
 
     /**
