@@ -203,7 +203,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $result = [];
 
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
-        $uploadPath = $uploadRootDir . '/' . (date_create('today')->format('Ymd'));
+        $uploadPath = $uploadRootDir . '/' . $dataSource->getPublisherId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
 
         /** @var FileBag $files */
         $files = $request->files;
@@ -220,7 +220,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             $file->move($uploadPath, $name);
 
             // create new data source entry
-            $dataSourceEntry= (new DataSourceEntry())
+            $dataSourceEntry = (new DataSourceEntry())
                 ->setDataSource($dataSource)
                 ->setPath($uploadPath . '/' . $name)
                 //->setValid() // set later by parser module
@@ -230,7 +230,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
 
             $em->save($dataSourceEntry);
 
-            $result[$origin_name]='success';
+            $result[$origin_name] = 'success';
         }
 
         return $result;
