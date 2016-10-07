@@ -74,4 +74,14 @@ class IntegrationGroupManager implements IntegrationGroupManagerInterface
     {
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByName($name)
+    {
+        return $this->repository->findBy(
+            array('name' => $name)
+        );
+    }
 }

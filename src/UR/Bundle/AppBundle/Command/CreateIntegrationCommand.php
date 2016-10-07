@@ -31,6 +31,7 @@ class CreateIntegrationCommand extends ContainerAwareCommand
 
         /** @var IntegrationGroupManagerInterface $integrationGroupManager */
         $integrationGroupManager = $container->get('ur.domain_manager.integration_group');
+        $integrationManager = $container->get('ur.domain_manager.integration');
 
         foreach ($integrationGroups as $integrationGroup) {
             // validate
@@ -39,9 +40,14 @@ class CreateIntegrationCommand extends ContainerAwareCommand
                 return;
             }
 
-            // create new entity integrationGroup
-            $integrationGroupEntity = (new IntegrationGroup())
-                ->setName($integrationGroup['name']);
+            $dbIntegrationGroup = $integrationGroupManager->findByName($integrationGroup['name']);
+
+            if (count($dbIntegrationGroup) < 1) {//doesn't exist in DB - create new entity integrationGroup
+                $integrationGroupEntity = (new IntegrationGroup())
+                    ->setName($integrationGroup['name']);
+            } else {
+                $integrationGroupEntity = $dbIntegrationGroup[0];
+            }
 
             // build all entity integrations for integrationGroup
             $integrations = $integrationGroup['integrations'];
@@ -59,18 +65,27 @@ class CreateIntegrationCommand extends ContainerAwareCommand
                     return;
                 }
 
-                $integration = (new Integration())
-                    ->setName($integration['name'])
-                    ->setType($integration['type'])
-                    ->setUrl($integration['url'])
-                ;
-                $integration->setIntegrationGroup(($integrationGroupEntity));
-                $integrationEntities[] = $integration;
+                $dbIntegration = $integrationManager->findByName($integration['name']);
+
+                if (count($dbIntegration) < 1) { //doesn't exist in DB - create new entity integration
+                    $integrationEntity = (new Integration())
+                        ->setName($integration['name'])
+                        ->setType($integration['type'])
+                        ->setUrl($integration['url']);
+                } else { // update integration if exist
+                    $integrationEntity = $dbIntegration[0];
+                    $integrationEntity->setType($integration['type']);
+                    $integrationEntity->setUrl($integration['url']);
+                }
+
+                $integrationEntity->setIntegrationGroup(($integrationGroupEntity));
+                $integrationEntities[] = $integrationEntity;
             }
 
             $integrationGroupEntity->setIntegrations($integrationEntities);
             $integrationGroupManager->save($integrationGroupEntity);
         }
+
         $logger->info("command run successful");
     }
 } 
