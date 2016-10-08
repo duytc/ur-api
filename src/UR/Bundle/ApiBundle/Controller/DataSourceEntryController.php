@@ -26,6 +26,14 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      *
      * @Rest\View(serializerGroups={"datasource.detail", "dataSourceEntry.summary", "user.summary"})
      *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     *
      * @ApiDoc(
      *  section = "Data Source Entry",
      *  resource = true,
@@ -34,11 +42,17 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      *  }
      * )
      *
-     * @return DataSourceEntryInterface[]
+     * @param Request $request
+     * @return \UR\Model\Core\DataSourceEntryInterface[]
      */
-    public function cgetAction()
+    public function cgetAction(Request $request)
     {
-        return $this->all();
+        $publisher = $this->getUser();
+
+        $dataSourceEntryRepository = $this->get('ur.repository.data_source_entry');
+        $qb = $dataSourceEntryRepository->getDataSourceEntriesForDataSourceQuery($publisher, $this->getParams());
+
+        return $this->getPagination($qb, $request);
     }
 
     /**

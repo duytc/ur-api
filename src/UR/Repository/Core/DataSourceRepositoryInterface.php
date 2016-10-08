@@ -5,7 +5,9 @@ namespace UR\Repository\Core;
 use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
+use UR\Model\User\Role\UserRoleInterface;
 
 interface DataSourceRepositoryInterface extends ObjectRepository
 {
@@ -31,4 +33,10 @@ interface DataSourceRepositoryInterface extends ObjectRepository
      */
     public function getDataSourceByApiKey($apiKey);
 
+    /**
+     * @param UserRoleInterface $userRole
+     * @param PagerParam $param
+     * @return QueryBuilder
+     */
+    public function getDataSourcesForUserQuery(UserRoleInterface $userRole, PagerParam $param);
 }

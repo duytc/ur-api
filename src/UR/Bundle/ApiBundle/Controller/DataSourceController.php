@@ -32,6 +32,12 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      * @Rest\View(serializerGroups={"datasource.detail", "user.summary"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -41,27 +47,17 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *  }
      * )
      *
-     * @return DataSourceInterface[]
+     * @param Request $request
+     * @return \UR\Model\Core\DataSourceInterface[]
      */
-    public function cgetAction()
+    public function cgetAction(Request $request)
     {
-        $paramFetcher = $this->get('fos_rest.request.param_fetcher');
-        $publisher = $paramFetcher->get('publisher');
-        $dataSourceManager = $this->get('ur.domain_manager.data_source');
+        $publisher = $this->getUser();
 
-        if ($publisher != null && $this->getUser() instanceof AdminInterface) {
-            $publisher = $this->get('ur_user.domain_manager.publisher')->findPublisher($publisher);
+        $dataSourceRepository = $this->get('ur.repository.data_source');
+        $qb = $dataSourceRepository->getDataSourcesForUserQuery($publisher, $this->getParams());
 
-            if (!$publisher instanceof PublisherInterface) {
-                throw new NotFoundHttpException('That publisher does not exist');
-            }
-            $all = $dataSourceManager->getDataSourceForPublisher($publisher);
-        }
-
-        $all = isset($all) ? $all : $this->all();
-
-        $this->checkUserPermission($all);
-        return $all;
+        return $this->getPagination($qb, $request);
     }
 
     /**

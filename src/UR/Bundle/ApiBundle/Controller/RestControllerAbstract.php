@@ -2,6 +2,8 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use DataDog\PagerBundle\Pagination;
+use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\Request;
 use FOS\RestBundle\Controller\FOSRestController;
 
@@ -319,5 +321,16 @@ abstract class RestControllerAbstract extends FOSRestController
     {
         $params = $this->get('fos_rest.request.param_fetcher')->all($strict = true);
         return $this->_createParams($params);
+    }
+
+    protected function getPagination(QueryBuilder $qb, Request $request)
+    {
+        $pagination = new Pagination($qb, $request);
+        return array(
+            'totalRecord' => $pagination->total(),
+            'records' => $pagination->getArrayCopy(),
+            'itemPerPage' => $pagination->itemsPerPage(),
+            'currentPage' => $pagination->currentPage()
+        );
     }
 }
