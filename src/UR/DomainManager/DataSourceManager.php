@@ -89,4 +89,12 @@ class DataSourceManager implements DataSourceManagerInterface
     {
         return $this->repository->getDataSourceByApiKey($apiKey);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceByEmailKey($emailKey)
+    {
+        return $this->repository->getDataSourceByEmailKey($emailKey);
+    }
 }

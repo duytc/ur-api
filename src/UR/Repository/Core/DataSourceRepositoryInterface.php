@@ -39,4 +39,10 @@ interface DataSourceRepositoryInterface extends ObjectRepository
      * @return QueryBuilder
      */
     public function getDataSourcesForUserQuery(UserRoleInterface $userRole, PagerParam $param);
+
+    /**
+     * @param string $emailKey
+     * @return DataSourceInterface
+     */
+    public function getDataSourceByEmailKey($emailKey);
 }

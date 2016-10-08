@@ -59,6 +59,18 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
     /**
      * @inheritdoc
      */
+    public function getDataSourceByEmailKey($emailKey)
+    {
+        $qb = $this->createQueryBuilder('ds')
+            ->where('ds.urEmail = :urEmailParam')
+            ->setParameter('urEmailParam', $emailKey, Type::STRING);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getDataSourcesForUserQuery(UserRoleInterface $user, PagerParam $param)
     {
         $qb = $this->createQueryBuilderForUser($user);

@@ -176,6 +176,38 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
+     * Get data sources by API Key
+     *
+     * @Rest\Get("/datasources/byemailkey")
+     *
+     * @Rest\View(serializerGroups={"datasource.detail", "user.summary"})
+     *
+     * @Rest\QueryParam(name="apiKey", nullable=true, description="The API Key")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return DataSourceInterface
+     */
+    public function getDataSourceByUrEmailAction(Request $request)
+    {
+        $emailKey = $request->query->get('emailkey', null);
+        if (null === $emailKey) {
+            throw new BadRequestHttpException('missing UR Email Key');
+        }
+
+        $em = $this->get('ur.domain_manager.data_source');
+
+        return $em->getDataSourceByEmailKey($emailKey);
+    }
+
+    /**
      * Create a data source from the submitted data
      *
      * @ApiDoc(
