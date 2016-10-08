@@ -109,10 +109,36 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     {
         /** @var DataSourceInterface $dataSource */
         $dataSource = $this->one($id);
+        $apiKey = $dataSource->getApiKey();
 
-        $apiKey = $dataSource->generateApiKey();
-        $em = $this->get('ur.domain_manager.data_source');
-        $em->save($dataSource);
+        return $apiKey;
+    }
+
+    /**
+     * Generate API token for DataSource
+     *
+     * @Rest\Get("/datasources/{id}/uremail" )
+     *
+     * @Rest\View(serializerGroups={"datasource.apikey"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @return string
+     * @throws NotFoundHttpException when the resource does not exist
+     */
+    public function getUrEmailAction($id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+        $apiKey = $dataSource->getUrEmail();
 
         return $apiKey;
     }

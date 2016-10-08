@@ -40,7 +40,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
                 'type' => new DataSourceIntegrationFormType(),
                 'allow_add' => true,
                 'allow_delete' => true,
-            ));;
+            ));
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(
@@ -62,6 +62,8 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
                     $form->get('alertSetting')->addError(new FormError('alert setting invalid: not supported key or duplicate'));
                     return;
                 }
+                $dataSource->setApiKey($dataSource->getApiKey());
+                $dataSource->setUrEmail($dataSource->getUrEmail());
 
                 $dataSourceIntegrations = $dataSource->getDataSourceIntegrations();
 

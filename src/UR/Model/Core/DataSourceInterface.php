@@ -76,6 +76,17 @@ interface DataSourceInterface extends ModelInterface
      */
     public function setApiKey($apiKey);
 
+
+    /**
+     * @return string
+     */
+    public function getUrEmail();
+
+    /**
+     * @param string $urEmail
+     */
+    public function setUrEmail($urEmail);
+
     /**
      * @return mixed
      */
