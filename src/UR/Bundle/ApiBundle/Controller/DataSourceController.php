@@ -242,6 +242,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @param Request $request the request object
      *
+     * @param $id
      * @return mixed
      */
     public function postUploadAction(Request $request, $id)
@@ -255,38 +256,13 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
          *      ...
          * ]
          */
-        $result = [];
-
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
         $uploadPath = $uploadRootDir . '/' . $dataSource->getPublisherId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
 
         /** @var FileBag $files */
         $files = $request->files;
-        $keys = $files->keys();
         $em = $this->get('ur.domain_manager.data_source_entry');
-
-        foreach ($keys as $key) {
-            /**@var UploadedFile $file */
-            $file = $files->get($key);
-            $origin_name = $file->getClientOriginalName();
-
-            // save file to upload dir
-            $name = $file->getClientOriginalName() . '_' . round(microtime(true));
-            $file->move($uploadPath, $name);
-
-            // create new data source entry
-            $dataSourceEntry = (new DataSourceEntry())
-                ->setDataSource($dataSource)
-                ->setPath($uploadPath . '/' . $name)
-                //->setValid() // set later by parser module
-                //->setMetaData() // only for email...
-                //->setReceivedDate() // auto
-            ;
-            $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
-            $em->save($dataSourceEntry);
-
-            $result[$origin_name] = 'success';
-        }
+        $result = $em->uploadDataSourceEntryFiles($files, $uploadPath, $dataSource);
 
         return $result;
     }
