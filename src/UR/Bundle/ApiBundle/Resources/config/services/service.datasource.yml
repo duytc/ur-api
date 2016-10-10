@@ -3,6 +3,8 @@ parameters:
     ur.entity.core.data_source.class: UR\Entity\Core\DataSource
     # form class
     ur.form.type.core.data_source.class: UR\Form\Type\DataSourceFormType
+    # listener class
+    ur.listener.data_source.class: UR\Bundle\ApiBundle\EventListener\DataSourceCreatedListener
 
 services:
     ur_api.handler.data_source:
@@ -58,3 +60,9 @@ services:
             -
                 - @ur.handler.handlers.data_source.admin
                 - @ur.handler.handlers.data_source.publisher
+    ur.bundle.event.data_source_listener:
+        class: %ur.listener.data_source.class%
+        tags:
+            -
+                name: doctrine.event_listener
+                event: prePersist

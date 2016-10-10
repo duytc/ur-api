@@ -6,18 +6,13 @@ use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
-use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
-use UR\Model\User\Role\AdminInterface;
-use UR\Model\User\Role\PublisherInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 

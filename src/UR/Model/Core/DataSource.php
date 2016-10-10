@@ -13,7 +13,7 @@ class DataSource implements DataSourceInterface
     protected $alertSetting;
     protected $apiKey;
     protected $urEmail;
-    const UR_EMAIL= "@unifiedreportemail";
+    const UR_EMAIL = "@unifiedreportemail";
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -149,23 +149,9 @@ class DataSource implements DataSourceInterface
     /**
      * @inheritdoc
      */
-    public function setApiKey($apiKey)
+    public function setApiKey($apiKey = null)
     {
-        if ($apiKey !== null) {
-            $this->apiKey = $apiKey;
-        } else {
-            $this->apiKey = $this->getPublisher()->getUsername() . $this->generateApiKey();
-        }
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function generateApiKey()
-    {
-        $tokenString = md5(uniqid(rand(1, 10000), true));
-
-        return $tokenString;
+        $this->apiKey = $apiKey;
     }
 
     /**
@@ -181,10 +167,6 @@ class DataSource implements DataSourceInterface
      */
     public function setUrEmail($urEmail)
     {
-        if ($urEmail !== null) {
-            $this->urEmail = $urEmail;
-        } else {
-            $this->urEmail = $this->generateApiKey() . self::UR_EMAIL;
-        }
+        $this->urEmail = $urEmail;
     }
 }

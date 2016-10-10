@@ -74,7 +74,7 @@ interface DataSourceInterface extends ModelInterface
     /**
      * @param mixed $apiKey
      */
-    public function setApiKey($apiKey);
+    public function setApiKey($apiKey=null);
 
 
     /**
@@ -86,9 +86,4 @@ interface DataSourceInterface extends ModelInterface
      * @param string $urEmail
      */
     public function setUrEmail($urEmail);
-
-    /**
-     * @return mixed
-     */
-    public function generateApiKey();
 }
