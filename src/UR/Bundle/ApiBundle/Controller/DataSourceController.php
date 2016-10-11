@@ -81,6 +81,31 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
+     * Get a single data source for the given id
+     *
+     * @Rest\Get("/datasources/{id}/datasourceentries")
+     *
+     * @Rest\View(serializerGroups={"datasource.summary", "user.summary", "dataSourceEntry.detail"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @return \UR\Model\Core\DataSourceInterface
+     * @throws NotFoundHttpException when the resource does not exist
+     */
+    public function getDataSourceEntriesAction($id)
+    {
+        return $this->one($id);
+    }
+
+    /**
      * Generate API token for DataSource
      *
      * @Rest\Get("/datasources/{id}/apikey" )

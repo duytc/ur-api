@@ -10,7 +10,7 @@ class DataSourceIntegrationVoter extends EntityVoterAbstract
 {
     public function supportsClass($class)
     {
-        $supportedClass = DataSourceEntryInterface::class;
+        $supportedClass = DataSourceIntegrationInterface::class;
 
         return $supportedClass === $class || is_subclass_of($class, $supportedClass);
     }

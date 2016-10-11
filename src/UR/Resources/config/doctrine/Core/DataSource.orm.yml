@@ -35,3 +35,7 @@ UR\Entity\Core\DataSource:
             cascade: ['persist', 'detach', 'remove']
             mappedBy: dataSource
             orphanRemoval: true
+
+        dataSourceEntries:
+            targetEntity: UR\Entity\Core\DataSourceEntry
+            mappedBy: dataSource

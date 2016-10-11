@@ -3,9 +3,9 @@
 namespace UR\Handler\Handlers\Core\Publisher;
 
 
-use UR\DomainManager\AlertManagerInterface;
 use UR\Exception\LogicException;
 use UR\Handler\Handlers\Core\AlertHandlerAbstract;
+use UR\Model\Core\AlertInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -46,7 +46,7 @@ class AlertHandler extends AlertHandlerAbstract
      */
     protected function processForm(ModelInterface $alert, array $parameters, $method = "PUT")
     {
-        /** @var AlertManagerInterface $alert */
+        /** @var AlertInterface $alert */
         return parent::processForm($alert, $parameters, $method);
     }
 }

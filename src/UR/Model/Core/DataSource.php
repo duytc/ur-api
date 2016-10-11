@@ -19,6 +19,11 @@ class DataSource implements DataSourceInterface
     protected $publisher;
 
     /**
+     * @var DataSourceEntryInterface[]
+     */
+    protected $dataSourceEntries;
+
+    /**
      * @inheritdoc
      */
     public function getAlertSetting()
@@ -168,5 +173,21 @@ class DataSource implements DataSourceInterface
     public function setUrEmail($urEmail)
     {
         $this->urEmail = $urEmail;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceEntries()
+    {
+        return $this->dataSourceEntries;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setDataSourceEntries($dataSourceEntries)
+    {
+        $this->dataSourceEntries = $dataSourceEntries;
     }
 }
