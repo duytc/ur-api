@@ -10,8 +10,10 @@ use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
@@ -62,6 +64,8 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @Rest\View(serializerGroups={"datasource.detail", "user.summary"})
      *
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     *
      * @ApiDoc(
      *  section = "Data Source",
      *  resource = true,
@@ -85,7 +89,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @Rest\Get("/datasources/{id}/datasourceentries")
      *
-     * @Rest\View(serializerGroups={"datasourceentries.detail", "dataSourceEntry.detail"})
+     * @Rest\View(serializerGroups={"dataSourceEntry.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -95,14 +99,17 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *  }
      * )
      *
+     * @param Request $request
      * @param int $id the resource id
-     *
-     * @return \UR\Model\Core\DataSourceInterface
-     * @throws NotFoundHttpException when the resource does not exist
+     * @return DataSourceEntryInterface
      */
-    public function getDataSourceEntriesAction($id)
+    public function getDataSourceEntriesAction(Request $request, $id)
     {
-        return $this->one($id);
+        $dataSource = $this->one($id);
+        $dataSourceRepository = $this->get('ur.repository.data_source_entry');
+        $qb = $dataSourceRepository->getDataSourceEntriesByDataSourceIdQuery($dataSource, $this->getParams());
+
+        return $this->getPagination($qb, $request);
     }
 
     /**

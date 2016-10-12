@@ -6,7 +6,7 @@ UR\Entity\Core\DataSourceEntry:
             groups: [dataSourceEntry.detail, dataSourceEntry.summary]
         dataSource:
             expose: true
-            groups: [dataSourceEntry.detail, dataSourceEntry.summary]
+            groups: [dataSourceEntry.detail]
         valid:
             expose: true
             groups: [dataSourceEntry.detail, dataSourceEntry.summary]

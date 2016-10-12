@@ -24,4 +24,4 @@ UR\Entity\Core\DataSource:
             groups: [datasource.apikey]
         dataSourceEntries:
             expose: true
-            groups: [datasource.detail, datasourceentries.detail]
+            groups: [datasource.detail]
