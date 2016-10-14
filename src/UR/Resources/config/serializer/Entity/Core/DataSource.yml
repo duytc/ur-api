@@ -15,10 +15,10 @@ UR\Entity\Core\DataSource:
             groups: [datasource.detail, datasource.summary]
         dataSourceIntegrations:
             expose: true
-            groups: [datasource.detail]
+            groups: [datasource.detail, datasource.summary]
         alertSetting:
             expose: true
-            groups: [datasource.detail]
+            groups: [datasource.detail, datasource.summary]
         apiKey:
             expose: true
             groups: [datasource.apikey]
