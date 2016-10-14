@@ -7,9 +7,7 @@ use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormTypeInterface;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -107,10 +105,12 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
             throw $this->createNotFoundException();
         }
 
-        $response = new BinaryFileResponse($filePath);
-        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT);
-
-        return $response;
+        return array(
+            'file_path' => $filePath,
+            'file_name' => basename($filePath),
+            'content' => file_get_contents($filePath),
+            'format' => $dataSourceEntry->getDataSource()->getFormat()
+        );
     }
 
     /**
