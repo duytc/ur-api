@@ -16,6 +16,10 @@ class DataSet implements DataSetInterface
     /** @var UserEntityInterface */
     protected $publisher;
 
+    public function __construct()
+    {
+    }
+
     /**
      * @inheritdoc
      */
