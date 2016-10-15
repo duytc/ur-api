@@ -1,0 +1,60 @@
+parameters:
+    # entity class
+    ur.entity.core.data_set.class: UR\Entity\Core\DataSet
+    # form class
+    ur.form.type.core.data_set.class: UR\Form\Type\DataSetFormType
+
+services:
+    ur_api.handler.data_set:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.data_set
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.data_set:
+        class: UR\Repository\Core\DataSetRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.data_set.class%
+
+    ur.domain_manager.data_set:
+        class: UR\DomainManager\DataSetManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.data_set
+
+    ur.form.type.data_set:
+        class: %ur.form.type.core.data_set.class%
+        tags:
+            - { name: form.type, alias: ur_form_data_set }
+
+    ur.handler.handlers.data_set.abstract:
+        class: UR\Handler\Handlers\Core\DataSetHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.data_set
+            - @ur.domain_manager.data_set
+
+    ur.handler.handlers.data_set.admin:
+        class: UR\Handler\Handlers\Core\Admin\DataSetHandler
+        parent: ur.handler.handlers.data_set.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.data_set.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\DataSetHandler
+        parent: ur.handler.handlers.data_set.abstract
+        public: false
+
+    ur.handler.handler_manager.data_set:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.data_set.class%
+            -
+                - @ur.handler.handlers.data_set.admin
+                - @ur.handler.handlers.data_set.publisher

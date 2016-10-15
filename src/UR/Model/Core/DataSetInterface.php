@@ -58,6 +58,11 @@ interface DataSetInterface extends ModelInterface
     public function getPublisherId();
 
     /**
+     * @return PublisherInterface|null
+     */
+    public function getPublisher();
+
+    /**
      * @param PublisherInterface $publisher
      * @return self
      */

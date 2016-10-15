@@ -111,6 +111,14 @@ class DataSet implements DataSetInterface
     /**
      * @inheritdoc
      */
+    public function getPublisher()
+    {
+        return $this->publisher;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function setPublisher(PublisherInterface $publisher)
     {
         $this->publisher = $publisher->getUser();
