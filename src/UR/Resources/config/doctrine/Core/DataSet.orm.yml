@@ -1,0 +1,27 @@
+UR\Entity\Core\DataSet:
+    type: entity
+    table: core_data_set
+    repositoryClass: UR\Repository\Core\DataSetRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: 100
+        dimensions:
+            type: json_array
+            nullable: true
+        metrics:
+            type: json_array
+            nullable: true
+        createdDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+    manyToOne:
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

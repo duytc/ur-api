@@ -8,16 +8,16 @@ use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
 
-class DataSourceRepository extends EntityRepository implements DataSourceRepositoryInterface
+class DataSetRepository extends EntityRepository implements DataSetRepositoryInterface
 {
     protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name'];
 
     /**
      * @inheritdoc
      */
-    public function getDataSourcesForPublisher(PublisherInterface $publisher, $limit = null, $offset = null)
+    public function getDataSetsForPublisher(PublisherInterface $publisher, $limit = null, $offset = null)
     {
-        $qb = $this->getDataSourcesForPublisherQuery($publisher, $limit, $offset)
+        $qb = $this->getDataSetsForPublisherQuery($publisher, $limit, $offset)
             ->addOrderBy('ds.name', 'asc');
 
         return $qb->getQuery()->getResult();
@@ -26,7 +26,7 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
     /**
      * @inheritdoc
      */
-    public function getDataSourcesForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null)
+    public function getDataSetsForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null)
     {
         $publisherId = $publisher->getId();
 
@@ -47,31 +47,7 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
     /**
      * @inheritdoc
      */
-    public function getDataSourceByApiKey($apiKey)
-    {
-        $qb = $this->createQueryBuilder('ds')
-            ->where('ds.apiKey = :apiKeyParam')
-            ->setParameter('apiKeyParam', $apiKey, Type::STRING);
-
-        return $qb->getQuery()->getResult();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getDataSourceByEmailKey($emailKey)
-    {
-        $qb = $this->createQueryBuilder('ds')
-            ->where('ds.urEmail = :urEmailParam')
-            ->setParameter('urEmailParam', $emailKey, Type::STRING);
-
-        return $qb->getQuery()->getResult();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getDataSourcesForUserQuery(UserRoleInterface $user, PagerParam $param)
+    public function getDataSetsForUserPaginationQuery(UserRoleInterface $user, PagerParam $param)
     {
         $qb = $this->createQueryBuilderForUser($user);
 
@@ -105,7 +81,7 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
 
     private function createQueryBuilderForUser(UserRoleInterface $user)
     {
-        return $user instanceof PublisherInterface ? $this->getDataSourcesForPublisherQuery($user) : $this->createQueryBuilder('ds');
+        return $user instanceof PublisherInterface ? $this->getDataSetsForPublisherQuery($user) : $this->createQueryBuilder('ds');
     }
 
 }
