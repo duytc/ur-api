@@ -1,6 +1,6 @@
 UR\Entity\Core\ConnectedDataSource:
     type: entity
-    table: core_data_set
+    table: core_connected_data_source
     repositoryClass: UR\Repository\Core\ConnectedDataSourceRepository
     id:
         id:
@@ -20,6 +20,5 @@ UR\Entity\Core\ConnectedDataSource:
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource
-    manyToOne:
         dataSet:
             targetEntity: UR\Entity\Core\DataSet
