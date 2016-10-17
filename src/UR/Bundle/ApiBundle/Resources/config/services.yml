@@ -7,6 +7,7 @@ imports:
     - { resource: services/service.integration.yml }
     - { resource: services/service.alert.yml}
     - { resource: services/service.dataset.yml }
+    - { resource: services/service.connected-data-source.yml }
 
 
 parameters:

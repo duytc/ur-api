@@ -31,22 +31,22 @@ class ConnectedDataSourceManager implements ConnectedDataSourceManagerInterface
     /**
      * @inheritdoc
      */
-    public function save(ModelInterface $ConnectedDataSource)
+    public function save(ModelInterface $connectedDataSource)
     {
-        if (!$ConnectedDataSource instanceof ConnectedDataSourceInterface) throw new InvalidArgumentException('expect ConnectedDataSourceInterface object');
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) throw new InvalidArgumentException('expect ConnectedDataSourceInterface object');
 
-        $this->om->persist($ConnectedDataSource);
+        $this->om->persist($connectedDataSource);
         $this->om->flush();
     }
 
     /**
      * @inheritdoc
      */
-    public function delete(ModelInterface $ConnectedDataSource)
+    public function delete(ModelInterface $connectedDataSource)
     {
-        if (!$ConnectedDataSource instanceof ConnectedDataSourceInterface) throw new InvalidArgumentException('expect ConnectedDataSourceInterface object');
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) throw new InvalidArgumentException('expect ConnectedDataSourceInterface object');
 
-        $this->om->remove($ConnectedDataSource);
+        $this->om->remove($connectedDataSource);
         $this->om->flush();
     }
 
