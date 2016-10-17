@@ -1,7 +1,7 @@
 UR\Entity\Core\ConnectedDataSource:
     type: entity
     table: core_data_set
-    repositoryClass: UR\Repository\Core\DataSetRepository
+    repositoryClass: UR\Repository\Core\ConnectedDataSourceRepository
     id:
         id:
             type: integer
