@@ -10,6 +10,7 @@ parameters:
     ur.security.auth.voter.data_source_integration.class: UR\Security\Authorization\Voter\DataSourceIntegrationVoter
     ur.security.auth.voter.alert.class: UR\Security\Authorization\Voter\AlertVoter
     ur.security.auth.voter.user.class: UR\Security\Authorization\Voter\PublisherVoter
+    ur.security.auth.voter.data_set.class: UR\Security\Authorization\Voter\DataSetVoter
 
     # event dispatched on user action such as add, remove, delete
     ur.events.handler_event: 'ur.events.handler_event'
@@ -41,6 +42,12 @@ services:
 
     ur.security.auth.voter.user:
         class:  %ur.security.auth.voter.user.class%
+        public: false
+        tags:
+            - { name: security.voter }
+
+    ur.security.auth.voter.data_set:
+        class:  %ur.security.auth.voter.data_set.class%
         public: false
         tags:
             - { name: security.voter }

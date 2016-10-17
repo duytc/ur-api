@@ -1,0 +1,21 @@
+UR\Entity\Core\DataSet:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [dataset.detail, dataset.summary]
+        publisher:
+            expose: true
+            groups: [dataset.detail]
+        name:
+            expose: true
+            groups: [dataset.detail, dataset.summary]
+        dimensions:
+            expose: true
+            groups: [dataset.detail, dataset.summary]
+        metrics:
+            expose: true
+            groups: [dataset.detail, dataset.summary]
+        createdDate:
+            expose: true
+            groups: [dataset.detail, dataset.summary]

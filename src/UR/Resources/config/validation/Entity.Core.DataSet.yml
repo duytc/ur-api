@@ -1,0 +1,12 @@
+UR\Entity\Core\DataSet:
+    properties:
+        name:
+            - NotBlank: ~
+            - NotNull: ~
+#            - Type: string
+        dimensions:
+            - NotBlank: ~
+            - NotNull: ~
+        metrics:
+            - NotBlank: ~
+            - NotNull: ~

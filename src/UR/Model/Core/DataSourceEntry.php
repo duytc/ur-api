@@ -131,5 +131,4 @@ class DataSourceEntry implements DataSourceEntryInterface
     {
         $this->receivedVia = $receivedVia;
     }
-
 }

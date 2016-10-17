@@ -37,3 +37,13 @@ api_alert:
     type: rest
     resource: UR\Bundle\ApiBundle\Controller\AlertController
     name_prefix:  api_1_
+
+api_data_set:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\DataSetController
+    name_prefix:  api_1_
+
+api_connected_data_source:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ConnectedDataSourceController
+    name_prefix:  api_1_
