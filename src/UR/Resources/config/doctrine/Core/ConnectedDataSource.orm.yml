@@ -1,0 +1,25 @@
+UR\Entity\Core\ConnectedDataSource:
+    type: entity
+    table: core_data_set
+    repositoryClass: UR\Repository\Core\DataSetRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        mapFields:
+            type: json_array
+            nullable: true
+        filters:
+            type: json_array
+            nullable: true
+        transforms:
+            type: json_array
+            nullable: true
+    manyToOne:
+        dataSource:
+            targetEntity: UR\Entity\Core\DataSource
+    manyToOne:
+        dataSet:
+            targetEntity: UR\Entity\Core\DataSet
