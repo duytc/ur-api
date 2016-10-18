@@ -31,6 +31,26 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         'decimal'
     ];
 
+    static $COMPARISON_NUMBER_VALUES = [
+        'smaller',
+        'smaller or equal',
+        'equal',
+        'not equal',
+        'greater',
+        'greater or equal',
+        'in',
+        'not'
+    ];
+
+    static $COMPARISON_TEXT_VALUES = [
+        'contains',
+        'not contains',
+        'start with',
+        'end with',
+        'in',
+        'not'
+    ];
+
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
@@ -70,19 +90,27 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                     $form->get('metrics')->addError(new FormError('metric values should not null and be one of ' . json_encode(self::$SUPPORTED_METRIC_VALUES)));
                 }
 
+                //validate connDataSources
                 $connDataSources = $dataSet->getConnectedDataSources();
 
                 if (count($connDataSources) > 0) {
+
+                    //validate mapping fields
                     if (!$this->validateMappingFields($dataSet, $connDataSources)) {
-                        $form->get('connectedDataSources')->addError(new FormError('one or more fields you mapping are not exist in DataSet Dimensions or Metrics'));
+                        $form->get('connectedDataSources')->addError(new FormError('one or more fields of your mapping dose not exist in DataSet Dimensions or Metrics'));
+                    }
+
+                    //validate filter
+                    if (!$this->validateFilters($dataSet, $connDataSources)) {
+                        $form->get('connectedDataSources')->addError(new FormError('Filters Mapping error'));
                     }
                 }
 
-                // todo: hhhhhh
                 foreach ($connDataSources as $connDataSource) {
                     /** @var ConnectedDataSourceInterface $connDataSource */
                     $connDataSource->setDataSet($dataSet);
                 }
+
             }
         );
     }
@@ -137,4 +165,67 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         }
         return true;
     }
+
+    public function validateFilters(DataSetInterface $dataSet, $connDataSources)
+    {
+        /**@var ConnectedDataSourceInterface $connDataSource */
+        foreach ($connDataSources as $connDataSource) {
+            if ($connDataSource->getFilters() !== null)
+                foreach ($connDataSource->getFilters() as $fieldName => $value) {
+
+                    if (!array_key_exists($fieldName, $dataSet->getDimensions()) && !array_key_exists($fieldName, $dataSet->getMetrics())) {
+                        return false;
+                    }
+
+                    if (strcmp($value['type'], "date") === 0 && !$this->validateFilterDateType($value)) {
+                        return false;
+                    }
+
+                    if (strcmp($value['type'], "number") === 0 && !$this->validateFilterNumberType($value)) {
+                        return false;
+                    }
+
+                    if (strcmp($value['type'], "text") === 0 && !$this->validateFilterTextType($value)) {
+                        return false;
+                    }
+
+                }
+        }
+        return true;
+    }
+
+    public function validateFilterDateType($value)
+    {
+        if (count($value) !== 3 || !array_key_exists("from", $value) || !array_key_exists("to", $value)) {
+            return false;
+        }
+        return true;
+    }
+
+    public function validateFilterNumberType($value)
+    {
+        if (count($value) !== 3 || !array_key_exists("comparison", $value) || !array_key_exists("compareValue", $value)) {
+            return false;
+        }
+
+        if (!in_array($value['comparison'], self::$COMPARISON_NUMBER_VALUES, true)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function validateFilterTextType($value)
+    {
+        if (count($value) !== 3 || !array_key_exists("comparison", $value) || !array_key_exists("compareValue", $value)) {
+            return false;
+        }
+
+        if (!in_array($value['comparison'], self::$COMPARISON_TEXT_VALUES, true)) {
+            return false;
+        }
+
+        return true;
+    }
+
 }
