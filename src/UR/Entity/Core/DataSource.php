@@ -3,7 +3,7 @@
 namespace UR\Entity\Core;
 
 use UR\Model\Core\DataSource as DataSourceModel;
-use UR\Model\Core\IntegrationInterface;
+use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\User\UserEntityInterface;
 
 class DataSource extends DataSourceModel
@@ -19,7 +19,7 @@ class DataSource extends DataSourceModel
     protected $publisher;
 
     /**
-     * @var IntegrationInterface[]
+     * @var DataSourceIntegrationInterface[]
      */
     protected $dataSourceIntegrations;
 

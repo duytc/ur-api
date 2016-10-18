@@ -42,7 +42,8 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                 // validate mapping fields
                 /** @var DataSetInterface $dataSet */
                 $dataSet = $connDataSource->getDataSet();
-                if (!$this->validateMappingFields($dataSet, $connDataSource->getMapFields())) {
+
+                if ($dataSet != null && !$this->validateMappingFields($dataSet, $connDataSource->getMapFields())) {
                     $form->get('mapFields')->addError(new FormError('one or more fields you mapping are not exist in DataSet Dimensions or Metrics'));
                 }
             }
@@ -63,10 +64,9 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
     {
         // check if mapping fields are exist in Data Set
         foreach ($mapFields as $mapField) {
-            if (!array_key_exists($mapField, $dataSet->getDimensions()))
-                if (!array_key_exists($mapField, $dataSet->getMetrics())) {
-                    return false;
-                }
+            if (!array_key_exists($mapField, $dataSet->getDimensions()) && !array_key_exists($mapField, $dataSet->getMetrics())) {
+                return false;
+            }
         }
         return true;
     }
