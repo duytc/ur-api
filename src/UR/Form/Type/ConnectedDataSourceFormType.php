@@ -8,6 +8,7 @@ use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\ConnectedDataSource;
+use UR\Form\Behaviors\ValidateConnectedDataSourceTrait;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
@@ -15,6 +16,8 @@ use UR\Model\User\Role\AdminInterface;
 
 class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
 {
+    use ValidateConnectedDataSourceTrait;
+
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
@@ -43,8 +46,15 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                 /** @var DataSetInterface $dataSet */
                 $dataSet = $connDataSource->getDataSet();
 
-                if ($dataSet != null && !$this->validateMappingFields($dataSet, $connDataSource->getMapFields())) {
-                    $form->get('mapFields')->addError(new FormError('one or more fields you mapping are not exist in DataSet Dimensions or Metrics'));
+                if ($dataSet != null) {
+
+                    if (!$this->validateMappingFields($dataSet, $connDataSource)) {
+                        $form->get('mapFields')->addError(new FormError('one or more fields of your mapping dose not exist in DataSet Dimensions or Metrics'));
+                    }
+
+                    if (!$this->validateFilters($dataSet, $connDataSource)) {
+                        $form->get('filters')->addError(new FormError('Filters Mapping error'));
+                    }
                 }
             }
         );
@@ -58,16 +68,5 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
     public function getName()
     {
         return 'ur_form_connected_data_source';
-    }
-
-    public function validateMappingFields(DataSetInterface $dataSet, $mapFields)
-    {
-        // check if mapping fields are exist in Data Set
-        foreach ($mapFields as $mapField) {
-            if (!array_key_exists($mapField, $dataSet->getDimensions()) && !array_key_exists($mapField, $dataSet->getMetrics())) {
-                return false;
-            }
-        }
-        return true;
     }
 }
