@@ -28,6 +28,25 @@ trait ValidateConnectedDataSourceTrait
         'not'
     ];
 
+    static $FILTERS_TYPE_VALUES = [
+        'date',
+        'number',
+        'text'
+    ];
+
+    static $TRANSFORMS_TYPE_VALUES = [
+        'single-field',
+        'all-fields'
+    ];
+
+    static $ALL_FIELDS_TRANSFORMS_TYPE_VALUES = [
+        'groupBy',
+        'sortBy',
+        'addField',
+        'addCalculatedField',
+        'comparisonPercent'
+    ];
+
     public function validateMappingFields(DataSetInterface $dataSet, $connDataSource)
     {
         /**@var ConnectedDataSourceInterface $connDataSource */
@@ -50,7 +69,7 @@ trait ValidateConnectedDataSourceTrait
                     return false;
                 }
 
-                if ((strcmp($value['type'], "date") !== 0) && (strcmp($value['type'], "number") !== 0) && (strcmp($value['type'], "text") !== 0)) {
+                if (!in_array($value['type'], self::$FILTERS_TYPE_VALUES, true)) {
                     return false;
                 }
 
@@ -67,6 +86,29 @@ trait ValidateConnectedDataSourceTrait
                 }
 
             }
+        return true;
+    }
+
+    public function validateTransforms(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
+    {
+        if ($connDataSource->getTransforms() !== null) {
+
+            foreach ($connDataSource->getTransforms() as $transformType => $fields) {
+
+                if (!in_array($transformType, self::$TRANSFORMS_TYPE_VALUES, true)) {
+                    return false;
+                }
+
+                if ((strcmp($transformType, "single-field") === 0) && !$this->validateSingleFieldTransform($dataSet, $fields)) {
+                    return false;
+                }
+
+                if ((strcmp($transformType, "all-fields") === 0) && !$this->validateAllFieldsTransform($dataSet, $fields)) {
+                    return false;
+                }
+
+            }
+        }
         return true;
     }
 
@@ -100,6 +142,32 @@ trait ValidateConnectedDataSourceTrait
 
         if (!in_array($value['comparison'], self::$COMPARISON_TEXT_VALUES, true)) {
             return false;
+        }
+
+        return true;
+    }
+
+    public function validateSingleFieldTransform(DataSetInterface $dataSet, $fields)
+    {
+        foreach ($fields as $fieldName => $formats) {
+
+            if (!array_key_exists($fieldName, $dataSet->getDimensions()) && !array_key_exists($fieldName, $dataSet->getMetrics())) {
+                return false;
+            }
+
+        }
+
+        return true;
+    }
+
+    public function validateAllFieldsTransform(DataSetInterface $dataSet, $allFields)
+    {
+        foreach ($allFields as $transType => $fieldNames) {
+
+            if (!in_array($transType, self::$ALL_FIELDS_TRANSFORMS_TYPE_VALUES)) {
+                return false;
+            }
+
         }
 
         return true;

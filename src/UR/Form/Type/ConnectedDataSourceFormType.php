@@ -7,6 +7,7 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use UR\DomainManager\DataSourceManagerInterface;
 use UR\Entity\Core\ConnectedDataSource;
 use UR\Form\Behaviors\ValidateConnectedDataSourceTrait;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
@@ -17,6 +18,16 @@ use UR\Model\User\Role\AdminInterface;
 class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
 {
     use ValidateConnectedDataSourceTrait;
+
+    /**
+     * @var DataSourceManagerInterface
+     */
+    protected $dataSourceManager;
+
+    function __construct(DataSourceManagerInterface $dataSourceManager)
+    {
+        $this->dataSourceManager = $dataSourceManager;
+    }
 
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -54,6 +65,10 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
 
                     if (!$this->validateFilters($dataSet, $connDataSource)) {
                         $form->get('filters')->addError(new FormError('Filters Mapping error'));
+                    }
+
+                    if(!$this->validateTransforms($dataSet, $connDataSource)){
+                        $form->get('transforms')->addError(new FormError('Transforms Mapping error'));
                     }
                 }
             }
