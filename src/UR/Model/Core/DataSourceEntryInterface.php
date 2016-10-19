@@ -25,13 +25,13 @@ interface DataSourceEntryInterface extends ModelInterface
     /**
      * @return boolean
      */
-    public function getValid();
+    public function getIsValid();
 
     /**
      * @param boolean $valid
      * @return self
      */
-    public function setValid($valid);
+    public function setIsValid($valid);
 
     /**
      * @return string

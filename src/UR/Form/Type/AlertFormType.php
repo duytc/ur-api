@@ -6,7 +6,7 @@ namespace UR\Form\Type;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\DataSourceEntry;
-use UR\Model\Core\Alert;
+use UR\Entity\Core\Alert;
 use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\DataSourceEntryRepository;
@@ -37,7 +37,7 @@ class AlertFormType extends AbstractRoleSpecificFormType
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)
     {
-        $resolver->setDefaults(['data_class' => Alert::class,]);
+        $resolver->setDefaults(['data_class' => Alert::class]);
     }
 
     public function getName()

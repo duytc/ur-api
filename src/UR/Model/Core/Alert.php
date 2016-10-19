@@ -18,6 +18,7 @@ class Alert implements AlertInterface
 
     public function __construct()
     {
+        $this->isRead = false;
     }
 
     /**

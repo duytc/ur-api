@@ -9,7 +9,7 @@ class DataSourceEntry extends DataSourceEntryModel
 {
     protected $id;
     protected $receivedDate;
-    protected $valid;
+    protected $isValid;
     protected $path;
     protected $metaData;
     protected $receivedVia;

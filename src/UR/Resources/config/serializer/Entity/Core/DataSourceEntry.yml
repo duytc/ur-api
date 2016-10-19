@@ -7,7 +7,7 @@ UR\Entity\Core\DataSourceEntry:
         dataSource:
             expose: true
             groups: [dataSourceEntry.detail, dataSourceEntry.summary]
-        valid:
+        isValid:
             expose: true
             groups: [dataSourceEntry.detail, dataSourceEntry.summary]
         path:

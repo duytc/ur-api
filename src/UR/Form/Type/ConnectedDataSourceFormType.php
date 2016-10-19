@@ -19,16 +19,6 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
 {
     use ValidateConnectedDataSourceTrait;
 
-    /**
-     * @var DataSourceManagerInterface
-     */
-    protected $dataSourceManager;
-
-    function __construct(DataSourceManagerInterface $dataSourceManager)
-    {
-        $this->dataSourceManager = $dataSourceManager;
-    }
-
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
@@ -57,7 +47,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                 /** @var DataSetInterface $dataSet */
                 $dataSet = $connDataSource->getDataSet();
 
-                if ($dataSet != null) {
+                if ($dataSet !== null || $connDataSource->getId() !== null) {
 
                     if (!$this->validateMappingFields($dataSet, $connDataSource)) {
                         $form->get('mapFields')->addError(new FormError('one or more fields of your mapping dose not exist in DataSet Dimensions or Metrics'));
@@ -67,7 +57,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                         $form->get('filters')->addError(new FormError('Filters Mapping error'));
                     }
 
-                    if(!$this->validateTransforms($dataSet, $connDataSource)){
+                    if (!$this->validateTransforms($dataSet, $connDataSource)) {
                         $form->get('transforms')->addError(new FormError('Transforms Mapping error'));
                     }
                 }
