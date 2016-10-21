@@ -2,18 +2,22 @@
 
 namespace UR\Form\Type;
 
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\DataSet;
+use UR\Form\Behaviors\ValidateConnectedDataSourceTrait;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\User\Role\AdminInterface;
 
 class DataSetFormType extends AbstractRoleSpecificFormType
 {
+    use ValidateConnectedDataSourceTrait;
     static $SUPPORTED_DIMENSION_VALUES = [
         'date',
         'datetime',
@@ -24,7 +28,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         'date',
         'datetime',
         'text',
-        'multilineText',
+        'multiLineText',
         'number',
         'decimal'
     ];
@@ -34,7 +38,14 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         $builder
             ->add('name')
             ->add('dimensions')
-            ->add('metrics');
+            ->add('metrics')
+            ->add('connectedDataSources', CollectionType::class, array(
+                'mapped' => true,
+                'type' => new ConnectedDataSourceFormType(),
+                'allow_add' => true,
+                'by_reference' => false,
+                'allow_delete' => true,
+            ));
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(
@@ -47,22 +58,41 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,
             function (FormEvent $event) {
-
                 /** @var DataSetInterface $dataSet */
                 $dataSet = $event->getData();
-                $error = 1;
 
                 // validate dimensions and metrics
                 $form = $event->getForm();
+
                 if (!$this->validateDimensions($dataSet->getDimensions())) {
                     $form->get('dimensions')->addError(new FormError('dimension values should not null and be one of ' . json_encode(self::$SUPPORTED_DIMENSION_VALUES)));
-                    $error = $error & 0;
                 }
+
                 if (!$this->validateMetrics($dataSet->getMetrics())) {
                     $form->get('metrics')->addError(new FormError('metric values should not null and be one of ' . json_encode(self::$SUPPORTED_METRIC_VALUES)));
-                    $error = $error & 0;
                 }
-                return $error;
+
+                //validate connDataSources
+                $connDataSources = $dataSet->getConnectedDataSources();
+
+                if (count($connDataSources) > 0) {
+
+                    foreach ($connDataSources as $connDataSource) {
+
+                        //validate mapping fields
+                        if (!$this->validateMappingFields($dataSet, $connDataSource)) {
+                            $form->get('connectedDataSources')->addError(new FormError('one or more fields of your mapping dose not exist in DataSet Dimensions or Metrics'));
+                        }
+
+                        //validate filter
+                        if (!$this->validateFilters($dataSet, $connDataSource)) {
+                            $form->get('connectedDataSources')->addError(new FormError('Filters Mapping error'));
+                        }
+
+                        /** @var ConnectedDataSourceInterface $connDataSource */
+                        $connDataSource->setDataSet($dataSet);
+                    }
+                }
             }
         );
     }
@@ -104,4 +134,6 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         }
         return true;
     }
+
+
 }

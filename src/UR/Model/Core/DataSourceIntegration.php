@@ -23,6 +23,7 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
 
     public function __construct()
     {
+        $this->active = true;
     }
 
     /**

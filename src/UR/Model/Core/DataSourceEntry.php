@@ -6,7 +6,7 @@ class DataSourceEntry implements DataSourceEntryInterface
 {
     protected $id;
     protected $receivedDate;
-    protected $valid;
+    protected $isValid;
     protected $path;
     protected $metaData;
     protected $receivedVia;
@@ -18,7 +18,7 @@ class DataSourceEntry implements DataSourceEntryInterface
 
     public function __construct()
     {
-        $this->valid = false;
+        $this->isValid = false;
     }
 
     /**
@@ -48,17 +48,17 @@ class DataSourceEntry implements DataSourceEntryInterface
     /**
      * @inheritdoc
      */
-    public function getValid()
+    public function getIsValid()
     {
-        return $this->valid;
+        return $this->isValid;
     }
 
     /**
      * @inheritdoc
      */
-    public function setValid($valid)
+    public function setIsValid($isValid)
     {
-        $this->valid = $valid;
+        $this->isValid = $isValid;
 
         return $this;
     }

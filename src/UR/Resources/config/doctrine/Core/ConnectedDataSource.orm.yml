@@ -22,3 +22,4 @@ UR\Entity\Core\ConnectedDataSource:
             targetEntity: UR\Entity\Core\DataSource
         dataSet:
             targetEntity: UR\Entity\Core\DataSet
+            inversedBy: connectedDataSources
