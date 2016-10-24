@@ -1,0 +1,21 @@
+UR\Entity\Core\ImportHistory:
+    type: entity
+    table: core_import_history
+    repositoryClass: UR\Repository\Core\ImportHistoryRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        description:
+            type: string
+            nullable: true
+        createdDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+    manyToOne:
+        connectedDataSource:
+            targetEntity: UR\Entity\Core\DataSourceEntry
