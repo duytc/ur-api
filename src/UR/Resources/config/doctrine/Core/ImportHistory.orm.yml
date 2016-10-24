@@ -18,4 +18,4 @@ UR\Entity\Core\ImportHistory:
                     on: create
     manyToOne:
         connectedDataSource:
-            targetEntity: UR\Entity\Core\DataSourceEntry
+            targetEntity: UR\Entity\Core\ConnectedDataSource

@@ -29,7 +29,7 @@ $availableWorkers = [
     $container->get('ur.worker.workers.import_dataset_worker'),
 ];
 
-$workerPool = new \Tagcade\Worker\Pool($availableWorkers);
+$workerPool = new \UR\Worker\Pool($availableWorkers);
 
 function stdErr($text)
 {
