@@ -40,10 +40,10 @@ class DataSetFormType extends AbstractRoleSpecificFormType
             ->add('dimensions')
             ->add('metrics')
             ->add('connectedDataSources', CollectionType::class, array(
-                'mapped' => true,
+//                'mapped' => true,
                 'type' => new ConnectedDataSourceFormType(),
                 'allow_add' => true,
-                'by_reference' => false,
+//                'by_reference' => false,
                 'allow_delete' => true,
             ));
 

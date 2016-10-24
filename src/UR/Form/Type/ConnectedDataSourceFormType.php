@@ -7,7 +7,6 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
-use UR\DomainManager\DataSourceManagerInterface;
 use UR\Entity\Core\ConnectedDataSource;
 use UR\Form\Behaviors\ValidateConnectedDataSourceTrait;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
@@ -61,7 +60,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                         $form->get('transforms')->addError(new FormError('Transforms Mapping error'));
                     }
                 }
-            }
+             }
         );
     }
 

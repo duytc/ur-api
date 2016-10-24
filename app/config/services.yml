@@ -92,3 +92,13 @@ services:
             - @security.token_storage
         tags:
             - { name: monolog.processor, method: processRecord }
+
+    ur.worker.manager:
+            class: UR\Worker\Manager
+            arguments:
+                - @ur.service.date_util
+                - @leezy.pheanstalk
+
+#    ur.worker.workers.import_dataset_worker:
+#        class: AutoCreateDataImportWorker
+#        arguments:
