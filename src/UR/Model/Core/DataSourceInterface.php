@@ -86,4 +86,14 @@ interface DataSourceInterface extends ModelInterface
      * @param string $urEmail
      */
     public function setUrEmail($urEmail);
+
+    /**
+     * @return mixed
+     */
+    public function getDataSourceEntries();
+
+    /**
+     * @param mixed $dataSourceEntries
+     */
+    public function setDataSourceEntries($dataSourceEntries);
 }

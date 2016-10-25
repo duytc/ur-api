@@ -1,6 +1,6 @@
 <?php
 
-namespace UnifiedReports\Parser\Transformer\Column;
+namespace UR\Service\Parser\Transformer\Column;
 
 class MysqlDateTimeFormat extends DateFormat
 {

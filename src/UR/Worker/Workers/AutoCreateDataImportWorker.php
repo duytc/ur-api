@@ -12,8 +12,11 @@ use UR\Entity\Core\ImportHistory;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
+use UR\Service\DataSource\Csv;
+use UR\Service\Parser\ParserConfig;
 
 class AutoCreateDataImportWorker
 {
@@ -57,8 +60,8 @@ class AutoCreateDataImportWorker
             $importHistoryEntity->setConnectedDataSource($connectedDataSource);
             $this->importHistoryManager->save($importHistoryEntity);
 
-            $conn= $this->em->getConnection();
-            $dataSetLocator= new Locator($conn);
+            $conn = $this->em->getConnection();
+            $dataSetLocator = new Locator($conn);
             $dataSetSynchronizer = new Synchronizer($conn, new Comparator());
             $schema = new Schema();
             $dataSetTable = $schema->createTable($dataSetLocator->getDataSetName($importHistoryEntity->getId()));
@@ -69,15 +72,16 @@ class AutoCreateDataImportWorker
 
             //mapping
             // add dimensions
-            foreach ($dataSet->getDimensions() as $key => $value){
+            foreach ($dataSet->getDimensions() as $key => $value) {
                 $dataSetTable->addColumn($key, $value);
             }
 
             // add metrics
-            foreach ($dataSet->getMetrics() as $key => $value){
+            foreach ($dataSet->getMetrics() as $key => $value) {
                 $dataSetTable->addColumn($key, $value, ["unsigned" => true, "notnull" => false]);
             }
 
+            // create table
             try {
                 $dataSetSynchronizer->syncSchema($schema);
                 $truncateSql = $conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetName($importHistoryEntity->getId()));
@@ -86,9 +90,23 @@ class AutoCreateDataImportWorker
                 echo "could not sync schema";
                 exit(1);
             }
-        }
 
-        // parse: Giang
+            //get datasource entry
+            $dse = $connectedDataSource->getDataSource()->getDataSourceEntries();
+            $expressionLanguage = new Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+
+            /**@var DataSourceEntryInterface $item */
+            foreach ($dse as $item) {
+                // parse: Giang
+                $file = new Csv($item->getPath());
+                $file->getColumns();
+
+//                $parserConfig = (new ParserConfig())
+//                    ->addColumn()
+            }
+
+
+        }
 
 
         // filter

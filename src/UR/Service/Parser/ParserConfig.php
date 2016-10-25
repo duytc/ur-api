@@ -1,6 +1,6 @@
 <?php
 
-namespace UnifiedReports\Parser;
+namespace UR\Service\Parser;
 
 use UnifiedReports\Parser\Transformer\Column\ColumnTransformerInterface;
 use UnifiedReports\Parser\Transformer\Collection\CollectionTransformerInterface;

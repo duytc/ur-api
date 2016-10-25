@@ -1,6 +1,6 @@
 <?php
 
-namespace UnifiedReports\Parser;
+namespace UR\Service\Parser;
 
 use UnifiedReports\DataSource\DataSourceInterface;
 use UnifiedReports\DTO\Collection;

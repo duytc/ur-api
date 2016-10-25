@@ -89,6 +89,11 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                             $form->get('connectedDataSources')->addError(new FormError('Filters Mapping error'));
                         }
 
+                        //validate transform
+                        if (!$this->validateTransforms($dataSet, $connDataSource)) {
+                            $form->get('connectedDataSources')->addError(new FormError('Transform Mapping error'));
+                        }
+
                         /** @var ConnectedDataSourceInterface $connDataSource */
                         $connDataSource->setDataSet($dataSet);
                     }
