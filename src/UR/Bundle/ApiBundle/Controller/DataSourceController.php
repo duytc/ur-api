@@ -10,8 +10,10 @@ use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
@@ -60,7 +62,9 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @Rest\Get("/datasources/{id}", requirements={"id" = "\d+"})
      *
-     * @Rest\View(serializerGroups={"datasource.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"datasource.summary", "dataSourceIntegration.summary","integration.summary","user.summary"})
+     *
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -78,6 +82,34 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     public function getAction($id)
     {
         return $this->one($id);
+    }
+
+    /**
+     * Get a single data source for the given id
+     *
+     * @Rest\Get("/datasources/{id}/datasourceentries")
+     *
+     * @Rest\View(serializerGroups={"dataSourceEntry.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @param int $id the resource id
+     * @return DataSourceEntryInterface
+     */
+    public function getDataSourceEntriesAction(Request $request, $id)
+    {
+        $dataSource = $this->one($id);
+        $dataSourceRepository = $this->get('ur.repository.data_source_entry');
+        $qb = $dataSourceRepository->getDataSourceEntriesByDataSourceIdQuery($dataSource, $this->getParams());
+
+        return $this->getPagination($qb, $request);
     }
 
     /**

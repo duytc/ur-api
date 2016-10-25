@@ -4,6 +4,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -72,6 +73,13 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
     private function createQueryBuilderForUser(UserRoleInterface $user)
     {
         return $user instanceof PublisherInterface ? $this->getDataSourceEntriesForPublisherQuery($user) : $this->createQueryBuilder('dse');
+    }
+
+    public function getDataSourceEntriesByDataSourceIdQuery(DataSourceInterface $dataSource, PagerParam $param)
+    {
+        $qb = $this->createQueryBuilder('dse');
+        $qb->andWhere($qb->expr()->eq('dse.dataSource', $dataSource->getId()));
+        return $qb;
     }
 
 }
