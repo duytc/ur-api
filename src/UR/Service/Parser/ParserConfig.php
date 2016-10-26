@@ -2,8 +2,8 @@
 
 namespace UR\Service\Parser;
 
-use UnifiedReports\Parser\Transformer\Column\ColumnTransformerInterface;
-use UnifiedReports\Parser\Transformer\Collection\CollectionTransformerInterface;
+use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
+use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 
 class ParserConfig
 {
@@ -17,7 +17,7 @@ class ParserConfig
      */
     protected $collectionTransforms = [];
 
-    public function addColumn(string $fromColumn, string $toColumn = null): self
+    public function addColumn($fromColumn, $toColumn = null)
     {
         if (empty($fromColumn)) {
             throw new \InvalidArgumentException('column names cannot be empty');
@@ -44,7 +44,7 @@ class ParserConfig
         return $this;
     }
 
-    public function transformColumn($column, ColumnTransformerInterface $transform): self
+    public function transformColumn($column, ColumnTransformerInterface $transform)
     {
         if (!$this->hasColumnMapping($column)) {
             throw new \InvalidArgumentException('Cannot add the column transform because the column does not exist');
@@ -59,7 +59,7 @@ class ParserConfig
         return $this;
     }
 
-    public function transformCollection(CollectionTransformerInterface $transform): self
+    public function transformCollection(CollectionTransformerInterface $transform)
     {
         $this->collectionTransforms[] = $transform;
 
@@ -69,7 +69,7 @@ class ParserConfig
     /**
      * @return array
      */
-    public function getAllColumnMappings(): array
+    public function getAllColumnMappings()
     {
         return $this->columnMapping;
     }
@@ -78,7 +78,7 @@ class ParserConfig
      * @param string $fromColumn
      * @return bool
      */
-    public function hasColumnMapping(string $fromColumn): bool
+    public function hasColumnMapping($fromColumn)
     {
         return array_key_exists($fromColumn, $this->columnMapping);
     }
@@ -87,7 +87,7 @@ class ParserConfig
      * @param string $fromColumn
      * @return string|false
      */
-    public function getColumnMapping(string $fromColumn)
+    public function getColumnMapping($fromColumn)
     {
         if ($this->hasColumnMapping($fromColumn)) {
             return $this->columnMapping[$fromColumn];

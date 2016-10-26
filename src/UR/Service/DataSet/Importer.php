@@ -4,7 +4,7 @@ namespace UR\Service\DataSet;
 
 use \Doctrine\DBAL\Connection;
 use \Doctrine\DBAL\Schema\Table;
-use UnifiedReports\DTO\Collection;
+use UR\Service\DTO\Collection;
 
 class Importer
 {

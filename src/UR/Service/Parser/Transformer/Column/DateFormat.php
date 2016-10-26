@@ -9,7 +9,7 @@ class DateFormat implements ColumnTransformerInterface
     protected $fromDateFormat;
     protected $toDateFormat;
 
-    public function __construct(string $fromDateFormat = 'Y-m-d', string $toDateFormat = 'Y-m-d')
+    public function __construct($fromDateFormat = 'Y-m-d', $toDateFormat = 'Y-m-d')
     {
         $this->fromDateFormat = $fromDateFormat;
         $this->toDateFormat = $toDateFormat;

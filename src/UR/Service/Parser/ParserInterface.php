@@ -2,10 +2,9 @@
 
 namespace UR\Service\Parser;
 
-use UnifiedReports\DataSource\DataSourceInterface;
-use UnifiedReports\DTO\Collection;
+use UR\Service\DataSource\DataSourceInterface;
 
 interface ParserInterface
 {
-    public function parse(DataSourceInterface $dataSource, ParserConfig $config): Collection;
+    public function parse(DataSourceInterface $dataSource, ParserConfig $config);
 }
