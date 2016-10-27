@@ -35,6 +35,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
                 ],
             ])
             ->add('alertSetting')
+            ->add('enable')
             ->add('dataSourceIntegrations', CollectionType::class, array(
                 'mapped' => true,
                 'type' => new DataSourceIntegrationFormType(),

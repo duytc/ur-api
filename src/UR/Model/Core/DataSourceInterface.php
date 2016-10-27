@@ -96,4 +96,14 @@ interface DataSourceInterface extends ModelInterface
      * @param mixed $dataSourceEntries
      */
     public function setDataSourceEntries($dataSourceEntries);
+
+    /**
+     * @return mixed
+     */
+    public function getEnable();
+
+    /**
+     * @param mixed $enable
+     */
+    public function setEnable($enable);
 }
