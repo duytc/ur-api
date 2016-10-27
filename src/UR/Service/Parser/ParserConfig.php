@@ -49,19 +49,9 @@ class ParserConfig
         return $this;
     }
 
-    public function filtersDateColumn($column, ColumnFilterInterface $filter)
+    public function filtersColumn($column, ColumnFilterInterface $filter)
     {
         $this->columnFilters[$column][] = $filter;
-    }
-
-    public function filtersTextColumn($column, ColumnFilterInterface $filter)
-    {
-        $this->columnFilters[$column][] = $filter;
-    }
-
-    public function filtersNumberColumn($column, $comparison, $compareValue)
-    {
-
     }
 
     public function transformColumn($column, ColumnTransformerInterface $transform)
