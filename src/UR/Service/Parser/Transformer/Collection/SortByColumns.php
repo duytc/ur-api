@@ -23,11 +23,9 @@ class SortByColumns implements CollectionTransformerInterface
         if (count($sortByColumns) != count($this->sortByColumns)) {
             throw new \InvalidArgumentException('Cannot sort the collection, some of the columns do not exist');
         }
-
         // todo implement sorting
-        foreach ($sortByColumns as $sortByColumn) {
-            $this->array_sort_by_column($rows, $sortByColumn);
-        }
+
+        $this->array_sort_by_columns($rows, $sortByColumns);
 
         return new Collection($columns, $rows);
     }
@@ -37,12 +35,21 @@ class SortByColumns implements CollectionTransformerInterface
         return 0;
     }
 
-    public function array_sort_by_column(&$arr, $col, $dir = SORT_ASC) {
-        $sort_col = array();
-        foreach ($arr as $key=> $row) {
-            $sort_col[$key] = $row[$col];
-        }
+    public function array_sort_by_columns(&$arr, $cols, $dir = SORT_ASC)
+    {
+        $sort = array();
 
-        array_multisort($sort_col, $dir, $arr);
+        foreach ($arr as $k => $v) {
+            foreach ($cols as $col) {
+                $sort[$col][$k] = $v[$col];
+            }
+        }
+        $param = array();
+        foreach ($cols as $col) {
+            array_push($param, $sort[$col], $dir);
+        }
+        array_push($param, $arr);
+        $result = call_user_func_array('array_multisort', $param);
+
     }
 }

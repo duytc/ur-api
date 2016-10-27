@@ -4,6 +4,7 @@ namespace UR\Service\Parser;
 
 use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\DTO\Collection;
+use UR\Service\Parser\Filter\ColumnFilterInterface;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 
@@ -21,7 +22,9 @@ class Parser implements ParserInterface
 
         $rows = $dataSource->getRows();
 
+        $cur_row = -1;
         foreach ($rows as &$row) {
+            $cur_row++;
             $row = array_intersect_key($row, $columns);
 
             $keys = array_map(function ($key) use ($columns) {
@@ -29,6 +32,13 @@ class Parser implements ParserInterface
             }, array_keys($row));
 
             $row = array_combine($keys, $row);
+
+            foreach ($config->getColumnFilters() as $column => $filters) {
+                /**@var ColumnFilterInterface $filters */
+
+            }
+
+            unset($rows[$cur_row]);
 
             foreach ($config->getColumnTransforms() as $column => $transforms) {
                 /** @var ColumnTransformerInterface[] $transforms */

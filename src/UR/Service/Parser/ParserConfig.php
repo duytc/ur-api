@@ -2,12 +2,17 @@
 
 namespace UR\Service\Parser;
 
+use UR\Service\Parser\Filter\ColumnFilterInterface;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 
 class ParserConfig
 {
     protected $columnMapping = [];
+    /**
+     * @var ColumnFilterInterface[]
+     */
+    protected $columnFilters = [];
     /**
      * @var ColumnTransformerInterface[]
      */
@@ -42,6 +47,21 @@ class ParserConfig
         $this->columnMapping[$toColumn] = $fromColumn;
 
         return $this;
+    }
+
+    public function filtersDateColumn($column, ColumnFilterInterface $filter)
+    {
+        $this->columnFilters[$column][] = $filter;
+    }
+
+    public function filtersTextColumn($column, ColumnFilterInterface $filter)
+    {
+        $this->columnFilters[$column][] = $filter;
+    }
+
+    public function filtersNumberColumn($column, $comparison, $compareValue)
+    {
+
     }
 
     public function transformColumn($column, ColumnTransformerInterface $transform)
@@ -102,6 +122,14 @@ class ParserConfig
     public function getColumnTransforms()
     {
         return $this->columnTransforms;
+    }
+
+    /**
+     * @return ColumnFilterInterface[]
+     */
+    public function getColumnFilters()
+    {
+        return $this->columnFilters;
     }
 
     /**

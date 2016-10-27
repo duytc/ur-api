@@ -14,10 +14,14 @@ use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Service\DataSet\Comparison;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
+use UR\Service\DataSet\Type;
 use UR\Service\DataSource\Csv;
+use UR\Service\Parser\Filter\DateFilter;
+use UR\Service\Parser\Filter\TextFilter;
 use UR\Service\Parser\Parser;
 use UR\Service\Parser\ParserConfig;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
@@ -94,6 +98,8 @@ class AutoCreateDataImportWorker
                         }
                     }
                 }
+                //filter
+                $this->filterDataSetTable($connectedDataSource, $parserConfig);
 
                 //transform
                 $this->transformDataSetTable($connectedDataSource, $parserConfig);
@@ -141,9 +147,19 @@ class AutoCreateDataImportWorker
         }
     }
 
-    function mappingDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
+    function filterDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
     {
+        $filters = $connectedDataSource->getFilters();
+        foreach ($filters as $field => $filter) {
+            // filter Date
+            if (strcmp($filter[Comparison::TYPE], Type::DATE) === 0) {
+                $parserConfig->filtersDateColumn($field, new DateFilter($filter['from'], $filter['to']));
+            }
 
+            if (strcmp($filter[Comparison::TYPE], Type::TEXT) === 0) {
+                $parserConfig->filtersTextColumn($field, new TextFilter($filter['comparison'], $filter['compareValue']));
+            }
+        }
     }
 
     function transformDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
