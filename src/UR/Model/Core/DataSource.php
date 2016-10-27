@@ -13,6 +13,7 @@ class DataSource implements DataSourceInterface
     protected $alertSetting;
     protected $apiKey;
     protected $urEmail;
+    protected $enable;
     const UR_EMAIL = "@unifiedreportemail";
 
     /** @var UserEntityInterface */
@@ -24,28 +25,13 @@ class DataSource implements DataSourceInterface
     protected $dataSourceEntries;
 
     /**
-     * @inheritdoc
-     */
-    public function getAlertSetting()
-    {
-        return $this->alertSetting;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setAlertSetting($alertSetting)
-    {
-        $this->alertSetting = $alertSetting;
-    }
-
-    /**
      * @var IntegrationInterface[]
      */
     protected $dataSourceIntegrations;
 
     public function __construct()
     {
+        $this->enable = true;
     }
 
     /**
@@ -189,5 +175,37 @@ class DataSource implements DataSourceInterface
     public function setDataSourceEntries($dataSourceEntries)
     {
         $this->dataSourceEntries = $dataSourceEntries;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getAlertSetting()
+    {
+        return $this->alertSetting;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setAlertSetting($alertSetting)
+    {
+        $this->alertSetting = $alertSetting;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getEnable()
+    {
+        return $this->enable;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setEnable($enable)
+    {
+        $this->enable = $enable;
     }
 }
