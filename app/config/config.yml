@@ -216,3 +216,10 @@ stof_doctrine_extensions:
 # all parameters
 parameters:
     jms_serializer.json_serialization_visitor.class: UR\Behaviors\JsonSerializationVisitor
+
+leezy_pheanstalk:
+    enabled: true
+    pheanstalks:
+        primary:
+            server: 127.0.0.1
+            default: true

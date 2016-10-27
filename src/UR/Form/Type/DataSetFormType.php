@@ -40,10 +40,10 @@ class DataSetFormType extends AbstractRoleSpecificFormType
             ->add('dimensions')
             ->add('metrics')
             ->add('connectedDataSources', CollectionType::class, array(
-                'mapped' => true,
+//                'mapped' => true,
                 'type' => new ConnectedDataSourceFormType(),
                 'allow_add' => true,
-                'by_reference' => false,
+//                'by_reference' => false,
                 'allow_delete' => true,
             ));
 
@@ -87,6 +87,11 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                         //validate filter
                         if (!$this->validateFilters($dataSet, $connDataSource)) {
                             $form->get('connectedDataSources')->addError(new FormError('Filters Mapping error'));
+                        }
+
+                        //validate transform
+                        if (!$this->validateTransforms($dataSet, $connDataSource)) {
+                            $form->get('connectedDataSources')->addError(new FormError('Transform Mapping error'));
                         }
 
                         /** @var ConnectedDataSourceInterface $connDataSource */

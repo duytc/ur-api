@@ -99,11 +99,11 @@ trait ValidateConnectedDataSourceTrait
                     return false;
                 }
 
-                if ((strcmp($transformType, "single-field") === 0) && !$this->validateSingleFieldTransform($dataSet, $fields)) {
+                if ((strcmp($transformType, "single-field") === 0) && !$this->validateSingleFieldTransform($connDataSource, $fields)) {
                     return false;
                 }
 
-                if ((strcmp($transformType, "all-fields") === 0) && !$this->validateAllFieldsTransform($dataSet, $fields)) {
+                if ((strcmp($transformType, "all-fields") === 0) && !$this->validateAllFieldsTransform($connDataSource, $fields)) {
                     return false;
                 }
 
@@ -147,11 +147,11 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
-    public function validateSingleFieldTransform(DataSetInterface $dataSet, $fields)
+    public function validateSingleFieldTransform(ConnectedDataSourceInterface $connectedDataSource, $fields)
     {
         foreach ($fields as $fieldName => $formats) {
 
-            if (!array_key_exists($fieldName, $dataSet->getDimensions()) && !array_key_exists($fieldName, $dataSet->getMetrics())) {
+            if (!in_array($fieldName, $connectedDataSource->getMapFields())) {
                 return false;
             }
 
@@ -160,14 +160,21 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
-    public function validateAllFieldsTransform(DataSetInterface $dataSet, $allFields)
+    public function validateAllFieldsTransform(ConnectedDataSourceInterface $connectedDataSource, $allFields)
     {
-        foreach ($allFields as $transType => $fieldNames) {
+        foreach ($allFields as $transType => $fieldName) {
 
             if (!in_array($transType, self::$ALL_FIELDS_TRANSFORMS_TYPE_VALUES)) {
                 return false;
             }
 
+            foreach ($fieldName as $trans) {
+
+                if (!array_key_exists($trans, $connectedDataSource->getMapFields())) {
+                    return false;
+                }
+
+            }
         }
 
         return true;
