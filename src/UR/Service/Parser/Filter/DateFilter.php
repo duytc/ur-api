@@ -15,6 +15,9 @@ class DateFilter implements ColumnFilterInterface
 
     public function filter($filter)
     {
-        // TODO: Implement filter() method.
+        if ($filter > $this->dateTo) {
+            return false;
+        }
+        return true;
     }
 }
