@@ -26,5 +26,18 @@ interface DataSourceEntryRepositoryInterface extends ObjectRepository
      */
     public  function  getDataSourceEntriesForDataSourceQuery(UserRoleInterface $user, PagerParam $param);
 
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param PagerParam $param
+     * @return mixed
+     */
     public function getDataSourceEntriesByDataSourceIdQuery(DataSourceInterface $dataSource, PagerParam $param);
+
+    /**
+     * @param PublisherInterface $publisher
+     * @param null $limit
+     * @param null $offset
+     * @return mixed
+     */
+    public function getDataSourceEntriesForPublisher(PublisherInterface $publisher, $limit = null, $offset = null);
 }

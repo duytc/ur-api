@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use DataDog\PagerBundle\Pagination;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
@@ -9,10 +10,12 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\User\Role\AdminInterface;
 
 /**
  * @Rest\RouteResource("datasourceentry")
@@ -50,7 +53,18 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $dataSourceEntryRepository = $this->get('ur.repository.data_source_entry');
         $qb = $dataSourceEntryRepository->getDataSourceEntriesForDataSourceQuery($publisher, $this->getParams());
 
-        return $this->getPagination($qb, $request);
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['limit'])) {
+            $pagination = new Pagination($qb, $request);
+            return array(
+                'totalRecord' => $pagination->total(),
+                'records' => $qb->getQuery()->getResult(),
+                'itemPerPage' => $pagination->total(),
+                'currentPage' => $pagination->currentPage()
+            );
+        } else {
+            return $this->getPagination($qb, $request);
+        }
     }
 
     /**
@@ -74,6 +88,39 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     public function getAction($id)
     {
         return $this->one($id);
+    }
+
+    /**
+     * Get data sources by publisher id
+     *
+     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceEntry.summary", "user.summary"})
+     *
+     * @Rest\Get("/datasourceentries/publisher/{id}")
+     *
+     * @ApiDoc(
+     *  section = "Data Source Entry",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the publisher id
+     * @return array
+     * @throws NotFoundHttpException when resource not exist
+     */
+    public function getDataSourceEntryByPublisherAction($id)
+    {
+        if (!$this->getUser() instanceof AdminInterface) {
+            throw new InvalidArgumentException('only Admin has permission to create this resource');
+        }
+
+        $publisherManager = $this->get('ur_user.domain_manager.publisher');
+        $publisher = $publisherManager->findPublisher($id);
+
+        $em = $this->get('ur.domain_manager.data_source_entry');
+
+        return $em->getDataSourceEntryForPublisher($publisher);
     }
 
     /**
