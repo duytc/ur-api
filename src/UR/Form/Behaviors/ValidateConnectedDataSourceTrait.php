@@ -5,35 +5,11 @@ namespace UR\Form\Behaviors;
 
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Service\DataSet\Comparison;
+use UR\Service\DataSet\Type;
 
 trait ValidateConnectedDataSourceTrait
 {
-    static $COMPARISON_NUMBER_VALUES = [
-        'smaller',
-        'smaller or equal',
-        'equal',
-        'not equal',
-        'greater',
-        'greater or equal',
-        'in',
-        'not'
-    ];
-
-    static $COMPARISON_TEXT_VALUES = [
-        'contains',
-        'not contains',
-        'start with',
-        'end with',
-        'in',
-        'not'
-    ];
-
-    static $FILTERS_TYPE_VALUES = [
-        'date',
-        'number',
-        'text'
-    ];
-
     static $TRANSFORMS_TYPE_VALUES = [
         'single-field',
         'all-fields'
@@ -69,19 +45,19 @@ trait ValidateConnectedDataSourceTrait
                     return false;
                 }
 
-                if (!in_array($value['type'], self::$FILTERS_TYPE_VALUES, true)) {
+                if (!Type::isValidFilterType($value['type'])) {
                     return false;
                 }
 
-                if ((strcmp($value['type'], "date") === 0) && !$this->validateFilterDateType($value)) {
+                if ((strcmp($value['type'], Type::DATE) === 0) && !$this->validateFilterDateType($value)) {
                     return false;
                 }
 
-                if (strcmp($value['type'], "number") === 0 && !$this->validateFilterNumberType($value)) {
+                if (strcmp($value['type'], Type::NUMBER) === 0 && !$this->validateFilterNumberType($value)) {
                     return false;
                 }
 
-                if (strcmp($value['type'], "text") === 0 && !$this->validateFilterTextType($value)) {
+                if (strcmp($value['type'], Type::TEXT) === 0 && !$this->validateFilterTextType($value)) {
                     return false;
                 }
 
@@ -89,7 +65,7 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
-    public function validateTransforms(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
+    public function validateTransforms(ConnectedDataSourceInterface $connDataSource)
     {
         if ($connDataSource->getTransforms() !== null) {
 
@@ -127,7 +103,7 @@ trait ValidateConnectedDataSourceTrait
             return false;
         }
 
-        if (!in_array($value['comparison'], self::$COMPARISON_NUMBER_VALUES, true)) {
+        if (!Comparison::isValidNumberComparison($value['comparison'])) {
             return false;
         }
 
@@ -140,7 +116,7 @@ trait ValidateConnectedDataSourceTrait
             return false;
         }
 
-        if (!in_array($value['comparison'], self::$COMPARISON_TEXT_VALUES, true)) {
+        if (!Comparison::isValidTextComparison($value['comparison'])) {
             return false;
         }
 
