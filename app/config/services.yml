@@ -11,6 +11,7 @@ parameters:
     ur.security.auth.voter.alert.class: UR\Security\Authorization\Voter\AlertVoter
     ur.security.auth.voter.user.class: UR\Security\Authorization\Voter\PublisherVoter
     ur.security.auth.voter.data_set.class: UR\Security\Authorization\Voter\DataSetVoter
+    ur.security.auth.voter.connected_data_source.class: UR\Security\Authorization\Voter\ConnectedDataSourceVoter
 
     # event dispatched on user action such as add, remove, delete
     ur.events.handler_event: 'ur.events.handler_event'
@@ -52,6 +53,12 @@ services:
         tags:
             - { name: security.voter }
 
+    ur.security.auth.voter.connected_data_source:
+        class:  %ur.security.auth.voter.connected_data_source.class%
+        public: false
+        tags:
+            - { name: security.voter }
+
     ur.service.console_output:
         class: Symfony\Component\Console\Output\ConsoleOutput
 
@@ -85,3 +92,17 @@ services:
             - @security.token_storage
         tags:
             - { name: monolog.processor, method: processRecord }
+
+    ur.worker.manager:
+        class: UR\Worker\Manager
+        arguments:
+            - @ur.service.date_util
+            - @leezy.pheanstalk
+
+    ur.worker.workers.import_dataset_worker:
+        class: UR\Worker\Workers\AutoCreateDataImportWorker
+        arguments:
+            - @ur.domain_manager.data_set
+            - @ur.domain_manager.import_history
+            - @doctrine.orm.entity_manager
+

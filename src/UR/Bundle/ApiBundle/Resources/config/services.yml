@@ -8,6 +8,7 @@ imports:
     - { resource: services/service.alert.yml}
     - { resource: services/service.dataset.yml }
     - { resource: services/service.connected-data-source.yml }
+    - { resource: services/service.import-history.yml }
 
 
 parameters:

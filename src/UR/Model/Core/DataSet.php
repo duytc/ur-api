@@ -16,6 +16,11 @@ class DataSet implements DataSetInterface
     /** @var UserEntityInterface */
     protected $publisher;
 
+    /**
+     * @var ConnectedDataSourceInterface[]
+     */
+    protected $connectedDataSources;
+
     public function __construct()
     {
     }
@@ -127,5 +132,21 @@ class DataSet implements DataSetInterface
     {
         $this->publisher = $publisher->getUser();
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getConnectedDataSources()
+    {
+        return $this->connectedDataSources;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setConnectedDataSources($connectedDataSources)
+    {
+        $this->connectedDataSources = $connectedDataSources;
     }
 }

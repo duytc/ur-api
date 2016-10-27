@@ -33,7 +33,7 @@ class DataSourceEntryFormType extends AbstractRoleSpecificFormType
                 }
             ))
             ->add('metaData')
-            ->add('valid')
+            ->add('isValid')
             ->add('path')
             ->add('receivedVia', ChoiceType::class, [
                 'choices' => [

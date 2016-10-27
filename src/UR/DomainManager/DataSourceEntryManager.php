@@ -4,7 +4,6 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\HttpFoundation\FileBag;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -89,9 +88,10 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             /**@var UploadedFile $file */
             $file = $files->get($key);
             $origin_name = $file->getClientOriginalName();
+            $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
 
             // save file to upload dir
-            $name = $file->getClientOriginalName() . '_' . round(microtime(true));
+            $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
             $file->move($path, $name);
 
             // create new data source entry
@@ -102,6 +102,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 //->setMetaData() // only for email...
                 //->setReceivedDate() // auto
             ;
+            
             $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
             $this->save($dataSourceEntry);
 

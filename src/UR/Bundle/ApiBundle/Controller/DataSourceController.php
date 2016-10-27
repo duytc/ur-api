@@ -26,7 +26,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     /**
      * Get all data sources
      *
-     * @Rest\View(serializerGroups={"datasource.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"datasource.summary", "user.summary"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")

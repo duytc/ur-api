@@ -12,12 +12,12 @@ class ArrayUtil implements ArrayUtilInterface
      */
     public function array_unique_object(array $objects)
     {
-        if(count($objects) < 2) {
+        if (count($objects) < 2) {
             return $objects;
         }
 
         $mappedObjects = [];
-        foreach($objects as $obj) {
+        foreach ($objects as $obj) {
             if (!$obj instanceof ModelInterface) {
                 throw new InvalidArgumentException('expect instance of ModelInterface');
             }

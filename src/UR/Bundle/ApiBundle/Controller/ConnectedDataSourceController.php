@@ -21,7 +21,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     /**
      * Get all connectedDataSource
      *
-     * @Rest\View(serializerGroups={"connectedDataSource.detail","dataSourceEntry.summary", "datasource.detail"})
+     * @Rest\View(serializerGroups={"connectedDataSource.summary", "datasource.detail"})
      *
      * @ApiDoc(
      *  section = "ConnectedDataSource",
@@ -160,7 +160,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
      */
     protected function getResourceName()
     {
-        return 'connectedDataSource';
+        return 'connecteddatasource';
     }
 
     /**
@@ -170,7 +170,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
      */
     protected function getGETRouteName()
     {
-        return 'api_1_get_connectedDataSource';
+        return 'api_1_get_connecteddatasource';
     }
 
     /**

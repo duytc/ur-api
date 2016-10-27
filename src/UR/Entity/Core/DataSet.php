@@ -2,8 +2,8 @@
 
 namespace UR\Entity\Core;
 
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSet as DataSetModel;
-use UR\Model\Core\IntegrationInterface;
 use UR\Model\User\UserEntityInterface;
 
 class DataSet extends DataSetModel
@@ -18,9 +18,9 @@ class DataSet extends DataSetModel
     protected $publisher;
 
     /**
-     * @var IntegrationInterface[]
+     * @var ConnectedDataSourceInterface[]
      */
-    protected $dataSourceIntegrations;
+    protected $connectedDataSources;
 
     /**
      * @inheritdoc

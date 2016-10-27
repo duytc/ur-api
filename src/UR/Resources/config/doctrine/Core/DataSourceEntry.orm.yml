@@ -8,7 +8,7 @@ UR\Entity\Core\DataSourceEntry:
             generator:
                 strategy: AUTO
     fields:
-        valid:
+        isValid:
             type: boolean
             option:
                 default: false
