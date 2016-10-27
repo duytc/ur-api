@@ -25,7 +25,7 @@ class SortByColumns implements CollectionTransformerInterface
         }
         // todo implement sorting
 
-        $this->array_sort_by_columns($rows, $sortByColumns);
+        $this->array_sort_by_column($rows, $this->sortByColumns[0]);
 
         return new Collection($columns, $rows);
     }
@@ -35,21 +35,12 @@ class SortByColumns implements CollectionTransformerInterface
         return 0;
     }
 
-    public function array_sort_by_columns(&$arr, $cols, $dir = SORT_ASC)
-    {
-        $sort = array();
-
-        foreach ($arr as $k => $v) {
-            foreach ($cols as $col) {
-                $sort[$col][$k] = $v[$col];
-            }
+    function array_sort_by_column(&$arr, $col, $dir = SORT_ASC) {
+        $sort_col = array();
+        foreach ($arr as $key=> $row) {
+            $sort_col[$key] = $row[$col];
         }
-        $param = array();
-        foreach ($cols as $col) {
-            array_push($param, $sort[$col], $dir);
-        }
-        array_push($param, $arr);
-        $result = call_user_func_array('array_multisort', $param);
 
+        array_multisort($sort_col, $dir, $arr);
     }
 }
