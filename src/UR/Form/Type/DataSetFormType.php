@@ -90,7 +90,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                         }
 
                         //validate transform
-                        if (!$this->validateTransforms($dataSet, $connDataSource)) {
+                        if (!$this->validateTransforms($connDataSource)) {
                             $form->get('connectedDataSources')->addError(new FormError('Transform Mapping error'));
                         }
 

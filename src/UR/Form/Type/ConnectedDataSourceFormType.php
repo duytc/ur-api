@@ -56,7 +56,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                         $form->get('filters')->addError(new FormError('Filters Mapping error'));
                     }
 
-                    if (!$this->validateTransforms($dataSet, $connDataSource)) {
+                    if (!$this->validateTransforms($connDataSource)) {
                         $form->get('transforms')->addError(new FormError('Transforms Mapping error'));
                     }
                 }
