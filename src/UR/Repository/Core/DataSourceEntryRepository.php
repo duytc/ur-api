@@ -77,8 +77,19 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
 
     public function getDataSourceEntriesByDataSourceIdQuery(DataSourceInterface $dataSource, PagerParam $param)
     {
-        $qb = $this->createQueryBuilder('dse');
-        $qb->andWhere($qb->expr()->eq('dse.dataSource', $dataSource->getId()));
+        $dataSourceId = $dataSource->getId();
+
+        $qb = $this->createQueryBuilder('dse')
+            ->join('dse.dataSource', 'ds')
+            ->andWhere('dse.dataSource = :dataSourceId')
+            ->setParameter('dataSourceId', $dataSourceId, Type::INTEGER);
+
+//        $qb = $this->createQueryBuilder('dse')
+//            ->join('dse.dataSource', 'ds');
+//        $qb
+//            ->select('dse, ds')
+//            ->where('dse.dataSource = :dataSource')
+//            ->setParameter('dataSource', $dataSource);
         return $qb;
     }
 
