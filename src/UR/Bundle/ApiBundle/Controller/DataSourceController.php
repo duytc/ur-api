@@ -115,7 +115,8 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $dataSource = $this->one($id);
         $dataSourceRepository = $this->get('ur.repository.data_source_entry');
         $qb = $dataSourceRepository->getDataSourceEntriesByDataSourceIdQuery($dataSource, $this->getParams());
-        $result = $qb->getQuery()->getResult();
+
+        $params = array_merge($request->query->all(), $request->attributes->all());
         if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['search'])) {
             return $qb->getQuery()->getResult();
         } else {

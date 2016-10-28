@@ -2,6 +2,7 @@
 
 namespace UR\Repository\Core;
 
+use DateTime;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSourceInterface;
@@ -44,12 +45,23 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
 
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
+
+            $orX = $qb->expr()->orX();
+            $conditions = array(
+                $qb->expr()->like('ds.name', ':searchKey'),
+                $qb->expr()->like('ds.format', ':searchKey'),
+                $qb->expr()->like('dse.receivedVia', ':searchKey')
+            );
+            $orX->addMultiple($conditions);
             $qb
-                ->andWhere($qb->expr()->orX(
-                    $qb->expr()->like('dse.dataSource', ':searchKey'),
-                    $qb->expr()->like('dse.id', ':searchKey')
-                ))
+                ->join('dse.dataSource', 'ds')
+                ->andWhere($orX)
                 ->setParameter('searchKey', $searchLike);
+
+            $searchLike = sprintf('%%%s%%', str_replace("/", "-", $param->getSearchKey()));
+            $qb
+                ->orWhere($qb->expr()->like('SUBSTRING(dse.receivedDate,0,10)', ':date'))
+                ->setParameter('date', $searchLike);
         }
         if (is_string($param->getSortField()) &&
             is_string($param->getSortDirection()) &&
@@ -84,12 +96,6 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
             ->andWhere('dse.dataSource = :dataSourceId')
             ->setParameter('dataSourceId', $dataSourceId, Type::INTEGER);
 
-//        $qb = $this->createQueryBuilder('dse')
-//            ->join('dse.dataSource', 'ds');
-//        $qb
-//            ->select('dse, ds')
-//            ->where('dse.dataSource = :dataSource')
-//            ->setParameter('dataSource', $dataSource);
         return $qb;
     }
 
