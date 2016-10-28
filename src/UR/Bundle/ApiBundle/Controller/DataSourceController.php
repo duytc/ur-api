@@ -57,14 +57,8 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $qb = $dataSourceRepository->getDataSourcesForUserQuery($publisher, $this->getParams());
 
         $params = array_merge($request->query->all(), $request->attributes->all());
-        if (!isset($params['limit'])) {
-            $pagination = new Pagination($qb, $request);
-            return array(
-                'totalRecord' => $pagination->total(),
-                'records' => $qb->getQuery()->getResult(),
-                'itemPerPage' => $pagination->total(),
-                'currentPage' => $pagination->currentPage()
-            );
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['search'])) {
+            return $qb->getQuery()->getResult();
         } else {
             return $this->getPagination($qb, $request);
         }
@@ -102,7 +96,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @Rest\Get("/datasources/{id}/datasourceentries")
      *
-     * @Rest\View(serializerGroups={"dataSourceEntry.summary"})
+     * @Rest\View(serializerGroups={"datasource.summary", "dataSourceEntry.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -121,8 +115,12 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $dataSource = $this->one($id);
         $dataSourceRepository = $this->get('ur.repository.data_source_entry');
         $qb = $dataSourceRepository->getDataSourceEntriesByDataSourceIdQuery($dataSource, $this->getParams());
-
-        return $this->getPagination($qb, $request);
+        $result = $qb->getQuery()->getResult();
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['search'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
     }
 
     /**
