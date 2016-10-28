@@ -2,7 +2,7 @@
 
 namespace UR\Service\DataSet;
 
-final class Comparison
+final class FilterType
 {
     const TYPE = 'type';
     const COMPARISON = 'comparison';
@@ -44,13 +44,38 @@ final class Comparison
         self::NOT
     ];
 
-    public static function isValidNumberComparison($name)
+    public static function isValidFilterDateType($arr)
     {
-        return in_array($name, self::$comparisonForNumbers, true);
+        if (count($arr) !== 3 || !array_key_exists("from", $arr) || !array_key_exists("to", $arr)) {
+            return false;
+        }
+
+        return true;
     }
 
-    public static function isValidTextComparison($name)
+    public static function isValidFilterNumberType($arr)
     {
-        return in_array($name, self::$comparisonForTexts, true);
+        if (count($arr) !== 3 || !array_key_exists(self::COMPARISON, $arr) || !array_key_exists(self::COMPARE_VALUE, $arr)) {
+            return false;
+        }
+
+        if (!in_array($arr[self::COMPARISON], self::$comparisonForNumbers, true)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static function isValidFilterTextType($arr)
+    {
+        if (count($arr) !== 3 || !array_key_exists(self::COMPARISON, $arr) || !array_key_exists(self::COMPARE_VALUE, $arr)) {
+            return false;
+        }
+
+        if (!in_array($arr[self::COMPARISON], self::$comparisonForTexts, true)) {
+            return false;
+        }
+
+        return true;
     }
 }
