@@ -33,12 +33,22 @@ class Parser implements ParserInterface
 
             $row = array_combine($keys, $row);
 
+            $isValidFilter = 1;
             foreach ($config->getColumnFilters() as $column => $filters) {
-                /**@var ColumnFilterInterface $filters */
+                /**@var ColumnFilterInterface[] $filters */
+                if (!array_key_exists($column, $row)) {
+                    continue;
+                }
 
+                foreach ($filters as $filter) {
+                    $isValidFilter = $isValidFilter & $filter->filter($row[$column]);
+                }
             }
 
-            unset($rows[$cur_row]);
+            if (!$isValidFilter) {
+                unset($rows[$cur_row]);
+                continue;
+            }
 
             foreach ($config->getColumnTransforms() as $column => $transforms) {
                 /** @var ColumnTransformerInterface[] $transforms */

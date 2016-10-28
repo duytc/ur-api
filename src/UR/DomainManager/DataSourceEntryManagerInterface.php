@@ -4,6 +4,7 @@ namespace UR\DomainManager;
 
 use Symfony\Component\HttpFoundation\FileBag;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\User\Role\PublisherInterface;
 
 interface DataSourceEntryManagerInterface extends ManagerInterface
 {
@@ -14,4 +15,12 @@ interface DataSourceEntryManagerInterface extends ManagerInterface
      * @return array
      */
     public function uploadDataSourceEntryFiles($files, $path, $dataSource);
+
+    /**
+     * @param PublisherInterface $publisher
+     * @param null $limit
+     * @param null $offset
+     * @return mixed
+     */
+    public function getDataSourceEntryForPublisher(PublisherInterface $publisher, $limit = null, $offset = null);
 }

@@ -82,4 +82,10 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
         return $qb;
     }
 
+    public function getDataSourceEntriesForPublisher(PublisherInterface $publisher, $limit = null, $offset = null)
+    {
+        $qb = $this->getDataSourceEntriesForPublisherQuery($publisher, $limit, $offset);
+
+        return $qb->getQuery()->getResult();
+    }
 }

@@ -8,6 +8,7 @@ use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\ModelInterface;
+use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use ReflectionClass;
 
@@ -110,5 +111,13 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         }
 
         return $result;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceEntryForPublisher(PublisherInterface $publisher, $limit = null, $offset = null)
+    {
+        return $this->repository->getDataSourceEntriesForPublisher($publisher, $limit, $offset);
     }
 }

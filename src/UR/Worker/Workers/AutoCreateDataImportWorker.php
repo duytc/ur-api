@@ -21,6 +21,7 @@ use UR\Service\DataSet\Synchronizer;
 use UR\Service\DataSet\Type;
 use UR\Service\DataSource\Csv;
 use UR\Service\Parser\Filter\DateFilter;
+use UR\Service\Parser\Filter\NumberFilter;
 use UR\Service\Parser\Filter\TextFilter;
 use UR\Service\Parser\Parser;
 use UR\Service\Parser\ParserConfig;
@@ -153,11 +154,15 @@ class AutoCreateDataImportWorker
         foreach ($filters as $field => $filter) {
             // filter Date
             if (strcmp($filter[Comparison::TYPE], Type::DATE) === 0) {
-                $parserConfig->filtersDateColumn($field, new DateFilter($filter['from'], $filter['to']));
+                $parserConfig->filtersColumn($field, new DateFilter($filter['from'], $filter['to']));
             }
 
             if (strcmp($filter[Comparison::TYPE], Type::TEXT) === 0) {
-                $parserConfig->filtersTextColumn($field, new TextFilter($filter['comparison'], $filter['compareValue']));
+                $parserConfig->filtersColumn($field, new TextFilter($filter['comparison'], $filter['compareValue']));
+            }
+
+            if (strcmp($filter[Comparison::TYPE], Type::NUMBER) === 0) {
+                $parserConfig->filtersColumn($field, new NumberFilter($filter['comparison'], $filter['compareValue']));
             }
         }
     }

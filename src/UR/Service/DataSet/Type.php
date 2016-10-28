@@ -20,8 +20,20 @@ final class Type
         self::DECIMAL
     ];
 
+    private static $filterTypes = [
+        self::DATE,
+        self::NUMBER,
+        self::TEXT,
+    ];
+
+
     public static function isValidType($name)
     {
         return in_array($name, self::$types, true);
+    }
+
+    public static function isValidFilterType($name)
+    {
+        return in_array($name, self::$filterTypes, true);
     }
 }
