@@ -139,7 +139,14 @@ class AutoCreateDataImportWorker
 
 // add metrics
         foreach ($dataSet->getMetrics() as $key => $value) {
-            $dataSetTable->addColumn($key, $value, ["unsigned" => true, "notnull" => false]);
+
+            if (strcmp($value, Type::NUMBER) === 0) {
+                $dataSetTable->addColumn($key, "decimal", ["notnull" => false]);
+            } else if (strcmp($value, Type::DECIMAL) === 0) {
+                $dataSetTable->addColumn($key, $value, ["scale" => 2, "notnull" => false]);
+            } else {
+                $dataSetTable->addColumn($key, $value, ["notnull" => false]);
+            }
         }
 
 // create table
@@ -159,7 +166,7 @@ class AutoCreateDataImportWorker
         foreach ($filters as $field => $filter) {
             // filter Date
             if (strcmp($filter[FilterType::TYPE], Type::DATE) === 0) {
-                $parserConfig->filtersColumn($field, new DateFilter($filter['format'], $filter['from'], $filter['to']));
+                $parserConfig->filtersColumn($field, new DateFilter($filter[FilterType::FORMAT], $filter[FilterType::FROM], $filter[FilterType::TO]));
             }
 
             if (strcmp($filter[FilterType::TYPE], Type::TEXT) === 0) {
@@ -183,11 +190,11 @@ class AutoCreateDataImportWorker
 
                 //TODO WILL BE CHANGE IN FUTURE
                 if (strcmp($trans[TransformType::TYPE], TransformType::DATE) === 0) {
-                    $parserConfig->transformColumn($field, new DateFormat($trans['from'], $trans['to']));
+                    $parserConfig->transformColumn($field, new DateFormat($trans[FilterType::FROM], 'Y-m-d'));
                 }
 
                 if (strcmp($trans[TransformType::TYPE], TransformType::NUMBER) === 0) {
-                    $parserConfig->transformColumn($field, new NumberFormat(2, ','));
+//                    $parserConfig->transformColumn($field, new NumberFormat(10, ','));
                 }
             }
         }
