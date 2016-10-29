@@ -56,6 +56,7 @@ final class TransformType
         'n/d/Y',  // 2/01/2016
         'n-j-Y',  // 2-1-2016
         'n/j/Y',  // 2/1/2016
+        'd/m/Y',  // 2/1/2016
     ];
 
     private static $supportedNumberFormats = [

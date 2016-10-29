@@ -7,19 +7,19 @@ class DateFilter implements ColumnFilterInterface
 {
     protected $dateFrom;
     protected $dateTo;
-    protected $format = 'Y-m-d';
+    protected $format;
 
-    public function __construct($dateFrom, $dateTo)
+    public function __construct($format, $dateFrom, $dateTo)
     {
-        $dateFrom = date($this->format, strtotime($dateFrom));
-        $dateTo = date($this->format, strtotime($dateTo));
-        $this->dateFrom = $dateFrom;
-        $this->dateTo = $dateTo;
+        $this->format = $format;
+        $this->dateFrom = \DateTime::createFromFormat($this->format, $dateFrom);
+        $this->dateTo = \DateTime::createFromFormat($this->format, $dateTo);
     }
 
     public function filter($filter)
     {
-        $filter = date($this->format, strtotime($filter));
+        $filter = \DateTime::createFromFormat($this->format, $filter);
+
         if ($filter < $this->dateTo && $filter > $this->dateFrom) {
             return true;
         }

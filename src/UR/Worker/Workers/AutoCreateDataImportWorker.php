@@ -159,7 +159,7 @@ class AutoCreateDataImportWorker
         foreach ($filters as $field => $filter) {
             // filter Date
             if (strcmp($filter[FilterType::TYPE], Type::DATE) === 0) {
-                $parserConfig->filtersColumn($field, new DateFilter($filter['from'], $filter['to']));
+                $parserConfig->filtersColumn($field, new DateFilter($filter['format'], $filter['from'], $filter['to']));
             }
 
             if (strcmp($filter[FilterType::TYPE], Type::TEXT) === 0) {
@@ -183,7 +183,7 @@ class AutoCreateDataImportWorker
 
                 //TODO WILL BE CHANGE IN FUTURE
                 if (strcmp($trans[TransformType::TYPE], TransformType::DATE) === 0) {
-                    $parserConfig->transformColumn($field, new DateFormat('Y-m-d', $trans['to']));
+                    $parserConfig->transformColumn($field, new DateFormat($trans['from'], $trans['to']));
                 }
 
                 if (strcmp($trans[TransformType::TYPE], TransformType::NUMBER) === 0) {

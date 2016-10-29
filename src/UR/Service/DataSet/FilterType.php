@@ -15,6 +15,7 @@ final class FilterType
     const GREATER_OR_EQUAL = 'greater or equal'; // double/float
     const IN = 'in';
     const NOT = 'not';
+    const FORMAT = 'format';
     const FROM = 'from';
     const TO = 'to';
 
@@ -46,10 +47,10 @@ final class FilterType
 
     public static function isValidFilterDateType($arr)
     {
-        if (count($arr) !== 3 || !array_key_exists("from", $arr) || !array_key_exists("to", $arr)) {
+        if (count($arr) !== 4 || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr) || !array_key_exists(self::FORMAT, $arr)) {
             return false;
         }
-
+        //todo check date range is valid
         return true;
     }
 
