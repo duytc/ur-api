@@ -25,7 +25,8 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
             ->add('dataSource')
             ->add('mapFields')
             ->add('filters')
-            ->add('transforms');
+            ->add('transforms')
+            ->add('requires');
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(

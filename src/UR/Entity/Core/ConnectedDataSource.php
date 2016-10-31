@@ -12,6 +12,7 @@ class ConnectedDataSource extends ConnectedDataSourceModel
     protected $mapFields;
     protected $filters;
     protected $transforms;
+    protected $requires;
 
     /**
      * @var DataSourceInterface
