@@ -99,7 +99,7 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
             $qb
                 ->andWhere($qb->expr()->orX(
                     $qb->expr()->like('ds.name', ':searchKey'),
-                    $qb->expr()->like('ds.id', ':searchKey')
+                    $qb->expr()->like('dse.id', ':searchKey')
                 ))
                 ->setParameter('searchKey', $searchLike);
         }
