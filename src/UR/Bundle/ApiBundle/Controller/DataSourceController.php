@@ -57,7 +57,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $qb = $dataSourceRepository->getDataSourcesForUserQuery($publisher, $this->getParams());
 
         $params = array_merge($request->query->all(), $request->attributes->all());
-        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['search'])) {
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
             return $qb->getQuery()->getResult();
         } else {
             return $this->getPagination($qb, $request);
@@ -94,9 +94,17 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     /**
      * Get a single data source for the given id
      *
-     * @Rest\Get("/datasources/{id}/datasourceentries")
+     * @Rest\Get("/datasources/{id}/datasourceentries", requirements={"id" = "\d+"})
      *
      * @Rest\View(serializerGroups={"datasource.summary", "dataSourceEntry.summary"})
+     *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -113,11 +121,11 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     public function getDataSourceEntriesAction(Request $request, $id)
     {
         $dataSource = $this->one($id);
-        $dataSourceRepository = $this->get('ur.repository.data_source_entry');
-        $qb = $dataSourceRepository->getDataSourceEntriesByDataSourceIdQuery($dataSource, $this->getParams());
+        $dataSourceEntryRepository = $this->get('ur.repository.data_source_entry');
+        $qb = $dataSourceEntryRepository->getDataSourceEntriesByDataSourceIdQuery($dataSource, $this->getParams());
 
         $params = array_merge($request->query->all(), $request->attributes->all());
-        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['search'])) {
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
             return $qb->getQuery()->getResult();
         } else {
             return $this->getPagination($qb, $request);

@@ -89,13 +89,36 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
 
     public function getDataSourceEntriesByDataSourceIdQuery(DataSourceInterface $dataSource, PagerParam $param)
     {
-        $dataSourceId = $dataSource->getId();
-
         $qb = $this->createQueryBuilder('dse')
             ->join('dse.dataSource', 'ds')
-            ->andWhere('dse.dataSource = :dataSourceId')
-            ->setParameter('dataSourceId', $dataSourceId, Type::INTEGER);
+            ->where('dse.dataSource = :dataSource')
+            ->setParameter('dataSource', $dataSource);
 
+        if (is_string($param->getSearchKey())) {
+            $searchLike = sprintf('%%%s%%', $param->getSearchKey());
+            $qb
+                ->andWhere($qb->expr()->orX(
+                    $qb->expr()->like('ds.name', ':searchKey'),
+                    $qb->expr()->like('ds.id', ':searchKey')
+                ))
+                ->setParameter('searchKey', $searchLike);
+        }
+        if (is_string($param->getSortField()) &&
+            is_string($param->getSortDirection()) &&
+            in_array($param->getSortDirection(), ['asc', 'desc', 'ASC', 'DESC']) &&
+            in_array($param->getSortField(), $this->SORT_FIELDS)
+        ) {
+            switch ($param->getSortField()) {
+                case $this->SORT_FIELDS['id']:
+                    $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['name']:
+                    $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                default:
+                    break;
+            }
+        }
         return $qb;
     }
 
