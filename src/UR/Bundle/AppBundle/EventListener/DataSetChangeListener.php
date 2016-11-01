@@ -69,7 +69,7 @@ class DataSetChangeListener
         }
 
         // update connected DataSource for DataSet
-        $this->workerManager->updateConnectedDataSourceForDataSet($dataSetIds);
+//        $this->workerManager->updateConnectedDataSourceForDataSet($dataSetIds);
 
         // reset for new onFlush event
         $this->changedEntities = [];

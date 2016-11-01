@@ -5,24 +5,12 @@ namespace UR\Form\Behaviors;
 
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Service\DataSet\Comparison;
+use UR\Service\DataSet\FilterType;
+use UR\Service\DataSet\TransformType;
 use UR\Service\DataSet\Type;
 
 trait ValidateConnectedDataSourceTrait
 {
-    static $TRANSFORMS_TYPE_VALUES = [
-        'single-field',
-        'all-fields'
-    ];
-
-    static $ALL_FIELDS_TRANSFORMS_TYPE_VALUES = [
-        'groupBy',
-        'sortBy',
-        'addField',
-        'addCalculatedField',
-        'comparisonPercent'
-    ];
-
     public function validateMappingFields(DataSetInterface $dataSet, $connDataSource)
     {
         /**@var ConnectedDataSourceInterface $connDataSource */
@@ -45,19 +33,23 @@ trait ValidateConnectedDataSourceTrait
                     return false;
                 }
 
-                if (!Type::isValidFilterType($value['type'])) {
+                if (!array_key_exists(FilterType::TYPE, $value)) {
                     return false;
                 }
 
-                if ((strcmp($value['type'], Type::DATE) === 0) && !$this->validateFilterDateType($value)) {
+                if (!Type::isValidFilterType($value[FilterType::TYPE])) {
                     return false;
                 }
 
-                if (strcmp($value['type'], Type::NUMBER) === 0 && !$this->validateFilterNumberType($value)) {
+                if ((strcmp($value[FilterType::TYPE], Type::DATE) === 0) && !FilterType::isValidFilterDateType($value)) {
                     return false;
                 }
 
-                if (strcmp($value['type'], Type::TEXT) === 0 && !$this->validateFilterTextType($value)) {
+                if (strcmp($value[FilterType::TYPE], Type::NUMBER) === 0 && !FilterType::isValidFilterNumberType($value)) {
+                    return false;
+                }
+
+                if (strcmp($value[FilterType::TYPE], Type::TEXT) === 0 && !FilterType::isValidFilterTextType($value)) {
                     return false;
                 }
 
@@ -71,15 +63,15 @@ trait ValidateConnectedDataSourceTrait
 
             foreach ($connDataSource->getTransforms() as $transformType => $fields) {
 
-                if (!in_array($transformType, self::$TRANSFORMS_TYPE_VALUES, true)) {
+                if (!Type::isValidTransformType($transformType)) {
                     return false;
                 }
 
-                if ((strcmp($transformType, "single-field") === 0) && !$this->validateSingleFieldTransform($connDataSource, $fields)) {
+                if ((strcmp($transformType, Type::SINGLE_FIELD) === 0) && !$this->validateSingleFieldTransform($connDataSource, $fields)) {
                     return false;
                 }
 
-                if ((strcmp($transformType, "all-fields") === 0) && !$this->validateAllFieldsTransform($connDataSource, $fields)) {
+                if ((strcmp($transformType, Type::ALL_FIELD) === 0) && !$this->validateAllFieldsTransform($connDataSource, $fields)) {
                     return false;
                 }
 
@@ -88,46 +80,15 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
-    public function validateFilterDateType($value)
-    {
-        if (count($value) !== 3 || !array_key_exists("from", $value) || !array_key_exists("to", $value)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    public function validateFilterNumberType($value)
-    {
-        if (count($value) !== 3 || !array_key_exists("comparison", $value) || !array_key_exists("compareValue", $value)) {
-            return false;
-        }
-
-        if (!Comparison::isValidNumberComparison($value['comparison'])) {
-            return false;
-        }
-
-        return true;
-    }
-
-    public function validateFilterTextType($value)
-    {
-        if (count($value) !== 3 || !array_key_exists("comparison", $value) || !array_key_exists("compareValue", $value)) {
-            return false;
-        }
-
-        if (!Comparison::isValidTextComparison($value['comparison'])) {
-            return false;
-        }
-
-        return true;
-    }
-
     public function validateSingleFieldTransform(ConnectedDataSourceInterface $connectedDataSource, $fields)
     {
         foreach ($fields as $fieldName => $formats) {
 
             if (!in_array($fieldName, $connectedDataSource->getMapFields())) {
+                return false;
+            }
+
+            if (!TransformType::isValidSingleFieldTransformType($formats)) {
                 return false;
             }
 
@@ -140,15 +101,25 @@ trait ValidateConnectedDataSourceTrait
     {
         foreach ($allFields as $transType => $fieldName) {
 
-            if (!in_array($transType, self::$ALL_FIELDS_TRANSFORMS_TYPE_VALUES)) {
+            if (!TransformType::isValidAllFieldTransformType($transType)) {
                 return false;
             }
 
-            foreach ($fieldName as $trans) {
+            foreach ($fieldName as $key => $trans) {
+                if (TransformType::isGroupOrSortType($transType)) {
 
-                if (!array_key_exists($trans, $connectedDataSource->getMapFields())) {
-                    return false;
+                    if (!in_array($trans, $connectedDataSource->getMapFields())) {
+                        return false;
+                    }
                 }
+
+                if (TransformType::isAddingType($transType)) {
+
+                    if (in_array($key, $connectedDataSource->getMapFields())) {
+                        return false;
+                    }
+                }
+                //todo validte addcalculate fields
 
             }
         }
