@@ -69,7 +69,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @Rest\Get("/datasources/{id}", requirements={"id" = "\d+"})
      *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.summary", "integration.summary", "user.summary", "dataSourceEntry.summary"})
+     * @Rest\View(serializerGroups={"datasource.summary", "dataSourceIntegration.summary", "integration.summary", "user.summary"})
      *
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
      *
