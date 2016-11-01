@@ -45,16 +45,19 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
 
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
-
+            if (!$user instanceof PublisherInterface) {
+                $qb ->join('dse.dataSource', 'ds');
+            }
             $orX = $qb->expr()->orX();
             $conditions = array(
+                $qb->expr()->like('dse.id', ':searchKey'),
                 $qb->expr()->like('ds.name', ':searchKey'),
                 $qb->expr()->like('ds.format', ':searchKey'),
                 $qb->expr()->like('dse.receivedVia', ':searchKey')
             );
             $orX->addMultiple($conditions);
+
             $qb
-                ->join('dse.dataSource', 'ds')
                 ->andWhere($orX)
                 ->setParameter('searchKey', $searchLike);
 
