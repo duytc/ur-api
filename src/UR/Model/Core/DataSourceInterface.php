@@ -7,6 +7,10 @@ use UR\Model\User\Role\PublisherInterface;
 
 interface DataSourceInterface extends ModelInterface
 {
+    const JSON_FORMAT = 'json';
+    const CSV_FORMAT = 'csv';
+    const EXCEL_FORMAT = 'excel';
+
     /**
      * @return mixed
      */

@@ -15,6 +15,7 @@ use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\AdminInterface;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -154,9 +155,9 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
 
         $response = new Response();
         $response->headers->set('Cache-Control', 'private');
-        $response->headers->set('Content-type', mime_content_type($filePath));
+        $response->headers->set('Content-type', 'application/download');
         $response->headers->set('Content-Disposition', 'inline; filename="'.basename($filePath).'"');
-        $response->setContent(readfile($filePath));
+        $response->setContent(file_get_contents($filePath));
 
         return $response;
     }
