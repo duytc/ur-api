@@ -6,7 +6,6 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Entity\Core\ImportHistory;
@@ -14,10 +13,11 @@ use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
-use UR\Service\DataSet\Comparison;
+use UR\Service\DataSet\FilterType;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
+use UR\Service\DataSet\TransformType;
 use UR\Service\DataSet\Type;
 use UR\Service\DataSource\Csv;
 use UR\Service\Parser\Filter\DateFilter;
@@ -25,6 +25,8 @@ use UR\Service\Parser\Filter\NumberFilter;
 use UR\Service\Parser\Filter\TextFilter;
 use UR\Service\Parser\Parser;
 use UR\Service\Parser\ParserConfig;
+use UR\Service\Parser\Transformer\Collection\AddField;
+use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Parser\Transformer\Column\DateFormat;
@@ -134,7 +136,14 @@ class AutoCreateDataImportWorker
 
 // add metrics
         foreach ($dataSet->getMetrics() as $key => $value) {
-            $dataSetTable->addColumn($key, $value, ["unsigned" => true, "notnull" => false]);
+
+            if (strcmp($value, Type::NUMBER) === 0) {
+                $dataSetTable->addColumn($key, "decimal", ["notnull" => false]);
+            } else if (strcmp($value, Type::DECIMAL) === 0) {
+                $dataSetTable->addColumn($key, $value, ["scale" => 2, "notnull" => false]);
+            } else {
+                $dataSetTable->addColumn($key, $value, ["notnull" => false]);
+            }
         }
 
 // create table
@@ -153,38 +162,75 @@ class AutoCreateDataImportWorker
         $filters = $connectedDataSource->getFilters();
         foreach ($filters as $field => $filter) {
             // filter Date
-            if (strcmp($filter[Comparison::TYPE], Type::DATE) === 0) {
-                $parserConfig->filtersColumn($field, new DateFilter($filter['from'], $filter['to']));
+            if (strcmp($filter[FilterType::TYPE], Type::DATE) === 0) {
+                $parserConfig->filtersColumn($field, new DateFilter($filter[FilterType::FORMAT], $filter[FilterType::FROM], $filter[FilterType::TO]));
             }
 
-            if (strcmp($filter[Comparison::TYPE], Type::TEXT) === 0) {
-                $parserConfig->filtersColumn($field, new TextFilter($filter['comparison'], $filter['compareValue']));
+            if (strcmp($filter[FilterType::TYPE], Type::TEXT) === 0) {
+                $parserConfig->filtersColumn($field, new TextFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
             }
 
-            if (strcmp($filter[Comparison::TYPE], Type::NUMBER) === 0) {
-                $parserConfig->filtersColumn($field, new NumberFilter($filter['comparison'], $filter['compareValue']));
+            if (strcmp($filter[FilterType::TYPE], Type::NUMBER) === 0) {
+                $parserConfig->filtersColumn($field, new NumberFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
             }
         }
     }
 
     function transformDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
     {
-        $expressionLanguage = new ExpressionLanguage();
         $transforms = $connectedDataSource->getTransforms();
 
-        foreach ($transforms['single-field'] as $field => $trans) {
+        foreach ($transforms[Type::SINGLE_FIELD] as $field => $trans) {
+
             if ($parserConfig->hasColumnMapping($field)) {
-                $parserConfig->transformColumn($field, new DateFormat($trans['from'], $trans['to']));
+
+                //TODO WILL BE CHANGE IN FUTURE
+                if (strcmp($trans[TransformType::TYPE], TransformType::DATE) === 0) {
+                    $parserConfig->transformColumn($field, new DateFormat($trans[FilterType::FROM], 'Y-m-d'));
+                }
+
+                if (strcmp($trans[TransformType::TYPE], TransformType::NUMBER) === 0) {
+                    //todo will be add in the future
+                }
             }
         }
 
-        foreach ($transforms['all-fields'] as $field => $trans) {
-            if (strcmp($field, 'groupBy') === 0) {
+        foreach ($transforms[Type::ALL_FIELD] as $field => $trans) {
+
+            //todo will be change in the future
+            if (strcmp($field, TransformType::GROUP_BY) === 0) {
                 $parserConfig->transformCollection(new GroupByColumns($trans));
+                continue;
             }
-            if (strcmp($field, 'sortBy') === 0) {
+
+            if (strcmp($field, TransformType::SORT_BY) === 0) {
                 $parserConfig->transformCollection(new SortByColumns($trans));
+                continue;
             }
+
+            if (strcmp($field, TransformType::ADD_FIELD) === 0) {
+
+                foreach ($trans as $f => $v) {
+                    $parserConfig->transformCollection(new AddField($f, $v));
+                }
+                continue;
+            }
+
+            if (strcmp($field, TransformType::ADD_CALCULATED_FIELD) === 0) {
+
+                foreach ($trans as $f => $expression) {
+//                    $parserConfig->transformCollection(new AddCalculatedField($expressionLanguage, $f, $expression, 0));
+                }
+                continue;
+            }
+
+            if (strcmp($field, TransformType::COMPARISON_PERCENT) === 0) {
+                foreach ($trans as $f => $expression) {
+                    $parserConfig->transformCollection(new ComparisonPercent($f, $expression[0], $expression[1]));
+                }
+                continue;
+            }
+
         }
     }
 }
