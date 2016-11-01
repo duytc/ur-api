@@ -11,7 +11,7 @@ class DateFilter implements ColumnFilterInterface
 
     public function __construct($format, $dateFrom, $dateTo)
     {
-        $this->format = $format;
+        $this->format = '!' . $format;
         $this->dateFrom = \DateTime::createFromFormat($this->format, $dateFrom);
         $this->dateTo = \DateTime::createFromFormat($this->format, $dateTo);
     }

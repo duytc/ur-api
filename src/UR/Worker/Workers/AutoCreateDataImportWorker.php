@@ -6,7 +6,6 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Entity\Core\ImportHistory;
@@ -26,13 +25,11 @@ use UR\Service\Parser\Filter\NumberFilter;
 use UR\Service\Parser\Filter\TextFilter;
 use UR\Service\Parser\Parser;
 use UR\Service\Parser\ParserConfig;
-use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
 use UR\Service\Parser\Transformer\Collection\AddField;
 use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Parser\Transformer\Column\DateFormat;
-use UR\Service\Parser\Transformer\Column\NumberFormat;
 
 class AutoCreateDataImportWorker
 {
@@ -181,7 +178,6 @@ class AutoCreateDataImportWorker
 
     function transformDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
     {
-        $expressionLanguage = new ExpressionLanguage();
         $transforms = $connectedDataSource->getTransforms();
 
         foreach ($transforms[Type::SINGLE_FIELD] as $field => $trans) {
@@ -194,7 +190,7 @@ class AutoCreateDataImportWorker
                 }
 
                 if (strcmp($trans[TransformType::TYPE], TransformType::NUMBER) === 0) {
-//                    $parserConfig->transformColumn($field, new NumberFormat(10, ','));
+                    //todo will be add in the future
                 }
             }
         }
@@ -223,7 +219,7 @@ class AutoCreateDataImportWorker
             if (strcmp($field, TransformType::ADD_CALCULATED_FIELD) === 0) {
 
                 foreach ($trans as $f => $expression) {
-                    $parserConfig->transformCollection(new AddCalculatedField($expressionLanguage, $f, $expression, 0));
+//                    $parserConfig->transformCollection(new AddCalculatedField($expressionLanguage, $f, $expression, 0));
                 }
                 continue;
             }
