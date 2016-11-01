@@ -139,24 +139,21 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      */
     public function downloadFileAction($id)
     {
-        $dataSourceEntryManager = $this->get('ur.domain_manager.data_source_entry');
-
         /**@var DataSourceEntryInterface $dataSourceEntry */
-        $dataSourceEntry = $dataSourceEntryManager->find($id);
-
-        if(!$dataSourceEntry instanceof DataSourceEntryInterface) {
-            throw new NotFoundHttpException(
-                sprintf("The %s resource '%s' was not found or you do not have access", $this->getResourceName(), $id)
-            );
-        }
+        $dataSourceEntry = $this->one($id);
 
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
         $filePath = $uploadRootDir . $dataSourceEntry->getPath();
 
+        if(!file_exists($filePath)) {
+            throw new NotFoundHttpException('The file was not found or you do not have access');
+        }
+
         $response = new Response();
         $response->headers->set('Cache-Control', 'private');
         $response->headers->set('Content-type', 'application/download');
-        $response->headers->set('Content-Disposition', 'inline; filename="'.basename($filePath).'"');
+//        $response->headers->set('Content-Disposition', 'inline; filename="'.basename($filePath).'"');
+        $response->headers->set('filename', basename($filePath));
         $response->setContent(file_get_contents($filePath));
 
         return $response;
