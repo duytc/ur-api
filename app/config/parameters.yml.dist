@@ -54,4 +54,4 @@ parameters:
                         name: JW Player Daily Stat
                         url: http://jwplayer.com/report/daily_stat
                         type: json
-    upload_file_dir: '/var/www/api.unified-reports.dev/data/file_upload'
+    upload_file_dir: %kernel.root_dir%/../data/file_upload

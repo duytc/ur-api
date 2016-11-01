@@ -48,6 +48,12 @@ security:
             anonymous: ~
             provider:  ur_user_publisher
 
+        download:
+            pattern: ^/api/v1/datasourceentries/.*/download
+            stateless: true
+            security: false
+            anonymous: ~
+
         api:
             pattern:    ^/api/
             stateless:  true
