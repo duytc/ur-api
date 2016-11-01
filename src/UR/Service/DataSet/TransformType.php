@@ -59,13 +59,6 @@ final class TransformType
         'd/m/Y',  // 2/1/2016
     ];
 
-    private static $supportedNumberFormats = [
-        '####.#', // 1234.599 -> 1234.6
-        '#.000', // 1234 -> 1234.000
-        '0.#', // 0.631 -> 0.6
-        '#.0#' // 12 -> 12.0  ; 1234.5678 -> 1234.57
-    ];
-
     public static function isValidAllFieldTransformType($name)
     {
         return in_array($name, self::$transformTypes, true);
@@ -90,9 +83,7 @@ final class TransformType
 
         if ($arr[self::TYPE] === self::NUMBER) {
 
-            if (!in_array($arr[self::TO], self::$supportedNumberFormats)) {
-                return false;
-            }
+            //todo will be change in future
         }
 
         return true;
