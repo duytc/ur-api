@@ -146,7 +146,7 @@ trait ValidateConnectedDataSourceTrait
 
             foreach ($fieldName as $trans) {
 
-                if (!array_key_exists($trans, $connectedDataSource->getMapFields())) {
+                if (!in_array($trans, $connectedDataSource->getMapFields())) {
                     return false;
                 }
 

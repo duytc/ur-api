@@ -83,18 +83,17 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     /**
      * @inheritdoc
      */
-    public function getRequired()
+    public function getRequires()
     {
-        return $this->required;
+        return $this->requires;
     }
 
     /**
      * @inheritdoc
      */
-    public function setRequired($required)
+    public function setRequires($requires)
     {
-        $this->required = $required;
-        return $this;
+        $this->requires = $requires;
     }
 
     /**
