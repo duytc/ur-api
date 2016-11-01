@@ -17,6 +17,9 @@ UR\Entity\Core\ConnectedDataSource:
         transforms:
             type: json_array
             nullable: true
+        requires:
+            type: json_array
+            nullable: true
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

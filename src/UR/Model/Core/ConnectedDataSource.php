@@ -8,6 +8,7 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $mapFields;
     protected $filters;
     protected $transforms;
+    protected $requires;
 
     /**
      * @var DataSourceInterface
@@ -77,6 +78,22 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setTransforms($transforms)
     {
         $this->transforms = $transforms;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getRequires()
+    {
+        return $this->requires;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setRequires($requires)
+    {
+        $this->requires = $requires;
     }
 
     /**

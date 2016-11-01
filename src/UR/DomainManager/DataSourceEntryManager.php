@@ -79,7 +79,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     /**
      * @inheritdoc
      */
-    public function uploadDataSourceEntryFiles($files, $path, $dataSource)
+    public function uploadDataSourceEntryFiles($files, $path, $dirItem, $dataSource)
     {
         $result = [];
         /** @var  $files */
@@ -98,7 +98,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             // create new data source entry
             $dataSourceEntry = (new DataSourceEntry())
                 ->setDataSource($dataSource)
-                ->setPath($path . '/' . $name)
+                ->setPath($dirItem . '/' . $name)
                 //->setValid() // set later by parser module
                 //->setMetaData() // only for email...
                 //->setReceivedDate() // auto

@@ -11,10 +11,11 @@ interface DataSourceEntryManagerInterface extends ManagerInterface
     /**
      * @param FileBag $files
      * @param string $path
+     * @param string $dirItem
      * @param DataSourceInterface $dataSource
      * @return array
      */
-    public function uploadDataSourceEntryFiles($files, $path, $dataSource);
+    public function uploadDataSourceEntryFiles($files, $path, $dirItem, $dataSource);
 
     /**
      * @param PublisherInterface $publisher

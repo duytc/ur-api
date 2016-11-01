@@ -10,6 +10,8 @@ final class Type
     const MULTI_LINE_TEXT = 'multi_line_text'; // text
     const NUMBER = 'number'; // integer
     const DECIMAL = 'decimal'; // double/float
+    const SINGLE_FIELD = 'single-field';
+    const ALL_FIELD = 'all-fields';
 
     private static $types = [
         self::DATE,
@@ -26,6 +28,11 @@ final class Type
         self::TEXT,
     ];
 
+    private static $transformTypes = [
+        self::SINGLE_FIELD,
+        self::ALL_FIELD
+    ];
+
 
     public static function isValidType($name)
     {
@@ -35,5 +42,10 @@ final class Type
     public static function isValidFilterType($name)
     {
         return in_array($name, self::$filterTypes, true);
+    }
+
+    public static function isValidTransformType($name)
+    {
+        return in_array($name, self::$transformTypes, true);
     }
 }

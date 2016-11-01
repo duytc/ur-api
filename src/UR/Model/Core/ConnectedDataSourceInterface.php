@@ -60,4 +60,14 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @param DataSetInterface $dataSet
      */
     public function setDataSet($dataSet);
+
+    /**
+     * @return mixed
+     */
+    public function getRequires();
+
+    /**
+     * @param mixed $requires
+     */
+    public function setRequires($requires);
 }

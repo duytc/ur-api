@@ -330,19 +330,14 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         /** @var DataSourceInterface $dataSource */
         $dataSource = $this->one($id);
 
-        /* format as
-         * [
-         *      file_name => status,
-         *      ...
-         * ]
-         */
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
-        $uploadPath = $uploadRootDir . '/' . $dataSource->getPublisherId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
+        $dirItem = '/' . $dataSource->getPublisherId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
+        $uploadPath = $uploadRootDir . $dirItem;
 
         /** @var FileBag $files */
         $files = $request->files;
         $em = $this->get('ur.domain_manager.data_source_entry');
-        $result = $em->uploadDataSourceEntryFiles($files, $uploadPath, $dataSource);
+        $result = $em->uploadDataSourceEntryFiles($files, $uploadPath, $dirItem, $dataSource);
 
         return $result;
     }

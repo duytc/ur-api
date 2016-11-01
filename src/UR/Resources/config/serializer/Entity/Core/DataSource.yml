@@ -15,7 +15,7 @@ UR\Entity\Core\DataSource:
             groups: [datasource.detail, datasource.summary]
         dataSourceIntegrations:
             expose: true
-            groups: [datasource.detail, datasource.summary]
+            groups: [datasource.detail]
         alertSetting:
             expose: true
             groups: [datasource.detail, datasource.summary]

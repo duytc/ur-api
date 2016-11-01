@@ -16,6 +16,7 @@ use UR\Model\Core\DataSourceEntryInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\User\Role\AdminInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @Rest\RouteResource("datasourceentry")
@@ -137,21 +138,27 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      */
     public function downloadFileAction($id)
     {
-        /**@var DataSourceEntryInterface $dataSourceEntry */
-        $dataSourceEntry = $this->one($id);
-        $filePath = $dataSourceEntry->getPath();
-        $fs = new Filesystem();
+        $dataSourceEntryManager = $this->get('ur.domain_manager.data_source_entry');
 
-        if (!$fs->exists($filePath)) {
-            throw $this->createNotFoundException();
+        /**@var DataSourceEntryInterface $dataSourceEntry */
+        $dataSourceEntry = $dataSourceEntryManager->find($id);
+
+        if(!$dataSourceEntry instanceof DataSourceEntryInterface) {
+            throw new NotFoundHttpException(
+                sprintf("The %s resource '%s' was not found or you do not have access", $this->getResourceName(), $id)
+            );
         }
 
-        return array(
-            'file_path' => $filePath,
-            'file_name' => basename($filePath),
-            'content' => file_get_contents($filePath),
-            'format' => $dataSourceEntry->getDataSource()->getFormat()
-        );
+        $uploadRootDir = $this->container->getParameter('upload_file_dir');
+        $filePath = $uploadRootDir . $dataSourceEntry->getPath();
+
+        $response = new Response();
+        $response->headers->set('Cache-Control', 'private');
+        $response->headers->set('Content-type', mime_content_type($filePath));
+        $response->headers->set('Content-Disposition', 'inline; filename="'.basename($filePath).'"');
+        $response->setContent(readfile($filePath));
+
+        return $response;
     }
 
     /**

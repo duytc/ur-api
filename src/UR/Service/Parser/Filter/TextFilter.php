@@ -2,7 +2,7 @@
 
 namespace UR\Service\Parser\Filter;
 
-use UR\Service\DataSet\Comparison;
+use UR\Service\DataSet\FilterType;
 
 class TextFilter implements ColumnFilterInterface
 {
@@ -17,7 +17,7 @@ class TextFilter implements ColumnFilterInterface
 
     public function filter($filter)
     {
-        if (strcmp($this->comparison, Comparison::CONTAINS) === 0) {
+        if (strcmp($this->comparison, FilterType::CONTAINS) === 0) {
 
             if (strpos($filter, $this->compareValue) === false) {
                 return false;
@@ -25,7 +25,7 @@ class TextFilter implements ColumnFilterInterface
             return true;
         }
 
-        if (strcmp($this->comparison, Comparison::NOT_CONTAINS) === 0) {
+        if (strcmp($this->comparison, FilterType::NOT_CONTAINS) === 0) {
 
             if (strpos($filter, $this->compareValue) !== false) {
                 return false;
@@ -34,7 +34,7 @@ class TextFilter implements ColumnFilterInterface
             return true;
         }
 
-        if (strcmp($this->comparison, Comparison::START_WITH) === 0) {
+        if (strcmp($this->comparison, FilterType::START_WITH) === 0) {
 
             if (substr($filter, 0, strlen($this->compareValue)) !== $this->compareValue) {
                 return false;
@@ -43,7 +43,7 @@ class TextFilter implements ColumnFilterInterface
             return true;
         }
 
-        if (strcmp($this->comparison, Comparison::END_WITH) === 0) {
+        if (strcmp($this->comparison, FilterType::END_WITH) === 0) {
 
             if (substr($filter, 0 - strlen($this->compareValue)) !== $this->compareValue) {
                 return false;
@@ -52,7 +52,7 @@ class TextFilter implements ColumnFilterInterface
             return true;
         }
 
-        if (strcmp($this->comparison, Comparison::IN) === 0) {
+        if (strcmp($this->comparison, FilterType::IN) === 0) {
 
             if (strpos($this->compareValue, $filter) === false) {
                 return false;
@@ -61,7 +61,7 @@ class TextFilter implements ColumnFilterInterface
             return true;
         }
 
-        if (strcmp($this->comparison, Comparison::NOT) === 0) {
+        if (strcmp($this->comparison, FilterType::NOT) === 0) {
 
             if (strpos($this->compareValue, $filter) !== false) {
                 return false;
