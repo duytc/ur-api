@@ -139,8 +139,10 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      */
     public function downloadFileAction($id)
     {
+        $dataSourceEntryManager = $this->get('ur.domain_manager.data_source_entry');
+
         /**@var DataSourceEntryInterface $dataSourceEntry */
-        $dataSourceEntry = $this->one($id);
+        $dataSourceEntry = $dataSourceEntryManager->find($id);
 
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
         $filePath = $uploadRootDir . $dataSourceEntry->getPath();
@@ -152,8 +154,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $response = new Response();
         $response->headers->set('Cache-Control', 'private');
         $response->headers->set('Content-type', 'application/download');
-//        $response->headers->set('Content-Disposition', 'inline; filename="'.basename($filePath).'"');
-        $response->headers->set('filename', basename($filePath));
+        $response->headers->set('Content-Disposition', 'inline; filename="'.basename($filePath).'"');
         $response->setContent(file_get_contents($filePath));
 
         return $response;
