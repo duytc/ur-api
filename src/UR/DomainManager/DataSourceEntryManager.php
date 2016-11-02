@@ -9,6 +9,7 @@ use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
+use UR\Repository\Core\DataSourceEntryRepository;
 use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use ReflectionClass;
 
@@ -91,23 +92,27 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $origin_name = $file->getClientOriginalName();
             $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
 
-            // save file to upload dir
-            $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
-            $file->move($path, $name);
+            if (($file->getClientOriginalExtension() === $dataSource->getFormat()) || ($dataSource->getFormat() === DataSourceEntryRepository::EXCEL_FORMAT && in_array($file->getClientOriginalExtension(), DataSourceEntryRepository::$excelType))) {
+                // save file to upload dir
+                $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
+                $file->move($path, $name);
 
-            // create new data source entry
-            $dataSourceEntry = (new DataSourceEntry())
-                ->setDataSource($dataSource)
-                ->setPath($dirItem . '/' . $name)
-                //->setValid() // set later by parser module
-                //->setMetaData() // only for email...
-                //->setReceivedDate() // auto
-            ;
-            
-            $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
-            $this->save($dataSourceEntry);
+                // create new data source entry
+                $dataSourceEntry = (new DataSourceEntry())
+                    ->setDataSource($dataSource)
+                    ->setPath($dirItem . '/' . $name)
+                    //->setValid() // set later by parser module
+                    //->setMetaData() // only for email...
+                    //->setReceivedDate() // auto
+                ;
 
-            $result[$origin_name] = 'success';
+                $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
+                $this->save($dataSourceEntry);
+
+                $result[$origin_name] = 'success';
+            } else {
+                throw new \Exception(sprintf("File %s is not valid", $origin_name));
+            }
         }
 
         return $result;
