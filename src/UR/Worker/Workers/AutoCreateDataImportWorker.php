@@ -7,7 +7,9 @@ use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\DomainManager\DataSetManagerInterface;
+use UR\DomainManager\DataSourceEntryImportHistoryManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
+use UR\Entity\Core\DataSourceEntryImportHistory;
 use UR\Entity\Core\ImportHistory;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
@@ -30,6 +32,7 @@ use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Parser\Transformer\Column\DateFormat;
+use UR\Service\Parser\Transformer\Column\NumberFormat;
 
 class AutoCreateDataImportWorker
 {
@@ -46,10 +49,16 @@ class AutoCreateDataImportWorker
      */
     private $importHistoryManager;
 
-    function __construct(DataSetManagerInterface $dataSetManager, ImportHistoryManagerInterface $importHistoryManager, EntityManagerInterface $em)
+    /**
+     * @var DataSourceEntryImportHistoryManagerInterface
+     */
+    private $dataSourceEntryImportHistoryManager;
+
+    function __construct(DataSetManagerInterface $dataSetManager, ImportHistoryManagerInterface $importHistoryManager, DataSourceEntryImportHistoryManagerInterface $dataSourceEntryImportHistoryManager, EntityManagerInterface $em)
     {
         $this->dataSetManager = $dataSetManager;
         $this->importHistoryManager = $importHistoryManager;
+        $this->dataSourceEntryImportHistoryManager = $dataSourceEntryImportHistoryManager;
         $this->em = $em;
     }
 
@@ -76,6 +85,7 @@ class AutoCreateDataImportWorker
             // create importHistory: createdTime
             $importHistoryEntity = new ImportHistory();
             $importHistoryEntity->setConnectedDataSource($connectedDataSource);
+//            $importHistoryEntity->setDescription();
             $this->importHistoryManager->save($importHistoryEntity);
 
             //create or update empty dataSet table
@@ -88,11 +98,11 @@ class AutoCreateDataImportWorker
 
             /**@var DataSourceEntryInterface $item */
             foreach ($dse as $item) {
-                // parse: Giang
                 $file = (new Csv($item->getPath()))->setDelimiter(',');
                 // mapping
                 $parserConfig = new ParserConfig();
                 $columns = $file->getColumns();
+
                 foreach ($columns as $column) {
                     foreach ($connectedDataSource->getMapFields() as $k => $v) {
                         if (strcmp($column, $k) === 0) {
@@ -101,6 +111,20 @@ class AutoCreateDataImportWorker
                         }
                     }
                 }
+
+                $validRequires = true;
+                foreach ($connectedDataSource->getRequires() as $require) {
+                    if (!array_key_exists($require, $parserConfig->getAllColumnMappings())) {
+                        $validRequires = false;
+                        break;
+                    }
+                }
+
+                if (!$validRequires) {
+                    $this->createDataSourceEntryHistory($item, $importHistoryEntity, "failure", "error when mapping require fields");
+                    continue;
+                }
+
                 //filter
                 $this->filterDataSetTable($connectedDataSource, $parserConfig);
 
@@ -108,7 +132,22 @@ class AutoCreateDataImportWorker
                 $this->transformDataSetTable($connectedDataSource, $parserConfig);
 
                 // import
+
                 $collectionParser = $parser->parse($file, $parserConfig);
+
+                if (is_array($collectionParser)) {
+                    $desc = "";
+                    if (strcmp($collectionParser["error"], "filter")) {
+                        $desc = "error when Filter file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
+                    }
+
+                    if (strcmp($collectionParser["error"], "transform")) {
+                        $desc = "error when Transform file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
+                    }
+
+                    $this->createDataSourceEntryHistory($item, $importHistoryEntity, "failure", $desc);
+                    continue;
+                }
 
                 $ds1 = $dataSetLocator->getDataSet($dataSetId);
 
@@ -116,7 +155,6 @@ class AutoCreateDataImportWorker
 
             }
         }
-
     }
 
     function createEmptyDataSetTable(DataSetInterface $dataSet, Locator $dataSetLocator, Synchronizer $dataSetSynchronizer, Connection $conn)
@@ -127,7 +165,6 @@ class AutoCreateDataImportWorker
         $dataSetTable->setPrimaryKey(array("__id"));
         $dataSetTable->addColumn("__data_source_id", "integer", array("unsigned" => true, "notnull" => true));
         $dataSetTable->addColumn("__import_id", "integer", array("unsigned" => true, "notnull" => true));
-
         // create import table
         // add dimensions
         foreach ($dataSet->getDimensions() as $key => $value) {
@@ -190,7 +227,6 @@ class AutoCreateDataImportWorker
                 }
 
                 if (strcmp($trans[TransformType::TYPE], TransformType::NUMBER) === 0) {
-                    //todo will be add in the future
                 }
             }
         }
@@ -230,7 +266,16 @@ class AutoCreateDataImportWorker
                 }
                 continue;
             }
-
         }
+    }
+
+    function createDataSourceEntryHistory(DataSourceEntryInterface $item, $importHistoryEntity, $status, $desc)
+    {
+        $dseImportHistoryEntity = new DataSourceEntryImportHistory();
+        $dseImportHistoryEntity->setDataSourceEntry($item);
+        $dseImportHistoryEntity->setImportHistory($importHistoryEntity);
+        $dseImportHistoryEntity->setStatus($status);
+        $dseImportHistoryEntity->setDescription($desc);
+        $this->dataSourceEntryImportHistoryManager->save($dseImportHistoryEntity);
     }
 }

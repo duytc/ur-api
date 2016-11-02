@@ -66,9 +66,9 @@ final class TransformType
 
     public static function isValidSingleFieldTransformType($arr)
     {
-        if (!array_key_exists(self::TYPE, $arr) || !array_key_exists(self::TO, $arr)) {
-            return false;
-        }
+//        if (!array_key_exists(self::TYPE, $arr) || !array_key_exists(self::TO, $arr)) {
+//            return false;
+//        }
 
         if (!in_array($arr[self::TYPE], self::$singleTransformTypes)) {
             return false;

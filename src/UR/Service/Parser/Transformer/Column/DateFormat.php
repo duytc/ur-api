@@ -20,7 +20,7 @@ class DateFormat implements ColumnTransformerInterface
         $date = DateTime::createFromFormat($this->fromDateFormat, $value);
 
         if (!$date) {
-            return $value;
+            return 0;
         }
 
         return $date->format($this->toDateFormat);

@@ -19,6 +19,19 @@ trait ValidateConnectedDataSourceTrait
                 return false;
             }
         }
+
+        return true;
+    }
+
+    public function validateRequireFields(DataSetInterface $dataSet, $connDataSource)
+    {
+        /**@var ConnectedDataSourceInterface $connDataSource */
+        foreach ($connDataSource->getRequires() as $require) {
+            if (!in_array($require, $connDataSource->getMapFields())) {
+                return false;
+            }
+        }
+
         return true;
     }
 

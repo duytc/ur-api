@@ -22,6 +22,6 @@ class ConnectedDataSourceVoter extends EntityVoterAbstract
      */
     protected function isPublisherActionAllowed($connectedDataSource, UserEntityInterface $user, $action)
     {
-        return $user->getId() == $connectedDataSource->getDataSet()->getPublisherId();
+        return ($user->getId() == $connectedDataSource->getDataSet()->getPublisherId()) && ($user->getId() == $connectedDataSource->getDataSource()->getPublisher()->getId());
     }
 }

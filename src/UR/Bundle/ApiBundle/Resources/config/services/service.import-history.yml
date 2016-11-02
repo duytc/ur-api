@@ -3,12 +3,6 @@ parameters:
     ur.entity.core.import_history.class: UR\Entity\Core\ImportHistory
 
 services:
-    ur_api.handler.import_history:
-        class: UR\Handler\HandlerInterface
-        factory_service: ur.handler.handler_manager.import_history
-        factory_method: getHandler
-        arguments:
-            - @ur.user_role
 
     ur.repository.import_history:
         class: UR\Repository\Core\ImportHistoryRepositoryInterface

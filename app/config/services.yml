@@ -104,5 +104,6 @@ services:
         arguments:
             - @ur.domain_manager.data_set
             - @ur.domain_manager.import_history
+            - @ur.domain_manager.data_source_entry_import_history
             - @doctrine.orm.entity_manager
 

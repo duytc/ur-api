@@ -50,6 +50,12 @@ final class FilterType
         if (count($arr) !== 4 || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr) || !array_key_exists(self::FORMAT, $arr)) {
             return false;
         }
+        $dateFrom = \DateTime::createFromFormat($arr[self::FORMAT], $arr[self::FROM]);
+        $dateTo = \DateTime::createFromFormat($arr[self::FORMAT], $arr[self::FROM]);
+
+        if (!$dateFrom || !$dateTo) {
+            return false;
+        }
         //todo check date range is valid
         return true;
     }

@@ -1,0 +1,18 @@
+parameters:
+    # entity class
+    ur.entity.core.data_source_entry_import_history.class: UR\Entity\Core\DataSourceEntryImportHistory
+
+services:
+
+    ur.repository.data_source_entry_import_history:
+        class: UR\Repository\Core\DataSourceEntryImportHistoryRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.data_source_entry_import_history.class%
+
+    ur.domain_manager.data_source_entry_import_history:
+        class: UR\DomainManager\DataSourceEntryImportHistoryManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.data_source_entry_import_history
