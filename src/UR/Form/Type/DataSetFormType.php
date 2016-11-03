@@ -139,6 +139,4 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         }
         return true;
     }
-
-
 }

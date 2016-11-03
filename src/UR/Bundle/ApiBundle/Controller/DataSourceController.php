@@ -19,6 +19,9 @@ use UR\Model\Core\DataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\User\Role\AdminInterface;
+use UR\Service\DataSource\Csv;
+use UR\Service\DataSource\Excel;
+use UR\Service\DataSource\Json;
 
 /**
  * @Rest\RouteResource("DataSource")
@@ -285,6 +288,51 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $em = $this->get('ur.domain_manager.data_source');
 
         return $em->getDataSourceByEmailKey($emailKey);
+    }
+
+    /**
+     * Get data sources by API Key
+     *
+     * @Rest\Get("/datasources/{id}/detectedfields")
+     *
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id
+     * @return array
+     */
+    public function getDetectedFieldsAction($id)
+    {
+        /**@var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+        $dse = $dataSource->getDataSourceEntries();
+
+        $phpExcel = $this->container->get('phpexcel');
+        $arr = array();
+        /**@var DataSourceEntryInterface $item */
+        /**@var DataSourceInterface $file */
+        foreach ($dse as $item) {
+            if (strcmp($dataSource->getFormat(), 'csv') === 0) {
+                /**@var Csv $file */
+                $file = (new Csv($item->getPath()))->setDelimiter(',');
+            } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
+                /**@var Excel $file */
+                $file = new \UR\Service\DataSource\Excel($item->getPath(), $phpExcel);
+            } else {
+                $file = new Json($item->getPath());
+            }
+            $columns = $file->getColumns();
+            $arr = array_merge($arr, $columns);
+        }
+        array_unique($arr);
+
+        return array_unique($arr);
     }
 
     /**
