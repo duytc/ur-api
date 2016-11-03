@@ -15,6 +15,7 @@ final class FilterType
     const GREATER_OR_EQUAL = 'greater or equal'; // double/float
     const IN = 'in';
     const NOT = 'not';
+    const FIELD='field';
     const FORMAT = 'format';
     const FROM = 'from';
     const TO = 'to';
@@ -47,7 +48,7 @@ final class FilterType
 
     public static function isValidFilterDateType($arr)
     {
-        if (count($arr) !== 4 || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr) || !array_key_exists(self::FORMAT, $arr)) {
+        if (count($arr) !== 5 || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr) || !array_key_exists(self::FORMAT, $arr)) {
             return false;
         }
         $dateFrom = \DateTime::createFromFormat($arr[self::FORMAT], $arr[self::FROM]);
@@ -62,7 +63,7 @@ final class FilterType
 
     public static function isValidFilterNumberType($arr)
     {
-        if (count($arr) !== 3 || !array_key_exists(self::COMPARISON, $arr) || !array_key_exists(self::COMPARE_VALUE, $arr)) {
+        if (count($arr) !== 4 || !array_key_exists(self::COMPARISON, $arr) || !array_key_exists(self::COMPARE_VALUE, $arr)) {
             return false;
         }
 
@@ -75,7 +76,7 @@ final class FilterType
 
     public static function isValidFilterTextType($arr)
     {
-        if (count($arr) !== 3 || !array_key_exists(self::COMPARISON, $arr) || !array_key_exists(self::COMPARE_VALUE, $arr)) {
+        if (count($arr) !== 4 || !array_key_exists(self::COMPARISON, $arr) || !array_key_exists(self::COMPARE_VALUE, $arr)) {
             return false;
         }
 

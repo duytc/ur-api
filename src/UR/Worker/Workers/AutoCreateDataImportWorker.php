@@ -215,18 +215,18 @@ class AutoCreateDataImportWorker
     function filterDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
     {
         $filters = $connectedDataSource->getFilters();
-        foreach ($filters as $field => $filter) {
+        foreach ($filters as $filter) {
             // filter Date
             if (strcmp($filter[FilterType::TYPE], Type::DATE) === 0) {
-                $parserConfig->filtersColumn($field, new DateFilter($filter[FilterType::FORMAT], $filter[FilterType::FROM], $filter[FilterType::TO]));
+                $parserConfig->filtersColumn($filter[FilterType::FIELD], new DateFilter($filter[FilterType::FORMAT], $filter[FilterType::FROM], $filter[FilterType::TO]));
             }
 
             if (strcmp($filter[FilterType::TYPE], Type::TEXT) === 0) {
-                $parserConfig->filtersColumn($field, new TextFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
+                $parserConfig->filtersColumn($filter[FilterType::FIELD], new TextFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
             }
 
             if (strcmp($filter[FilterType::TYPE], Type::NUMBER) === 0) {
-                $parserConfig->filtersColumn($field, new NumberFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
+                $parserConfig->filtersColumn($filter[FilterType::FIELD], new NumberFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
             }
         }
     }

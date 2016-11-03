@@ -10,6 +10,9 @@ UR\Entity\Core\ConnectedDataSource:
         mapFields:
             expose: true
             groups: [connectedDataSource.detail, connectedDataSource.summary]
+        requires:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
         filters:
             expose: true
             groups: [connectedDataSource.detail, connectedDataSource.summary]

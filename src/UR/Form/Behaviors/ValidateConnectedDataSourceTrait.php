@@ -25,6 +25,7 @@ trait ValidateConnectedDataSourceTrait
 
     public function validateRequireFields(DataSetInterface $dataSet, $connDataSource)
     {
+
         /**@var ConnectedDataSourceInterface $connDataSource */
         foreach ($connDataSource->getRequires() as $require) {
             if (!in_array($require, $connDataSource->getMapFields())) {
@@ -40,29 +41,34 @@ trait ValidateConnectedDataSourceTrait
 
         /**@var ConnectedDataSourceInterface $connDataSource */
         if ($connDataSource->getFilters() !== null)
-            foreach ($connDataSource->getFilters() as $fieldName => $value) {
+            foreach ($connDataSource->getFilters() as $filters) {
 
-                if (!array_key_exists($fieldName, $dataSet->getDimensions()) && !array_key_exists($fieldName, $dataSet->getMetrics())) {
+                foreach ($filters as $key => $value) {
+
+                }
+
+                if (!array_key_exists($filters['field'], $dataSet->getDimensions()) && !array_key_exists($filters['field'], $dataSet->getMetrics())) {
                     return false;
                 }
 
-                if (!array_key_exists(FilterType::TYPE, $value)) {
+
+                if (!array_key_exists(FilterType::TYPE, $filters)) {
                     return false;
                 }
 
-                if (!Type::isValidFilterType($value[FilterType::TYPE])) {
+                if (!Type::isValidFilterType($filters[FilterType::TYPE])) {
                     return false;
                 }
 
-                if ((strcmp($value[FilterType::TYPE], Type::DATE) === 0) && !FilterType::isValidFilterDateType($value)) {
+                if ((strcmp($filters[FilterType::TYPE], Type::DATE) === 0) && !FilterType::isValidFilterDateType($filters)) {
                     return false;
                 }
 
-                if (strcmp($value[FilterType::TYPE], Type::NUMBER) === 0 && !FilterType::isValidFilterNumberType($value)) {
+                if (strcmp($filters[FilterType::TYPE], Type::NUMBER) === 0 && !FilterType::isValidFilterNumberType($filters)) {
                     return false;
                 }
 
-                if (strcmp($value[FilterType::TYPE], Type::TEXT) === 0 && !FilterType::isValidFilterTextType($value)) {
+                if (strcmp($filters[FilterType::TYPE], Type::TEXT) === 0 && !FilterType::isValidFilterTextType($filters)) {
                     return false;
                 }
 
