@@ -22,7 +22,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     /**
      * Get all data sets
      *
-     * @Rest\View(serializerGroups={"dataset.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"dataset.detail", "user.summary", "connectedDataSource.summary"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
@@ -58,7 +58,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      *
      * @Rest\Get("/datasets/{id}", requirements={"id" = "\d+"})
      *
-     * @Rest\View(serializerGroups={"dataset.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"dataset.detail", "user.summary", "connectedDataSource.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",

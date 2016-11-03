@@ -44,7 +44,7 @@ class Parser implements ParserInterface
                     $filterResult = $filter->filter($row[$column]);
                     if ($filterResult > 1) {
                         return array("error" => "filter",
-                            "row" => $cur_row,
+                            "row" => $cur_row + 2,
                             "column" => $column);
                     } else {
                         $isValidFilter = $isValidFilter & $filterResult;
@@ -67,7 +67,7 @@ class Parser implements ParserInterface
                     $row[$column] = $transform->transform($row[$column]);
                     if (!$row[$column]) {
                         return array("error" => "transform",
-                            "row" => $cur_row,
+                            "row" => $cur_row + 2,
                             "column" => $column);
                     }
                 }

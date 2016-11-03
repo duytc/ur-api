@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\ORM\EntityManagerInterface;
+use Liuggio\ExcelBundle\Factory;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\DataSourceEntryImportHistoryManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
@@ -22,6 +23,8 @@ use UR\Service\DataSet\Synchronizer;
 use UR\Service\DataSet\TransformType;
 use UR\Service\DataSet\Type;
 use UR\Service\DataSource\Csv;
+use UR\Service\DataSource\Excel;
+use UR\Service\DataSource\Json;
 use UR\Service\Parser\Filter\DateFilter;
 use UR\Service\Parser\Filter\NumberFilter;
 use UR\Service\Parser\Filter\TextFilter;
@@ -54,12 +57,18 @@ class AutoCreateDataImportWorker
      */
     private $dataSourceEntryImportHistoryManager;
 
-    function __construct(DataSetManagerInterface $dataSetManager, ImportHistoryManagerInterface $importHistoryManager, DataSourceEntryImportHistoryManagerInterface $dataSourceEntryImportHistoryManager, EntityManagerInterface $em)
+    /**
+     * @var Factory
+     */
+    private $phpExcel;
+
+    function __construct(DataSetManagerInterface $dataSetManager, ImportHistoryManagerInterface $importHistoryManager, DataSourceEntryImportHistoryManagerInterface $dataSourceEntryImportHistoryManager, EntityManagerInterface $em, Factory $phpExcel)
     {
         $this->dataSetManager = $dataSetManager;
         $this->importHistoryManager = $importHistoryManager;
         $this->dataSourceEntryImportHistoryManager = $dataSourceEntryImportHistoryManager;
         $this->em = $em;
+        $this->phpExcel = $phpExcel;
     }
 
     function autoCreateDataImport($dataSetId)
@@ -98,7 +107,16 @@ class AutoCreateDataImportWorker
 
             /**@var DataSourceEntryInterface $item */
             foreach ($dse as $item) {
-                $file = (new Csv($item->getPath()))->setDelimiter(',');
+
+                if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'csv') === 0) {
+                    /**@var Csv $file*/
+                    $file = (new Csv($item->getPath()))->setDelimiter(',');
+                } else if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'excel') === 0) {
+                    /**@var Excel $file*/
+                    $file = new \UR\Service\DataSource\Excel($item->getPath(), $this->phpExcel);
+                } else {
+                    $file = new Json($item->getPath());
+                }
                 // mapping
                 $parserConfig = new ParserConfig();
                 $columns = $file->getColumns();
@@ -137,11 +155,11 @@ class AutoCreateDataImportWorker
 
                 if (is_array($collectionParser)) {
                     $desc = "";
-                    if (strcmp($collectionParser["error"], "filter")) {
+                    if (strcmp($collectionParser["error"], "filter")===0) {
                         $desc = "error when Filter file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
                     }
 
-                    if (strcmp($collectionParser["error"], "transform")) {
+                    if (strcmp($collectionParser["error"], "transform")===0) {
                         $desc = "error when Transform file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
                     }
 
