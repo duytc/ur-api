@@ -26,3 +26,7 @@ UR\Entity\Core\ConnectedDataSource:
         dataSet:
             targetEntity: UR\Entity\Core\DataSet
             inversedBy: connectedDataSources
+            joinColumn:
+                name: data_set_id
+                referencedColumnName: id
+                onDelete: CASCADE

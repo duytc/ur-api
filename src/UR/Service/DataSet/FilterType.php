@@ -17,8 +17,8 @@ final class FilterType
     const NOT = 'not';
     const FIELD='field';
     const FORMAT = 'format';
-    const FROM = 'from';
-    const TO = 'to';
+    const FROM = 'startDate';
+    const TO = 'endDate';
 
     const CONTAINS = 'contains';
     const NOT_CONTAINS = 'not contains';

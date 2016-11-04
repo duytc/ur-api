@@ -29,7 +29,7 @@ class DataSource extends DataSourceModel
     /**
      * @var DataSourceEntryInterface[]
      */
-    protected $dataSourceEntries;
+        protected $dataSourceEntries;
 
     /**
      * @var ConnectedDataSourceInterface[]
