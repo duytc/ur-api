@@ -43,11 +43,7 @@ trait ValidateConnectedDataSourceTrait
         if ($connDataSource->getFilters() !== null)
             foreach ($connDataSource->getFilters() as $filters) {
 
-                foreach ($filters as $key => $value) {
-
-                }
-
-                if (!array_key_exists($filters['field'], $dataSet->getDimensions()) && !array_key_exists($filters['field'], $dataSet->getMetrics())) {
+                if (!array_key_exists($filters[FilterType::FIELD], $dataSet->getDimensions()) && !array_key_exists($filters[FilterType::FIELD], $dataSet->getMetrics())) {
                     return false;
                 }
 
@@ -80,17 +76,17 @@ trait ValidateConnectedDataSourceTrait
     {
         if ($connDataSource->getTransforms() !== null) {
 
-            foreach ($connDataSource->getTransforms() as $transformType => $fields) {
+            foreach ($connDataSource->getTransforms() as $transform) {
 
-                if (!Type::isValidTransformType($transformType)) {
+                if (!Type::isValidTransformType($transform[TransformType::TRANSFORM_TYPE])) {
                     return false;
                 }
 
-                if ((strcmp($transformType, Type::SINGLE_FIELD) === 0) && !$this->validateSingleFieldTransform($connDataSource, $fields)) {
+                if ((strcmp($transform[TransformType::TRANSFORM_TYPE], Type::SINGLE_FIELD) === 0) && !$this->validateSingleFieldTransform($connDataSource, $transform)) {
                     return false;
                 }
 
-                if ((strcmp($transformType, Type::ALL_FIELD) === 0) && !$this->validateAllFieldsTransform($connDataSource, $fields)) {
+                if ((strcmp($transform[TransformType::TRANSFORM_TYPE], Type::ALL_FIELD) === 0) && !$this->validateAllFieldsTransform($connDataSource, $transform)) {
                     return false;
                 }
 
@@ -99,48 +95,48 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
-    public function validateSingleFieldTransform(ConnectedDataSourceInterface $connectedDataSource, $fields)
+    public function validateSingleFieldTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
-        foreach ($fields as $fieldName => $formats) {
+//        foreach ($fields as $fieldName => $formats) {
 
-            if (!in_array($fieldName, $connectedDataSource->getMapFields())) {
-                return false;
-            }
-
-            if (!TransformType::isValidSingleFieldTransformType($formats)) {
-                return false;
-            }
-
+        if (!in_array($transform[TransformType::FIELD], $connectedDataSource->getMapFields())) {
+            return false;
         }
+
+        if (!TransformType::isValidSingleFieldTransformType($transform)) {
+            return false;
+        }
+
+//        }
 
         return true;
     }
 
-    public function validateAllFieldsTransform(ConnectedDataSourceInterface $connectedDataSource, $allFields)
+    public function validateAllFieldsTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
-        foreach ($allFields as $transType => $fieldName) {
 
-            if (!TransformType::isValidAllFieldTransformType($transType)) {
+        foreach ($transform as $k => $v) {
+
+            if (!TransformType::isValidAllFieldTransformType($k)) {
                 return false;
             }
 
-            foreach ($fieldName as $key => $trans) {
-                if (TransformType::isGroupOrSortType($transType)) {
-
-                    if (!in_array($trans, $connectedDataSource->getMapFields())) {
+            if (TransformType::isGroupOrSortType($k)) {
+                foreach ($v as $field) {
+                    if (!in_array($field, $connectedDataSource->getMapFields())) {
                         return false;
                     }
                 }
-
-                if (TransformType::isAddingType($transType)) {
-
-                    if (in_array($key, $connectedDataSource->getMapFields())) {
-                        return false;
-                    }
-                }
-                //todo validte addcalculate fields
-
             }
+
+            if (TransformType::isAddingType($k)) {
+                foreach ($v as $field) {
+                    if (in_array($field[TransformType::FIELD], $connectedDataSource->getMapFields())) {
+                        return false;
+                    }
+                }
+            }
+
         }
 
         return true;

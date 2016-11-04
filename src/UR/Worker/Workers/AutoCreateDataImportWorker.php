@@ -109,10 +109,10 @@ class AutoCreateDataImportWorker
             foreach ($dse as $item) {
 
                 if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'csv') === 0) {
-                    /**@var Csv $file*/
+                    /**@var Csv $file */
                     $file = (new Csv($item->getPath()))->setDelimiter(',');
                 } else if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'excel') === 0) {
-                    /**@var Excel $file*/
+                    /**@var Excel $file */
                     $file = new \UR\Service\DataSource\Excel($item->getPath(), $this->phpExcel);
                 } else {
                     $file = new Json($item->getPath());
@@ -155,11 +155,11 @@ class AutoCreateDataImportWorker
 
                 if (is_array($collectionParser)) {
                     $desc = "";
-                    if (strcmp($collectionParser["error"], "filter")===0) {
+                    if (strcmp($collectionParser["error"], "filter") === 0) {
                         $desc = "error when Filter file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
                     }
 
-                    if (strcmp($collectionParser["error"], "transform")===0) {
+                    if (strcmp($collectionParser["error"], "transform") === 0) {
                         $desc = "error when Transform file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
                     }
 
@@ -235,54 +235,58 @@ class AutoCreateDataImportWorker
     {
         $transforms = $connectedDataSource->getTransforms();
 
-        foreach ($transforms[Type::SINGLE_FIELD] as $field => $trans) {
+        foreach ($transforms as $transform) {
 
-            if ($parserConfig->hasColumnMapping($field)) {
+            if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::SINGLE_FIELD) === 0 && $parserConfig->hasColumnMapping($transform[TransformType::FIELD])) {
 
                 //TODO WILL BE CHANGE IN FUTURE
-                if (strcmp($trans[TransformType::TYPE], TransformType::DATE) === 0) {
-                    $parserConfig->transformColumn($field, new DateFormat($trans[FilterType::FROM], 'Y-m-d'));
+                if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
+                    $parserConfig->transformColumn($transform[TransformType::FIELD], new DateFormat($transform[TransformType::FROM], 'Y-m-d'));
                 }
 
-                if (strcmp($trans[TransformType::TYPE], TransformType::NUMBER) === 0) {
+                if (strcmp($transform[TransformType::TYPE], TransformType::NUMBER) === 0) {
+
                 }
-            }
-        }
 
-        foreach ($transforms[Type::ALL_FIELD] as $field => $trans) {
-
-            //todo will be change in the future
-            if (strcmp($field, TransformType::GROUP_BY) === 0) {
-                $parserConfig->transformCollection(new GroupByColumns($trans));
-                continue;
             }
 
-            if (strcmp($field, TransformType::SORT_BY) === 0) {
-                $parserConfig->transformCollection(new SortByColumns($trans));
-                continue;
-            }
+            if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::ALL_FIELD) === 0) {
+                foreach ($transform as $k => $v) {
 
-            if (strcmp($field, TransformType::ADD_FIELD) === 0) {
+                    if (strcmp($k, TransformType::GROUP_BY) === 0) {
+                        $parserConfig->transformCollection(new GroupByColumns($v));
+                        continue;
+                    }
 
-                foreach ($trans as $f => $v) {
-                    $parserConfig->transformCollection(new AddField($f, $v));
+                    if (strcmp($k, TransformType::SORT_BY) === 0) {
+                        $parserConfig->transformCollection(new SortByColumns($v));
+                        continue;
+                    }
+
+                    if (strcmp($k, TransformType::ADD_FIELD) === 0) {
+
+                        foreach ($v as $field => $value) {
+                            $parserConfig->transformCollection(new AddField($field, $value));
+                        }
+                        continue;
+                    }
+
+                    if (strcmp($k, TransformType::ADD_CALCULATED_FIELD) === 0) {
+
+                        foreach ($v as $f => $expression) {
+                            //todo will be change in future
+                        }
+                        continue;
+                    }
+
+                    if (strcmp($k, TransformType::COMPARISON_PERCENT) === 0) {
+                        foreach ($v as $comparisonPercents) {
+                            $parserConfig->transformCollection(new ComparisonPercent($comparisonPercents[TransformType::FIELD], $comparisonPercents[TransformType::COMPARISON][0], $comparisonPercents[TransformType::COMPARISON][1]));
+                        }
+                        continue;
+                    }
+
                 }
-                continue;
-            }
-
-            if (strcmp($field, TransformType::ADD_CALCULATED_FIELD) === 0) {
-
-                foreach ($trans as $f => $expression) {
-//                    $parserConfig->transformCollection(new AddCalculatedField($expressionLanguage, $f, $expression, 0));
-                }
-                continue;
-            }
-
-            if (strcmp($field, TransformType::COMPARISON_PERCENT) === 0) {
-                foreach ($trans as $f => $expression) {
-                    $parserConfig->transformCollection(new ComparisonPercent($f, $expression[0], $expression[1]));
-                }
-                continue;
             }
         }
     }

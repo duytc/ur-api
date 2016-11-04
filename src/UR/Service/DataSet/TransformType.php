@@ -6,16 +6,23 @@ final class TransformType
 {
 
     const TYPE = 'type';
+    const FROM = 'from';
     const TO = 'to';
     const DATE = 'date';
     const NUMBER = 'number';
+    const TRANSFORM_TYPE = 'transformType';
+    const FIELD = 'field';
+    const DECIMALS = 'decimals';
+    const THOUSANDS_SEPARATOR = 'thousandsSeparator';
     const GROUP_BY = 'groupBy';
     const SORT_BY = 'sortBy';
     const ADD_FIELD = 'addField';
     const ADD_CALCULATED_FIELD = 'addCalculatedField';
+    const COMPARISON = 'comparison';
     const COMPARISON_PERCENT = 'comparisonPercent';
 
     private static $transformTypes = [
+        self::TRANSFORM_TYPE,
         self::GROUP_BY,
         self::SORT_BY,
         self::ADD_FIELD,
@@ -37,6 +44,10 @@ final class TransformType
     private static $singleTransformTypes = [
         self::DATE,
         self::NUMBER
+    ];
+
+    private static $supportedThousandsSeparator = [
+        ",", "."
     ];
 
     private static $supportedDateFormats = [
@@ -75,15 +86,22 @@ final class TransformType
         }
 
         if ($arr[self::TYPE] === self::DATE) {
+            if (count($arr) !== 5 || !array_key_exists(self::TRANSFORM_TYPE, $arr) || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::TYPE, $arr) || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr)) {
+                return false;
+            }
 
-            if (!in_array($arr[self::TO], self::$supportedDateFormats)) {
+            if (!in_array($arr[self::TO], self::$supportedDateFormats) || !in_array($arr[self::FROM], self::$supportedDateFormats)) {
                 return false;
             }
         }
 
         if ($arr[self::TYPE] === self::NUMBER) {
-
-            //todo will be change in future
+            if (count($arr) !== 5 || !array_key_exists(self::TRANSFORM_TYPE, $arr) || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::TYPE, $arr) || !array_key_exists(self::DECIMALS, $arr) || !array_key_exists(self::THOUSANDS_SEPARATOR, $arr)) {
+                return false;
+            }
+            if (!is_numeric($arr[self::DECIMALS]) || !in_array($arr[self::THOUSANDS_SEPARATOR], self::$supportedThousandsSeparator)) {
+                return false;
+            }
         }
 
         return true;

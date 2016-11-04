@@ -19,3 +19,7 @@ UR\Entity\Core\ImportHistory:
     manyToOne:
         connectedDataSource:
             targetEntity: UR\Entity\Core\ConnectedDataSource
+            joinColumn:
+                name: connected_data_source_id
+                referencedColumnName: id
+                onDelete: CASCADE

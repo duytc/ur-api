@@ -22,5 +22,9 @@ UR\Entity\Core\DataSourceEntryImportHistory:
     manyToOne:
         importHistory:
             targetEntity: UR\Entity\Core\ImportHistory
+            joinColumn:
+                name: import_history_id
+                referencedColumnName: id
+                onDelete: CASCADE
         dataSourceEntry:
             targetEntity: UR\Entity\Core\DataSourceEntry
