@@ -203,7 +203,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * Get all connected data sources of a data set
      *
      * @Rest\Get("datasets/{id}/connecteddatasources", requirements={"id" = "\d+"})
-     * @Rest\View(serializerGroups={"connectedDataSource.summary", "dataSet.summary"})
+     * @Rest\View(serializerGroups={"connectedDataSource.summary", "datasource.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",

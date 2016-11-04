@@ -6,7 +6,7 @@ UR\Entity\Core\ConnectedDataSource:
             groups: [connectedDataSource.detail, connectedDataSource.summary]
         dataSource:
             expose: true
-            groups: [connectedDataSource.detail]
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
         mapFields:
             expose: true
             groups: [connectedDataSource.detail, connectedDataSource.summary]
