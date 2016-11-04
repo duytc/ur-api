@@ -265,8 +265,8 @@ class AutoCreateDataImportWorker
 
                     if (strcmp($k, TransformType::ADD_FIELD) === 0) {
 
-                        foreach ($v as $field => $value) {
-                            $parserConfig->transformCollection(new AddField($field, $value));
+                        foreach ($v as $addfields) {
+                            $parserConfig->transformCollection(new AddField($addfields[TransformType::FIELD], TransformType::VALUE));
                         }
                         continue;
                     }
