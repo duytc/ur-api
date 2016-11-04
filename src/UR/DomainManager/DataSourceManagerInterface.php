@@ -2,6 +2,7 @@
 
 namespace UR\DomainManager;
 
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\PublisherInterface;
 
@@ -20,4 +21,16 @@ interface DataSourceManagerInterface extends ManagerInterface
      * @return DataSourceInterface
      */
     public function getDataSourceByApiKey($apiKey);
+
+    /**
+     * @param DataSetInterface $dataSet
+     * @return DataSourceInterface[]
+     */
+    public function getDataSourceByDataSet(DataSetInterface $dataSet);
+
+    /**
+     * @param DataSetInterface $dataSet
+     * @return DataSourceInterface[]
+     */
+    public function getDataSourceNotInByDataSet(DataSetInterface $dataSet);
 }

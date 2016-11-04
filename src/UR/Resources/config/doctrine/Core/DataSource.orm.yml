@@ -44,3 +44,8 @@ UR\Entity\Core\DataSource:
             targetEntity: UR\Entity\Core\DataSourceEntry
             cascade: ['persist', 'detach', 'remove']
             mappedBy: dataSource
+
+        connectedDataSources:
+            targetEntity: UR\Entity\Core\ConnectedDataSource
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: dataSource
