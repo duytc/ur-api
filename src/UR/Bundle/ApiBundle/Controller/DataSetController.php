@@ -159,6 +159,75 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     }
 
     /**
+     * Get all data sources of a data set
+     *
+     * @Rest\Get("datasets/{id}/datasources", requirements={"id" = "\d+"})
+     * @Rest\View(serializerGroups={"datasource.summary","dataset.summary"})
+     * @Rest\QueryParam(name="connected", nullable=true, requirements="\d+", description="relation between datasource and dataset option")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @param int $id the resource id
+     * @return array
+     * @throws \Exception
+     */
+    public function getDataSourceByDataSetAction(Request $request, $id)
+    {
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $this->one($id);
+
+        $connected = $request->query->get('connected', null);
+        $dataSourceManager = $this->get('ur.domain_manager.data_source');
+
+        if (!$connected) {
+            $dataSource = $dataSourceManager->getDataSourceForPublisher($dataSet->getPublisher());
+        }else if ($connected == true) {
+            $dataSource = $dataSourceManager->getDataSourceByDataSet($dataSet);
+        } else if ($connected == false) {
+            $dataSource = $dataSourceManager->getDataSourceNotInByDataSet($dataSet);
+        } else {
+            throw new \Exception(sprintf("Connected param %s is not valid", $connected));
+        }
+
+        return $dataSource;
+    }
+
+    /**
+     * Get all connected data sources of a data set
+     *
+     * @Rest\Get("datasets/{id}/connecteddatasources", requirements={"id" = "\d+"})
+     * @Rest\View(serializerGroups={"connectedDataSource.summary", "dataSet.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     * @return array
+     */
+    public function getConnectedDataSourceByDataSetAction($id)
+    {
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $this->one($id);
+
+        $connectedDataSourceManager = $this->get('ur.domain_manager.connected_data_source');
+        $connectedDataSource = $connectedDataSourceManager->getConnectedDataSourceByDataSet($dataSet);
+
+        return $connectedDataSource;
+    }
+
+    /**
      * Delete an existing data set
      *
      * @ApiDoc(

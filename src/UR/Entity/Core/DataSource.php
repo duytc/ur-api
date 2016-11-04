@@ -2,6 +2,7 @@
 
 namespace UR\Entity\Core;
 
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSource as DataSourceModel;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceIntegrationInterface;
@@ -29,6 +30,11 @@ class DataSource extends DataSourceModel
      * @var DataSourceEntryInterface[]
      */
         protected $dataSourceEntries;
+
+    /**
+     * @var ConnectedDataSourceInterface[]
+     */
+    protected $connectedDataSources;
 
     /**
      * @inheritdoc
