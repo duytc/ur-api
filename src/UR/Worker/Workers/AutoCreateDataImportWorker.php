@@ -71,7 +71,7 @@ class AutoCreateDataImportWorker
         $this->phpExcel = $phpExcel;
     }
 
-    function autoCreateDataImport($dataSetId)
+    function autoCreateDataImport($dataSetId, $filepath)
     {
         $conn = $this->em->getConnection();
         $dataSetLocator = new Locator($conn);
@@ -110,10 +110,10 @@ class AutoCreateDataImportWorker
 
                 if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'csv') === 0) {
                     /**@var Csv $file */
-                    $file = (new Csv($item->getPath()))->setDelimiter(',');
+                    $file = (new Csv($filepath . $item->getPath()))->setDelimiter(',');
                 } else if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'excel') === 0) {
                     /**@var Excel $file */
-                    $file = new \UR\Service\DataSource\Excel($item->getPath(), $this->phpExcel);
+                    $file = new \UR\Service\DataSource\Excel($filepath . $item->getPath(), $this->phpExcel);
                 } else {
                     $file = new Json($item->getPath());
                 }
@@ -266,7 +266,7 @@ class AutoCreateDataImportWorker
                     if (strcmp($k, TransformType::ADD_FIELD) === 0) {
 
                         foreach ($v as $addfields) {
-                            $parserConfig->transformCollection(new AddField($addfields[TransformType::FIELD], TransformType::VALUE));
+                            $parserConfig->transformCollection(new AddField($addfields[TransformType::FIELD], $addfields[TransformType::VALUE]));
                         }
                         continue;
                     }

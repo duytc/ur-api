@@ -320,10 +320,10 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         foreach ($dse as $item) {
             if (strcmp($dataSource->getFormat(), 'csv') === 0) {
                 /**@var Csv $file */
-                $file = (new Csv($item->getPath()))->setDelimiter(',');
+                $file = (new Csv($this->container->getParameter('upload_file_dir') . $item->getPath()))->setDelimiter(',');
             } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
                 /**@var Excel $file */
-                $file = new \UR\Service\DataSource\Excel($item->getPath(), $phpExcel);
+                $file = new \UR\Service\DataSource\Excel($this->container->getParameter('upload_file_dir') . $item->getPath(), $phpExcel);
             } else {
                 $file = new Json($item->getPath());
             }
