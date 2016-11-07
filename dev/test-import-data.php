@@ -5,6 +5,7 @@ namespace tagcade\dev;
 
 use AppKernel;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use UR\Entity\Core\DataSet;
 
 $loader = require_once __DIR__ . '/../app/autoload.php';
 require_once __DIR__ . '/../app/AppKernel.php';
@@ -23,4 +24,5 @@ $container = $kernel->getContainer();
 
 
 $test = $container->get('ur.worker.workers.import_dataset_worker');
-$test->autoCreateDataImport(19);
+$path= $container->getParameter('upload_file_dir');
+$test->autoCreateDataImport(32, $path);

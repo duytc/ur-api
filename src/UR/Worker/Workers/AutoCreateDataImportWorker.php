@@ -251,36 +251,36 @@ class AutoCreateDataImportWorker
             }
 
             if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::ALL_FIELD) === 0) {
-                foreach ($transform as $k => $v) {
+//                foreach ($transform as $k => $v) {
 
-                    if (strcmp($k, TransformType::GROUP_BY) === 0) {
-                        $parserConfig->transformCollection(new GroupByColumns($v));
+                    if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
+                        $parserConfig->transformCollection(new GroupByColumns($transform[TransformType::FIELDS]));
                         continue;
                     }
 
-                    if (strcmp($k, TransformType::SORT_BY) === 0) {
-                        $parserConfig->transformCollection(new SortByColumns($v));
+                    if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
+                        $parserConfig->transformCollection(new SortByColumns($transform[TransformType::FIELDS]));
                         continue;
                     }
 
-                    if (strcmp($k, TransformType::ADD_FIELD) === 0) {
+                    if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
 
-                        foreach ($v as $addfields) {
+                        foreach ($transform[TransformType::FIELDS] as $addfields) {
                             $parserConfig->transformCollection(new AddField($addfields[TransformType::FIELD], $addfields[TransformType::VALUE]));
                         }
                         continue;
                     }
 
-                    if (strcmp($k, TransformType::ADD_CALCULATED_FIELD) === 0) {
+                    if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CALCULATED_FIELD) === 0) {
 
-                        foreach ($v as $f => $expression) {
+                        foreach ($transform[TransformType::FIELDS] as $f => $expression) {
                             //todo will be change in future
                         }
                         continue;
                     }
 
-                    if (strcmp($k, TransformType::COMPARISON_PERCENT) === 0) {
-                        foreach ($v as $comparisonPercents) {
+                    if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
+                        foreach ($transform[TransformType::FIELDS] as $comparisonPercents) {
                             $parserConfig->transformCollection(new ComparisonPercent($comparisonPercents[TransformType::FIELD], $comparisonPercents[TransformType::COMPARISON][0], $comparisonPercents[TransformType::COMPARISON][1]));
                         }
                         continue;
@@ -288,7 +288,7 @@ class AutoCreateDataImportWorker
 
                 }
             }
-        }
+//        }
     }
 
     function createDataSourceEntryHistory(DataSourceEntryInterface $item, $importHistoryEntity, $status, $desc)
