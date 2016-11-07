@@ -43,33 +43,37 @@ trait ValidateConnectedDataSourceTrait
         if ($connDataSource->getFilters() !== null)
             foreach ($connDataSource->getFilters() as $filters) {
 
+                if (!array_key_exists(FilterType::FIELD, $filters)) {
+                    return "Filter Setting should have 'field' property";
+                }
+
                 if (!array_key_exists($filters[FilterType::FIELD], $dataSet->getDimensions()) && !array_key_exists($filters[FilterType::FIELD], $dataSet->getMetrics())) {
-                    return false;
+                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] dose not exist in Dimensions or Metrics";
                 }
 
 
                 if (!array_key_exists(FilterType::TYPE, $filters)) {
-                    return false;
+                    return "filter Setting error: cant find 'type' of field [" . $filters[FilterType::FIELD] . "]";
                 }
 
                 if (!Type::isValidFilterType($filters[FilterType::TYPE])) {
-                    return false;
+                    return "filter Setting error: type of field [" . $filters[FilterType::FIELD] . "] should be one of ['date', 'text', 'number']";
                 }
 
                 if ((strcmp($filters[FilterType::TYPE], Type::DATE) === 0) && !FilterType::isValidFilterDateType($filters)) {
-                    return false;
+                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Date Setting";
                 }
 
                 if (strcmp($filters[FilterType::TYPE], Type::NUMBER) === 0 && !FilterType::isValidFilterNumberType($filters)) {
-                    return false;
+                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Number Setting";
                 }
 
                 if (strcmp($filters[FilterType::TYPE], Type::TEXT) === 0 && !FilterType::isValidFilterTextType($filters)) {
-                    return false;
+                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Text Setting";
                 }
 
             }
-        return true;
+        return 0;
     }
 
     public function validateTransforms(ConnectedDataSourceInterface $connDataSource)
