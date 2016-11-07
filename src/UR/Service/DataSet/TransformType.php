@@ -12,6 +12,7 @@ final class TransformType
     const NUMBER = 'number';
     const TRANSFORM_TYPE = 'transformType';
     const FIELD = 'field';
+    const FIELDS = 'fields';
     const VALUE = 'value';
     const DECIMALS = 'decimals';
     const THOUSANDS_SEPARATOR = 'thousandsSeparator';

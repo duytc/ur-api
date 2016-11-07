@@ -118,29 +118,24 @@ trait ValidateConnectedDataSourceTrait
 
     public function validateAllFieldsTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
+        if (!TransformType::isValidAllFieldTransformType($transform[TransformType::TYPE])) {
+            return false;
+        }
 
-        foreach ($transform as $k => $v) {
-
-            if (!TransformType::isValidAllFieldTransformType($k)) {
-                return false;
-            }
-
-            if (TransformType::isGroupOrSortType($k)) {
-                foreach ($v as $field) {
-                    if (!in_array($field, $connectedDataSource->getMapFields())) {
-                        return false;
-                    }
+        if (TransformType::isGroupOrSortType($transform[TransformType::TYPE])) {
+            foreach ($transform[TransformType::FIELDS] as $field) {
+                if (!in_array($field, $connectedDataSource->getMapFields())) {
+                    return false;
                 }
             }
+        }
 
-            if (TransformType::isAddingType($k)) {
-                foreach ($v as $field) {
-                    if (in_array($field[TransformType::FIELD], $connectedDataSource->getMapFields())) {
-                        return false;
-                    }
+        if (TransformType::isAddingType($transform[TransformType::TYPE])) {
+            foreach ($transform[TransformType::FIELDS] as $field) {
+                if (in_array($field[TransformType::FIELD], $connectedDataSource->getMapFields())) {
+                    return false;
                 }
             }
-
         }
 
         return true;
