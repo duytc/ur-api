@@ -181,7 +181,7 @@ class AutoCreateDataImportWorker
         $dataSetTable = $schema->createTable($dataSetLocator->getDataSetName($dataSet->getId()));
         $dataSetTable->addColumn("__id", "integer", array("autoincrement" => true, "unsigned" => true));
         $dataSetTable->setPrimaryKey(array("__id"));
-        $dataSetTable->addColumn("__data_source_id", "integer", array("unsigned" => true, "notnull" => true));
+        $dataSetTable->addColumn("__data_source_id", "integer", array("unsigned" => true, "notnull" => true, "default" => 1));
         $dataSetTable->addColumn("__import_id", "integer", array("unsigned" => true, "notnull" => true));
         // create import table
         // add dimensions
@@ -253,41 +253,41 @@ class AutoCreateDataImportWorker
             if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::ALL_FIELD) === 0) {
 //                foreach ($transform as $k => $v) {
 
-                    if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
-                        $parserConfig->transformCollection(new GroupByColumns($transform[TransformType::FIELDS]));
-                        continue;
-                    }
-
-                    if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
-                        $parserConfig->transformCollection(new SortByColumns($transform[TransformType::FIELDS]));
-                        continue;
-                    }
-
-                    if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
-
-                        foreach ($transform[TransformType::FIELDS] as $addfields) {
-                            $parserConfig->transformCollection(new AddField($addfields[TransformType::FIELD], $addfields[TransformType::VALUE]));
-                        }
-                        continue;
-                    }
-
-                    if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CALCULATED_FIELD) === 0) {
-
-                        foreach ($transform[TransformType::FIELDS] as $f => $expression) {
-                            //todo will be change in future
-                        }
-                        continue;
-                    }
-
-                    if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
-                        foreach ($transform[TransformType::FIELDS] as $comparisonPercents) {
-                            $parserConfig->transformCollection(new ComparisonPercent($comparisonPercents[TransformType::FIELD], $comparisonPercents[TransformType::COMPARISON][0], $comparisonPercents[TransformType::COMPARISON][1]));
-                        }
-                        continue;
-                    }
-
+                if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
+                    $parserConfig->transformCollection(new GroupByColumns($transform[TransformType::FIELDS]));
+                    continue;
                 }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
+                    $parserConfig->transformCollection(new SortByColumns($transform[TransformType::FIELDS]));
+                    continue;
+                }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
+
+                    foreach ($transform[TransformType::FIELDS] as $addfields) {
+                        $parserConfig->transformCollection(new AddField($addfields[TransformType::FIELD], $addfields[TransformType::VALUE]));
+                    }
+                    continue;
+                }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CALCULATED_FIELD) === 0) {
+
+                    foreach ($transform[TransformType::FIELDS] as $f => $expression) {
+                        //todo will be change in future
+                    }
+                    continue;
+                }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
+                    foreach ($transform[TransformType::FIELDS] as $comparisonPercents) {
+                        $parserConfig->transformCollection(new ComparisonPercent($comparisonPercents[TransformType::FIELD], $comparisonPercents[TransformType::COMPARISON][0], $comparisonPercents[TransformType::COMPARISON][1]));
+                    }
+                    continue;
+                }
+
             }
+        }
 //        }
     }
 

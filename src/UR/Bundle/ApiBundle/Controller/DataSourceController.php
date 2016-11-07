@@ -332,7 +332,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         }
         array_unique($arr);
 
-        return array_unique($arr);
+        return array_values($arr);
     }
 
     /**
