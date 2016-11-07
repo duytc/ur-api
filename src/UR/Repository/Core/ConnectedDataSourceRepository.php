@@ -10,6 +10,8 @@ class ConnectedDataSourceRepository extends EntityRepository implements Connecte
     public function getConnectedDataSourceByDataSet(DataSetInterface $dataSet)
     {
         $qb = $this->createQueryBuilder('cds')
+            ->leftJoin('cds.dataSource' ,'ds')
+            ->select('cds, ds')
             ->where('cds.dataSet = :dataSet')
             ->setParameter('dataSet', $dataSet);
 
