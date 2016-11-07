@@ -86,6 +86,9 @@ class AutoCreateDataImportWorker
             throw new InvalidArgumentException('not found Dataset with this ID');
         }
 
+        //create or update empty dataSet table
+        $this->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $conn);
+
         $connectedDataSources = $dataSet->getConnectedDataSources();
 
         /**@var ConnectedDataSourceInterface $connectedDataSource */
@@ -96,9 +99,6 @@ class AutoCreateDataImportWorker
             $importHistoryEntity->setConnectedDataSource($connectedDataSource);
 //            $importHistoryEntity->setDescription();
             $this->importHistoryManager->save($importHistoryEntity);
-
-            //create or update empty dataSet table
-            $this->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $conn);
 
             //get all dataSource entries
             $dse = $connectedDataSource->getDataSource()->getDataSourceEntries();
