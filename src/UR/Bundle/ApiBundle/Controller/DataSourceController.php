@@ -330,9 +330,8 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             $columns = $file->getColumns();
             $arr = array_merge($arr, $columns);
         }
-        array_unique($arr);
 
-        return array_values($arr);
+        return array_values(array_unique($arr));
     }
 
     /**
