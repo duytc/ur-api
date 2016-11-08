@@ -4,6 +4,7 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use UR\Entity\Core\Alert;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -109,8 +110,22 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
                 $this->save($dataSourceEntry);
 
+                $alert = new Alert();
+                $alert->setDataSourceEntry($dataSourceEntry);
+                $alert->setTitle(sprintf('Upload file successfully'));
+                $alert->setType(sprintf('info'));
+                $alert->setMessage(sprintf('File %s of %s is not uploaded', $dataSourceEntry->getPath(), $dataSourceEntry->getDataSource()->getName()));
+                $this->om->persist($alert);
+                $this->om->flush();
                 $result[$origin_name] = 'success';
             } else {
+                $alert = new Alert();
+                $alert->setDataSourceEntry($dataSourceEntry);
+                $alert->setTitle(sprintf('Upload file failure'));
+                $alert->setType(sprintf('error'));
+                $alert->setMessage(sprintf('File %s of %s is not uploaded', $dataSourceEntry->getPath(), $dataSourceEntry->getDataSource()->getName()));
+                $this->om->persist($alert);
+                $this->om->flush();
                 throw new \Exception(sprintf("File %s is not valid", $origin_name));
             }
         }
