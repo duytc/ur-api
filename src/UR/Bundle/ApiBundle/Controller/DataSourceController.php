@@ -324,29 +324,13 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             if (strcmp($dataSource->getFormat(), 'csv') === 0) {
                 /**@var Csv $file */
                 $file = (new Csv($inputFile))->setDelimiter(',');
-                $columns = $file->getColumns();
             } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
-                $inputFileType = \PHPExcel_IOFactory::identify($inputFile);
-                if (strcmp($inputFileType, 'Excel5') === 0) {
-                    /**@var Excel $file */
-                    $file = new \UR\Service\DataSource\Excel($inputFile, $phpExcel);
-                    $columns = $file->getColumns();
-                } else if (strcmp($inputFileType, 'Excel2007') === 0) {
-                    $reader = ReaderFactory::create(Type::XLSX);
-                    $reader->open($inputFile);
-                    foreach ($reader->getSheetIterator() as $sheet) {
-                        foreach ($sheet->getRowIterator() as $row) {
-                            $columns = $row;
-                            break;
-                        }
-                        break;
-                    }
-                }
+                /**@var Excel $file */
+                $file = new \UR\Service\DataSource\Excel($inputFile, $phpExcel);
             } else {
                 $file = new Json($item->getPath());
-                $columns = $file->getColumns();
             }
-//            $columns = $file->getColumns();
+            $columns = $file->getColumns();
             $arr = array_merge($arr, $columns);
             $arr = array_unique($arr);
             $arr = array_filter($arr, function ($value) {

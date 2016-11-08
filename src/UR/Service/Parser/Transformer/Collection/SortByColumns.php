@@ -21,6 +21,7 @@ class SortByColumns implements CollectionTransformerInterface
         $sortByColumns = array_intersect($columns, $this->sortByColumns);
 
         if (count($sortByColumns) != count($this->sortByColumns)) {
+            return new Collection($columns, $rows);
             throw new \InvalidArgumentException('Cannot sort the collection, some of the columns do not exist');
         }
         // todo implement sorting

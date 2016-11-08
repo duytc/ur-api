@@ -132,6 +132,10 @@ class AutoCreateDataImportWorker
                     }
                 }
 
+                if (count($parserConfig->getAllColumnMappings()) === 0) {
+                    continue;
+                }
+
                 $validRequires = true;
                 foreach ($connectedDataSource->getRequires() as $require) {
                     if (!array_key_exists($require, $parserConfig->getAllColumnMappings())) {
