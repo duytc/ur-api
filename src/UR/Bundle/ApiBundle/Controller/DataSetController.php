@@ -196,7 +196,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
             throw new \Exception(sprintf("Connected param %s is not valid", $connected));
         }
 
-        return $dataSource;
+        return array_values($dataSource);
     }
 
     /**
