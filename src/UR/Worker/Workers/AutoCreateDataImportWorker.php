@@ -7,9 +7,12 @@ use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\ORM\EntityManagerInterface;
 use Liuggio\ExcelBundle\Factory;
+use UR\DomainManager\AlertManager;
+use UR\DomainManager\AlertManagerInterface;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\DataSourceEntryImportHistoryManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
+use UR\Entity\Core\Alert;
 use UR\Entity\Core\DataSourceEntryImportHistory;
 use UR\Entity\Core\ImportHistory;
 use UR\Exception\InvalidArgumentException;
@@ -58,14 +61,20 @@ class AutoCreateDataImportWorker
     private $dataSourceEntryImportHistoryManager;
 
     /**
+     * @var AlertManagerInterface
+     */
+    private $alertManager;
+
+    /**
      * @var Factory
      */
     private $phpExcel;
 
-    function __construct(DataSetManagerInterface $dataSetManager, ImportHistoryManagerInterface $importHistoryManager, DataSourceEntryImportHistoryManagerInterface $dataSourceEntryImportHistoryManager, EntityManagerInterface $em, Factory $phpExcel)
+    function __construct(DataSetManagerInterface $dataSetManager, ImportHistoryManagerInterface $importHistoryManager, AlertManagerInterface $alertManager, DataSourceEntryImportHistoryManagerInterface $dataSourceEntryImportHistoryManager, EntityManagerInterface $em, Factory $phpExcel)
     {
         $this->dataSetManager = $dataSetManager;
         $this->importHistoryManager = $importHistoryManager;
+        $this->alertManager = $alertManager;
         $this->dataSourceEntryImportHistoryManager = $dataSourceEntryImportHistoryManager;
         $this->em = $em;
         $this->phpExcel = $phpExcel;
@@ -159,17 +168,26 @@ class AutoCreateDataImportWorker
 
                 $collectionParser = $parser->parse($file, $parserConfig);
 
+                $type = "";
+
                 if (is_array($collectionParser)) {
                     $desc = "";
+                    $title = "";
                     if (strcmp($collectionParser["error"], "filter") === 0) {
+                        $title = "Import data failure";
+                        $type = "error";
                         $desc = "error when Filter file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
                     }
 
                     if (strcmp($collectionParser["error"], "transform") === 0) {
+                        $title = "Import data failure";
+                        $type = "error";
                         $desc = "error when Transform file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
                     }
 
                     $this->createDataSourceEntryHistory($item, $importHistoryEntity, "failure", $desc);
+
+                    $this->createImportedDataAlert($item, $title, $type, $desc);
                     continue;
                 }
 
@@ -177,6 +195,10 @@ class AutoCreateDataImportWorker
 
                 $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
 
+                $title = "Import data successfully";
+                $type = "info";
+                $desc = "File ". $item->getPath() . " of " . $connectedDataSource->getDataSource()->getName() . " and " . $connectedDataSource->getDataSet()->getName() . " is imported";
+                $this->createImportedDataAlert($item, $title, $type, $desc);
             }
         }
     }
@@ -303,5 +325,15 @@ class AutoCreateDataImportWorker
         $dseImportHistoryEntity->setStatus($status);
         $dseImportHistoryEntity->setDescription($desc);
         $this->dataSourceEntryImportHistoryManager->save($dseImportHistoryEntity);
+    }
+
+    function createImportedDataAlert(DataSourceEntryInterface $item, $title, $type, $message)
+    {
+        $importedDataAlert = new Alert();
+        $importedDataAlert->setDataSourceEntry($item);
+        $importedDataAlert->setTitle($title);
+        $importedDataAlert->setType($type);
+        $importedDataAlert->setMessage($message);
+        $this->alertManager->save($importedDataAlert);
     }
 }
