@@ -96,7 +96,9 @@ class AutoCreateDataImportWorker
         }
 
         //create or update empty dataSet table
-        $this->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $conn);
+        if (!$dataSetLocator->getDataSetImportTable($dataSetId)) {
+            $this->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $conn);
+        }
 
         $connectedDataSources = $dataSet->getConnectedDataSources();
 
@@ -185,9 +187,9 @@ class AutoCreateDataImportWorker
                     continue;
                 }
 
-                $ds1 = $dataSetLocator->getDataSet($dataSetId);
+                $ds1 = $dataSetLocator->getDataSetImportTable($dataSetId);
 
-                $dataSetImporter->importCollection($collectionParser, $ds1);
+                $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
 
                 $title = "Import data successfully";
                 $type = "info";
@@ -200,10 +202,10 @@ class AutoCreateDataImportWorker
     function createEmptyDataSetTable(DataSetInterface $dataSet, Locator $dataSetLocator, Synchronizer $dataSetSynchronizer, Connection $conn)
     {
         $schema = new Schema();
-        $dataSetTable = $schema->createTable($dataSetLocator->getDataSetName($dataSet->getId()));
+        $dataSetTable = $schema->createTable($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
         $dataSetTable->addColumn("__id", "integer", array("autoincrement" => true, "unsigned" => true));
         $dataSetTable->setPrimaryKey(array("__id"));
-        $dataSetTable->addColumn("__data_source_id", "integer", array("unsigned" => true, "notnull" => true, "default" => 1));
+        $dataSetTable->addColumn("__data_source_id", "integer", array("unsigned" => true, "notnull" => true));
         $dataSetTable->addColumn("__import_id", "integer", array("unsigned" => true, "notnull" => true));
         // create import table
         // add dimensions
@@ -211,7 +213,7 @@ class AutoCreateDataImportWorker
             $dataSetTable->addColumn($key, $value);
         }
 
-// add metrics
+        // add metrics
         foreach ($dataSet->getMetrics() as $key => $value) {
 
             if (strcmp($value, Type::NUMBER) === 0) {
@@ -223,10 +225,10 @@ class AutoCreateDataImportWorker
             }
         }
 
-// create table
+        // create table
         try {
             $dataSetSynchronizer->syncSchema($schema);
-            $truncateSql = $conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetName($dataSet->getId()));
+            $truncateSql = $conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
             $conn->exec($truncateSql);
         } catch (\Exception $e) {
             echo "could not sync schema";
@@ -273,7 +275,6 @@ class AutoCreateDataImportWorker
             }
 
             if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::ALL_FIELD) === 0) {
-//                foreach ($transform as $k => $v) {
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
                     $parserConfig->transformCollection(new GroupByColumns($transform[TransformType::FIELDS]));
@@ -310,7 +311,6 @@ class AutoCreateDataImportWorker
 
             }
         }
-//        }
     }
 
     function createDataSourceEntryHistory(DataSourceEntryInterface $item, $importHistoryEntity, $status, $desc)
