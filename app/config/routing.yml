@@ -1,3 +1,7 @@
+report_api:
+    resource: "@ReportApiBundle/Resources/config/routing.yml"
+    prefix:   /report
+
 ur_admin_api:
     resource: "@URAdminApiBundle/Resources/config/routing.yml"
     type:   rest

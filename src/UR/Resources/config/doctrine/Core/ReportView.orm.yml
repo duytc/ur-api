@@ -1,0 +1,30 @@
+UR\Entity\Core\ReportView:
+    type: entity
+    table: core_report_view
+    repositoryClass: UR\Repository\Core\ReportViewRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        filters:
+            type: json_array
+            nullable: true
+        transforms:
+            type: json_array
+            nullable: true
+        name:
+            type: string
+            nullable: false
+        joinedFields:
+            type: json_array
+            nullable: true
+        createdDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+    manyToMany:
+        dataSets:
+            targetEntity: UR\Entity\Core\DataSet
