@@ -186,17 +186,17 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         $connected = $request->query->get('connected', null);
         $dataSourceManager = $this->get('ur.domain_manager.data_source');
 
-        if (!$connected) {
+        if (is_null($connected)) {
             $dataSource = $dataSourceManager->getDataSourceForPublisher($dataSet->getPublisher());
-        }else if ($connected == true) {
+        } else if (strtolower($connected) === 'true') {
             $dataSource = $dataSourceManager->getDataSourceByDataSet($dataSet);
-        } else if ($connected == false) {
+        } else if (strtolower($connected) === 'false') {
             $dataSource = $dataSourceManager->getDataSourceNotInByDataSet($dataSet);
         } else {
             throw new \Exception(sprintf("Connected param %s is not valid", $connected));
         }
 
-        return $dataSource;
+        return array_values($dataSource);
     }
 
     /**

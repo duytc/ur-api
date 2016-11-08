@@ -100,7 +100,9 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
 
         $allQb = $this->getDataSourcesForPublisherQuery($dataSet->getPublisher());
 
-        return array_diff($allQb->getQuery()->getResult(), $inQb->getQuery()->getResult());
+        $notIn = array_diff($allQb->getQuery()->getResult(), $inQb->getQuery()->getResult());
+
+        return $notIn;
     }
 
     /**
