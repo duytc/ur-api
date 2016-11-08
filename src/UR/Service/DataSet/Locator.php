@@ -20,11 +20,11 @@ class Locator
      * @param int $id
      * @return \Doctrine\DBAL\Schema\Table|false
      */
-    public function getDataSet($id)
+    public function getDataSetImportTable($id)
     {
         $sm = $this->conn->getSchemaManager();
 
-        $tableName = $this->getDataSetName($id);
+        $tableName = $this->getDataSetImportTableName($id);
 
         if (!$sm->tablesExist([$tableName])) {
             return false;
@@ -33,8 +33,8 @@ class Locator
         return $sm->listTableDetails($tableName);
     }
 
-    public function getDataSetName($id)
+    public function getDataSetImportTableName($id)
     {
-        return sprintf('__data_set_%d', $id);
+        return sprintf('__data_import_%d', $id);
     }
 }
