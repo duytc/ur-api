@@ -25,7 +25,15 @@ class ComparisonPercent implements CollectionTransformerInterface
         $columnCheck = array_diff([$this->columnA, $this->columnB], $columns);
 
         if (count($columnCheck) > 0) {
-            throw new \InvalidArgumentException('Some of the expected columns do not exist');
+            $columns[]=$this->newColumn;
+            foreach ($rows as $idx => &$row) {
+                $value = "";
+                $row[$this->newColumn] = $value;
+            }
+
+            return new Collection($columns, $rows);
+
+//            throw new \InvalidArgumentException('Some of the expected columns do not exist');
         }
 
         if (in_array($this->newColumn, $columns, true)) {

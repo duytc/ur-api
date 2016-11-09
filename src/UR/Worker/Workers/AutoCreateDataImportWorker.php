@@ -6,13 +6,20 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\ORM\EntityManagerInterface;
+use Liuggio\ExcelBundle\Factory;
+use UR\DomainManager\AlertManager;
+use UR\DomainManager\AlertManagerInterface;
 use UR\DomainManager\DataSetManagerInterface;
+use UR\DomainManager\DataSourceEntryImportHistoryManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
+use UR\Entity\Core\Alert;
+use UR\Entity\Core\DataSourceEntryImportHistory;
 use UR\Entity\Core\ImportHistory;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Repository\Core\DataSourceRepository;
 use UR\Service\DataSet\FilterType;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
@@ -20,6 +27,8 @@ use UR\Service\DataSet\Synchronizer;
 use UR\Service\DataSet\TransformType;
 use UR\Service\DataSet\Type;
 use UR\Service\DataSource\Csv;
+use UR\Service\DataSource\Excel;
+use UR\Service\DataSource\Json;
 use UR\Service\Parser\Filter\DateFilter;
 use UR\Service\Parser\Filter\NumberFilter;
 use UR\Service\Parser\Filter\TextFilter;
@@ -30,6 +39,7 @@ use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Parser\Transformer\Column\DateFormat;
+use UR\Service\Parser\Transformer\Column\NumberFormat;
 
 class AutoCreateDataImportWorker
 {
@@ -46,14 +56,32 @@ class AutoCreateDataImportWorker
      */
     private $importHistoryManager;
 
-    function __construct(DataSetManagerInterface $dataSetManager, ImportHistoryManagerInterface $importHistoryManager, EntityManagerInterface $em)
+    /**
+     * @var DataSourceEntryImportHistoryManagerInterface
+     */
+    private $dataSourceEntryImportHistoryManager;
+
+    /**
+     * @var AlertManagerInterface
+     */
+    private $alertManager;
+
+    /**
+     * @var Factory
+     */
+    private $phpExcel;
+
+    function __construct(DataSetManagerInterface $dataSetManager, ImportHistoryManagerInterface $importHistoryManager, AlertManagerInterface $alertManager, DataSourceEntryImportHistoryManagerInterface $dataSourceEntryImportHistoryManager, EntityManagerInterface $em, Factory $phpExcel)
     {
         $this->dataSetManager = $dataSetManager;
         $this->importHistoryManager = $importHistoryManager;
+        $this->alertManager = $alertManager;
+        $this->dataSourceEntryImportHistoryManager = $dataSourceEntryImportHistoryManager;
         $this->em = $em;
+        $this->phpExcel = $phpExcel;
     }
 
-    function autoCreateDataImport($dataSetId)
+    function autoCreateDataImport($dataSetId, $filepath)
     {
         $conn = $this->em->getConnection();
         $dataSetLocator = new Locator($conn);
@@ -68,6 +96,11 @@ class AutoCreateDataImportWorker
             throw new InvalidArgumentException('not found Dataset with this ID');
         }
 
+        //create or update empty dataSet table
+        if (!$dataSetLocator->getDataSetImportTable($dataSetId)) {
+            $this->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $conn);
+        }
+
         $connectedDataSources = $dataSet->getConnectedDataSources();
 
         /**@var ConnectedDataSourceInterface $connectedDataSource */
@@ -76,10 +109,8 @@ class AutoCreateDataImportWorker
             // create importHistory: createdTime
             $importHistoryEntity = new ImportHistory();
             $importHistoryEntity->setConnectedDataSource($connectedDataSource);
+//            $importHistoryEntity->setDescription();
             $this->importHistoryManager->save($importHistoryEntity);
-
-            //create or update empty dataSet table
-            $this->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $conn);
 
             //get all dataSource entries
             $dse = $connectedDataSource->getDataSource()->getDataSourceEntries();
@@ -88,11 +119,20 @@ class AutoCreateDataImportWorker
 
             /**@var DataSourceEntryInterface $item */
             foreach ($dse as $item) {
-                // parse: Giang
-                $file = (new Csv($item->getPath()))->setDelimiter(',');
+
+                if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'csv') === 0) {
+                    /**@var Csv $file */
+                    $file = (new Csv($filepath . $item->getPath()))->setDelimiter(',');
+                } else if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'excel') === 0) {
+                    /**@var Excel $file */
+                    $file = new \UR\Service\DataSource\Excel($filepath . $item->getPath(), $this->phpExcel);
+                } else {
+                    $file = new Json($item->getPath());
+                }
                 // mapping
                 $parserConfig = new ParserConfig();
                 $columns = $file->getColumns();
+
                 foreach ($columns as $column) {
                     foreach ($connectedDataSource->getMapFields() as $k => $v) {
                         if (strcmp($column, $k) === 0) {
@@ -101,6 +141,20 @@ class AutoCreateDataImportWorker
                         }
                     }
                 }
+
+                $validRequires = true;
+                foreach ($connectedDataSource->getRequires() as $require) {
+                    if (!array_key_exists($require, $parserConfig->getAllColumnMappings())) {
+                        $validRequires = false;
+                        break;
+                    }
+                }
+
+                if (!$validRequires) {
+                    $this->createDataSourceEntryHistory($item, $importHistoryEntity, "failure", "error when mapping require fields");
+                    continue;
+                }
+
                 //filter
                 $this->filterDataSetTable($connectedDataSource, $parserConfig);
 
@@ -108,33 +162,72 @@ class AutoCreateDataImportWorker
                 $this->transformDataSetTable($connectedDataSource, $parserConfig);
 
                 // import
+
                 $collectionParser = $parser->parse($file, $parserConfig);
 
-                $ds1 = $dataSetLocator->getDataSet($dataSetId);
+                $type = "";
 
-                $dataSetImporter->importCollection($collectionParser, $ds1);
+                if (is_array($collectionParser)) {
+                    $desc = "";
+                    $title = "";
+                    if (strcmp($collectionParser["error"], "filter") === 0) {
+                        $title = "Import data failure";
+                        $type = "error";
+                        $desc = "error when Filter file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
+                    }
 
+                    if (strcmp($collectionParser["error"], "transform") === 0) {
+                        $title = "Import data failure";
+                        $type = "error";
+                        $desc = "error when Transform file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
+                    }
+
+                    $this->createDataSourceEntryHistory($item, $importHistoryEntity, "failure", $desc);
+
+                    $dataSource = $connectedDataSource->getDataSource();
+                    $alertSetting = $dataSource->getAlertSetting();
+
+                    if (in_array(DataSourceRepository::DATA_RECEIVED, $alertSetting)) {
+                        $this->createImportedDataAlert($item, $title, $type, $desc);
+                    }
+                    continue;
+                }
+
+                $ds1 = $dataSetLocator->getDataSetImportTable($dataSetId);
+
+                $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
+
+                $title = "Import data successfully";
+                $type = "info";
+                $arrayPath = explode('/', $item->getPath());
+                $fileNameTemp = $arrayPath[count($arrayPath) - 1];
+                $first = explode('_', $fileNameTemp);
+                $second = explode('.', $first[1]);
+                $fileName = $first[0] . "." . $second[1];
+                $desc = "File ". $fileName . " of " . $connectedDataSource->getDataSource()->getName() . " and " . $connectedDataSource->getDataSet()->getName() . " is imported";
+                $alertSetting = $dataSource->getAlertSetting();
+                if (in_array(DataSourceRepository::WRONG_FORMAT, $alertSetting)) {
+                    $this->createImportedDataAlert($item, $title, $type, $desc);
+                }
             }
         }
-
     }
 
     function createEmptyDataSetTable(DataSetInterface $dataSet, Locator $dataSetLocator, Synchronizer $dataSetSynchronizer, Connection $conn)
     {
         $schema = new Schema();
-        $dataSetTable = $schema->createTable($dataSetLocator->getDataSetName($dataSet->getId()));
+        $dataSetTable = $schema->createTable($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
         $dataSetTable->addColumn("__id", "integer", array("autoincrement" => true, "unsigned" => true));
         $dataSetTable->setPrimaryKey(array("__id"));
         $dataSetTable->addColumn("__data_source_id", "integer", array("unsigned" => true, "notnull" => true));
         $dataSetTable->addColumn("__import_id", "integer", array("unsigned" => true, "notnull" => true));
-
         // create import table
         // add dimensions
         foreach ($dataSet->getDimensions() as $key => $value) {
             $dataSetTable->addColumn($key, $value);
         }
 
-// add metrics
+        // add metrics
         foreach ($dataSet->getMetrics() as $key => $value) {
 
             if (strcmp($value, Type::NUMBER) === 0) {
@@ -146,10 +239,10 @@ class AutoCreateDataImportWorker
             }
         }
 
-// create table
+        // create table
         try {
             $dataSetSynchronizer->syncSchema($schema);
-            $truncateSql = $conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetName($dataSet->getId()));
+            $truncateSql = $conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
             $conn->exec($truncateSql);
         } catch (\Exception $e) {
             echo "could not sync schema";
@@ -160,18 +253,18 @@ class AutoCreateDataImportWorker
     function filterDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
     {
         $filters = $connectedDataSource->getFilters();
-        foreach ($filters as $field => $filter) {
+        foreach ($filters as $filter) {
             // filter Date
             if (strcmp($filter[FilterType::TYPE], Type::DATE) === 0) {
-                $parserConfig->filtersColumn($field, new DateFilter($filter[FilterType::FORMAT], $filter[FilterType::FROM], $filter[FilterType::TO]));
+                $parserConfig->filtersColumn($filter[FilterType::FIELD], new DateFilter($filter[FilterType::FORMAT], $filter[FilterType::FROM], $filter[FilterType::TO]));
             }
 
             if (strcmp($filter[FilterType::TYPE], Type::TEXT) === 0) {
-                $parserConfig->filtersColumn($field, new TextFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
+                $parserConfig->filtersColumn($filter[FilterType::FIELD], new TextFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
             }
 
             if (strcmp($filter[FilterType::TYPE], Type::NUMBER) === 0) {
-                $parserConfig->filtersColumn($field, new NumberFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
+                $parserConfig->filtersColumn($filter[FilterType::FIELD], new NumberFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
             }
         }
     }
@@ -180,57 +273,77 @@ class AutoCreateDataImportWorker
     {
         $transforms = $connectedDataSource->getTransforms();
 
-        foreach ($transforms[Type::SINGLE_FIELD] as $field => $trans) {
+        foreach ($transforms as $transform) {
 
-            if ($parserConfig->hasColumnMapping($field)) {
+            if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::SINGLE_FIELD) === 0 && $parserConfig->hasColumnMapping($transform[TransformType::FIELD])) {
 
                 //TODO WILL BE CHANGE IN FUTURE
-                if (strcmp($trans[TransformType::TYPE], TransformType::DATE) === 0) {
-                    $parserConfig->transformColumn($field, new DateFormat($trans[FilterType::FROM], 'Y-m-d'));
+                if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
+                    $parserConfig->transformColumn($transform[TransformType::FIELD], new DateFormat($transform[TransformType::FROM], 'Y-m-d'));
                 }
 
-                if (strcmp($trans[TransformType::TYPE], TransformType::NUMBER) === 0) {
-                    //todo will be add in the future
+                if (strcmp($transform[TransformType::TYPE], TransformType::NUMBER) === 0) {
+
                 }
+
+            }
+
+            if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::ALL_FIELD) === 0) {
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
+                    $parserConfig->transformCollection(new GroupByColumns($transform[TransformType::FIELDS]));
+                    continue;
+                }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
+                    $parserConfig->transformCollection(new SortByColumns($transform[TransformType::FIELDS]));
+                    continue;
+                }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
+
+                    foreach ($transform[TransformType::FIELDS] as $addfields) {
+                        $parserConfig->transformCollection(new AddField($addfields[TransformType::FIELD], $addfields[TransformType::VALUE]));
+                    }
+                    continue;
+                }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CALCULATED_FIELD) === 0) {
+
+                    foreach ($transform[TransformType::FIELDS] as $f => $expression) {
+                        //todo will be change in future
+                    }
+                    continue;
+                }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
+                    foreach ($transform[TransformType::FIELDS] as $comparisonPercents) {
+                        $parserConfig->transformCollection(new ComparisonPercent($comparisonPercents[TransformType::FIELD], $comparisonPercents[TransformType::COMPARISON][0], $comparisonPercents[TransformType::COMPARISON][1]));
+                    }
+                    continue;
+                }
+
             }
         }
+    }
 
-        foreach ($transforms[Type::ALL_FIELD] as $field => $trans) {
+    function createDataSourceEntryHistory(DataSourceEntryInterface $item, $importHistoryEntity, $status, $desc)
+    {
+        $dseImportHistoryEntity = new DataSourceEntryImportHistory();
+        $dseImportHistoryEntity->setDataSourceEntry($item);
+        $dseImportHistoryEntity->setImportHistory($importHistoryEntity);
+        $dseImportHistoryEntity->setStatus($status);
+        $dseImportHistoryEntity->setDescription($desc);
+        $this->dataSourceEntryImportHistoryManager->save($dseImportHistoryEntity);
+    }
 
-            //todo will be change in the future
-            if (strcmp($field, TransformType::GROUP_BY) === 0) {
-                $parserConfig->transformCollection(new GroupByColumns($trans));
-                continue;
-            }
-
-            if (strcmp($field, TransformType::SORT_BY) === 0) {
-                $parserConfig->transformCollection(new SortByColumns($trans));
-                continue;
-            }
-
-            if (strcmp($field, TransformType::ADD_FIELD) === 0) {
-
-                foreach ($trans as $f => $v) {
-                    $parserConfig->transformCollection(new AddField($f, $v));
-                }
-                continue;
-            }
-
-            if (strcmp($field, TransformType::ADD_CALCULATED_FIELD) === 0) {
-
-                foreach ($trans as $f => $expression) {
-//                    $parserConfig->transformCollection(new AddCalculatedField($expressionLanguage, $f, $expression, 0));
-                }
-                continue;
-            }
-
-            if (strcmp($field, TransformType::COMPARISON_PERCENT) === 0) {
-                foreach ($trans as $f => $expression) {
-                    $parserConfig->transformCollection(new ComparisonPercent($f, $expression[0], $expression[1]));
-                }
-                continue;
-            }
-
-        }
+    function createImportedDataAlert(DataSourceEntryInterface $item, $title, $type, $message)
+    {
+        $importedDataAlert = new Alert();
+        $importedDataAlert->setDataSourceEntry($item);
+        $importedDataAlert->setTitle($title);
+        $importedDataAlert->setType($type);
+        $importedDataAlert->setMessage($message);
+        $this->alertManager->save($importedDataAlert);
     }
 }

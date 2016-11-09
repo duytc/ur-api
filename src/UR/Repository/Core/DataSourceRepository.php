@@ -4,6 +4,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -11,7 +12,8 @@ use UR\Model\User\Role\UserRoleInterface;
 class DataSourceRepository extends EntityRepository implements DataSourceRepositoryInterface
 {
     protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name'];
-
+    const WRONG_FORMAT = 'wrongFormat';
+    const DATA_RECEIVED = 'dataReceived';
     /**
      * @inheritdoc
      */
@@ -66,6 +68,42 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
             ->setParameter('urEmailParam', $emailKey, Type::STRING);
 
         return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceByDataSetQuery(DataSetInterface $dataSet)
+    {
+        $qb = $this->createQueryBuilder('ds')
+            ->join('ds.connectedDataSources', 'cds')
+            ->where('cds.dataSet = :dataSet')
+            ->setParameter('dataSet', $dataSet)
+            ->andWhere('ds.publisher = :publisherId')
+            ->setParameter('publisherId', $dataSet->getPublisherId());
+
+        return $qb;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceByDataSet(DataSetInterface $dataSet)
+    {
+        $qb = $this->getDataSourceByDataSetQuery($dataSet);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function getDataSourceNotInByDataSet(DataSetInterface $dataSet)
+    {
+        $inQb = $this->getDataSourceByDataSetQuery($dataSet);
+
+        $allQb = $this->getDataSourcesForPublisherQuery($dataSet->getPublisher());
+
+        $notIn = array_diff($allQb->getQuery()->getResult(), $inQb->getQuery()->getResult());
+
+        return $notIn;
     }
 
     /**

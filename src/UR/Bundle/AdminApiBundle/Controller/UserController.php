@@ -12,6 +12,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\AdminApiBundle\Handler\UserHandlerInterface;
 use UR\Bundle\ApiBundle\Controller\RestControllerAbstract;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
+use UR\Exception\InvalidArgumentException;
+use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
 
 class UserController extends RestControllerAbstract implements ClassResourceInterface
@@ -175,6 +177,37 @@ class UserController extends RestControllerAbstract implements ClassResourceInte
     public function patchAction(Request $request, $id)
     {
         return $this->patch($request, $id);
+    }
+
+    /**
+     * Get all datasources of a publisher
+     *
+     * @Rest\Get("/users/{id}/datasources", requirements={"id" = "\d+"})
+     * @Rest\View(serializerGroups={"datasource.summary"})
+     *
+     * @ApiDoc(
+     *  section = "admin",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     * @return array
+     */
+    public function getDataSourcesForPublisherAction($id)
+    {
+        if (!$this->getUser() instanceof AdminInterface) {
+            throw new InvalidArgumentException('only Admin has permission to view this resource');
+        }
+
+        $publisherManager = $this->get('ur_user.domain_manager.publisher');
+        $publisher = $publisherManager->findPublisher($id);
+
+        $em = $this->get('ur.domain_manager.data_source');
+
+        return $em->getDataSourceForPublisher($publisher);
     }
 
     /**

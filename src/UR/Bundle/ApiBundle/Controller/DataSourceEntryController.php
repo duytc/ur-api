@@ -144,14 +144,12 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         /**@var DataSourceEntryInterface $dataSourceEntry */
         $dataSourceEntry = $dataSourceEntryManager->find($id);
 
-        if(!$dataSourceEntry instanceof DataSourceEntryInterface) {
-            throw new NotFoundHttpException(
-                sprintf("The %s resource '%s' was not found or you do not have access", $this->getResourceName(), $id)
-            );
-        }
-
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
         $filePath = $uploadRootDir . $dataSourceEntry->getPath();
+
+        if(!file_exists($filePath)) {
+            throw new NotFoundHttpException('The file was not found or you do not have access');
+        }
 
         $response = new Response();
         $response->headers->set('Cache-Control', 'private');

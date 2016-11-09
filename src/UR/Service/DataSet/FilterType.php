@@ -15,14 +15,16 @@ final class FilterType
     const GREATER_OR_EQUAL = 'greater or equal'; // double/float
     const IN = 'in';
     const NOT = 'not';
+    const FIELD='field';
     const FORMAT = 'format';
-    const FROM = 'from';
-    const TO = 'to';
+    const FROM = 'startDate';
+    const TO = 'endDate';
 
     const CONTAINS = 'contains';
     const NOT_CONTAINS = 'not contains';
     const START_WITH = 'start with';
     const END_WITH = 'end with';
+    const DEFAULT_DATE_FORMAT= 'Y-m-d';
 
 
     private static $comparisonForNumbers = [
@@ -47,7 +49,13 @@ final class FilterType
 
     public static function isValidFilterDateType($arr)
     {
-        if (count($arr) !== 4 || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr) || !array_key_exists(self::FORMAT, $arr)) {
+        if (count($arr) !== 5 || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr) || !array_key_exists(self::FORMAT, $arr)) {
+            return false;
+        }
+        $dateFrom = \DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $arr[self::FROM]);
+        $dateTo = \DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $arr[self::FROM]);
+
+        if (!$dateFrom || !$dateTo) {
             return false;
         }
         //todo check date range is valid
@@ -56,7 +64,7 @@ final class FilterType
 
     public static function isValidFilterNumberType($arr)
     {
-        if (count($arr) !== 3 || !array_key_exists(self::COMPARISON, $arr) || !array_key_exists(self::COMPARE_VALUE, $arr)) {
+        if (count($arr) !== 4 || !array_key_exists(self::COMPARISON, $arr) || !array_key_exists(self::COMPARE_VALUE, $arr)) {
             return false;
         }
 
@@ -69,7 +77,7 @@ final class FilterType
 
     public static function isValidFilterTextType($arr)
     {
-        if (count($arr) !== 3 || !array_key_exists(self::COMPARISON, $arr) || !array_key_exists(self::COMPARE_VALUE, $arr)) {
+        if (count($arr) !== 4 || !array_key_exists(self::COMPARISON, $arr) || !array_key_exists(self::COMPARE_VALUE, $arr)) {
             return false;
         }
 

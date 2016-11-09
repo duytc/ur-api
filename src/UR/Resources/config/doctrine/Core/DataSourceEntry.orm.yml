@@ -27,3 +27,8 @@ UR\Entity\Core\DataSourceEntry:
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource
+            inversedBy: dataSourceEntries
+            joinColumn:
+                name: data_source_id
+                referencedColumnName: id
+                onDelete: CASCADE

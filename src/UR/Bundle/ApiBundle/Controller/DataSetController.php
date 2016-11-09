@@ -22,7 +22,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     /**
      * Get all data sets
      *
-     * @Rest\View(serializerGroups={"dataset.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"dataset.detail", "user.summary", "connectedDataSource.summary"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
@@ -58,7 +58,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      *
      * @Rest\Get("/datasets/{id}", requirements={"id" = "\d+"})
      *
-     * @Rest\View(serializerGroups={"dataset.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"dataset.detail", "user.summary", "connectedDataSource.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -156,6 +156,75 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         }
 
         return $this->patch($request, $id);
+    }
+
+    /**
+     * Get all data sources of a data set
+     *
+     * @Rest\Get("datasets/{id}/datasources", requirements={"id" = "\d+"})
+     * @Rest\View(serializerGroups={"datasource.summary","dataset.summary"})
+     * @Rest\QueryParam(name="connected", nullable=true, requirements="\d+", description="relation between datasource and dataset option")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @param int $id the resource id
+     * @return array
+     * @throws \Exception
+     */
+    public function getDataSourceByDataSetAction(Request $request, $id)
+    {
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $this->one($id);
+
+        $connected = $request->query->get('connected', null);
+        $dataSourceManager = $this->get('ur.domain_manager.data_source');
+
+        if (is_null($connected)) {
+            $dataSource = $dataSourceManager->getDataSourceForPublisher($dataSet->getPublisher());
+        } else if (strtolower($connected) === 'true') {
+            $dataSource = $dataSourceManager->getDataSourceByDataSet($dataSet);
+        } else if (strtolower($connected) === 'false') {
+            $dataSource = $dataSourceManager->getDataSourceNotInByDataSet($dataSet);
+        } else {
+            throw new \Exception(sprintf("Connected param %s is not valid", $connected));
+        }
+
+        return array_values($dataSource);
+    }
+
+    /**
+     * Get all connected data sources of a data set
+     *
+     * @Rest\Get("datasets/{id}/connecteddatasources", requirements={"id" = "\d+"})
+     * @Rest\View(serializerGroups={"connectedDataSource.summary", "datasource.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     * @return array
+     */
+    public function getConnectedDataSourceByDataSetAction($id)
+    {
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $this->one($id);
+
+        $connectedDataSourceManager = $this->get('ur.domain_manager.connected_data_source');
+        $connectedDataSource = $connectedDataSourceManager->getConnectedDataSourceByDataSet($dataSet);
+
+        return $connectedDataSource;
     }
 
     /**

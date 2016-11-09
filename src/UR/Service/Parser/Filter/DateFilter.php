@@ -3,6 +3,8 @@
 namespace UR\Service\Parser\Filter;
 
 
+use UR\Service\DataSet\FilterType;
+
 class DateFilter implements ColumnFilterInterface
 {
     protected $dateFrom;
@@ -12,14 +14,17 @@ class DateFilter implements ColumnFilterInterface
     public function __construct($format, $dateFrom, $dateTo)
     {
         $this->format = '!' . $format;
-        $this->dateFrom = \DateTime::createFromFormat($this->format, $dateFrom);
-        $this->dateTo = \DateTime::createFromFormat($this->format, $dateTo);
+        $this->dateFrom = \DateTime::createFromFormat(FilterType::DEFAULT_DATE_FORMAT, $dateFrom);
+        $this->dateTo = \DateTime::createFromFormat(FilterType::DEFAULT_DATE_FORMAT, $dateTo);
     }
 
     public function filter($filter)
     {
         $filter = \DateTime::createFromFormat($this->format, $filter);
 
+        if(!$filter){
+            return 2;
+        }
         if ($filter < $this->dateTo && $filter > $this->dateFrom) {
             return true;
         }

@@ -6,6 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\ConnectedDataSourceRepositoryInterface;
 
@@ -73,5 +74,13 @@ class ConnectedDataSourceManager implements ConnectedDataSourceManagerInterface
     public function all($limit = null, $offset = null)
     {
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getConnectedDataSourceByDataSet(DataSetInterface $dataSet)
+    {
+        return $this->repository->getConnectedDataSourceByDataSet($dataSet);
     }
 }

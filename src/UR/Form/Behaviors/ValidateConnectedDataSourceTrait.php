@@ -19,6 +19,20 @@ trait ValidateConnectedDataSourceTrait
                 return false;
             }
         }
+
+        return true;
+    }
+
+    public function validateRequireFields(DataSetInterface $dataSet, $connDataSource)
+    {
+
+        /**@var ConnectedDataSourceInterface $connDataSource */
+        foreach ($connDataSource->getRequires() as $require) {
+            if (!in_array($require, $connDataSource->getMapFields())) {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -27,51 +41,56 @@ trait ValidateConnectedDataSourceTrait
 
         /**@var ConnectedDataSourceInterface $connDataSource */
         if ($connDataSource->getFilters() !== null)
-            foreach ($connDataSource->getFilters() as $fieldName => $value) {
+            foreach ($connDataSource->getFilters() as $filters) {
 
-                if (!array_key_exists($fieldName, $dataSet->getDimensions()) && !array_key_exists($fieldName, $dataSet->getMetrics())) {
-                    return false;
+                if (!array_key_exists(FilterType::FIELD, $filters)) {
+                    return "Filter Setting should have 'field' property";
                 }
 
-                if (!array_key_exists(FilterType::TYPE, $value)) {
-                    return false;
+                if (!array_key_exists($filters[FilterType::FIELD], $dataSet->getDimensions()) && !array_key_exists($filters[FilterType::FIELD], $dataSet->getMetrics())) {
+                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] dose not exist in Dimensions or Metrics";
                 }
 
-                if (!Type::isValidFilterType($value[FilterType::TYPE])) {
-                    return false;
+
+                if (!array_key_exists(FilterType::TYPE, $filters)) {
+                    return "filter Setting error: cant find 'type' of field [" . $filters[FilterType::FIELD] . "]";
                 }
 
-                if ((strcmp($value[FilterType::TYPE], Type::DATE) === 0) && !FilterType::isValidFilterDateType($value)) {
-                    return false;
+                if (!Type::isValidFilterType($filters[FilterType::TYPE])) {
+                    return "filter Setting error: type of field [" . $filters[FilterType::FIELD] . "] should be one of ['date', 'text', 'number']";
                 }
 
-                if (strcmp($value[FilterType::TYPE], Type::NUMBER) === 0 && !FilterType::isValidFilterNumberType($value)) {
-                    return false;
+                if ((strcmp($filters[FilterType::TYPE], Type::DATE) === 0) && !FilterType::isValidFilterDateType($filters)) {
+                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Date Setting";
                 }
 
-                if (strcmp($value[FilterType::TYPE], Type::TEXT) === 0 && !FilterType::isValidFilterTextType($value)) {
-                    return false;
+                if (strcmp($filters[FilterType::TYPE], Type::NUMBER) === 0 && !FilterType::isValidFilterNumberType($filters)) {
+                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Number Setting";
+                }
+
+                if (strcmp($filters[FilterType::TYPE], Type::TEXT) === 0 && !FilterType::isValidFilterTextType($filters)) {
+                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Text Setting";
                 }
 
             }
-        return true;
+        return 0;
     }
 
     public function validateTransforms(ConnectedDataSourceInterface $connDataSource)
     {
         if ($connDataSource->getTransforms() !== null) {
 
-            foreach ($connDataSource->getTransforms() as $transformType => $fields) {
+            foreach ($connDataSource->getTransforms() as $transform) {
 
-                if (!Type::isValidTransformType($transformType)) {
+                if (!Type::isValidTransformType($transform[TransformType::TRANSFORM_TYPE])) {
                     return false;
                 }
 
-                if ((strcmp($transformType, Type::SINGLE_FIELD) === 0) && !$this->validateSingleFieldTransform($connDataSource, $fields)) {
+                if ((strcmp($transform[TransformType::TRANSFORM_TYPE], Type::SINGLE_FIELD) === 0) && !$this->validateSingleFieldTransform($connDataSource, $transform)) {
                     return false;
                 }
 
-                if ((strcmp($transformType, Type::ALL_FIELD) === 0) && !$this->validateAllFieldsTransform($connDataSource, $fields)) {
+                if ((strcmp($transform[TransformType::TRANSFORM_TYPE], Type::ALL_FIELD) === 0) && !$this->validateAllFieldsTransform($connDataSource, $transform)) {
                     return false;
                 }
 
@@ -80,47 +99,42 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
-    public function validateSingleFieldTransform(ConnectedDataSourceInterface $connectedDataSource, $fields)
+    public function validateSingleFieldTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
-        foreach ($fields as $fieldName => $formats) {
+//        foreach ($fields as $fieldName => $formats) {
 
-            if (!in_array($fieldName, $connectedDataSource->getMapFields())) {
-                return false;
-            }
-
-            if (!TransformType::isValidSingleFieldTransformType($formats)) {
-                return false;
-            }
-
+        if (!in_array($transform[TransformType::FIELD], $connectedDataSource->getMapFields())) {
+            return false;
         }
+
+        if (!TransformType::isValidSingleFieldTransformType($transform)) {
+            return false;
+        }
+
+//        }
 
         return true;
     }
 
-    public function validateAllFieldsTransform(ConnectedDataSourceInterface $connectedDataSource, $allFields)
+    public function validateAllFieldsTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
-        foreach ($allFields as $transType => $fieldName) {
+        if (!TransformType::isValidAllFieldTransformType($transform[TransformType::TYPE])) {
+            return false;
+        }
 
-            if (!TransformType::isValidAllFieldTransformType($transType)) {
-                return false;
+        if (TransformType::isGroupOrSortType($transform[TransformType::TYPE])) {
+            foreach ($transform[TransformType::FIELDS] as $field) {
+                if (!in_array($field, $connectedDataSource->getMapFields())) {
+                    return false;
+                }
             }
+        }
 
-            foreach ($fieldName as $key => $trans) {
-                if (TransformType::isGroupOrSortType($transType)) {
-
-                    if (!in_array($trans, $connectedDataSource->getMapFields())) {
-                        return false;
-                    }
+        if (TransformType::isAddingType($transform[TransformType::TYPE])) {
+            foreach ($transform[TransformType::FIELDS] as $field) {
+                if (in_array($field[TransformType::FIELD], $connectedDataSource->getMapFields())) {
+                    return false;
                 }
-
-                if (TransformType::isAddingType($transType)) {
-
-                    if (in_array($key, $connectedDataSource->getMapFields())) {
-                        return false;
-                    }
-                }
-                //todo validte addcalculate fields
-
             }
         }
 

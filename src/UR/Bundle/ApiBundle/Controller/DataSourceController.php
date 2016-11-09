@@ -2,6 +2,8 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use Box\Spout\Common\Type;
+use Box\Spout\Reader\ReaderFactory;
 use DataDog\PagerBundle\Pagination;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
@@ -19,6 +21,9 @@ use UR\Model\Core\DataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\User\Role\AdminInterface;
+use UR\Service\DataSource\Csv;
+use UR\Service\DataSource\Excel;
+use UR\Service\DataSource\Json;
 
 /**
  * @Rest\RouteResource("DataSource")
@@ -69,7 +74,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @Rest\Get("/datasources/{id}", requirements={"id" = "\d+"})
      *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.summary", "integration.summary", "user.summary", "dataSourceEntry.summary"})
+     * @Rest\View(serializerGroups={"datasource.summary", "dataSourceIntegration.summary", "integration.summary", "user.summary"})
      *
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
      *
@@ -285,6 +290,71 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $em = $this->get('ur.domain_manager.data_source');
 
         return $em->getDataSourceByEmailKey($emailKey);
+    }
+
+    /**
+     * Get data sources by API Key
+     *
+     * @Rest\Get("/datasources/{id}/detectedfields")
+     *
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id
+     * @return array
+     */
+    public function getDetectedFieldsAction($id)
+    {
+        /**@var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+        $dse = $dataSource->getDataSourceEntries();
+
+        $phpExcel = $this->container->get('phpexcel');
+        $arr = array();
+        /**@var DataSourceEntryInterface $item */
+        /**@var DataSourceInterface $file */
+        foreach ($dse as $item) {
+            $inputFile = $this->container->getParameter('upload_file_dir') . $item->getPath();
+            if (strcmp($dataSource->getFormat(), 'csv') === 0) {
+                /**@var Csv $file */
+                $file = (new Csv($inputFile))->setDelimiter(',');
+                $columns = $file->getColumns();
+            } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
+                $inputFileType = \PHPExcel_IOFactory::identify($inputFile);
+                if (strcmp($inputFileType, 'Excel5') === 0) {
+                    /**@var Excel $file */
+                    $file = new \UR\Service\DataSource\Excel($inputFile, $phpExcel);
+                    $columns = $file->getColumns();
+                } else if (strcmp($inputFileType, 'Excel2007') === 0) {
+                    $reader = ReaderFactory::create(Type::XLSX);
+                    $reader->open($inputFile);
+                    foreach ($reader->getSheetIterator() as $sheet) {
+                        foreach ($sheet->getRowIterator() as $row) {
+                            $columns = $row;
+                            break;
+                        }
+                        break;
+                    }
+                }
+            } else {
+                $file = new Json($item->getPath());
+                $columns = $file->getColumns();
+            }
+//            $columns = $file->getColumns();
+            $arr = array_merge($arr, $columns);
+            $arr = array_unique($arr);
+            $arr = array_filter($arr, function ($value) {
+                return $value !== '';
+            });
+        }
+
+        return array_values($arr);
     }
 
     /**

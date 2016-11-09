@@ -4,6 +4,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
@@ -45,4 +46,16 @@ interface DataSourceRepositoryInterface extends ObjectRepository
      * @return DataSourceInterface
      */
     public function getDataSourceByEmailKey($emailKey);
+
+    /**
+     * @param DataSetInterface $dataSet
+     * @return array
+     */
+    public function getDataSourceByDataSet(DataSetInterface $dataSet);
+
+    /**
+     * @param DataSetInterface $dataSet
+     * @return DataSourceInterface[]
+     */
+    public function getDataSourceNotInByDataSet(DataSetInterface $dataSet);
 }

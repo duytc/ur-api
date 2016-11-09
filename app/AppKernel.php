@@ -36,6 +36,7 @@ class AppKernel extends Kernel
             new UR\Bundle\UserSystem\AdminBundle\URUserSystemAdminBundle(),
 
             new Doctrine\Bundle\DoctrineCacheBundle\DoctrineCacheBundle(),
+            new Liuggio\ExcelBundle\LiuggioExcelBundle(),
         );
 
         if (in_array($this->getEnvironment(), array('dev', 'test'))) {

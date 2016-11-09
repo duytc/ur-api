@@ -1,0 +1,30 @@
+UR\Entity\Core\DataSourceEntryImportHistory:
+    type: entity
+    table: core_data_source_entry_import_history
+    repositoryClass: UR\Repository\Core\DataSourceEntryImportHistoryRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        status:
+            type: string
+            nullable: false
+        description:
+            type: string
+            nullable: true
+        importedDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+    manyToOne:
+        importHistory:
+            targetEntity: UR\Entity\Core\ImportHistory
+            joinColumn:
+                name: import_history_id
+                referencedColumnName: id
+                onDelete: CASCADE
+        dataSourceEntry:
+            targetEntity: UR\Entity\Core\DataSourceEntry

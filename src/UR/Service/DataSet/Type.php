@@ -7,7 +7,7 @@ final class Type
     const DATE = 'date';
     const DATETIME = 'datetime';
     const TEXT = 'text'; // varchar
-    const MULTI_LINE_TEXT = 'multi_line_text'; // text
+    const MULTI_LINE_TEXT = 'multiLineText'; // text
     const NUMBER = 'number'; // integer
     const DECIMAL = 'decimal'; // double/float
     const SINGLE_FIELD = 'single-field';

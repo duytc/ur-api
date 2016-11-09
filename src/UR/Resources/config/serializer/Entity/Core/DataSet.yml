@@ -19,3 +19,6 @@ UR\Entity\Core\DataSet:
         createdDate:
             expose: true
             groups: [dataset.detail, dataset.summary]
+        connectedDataSources:
+            expose: true
+            groups: [dataset.detail, dataset.summary]

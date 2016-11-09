@@ -75,7 +75,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                 //validate connDataSources
                 $connDataSources = $dataSet->getConnectedDataSources();
 
-                if (count($connDataSources) > 0) {
+                if (count($connDataSources) <0) {
 
                     foreach ($connDataSources as $connDataSource) {
 
@@ -147,6 +147,4 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         }
         return true;
     }
-
-
 }

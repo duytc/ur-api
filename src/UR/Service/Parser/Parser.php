@@ -41,7 +41,14 @@ class Parser implements ParserInterface
                 }
 
                 foreach ($filters as $filter) {
-                    $isValidFilter = $isValidFilter & $filter->filter($row[$column]);
+                    $filterResult = $filter->filter($row[$column]);
+                    if ($filterResult > 1) {
+                        return array("error" => "filter",
+                            "row" => $cur_row + 2,
+                            "column" => $column);
+                    } else {
+                        $isValidFilter = $isValidFilter & $filterResult;
+                    }
                 }
             }
 
@@ -58,6 +65,11 @@ class Parser implements ParserInterface
 
                 foreach ($transforms as $transform) {
                     $row[$column] = $transform->transform($row[$column]);
+                    if (!$row[$column]) {
+                        return array("error" => "transform",
+                            "row" => $cur_row + 2,
+                            "column" => $column);
+                    }
                 }
             }
         }

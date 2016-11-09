@@ -29,6 +29,11 @@ class DataSource implements DataSourceInterface
      */
     protected $dataSourceIntegrations;
 
+    /**
+     * @var ConnectedDataSourceInterface[]
+     */
+    protected $connectedDataSources;
+
     public function __construct()
     {
         $this->enable = true;
