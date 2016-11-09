@@ -135,8 +135,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     /**
      * Update an array existing alert
      *
-     * @Rest\Get("/alerts")
-     *
+     * @Rest\Put("/alerts")
      * @Rest\QueryParam(name="ids", nullable=true, description="id alerts array")
      * @Rest\QueryParam(name="delete", nullable=true, description="delete alerts")
      * @Rest\QueryParam(name="status", nullable=false, description="status alerts")
@@ -153,7 +152,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      * @param Request $request the request object
      *
      */
-    public function updateAlertsAction(Request $request)
+    public function putAlertsAction(Request $request)
     {
         $ids = $request->query->get('ids', null);
         $delete = $request->query->get('delete', null);
