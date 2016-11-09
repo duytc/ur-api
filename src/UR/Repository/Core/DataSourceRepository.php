@@ -12,7 +12,8 @@ use UR\Model\User\Role\UserRoleInterface;
 class DataSourceRepository extends EntityRepository implements DataSourceRepositoryInterface
 {
     protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name'];
-
+    const WRONG_FORMAT = 'wrongFormat';
+    const DATA_RECEIVED = 'dataReceived';
     /**
      * @inheritdoc
      */
