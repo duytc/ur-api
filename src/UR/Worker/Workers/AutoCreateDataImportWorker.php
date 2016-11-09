@@ -2,6 +2,7 @@
 
 namespace UR\Worker\Workers;
 
+use StdClass;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
 use Liuggio\ExcelBundle\Factory;
@@ -68,8 +69,12 @@ class AutoCreateDataImportWorker
         $this->phpExcel = $phpExcel;
     }
 
-    function autoCreateDataImport($dataSetId, $filePath)
+    //function autoCreateDataImport($dataSetId, $filePath)
+    function autoCreateDataImport(StdClass $params)
     {
+        $dataSetId = $params->dataSetId;
+        $filePath = $params->filePath;
+
         $conn = $this->em->getConnection();
         $dataSetLocator = new Locator($conn);
         $dataSetSynchronizer = new Synchronizer($conn, new Comparator());

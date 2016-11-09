@@ -5,18 +5,18 @@ namespace UR\Bundle\AppBundle\EventListener;
 
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
-use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\ModelInterface;
 use UR\Worker\Manager;
 
 /**
- * Class DataSetChangeListener
+ * Class ConnectedDataSourceChangeListener
  *
- * Handle event Data Set changed for updating
+ * Handle event ConnectedDataSource changed for updating
  *
  * @package UR\Bundle\AppBundle\EventListener
  */
-class DataSetChangeListener
+class ConnectedDataSourceChangeListener
 {
     /**
      * @var array|ModelInterface[]
@@ -25,7 +25,6 @@ class DataSetChangeListener
 
     /** @var Manager */
     private $workerManager;
-
 
     private $uploadFileDir;
 
@@ -43,7 +42,7 @@ class DataSetChangeListener
         $this->changedEntities = array_merge($this->changedEntities, $uow->getScheduledEntityUpdates());
 
         $this->changedEntities = array_filter($this->changedEntities, function ($entity) {
-            return $entity instanceof DataSetInterface;
+            return $entity instanceof ConnectedDataSourceInterface;
         });
     }
 
@@ -58,21 +57,16 @@ class DataSetChangeListener
         $em = $args->getEntityManager();
         $uow = $em->getUnitOfWork();
 
-        // filter all sites changed on rtb & exchanges, then build needBeUpdatedAdSlots
         foreach ($this->changedEntities as $entity) {
-            if (!$entity instanceof DataSetInterface) {
+            if (!$entity instanceof ConnectedDataSourceInterface) {
                 continue;
             }
 
             $changedFields = $uow->getEntityChangeSet($entity);
-
-//            if (array_key_exists('rtbStatus', $changedFields)) {
-//                $needToBeUpdatedSiteIds[] = $entity->getId();
-//            }
-            $dataSetId = $entity->getId();
+            $dataSetId = $entity->getDataSet()->getId();
         }
 
-        // update connected DataSource for DataSet
+        // running import data
         $this->workerManager->autoCreateDataImport($dataSetId, $this->uploadFileDir);
 
         // reset for new onFlush event
