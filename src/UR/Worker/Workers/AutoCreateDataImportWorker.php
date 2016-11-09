@@ -19,6 +19,7 @@ use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Repository\Core\DataSourceRepository;
 use UR\Service\DataSet\FilterType;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
@@ -187,7 +188,12 @@ class AutoCreateDataImportWorker
 
                     $this->createDataSourceEntryHistory($item, $importHistoryEntity, "failure", $desc);
 
-                    $this->createImportedDataAlert($item, $title, $type, $desc);
+                    $dataSource = $connectedDataSource->getDataSource();
+                    $alertSetting = $dataSource->getAlertSetting();
+
+                    if (in_array(DataSourceRepository::DATA_RECEIVED, $alertSetting)) {
+                        $this->createImportedDataAlert($item, $title, $type, $desc);
+                    }
                     continue;
                 }
 
@@ -197,8 +203,16 @@ class AutoCreateDataImportWorker
 
                 $title = "Import data successfully";
                 $type = "info";
-                $desc = "File ". $item->getPath() . " of " . $connectedDataSource->getDataSource()->getName() . " and " . $connectedDataSource->getDataSet()->getName() . " is imported";
-                $this->createImportedDataAlert($item, $title, $type, $desc);
+                $arrayPath = explode('/', $item->getPath());
+                $fileNameTemp = $arrayPath[count($arrayPath) - 1];
+                $first = explode('_', $fileNameTemp);
+                $second = explode('.', $first[1]);
+                $fileName = $first[0] . "." . $second[1];
+                $desc = "File ". $fileName . " of " . $connectedDataSource->getDataSource()->getName() . " and " . $connectedDataSource->getDataSet()->getName() . " is imported";
+                $alertSetting = $dataSource->getAlertSetting();
+                if (in_array(DataSourceRepository::WRONG_FORMAT, $alertSetting)) {
+                    $this->createImportedDataAlert($item, $title, $type, $desc);
+                }
             }
         }
     }
