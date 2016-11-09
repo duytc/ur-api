@@ -6,45 +6,35 @@ namespace UR\Service\Report;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Table;
+use UR\Domain\DTO\Report\Filters\AbstractFilterInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Repository\Report\DataSetRepositoryInterface;
 
 class ReportSelector implements ReportSelectorInterface
 {
-    const DATA_SET_TABLE_NAME_TEMPLATE = '__data_set_%d';
     /**
-     * @var Connection
+     * @var DataSetRepositoryInterface
      */
-    protected $conn;
+    protected $repository;
 
 
-    public function __construct(Connection $conn)
+    public function __construct(DataSetRepositoryInterface $repository)
     {
-        $this->conn = $conn;
-    }
-
-    /**
-     * @param DataSetInterface $dataSet
-     * @return Table
-     */
-    public function getDataSetTableSchema(DataSetInterface $dataSet)
-    {
-        $sm = $this->conn->getSchemaManager();
-        $tableName = sprintf(self::DATA_SET_TABLE_NAME_TEMPLATE, $dataSet->getId());
-
-        return $sm->listTableDetails($tableName);
+        $this->repository = $repository;
     }
 
     public function getReportData(ParamsInterface $params)
     {
         $dataSets = $params->getDataSets();
+        $filters = $params->getFilters();
 
         $reports = [];
         /**
          * @var DataSetInterface $dataSet
          */
         foreach($dataSets as $dataSet) {
-            $result = $this->getDataFromDataSet($dataSet);
+            $result = $this->repository->getData($dataSet, $filters);
 
             if (is_array($result)) {
                 $reports[] = $result;
@@ -52,14 +42,5 @@ class ReportSelector implements ReportSelectorInterface
         }
 
         return $reports;
-    }
-
-    /**
-     * @param DataSetInterface $dataSet
-     * @return array|false
-     */
-    protected function getDataFromDataSet(DataSetInterface $dataSet)
-    {
-
     }
 }

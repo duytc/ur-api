@@ -38,6 +38,6 @@ class ReportBuilder implements ReportBuilderInterface
             return $reportData;
         }
 
-        return $this->reportGrouper->group($params, $reportData);
+        return $this->reportGrouper->group($params->getTransforms(), $reportData);
     }
 }

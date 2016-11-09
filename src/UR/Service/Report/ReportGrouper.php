@@ -4,11 +4,9 @@
 namespace UR\Service\Report;
 
 
-use UR\Domain\DTO\Report\ParamsInterface;
-
 class ReportGrouper implements GrouperInterface
 {
-    public function group(ParamsInterface $params, array $reports)
+    public function group(array $transforms, array $reports)
     {
         // TODO: Implement group() method.
     }

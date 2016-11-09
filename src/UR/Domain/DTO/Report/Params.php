@@ -6,6 +6,7 @@ namespace UR\Domain\DTO\Report;
 
 use UR\Domain\DTO\Report\Filters\AbstractFilterInterface;
 use UR\Domain\DTO\Report\Transforms\AbstractTransformInterface;
+use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Model\Core\DataSetInterface;
 
 class Params implements ParamsInterface
@@ -27,7 +28,17 @@ class Params implements ParamsInterface
 
     public function needToGroup()
     {
-        // TODO: Implement needToGroup() method.
+        if (empty($this->getTransforms())) {
+            return false;
+        }
+
+        foreach($this->getTransforms() as $transform) {
+            if ($transform instanceof GroupByTransform) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -35,14 +46,22 @@ class Params implements ParamsInterface
      */
     public function getFilters()
     {
+        if (empty($this->filters)) {
+            return [];
+        }
+
         return $this->filters;
     }
 
     /**
-     * @return AbstractTransformInterface
+     * @return AbstractTransformInterface[]
      */
     public function getTransforms()
     {
+        if (empty($this->transforms)) {
+            return [];
+        }
+
         return $this->transforms;
     }
 
@@ -51,6 +70,10 @@ class Params implements ParamsInterface
      */
     public function getDataSets()
     {
+        if (empty($this->dataSets)) {
+            return [];
+        }
+
         return $this->dataSets;
     }
 }

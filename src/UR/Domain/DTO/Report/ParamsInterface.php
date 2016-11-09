@@ -21,7 +21,7 @@ interface ParamsInterface
     public function getFilters();
 
     /**
-     * @return AbstractTransformInterface
+     * @return AbstractTransformInterface[]
      */
     public function getTransforms();
 
