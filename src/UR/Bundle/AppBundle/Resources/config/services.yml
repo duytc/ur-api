@@ -5,19 +5,20 @@ parameters:
     # params
 
 services:
-#    ur_app.event_listener.adnetwork_change_listener:
-#        class: UR\Bundle\AppBundle\EventListener\AdNetworkChangeListener
-#        arguments:
-#            - @event_dispatcher
-#        tags:
-#            - { name: doctrine.event_listener, event: onFlush }
-#            - { name: doctrine.event_listener, event: postFlush }
-#            - { name: doctrine.event_listener, event: preSoftDelete }
+    tagcade_app.event_listener.data_set_change_listener:
+        class: UR\Bundle\AppBundle\EventListener\DataSetChangeListener
+        arguments:
+            - @ur.worker.manager
+            - %upload_file_dir%
+        tags:
+            - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postFlush }
 
-#    tagcade_app.event_listener.site_change_listener:
-#        class: UR\Bundle\AppBundle\EventListener\DataSetChangeListener
-#        arguments:
-#            - @ur.worker.manager
-#        tags:
-#            - { name: doctrine.event_listener, event: onFlush }
-#            - { name: doctrine.event_listener, event: postFlush }
+    tagcade_app.event_listener.connected_data_source_change_listener:
+        class: UR\Bundle\AppBundle\EventListener\ConnectedDataSourceChangeListener
+        arguments:
+            - @ur.worker.manager
+            - %upload_file_dir%
+        tags:
+            - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postFlush }

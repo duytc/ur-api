@@ -173,21 +173,20 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      */
     public function putAlertsAction(Request $request)
     {
+        $alertManager = $this->get('ur.domain_manager.alert');
         $params = $request->request->all();
 
         $ids = $params['ids'];
         $delete =  filter_var($request->query->get('delete', null), FILTER_VALIDATE_BOOLEAN);
         $status = filter_var($request->query->get('status', null), FILTER_VALIDATE_BOOLEAN);
 
-        $em = $this->get('ur.domain_manager.alert');
         if ($delete === true) {
-            return $em->deleteAlertsByIds($ids);
+            return $alertManager->deleteAlertsByIds($ids);
+        } else if ($status === true) {
+            return $alertManager->updateMarkAsReadByIds($ids);
         }
-
-        if ($status === true) {
-            return $em->updateMarkAsReadByIds($ids);
-        } else if ($status === false) {
-            return $em->updateMarkAsUnreadByIds($ids);
+        else if ($status === false) {
+            return $alertManager->updateMarkAsUnreadByIds($ids);
         }
 
          throw new \Exception("param is not valid");

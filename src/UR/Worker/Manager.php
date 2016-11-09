@@ -27,9 +27,10 @@ class Manager
         $this->queue = $queue;
     }
 
-    public function autoCreateDataImport($dataSetId){
+    public function autoCreateDataImport($dataSetId, $filePath){
         $params = new StdClass;
-        $params->$dataSetId = $dataSetId;
+        $params->dataSetId = $dataSetId;
+        $params->filePath = $filePath;
 
         $this->queueTask('autoCreateDataImport', $params);
     }
