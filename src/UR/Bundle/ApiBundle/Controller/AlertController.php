@@ -133,6 +133,44 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     }
 
     /**
+     * Update an array existing alert
+     *
+     * @Rest\Get("/alerts")
+     *
+     * @Rest\QueryParam(name="ids", nullable=true, description="id alerts array")
+     * @Rest\QueryParam(name="delete", nullable=true, description="delete alerts")
+     * @Rest\QueryParam(name="status", nullable=false, description="status alerts")
+     *
+     * @ApiDoc(
+     *  section = "Alert",
+     *  resource = true,
+     *  statusCodes = {
+     *      204 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request the request object
+     *
+     */
+    public function updateAlertsAction(Request $request)
+    {
+        $ids = $request->query->get('ids', null);
+        $delete = $request->query->get('delete', null);
+        $status = $request->query->get('status', null);
+
+        $em = $this->get('ur.domain_manager.alert');
+        if (strtolower($delete) === 'true') {
+            return $em->deleteAlertsByIds($ids);
+        }
+
+        if (strtolower($status) === 'true') {
+            return $em->updateMarkAsReadByIds($ids);
+        } else if (strtolower($status) === 'false') {
+            return $em->updateMarkAsUnreadByIds($ids);
+        }
+    }
+    /**
      * Delete an existing alert
      *
      * @ApiDoc(
