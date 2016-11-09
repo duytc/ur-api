@@ -12,6 +12,8 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
 
         $qb->delete()
             ->where($qb->expr()->in('a.id', $ids));
+
+        return $qb->getQuery()->getResult();
     }
 
     public function updateMarkAsReadByIds($ids)
@@ -21,6 +23,8 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
         $qb->update()
             ->set('a.isRead', 1)
             ->where($qb->expr()->in('a.id', $ids));
+
+        return $qb->getQuery()->getResult();
     }
 
     public function updateMarkAsUnreadByIds($ids)
@@ -30,5 +34,7 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
         $qb->update()
             ->set('a.isRead', 0)
             ->where($qb->expr()->in('a.id', $ids));
+
+        return $qb->getQuery()->getResult();
     }
 }

@@ -136,9 +136,8 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      * Update an array existing alert
      *
      * @Rest\Put("/alerts")
-     * @Rest\QueryParam(name="ids", nullable=true, description="id alerts array")
-     * @Rest\QueryParam(name="delete", nullable=true, description="delete alerts")
-     * @Rest\QueryParam(name="status", nullable=false, description="status alerts")
+     * @Rest\QueryParam(name="delete", requirements="(true|false)", nullable=true, description="delete alerts")
+     * @Rest\QueryParam(name="status", requirements="(true|false)", nullable=true, description="status alerts")
      *
      * @ApiDoc(
      *  section = "Alert",
@@ -150,24 +149,29 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      * )
      *
      * @param Request $request the request object
-     *
+     * @return mixed
+     * @throws \Exception
      */
     public function putAlertsAction(Request $request)
     {
-        $ids = $request->query->get('ids', null);
-        $delete = $request->query->get('delete', null);
-        $status = $request->query->get('status', null);
+        $params = $request->request->all();
+
+        $ids = $params['ids'];
+        $delete =  filter_var($request->query->get('delete', null), FILTER_VALIDATE_BOOLEAN);
+        $status = filter_var($request->query->get('status', null), FILTER_VALIDATE_BOOLEAN);
 
         $em = $this->get('ur.domain_manager.alert');
-        if (strtolower($delete) === 'true') {
+        if ($delete === true) {
             return $em->deleteAlertsByIds($ids);
         }
 
-        if (strtolower($status) === 'true') {
+        if ($status === true) {
             return $em->updateMarkAsReadByIds($ids);
-        } else if (strtolower($status) === 'false') {
+        } else if ($status === false) {
             return $em->updateMarkAsUnreadByIds($ids);
         }
+
+         throw new \Exception("param is not valid");
     }
     /**
      * Delete an existing alert
