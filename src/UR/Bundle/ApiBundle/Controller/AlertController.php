@@ -23,6 +23,14 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      *
      * @Rest\View(serializerGroups={"alert.summary","dataSourceEntry.summary", "connectedDataSource.summary"})
      *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     *
      * @ApiDoc(
      *  section = "Alert",
      *  resource = true,
@@ -31,11 +39,22 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      *  }
      * )
      *
+     * @param Request $request
      * @return AlertInterface[]
      */
-    public function cgetAction()
+    public function cgetAction(Request $request)
     {
-        return $this->all();
+        $publisher = $this->getUser();
+
+        $alertRepository = $this->get('ur.repository.alert');
+        $qb = $alertRepository->getAlertsForUserQuery($publisher, $this->getParams());
+
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
     }
 
     /**
