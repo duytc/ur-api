@@ -177,19 +177,19 @@ class AutoCreateDataImportWorker
 
                 $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
 
-                $title = "Import data successfully";
-                $type = "info";
-                $arrayPath = explode('/', $item->getPath());
-                $fileNameTemp = $arrayPath[count($arrayPath) - 1];
-                $lastDash = strrpos($fileNameTemp, "_");
-                $lastFileNamePath = substr($fileNameTemp, $lastDash);
-                $arrayLastPath = explode('.', $lastFileNamePath);
-                $extension = $arrayLastPath[1];
-                $firstFileNamePath = substr($fileNameTemp, 0, strlen($fileNameTemp) - strlen($lastFileNamePath));
-                $fileName = $firstFileNamePath . "." . $extension;
-                $desc = "File ". $fileName . " of " . $connectedDataSource->getDataSource()->getName() . " and " . $connectedDataSource->getDataSet()->getName() . " is imported";
                 $alertSetting = $connectedDataSource->getAlertSetting();
                 if (in_array(ConnectedDataSourceRepository::DATA_ADDED, $alertSetting)) {
+                    $title = "Import data successfully";
+                    $type = "info";
+                    $arrayPath = explode('/', $item->getPath());
+                    $fileNameTemp = $arrayPath[count($arrayPath) - 1];
+                    $lastDash = strrpos($fileNameTemp, "_");
+                    $lastFileNamePath = substr($fileNameTemp, $lastDash);
+                    $arrayLastPath = explode('.', $lastFileNamePath);
+                    $extension = $arrayLastPath[1];
+                    $firstFileNamePath = substr($fileNameTemp, 0, strlen($fileNameTemp) - strlen($lastFileNamePath));
+                    $fileName = $firstFileNamePath . "." . $extension;
+                    $desc = "File ". $fileName . " of " . $connectedDataSource->getDataSource()->getName() . " and " . $connectedDataSource->getDataSet()->getName() . " is imported";
                     $this->createImportedDataAlert($item, $title, $type, $desc);
                 }
             }
