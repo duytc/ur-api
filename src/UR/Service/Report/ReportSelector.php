@@ -5,7 +5,9 @@ namespace UR\Service\Report;
 
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Schema\Table;
+use Doctrine\ORM\EntityManagerInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Model\Core\DataSetInterface;
 
@@ -24,16 +26,26 @@ class ReportSelector implements ReportSelectorInterface
     protected $sqlBuilder;
 
     /**
+     * @var DriverManager
+     */
+    protected $driverManager;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    protected $em;
+    /**
      * ReportSelector constructor.
-     * @param Connection $connection
+     * @param EntityManagerInterface $em
      * @param SqlBuilderInterface $sqlBuilder
      */
-    public function __construct(Connection $connection, SqlBuilderInterface $sqlBuilder)
+    public function __construct(EntityManagerInterface $em, SqlBuilderInterface $sqlBuilder)
     {
-        $this->connection = $connection;
         $this->sqlBuilder = $sqlBuilder;
-    }
+        $this->em = $em;
 
+        $this->connection = $this->em->getConnection();
+    }
 
     public function getReportData(ParamsInterface $params)
     {
