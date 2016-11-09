@@ -10,12 +10,13 @@ use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\DataSourceEntryImportHistoryManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Entity\Core\Alert;
+use UR\Entity\Core\DataSourceEntryImportHistory;
 use UR\Entity\Core\ImportHistory;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Model\Core\DataSourceEntryImportHistory;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Repository\Core\ConnectedDataSourceRepository;
 use UR\Repository\Core\DataSourceRepository;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
@@ -145,30 +146,24 @@ class AutoCreateDataImportWorker
                 // import
                 $collectionParser = $parser->parse($file, $parserConfig);
 
-                $type = "";
-
                 if (is_array($collectionParser)) {
-                    $desc = "";
-                    $title = "";
                     if (strcmp($collectionParser["error"], "filter") === 0) {
-                        $title = "Import data failure";
-                        $type = "error";
                         $desc = "error when Filter file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
                     }
 
                     if (strcmp($collectionParser["error"], "transform") === 0) {
-                        $title = "Import data failure";
-                        $type = "error";
                         $desc = "error when Transform file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
                     }
 
                     $this->createDataSourceEntryHistory($item, $importHistoryEntity, "failure", $desc);
 
-                    $dataSource = $connectedDataSource->getDataSource();
-                    $alertSetting = $dataSource->getAlertSetting();
-
-                    if (in_array(DataSourceRepository::DATA_RECEIVED, $alertSetting)) {
-                        $this->createImportedDataAlert($item, $title, $type, $desc);
+                    $alertSetting = $connectedDataSource->getAlertSetting();
+                    if (strcmp($collectionParser["error"], "filter") === 0 || strcmp($collectionParser["error"], "transform") === 0) {
+                        $title = "Import data failure";
+                        $type = "error";
+                        if (in_array(ConnectedDataSourceRepository::IMPORT_FAILURE, $alertSetting)) {
+                            $this->createImportedDataAlert($item, $title, $type, $desc);
+                        }
                     }
                     continue;
                 }
@@ -181,12 +176,15 @@ class AutoCreateDataImportWorker
                 $type = "info";
                 $arrayPath = explode('/', $item->getPath());
                 $fileNameTemp = $arrayPath[count($arrayPath) - 1];
-                $first = explode('_', $fileNameTemp);
-                $second = explode('.', $first[1]);
-                $fileName = $first[0] . "." . $second[1];
-                $desc = "File " . $fileName . " of " . $connectedDataSource->getDataSource()->getName() . " and " . $connectedDataSource->getDataSet()->getName() . " is imported";
-                $alertSetting = $dataSource->getAlertSetting();
-                if (in_array(DataSourceRepository::WRONG_FORMAT, $alertSetting)) {
+                $lastDash = strrpos($fileNameTemp, "_");
+                $lastFileNamePath = substr($fileNameTemp, $lastDash);
+                $arrayLastPath = explode('.', $lastFileNamePath);
+                $extension = $arrayLastPath[1];
+                $firstFileNamePath = substr($fileNameTemp, 0, strlen($fileNameTemp) - strlen($lastFileNamePath));
+                $fileName = $firstFileNamePath . "." . $extension;
+                $desc = "File ". $fileName . " of " . $connectedDataSource->getDataSource()->getName() . " and " . $connectedDataSource->getDataSet()->getName() . " is imported";
+                $alertSetting = $connectedDataSource->getAlertSetting();
+                if (in_array(ConnectedDataSourceRepository::DATA_ADDED, $alertSetting)) {
                     $this->createImportedDataAlert($item, $title, $type, $desc);
                 }
             }
