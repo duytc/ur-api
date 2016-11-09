@@ -10,4 +10,19 @@ abstract class AbstractTransform implements AbstractTransformInterface
     const ALL_FIELD_TARGET = 2;
 
     protected $target;
+
+    function __construct($target)
+    {
+        $this->target = $target;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTarget()
+    {
+        return $this->target;
+    }
+
+
 }

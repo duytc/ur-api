@@ -10,4 +10,17 @@ abstract class AllFieldTransform
     const SORT_BY_TRANSFORM = 4;
 
     protected $type;
+
+    function __construct($type)
+    {
+        $this->type = $type;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
 }

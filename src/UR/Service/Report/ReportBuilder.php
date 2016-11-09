@@ -29,7 +29,6 @@ class ReportBuilder implements ReportBuilderInterface
         $this->reportGrouper = $reportGrouper;
     }
 
-
     public function getReport(ParamsInterface $params)
     {
         $reportData = $this->reportSelector->getReportData($params);

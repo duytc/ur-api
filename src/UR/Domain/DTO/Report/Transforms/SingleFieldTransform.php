@@ -12,4 +12,27 @@ abstract class SingleFieldTransform extends AbstractTransform
     protected $type;
 
     protected $fieldName;
+
+    function __construct($fieldName, $type, $target )
+    {
+        parent::__construct($target);
+        $this->fieldName = $fieldName;
+        $this->type = $type;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFieldName()
+    {
+        return $this->fieldName;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
 }
