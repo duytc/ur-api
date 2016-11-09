@@ -6,6 +6,13 @@ namespace UR\Domain\DTO\Report\Filters;
 
 class NumberFilter extends AbstractFilter implements NumberFilterInterface
 {
+    const COMPARISON_TYPE_EQUAL = 1;
+    const COMPARISON_TYPE_SMALLER = 2;
+    const COMPARISON_TYPE_SMALLER_OR_EQUAL = 3;
+    const COMPARISON_TYPE_GREATER = 4;
+    const COMPARISON_TYPE_GREATER_OR_EQUAL = 5;
+
+
     protected $comparisonType;
 
     protected $comparisonValue;

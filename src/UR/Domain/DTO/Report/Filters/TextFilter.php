@@ -7,6 +7,11 @@ namespace UR\Domain\DTO\Report\Filters;
 class TextFilter extends AbstractFilter
 {
 
+    const COMPARISON_TYPE_EQUAL = 1;
+    const COMPARISON_TYPE_NOT_EQUAL = 2;
+    const COMPARISON_TYPE_CONTAINS = 3;
+    const COMPARISON_TYPE_START_WITH = 4;
+
     protected $comparisonType;
 
     protected $comparisonValue;
