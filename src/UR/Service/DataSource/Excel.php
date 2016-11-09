@@ -81,12 +81,12 @@ class Excel implements DataSourceInterface
             }
 
         } else if (strcmp($this->inputFileType, 'Excel2007') === 0) {
-            $currow = 0;
+            $curRow = 0;
             foreach ($this->excel->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
-                    if ($currow >= 1)
-                        $this->rows[$currow] = $row;
-                    $currow++;
+                    if ($curRow >= 1)
+                        $this->rows[$curRow] = $row;
+                    $curRow++;
                 }
             }
         }

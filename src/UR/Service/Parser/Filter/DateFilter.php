@@ -25,9 +25,10 @@ class DateFilter implements ColumnFilterInterface
         if(!$filter){
             return 2;
         }
-        if ($filter < $this->dateTo && $filter > $this->dateFrom) {
+        if ($filter <= $this->dateTo && $filter >= $this->dateFrom) {
             return true;
         }
+
         return false;
     }
 }
