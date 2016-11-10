@@ -35,6 +35,12 @@ class Manager
         $this->queueTask('autoCreateDataImport', $params);
     }
 
+    public function importDataWhenConnectedDataSourceChange($connectedDataSourceId){
+        $params = new StdClass;
+        $params->connectedDataSourceId = $connectedDataSourceId;
+        $this->queueTask('importDataWhenConnectedDataSourceChange', $params);
+    }
+
     /**
      * @param string $task
      * @param StdClass $params

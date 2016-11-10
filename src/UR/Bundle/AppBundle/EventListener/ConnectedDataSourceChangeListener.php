@@ -52,8 +52,7 @@ class ConnectedDataSourceChangeListener
             return;
         }
 
-        /** @var array|int $dataSetId */
-        $dataSetId = [];
+
         $em = $args->getEntityManager();
         $uow = $em->getUnitOfWork();
 
@@ -63,11 +62,12 @@ class ConnectedDataSourceChangeListener
             }
 
             $changedFields = $uow->getEntityChangeSet($entity);
-            $dataSetId = $entity->getDataSet()->getId();
+            /** @var int $conenectedDataSourceId */
+            $connectedDataSourceId= $entity->getId();
         }
 
         // running import data
-        $this->workerManager->autoCreateDataImport($dataSetId, $this->uploadFileDir);
+        $this->workerManager->importDataWhenConnectedDataSourceChange($connectedDataSourceId);
 
         // reset for new onFlush event
         $this->changedEntities = [];

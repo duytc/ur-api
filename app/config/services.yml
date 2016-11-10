@@ -99,6 +99,15 @@ services:
             - @ur.service.date_util
             - @leezy.pheanstalk
 
+    ur.worker.workers.auto_import_data:
+        class: UR\Service\Import\AutoImportData
+        arguments:
+            - @ur.domain_manager.import_history
+            - @ur.domain_manager.alert
+            - @ur.domain_manager.data_source_entry_import_history
+            - @phpexcel
+            - %upload_file_dir%
+
     ur.worker.workers.import_dataset_worker:
         class: UR\Worker\Workers\AutoCreateDataImportWorker
         arguments:
@@ -109,3 +118,9 @@ services:
             - @doctrine.orm.entity_manager
             - @phpexcel
 
+    ur.worker.workers.auto_import_when_connected_datasource_change_worker:
+        class: UR\Worker\Workers\AutoImportConnectedDataSourceChangedWorker
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.worker.workers.auto_import_data
+            - @ur.domain_manager.connected_data_source
