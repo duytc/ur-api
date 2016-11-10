@@ -101,24 +101,6 @@ class ReportView implements ReportViewInterface
     /**
      * @return array
      */
-    public function getFilters()
-    {
-        return $this->filters;
-    }
-
-    /**
-     * @param array $filters
-     * @return self
-     */
-    public function setFilters($filters)
-    {
-        $this->filters = $filters;
-        return $this;
-    }
-
-    /**
-     * @return array
-     */
     public function getTransforms()
     {
         return $this->transforms;

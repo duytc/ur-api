@@ -44,17 +44,6 @@ interface ReportViewInterface extends ModelInterface
     /**
      * @return array
      */
-    public function getFilters();
-
-    /**
-     * @param array $filters
-     * @return self
-     */
-    public function setFilters($filters);
-
-    /**
-     * @return array
-     */
     public function getTransforms();
 
     /**
