@@ -9,6 +9,12 @@ use UR\Model\Core\ReportViewInterface;
 
 interface ParamsBuilderInterface
 {
+
+    /**
+     * @return mixed
+     */
+    public function getDataSet();
+
     /**
      * @param array $params
      * @return ParamsInterface
@@ -42,7 +48,7 @@ interface ParamsBuilderInterface
     /**
      * @return mixed
      */
-    public function getJoinBy();
+    public function getJoinByFields();
 
     /**
      * @return mixed
