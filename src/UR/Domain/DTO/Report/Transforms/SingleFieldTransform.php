@@ -20,18 +20,18 @@ abstract class SingleFieldTransform extends AbstractTransform implements SingleF
     protected $fieldName;
 
     /**
-     * @return int
-     */
-    public function getType()
-    {
-        return $this->type;
-    }
-
-    /**
-     * @return string
+     * @return mixed
      */
     public function getFieldName()
     {
         return $this->fieldName;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 }

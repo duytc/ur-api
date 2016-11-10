@@ -4,7 +4,7 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 
-abstract class AllFieldTransform extends AbstractTransform implements AllFiledTransformInterface
+abstract class AllFieldTransform extends AbstractTransform
 {
     const GROUP_BY_TRANSFORM = 3;
     const SORT_BY_TRANSFORM = 4;
@@ -15,11 +15,10 @@ abstract class AllFieldTransform extends AbstractTransform implements AllFiledTr
     protected $type;
 
     /**
-     * @return int
+     * @return mixed
      */
     public function getType()
     {
         return $this->type;
     }
-
 }

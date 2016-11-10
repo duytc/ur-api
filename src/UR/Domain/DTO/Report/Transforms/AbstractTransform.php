@@ -15,7 +15,7 @@ abstract class AbstractTransform implements AbstractTransformInterface
     protected $target;
 
     /**
-     * @return int
+     * @return mixed
      */
     public function getTarget()
     {

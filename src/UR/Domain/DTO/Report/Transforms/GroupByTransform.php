@@ -11,8 +11,14 @@ class GroupByTransform extends AllFieldTransform implements GroupByTransformInte
      */
     protected $fields;
 
+    function __construct($fields, $type)
+    {
+        $this->type = $type;
+        $this->fields = $fields;
+    }
+
     /**
-     * @return array
+     * @return mixed
      */
     public function getFields()
     {
