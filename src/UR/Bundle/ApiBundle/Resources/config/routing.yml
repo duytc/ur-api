@@ -47,3 +47,13 @@ api_connected_data_source:
     type: rest
     resource: UR\Bundle\ApiBundle\Controller\ConnectedDataSourceController
     name_prefix:  api_1_
+
+api_report_schedule:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ReportScheduleController
+    name_prefix:  api_1_
+
+api_report_view:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ReportViewController
+    name_prefix:  api_1_
