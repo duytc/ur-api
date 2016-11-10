@@ -5,6 +5,7 @@ namespace UR\Service\Report;
 
 
 use UR\Domain\DTO\Report\Filters\DateFilter;
+use UR\Domain\DTO\Report\JoinBy\JoinBy;
 use UR\Domain\DTO\Report\Transforms\FormatDateTransform;
 use UR\Domain\DTO\Report\Transforms\FormatNumberTransform;
 use UR\Model\Core\ReportViewInterface;
@@ -18,12 +19,76 @@ class ParamsBuilder implements ParamsBuilderInterface
     protected $transformations;
     protected $joinBy;
 
+    /** @inherit */
+    public function getFilters()
+    {
+        return $this->filters;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getJoinBy()
+    {
+        return $this->joinBy;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getTransformations()
+    {
+        return $this->transformations;
+    }
+
+    /**
+    * @inheritdoc
+    */
     public function buildFromArray(array $params)
     {
         $filterObjects = [];
         $transformationObjects = [];
+        $joinByObject = null;
 
-        $allFilters = $params[ReportBuilderConstant::FILTERS_KEY];
+        if (array_key_exists(ReportBuilderConstant::FILTERS_KEY, $params)) {
+            $allFilters = $params[ReportBuilderConstant::FILTERS_KEY];
+            $filterObjects = $this->createFilterObjects($allFilters);
+        }
+
+        if (array_key_exists(ReportBuilderConstant::TRANSFORMS_KEY, $params)) {
+            $allTransformations = $params[ReportBuilderConstant::TRANSFORMS_KEY];
+            $this->createTransformationObjects($allTransformations);
+        }
+
+        if (array_key_exists(ReportBuilderConstant::JOIN_BY_KEY, $params)) {
+            $joinByObject =  new JoinBy($params[ReportBuilderConstant::JOIN_BY_KEY]);
+        }
+
+        $this->filters = $filterObjects;
+        $this->transformations = $transformationObjects;
+        $this->joinBy = $joinByObject;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function buildFromReportView(ReportViewInterface $reportView)
+    {
+        $allFilters = $reportView->getFilters();
+        $allTransformations = $reportView->getTransforms();
+        $joinBy = $reportView->getJoinedFields();
+
+        $this->filters = $this->createFilterObjects($allFilters);
+        $this->transformations = $this->createTransformationObjects($allTransformations);
+        $this->joinBy = new JoinBy($joinBy);
+    }
+
+    /**
+     * @param array $allFilters
+     * @return array
+     */
+    protected function createFilterObjects(array $allFilters) {
+        $filterObjects = [];
         foreach ($allFilters as $filter) {
             if ($filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY] == ReportBuilderConstant::DATE_FIELD_TYPE_FILTER_KEY) {
                 $filterObjects[]=  new DateFilter(
@@ -53,7 +118,16 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
         }
 
-        $allTransformations = $params[ReportBuilderConstant::TRANSFORMS_KEY];
+        return $filterObjects;
+    }
+
+    /**
+     * @param array $allTransformations
+     * @return array
+     */
+    protected function createTransformationObjects(array $allTransformations)
+    {
+        $transformationObjects = [];
         foreach ($allTransformations as $transformation) {
             if ($transformation[ReportBuilderConstant::TARGET_TRANSFORMATION_KEY] == ReportBuilderConstant::TARGET_TRANSFORMATION_SINGLED_VALUE) {
                 if ($transformation[ReportBuilderConstant::TYPE_TRANSFORMATION_KEY] == ReportBuilderConstant::DATE_FORMAT_TRANSFORMATION_VALUE) {
@@ -78,12 +152,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
         }
 
-        $this->filters = $filterObjects;
-        $this->transformations = $transformationObjects;
+        return $transformationObjects;
     }
 
-    public function buildFromReportView(ReportViewInterface $reportView)
-    {
-        // TODO: Implement buildFromReportView() method.
-    }
 }

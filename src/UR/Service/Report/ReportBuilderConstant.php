@@ -44,4 +44,6 @@ class ReportBuilderConstant {
     const DATE_FORMAT_TRANSFORMATION_VALUE              = 'dateFormat';
     const NUMBER_FORMAT_TRANSFORMATION_VALUE            = 'numberFormat';
 
+    const JOIN_BY_KEY                                   = 'joinBy';
+
 } 

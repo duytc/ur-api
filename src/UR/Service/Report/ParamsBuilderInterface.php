@@ -20,4 +20,20 @@ interface ParamsBuilderInterface
      * @return ParamsInterface
      */
     public function buildFromReportView(ReportViewInterface $reportView);
+
+    /**
+     * @return mixed
+     */
+    public function getFilters();
+
+    /**
+     * @return mixed
+     */
+    public function getJoinBy();
+
+    /**
+     * @return mixed
+     */
+    public function getTransformations();
+
 }
