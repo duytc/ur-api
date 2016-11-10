@@ -19,11 +19,7 @@ class ReportGrouper implements ReportGrouperInterface
             throw new InvalidArgumentException('grouping fields can not be empty');
         }
 
-        $groupedReport = [];
-        foreach($groupingFields as $field) {
-            $groupedReport = $grouper->getGroupedReport($field, $report, $metrics, $dimensions);
-        }
+        return $grouper->getGroupedReport($transform->getFields(), $report, $metrics, $dimensions);
 
-        return $groupedReport;
     }
 }
