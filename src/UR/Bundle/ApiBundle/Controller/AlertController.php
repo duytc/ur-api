@@ -21,7 +21,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     /**
      * Get all alert
      *
-     * @Rest\View(serializerGroups={"alert.summary","dataSourceEntry.summary", "connectedDataSource.summary"})
+     * @Rest\View(serializerGroups={"alert.detail","dataSourceEntry.summary", "datasource.summary", "user.summary"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
