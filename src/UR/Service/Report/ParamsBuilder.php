@@ -4,32 +4,31 @@
 namespace UR\Service\Report;
 
 
-use UR\Domain\DTO\Report\Filters\DateFilter;
+use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\JoinBy\JoinBy;
 use UR\Domain\DTO\Report\Transforms\FormatDateTransform;
 use UR\Domain\DTO\Report\Transforms\FormatNumberTransform;
 use UR\Model\Core\ReportViewInterface;
-use UR\Service\Parser\Filter\NumberFilter;
-use UR\Service\Parser\Filter\TextFilter;
 
 class ParamsBuilder implements ParamsBuilderInterface
 {
 
-    protected $filters;
+    protected $dataSets;
     protected $transformations;
     protected $joinByFields;
 
     /**
      * @inheritdoc
      */
-   public function getDataSet()
-   {
+    public function getDataSet()
+    {
+        return $this->dataSets;
+    }
 
-   }
     /** @inheritdoc */
     public function getFiltersByDataSet($dataSetId)
     {
-        return $this->filters;
+
     }
 
     /**
@@ -69,13 +68,13 @@ class ParamsBuilder implements ParamsBuilderInterface
      */
     public function buildFromArray(array $params)
     {
-        $filterObjects = [];
+        $dataSetObjects = [];
         $transformationObjects = [];
         $joinByObject = null;
 
-        if (array_key_exists(ReportBuilderConstant::FILTERS_KEY, $params)) {
-            $allFilters = $params[ReportBuilderConstant::DATA_SET_KEY][ReportBuilderConstant::FILTERS_KEY];
-            $filterObjects = $this->createFilterObjects($allFilters);
+        if (array_key_exists(ReportBuilderConstant::DATA_SET_KEY, $params)) {
+            $allDataSets = $params[ReportBuilderConstant::DATA_SET_KEY];
+            $dataSetObjects = $this->createDataSetsObjects($allDataSets);
         }
 
         if (array_key_exists(ReportBuilderConstant::TRANSFORMS_KEY, $params)) {
@@ -87,48 +86,23 @@ class ParamsBuilder implements ParamsBuilderInterface
             $joinByObject = new JoinBy($params[ReportBuilderConstant::JOIN_BY_KEY]);
         }
 
-        $this->filters = $filterObjects;
+        $this->dataSets = $dataSetObjects;
         $this->transformations = $transformationObjects;
         $this->joinByFields = $joinByObject;
     }
 
-    /**
-     * @param array $allFilters
-     * @return array
-     */
-    protected function createFilterObjects(array $allFilters)
+    protected function createDataSetsObjects(array $dataSets)
     {
-        $filterObjects = [];
-        foreach ($allFilters as $filter) {
-            if ($filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY] == ReportBuilderConstant::DATE_FIELD_TYPE_FILTER_KEY) {
-                $filterObjects[] = new DateFilter(
-                    $filter[ReportBuilderConstant::FIELD_NAME_KEY],
-                    $filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY],
-                    $filter[ReportBuilderConstant::DATE_FORMAT_FILTER_KEY],
-                    $filter[ReportBuilderConstant::DATE_RANGE_FILTER_KEY]
-                );
-            }
-
-            if (ReportBuilderConstant::FIELD_TYPE_FILTER_KEY == ReportBuilderConstant::TEXT_FIELD_TYPE_FILTER_KEY) {
-                $filterObjects[] = new TextFilter(
-                    $filter[ReportBuilderConstant::FIELD_NAME_KEY],
-                    $filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY],
-                    $filter[ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY],
-                    $filter[ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY]
-                );
-            }
-
-            if ($filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY] == ReportBuilderConstant::NUMBER_FIELD_TYPE_FILTER_KEY) {
-                $filterObjects[] = new NumberFilter(
-                    $filter[ReportBuilderConstant::FIELD_NAME_KEY],
-                    $filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY],
-                    $filter[ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY],
-                    $filter[ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY]
-                );
-            }
+        $dataSetObjects = [];
+        foreach ($dataSets as $dataSet) {
+            $dataSetObjects[] = new DataSet(
+                $dataSet[ReportBuilderConstant::DATA_SET_VALUE],
+                $dataSet[ReportBuilderConstant::METRICS_DATA_SET_VALUE],
+                $dataSet[ReportBuilderConstant::FILTERS_KEY],
+                $dataSet[ReportBuilderConstant::DIMENSIONS_DATA_SET_VALUE]);
         }
 
-        return $filterObjects;
+        return $dataSetObjects;
     }
 
     /**
@@ -170,11 +144,11 @@ class ParamsBuilder implements ParamsBuilderInterface
      */
     public function buildFromReportView(ReportViewInterface $reportView)
     {
-        $allFilters = $reportView->getFilters();
+        $allDataSets = $reportView->getDataSets();
         $allTransformations = $reportView->getTransforms();
         $joinBy = $reportView->getJoinedFields();
 
-        $this->filters = $this->createFilterObjects($allFilters);
+        $this->dataSets = $this->createDataSetsObjects($allDataSets);
         $this->transformations = $this->createTransformationObjects($allTransformations);
         $this->joinByFields = new JoinBy($joinBy);
     }
