@@ -14,16 +14,16 @@ class ReportBuilder implements ReportBuilderInterface
     protected $reportSelector;
 
     /**
-     * @var GrouperInterface
+     * @var ReportGrouperInterface
      */
     protected $reportGrouper;
 
     /**
      * ReportBuilder constructor.
      * @param ReportSelectorInterface $reportSelector
-     * @param GrouperInterface $reportGrouper
+     * @param ReportGrouperInterface $reportGrouper
      */
-    public function __construct(ReportSelectorInterface $reportSelector, GrouperInterface $reportGrouper)
+    public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper)
     {
         $this->reportSelector = $reportSelector;
         $this->reportGrouper = $reportGrouper;
@@ -37,6 +37,6 @@ class ReportBuilder implements ReportBuilderInterface
             return $reportData;
         }
 
-        return $this->reportGrouper->group($params->getTransforms(), $reportData);
+        return $this->reportGrouper->groupReports($params->getTransforms(), $reportData, [], []);
     }
 }
