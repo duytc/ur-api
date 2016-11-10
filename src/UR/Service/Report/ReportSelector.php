@@ -5,7 +5,6 @@ namespace UR\Service\Report;
 
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
@@ -24,11 +23,6 @@ class ReportSelector implements ReportSelectorInterface
      * @var  SqlBuilderInterface
      */
     protected $sqlBuilder;
-
-    /**
-     * @var DriverManager
-     */
-    protected $driverManager;
 
     /**
      * @var EntityManagerInterface

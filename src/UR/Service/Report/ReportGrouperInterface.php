@@ -4,7 +4,11 @@
 namespace UR\Service\Report;
 
 
-class ReportGrouperInterface
+interface ReportGrouperInterface
 {
-
+    /**
+     * @param array $report
+     * @return array
+     */
+    public function groupReports(array $report);
 }

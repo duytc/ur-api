@@ -4,7 +4,5 @@
 namespace UR\Service\Report\Groupers;
 
 
-class DefaultGrouper
-{
-
-}
+class DefaultGrouper extends AbstractGrouper
+{}

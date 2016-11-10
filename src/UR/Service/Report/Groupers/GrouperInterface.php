@@ -1,15 +1,16 @@
 <?php
 
 
-namespace UR\Service\Report;
+namespace UR\Service\Report\Groupers;
 
 
 interface GrouperInterface
 {
     /**
-     * @param array $transforms
+     * @param $groupingField
      * @param array $reports
+     * @param array $metrics
      * @return array
      */
-    public function group(array $transforms, array $reports);
+    public function getGroupedReport($groupingField, array $reports, array $metrics);
 }

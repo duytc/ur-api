@@ -4,10 +4,10 @@
 namespace UR\Service\Report;
 
 
-class ReportGrouper implements GrouperInterface
+class ReportGrouper implements ReportGrouperInterface
 {
-    public function group(array $transforms, array $reports)
+    public function groupReports(array $report)
     {
-        // TODO: Implement group() method.
+        // TODO: Implement groupReports() method.
     }
 }
