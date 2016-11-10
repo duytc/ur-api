@@ -17,7 +17,7 @@ class ReportView implements ReportViewInterface
     protected $name;
 
     /**
-     * @var DataSetInterface[]
+     * @var array
      */
     protected $dataSets;
 
@@ -25,11 +25,6 @@ class ReportView implements ReportViewInterface
      * @var array
      */
     protected $joinedFields;
-
-    /**
-     * @var array
-     */
-    protected $filters;
 
     /**
      * @var array
@@ -63,7 +58,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return DataSetInterface[]
+     * @return array
      */
     public function getDataSets()
     {
@@ -71,7 +66,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param DataSetInterface[] $dataSets
+     * @param array $dataSets
      * @return self
      */
     public function setDataSets($dataSets)
@@ -95,24 +90,6 @@ class ReportView implements ReportViewInterface
     public function setJoinedFields($joinedFields)
     {
         $this->joinedFields = $joinedFields;
-        return $this;
-    }
-
-    /**
-     * @return array
-     */
-    public function getFilters()
-    {
-        return $this->filters;
-    }
-
-    /**
-     * @param array $filters
-     * @return self
-     */
-    public function setFilters($filters)
-    {
-        $this->filters = $filters;
         return $this;
     }
 

@@ -8,7 +8,7 @@ UR\Entity\Core\ReportView:
             generator:
                 strategy: AUTO
     fields:
-        filters:
+        dataSets:
             type: json_array
             nullable: true
         transforms:
@@ -25,6 +25,3 @@ UR\Entity\Core\ReportView:
             gedmo:
                 timestampable:
                     on: create
-    manyToMany:
-        dataSets:
-            targetEntity: UR\Entity\Core\DataSet

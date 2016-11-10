@@ -20,12 +20,12 @@ interface ReportViewInterface extends ModelInterface
     public function setName($name);
 
     /**
-     * @return DataSetInterface[]
+     * @return array
      */
     public function getDataSets();
 
     /**
-     * @param DataSetInterface[] $dataSets
+     * @param array $dataSets
      * @return self
      */
     public function setDataSets($dataSets);
@@ -40,17 +40,6 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setJoinedFields($joinedFields);
-
-    /**
-     * @return array
-     */
-    public function getFilters();
-
-    /**
-     * @param array $filters
-     * @return self
-     */
-    public function setFilters($filters);
 
     /**
      * @return array
