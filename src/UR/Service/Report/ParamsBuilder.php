@@ -17,8 +17,15 @@ class ParamsBuilder implements ParamsBuilderInterface
 
     protected $filters;
     protected $transformations;
-    protected $joinBy;
+    protected $joinByFields;
 
+    /**
+     * @inheritdoc
+     */
+   public function getDataSet()
+   {
+
+   }
     /** @inheritdoc */
     public function getFiltersByDataSet($dataSetId)
     {
@@ -28,7 +35,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     /**
      * @inheritdoc
      */
-    public function getMetricByDataSet($dataSetId)
+    public function getMetricsByDataSet($dataSetId)
     {
 
     }
@@ -36,9 +43,17 @@ class ParamsBuilder implements ParamsBuilderInterface
     /**
      * @inheritdoc
      */
-    public function getJoinBy()
+    public function getDimensionByDataSet($dataSetId)
     {
-        return $this->joinBy;
+
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getJoinByFields()
+    {
+        return $this->joinByFields;
     }
 
     /**
@@ -50,8 +65,8 @@ class ParamsBuilder implements ParamsBuilderInterface
     }
 
     /**
-    * @inheritdoc
-    */
+     * @inheritdoc
+     */
     public function buildFromArray(array $params)
     {
         $filterObjects = [];
@@ -59,7 +74,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         $joinByObject = null;
 
         if (array_key_exists(ReportBuilderConstant::FILTERS_KEY, $params)) {
-            $allFilters = $params[ReportBuilderConstant::FILTERS_KEY];
+            $allFilters = $params[ReportBuilderConstant::DATA_SET_KEY][ReportBuilderConstant::FILTERS_KEY];
             $filterObjects = $this->createFilterObjects($allFilters);
         }
 
@@ -69,37 +84,24 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(ReportBuilderConstant::JOIN_BY_KEY, $params)) {
-            $joinByObject =  new JoinBy($params[ReportBuilderConstant::JOIN_BY_KEY]);
+            $joinByObject = new JoinBy($params[ReportBuilderConstant::JOIN_BY_KEY]);
         }
 
         $this->filters = $filterObjects;
         $this->transformations = $transformationObjects;
-        $this->joinBy = $joinByObject;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function buildFromReportView(ReportViewInterface $reportView)
-    {
-        $allFilters = $reportView->getFilters();
-        $allTransformations = $reportView->getTransforms();
-        $joinBy = $reportView->getJoinedFields();
-
-        $this->filters = $this->createFilterObjects($allFilters);
-        $this->transformations = $this->createTransformationObjects($allTransformations);
-        $this->joinBy = new JoinBy($joinBy);
+        $this->joinByFields = $joinByObject;
     }
 
     /**
      * @param array $allFilters
      * @return array
      */
-    protected function createFilterObjects(array $allFilters) {
+    protected function createFilterObjects(array $allFilters)
+    {
         $filterObjects = [];
         foreach ($allFilters as $filter) {
             if ($filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY] == ReportBuilderConstant::DATE_FIELD_TYPE_FILTER_KEY) {
-                $filterObjects[]=  new DateFilter(
+                $filterObjects[] = new DateFilter(
                     $filter[ReportBuilderConstant::FIELD_NAME_KEY],
                     $filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY],
                     $filter[ReportBuilderConstant::DATE_FORMAT_FILTER_KEY],
@@ -107,8 +109,8 @@ class ParamsBuilder implements ParamsBuilderInterface
                 );
             }
 
-            if ( ReportBuilderConstant::FIELD_TYPE_FILTER_KEY == ReportBuilderConstant::TEXT_FIELD_TYPE_FILTER_KEY ) {
-                $filterObjects[] =  new TextFilter(
+            if (ReportBuilderConstant::FIELD_TYPE_FILTER_KEY == ReportBuilderConstant::TEXT_FIELD_TYPE_FILTER_KEY) {
+                $filterObjects[] = new TextFilter(
                     $filter[ReportBuilderConstant::FIELD_NAME_KEY],
                     $filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY],
                     $filter[ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY],
@@ -117,7 +119,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
 
             if ($filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY] == ReportBuilderConstant::NUMBER_FIELD_TYPE_FILTER_KEY) {
-                $filterObjects[] =  new NumberFilter(
+                $filterObjects[] = new NumberFilter(
                     $filter[ReportBuilderConstant::FIELD_NAME_KEY],
                     $filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY],
                     $filter[ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY],
@@ -148,7 +150,7 @@ class ParamsBuilder implements ParamsBuilderInterface
                 }
 
                 if ($transformation[ReportBuilderConstant::TYPE_TRANSFORMATION_KEY] == ReportBuilderConstant::NUMBER_FORMAT_TRANSFORMATION_VALUE) {
-                    $transformationObjects[] =  new FormatNumberTransform(
+                    $transformationObjects[] = new FormatNumberTransform(
                         $transformation[ReportBuilderConstant::PREDICTION_TRANSFORMATION_KEY],
                         $transformation[ReportBuilderConstant::SCALE_TRANSFORMATION_KEY],
                         $transformation[ReportBuilderConstant::THOUSAND_SEPARATOR_TRANSFORMATION_KEY],
@@ -161,6 +163,20 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         return $transformationObjects;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function buildFromReportView(ReportViewInterface $reportView)
+    {
+        $allFilters = $reportView->getFilters();
+        $allTransformations = $reportView->getTransforms();
+        $joinBy = $reportView->getJoinedFields();
+
+        $this->filters = $this->createFilterObjects($allFilters);
+        $this->transformations = $this->createTransformationObjects($allTransformations);
+        $this->joinByFields = new JoinBy($joinBy);
     }
 
 }
