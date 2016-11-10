@@ -19,10 +19,18 @@ class ParamsBuilder implements ParamsBuilderInterface
     protected $transformations;
     protected $joinBy;
 
-    /** @inherit */
-    public function getFilters()
+    /** @inheritdoc */
+    public function getFiltersByDataSet($dataSetId)
     {
         return $this->filters;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMetricByDataSet($dataSetId)
+    {
+
     }
 
     /**

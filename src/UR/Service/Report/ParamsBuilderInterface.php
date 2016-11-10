@@ -22,9 +22,16 @@ interface ParamsBuilderInterface
     public function buildFromReportView(ReportViewInterface $reportView);
 
     /**
+     * @param $dataSetId
      * @return mixed
      */
-    public function getFilters();
+    public function getFiltersByDataSet($dataSetId);
+
+    /**
+     * @param $dataSetId
+     * @return mixed
+     */
+    public function getMetricByDataSet($dataSetId);
 
     /**
      * @return mixed
