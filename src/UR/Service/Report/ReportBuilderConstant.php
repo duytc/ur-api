@@ -8,6 +8,10 @@ class ReportBuilderConstant
 {
 
     const DATA_SET_KEY = 'dataSets';
+    const DATA_SET_VALUE = 'dataSet';
+    const DIMENSIONS_DATA_SET_VALUE = 'dimensions';
+    const METRICS_DATA_SET_VALUE = 'metrics';
+
     const FILTERS_KEY = 'filters';
     const TRANSFORMS_KEY = 'transforms';
     const TRANSFORM_TARGET_KEY = 'transformType';
