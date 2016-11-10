@@ -127,7 +127,6 @@ class AutoImportData implements AutoImportDataInterface
                 continue;
             }
 
-
             $ds1 = $dataSetLocator->getDataSetImportTable($dataSetId);
             $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
         }

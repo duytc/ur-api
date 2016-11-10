@@ -124,3 +124,8 @@ services:
             - @doctrine.orm.entity_manager
             - @ur.worker.workers.auto_import_data
             - @ur.domain_manager.connected_data_source
+
+    ur.worker.workers.alert_when_connected_data_source_change_worker:
+            class: UR\Worker\Workers\AlertWhenConnectedDataSourceChangeWorker
+            arguments:
+                - @ur.domain_manager.alert
