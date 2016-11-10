@@ -95,7 +95,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromReportView(ReportViewInterface $reportView)
     {
         $allDataSets = $reportView->getDataSets();
-        $allTransformations = $reportView->getTransforms();
+        $allTransformations = $reportView->getTransformations();
         $joinBy = $reportView->getJoinedFields();
 
         $dataSetObjects = $this->createDataSetsObjects($allDataSets);
