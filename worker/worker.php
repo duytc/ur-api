@@ -26,7 +26,8 @@ $entityManager = $container->get('doctrine.orm.entity_manager');
 $queue = $container->get("leezy.pheanstalk");
 // only tasks listed here are able to run
 $availableWorkers = [
-    $container->get('ur.worker.workers.import_dataset_worker'),
+    $container->get('ur.worker.workers.auto_import_when_connected_datasource_change_worker'),
+    $container->get('ur.worker.workers.alert_when_connected_data_source_change_worker'),
 ];
 
 $workerPool = new \UR\Worker\Pool($availableWorkers);

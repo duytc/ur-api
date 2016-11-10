@@ -18,7 +18,6 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Repository\Core\ConnectedDataSourceRepository;
-use UR\Repository\Core\DataSourceRepository;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
