@@ -11,17 +11,17 @@ use UR\Service\Report\ReportBuilderConstant;
 
 class DataSet implements DataSetInterface
 {
-    protected $dataSetName;
+    protected $dataSetId;
     protected $dimensions;
     protected $metrics;
     protected $filters;
 
-    function __construct($dataSetName, $dimensions, $filters, $metrics)
+    function __construct($dataSetId, $dimensions, $filters, $metrics)
     {
         $this->dimensions = $dimensions;
         $this->filters = $this->createFilterObjects($filters);
         $this->metrics = $metrics;
-        $this->dataSetName = $dataSetName;
+        $this->dataSetName = $dataSetId;
     }
 
     /**
@@ -51,9 +51,9 @@ class DataSet implements DataSetInterface
     /**
      * @inheritdoc
      */
-    public function getDataSetName()
+    public function getDataSetId()
     {
-        return $this->dataSetName;
+        return $this->dataSetId;
     }
 
     /**
