@@ -3,7 +3,6 @@
 namespace UR\Service\Import;
 
 
-use Doctrine\ORM\EntityManagerInterface;
 use Liuggio\ExcelBundle\Factory;
 use UR\DomainManager\AlertManagerInterface;
 use UR\DomainManager\DataSourceEntryImportHistoryManagerInterface;
@@ -14,15 +13,21 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
+use UR\Service\DataSet\Type;
 use UR\Service\DataSource\Csv;
 use UR\Service\DataSource\Excel;
 use UR\Service\DataSource\Json;
+use UR\Service\Parser\History\HistoryType;
 use UR\Service\Parser\ImportUtils;
 use UR\Service\Parser\Parser;
 use UR\Service\Parser\ParserConfig;
+use UR\Worker\Manager;
 
 class AutoImportData implements AutoImportDataInterface
 {
+    /** @var Manager */
+    private $workerManager;
+
     /**
      * @var ImportHistoryManagerInterface
      */
@@ -48,8 +53,9 @@ class AutoImportData implements AutoImportDataInterface
      */
     private $filePath;
 
-    function __construct(ImportHistoryManagerInterface $importHistoryManager, AlertManagerInterface $alertManager, DataSourceEntryImportHistoryManagerInterface $dataSourceEntryImportHistoryManager, Factory $phpExcel, $filePath)
+    function __construct(Manager $workerManager, ImportHistoryManagerInterface $importHistoryManager, AlertManagerInterface $alertManager, DataSourceEntryImportHistoryManagerInterface $dataSourceEntryImportHistoryManager, Factory $phpExcel, $filePath)
     {
+        $this->workerManager = $workerManager;
         $this->importHistoryManager = $importHistoryManager;
         $this->alertManager = $alertManager;
         $this->dataSourceEntryImportHistoryManager = $dataSourceEntryImportHistoryManager;
@@ -67,7 +73,7 @@ class AutoImportData implements AutoImportDataInterface
 
         //get all dataSource entries
         $dse = $connectedDataSource->getDataSource()->getDataSourceEntries();
-        $dataSetId= $connectedDataSource->getDataSet()->getId();
+        $dataSetId = $connectedDataSource->getDataSet()->getId();
 
         $parser = new Parser();
 
@@ -76,6 +82,12 @@ class AutoImportData implements AutoImportDataInterface
 
             // mapping
             $parserConfig = new ParserConfig();
+            $errors=array();
+
+            $errors[HistoryType::ERROR_CODE] = 0;
+            $errors[HistoryType::DATA_SOURCE_ENTRY_ENTITY] = $item->getId();
+            $errors[HistoryType::IMPORT_HISTORY_ENTITY] = $importHistoryEntity->getId();
+
             if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'csv') === 0) {
                 /**@var Csv $file */
                 $file = (new Csv($this->filePath . $item->getPath()))->setDelimiter(',');
@@ -101,7 +113,8 @@ class AutoImportData implements AutoImportDataInterface
             }
 
             if (!$validRequires) {
-                $this->createDataSourceEntryHistory($item, $importHistoryEntity, "failure", "error when mapping require fields");
+                $errors[HistoryType::ERROR_CODE] = 1;
+                $this->workerManager->createImportHistoryWhenConnectedDataSourceChange($errors);
                 continue;
             }
 
@@ -115,17 +128,14 @@ class AutoImportData implements AutoImportDataInterface
             $collectionParser = $parser->parse($file, $parserConfig);
 
             if (is_array($collectionParser)) {
-                if (strcmp($collectionParser["error"], "filter") === 0) {
-                    $desc = "error when Filter file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
-                }
-
-                if (strcmp($collectionParser["error"], "transform") === 0) {
-                    $desc = "error when Transform file at row " . $collectionParser["row"] . " column " . $collectionParser["column"];
-                }
-
-                $this->createDataSourceEntryHistory($item, $importHistoryEntity, "failure", $desc);
+                $errors=$collectionParser;
+                $errors[HistoryType::DATA_SOURCE_ENTRY_ENTITY] = $item->getId();
+                $errors[HistoryType::IMPORT_HISTORY_ENTITY] = $importHistoryEntity->getId();
+                $this->workerManager->createImportHistoryWhenConnectedDataSourceChange($errors);
                 continue;
             }
+
+            $this->workerManager->createImportHistoryWhenConnectedDataSourceChange($errors);
 
             $ds1 = $dataSetLocator->getDataSetImportTable($dataSetId);
             $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
