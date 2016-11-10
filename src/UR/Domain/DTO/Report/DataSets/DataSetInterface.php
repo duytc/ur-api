@@ -20,4 +20,10 @@ interface DataSetInterface
      * @return mixed
      */
     public function getFilters();
+
+    /**
+     * @return mixed
+     */
+    public function getDataSetId();
+
 } 

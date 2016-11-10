@@ -4,69 +4,26 @@
 namespace UR\Domain\DTO\Report;
 
 
-use UR\Domain\DTO\Report\Filters\AbstractFilterInterface;
-use UR\Domain\DTO\Report\Transforms\AbstractTransformInterface;
+use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
-use UR\Model\Core\DataSetInterface;
+
 
 class Params implements ParamsInterface
 {
-    /**
-     * @var AbstractFilterInterface[]
-     */
-    protected $filters;
-
-    /**
-     * @var AbstractTransformInterface
-     */
-    protected $transforms;
-
-    /**
-     * @var DataSetInterface[]
-     */
+    /** @var  DataSetInterface[] $dataSets */
     protected $dataSets;
+    protected $transformations;
+    protected $joinByFields;
 
-    public function needToGroup()
+    function __construct($dataSets, $joinByFields, $transformations)
     {
-        if (empty($this->getTransforms())) {
-            return false;
-        }
-
-        foreach($this->getTransforms() as $transform) {
-            if ($transform instanceof GroupByTransform) {
-                return true;
-            }
-        }
-
-        return false;
+        $this->dataSets = $dataSets;
+        $this->joinByFields = $joinByFields;
+        $this->transformations = $transformations;
     }
 
     /**
-     * @return AbstractFilterInterface[]
-     */
-    public function getFilters()
-    {
-        if (empty($this->filters)) {
-            return [];
-        }
-
-        return $this->filters;
-    }
-
-    /**
-     * @return AbstractTransformInterface[]
-     */
-    public function getTransforms()
-    {
-        if (empty($this->transforms)) {
-            return [];
-        }
-
-        return $this->transforms;
-    }
-
-    /**
-     * @return DataSetInterface[]
+     * @inheritdoc
      */
     public function getDataSets()
     {
@@ -76,4 +33,94 @@ class Params implements ParamsInterface
 
         return $this->dataSets;
     }
+
+    /** @inheritdoc */
+    public function getFiltersByDataSet($dataSetId)
+    {
+        if (!is_array($this->dataSets)) {
+            throw new \Exception(sprintf('Expect dataSet is object'));
+        }
+
+        foreach ($this->dataSets as $dataSet) {
+            if ($dataSet->getDataSetId() == $dataSetId) {
+                return $dataSet->getFilters();
+            }
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMetricsByDataSet($dataSetId)
+    {
+        if (!is_array($this->dataSets)) {
+            throw new \Exception(sprintf('Expect dataSet is object'));
+        }
+
+        foreach ($this->dataSets as $dataSet) {
+            if ($dataSet->getDataSetId() == $dataSetId) {
+                return $dataSet->getMetrics();
+            }
+        }
+
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDimensionByDataSet($dataSetId)
+    {
+        if (!is_array($this->dataSets)) {
+            throw new \Exception(sprintf('Expect dataSet is object'));
+        }
+
+        foreach ($this->dataSets as $dataSet) {
+            if ($dataSet->getDataSetId() == $dataSetId) {
+                return $dataSet->getDimensions();
+            }
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getJoinByFields()
+    {
+        if (empty($this->joinByFields)) {
+            return [];
+        }
+
+        return $this->joinByFields;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function needToGroup()
+    {
+        if (empty($this->getTransformations())) {
+            return false;
+        }
+
+        foreach ($this->getTransformations() as $transform) {
+            if ($transform instanceof GroupByTransform) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getTransformations()
+    {
+        if (empty($this->transformations)) {
+            return [];
+        }
+
+        return $this->transformations;
+    }
+
 }

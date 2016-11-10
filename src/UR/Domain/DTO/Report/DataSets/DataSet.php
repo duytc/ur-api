@@ -25,38 +25,6 @@ class DataSet implements DataSetInterface
     }
 
     /**
-     * @inheritdoc
-     */
-    public function getDimensions()
-    {
-        return $this->dimensions;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getMetrics()
-    {
-        return $this->metrics;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getFilters()
-    {
-        return $this->filters;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getDataSetId()
-    {
-        return $this->dataSetId;
-    }
-
-    /**
      * @param array $allFilters
      * @return array
      */
@@ -93,5 +61,37 @@ class DataSet implements DataSetInterface
         }
 
         return $filterObjects;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDimensions()
+    {
+        return $this->dimensions;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMetrics()
+    {
+        return $this->metrics;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFilters()
+    {
+        return $this->filters;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSetId()
+    {
+        return $this->dataSetId;
     }
 }

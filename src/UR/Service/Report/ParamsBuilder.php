@@ -6,62 +6,14 @@ namespace UR\Service\Report;
 
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\JoinBy\JoinBy;
+use UR\Domain\DTO\Report\Params;
+use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\FormatDateTransform;
 use UR\Domain\DTO\Report\Transforms\FormatNumberTransform;
 use UR\Model\Core\ReportViewInterface;
 
 class ParamsBuilder implements ParamsBuilderInterface
 {
-
-    protected $dataSets;
-    protected $transformations;
-    protected $joinByFields;
-
-    /**
-     * @inheritdoc
-     */
-    public function getDataSet()
-    {
-        return $this->dataSets;
-    }
-
-    /** @inheritdoc */
-    public function getFiltersByDataSet($dataSetId)
-    {
-
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getMetricsByDataSet($dataSetId)
-    {
-
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getDimensionByDataSet($dataSetId)
-    {
-
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getJoinByFields()
-    {
-        return $this->joinByFields;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getTransformations()
-    {
-        return $this->transformations;
-    }
 
     /**
      * @inheritdoc
@@ -86,9 +38,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             $joinByObject = new JoinBy($params[ReportBuilderConstant::JOIN_BY_KEY]);
         }
 
-        $this->dataSets = $dataSetObjects;
-        $this->transformations = $transformationObjects;
-        $this->joinByFields = $joinByObject;
+        return new Params($dataSetObjects,$joinByObject,$transformationObjects);
     }
 
     protected function createDataSetsObjects(array $dataSets)
@@ -148,9 +98,11 @@ class ParamsBuilder implements ParamsBuilderInterface
         $allTransformations = $reportView->getTransforms();
         $joinBy = $reportView->getJoinedFields();
 
-        $this->dataSets = $this->createDataSetsObjects($allDataSets);
-        $this->transformations = $this->createTransformationObjects($allTransformations);
-        $this->joinByFields = new JoinBy($joinBy);
+        $dataSetObjects = $this->createDataSetsObjects($allDataSets);
+        $transformationObjects = $this->createTransformationObjects($allTransformations);
+        $joinByObject = new JoinBy($joinBy);
+
+        return new Params($dataSetObjects,$joinByObject,$transformationObjects);
     }
 
 }
