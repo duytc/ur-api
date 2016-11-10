@@ -28,11 +28,18 @@ class ParamsBuilder implements ParamsBuilderInterface
     /**
      * @inheritdoc
      */
-    public function getMetricByDataSet($dataSetId)
+    public function getMetricsByDataSet($dataSetId)
     {
 
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getDimensionByDataSet($dataSetId)
+    {
+
+    }
     /**
      * @inheritdoc
      */
@@ -107,7 +114,7 @@ class ParamsBuilder implements ParamsBuilderInterface
                 );
             }
 
-            if ( ReportBuilderConstant::FIELD_TYPE_FILTER_KEY == ReportBuilderConstant::TEXT_FIELD_TYPE_FILTER_KEY ) {
+            if (ReportBuilderConstant::FIELD_TYPE_FILTER_KEY == ReportBuilderConstant::TEXT_FIELD_TYPE_FILTER_KEY) {
                 $filterObjects[] =  new TextFilter(
                     $filter[ReportBuilderConstant::FIELD_NAME_KEY],
                     $filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY],

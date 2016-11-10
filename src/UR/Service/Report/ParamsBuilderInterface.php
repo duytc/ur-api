@@ -31,7 +31,13 @@ interface ParamsBuilderInterface
      * @param $dataSetId
      * @return mixed
      */
-    public function getMetricByDataSet($dataSetId);
+    public function getMetricsByDataSet($dataSetId);
+
+    /**
+     * @param $dataSet
+     * @return mixed
+     */
+    public function getDimensionByDataSet($dataSet);
 
     /**
      * @return mixed
