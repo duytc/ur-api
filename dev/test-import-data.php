@@ -25,4 +25,4 @@ $container = $kernel->getContainer();
 
 $test = $container->get('ur.worker.workers.import_dataset_worker');
 $path= $container->getParameter('upload_file_dir');
-$test->autoCreateDataImport(32, $path);
+$test->autoCreateDataImport(4, $path);

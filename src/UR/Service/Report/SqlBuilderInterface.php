@@ -4,15 +4,21 @@
 namespace UR\Service\Report;
 
 
-use Doctrine\DBAL\Schema\Table;
+use Doctrine\DBAL\Driver\Statement;
+use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 
 interface SqlBuilderInterface
 {
     /**
-     * @param Table $table
-     * @param array $fields
-     * @param array $filters
-     * @return string
+     * @param DataSetInterface $dataSet
+     * @return Statement
      */
-    public function buildSelectQuery(Table $table, array $fields, array $filters);
+    public function buildQueryForSingleDataSet(DataSetInterface $dataSet);
+
+    /**
+     * @param array $dataSets
+     * @param $joinedField = null
+     * @return Statement
+     */
+    public function buildQuery(array $dataSets, $joinedField = null);
 }

@@ -9,7 +9,9 @@ services:
             - '@ur.services.report.report_grouper'
 
     ur.services.report.sql_builder:
-        class: UR\Service\Report\SqlBuilderInterface
+        class: UR\Service\Report\SqlBuilder
+        arguments:
+            - '@doctrine.orm.entity_manager'
 
     ur.services.report.report_grouper:
         class: UR\Service\Report\ReportGrouper
