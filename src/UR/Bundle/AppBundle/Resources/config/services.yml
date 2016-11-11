@@ -22,3 +22,19 @@ services:
         tags:
             - { name: doctrine.event_listener, event: onFlush }
             - { name: doctrine.event_listener, event: postFlush }
+
+    tagcade_app.event_listener.data_source_entry_inserted_listener:
+        class: UR\Bundle\AppBundle\EventListener\DataSourceEntryInsertedListener
+        arguments:
+            - @ur.worker.manager
+        tags:
+            - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postFlush }
+
+    tagcade_app.event_listener.data_source_entry_deleted_listener:
+        class: UR\Bundle\AppBundle\EventListener\DataSourceEntryDeletedListener
+        arguments:
+            - @ur.worker.manager
+        tags:
+            - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postFlush }

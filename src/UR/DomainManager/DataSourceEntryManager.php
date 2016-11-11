@@ -35,7 +35,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     }
 
     /**
-     * @inheritdoc
+     * @inheritdoc;
      */
     public function save(ModelInterface $dataSource)
     {
@@ -109,7 +109,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 ;
 
                 $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
-                $this->save($dataSourceEntry);
+                $this->om->persist($dataSourceEntry);
 
                 $alertSetting = $dataSource->getAlertSetting();
                 if (in_array(DataSourceRepository::DATA_RECEIVED, $alertSetting)) {
@@ -119,7 +119,6 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                     $alert->setType(sprintf('info'));
                     $alert->setMessage(sprintf('File %s of %s is uploaded', $file_name . "." . $file->getClientOriginalExtension(), $dataSourceEntry->getDataSource()->getName()));
                     $this->om->persist($alert);
-                    $this->om->flush();
                 }
 
                 $result[$origin_name] = 'success';
@@ -131,12 +130,13 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                     $alert->setType(sprintf('error'));
                     $alert->setMessage(sprintf('File %s is not uploaded', $file_name . "." . $file->getClientOriginalExtension()));
                     $this->om->persist($alert);
-                    $this->om->flush();
+
                 }
 
                 throw new \Exception(sprintf("File %s is not valid", $origin_name));
             }
         }
+        $this->om->flush();
 
         return $result;
     }

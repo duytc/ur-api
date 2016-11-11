@@ -213,4 +213,20 @@ class DataSource implements DataSourceInterface
     {
         $this->enable = $enable;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getConnectedDataSources()
+    {
+        return $this->connectedDataSources;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setConnectedDataSources($connectedDataSources)
+    {
+        $this->connectedDataSources = $connectedDataSources;
+    }
 }
