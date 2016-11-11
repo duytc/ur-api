@@ -22,7 +22,7 @@ class SqlBuilder implements SqlBuilderInterface
 {
     const START_DATE_INDEX = 0;
     const END_DATE_INDEX = 1;
-    const DATA_SET_TABLE_NAME_TEMPLATE = '__data_set_%d';
+    const DATA_SET_TABLE_NAME_TEMPLATE = '__data_import_%d';
 
     /**
      * @var Connection
@@ -146,7 +146,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         foreach ($fields as $field) {
-            $qb->addSelect(sprintf('t%d.%s', $dataSetIndex,  $field));
+            $qb->addSelect(sprintf('t%d.%s as %s%d', $dataSetIndex, $field, $field, $dataSet->getDataSetId()));
         }
 
         if ($dataSetIndex === 0) {
