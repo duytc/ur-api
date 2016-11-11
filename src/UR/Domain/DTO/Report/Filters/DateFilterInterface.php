@@ -11,8 +11,4 @@ interface DateFilterInterface extends AbstractFilterInterface
      */
     public function getDateFormat();
 
-    /**
-     * @return array
-     */
-    public function getDateRange();
 }

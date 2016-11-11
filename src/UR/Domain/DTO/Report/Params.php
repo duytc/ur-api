@@ -86,10 +86,6 @@ class Params implements ParamsInterface
      */
     public function getJoinByFields()
     {
-        if (empty($this->joinByFields)) {
-            return [];
-        }
-
         return $this->joinByFields;
     }
 

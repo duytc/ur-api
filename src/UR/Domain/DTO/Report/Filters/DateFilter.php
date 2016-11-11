@@ -14,21 +14,25 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
     /**
      * @var array
      */
-    protected $dateRange;
+    protected $startDate;
+
+    protected $endDate;
 
     /**
      * DateFilter constructor.
      * @param string $fieldName
      * @param int $fieldType
      * @param string $dateFormat
-     * @param array $dateRange
+     * @param $startDate
+     * @param $endDate
      */
-    public function __construct($fieldName, $fieldType, $dateFormat, array $dateRange)
+    public function __construct($fieldName, $fieldType, $dateFormat, $startDate, $endDate)
     {
         $this->fieldName = $fieldName;
         $this->fieldType = $fieldType;
         $this->dateFormat = $dateFormat;
-        $this->dateRange = $dateRange;
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
     }
 
     /**
@@ -40,10 +44,18 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
     }
 
     /**
+     * @return mixed
+     */
+    public function getEndDate()
+    {
+        return $this->endDate;
+    }
+
+    /**
      * @return array
      */
-    public function getDateRange()
+    public function getStartDate()
     {
-        return $this->dateRange;
+        return $this->startDate;
     }
 }

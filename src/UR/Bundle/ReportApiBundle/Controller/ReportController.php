@@ -11,7 +11,6 @@ use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Service\Report\ParamsBuilderInterface;
 
 /**
- * @Security("has_role('ROLE_ADMIN') or (has_role('ROLE_PUBLISHER') and has_role('MODULE_UNIFIED_REPORT'))")
  * Class ReportController
  * @package UR\Bundle\ReportApiBundle\Controller
  */
@@ -21,8 +20,8 @@ class ReportController extends FOSRestController
      * @Rest\Get("/platform")
      *
      * @Rest\QueryParam(name="dataSets", nullable=false)
-     * @Rest\QueryParam(name="filters", nullable=true)
-     * @Rest\QueryParam(name="transforms", nullable=true)*
+     * @Rest\QueryParam(name="joinBy", nullable=true)
+     * @Rest\QueryParam(name="transform", nullable=true)*
      *
      * @ApiDoc(
      *  section = "admin",
@@ -32,8 +31,8 @@ class ReportController extends FOSRestController
      *  },
      *  parameters={
      *      {"name"="dataSets", "dataType"="array", "required"=true, "description"="list of data set id to build report"},
-     *      {"name"="filters", "dataType"="array", "required"=false, "description"="filter descriptor"},
-     *      {"name"="transforms", "dataType"="array", "required"=false, "description"="transform descriptor"}
+     *      {"name"="joinBy", "dataType"="string", "required"=false, "description"="filter descriptor"},
+     *      {"name"="transform", "dataType"="string", "required"=false, "description"="transform descriptor"}
      *  }
      * )
      *
@@ -41,7 +40,8 @@ class ReportController extends FOSRestController
      */
     public function indexAction()
     {
-        return $this->getReportBuilder()->getReport($this->getParams());
+        $params = $this->getParams();
+        return $this->getReportBuilder()->getReport($params);
     }
 
     /**

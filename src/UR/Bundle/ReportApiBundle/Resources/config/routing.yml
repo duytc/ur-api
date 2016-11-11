@@ -1,3 +1,5 @@
 report_api_homepage:
-    path:     /hello/{name}
-    defaults: { _controller: ReportApiBundle:Default:index }
+    path:     /platform
+    defaults: { _controller: ReportApiBundle:Report:index }
+    methods: [GET]
+

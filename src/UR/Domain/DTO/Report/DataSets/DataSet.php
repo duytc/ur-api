@@ -32,30 +32,31 @@ class DataSet implements DataSetInterface
     {
         $filterObjects = [];
         foreach ($allFilters as $filter) {
-            if ($filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY] == ReportBuilderConstant::DATE_FIELD_TYPE_FILTER_KEY) {
+            if ($filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} == ReportBuilderConstant::DATE_FIELD_TYPE_FILTER_KEY) {
                 $filterObjects[] = new DateFilter(
-                    $filter[ReportBuilderConstant::FIELD_NAME_KEY],
-                    $filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY],
-                    $filter[ReportBuilderConstant::DATE_FORMAT_FILTER_KEY],
-                    $filter[ReportBuilderConstant::DATE_RANGE_FILTER_KEY]
+                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY},
+                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY},
+                    $filter->{ReportBuilderConstant::DATE_FORMAT_FILTER_KEY},
+                    $filter->{ReportBuilderConstant::START_DATE_FILTER_KEY},
+                    $filter->{ReportBuilderConstant::END_DATE_FILTER_KEY}
                 );
             }
 
-            if (ReportBuilderConstant::FIELD_TYPE_FILTER_KEY == ReportBuilderConstant::TEXT_FIELD_TYPE_FILTER_KEY) {
+            if ($filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} == ReportBuilderConstant::TEXT_FIELD_TYPE_FILTER_KEY) {
                 $filterObjects[] = new TextFilter(
-                    $filter[ReportBuilderConstant::FIELD_NAME_KEY],
-                    $filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY],
-                    $filter[ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY],
-                    $filter[ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY]
+                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY},
+                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY},
+                    $filter->{ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY},
+                    $filter->{ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY}
                 );
             }
 
-            if ($filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY] == ReportBuilderConstant::NUMBER_FIELD_TYPE_FILTER_KEY) {
+            if ($filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} == ReportBuilderConstant::NUMBER_FIELD_TYPE_FILTER_KEY) {
                 $filterObjects[] = new NumberFilter(
-                    $filter[ReportBuilderConstant::FIELD_NAME_KEY],
-                    $filter[ReportBuilderConstant::FIELD_TYPE_FILTER_KEY],
-                    $filter[ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY],
-                    $filter[ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY]
+                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY},
+                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY},
+                    $filter->{ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY},
+                    $filter->{ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY}
                 );
             }
         }
