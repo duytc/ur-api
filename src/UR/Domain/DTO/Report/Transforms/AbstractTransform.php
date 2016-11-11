@@ -14,6 +14,11 @@ abstract class AbstractTransform implements AbstractTransformInterface
      */
     protected $target;
 
+    function __construct($target)
+    {
+        $this->target = $target;
+    }
+
     /**
      * @return mixed
      */

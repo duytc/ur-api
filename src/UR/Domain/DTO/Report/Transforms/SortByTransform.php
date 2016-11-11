@@ -11,9 +11,9 @@ class SortByTransform extends AllFieldTransform implements SortByTransformInterf
      */
     protected $fields;
 
-    function __construct($fields,$type)
+    function __construct($fields, $type, $target)
     {
-        $this->type = $type;
+        parent::__construct($type, $target);
         $this->fields = $fields;
     }
 

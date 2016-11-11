@@ -45,10 +45,10 @@ class ReportBuilderConstant
     const SCALE_TRANSFORMATION_KEY = 'scale';
 
     const TARGET_TRANSFORMATION_SINGLED_VALUE = 'single-field';
-    const TARGET_TRANSFORMATION_ALL_VALUE = 'all-field';
+    const TARGET_TRANSFORMATION_ALL_VALUE = 'all-fields';
     const GROUP_BY_TRANSFORMATION_VALUE = 'groupBy';
     const FIELDS_GROUP_BY_TRANSFORMATION_VALUE = 'fields';
-    const SORT_BY_TRANSFORMATION_VALUE = 'groupBy';
+    const SORT_BY_TRANSFORMATION_VALUE = 'sortBy';
 
     const DATE_FORMAT_TRANSFORMATION_VALUE = 'format';
     const NUMBER_FORMAT_TRANSFORMATION_VALUE = 'number';

@@ -88,23 +88,22 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
 
             if ($transformation->{ReportBuilderConstant::TARGET_TRANSFORMATION_KEY} == ReportBuilderConstant::TARGET_TRANSFORMATION_ALL_VALUE) {
-
                 if ($transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} == ReportBuilderConstant::GROUP_BY_TRANSFORMATION_VALUE) {
                     $transformationObjects [] = new GroupByTransform(
                         $transformation->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE},
-                        $transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY}
-
+                        $transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY},
+                        $transformation->{ReportBuilderConstant::TARGET_TRANSFORMATION_KEY}
                     );
                 }
 
                 if ($transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} == ReportBuilderConstant::SORT_BY_TRANSFORMATION_VALUE) {
                     $transformationObjects [] = new SortByTransform(
                         $transformation->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE},
-                        $transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY}
+                        $transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY},
+                        $transformation->{ReportBuilderConstant::TARGET_TRANSFORMATION_KEY}
                     );
                 }
             }
-
         }
 
         return $transformationObjects;

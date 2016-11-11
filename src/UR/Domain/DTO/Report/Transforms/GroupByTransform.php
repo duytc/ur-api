@@ -11,9 +11,9 @@ class GroupByTransform extends AllFieldTransform implements GroupByTransformInte
      */
     protected $fields;
 
-    function __construct($fields, $type)
+    function __construct($fields, $type, $target)
     {
-        $this->type = $type;
+        parent::__construct($type, $target);
         $this->fields = $fields;
     }
 
