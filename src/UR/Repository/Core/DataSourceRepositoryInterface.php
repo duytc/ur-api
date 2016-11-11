@@ -52,4 +52,10 @@ interface DataSourceRepositoryInterface extends ObjectRepository
      * @return array
      */
     public function getDataSourceByDataSet(DataSetInterface $dataSet);
+
+    /**
+     * @param DataSetInterface $dataSet
+     * @return DataSourceInterface[]
+     */
+    public function getDataSourceNotInByDataSet(DataSetInterface $dataSet);
 }

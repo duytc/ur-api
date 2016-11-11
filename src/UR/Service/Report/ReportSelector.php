@@ -5,11 +5,9 @@ namespace UR\Service\Report;
 
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Schema\Table;
+use Doctrine\DBAL\Driver\Statement;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
-use UR\Model\Core\DataSetInterface;
-use UR\Domain\DTO\Report\DataSets\DataSetInterface as DataSetDTO;
 
 class ReportSelector implements ReportSelectorInterface
 {
@@ -42,43 +40,18 @@ class ReportSelector implements ReportSelectorInterface
         $this->connection = $this->em->getConnection();
     }
 
+    /**
+     * @param ParamsInterface $params
+     * @return Statement
+     */
     public function getReportData(ParamsInterface $params)
     {
         $dataSets = $params->getDataSets();
 
-        $reports = [];
-        /**
-         * @var DataSetDTO $dataSet
-         */
-        foreach($dataSets as $dataSet) {
-            $result = $this->getData($dataSet, [], $filters);
-
-            if (is_array($result)) {
-                $reports[] = $result;
-            }
+        if (count($dataSets) < 2) {
+            return $this->sqlBuilder->buildQueryForSingleDataSet($dataSets[0]);
         }
 
-        return $reports;
-    }
-
-    public function getData(DataSetDTO $dataSet, array $fields, array $filters)
-    {
-        $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
-        $query = $this->sqlBuilder->buildSelectQuery($table, $fields, $filters);
-
-        return $this->connection->query($query);
-    }
-
-
-    /**
-     * @param $dataSetId
-     * @return Table
-     */
-    protected function getDataSetTableSchema($dataSetId)
-    {
-        $sm = $this->connection->getSchemaManager();
-        $tableName = sprintf(self::DATA_SET_TABLE_NAME_TEMPLATE, $dataSetId);
-
-        return $sm->listTableDetails($tableName);
+        return $this->sqlBuilder->buildQuery($dataSets, $params->getJoinByFields()->getJoinByValue());
     }
 }

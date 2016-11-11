@@ -21,7 +21,15 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     /**
      * Get all alert
      *
-     * @Rest\View(serializerGroups={"alert.detail","dataSourceEntry.summary", "datasource.detail"})
+     * @Rest\View(serializerGroups={"alert.summary","dataSourceEntry.summary", "datasource.summary", "user.summary"})
+     *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
      *
      * @ApiDoc(
      *  section = "Alert",
@@ -31,11 +39,22 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      *  }
      * )
      *
+     * @param Request $request
      * @return AlertInterface[]
      */
-    public function cgetAction()
+    public function cgetAction(Request $request)
     {
-        return $this->all();
+        $publisher = $this->getUser();
+
+        $alertRepository = $this->get('ur.repository.alert');
+        $qb = $alertRepository->getAlertsForUserQuery($publisher, $this->getParams());
+
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
     }
 
     /**
@@ -132,6 +151,46 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
         return $this->patch($request, $id);
     }
 
+    /**
+     * Update an array existing alert
+     *
+     * @Rest\Put("/alerts")
+     * @Rest\QueryParam(name="delete", requirements="(true|false)", nullable=true, description="delete alerts")
+     * @Rest\QueryParam(name="status", requirements="(true|false)", nullable=true, description="status alerts")
+     *
+     * @ApiDoc(
+     *  section = "Alert",
+     *  resource = true,
+     *  statusCodes = {
+     *      204 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request the request object
+     * @return mixed
+     * @throws \Exception
+     */
+    public function putAlertsAction(Request $request)
+    {
+        $alertManager = $this->get('ur.domain_manager.alert');
+        $params = $request->request->all();
+
+        $ids = $params['ids'];
+        $delete =  filter_var($request->query->get('delete', null), FILTER_VALIDATE_BOOLEAN);
+        $status = filter_var($request->query->get('status', null), FILTER_VALIDATE_BOOLEAN);
+
+        if ($delete === true) {
+            return $alertManager->deleteAlertsByIds($ids);
+        } else if ($status === true) {
+            return $alertManager->updateMarkAsReadByIds($ids);
+        }
+        else if ($status === false) {
+            return $alertManager->updateMarkAsUnreadByIds($ids);
+        }
+
+         throw new \Exception("param is not valid");
+    }
     /**
      * Delete an existing alert
      *

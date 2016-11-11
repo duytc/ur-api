@@ -4,7 +4,11 @@
 namespace UR\Service\Report;
 
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Table;
+use Doctrine\ORM\EntityManagerInterface;
+use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\Filters\AbstractFilterInterface;
 use UR\Domain\DTO\Report\Filters\DateFilterInterface;
 use UR\Domain\DTO\Report\Filters\NumberFilter;
@@ -12,17 +16,41 @@ use UR\Domain\DTO\Report\Filters\NumberFilterInterface;
 use UR\Domain\DTO\Report\Filters\TextFilter;
 use UR\Domain\DTO\Report\Filters\TextFilterInterface;
 use UR\Exception\InvalidArgumentException;
+use UR\Exception\RuntimeException;
 
 class SqlBuilder implements SqlBuilderInterface
 {
     const START_DATE_INDEX = 0;
     const END_DATE_INDEX = 1;
+    const DATA_SET_TABLE_NAME_TEMPLATE = '__data_import_%d';
 
-    public function buildSelectQuery(Table $table, array $fields, array $filters)
+    /**
+     * @var Connection
+     */
+    protected $connection;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    protected $em;
+
+    /**
+     * SqlBuilder constructor.
+     * @param EntityManagerInterface $em
+     */
+    public function __construct(EntityManagerInterface $em)
     {
-        $sql = 'SELECT %s FROM %s';
+        $this->em = $em;
+        $this->connection = $this->em->getConnection();
+    }
 
-        $tableName = $table->getName();
+    public function buildQueryForSingleDataSet(DataSetInterface $dataSet)
+    {
+        $metrics = $dataSet->getMetrics();
+        $dimensions = $dataSet->getDimensions();
+        $filters = $dataSet->getFilters();
+        $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
+        $fields = array_merge($metrics, $dimensions);
         $tableColumns = array_keys($table->getColumns());
 
         foreach($fields as $index=>$field) {
@@ -32,22 +60,110 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         if (empty($fields)) {
-            throw new InvalidArgumentException('at least one filed must be selected');
+            throw new InvalidArgumentException('at least one field must be selected');
         }
 
-        $sql = sprintf($sql, $tableName, implode(',', $fields));
+        $qb = $this->connection->createQueryBuilder();
+        foreach ($fields as $field) {
+            $qb->addSelect($field);
+        }
+
+        $qb->from($table->getName());
+
+        if (empty($filters)) {
+            return $qb->execute();
+        }
 
         $conditions = $this->buildFilters($filters);
 
-        if (empty($conditions)) {
-            return $sql;
+        if (count($conditions) == 1) {
+            $qb->where($conditions[0]);
+            return $qb->execute();
         }
 
-        return $sql . ' WHERE ' . implode(' AND ', $conditions);
+        $qb->where(implode(' AND ', $conditions));
+        return $qb->execute();
     }
 
 
-    protected function buildFilters(array $filters)
+    public function buildQuery(array $dataSets, $joinedField = null)
+    {
+        if (empty($dataSets)) {
+            throw new InvalidArgumentException('no dataSet');
+        }
+
+        if (count($dataSets) == 1) {
+            $dataSet = $dataSets[0];
+            if (!$dataSet instanceof DataSetInterface) {
+                throw new RuntimeException('expect an DataSetInterface object');
+            }
+
+            return $this->buildQueryForSingleDataSet($dataSet);
+        }
+
+        if ($joinedField === null) {
+            throw new InvalidArgumentException('joined field is required when multiple data sets is selected');
+        }
+
+        $qb = $this->connection->createQueryBuilder();
+        $conditions = [];
+
+        // add select clause
+        /** @var DataSetInterface $dataSet */
+        foreach($dataSets as $dataSetIndex=>$dataSet) {
+            $qb = $this->buildSelectQuery($qb, $dataSet, $dataSetIndex, $joinedField);
+            $conditions = array_merge($conditions, $this->buildFilters($dataSet->getFilters(), sprintf('t%d', $dataSetIndex)));
+        }
+
+        // add WHERE clause
+        if (!empty($conditions)) {
+            if (count($conditions) == 1) {
+                $qb->where($conditions[0]);
+            } else {
+                $qb->where(implode(' AND ', $conditions));
+            }
+        }
+
+        return $qb->execute();
+    }
+
+    protected function buildSelectQuery(QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, $joinBy)
+    {
+        $metrics = $dataSet->getMetrics();
+        $dimensions = $dataSet->getDimensions();
+        $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
+        $fields = array_merge($metrics, $dimensions);
+        $tableColumns = array_keys($table->getColumns());
+        foreach($fields as $index=>$field) {
+
+            if (!in_array($field, $tableColumns)) {
+                unset($fields[$index]);
+            }
+        }
+
+        if (empty($fields)) {
+            throw new InvalidArgumentException('at least one field must be selected');
+        }
+
+        foreach ($fields as $field) {
+            $qb->addSelect(sprintf('t%d.%s as %s_%d', $dataSetIndex, $field, $field, $dataSet->getDataSetId()));
+        }
+
+        if ($dataSetIndex === 0) {
+            $qb->from($table->getName(), sprintf('t%d', $dataSetIndex));
+        } else {
+            $qb->join('t0', $table->getName(), sprintf('t%d', $dataSetIndex), sprintf('t0.%s = t%d.%s', $joinBy, $dataSetIndex, $joinBy));
+        }
+
+        return $qb;
+    }
+
+    /**
+     * @param array $filters
+     * @param null $tableAlias
+     * @return array
+     */
+    protected function buildFilters(array $filters, $tableAlias = null)
     {
         $sqlConditions = [];
 
@@ -56,35 +172,42 @@ class SqlBuilder implements SqlBuilderInterface
                 continue;
             }
 
-            $sqlConditions[] = $this->buildSingleFilter($filter);
+            $sqlConditions[] = $this->buildSingleFilter($filter, $tableAlias);
         }
 
         return $sqlConditions;
     }
 
-    protected function buildSingleFilter(AbstractFilterInterface $filter)
+    /**
+     * @param AbstractFilterInterface $filter
+     * @param null $tableAlias
+     * @return string
+     */
+    protected function buildSingleFilter(AbstractFilterInterface $filter, $tableAlias = null)
     {
+        $fieldName = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, $filter->getFieldName()) : $filter->getFieldName();
+
         if ($filter instanceof DateFilterInterface) {
             $dateRange = $filter->getDateRange();
-            if (is_array($dateRange) || count($dateRange) < 2) {
+            if (!is_array($dateRange) || count($dateRange) < 2) {
                 throw new InvalidArgumentException('invalid date range of filter');
             }
 
-            return sprintf('(%s BETWEEN %s AND %s)', $filter->getFieldName(), $dateRange[self::START_DATE_INDEX], $dateRange[self::END_DATE_INDEX]);
+            return sprintf('(%s BETWEEN "%s" AND "%s")', $fieldName, $dateRange[self::START_DATE_INDEX], $dateRange[self::END_DATE_INDEX]);
         }
 
         if ($filter instanceof NumberFilterInterface) {
             switch ($filter->getComparisonType()) {
                 case NumberFilter::COMPARISON_TYPE_EQUAL :
-                    return sprintf('%s = %d', $filter->getFieldName(), $filter->getComparisonValue());
+                    return sprintf('%s = %d', $fieldName, $filter->getComparisonValue());
                 case NumberFilter::COMPARISON_TYPE_GREATER:
-                    return sprintf('%s > %d', $filter->getFieldName(), $filter->getComparisonValue());
+                    return sprintf('%s > %d', $fieldName, $filter->getComparisonValue());
                 case NumberFilter::COMPARISON_TYPE_SMALLER:
-                    return sprintf('%s < %d', $filter->getFieldName(), $filter->getComparisonValue());
+                    return sprintf('%s < %d', $fieldName, $filter->getComparisonValue());
                 case NumberFilter::COMPARISON_TYPE_SMALLER_OR_EQUAL:
-                    return sprintf('%s <= %d', $filter->getFieldName(), $filter->getComparisonValue());
+                    return sprintf('%s <= %d', $fieldName, $filter->getComparisonValue());
                 case NumberFilter::COMPARISON_TYPE_GREATER_OR_EQUAL:
-                    return sprintf('%s >= %d', $filter->getFieldName(), $filter->getComparisonValue());
+                    return sprintf('%s >= %d', $fieldName, $filter->getComparisonValue());
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));
             }
@@ -93,18 +216,30 @@ class SqlBuilder implements SqlBuilderInterface
         if ($filter instanceof TextFilterInterface) {
             switch ($filter->getComparisonType()) {
                 case TextFilter::COMPARISON_TYPE_EQUAL :
-                    return sprintf('%s = %s', $filter->getFieldName(), $filter->getComparisonValue());
+                    return sprintf('%s = %s', $fieldName, $filter->getComparisonValue());
                 case TextFilter::COMPARISON_TYPE_NOT_EQUAL:
-                    return sprintf('%s != %d', $filter->getFieldName(), $filter->getComparisonValue());
+                    return sprintf('%s != %d', $fieldName, $filter->getComparisonValue());
                 case TextFilter::COMPARISON_TYPE_CONTAINS :
-                    return sprintf('CONTAINS(%s, %s)', $filter->getFieldName(), $filter->getComparisonValue());
+                    return sprintf('CONTAINS(%s, %s)', $fieldName, $filter->getComparisonValue());
                 case TextFilter::COMPARISON_TYPE_START_WITH:
-                    return sprintf('%s LIKE %s%', $filter->getFieldName(), $filter->getComparisonValue());
+                    return sprintf('%s LIKE %s%', $fieldName, $filter->getComparisonValue());
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));
             }
         }
 
         throw new InvalidArgumentException(sprintf('filter is not supported'));
+    }
+
+    /**
+     * @param $dataSetId
+     * @return Table
+     */
+    protected function getDataSetTableSchema($dataSetId)
+    {
+        $sm = $this->connection->getSchemaManager();
+        $tableName = sprintf(self::DATA_SET_TABLE_NAME_TEMPLATE, $dataSetId);
+
+        return $sm->listTableDetails($tableName);
     }
 }

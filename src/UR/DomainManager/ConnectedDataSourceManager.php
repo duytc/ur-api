@@ -7,10 +7,11 @@ use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\ConnectedDataSourceRepositoryInterface;
 
-class ConnectedDataSourceManager implements ConnectedDataSourceManagerInterface
+    class ConnectedDataSourceManager implements ConnectedDataSourceManagerInterface
 {
     protected $om;
     protected $repository;
@@ -82,5 +83,13 @@ class ConnectedDataSourceManager implements ConnectedDataSourceManagerInterface
     public function getConnectedDataSourceByDataSet(DataSetInterface $dataSet)
     {
         return $this->repository->getConnectedDataSourceByDataSet($dataSet);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getConnectedDataSourceByDataSource(DataSourceInterface $dataSource)
+    {
+        return $this->repository->getConnectedDataSourceByDataSource($dataSource);
     }
 }

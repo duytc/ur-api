@@ -2,6 +2,8 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use Box\Spout\Common\Type;
+use Box\Spout\Reader\ReaderFactory;
 use DataDog\PagerBundle\Pagination;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
@@ -318,21 +320,25 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         /**@var DataSourceEntryInterface $item */
         /**@var DataSourceInterface $file */
         foreach ($dse as $item) {
+            $inputFile = $this->container->getParameter('upload_file_dir') . $item->getPath();
             if (strcmp($dataSource->getFormat(), 'csv') === 0) {
                 /**@var Csv $file */
-                $file = (new Csv($this->container->getParameter('upload_file_dir') . $item->getPath()))->setDelimiter(',');
+                $file = (new Csv($inputFile))->setDelimiter(',');
             } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
                 /**@var Excel $file */
-                $file = new \UR\Service\DataSource\Excel($this->container->getParameter('upload_file_dir') . $item->getPath(), $phpExcel);
+                $file = new \UR\Service\DataSource\Excel($inputFile, $phpExcel);
             } else {
                 $file = new Json($item->getPath());
             }
             $columns = $file->getColumns();
             $arr = array_merge($arr, $columns);
+            $arr = array_unique($arr);
+            $arr = array_filter($arr, function ($value) {
+                return $value !== '';
+            });
         }
-        array_unique($arr);
 
-        return array_unique($arr);
+        return array_values($arr);
     }
 
     /**

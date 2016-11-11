@@ -24,7 +24,7 @@ final class FilterType
     const NOT_CONTAINS = 'not contains';
     const START_WITH = 'start with';
     const END_WITH = 'end with';
-    const DEFAULT_DATE_FORMAT= 'Y-m-d';
+    const DEFAULT_DATE_FORMAT= '!Y-m-d';
 
 
     private static $comparisonForNumbers = [
