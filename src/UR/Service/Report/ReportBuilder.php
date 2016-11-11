@@ -31,12 +31,33 @@ class ReportBuilder implements ReportBuilderInterface
 
     public function getReport(ParamsInterface $params)
     {
-        $reportData = $this->reportSelector->getReportData($params);
+        $statement = $this->reportSelector->getReportData($params);
 
         if (!$params->needToGroup()) {
-            return $reportData;
+            return $statement->fetchAll();
         }
 
-        return $this->reportGrouper->groupReports($params->getTransforms(), $reportData, [], []);
+        $metrics = [];
+        $dimensions = [];
+
+        $dataSets = $params->getDataSets();
+
+        if (count($dataSets) < 2) {
+            $metrics = $dataSets[0]->getMetrics();
+            $dimensions = $dataSets[0]->getDimensions();
+        } else {
+            foreach($dataSets as $dataSet) {
+                foreach($dataSet->getMetrics() as $item) {
+                    $metrics[] = sprintf('%s%d', $item, $dataSet->getDataSetId());
+                }
+
+                foreach($dataSet->getDimensions() as $item) {
+                    $dimensions[] = sprintf('%s%d', $item, $dataSet->getDataSetId());
+                }
+            }
+        }
+
+
+        return $this->reportGrouper->groupReports($params->getTransformations(), $statement, $metrics, $dimensions);
     }
 }

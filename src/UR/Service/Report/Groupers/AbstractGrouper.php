@@ -5,11 +5,13 @@ namespace UR\Service\Report\Groupers;
 
 
 
+use Doctrine\DBAL\Driver\Statement;
+
 abstract class AbstractGrouper implements GrouperInterface
 {
-    public function getGroupedReport($groupingFields, array $reports, array $metrics, array $dimensions)
+    public function getGroupedReport($groupingFields, Statement $statement, array $metrics, array $dimensions)
     {
-        $groupedReports = $this->generateGroupedArray($groupingFields, $reports);
+        $groupedReports = $this->generateGroupedArray($groupingFields, $statement);
 
         $results = [];
         foreach($groupedReports as $groupedReport) {
@@ -36,10 +38,14 @@ abstract class AbstractGrouper implements GrouperInterface
         return $results;
     }
 
-    protected function generateGroupedArray($groupingFields, array $reports)
+    protected function generateGroupedArray($groupingFields, Statement $statement)
     {
         $groupedArray = [];
-        foreach($reports as $report) {
+        while ($report = $statement->fetch()) {
+            if (!$report) {
+                break;
+            }
+
             $key = '';
             foreach ($groupingFields as $groupField) {
                 if (array_key_exists($groupField, $report)) {
@@ -49,6 +55,16 @@ abstract class AbstractGrouper implements GrouperInterface
             $key = md5($key);
             $groupedArray[$key][] = $report;
         }
+//        foreach($reports as $report) {
+//            $key = '';
+//            foreach ($groupingFields as $groupField) {
+//                if (array_key_exists($groupField, $report)) {
+//                    $key .= is_array($report[$groupField]) ? json_encode($report[$groupField], JSON_UNESCAPED_UNICODE) : $report[$groupField];
+//                }
+//            }
+//            $key = md5($key);
+//            $groupedArray[$key][] = $report;
+//        }
 
         return $groupedArray;
     }
