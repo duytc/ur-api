@@ -16,7 +16,7 @@ use UR\Worker\Manager;
  *
  * @package UR\Bundle\AppBundle\EventListener
  */
-class DataSetChangeListener
+class ReImportDataSetChangeListener
 {
     /**
      * @var array|ModelInterface[]
@@ -29,10 +29,9 @@ class DataSetChangeListener
 
     private $uploadFileDir;
 
-    function __construct(Manager $workerManager, $uploadFileDir)
+    function __construct(Manager $workerManager)
     {
         $this->workerManager = $workerManager;
-        $this->uploadFileDir = $uploadFileDir;
     }
 
     public function onFlush(OnFlushEventArgs $args)
@@ -73,7 +72,7 @@ class DataSetChangeListener
         }
 
         // update connected DataSource for DataSet
-        $this->workerManager->autoCreateDataImport($dataSetId, $this->uploadFileDir);
+        $this->workerManager->reImportWhenDataSetChange($dataSetId);
 
         // reset for new onFlush event
         $this->changedEntities = [];

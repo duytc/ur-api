@@ -17,7 +17,7 @@ use UR\Worker\Manager;
  *
  * @package UR\Bundle\AppBundle\EventListener
  */
-class DataSourceEntryInsertedListener
+class ReImportDataSourceEntryInsertedListener
 {
     /**
      * @var array|ModelInterface[]
@@ -50,15 +50,10 @@ class DataSourceEntryInsertedListener
             return;
         }
 
-        $em = $args->getEntityManager();
-        $uow = $em->getUnitOfWork();
-
         foreach ($this->insertedEntities as $entity) {
             if (!$entity instanceof DataSourceEntryInterface) {
                 continue;
             }
-
-            $changedFields = $uow->getEntityChangeSet($entity);
             /** @var DataSourceInterface $dataSource */
             $dataSource = $entity->getDataSource();
             break;

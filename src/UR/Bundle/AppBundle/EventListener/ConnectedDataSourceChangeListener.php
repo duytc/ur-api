@@ -3,6 +3,7 @@
 namespace UR\Bundle\AppBundle\EventListener;
 
 
+use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use UR\Model\Core\ConnectedDataSourceInterface;
@@ -21,56 +22,58 @@ class ConnectedDataSourceChangeListener
     /**
      * @var array|ModelInterface[]
      */
-    protected $changedEntities = [];
+    protected $changedEntity;
+    protected $insertedEntity;
+    protected $removedEntity;
 
     /** @var Manager */
     private $workerManager;
 
-    private $uploadFileDir;
-
-    function __construct(Manager $workerManager, $uploadFileDir)
+    function __construct(Manager $workerManager)
     {
         $this->workerManager = $workerManager;
-        $this->uploadFileDir = $uploadFileDir;
-    }
-
-    public function onFlush(OnFlushEventArgs $args)
-    {
-        $em = $args->getEntityManager();
-        $uow = $em->getUnitOfWork();
-
-        $this->changedEntities = array_merge($this->changedEntities, $uow->getScheduledEntityUpdates());
-
-        $this->changedEntities = array_filter($this->changedEntities, function ($entity) {
-            return $entity instanceof ConnectedDataSourceInterface;
-        });
     }
 
     public function postFlush(PostFlushEventArgs $args)
     {
-        if (count($this->changedEntities) < 1) {
+        $this->importWhenInsertOrUpdate($this->insertedEntity);
+        $this->importWhenInsertOrUpdate($this->changedEntity);
+        $this->importWhenInsertOrUpdate($this->removedEntity);
+    }
+
+    public function postPersist(LifecycleEventArgs $args)
+    {
+        $entity = $args->getEntity();
+        $this->insertedEntity = $entity;
+    }
+
+    public function postUpdate(LifecycleEventArgs $args)
+    {
+        $entity = $args->getEntity();
+        $this->changedEntity = $entity;
+    }
+
+    public function postRemove(LifecycleEventArgs $args)
+    {
+        $entity = $args->getEntity();
+        $this->removedEntity = $entity;
+    }
+
+    public function importWhenInsertOrUpdate($entity)
+    {
+        if (!$entity instanceof ConnectedDataSourceInterface) {
             return;
         }
-
-
-        $em = $args->getEntityManager();
-        $uow = $em->getUnitOfWork();
-
-        foreach ($this->changedEntities as $entity) {
-            if (!$entity instanceof ConnectedDataSourceInterface) {
-                continue;
-            }
-
-            $changedFields = $uow->getEntityChangeSet($entity);
-            /** @var int $conenectedDataSourceId */
-            $connectedDataSourceId= $entity->getId();
-        }
-
-        // running import data
-        $this->workerManager->importDataWhenConnectedDataSourceChange($connectedDataSourceId);
-
-        // reset for new onFlush event
-        $this->changedEntities = [];
+        $this->workerManager->importDataWhenConnectedDataSourceChange($entity->getId());
     }
+
+    public function importWhenDeleted($entity)
+    {
+        if (!$entity instanceof ConnectedDataSourceInterface) {
+            return;
+        }
+        $this->workerManager->reImportWhenDataSetChange($entity->getDataSet()->getId());
+    }
+
 
 }

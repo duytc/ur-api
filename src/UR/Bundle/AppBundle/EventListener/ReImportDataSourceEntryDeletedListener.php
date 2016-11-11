@@ -17,7 +17,7 @@ use UR\Worker\Manager;
  *
  * @package UR\Bundle\AppBundle\EventListener
  */
-class DataSourceEntryDeletedListener
+class ReImportDataSourceEntryDeletedListener
 {
     /**
      * @var array|ModelInterface[]
@@ -50,15 +50,10 @@ class DataSourceEntryDeletedListener
             return;
         }
 
-        $em = $args->getEntityManager();
-        $uow = $em->getUnitOfWork();
-
         foreach ($this->deletedEntities as $entity) {
             if (!$entity instanceof DataSourceEntryInterface) {
                 continue;
             }
-
-            $changedFields = $uow->getEntityChangeSet($entity);
             /** @var DataSourceInterface $dataSource */
             $dataSource = $entity->getDataSource();
             break;
@@ -69,7 +64,11 @@ class DataSourceEntryDeletedListener
         }
 
         // reset for new onFlush event
-        $this->insertedEntities = [];
+        $this->deletedEntities = [];
+    }
+
+    public function filterEntities(){
+
     }
 
 }

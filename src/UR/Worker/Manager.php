@@ -27,12 +27,10 @@ class Manager
         $this->queue = $queue;
     }
 
-    public function autoCreateDataImport($dataSetId, $filePath){
+    public function reImportWhenDataSetChange($dataSetId){
         $params = new StdClass;
         $params->dataSetId = $dataSetId;
-        $params->filePath = $filePath;
-
-        $this->queueTask('autoCreateDataImport', $params);
+        $this->queueTask('reImportWhenDataSetChange', $params);
     }
 
     public function importDataWhenConnectedDataSourceChange($connectedDataSourceId){
