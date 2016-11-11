@@ -7,9 +7,9 @@ namespace UR\Service\Report\Groupers;
 
 abstract class AbstractGrouper implements GrouperInterface
 {
-    public function getGroupedReport($groupingField, array $reports, array $metrics, array $dimensions)
+    public function getGroupedReport($groupingFields, array $reports, array $metrics, array $dimensions)
     {
-        $groupedReports = $this->generateGroupedArray($groupingField, $reports);
+        $groupedReports = $this->generateGroupedArray($groupingFields, $reports);
 
         $results = [];
         foreach($groupedReports as $groupedReport) {
@@ -36,11 +36,18 @@ abstract class AbstractGrouper implements GrouperInterface
         return $results;
     }
 
-    protected function generateGroupedArray($groupingField, array $reports)
+    protected function generateGroupedArray($groupingFields, array $reports)
     {
         $groupedArray = [];
         foreach($reports as $report) {
-            $groupedArray[$report[$groupingField]][] = $report;
+            $key = '';
+            foreach ($groupingFields as $groupField) {
+                if (array_key_exists($groupField, $report)) {
+                    $key .= is_array($report[$groupField]) ? json_encode($report[$groupField], JSON_UNESCAPED_UNICODE) : $report[$groupField];
+                }
+            }
+            $key = md5($key);
+            $groupedArray[$key][] = $report;
         }
 
         return $groupedArray;

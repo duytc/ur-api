@@ -17,7 +17,7 @@ class ReportView implements ReportViewInterface
     protected $name;
 
     /**
-     * @var DataSetInterface[]
+     * @var array
      */
     protected $dataSets;
 
@@ -29,12 +29,7 @@ class ReportView implements ReportViewInterface
     /**
      * @var array
      */
-    protected $filters;
-
-    /**
-     * @var array
-     */
-    protected $transformations;
+    protected $transforms;
 
     /**
      * @return int
@@ -63,7 +58,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return DataSetInterface[]
+     * @return array
      */
     public function getDataSets()
     {
@@ -71,7 +66,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param DataSetInterface[] $dataSets
+     * @param array $dataSets
      * @return self
      */
     public function setDataSets($dataSets)
@@ -101,18 +96,18 @@ class ReportView implements ReportViewInterface
     /**
      * @return array
      */
-    public function getTransformations()
+    public function getTransforms()
     {
-        return $this->transformations;
+        return $this->transforms;
     }
 
     /**
      * @param array $transforms
      * @return self
      */
-    public function setTransformations($transforms)
+    public function setTransforms($transforms)
     {
-        $this->transformations = $transforms;
+        $this->transforms = $transforms;
         return $this;
     }
 }

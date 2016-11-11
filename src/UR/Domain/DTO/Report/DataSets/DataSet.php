@@ -21,7 +21,7 @@ class DataSet implements DataSetInterface
         $this->dimensions = $dimensions;
         $this->filters = $this->createFilterObjects($filters);
         $this->metrics = $metrics;
-        $this->dataSetName = $dataSetId;
+        $this->dataSetId = $dataSetId;
     }
 
     /**

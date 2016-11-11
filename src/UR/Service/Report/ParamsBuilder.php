@@ -7,7 +7,6 @@ namespace UR\Service\Report;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\JoinBy\JoinBy;
 use UR\Domain\DTO\Report\Params;
-use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\FormatDateTransform;
 use UR\Domain\DTO\Report\Transforms\FormatNumberTransform;
 use UR\Model\Core\ReportViewInterface;
@@ -38,7 +37,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             $joinByObject = new JoinBy($params[ReportBuilderConstant::JOIN_BY_KEY]);
         }
 
-        return new Params($dataSetObjects,$joinByObject,$transformationObjects);
+        return new Params($dataSetObjects, $joinByObject, $transformationObjects);
     }
 
     protected function createDataSetsObjects(array $dataSets)
@@ -95,14 +94,14 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromReportView(ReportViewInterface $reportView)
     {
         $allDataSets = $reportView->getDataSets();
-        $allTransformations = $reportView->getTransformations();
+        $allTransformations = $reportView->getTransforms();
         $joinBy = $reportView->getJoinedFields();
 
         $dataSetObjects = $this->createDataSetsObjects($allDataSets);
         $transformationObjects = $this->createTransformationObjects($allTransformations);
         $joinByObject = new JoinBy($joinBy);
 
-        return new Params($dataSetObjects,$joinByObject,$transformationObjects);
+        return new Params($dataSetObjects, $joinByObject, $transformationObjects);
     }
 
 }
