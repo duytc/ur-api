@@ -9,6 +9,7 @@ use Doctrine\DBAL\Schema\Table;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Domain\DTO\Report\DataSets\DataSetInterface as DataSetDTO;
 
 class ReportSelector implements ReportSelectorInterface
 {
@@ -44,11 +45,10 @@ class ReportSelector implements ReportSelectorInterface
     public function getReportData(ParamsInterface $params)
     {
         $dataSets = $params->getDataSets();
-        $filters = $params->getFilters();
 
         $reports = [];
         /**
-         * @var DataSetInterface $dataSet
+         * @var DataSetDTO $dataSet
          */
         foreach($dataSets as $dataSet) {
             $result = $this->getData($dataSet, [], $filters);
@@ -61,9 +61,9 @@ class ReportSelector implements ReportSelectorInterface
         return $reports;
     }
 
-    public function getData(DataSetInterface $dataSet, array $fields, array $filters)
+    public function getData(DataSetDTO $dataSet, array $fields, array $filters)
     {
-        $table = $this->getDataSetTableSchema($dataSet);
+        $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $query = $this->sqlBuilder->buildSelectQuery($table, $fields, $filters);
 
         return $this->connection->query($query);
@@ -71,13 +71,13 @@ class ReportSelector implements ReportSelectorInterface
 
 
     /**
-     * @param DataSetInterface $dataSet
+     * @param $dataSetId
      * @return Table
      */
-    protected function getDataSetTableSchema(DataSetInterface $dataSet)
+    protected function getDataSetTableSchema($dataSetId)
     {
         $sm = $this->connection->getSchemaManager();
-        $tableName = sprintf(self::DATA_SET_TABLE_NAME_TEMPLATE, $dataSet->getId());
+        $tableName = sprintf(self::DATA_SET_TABLE_NAME_TEMPLATE, $dataSetId);
 
         return $sm->listTableDetails($tableName);
     }
