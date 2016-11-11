@@ -50,7 +50,12 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         $dataSetRepository = $this->get('ur.repository.data_set');
         $qb = $dataSetRepository->getDataSetsForUserPaginationQuery($publisher, $this->getParams());
 
-        return $this->getPagination($qb, $request);
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
     }
 
     /**
@@ -58,7 +63,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      *
      * @Rest\Get("/datasets/{id}", requirements={"id" = "\d+"})
      *
-     * @Rest\View(serializerGroups={"dataset.detail", "user.summary", "connectedDataSource.summary"})
+     * @Rest\View(serializerGroups={"dataset.detail", "user.summary", "connectedDataSource.summary", "datasource.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -186,17 +191,17 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         $connected = $request->query->get('connected', null);
         $dataSourceManager = $this->get('ur.domain_manager.data_source');
 
-        if (!$connected) {
+        if (is_null($connected)) {
             $dataSource = $dataSourceManager->getDataSourceForPublisher($dataSet->getPublisher());
-        }else if ($connected == true) {
+        } else if (strtolower($connected) === 'true') {
             $dataSource = $dataSourceManager->getDataSourceByDataSet($dataSet);
-        } else if ($connected == false) {
+        } else if (strtolower($connected) === 'false') {
             $dataSource = $dataSourceManager->getDataSourceNotInByDataSet($dataSet);
         } else {
             throw new \Exception(sprintf("Connected param %s is not valid", $connected));
         }
 
-        return $dataSource;
+        return array_values($dataSource);
     }
 
     /**

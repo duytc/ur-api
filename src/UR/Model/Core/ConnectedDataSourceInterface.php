@@ -70,4 +70,14 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @param mixed $requires
      */
     public function setRequires($requires);
+
+    /**
+     * @return mixed
+     */
+    public function getAlertSetting();
+
+    /**
+     * @param mixed $alertSetting
+     */
+    public function setAlertSetting($alertSetting);
 }

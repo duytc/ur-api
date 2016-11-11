@@ -20,7 +20,7 @@ class Importer
         $this->conn = $conn;
     }
 
-    public function importCollection(Collection $collection, Table $table)
+    public function importCollection(Collection $collection, Table $table, $importId, $dataSourceId)
     {
         $tableName = $table->getName();
         $tableColumns = array_keys($table->getColumns());
@@ -28,7 +28,7 @@ class Importer
         $columns = array_intersect($collection->getColumns(), $tableColumns);
         $columns = array_values($columns);
 
-        foreach($columns as $column) {
+        foreach ($columns as $column) {
             if (in_array($column, self::$restrictedColumns, true)) {
                 throw new \InvalidArgumentException(sprintf('%s cannot be used as a column name. It is reserved for internal use.', $column));
             }
@@ -47,12 +47,16 @@ class Importer
         try {
             foreach ($rows as $row) {
                 $query = $qb
-                    ->insert($tableName)
-                ;
+                    ->insert($tableName);
 
                 $positionKey = 0;
-                
-                foreach($columns as $column) {
+                $query->setValue('__data_source_id', '?');
+                $query->setParameter($positionKey, $dataSourceId);
+                $positionKey++;
+                $query->setValue('__import_id', '?');
+                $query->setParameter($positionKey, $importId);
+                $positionKey++;
+                foreach ($columns as $column) {
                     $query->setValue($column, '?');
                     // todo bind param type
                     $query->setParameter($positionKey, $row[$column]);
@@ -66,7 +70,7 @@ class Importer
             }
 
             $this->conn->commit();
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             $this->conn->rollBack();
             throw $e;
         }
