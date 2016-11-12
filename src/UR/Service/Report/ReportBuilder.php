@@ -51,11 +51,11 @@ class ReportBuilder implements ReportBuilderInterface
         } else {
             foreach($dataSets as $dataSet) {
                 foreach($dataSet->getMetrics() as $item) {
-                    $metrics[] = sprintf('%s%d', $item, $dataSet->getDataSetId());
+                    $metrics[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
                 }
 
                 foreach($dataSet->getDimensions() as $item) {
-                    $dimensions[] = sprintf('%s%d', $item, $dataSet->getDataSetId());
+                    $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
                 }
             }
         }
