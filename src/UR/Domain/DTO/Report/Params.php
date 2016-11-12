@@ -63,6 +63,7 @@ class Params implements ParamsInterface
             }
         }
 
+        return [];
     }
 
     /**
@@ -79,6 +80,8 @@ class Params implements ParamsInterface
                 return $dataSet->getDimensions();
             }
         }
+
+        return [];
     }
 
     /**
@@ -92,7 +95,7 @@ class Params implements ParamsInterface
     /**
      * @inheritdoc
      */
-    public function needToGroup()
+    public function getGroupByTransform()
     {
         if (empty($this->getTransformations())) {
             return false;
@@ -100,7 +103,7 @@ class Params implements ParamsInterface
 
         foreach ($this->getTransformations() as $transform) {
             if ($transform instanceof GroupByTransform) {
-                return true;
+                return $transform;
             }
         }
 

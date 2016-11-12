@@ -188,12 +188,11 @@ class SqlBuilder implements SqlBuilderInterface
         $fieldName = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, $filter->getFieldName()) : $filter->getFieldName();
 
         if ($filter instanceof DateFilterInterface) {
-            $dateRange = $filter->getDateRange();
-            if (!is_array($dateRange) || count($dateRange) < 2) {
+            if (!$filter->getStartDate() || !$filter->getEndDate()) {
                 throw new InvalidArgumentException('invalid date range of filter');
             }
 
-            return sprintf('(%s BETWEEN "%s" AND "%s")', $fieldName, $dateRange[self::START_DATE_INDEX], $dateRange[self::END_DATE_INDEX]);
+            return sprintf('(%s BETWEEN "%s" AND "%s")', $fieldName, $filter->getStartDate(), $filter->getEndDate());
         }
 
         if ($filter instanceof NumberFilterInterface) {

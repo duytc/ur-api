@@ -8,13 +8,14 @@ use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Domain\DTO\Report\JoinBy\JoinByInterface;
 use UR\Domain\DTO\Report\Transforms\AbstractTransformInterface;
+use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
 
 interface ParamsInterface
 {
     /**
-     * @return boolean
+     * @return boolean|GroupByTransformInterface
      */
-    public function needToGroup();
+    public function getGroupByTransform();
 
     /**
      * @return AbstractTransformInterface[]
