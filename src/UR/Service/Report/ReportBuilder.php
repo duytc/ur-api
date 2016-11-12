@@ -5,6 +5,8 @@ namespace UR\Service\Report;
 
 
 use UR\Domain\DTO\Report\ParamsInterface;
+use UR\Domain\DTO\Report\Transforms\AbstractTransformInterface;
+use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
 
 class ReportBuilder implements ReportBuilderInterface
 {
@@ -32,8 +34,9 @@ class ReportBuilder implements ReportBuilderInterface
     public function getReport(ParamsInterface $params)
     {
         $statement = $this->reportSelector->getReportData($params);
+        $groupBy = $params->getGroupByTransform();
 
-        if (!$params->needToGroup()) {
+        if (!$groupBy) {
             return $statement->fetchAll();
         }
 
@@ -57,7 +60,6 @@ class ReportBuilder implements ReportBuilderInterface
             }
         }
 
-
-        return $this->reportGrouper->groupReports($params->getTransformations(), $statement, $metrics, $dimensions);
+        return $this->reportGrouper->groupReports($groupBy, $statement, $metrics, $dimensions);
     }
 }
