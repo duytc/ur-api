@@ -26,38 +26,61 @@ class DataSet implements DataSetInterface
 
     /**
      * @param array $allFilters
+     * @throws \Exception
      * @return array
      */
     protected function createFilterObjects(array $allFilters)
     {
         $filterObjects = [];
         foreach ($allFilters as $filter) {
+
+            if (!property_exists($filter, ReportBuilderConstant::FIELD_TYPE_FILTER_KEY)) {
+                throw new \Exception(sprintf('Filter must have key = %s', ReportBuilderConstant::FIELD_TYPE_FILTER_KEY));
+            }
+
             if ($filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} == ReportBuilderConstant::DATE_FIELD_TYPE_FILTER_KEY) {
-                $filterObjects[] = new DateFilter(
-                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY},
-                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY},
-                    $filter->{ReportBuilderConstant::DATE_FORMAT_FILTER_KEY},
-                    $filter->{ReportBuilderConstant::START_DATE_FILTER_KEY},
-                    $filter->{ReportBuilderConstant::END_DATE_FILTER_KEY}
-                );
+
+                $filedName = property_exists($filter, ReportBuilderConstant::FIELD_NAME_KEY) ?
+                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY} : null;
+                $filedType = property_exists($filter, ReportBuilderConstant::FIELD_TYPE_FILTER_KEY) ?
+                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} : null;
+                $formatDate = property_exists($filter, ReportBuilderConstant::DATE_FORMAT_FILTER_KEY) ?
+                    $filter->{ReportBuilderConstant::DATE_FORMAT_FILTER_KEY} : null;
+                $startDate = property_exists($filter, ReportBuilderConstant::START_DATE_FILTER_KEY) ?
+                    $filter->{ReportBuilderConstant::START_DATE_FILTER_KEY} : null;
+                $endDate = property_exists($filter, ReportBuilderConstant::START_DATE_FILTER_KEY) ?
+                    $filter->{ReportBuilderConstant::START_DATE_FILTER_KEY} : null;
+
+
+                $filterObjects[] = new DateFilter($filedName, $filedType, $formatDate, $startDate, $endDate);
             }
 
             if ($filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} == ReportBuilderConstant::TEXT_FIELD_TYPE_FILTER_KEY) {
-                $filterObjects[] = new TextFilter(
-                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY},
-                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY},
-                    $filter->{ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY},
-                    $filter->{ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY}
-                );
+
+                $fieldName = property_exists($filter, ReportBuilderConstant::FIELD_NAME_KEY) ?
+                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY} : null;
+                $fieldType = property_exists($filter, ReportBuilderConstant::FIELD_TYPE_FILTER_KEY) ?
+                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} : null;
+                $comparisonType = property_exists($filter, ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY) ?
+                    $filter->{ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY} : null;
+                $comparisonValue = property_exists($filter, ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY) ?
+                    $filter->{ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY} : null;
+
+                $filterObjects[] = new TextFilter($fieldName, $fieldType, $comparisonType, $comparisonValue);
             }
 
             if ($filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} == ReportBuilderConstant::NUMBER_FIELD_TYPE_FILTER_KEY) {
-                $filterObjects[] = new NumberFilter(
-                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY},
-                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY},
-                    $filter->{ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY},
-                    $filter->{ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY}
-                );
+
+                $fieldName = property_exists($filter, ReportBuilderConstant::FIELD_NAME_KEY) ?
+                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY} : null;
+                $fieldType = property_exists($filter, ReportBuilderConstant::FIELD_TYPE_FILTER_KEY) ?
+                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} : null;
+                $comparisonType = property_exists($filter, ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY) ?
+                    $filter->{ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY} : null;
+                $comparisonValue = property_exists($filter, ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY) ?
+                    $filter->{ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY} : null;
+
+                $filterObjects[] = new NumberFilter($fieldName, $fieldType, $comparisonType, $comparisonValue);
             }
         }
 
