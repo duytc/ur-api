@@ -22,7 +22,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     {
         $dataSetObjects = [];
         $transformationObjects = [];
-        $joinByObject = null;
+        $joinByValue = null;
 
         if (array_key_exists(ReportBuilderConstant::DATA_SET_KEY, $params)) {
             $allDataSets = $params[ReportBuilderConstant::DATA_SET_KEY];
@@ -38,10 +38,10 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(ReportBuilderConstant::JOIN_BY_KEY, $params)) {
-            $joinByObject = new JoinBy($params[ReportBuilderConstant::JOIN_BY_KEY]);
+            $joinByValue = $params[ReportBuilderConstant::JOIN_BY_KEY];
         }
 
-        return new Params($dataSetObjects, $joinByObject, $transformationObjects);
+        return new Params($dataSetObjects, $joinByValue, $transformationObjects);
     }
 
     protected function createDataSetsObjects(array $dataSets)
@@ -74,7 +74,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 
                 if ($transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} == ReportBuilderConstant::NUMBER_FORMAT_TRANSFORMATION_VALUE) {
 
-                    $scale = property_exists($transformation,ReportBuilderConstant::SCALE_TRANSFORMATION_KEY)? $transformation->{ReportBuilderConstant::SCALE_TRANSFORMATION_KEY}:0;
+                    $scale = property_exists($transformation, ReportBuilderConstant::SCALE_TRANSFORMATION_KEY) ? $transformation->{ReportBuilderConstant::SCALE_TRANSFORMATION_KEY} : 0;
 
                     $transformationObjects[] = new FormatNumberTransform(
                         $transformation->{ReportBuilderConstant::PREDICTION_TRANSFORMATION_KEY},
