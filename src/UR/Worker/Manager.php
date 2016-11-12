@@ -33,9 +33,10 @@ class Manager
         $this->queueTask('reImportWhenDataSetChange', $params);
     }
 
-    public function importDataWhenConnectedDataSourceChange($connectedDataSourceId){
+    public function importDataWhenConnectedDataSourceChange($entryIds, $dataSourceId){
         $params = new StdClass;
-        $params->connectedDataSourceId = $connectedDataSourceId;
+        $params->entryIds = $entryIds;
+        $params->dataSourceId=$dataSourceId;
         $this->queueTask('importDataWhenConnectedDataSourceChange', $params);
     }
 
@@ -43,12 +44,6 @@ class Manager
         $params = new StdClass;
         $params->errors = $errors;
         $this->queueTask('alertWhenConnectedDataSourceChange', $params);
-    }
-
-    public function createImportHistoryWhenConnectedDataSourceChange($errors){
-        $params = new StdClass;
-        $params->errors = $errors;
-        $this->queueTask('createImportHistoryWhenConnectedDataSourceChange', $params);
     }
 
     /**

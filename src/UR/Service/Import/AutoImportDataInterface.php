@@ -2,11 +2,10 @@
 
 namespace UR\Service\Import;
 
-use UR\Model\Core\ConnectedDataSourceInterface;
-use UR\Service\DataSet\Importer;
-use UR\Service\DataSet\Locator;
+use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 
 interface AutoImportDataInterface
 {
-    public function autoCreateDataImport(ConnectedDataSourceInterface $connectedDataSource, Importer $dataSetImporter, Locator $dataSetLocator);
+    public function autoCreateDataImport(DataSetInterface $dataSet, DataSourceEntryInterface $dataSourceEntry);
 }

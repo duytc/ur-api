@@ -102,6 +102,7 @@ services:
     ur.worker.workers.auto_import_data:
         class: UR\Service\Import\AutoImportData
         arguments:
+            - @doctrine.orm.entity_manager
             - @ur.worker.manager
             - @ur.domain_manager.import_history
             - @ur.domain_manager.alert
@@ -111,9 +112,9 @@ services:
     ur.worker.workers.re_import_data_set_changed:
         class: UR\Worker\Workers\AutoImportDataSetChangedWorker
         arguments:
-            - @ur.domain_manager.data_set
             - @ur.worker.workers.auto_import_data
-            - @doctrine.orm.entity_manager
+            - @ur.domain_manager.data_set
+            - @ur.domain_manager.data_source_entry
 
     ur.worker.workers.auto_import_when_connected_datasource_change_worker:
         class: UR\Worker\Workers\AutoImportConnectedDataSourceChangedWorker

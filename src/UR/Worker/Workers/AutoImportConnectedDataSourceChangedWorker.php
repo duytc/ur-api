@@ -35,8 +35,8 @@ class AutoImportConnectedDataSourceChangedWorker
         $conn = $this->em->getConnection();
         $dataSetLocator = new Locator($conn);
         $dataSetImporter = new Importer($conn);
-        $connectedDataSourceId = $params->connectedDataSourceId;
-        $connectedDataSource = $this->connectedDataSourcemManager->find($connectedDataSourceId);
-        $this->autoImport->autoCreateDataImport($connectedDataSource, $dataSetImporter, $dataSetLocator);
+        $entryIds = $params->entryIds;
+        $dataSourceId = $params->dataSourceId;
+        $this->autoImport->autoCreateDataImport($entryIds, $dataSourceId, $dataSetImporter, $dataSetLocator);
     }
 }

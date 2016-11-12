@@ -5,6 +5,7 @@ namespace UR\DomainManager;
 use Doctrine\Common\Persistence\ObjectManager;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\DataSetRepositoryInterface;
@@ -80,5 +81,13 @@ class DataSetManager implements DataSetManagerInterface
     public function all($limit = null, $offset = null)
     {
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSetByDataSource(DataSourceInterface $dataSource)
+    {
+        return $this->getDataSetByDataSource($dataSource);
     }
 }
