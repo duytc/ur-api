@@ -1,6 +1,1 @@
-services:
-    ur.services.report.params_builder:
-        class: UR\Service\Report\ParamsBuilder
-    ur.services.report.report_builder:
-        class: UR\Service\Report\ReportBuilder
 
