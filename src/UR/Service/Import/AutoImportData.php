@@ -5,15 +5,12 @@ namespace UR\Service\Import;
 
 use Liuggio\ExcelBundle\Factory;
 use UR\DomainManager\AlertManagerInterface;
-use UR\DomainManager\DataSourceEntryImportHistoryManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
-use UR\Entity\Core\DataSourceEntryImportHistory;
 use UR\Entity\Core\ImportHistory;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
-use UR\Service\DataSet\Type;
 use UR\Service\DataSource\Csv;
 use UR\Service\DataSource\Excel;
 use UR\Service\DataSource\Json;
@@ -34,11 +31,6 @@ class AutoImportData implements AutoImportDataInterface
     private $importHistoryManager;
 
     /**
-     * @var DataSourceEntryImportHistoryManagerInterface
-     */
-    private $dataSourceEntryImportHistoryManager;
-
-    /**
      * @var AlertManagerInterface
      */
     private $alertManager;
@@ -53,12 +45,11 @@ class AutoImportData implements AutoImportDataInterface
      */
     private $filePath;
 
-    function __construct(Manager $workerManager, ImportHistoryManagerInterface $importHistoryManager, AlertManagerInterface $alertManager, DataSourceEntryImportHistoryManagerInterface $dataSourceEntryImportHistoryManager, Factory $phpExcel, $filePath)
+    function __construct(Manager $workerManager, ImportHistoryManagerInterface $importHistoryManager, AlertManagerInterface $alertManager, Factory $phpExcel, $filePath)
     {
         $this->workerManager = $workerManager;
         $this->importHistoryManager = $importHistoryManager;
         $this->alertManager = $alertManager;
-        $this->dataSourceEntryImportHistoryManager = $dataSourceEntryImportHistoryManager;
         $this->phpExcel = $phpExcel;
         $this->filePath = $filePath;
     }
@@ -67,7 +58,7 @@ class AutoImportData implements AutoImportDataInterface
     {
         $importUtils = new ImportUtils();
         $importHistoryEntity = new ImportHistory();
-        $importHistoryEntity->setConnectedDataSource($connectedDataSource);
+//        $importHistoryEntity->setConnectedDataSource($connectedDataSource);
         //$importHistoryEntity->setDescription(); // TODO: set later
         $this->importHistoryManager->save($importHistoryEntity);
 
@@ -140,15 +131,5 @@ class AutoImportData implements AutoImportDataInterface
             $ds1 = $dataSetLocator->getDataSetImportTable($dataSetId);
             $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
         }
-    }
-
-    function createDataSourceEntryHistory(DataSourceEntryInterface $item, $importHistoryEntity, $status, $desc)
-    {
-        $dseImportHistoryEntity = new DataSourceEntryImportHistory();
-        $dseImportHistoryEntity->setDataSourceEntry($item);
-        $dseImportHistoryEntity->setImportHistory($importHistoryEntity);
-        $dseImportHistoryEntity->setStatus($status);
-        $dseImportHistoryEntity->setDescription($desc);
-        $this->dataSourceEntryImportHistoryManager->save($dseImportHistoryEntity);
     }
 }

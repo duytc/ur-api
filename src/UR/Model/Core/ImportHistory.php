@@ -9,9 +9,14 @@ class ImportHistory implements ImportHistoryInterface
     protected $description;
 
     /**
-     * @var ConnectedDataSourceInterface
+     * @var DataSetInterface
      */
-    protected $connectedDataSource;
+    protected $dataSet;
+
+    /**
+     * @var DataSourceEntryInterface
+     */
+    protected $dataSourceEntry;
 
     public function __construct()
     {
@@ -61,16 +66,32 @@ class ImportHistory implements ImportHistoryInterface
     /**
      * @inheritdoc
      */
-    public function getConnectedDataSource()
+    public function getDataSet()
     {
-        return $this->connectedDataSource;
+        return $this->dataSet;
     }
 
     /**
      * @inheritdoc
      */
-    public function setConnectedDataSource($connectedDataSource)
+    public function setDataSet($dataSet)
     {
-        $this->connectedDataSource = $connectedDataSource;
+        $this->dataSet = $dataSet;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceEntry()
+    {
+        return $this->dataSourceEntry;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setDataSourceEntry($dataSourceEntry)
+    {
+        $this->dataSourceEntry = $dataSourceEntry;
     }
 }

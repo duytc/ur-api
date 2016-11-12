@@ -4,7 +4,6 @@ namespace UR\Bundle\AppBundle\EventListener;
 
 
 use Doctrine\ORM\Event\LifecycleEventArgs;
-use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\ModelInterface;
@@ -38,7 +37,7 @@ class ConnectedDataSourceChangeListener
     {
         $this->importWhenInsertOrUpdate($this->insertedEntity);
         $this->importWhenInsertOrUpdate($this->changedEntity);
-        $this->importWhenInsertOrUpdate($this->removedEntity);
+        $this->importWhenDeleted($this->removedEntity);
     }
 
     public function postPersist(LifecycleEventArgs $args)

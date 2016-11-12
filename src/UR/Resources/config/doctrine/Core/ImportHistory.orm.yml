@@ -16,10 +16,17 @@ UR\Entity\Core\ImportHistory:
             gedmo:
                 timestampable:
                     on: create
-    manyToOne:
-        connectedDataSource:
-            targetEntity: UR\Entity\Core\ConnectedDataSource
+    oneToOne:
+        dataSourceEntry:
+            targetEntity: UR\Entity\Core\DataSourceEntry
             joinColumn:
-                name: connected_data_source_id
+                name: data_source_entry_id
+                referencedColumnName: id
+                onDelete: CASCADE
+    manyToOne:
+        dataSet:
+            targetEntity: UR\Entity\Core\DataSet
+            joinColumn:
+                name: data_set_id
                 referencedColumnName: id
                 onDelete: CASCADE

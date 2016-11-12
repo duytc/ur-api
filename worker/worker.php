@@ -29,7 +29,6 @@ $availableWorkers = [
     $container->get('ur.worker.workers.re_import_data_set_changed'),
     $container->get('ur.worker.workers.auto_import_when_connected_datasource_change_worker'),
     $container->get('ur.worker.workers.alert_when_connected_data_source_change_worker'),
-    $container->get('ur.worker.workers.create_history_when_connected_data_source_change_worker'),
 ];
 
 $workerPool = new \UR\Worker\Pool($availableWorkers);
