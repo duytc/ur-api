@@ -48,8 +48,8 @@ class DataSet implements DataSetInterface
                     $filter->{ReportBuilderConstant::DATE_FORMAT_FILTER_KEY} : null;
                 $startDate = property_exists($filter, ReportBuilderConstant::START_DATE_FILTER_KEY) ?
                     $filter->{ReportBuilderConstant::START_DATE_FILTER_KEY} : null;
-                $endDate = property_exists($filter, ReportBuilderConstant::START_DATE_FILTER_KEY) ?
-                    $filter->{ReportBuilderConstant::START_DATE_FILTER_KEY} : null;
+                $endDate = property_exists($filter, ReportBuilderConstant::END_DATE_FILTER_KEY) ?
+                    $filter->{ReportBuilderConstant::END_DATE_FILTER_KEY} : null;
 
 
                 $filterObjects[] = new DateFilter($filedName, $filedType, $formatDate, $startDate, $endDate);
