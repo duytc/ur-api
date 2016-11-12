@@ -5,28 +5,28 @@ parameters:
     # params
 
 services:
-    tagcade_app.event_listener.data_set_change_listener:
-        class: UR\Bundle\AppBundle\EventListener\ReImportDataSetChangeListener
-        arguments:
-            - @ur.worker.manager
-        tags:
-            - { name: doctrine.event_listener, event: onFlush }
-            - { name: doctrine.event_listener, event: postFlush }
-            - { name: doctrine.event_listener, event: postPersist }
-            - { name: doctrine.event_listener, event: postUpdate }
-            - { name: doctrine.event_listener, event: postRemove }
+#    tagcade_app.event_listener.data_set_change_listener:
+#        class: UR\Bundle\AppBundle\EventListener\ReImportDataSetChangeListener
+#        arguments:
+#            - @ur.worker.manager
+#        tags:
+#            - { name: doctrine.event_listener, event: onFlush }
+#            - { name: doctrine.event_listener, event: postFlush }
+#            - { name: doctrine.event_listener, event: postPersist }
+#            - { name: doctrine.event_listener, event: postUpdate }
+#            - { name: doctrine.event_listener, event: postRemove }
+#
+#    tagcade_app.event_listener.connected_data_source_change_listener:
+#        class: UR\Bundle\AppBundle\EventListener\ConnectedDataSourceChangeListener
+#        arguments:
+#            - @ur.worker.manager
+#        tags:
+#            - { name: doctrine.event_listener, event: postFlush }
+#            - { name: doctrine.event_listener, event: postPersist }
+#            - { name: doctrine.event_listener, event: postUpdate }
+#            - { name: doctrine.event_listener, event: postRemove }
 
-    tagcade_app.event_listener.connected_data_source_change_listener:
-        class: UR\Bundle\AppBundle\EventListener\ConnectedDataSourceChangeListener
-        arguments:
-            - @ur.worker.manager
-        tags:
-            - { name: doctrine.event_listener, event: postFlush }
-            - { name: doctrine.event_listener, event: postPersist }
-            - { name: doctrine.event_listener, event: postUpdate }
-            - { name: doctrine.event_listener, event: postRemove }
-
-    tagcade_app.event_listener.data_source_entry_inserted_listener:
+    ur_app.event_listener.data_source_entry_inserted_listener:
         class: UR\Bundle\AppBundle\EventListener\ReImportDataSourceEntryInsertedListener
         arguments:
             - @ur.worker.manager

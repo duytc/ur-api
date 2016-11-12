@@ -73,10 +73,6 @@ class AutoImportData implements AutoImportDataInterface
         if (!$dataSetLocator->getDataSetImportTable($dataSet->getId())) {
             $importUtils->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $conn);
         }
-        $importHistoryEntity = new ImportHistory();
-        $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
-        $importHistoryEntity->setDataSet($dataSet);
-        $this->importHistoryManager->save($importHistoryEntity);
 
         $parser = new Parser();
 
@@ -129,6 +125,10 @@ class AutoImportData implements AutoImportDataInterface
             }
 
             $ds1 = $dataSetLocator->getDataSetImportTable($dataSet->getId());
+            $importHistoryEntity = new ImportHistory();
+            $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
+            $importHistoryEntity->setDataSet($dataSet);
+            $this->importHistoryManager->save($importHistoryEntity);
             $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
         }
     }

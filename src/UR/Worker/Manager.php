@@ -27,16 +27,15 @@ class Manager
         $this->queue = $queue;
     }
 
-    public function reImportWhenDataSetChange($dataSetId){
+    public function reImportWhenDataSetChange($entryIds){
         $params = new StdClass;
-        $params->dataSetId = $dataSetId;
+        $params->entryIds = $entryIds;
         $this->queueTask('reImportWhenDataSetChange', $params);
     }
 
-    public function importDataWhenConnectedDataSourceChange($entryIds, $dataSourceId){
+    public function importDataWhenConnectedDataSourceChange($entryIds){
         $params = new StdClass;
         $params->entryIds = $entryIds;
-        $params->dataSourceId=$dataSourceId;
         $this->queueTask('importDataWhenConnectedDataSourceChange', $params);
     }
 

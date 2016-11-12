@@ -88,6 +88,6 @@ class DataSetManager implements DataSetManagerInterface
      */
     public function getDataSetByDataSource(DataSourceInterface $dataSource)
     {
-        return $this->getDataSetByDataSource($dataSource);
+        return $this->repository->getDataSetByDataSource($dataSource);
     }
 }

@@ -3,23 +3,13 @@
 namespace UR\Worker\Workers;
 
 use StdClass;
-use Doctrine\DBAL\Schema\Comparator;
-use Doctrine\ORM\EntityManagerInterface;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\DataSourceEntryManagerInterface;
-use UR\DomainManager\ImportHistoryManagerInterface;
-use UR\Entity\Core\ImportHistory;
 use UR\Exception\InvalidArgumentException;
-use UR\Model\Core\ConnectedDataSourceInterface;
-use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
-use UR\Service\DataSet\Importer;
-use UR\Service\DataSet\Locator;
-use UR\Service\DataSet\Synchronizer;
 use UR\Service\Import\AutoImportDataInterface;
-use UR\Service\Parser\ImportUtils;
 
-class AutoImportDataSetChangedWorker
+class ReImportWhenNewEntryReceived
 {
 
     /** @var AutoImportDataInterface $autoImport */

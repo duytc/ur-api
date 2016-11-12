@@ -56,10 +56,10 @@ class ReImportDataSourceEntryInsertedListener
                 continue;
             }
             /** @var DataSourceInterface $dataSource */
-            $entryIds = $entity->getId();
+            $entryIds[] = $entity->getId();
         }
         // running import data
-        $this->workerManager->importDataWhenConnectedDataSourceChange($entryIds, $entity->getDataSource()->getId());
+        $this->workerManager->reImportWhenDataSetChange($entryIds);
 
         // reset for new onFlush event
         $this->insertedEntities = [];
