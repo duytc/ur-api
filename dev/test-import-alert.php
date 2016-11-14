@@ -23,6 +23,17 @@ $container = $kernel->getContainer();
 //$AutoCreateDataImportWorker->doFunctionImport..();
 
 
-$test = $container->get('ur.worker.workers.import_dataset_worker');
-$path= $container->getParameter('upload_file_dir');
-$test->autoCreateDataImport(32, $path);
+$testWorkerManager = $container->get('ur.worker.manager');
+
+
+$code = 100;
+$publisherId =2;
+$params = array(
+    'dataSourceName'=>'testData',
+    'dataEntryName'=>'entryName',
+    'formatEntryName'=>'formatEntryName'
+);
+
+
+$testWorkerManager->processAlert($code, $publisherId, $params);
+
