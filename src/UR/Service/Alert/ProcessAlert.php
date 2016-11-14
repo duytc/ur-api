@@ -5,10 +5,11 @@ namespace UR\Service\Alert;
 
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\DomainManager\AlertManagerInterface;
+use UR\Entity\Core\Alert;
+use UR\Model\User\Role\PublisherInterface;
 
 class ProcessAlert implements ProcessAlertInterface
 {
-
     const NEW_DATA_IS_RECEIVED_FROM_UPLOAD = 100;
     const NEW_DATA_IS_RECEIVED_FROM_EMAIL = 101;
     const NEW_DATA_IS_RECEIVED_FROM_API = 102;
@@ -46,6 +47,19 @@ class ProcessAlert implements ProcessAlertInterface
      */
     public function createAlert($alertCode, $publisherId, $messageDetail)
     {
+        if (!in_array($alertCode, self::$alertCodes)) {
+            throw new \Exception('Alert code is not valid');
+        }
 
+        $publisher = $this->publisherManager->findPublisher($publisherId);
+        if (!$publisher instanceof PublisherInterface) {
+            throw new \Exception(sprintf('Not found that publisher %s', $publisherId));
+        }
+
+        $alert = new Alert();
+        $alert->setCode($alertCode);
+        $alert->setPublisher($publisher);
+        $alert->setMessage($messageDetail);
+        $this->alertManager->save($alert);
     }
 }

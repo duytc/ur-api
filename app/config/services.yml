@@ -123,17 +123,11 @@ services:
             - @ur.worker.workers.auto_import_data
             - @ur.domain_manager.connected_data_source
 
-    ur.worker.workers.alert_when_connected_data_source_change_worker:
-            class: UR\Worker\Workers\AlertWhenConnectedDataSourceChangeWorker
-            arguments:
-                - @ur.domain_manager.alert
-
     ur.service.alert.process_alert:
             class: UR\Service\Alert\ProcessAlert
             arguments:
+                - array
                 - @ur.domain_manager.alert
-                - @ur.domain_manager.data_source_entry
-                - @ur.domain_manager.connected_data_source
                 - @ur_user.domain_manager.publisher
 
     ur.worker.workers.alert_worker:
