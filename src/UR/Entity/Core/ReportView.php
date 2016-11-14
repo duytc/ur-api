@@ -8,8 +8,8 @@ class ReportView extends ReportViewModel
 {
     protected $id;
     protected $dataSets;
-    protected $joinedFields;
+    protected $joinBy;
     protected $name;
-    protected $transforms;
+    protected $transform;
     protected $createdDate;
 }

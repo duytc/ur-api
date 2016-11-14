@@ -11,13 +11,13 @@ UR\Entity\Core\ReportView:
         dataSets:
             type: json_array
             nullable: true
-        transforms:
+        transform:
             type: json_array
             nullable: true
         name:
             type: string
             nullable: false
-        joinedFields:
+        joinBy:
             type: json_array
             nullable: true
         createdDate:

@@ -14,8 +14,8 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
         $builder
             ->add('dataSets')
             ->add('name')
-            ->add('transforms')
-            ->add('joinedFields');
+            ->add('transform')
+            ->add('joinBy');
     }
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)

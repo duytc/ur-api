@@ -14,3 +14,4 @@ phpunit*
 app/SymfonyRequirements.php
 app/check.php
 app/var/jwt/
+data/
