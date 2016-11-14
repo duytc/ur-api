@@ -184,12 +184,13 @@ class ParamsBuilder implements ParamsBuilderInterface
 
                     $fieldGroup = property_exists($transformation, ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE) ?
                         $transformation->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE} : null;
+                    $direction = property_exists($transformation, ReportBuilderConstant::DIRECTION_TRANSFORMATION_VALUE) ?
+                        $transformation->{ReportBuilderConstant::DIRECTION_TRANSFORMATION_VALUE} : null;
                     $typeTransformation = property_exists($transformation, ReportBuilderConstant::TYPE_TRANSFORMATION_KEY) ?
                         $transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} : null;
                     $targetTransformation = property_exists($transformation, ReportBuilderConstant::TARGET_TRANSFORMATION_KEY) ?
                         $transformation->{ReportBuilderConstant::TARGET_TRANSFORMATION_KEY} : null;
-
-                    $transformationObjects [] = new SortByTransform($fieldGroup, $typeTransformation, $targetTransformation);
+                    $transformationObjects [] = new SortByTransform($fieldGroup, $direction, $typeTransformation, $targetTransformation);
                 }
             }
         }

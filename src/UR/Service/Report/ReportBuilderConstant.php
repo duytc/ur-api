@@ -49,6 +49,7 @@ class ReportBuilderConstant
     const GROUP_BY_TRANSFORMATION_VALUE = 'groupBy';
     const FIELDS_GROUP_BY_TRANSFORMATION_VALUE = 'fields';
     const SORT_BY_TRANSFORMATION_VALUE = 'sortBy';
+    const DIRECTION_TRANSFORMATION_VALUE = 'direction';
 
     const DATE_FORMAT_TRANSFORMATION_VALUE = 'format';
     const NUMBER_FORMAT_TRANSFORMATION_VALUE = 'number';
