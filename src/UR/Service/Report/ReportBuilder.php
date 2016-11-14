@@ -5,7 +5,9 @@ namespace UR\Service\Report;
 
 
 use UR\Domain\DTO\Report\ParamsInterface;
-use UR\Domain\DTO\Report\Transforms\SortByTransformInterface;
+use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
+use UR\Domain\DTO\Report\Transforms\TransformInterface;
+use UR\Service\DTO\Collection;
 
 class ReportBuilder implements ReportBuilderInterface
 {
@@ -20,35 +22,20 @@ class ReportBuilder implements ReportBuilderInterface
     protected $reportGrouper;
 
     /**
-     * @var ReportSorterInterface
-     */
-    protected $reportSorter;
-
-    /**
      * ReportBuilder constructor.
      * @param ReportSelectorInterface $reportSelector
      * @param ReportGrouperInterface $reportGrouper
-     * @param ReportSorterInterface $reportSorter
      */
-    public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper, ReportSorterInterface $reportSorter)
+    public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper)
     {
         $this->reportSelector = $reportSelector;
         $this->reportGrouper = $reportGrouper;
-        $this->reportSorter = $reportSorter;
     }
 
     public function getReport(ParamsInterface $params)
     {
-        $statement = $this->reportSelector->getReportData($params);
-        $groupBy = $params->getGroupByTransform();
-
-        if (!$groupBy) {
-            return $statement->fetchAll();
-        }
-
         $metrics = [];
         $dimensions = [];
-
         $dataSets = $params->getDataSets();
 
         if (count($dataSets) < 2) {
@@ -66,14 +53,22 @@ class ReportBuilder implements ReportBuilderInterface
             }
         }
 
-        $groupedReports =  $this->reportGrouper->groupReports($groupBy, $statement, $metrics, $dimensions);
+        $statement = $this->reportSelector->getReportData($params);
+        $collection = new Collection(array_merge($metrics,  $dimensions), $statement->fetchAll());
+        $groupBy = $params->getGroupByTransform();
 
-        $sortBy = $params->getSortByTransform();
-
-        if ($sortBy instanceof SortByTransformInterface) {
-            $this->reportSorter->sort($groupedReports, $sortBy);
+        $transforms = $params->getTransforms();
+        /**
+         * @var TransformInterface $transform
+         */
+        foreach($transforms as $transform) {
+            $transform->transform($collection);
         }
 
-        return $groupedReports;
+        if ($groupBy instanceof GroupByTransformInterface) {
+            return $this->reportGrouper->groupReports($groupBy, $collection, $metrics);
+        }
+
+        return $collection->getRows();
     }
 }

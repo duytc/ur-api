@@ -1,13 +1,13 @@
 <?php
 namespace UR\Service\Report\Groupers;
 
-use Doctrine\DBAL\Driver\Statement;
+use UR\Service\DTO\Collection;
 
 abstract class AbstractGrouper implements GrouperInterface
 {
-    public function getGroupedReport($groupingFields, Statement $statement, array $metrics)
+    public function getGroupedReport($groupingFields, Collection $collection, array $metrics)
     {
-        $groupedReports = $this->generateGroupedArray($groupingFields, $statement);
+        $groupedReports = $this->generateGroupedArray($groupingFields, $collection);
 
         $results = [];
         foreach($groupedReports as $groupedReport) {
@@ -34,14 +34,11 @@ abstract class AbstractGrouper implements GrouperInterface
         return $results;
     }
 
-    protected function generateGroupedArray($groupingFields, Statement $statement)
+    protected function generateGroupedArray($groupingFields, Collection $collection)
     {
         $groupedArray = [];
-        while ($report = $statement->fetch()) {
-            if (!$report) {
-                break;
-            }
-
+        $rows = $collection->getRows();
+        foreach($rows as $report) {
             $key = '';
             foreach ($groupingFields as $groupField) {
                 if (array_key_exists($groupField, $report)) {
@@ -50,7 +47,9 @@ abstract class AbstractGrouper implements GrouperInterface
             }
             $key = md5($key);
             $groupedArray[$key][] = $report;
+
         }
+
         return $groupedArray;
     }
 }

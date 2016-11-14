@@ -7,7 +7,6 @@ services:
         arguments:
             - '@ur.services.report.report_selector'
             - '@ur.services.report.report_grouper'
-            - '@ur.services.report.report_sorter'
 
     ur.services.report.sql_builder:
         class: UR\Service\Report\SqlBuilder
@@ -16,9 +15,6 @@ services:
 
     ur.services.report.report_grouper:
         class: UR\Service\Report\ReportGrouper
-
-    ur.services.report.report_sorter:
-        class: UR\Service\Report\ReportSorter
 
     ur.services.report.report_selector:
         class: UR\Service\Report\ReportSelector

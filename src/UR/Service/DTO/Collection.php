@@ -4,7 +4,14 @@ namespace UR\Service\DTO;
 
 class Collection
 {
+    /**
+     * @var array
+     */
     protected $columns;
+
+    /**
+     * @var array
+     */
     protected $rows;
 
     public function __construct(array $columns, array $rows)
@@ -27,5 +34,16 @@ class Collection
     public function getRows()
     {
         return $this->rows;
+    }
+
+
+    public function addColumn($column)
+    {
+        if (!is_array($this->columns)) {
+            $this->columns = [];
+        }
+
+        $this->columns[] = $column;
+        return $this;
     }
 }
