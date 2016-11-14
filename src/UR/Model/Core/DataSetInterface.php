@@ -69,7 +69,7 @@ interface DataSetInterface extends ModelInterface
     public function setPublisher(PublisherInterface $publisher);
 
     /**
-     * @return mixed
+     * @return ConnectedDataSourceInterface[]
      */
     public function getConnectedDataSources();
 

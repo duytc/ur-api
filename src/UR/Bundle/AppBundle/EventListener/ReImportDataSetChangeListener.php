@@ -54,28 +54,17 @@ class ReImportDataSetChangeListener
         if (count($this->changedEntities) < 1) {
             return;
         }
-
-        /** @var array|int $dataSetId */
-        $dataSetId = [];
         $em = $args->getEntityManager();
         $uow = $em->getUnitOfWork();
 
-        // filter all sites changed on rtb & exchanges, then build needBeUpdatedAdSlots
         foreach ($this->changedEntities as $entity) {
             if (!$entity instanceof DataSetInterface) {
                 continue;
             }
 
             $changedFields = $uow->getEntityChangeSet($entity);
-
-//            if (array_key_exists('rtbStatus', $changedFields)) {
-//                $needToBeUpdatedSiteIds[] = $entity->getId();
-//            }
             $dataSetId = $entity->getId();
         }
-
-        // update connected DataSource for DataSet
-        $this->workerManager->reImportWhenDataSetChange($dataSetId);
 
         // reset for new onFlush event
         $this->changedEntities = [];
@@ -102,7 +91,14 @@ class ReImportDataSetChangeListener
                 array_diff($values[0], $values[1]);
                 $deletedDimensions = array_diff_key($values[0], $values[1]);
                 $newDimensions = array_diff_key($values[1], $values[0]);
-                array_combine($values[1], $values[0]);
+            }
+        }
+        foreach ($deletedDimensions as $deletedDimension) {
+            foreach ($entity->getConnectedDataSources() as $connectedDataSource) {
+                $mapFields = $connectedDataSource->getMapFields();
+                $requires = $connectedDataSource->getRequires();
+                $filters = $connectedDataSource->getFilters();
+                $transforms = $connectedDataSource->getTransforms();
             }
         }
 
