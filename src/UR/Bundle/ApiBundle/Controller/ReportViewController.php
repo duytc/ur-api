@@ -42,7 +42,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     /**
      * Get a single report view group for the given id
      *
-     * @Rest\View(serializerGroups={"alert.detail"})
+     * @Rest\View(serializerGroups={"report_view.detail"})
      *
      * @ApiDoc(
      *  section = "ReportView",
