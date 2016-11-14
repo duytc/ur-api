@@ -7,9 +7,8 @@ namespace UR\Domain\DTO\Report;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Domain\DTO\Report\JoinBy\JoinByInterface;
-use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
-use UR\Domain\DTO\Report\Transforms\SortByTransformInterface;
+use UR\Domain\DTO\Report\Transforms\TransformInterface;
 
 interface ParamsInterface
 {
@@ -19,14 +18,9 @@ interface ParamsInterface
     public function getGroupByTransform();
 
     /**
-     * @return boolean|SortByTransformInterface
-     */
-    public function getSortByTransform();
-
-    /**
      * @return TransformInterface[]
      */
-    public function getTransformations();
+    public function getTransforms();
 
     /**
      * @return DataSet[]

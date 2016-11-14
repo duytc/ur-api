@@ -14,11 +14,6 @@ interface FormatNumberTransformInterface extends TransformInterface
     /**
      * @return mixed
      */
-    public function getScale();
-
-    /**
-     * @return mixed
-     */
     public function getThousandSeparator();
 
     /**

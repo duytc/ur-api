@@ -5,23 +5,32 @@ namespace UR\Domain\DTO\Report;
 
 
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
-use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
-use UR\Domain\DTO\Report\Transforms\SortByTransformInterface;
+use UR\Domain\DTO\Report\Transforms\TransformInterface;
 
 
 class Params implements ParamsInterface
 {
-    /** @var  DataSetInterface[] $dataSets */
+    /**
+     * @var  DataSetInterface[]
+     */
     protected $dataSets;
-    protected $transformations;
+
+    /**
+     * @var TransformInterface[]
+     */
+    protected $transforms;
+
+    /**
+     * @var null|string
+     */
     protected $joinByFields;
 
-    function __construct($dataSets, $joinByFields, $transformations)
+    function __construct()
     {
-        $this->dataSets = $dataSets;
-        $this->joinByFields = $joinByFields;
-        $this->transformations = $transformations;
+        $this->dataSets = [];
+        $this->joinByFields = null;
+        $this->transforms = [];
     }
 
     /**
@@ -35,6 +44,17 @@ class Params implements ParamsInterface
 
         return $this->dataSets;
     }
+
+    /**
+     * @param DataSets\DataSetInterface[] $dataSets
+     * @return self
+     */
+    public function setDataSets($dataSets)
+    {
+        $this->dataSets = $dataSets;
+        return $this;
+    }
+
 
     /** @inheritdoc */
     public function getFiltersByDataSet($dataSetId)
@@ -95,15 +115,26 @@ class Params implements ParamsInterface
     }
 
     /**
+     * @param null $joinByFields
+     * @return self
+     */
+    public function setJoinByFields($joinByFields)
+    {
+        $this->joinByFields = $joinByFields;
+        return $this;
+    }
+
+
+    /**
      * @inheritdoc
      */
     public function getGroupByTransform()
     {
-        if (empty($this->getTransformations())) {
+        if (empty($this->getTransforms())) {
             return false;
         }
 
-        foreach ($this->getTransformations() as $transform) {
+        foreach ($this->getTransforms() as $transform) {
             if ($transform instanceof GroupByTransformInterface) {
                 return $transform;
             }
@@ -112,32 +143,25 @@ class Params implements ParamsInterface
         return false;
     }
 
-    public function getSortByTransform()
-    {
-        if (empty($this->getTransformations())) {
-            return false;
-        }
-
-        foreach ($this->getTransformations() as $transform) {
-            if ($transform instanceof SortByTransformInterface) {
-                return $transform;
-            }
-        }
-
-        return false;
-    }
-
-
     /**
      * @inheritdoc
      */
-    public function getTransformations()
+    public function getTransforms()
     {
-        if (empty($this->transformations)) {
+        if (empty($this->transforms)) {
             return [];
         }
 
-        return $this->transformations;
+        return $this->transforms;
     }
 
+    /**
+     * @param array $transforms
+     * @return self
+     */
+    public function setTransforms($transforms)
+    {
+        $this->transforms = $transforms;
+        return $this;
+    }
 }

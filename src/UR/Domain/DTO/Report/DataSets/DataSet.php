@@ -7,21 +7,56 @@ namespace UR\Domain\DTO\Report\DataSets;
 use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Filters\NumberFilter;
 use UR\Domain\DTO\Report\Filters\TextFilter;
+use UR\Exception\InvalidArgumentException;
 use UR\Service\Report\ReportBuilderConstant;
 
 class DataSet implements DataSetInterface
 {
+    const DATA_SET_ID_KEY = 'dataSetId';
+    const FILTERS_KEY = 'filters';
+    const METRICS_KEY = 'metrics';
+    const DIMENSIONS_KEY = 'dimensions';
+
+
+    /**
+     * @var int
+     */
     protected $dataSetId;
+
+    /**
+     * @var array
+     */
     protected $dimensions;
+
+    /**
+     * @var array
+     */
     protected $metrics;
+
+    /**
+     * @var array
+     */
     protected $filters;
 
-    function __construct($dataSetId, $dimensions, $filters, $metrics)
+    function __construct(array $data)
     {
-        $this->dimensions = $dimensions;
-        $this->filters = $this->createFilterObjects($filters);
-        $this->metrics = $metrics;
-        $this->dataSetId = $dataSetId;
+        if (!array_key_exists(self::DATA_SET_ID_KEY, $data) || !array_key_exists(self::METRICS_KEY, $data) || !array_key_exists(self::DIMENSIONS_KEY, $data)) {
+            throw new InvalidArgumentException('either "dataSetId" or "metrics" or "dimensions" is missing');
+        }
+
+        $this->dimensions = $data[self::DIMENSIONS_KEY];
+        $this->dataSetId = $data[self::DATA_SET_ID_KEY];
+        $this->metrics = $data[self::METRICS_KEY];
+
+        if (!array_key_exists(self::FILTERS_KEY, $data)) {
+            $this->filters = [];
+        }
+
+        if (empty($data[self::FILTERS_KEY])) {
+            $this->filters = [];
+        }
+
+        $this->filters = $this->createFilterObjects($data[self::FILTERS_KEY]);
     }
 
     /**

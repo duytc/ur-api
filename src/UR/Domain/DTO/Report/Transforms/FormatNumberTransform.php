@@ -4,24 +4,35 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 
+use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
 class FormatNumberTransform implements FormatNumberTransformInterface
 {
-    protected $precision;
+    const DEFAULT_DECIMAL_SEPARATOR = '.';
+    const DEFAULT_THOUSAND_SEPARATOR = ',';
+    const DEFAULT_PRECISION = 3;
 
-    protected $scale;
+    const FIELD_NAME_KEY = 'fieldName';
+    const PRECISION_KEY = 'precision';
+    const THOUSAND_SEPARATOR_KEY = 'thousandSeparator';
+
+    protected $precision;
 
     protected $thousandSeparator;
 
     protected $fieldName;
 
-    function __construct($precision, $scale, $thousandSeparator, $fieldName)
+    function __construct(array $data)
     {
-        $this->fieldName = $fieldName;
-        $this->precision = $precision;
-        $this->scale = $scale;
-        $this->thousandSeparator = $thousandSeparator;
+        if (!array_key_exists(self::FIELD_NAME_KEY, $data)) {
+            throw new InvalidArgumentException('"fieldName" is missing');
+        }
+
+        $this->fieldName = $data[self::FIELD_NAME_KEY];
+
+        $this->precision = array_key_exists(self::PRECISION_KEY, $data) ? $data[self::PRECISION_KEY] : self::DEFAULT_PRECISION;
+        $this->thousandSeparator = array_key_exists(self::THOUSAND_SEPARATOR_KEY, $data) ? $data[self::THOUSAND_SEPARATOR_KEY] : self::DEFAULT_THOUSAND_SEPARATOR;
     }
 
     /**
@@ -30,14 +41,6 @@ class FormatNumberTransform implements FormatNumberTransformInterface
     public function getPrecision()
     {
         return $this->precision;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getScale()
-    {
-        return $this->scale;
     }
 
     /**
@@ -58,6 +61,15 @@ class FormatNumberTransform implements FormatNumberTransformInterface
 
     public function transform(Collection $collection)
     {
-        // TODO: Implement transform() method.
+        $rows = $collection->getRows();
+        foreach($rows as $row) {
+            if (!array_key_exists($this->getFieldName(), $row)) {
+                continue;
+            }
+
+            $row[$this->getFieldName()] = number_format($row[$this->getFieldName()], $this->precision, self::DEFAULT_DECIMAL_SEPARATOR, $this->thousandSeparator);
+        }
+
+        return $collection;
     }
 }
