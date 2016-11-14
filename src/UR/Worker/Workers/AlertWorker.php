@@ -38,26 +38,25 @@ class AlertWorker implements AlertWorkerInterface
         $code = $params[AlertParams::CODE];
 
         switch ($code) {
-            case AlertParams::UPLOAD_DATA_SUCCESS:
+            case AlertParams::UPLOAD_DATA_SUCCESS :
                 if (!array_key_exists(AlertParams::DATA_SOURCE_ENTRY, $params)) {
                     throw new \Exception('Expect data source entry for upload data success');
                 }
                 $this->alert->uploadAlert($params);
                 break;
-            case AlertParams::UPLOAD_DATA_FAILURE:
+            case AlertParams::UPLOAD_DATA_FAILURE :
                 if (!array_key_exists(AlertParams::PUBLISHER, $params)) {
                     throw new \Exception('Expect publisher for upload data success');
                 }
                 $this->alert->uploadAlert($params);
                 break;
-            
-            case AlertParams::IMPORT_DATA_SUCCESS:
+            case AlertParams::IMPORT_DATA_SUCCESS :
                 if (!array_key_exists(AlertParams::DATA_SOURCE_ENTRY, $params) || !array_key_exists(AlertParams::CONNECTED_DATA_SOURCE, $params)) {
                     throw new \Exception('Expect data source entry and connected data source for import data failure');
                 }
                 $this->alert->importAlert($params);
                 break;
-            case AlertParams::IMPORT_DATA_FAILURE:
+            case AlertParams::IMPORT_DATA_FAILURE :
                 if (!array_key_exists(AlertParams::ROW, $params) || !array_key_exists(AlertParams::COLUMN, $params)) {
                     throw new \Exception('Expect row and col for upload data failure');
                 }
