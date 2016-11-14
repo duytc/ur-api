@@ -171,7 +171,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      */
     protected function getGETRouteName()
     {
-        return 'api_1_get_report_view';
+        return 'api_1_get_reportview';
     }
 
     /**

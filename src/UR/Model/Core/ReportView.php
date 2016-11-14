@@ -24,12 +24,12 @@ class ReportView implements ReportViewInterface
     /**
      * @var array
      */
-    protected $joinedFields;
+    protected $joinBy;
 
     /**
      * @var array
      */
-    protected $transforms;
+    protected $transform;
 
     /**
      * @return int
@@ -78,36 +78,36 @@ class ReportView implements ReportViewInterface
     /**
      * @return array
      */
-    public function getJoinedFields()
+    public function getJoinBy()
     {
-        return $this->joinedFields;
+        return $this->joinBy;
     }
 
     /**
-     * @param array $joinedFields
+     * @param array $joinBy
      * @return self
      */
-    public function setJoinedFields($joinedFields)
+    public function setJoinBy($joinBy)
     {
-        $this->joinedFields = $joinedFields;
+        $this->joinBy = $joinBy;
         return $this;
     }
 
     /**
      * @return array
      */
-    public function getTransforms()
+    public function getTransform()
     {
-        return $this->transforms;
+        return $this->transform;
     }
 
     /**
-     * @param array $transforms
+     * @param array $transform
      * @return self
      */
-    public function setTransforms($transforms)
+    public function setTransform($transform)
     {
-        $this->transforms = $transforms;
+        $this->transform = $transform;
         return $this;
     }
 }

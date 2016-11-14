@@ -33,22 +33,22 @@ interface ReportViewInterface extends ModelInterface
     /**
      * @return array
      */
-    public function getJoinedFields();
+    public function getJoinBy();
 
     /**
-     * @param array $joinedFields
+     * @param array $joinBy
      * @return self
      */
-    public function setJoinedFields($joinedFields);
+    public function setJoinBy($joinBy);
 
     /**
      * @return array
      */
-    public function getTransforms();
+    public function getTransform();
 
     /**
-     * @param array $transforms
+     * @param array $transform
      * @return self
      */
-    public function setTransforms($transforms);
+    public function setTransform($transform);
 }
