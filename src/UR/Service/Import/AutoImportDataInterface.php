@@ -2,10 +2,15 @@
 
 namespace UR\Service\Import;
 
-use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 
 interface AutoImportDataInterface
 {
-    public function autoCreateDataImport(DataSetInterface $dataSet, DataSourceEntryInterface $dataSourceEntry);
+    /**
+     * @param ConnectedDataSourceInterface[] $connectedDataSources
+     * @param DataSourceEntryInterface $dataSourceEntry
+     * @return mixed
+     */
+    public function autoCreateDataImport($connectedDataSources, DataSourceEntryInterface $dataSourceEntry);
 }

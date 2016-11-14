@@ -111,4 +111,9 @@ class ReImportDataSetChangeListener
         $this->removedEntity = $entity;
     }
 
+    public function removeDimensions()
+    {
+
+    }
+
 }

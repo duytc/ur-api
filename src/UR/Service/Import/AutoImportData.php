@@ -9,6 +9,7 @@ use Liuggio\ExcelBundle\Factory;
 use UR\DomainManager\AlertManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Entity\Core\ImportHistory;
+use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -62,7 +63,7 @@ class AutoImportData implements AutoImportDataInterface
         $this->uploadFileDir = $uploadFileDir;
     }
 
-    public function autoCreateDataImport(DataSetInterface $dataSet, DataSourceEntryInterface $dataSourceEntry)
+    public function autoCreateDataImport($connectedDataSources, DataSourceEntryInterface $dataSourceEntry)
     {
         $conn = $this->em->getConnection();
         $dataSetLocator = new Locator($conn);
@@ -71,28 +72,30 @@ class AutoImportData implements AutoImportDataInterface
 
         $importUtils = new ImportUtils();
 
-        //create or update empty dataSet table
-        if (!$dataSetLocator->getDataSetImportTable($dataSet->getId())) {
-            $importUtils->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $conn);
-        }
-
-        $parser = new Parser();
-
-        // mapping
-        $parserConfig = new ParserConfig();
-
-        if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'csv') === 0) {
-            /**@var Csv $file */
-            $file = (new Csv($this->uploadFileDir . $dataSourceEntry->getPath()))->setDelimiter(',');
-        } else if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'excel') === 0) {
-            /**@var Excel $file */
-            $file = new \UR\Service\DataSource\Excel($this->uploadFileDir . $dataSourceEntry->getPath(), $this->phpExcel);
-        } else {
-            $file = new Json($dataSourceEntry->getPath());
-        }
-
-        $connectedDataSources = $dataSourceEntry->getDataSource()->getConnectedDataSources();
         foreach ($connectedDataSources as $connectedDataSource) {
+            if ($connectedDataSource->getDataSet() === null) {
+                throw new InvalidArgumentException('not found Dataset with this ID');
+            }
+            //create or update empty dataSet table
+            if (!$dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId())) {
+                $importUtils->createEmptyDataSetTable($connectedDataSource->getDataSet(), $dataSetLocator, $dataSetSynchronizer, $conn);
+            }
+
+            $parser = new Parser();
+
+            // mapping
+            $parserConfig = new ParserConfig();
+
+            if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'csv') === 0) {
+                /**@var Csv $file */
+                $file = (new Csv($this->uploadFileDir . $dataSourceEntry->getPath()))->setDelimiter(',');
+            } else if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'excel') === 0) {
+                /**@var Excel $file */
+                $file = new \UR\Service\DataSource\Excel($this->uploadFileDir . $dataSourceEntry->getPath(), $this->phpExcel);
+            } else {
+                $file = new Json($dataSourceEntry->getPath());
+            }
+
             // to do alert
             $alertParams = array(
                 AlertParams::CODE => AlertInterface::IMPORT_DATA_SUCCESS,
@@ -139,10 +142,10 @@ class AutoImportData implements AutoImportDataInterface
                 continue;
             }
 
-            $ds1 = $dataSetLocator->getDataSetImportTable($dataSet->getId());
+            $ds1 = $dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId());
             $importHistoryEntity = new ImportHistory();
             $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
-            $importHistoryEntity->setDataSet($dataSet);
+            $importHistoryEntity->setDataSet($connectedDataSource->getDataSet());
             $this->importHistoryManager->save($importHistoryEntity);
             // to do alert
             $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
