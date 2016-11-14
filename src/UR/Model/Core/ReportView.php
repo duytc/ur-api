@@ -29,7 +29,7 @@ class ReportView implements ReportViewInterface
     /**
      * @var array
      */
-    protected $transform;
+    protected $transforms;
 
     /**
      * @return int
@@ -96,18 +96,18 @@ class ReportView implements ReportViewInterface
     /**
      * @return array
      */
-    public function getTransform()
+    public function getTransforms()
     {
-        return $this->transform;
+        return $this->transforms;
     }
 
     /**
-     * @param array $transform
+     * @param array $transforms
      * @return self
      */
-    public function setTransform($transform)
+    public function setTransforms($transforms)
     {
-        $this->transform = $transform;
+        $this->transforms = $transforms;
         return $this;
     }
 }

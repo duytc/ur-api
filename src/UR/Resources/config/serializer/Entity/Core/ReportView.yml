@@ -10,7 +10,7 @@ UR\Entity\Core\ReportView:
         joinBy:
             expose: true
             groups: [report_view.detail, report_view.summary]
-        transform:
+        transforms:
             expose: true
             groups: [report_view.detail, report_view.summary]
         dataSets:

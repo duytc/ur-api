@@ -11,7 +11,7 @@ UR\Entity\Core\ReportView:
         dataSets:
             type: json_array
             nullable: true
-        transform:
+        transforms:
             type: json_array
             nullable: true
         name:

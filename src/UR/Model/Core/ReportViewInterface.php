@@ -44,11 +44,11 @@ interface ReportViewInterface extends ModelInterface
     /**
      * @return array
      */
-    public function getTransform();
+    public function getTransforms();
 
     /**
      * @param array $transform
      * @return self
      */
-    public function setTransform($transform);
+    public function setTransforms($transform);
 }

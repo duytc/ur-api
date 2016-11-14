@@ -14,7 +14,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
         $builder
             ->add('dataSets')
             ->add('name')
-            ->add('transform')
+            ->add('transforms')
             ->add('joinBy');
     }
 
