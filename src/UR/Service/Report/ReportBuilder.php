@@ -5,8 +5,7 @@ namespace UR\Service\Report;
 
 
 use UR\Domain\DTO\Report\ParamsInterface;
-use UR\Domain\DTO\Report\Transforms\AbstractTransformInterface;
-use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
+use UR\Domain\DTO\Report\Transforms\SortByTransformInterface;
 
 class ReportBuilder implements ReportBuilderInterface
 {
@@ -21,14 +20,21 @@ class ReportBuilder implements ReportBuilderInterface
     protected $reportGrouper;
 
     /**
+     * @var ReportSorterInterface
+     */
+    protected $reportSorter;
+
+    /**
      * ReportBuilder constructor.
      * @param ReportSelectorInterface $reportSelector
      * @param ReportGrouperInterface $reportGrouper
+     * @param ReportSorterInterface $reportSorter
      */
-    public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper)
+    public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper, ReportSorterInterface $reportSorter)
     {
         $this->reportSelector = $reportSelector;
         $this->reportGrouper = $reportGrouper;
+        $this->reportSorter = $reportSorter;
     }
 
     public function getReport(ParamsInterface $params)
@@ -60,6 +66,14 @@ class ReportBuilder implements ReportBuilderInterface
             }
         }
 
-        return $this->reportGrouper->groupReports($groupBy, $statement, $metrics, $dimensions);
+        $groupedReports =  $this->reportGrouper->groupReports($groupBy, $statement, $metrics, $dimensions);
+
+        $sortBy = $params->getSortByTransform();
+
+        if ($sortBy instanceof SortByTransformInterface) {
+            $this->reportSorter->sort($groupedReports, $sortBy);
+        }
+
+        return $groupedReports;
     }
 }
