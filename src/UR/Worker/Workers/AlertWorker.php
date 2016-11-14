@@ -24,16 +24,17 @@ class AlertWorker implements AlertWorkerInterface
     }
 
     /**
-     * @param StdClass $params
-     * @throws \Exception
+     * @param StdClass $inputAlert
+     * @internal param StdClass $params
      */
-    public function processAlert(StdClass $params)
+    public function processAlert(StdClass $inputAlert)
     {
-        $params = (array) $params->parameters;
-        $code = $params['code'];
-        $publisherId = $params['publisherId'];
-        $params = $params['params'];
+        $code = $inputAlert->code;
+        $publisherId = $inputAlert->publisherId;
+        $params = $inputAlert->params;
 
-        $this->alert->createAlert($code, $publisherId, $params);
+        var_dump($params);
+
+        $this->alert->createAlert($code, $publisherId, (array)$params);
     }
 }

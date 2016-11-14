@@ -15,8 +15,12 @@ class ProcessAlert implements ProcessAlertInterface
     const NEW_DATA_IS_RECEIVED_FROM_API = 102;
     const NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT = 103;
     const NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT = 104;
-    const NEW_DATA_IS_AD_TO_CONNECTED_DATA_SOURCE = 200;
+    const NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE = 200;
     const DATA_IMPORT_FAILS = 201;
+
+    const DATA_SOURCE_MODULE = 1;
+    const DATA_SET_MODULE = 2;
+    const UNSUPPORTED_MODULE = 0;
     /**
      * Status codes translation table.
      *
@@ -32,6 +36,20 @@ class ProcessAlert implements ProcessAlertInterface
         201 => 'Data import fails',
     );
 
+    public static $datSourceErrorParams = array(
+        'dataSourceName' => 'require',
+        'dataEntryName' => 'require',
+        'formatEntryName' => 'option'
+    );
+
+    public static $datSetErrorParams = array(
+        'dataSetName' => 'require',
+        'dataSourceName' => 'require',
+        'dataSourceEntryName' => 'option',
+        'row' => 'option',
+        'column' => 'option'
+    );
+
     protected $alertManager;
     protected $publisherManager;
 
@@ -44,9 +62,9 @@ class ProcessAlert implements ProcessAlertInterface
     /**
      * @inheritdoc
      */
-    public function createAlert($alertCode, $publisherId, $messageDetail)
+    public function createAlert($alertCode, $publisherId, array $params)
     {
-        if (!in_array($alertCode, self::$alertCodes)) {
+        if (!array_key_exists($alertCode, self::$alertCodes)) {
             throw new \Exception(sprintf('Alert code %d is not valid', $alertCode));
         }
 
@@ -55,10 +73,62 @@ class ProcessAlert implements ProcessAlertInterface
             throw new \Exception(sprintf('Not found that publisher %s', $publisherId));
         }
 
+        $this->validateParams($alertCode, $params);
+
         $alert = new Alert();
         $alert->setCode($alertCode);
         $alert->setPublisher($publisher);
-        $alert->setMessage($messageDetail);
+        $alert->setMessage(json_encode($params));
         $this->alertManager->save($alert);
+    }
+
+    protected function validateParams($alertCode, $params)
+    {
+        $caller = $this->getCallerFromAlertCode($alertCode);
+
+        switch ($caller) {
+            case self::DATA_SOURCE_MODULE:
+                foreach (self::$datSourceErrorParams as $dataSourceErrorParam => $value) {
+                    if ($value == 'require') {
+                        if (!array_key_exists($dataSourceErrorParam, $params)) {
+                            throw new \Exception (sprintf('Alert code %d need %d param', $alertCode, $dataSourceErrorParam));
+                        }
+                    }
+                }
+                break;
+            case self::DATA_SET_MODULE:
+                foreach (self::$datSetErrorParams as $dataSetErrorParam => $value) {
+                    if ($value == 'require') {
+                        if (!array_key_exists($dataSetErrorParam, $params)) {
+                            throw new \Exception (sprintf('Alert code %d need %d param', $alertCode, $dataSetErrorParam));
+                        }
+                    }
+                }
+                break;
+            default:
+                throw new \Exception (sprintf('System not support error code %d', $alertCode));
+                break;
+        }
+    }
+
+    /**
+     * @param $alertCode
+     * @return int
+     */
+    protected function getCallerFromAlertCode($alertCode)
+    {
+        $startWithNumber = substr($alertCode, 0, 1);
+
+        switch ($startWithNumber) {
+            case 1:
+                return self::DATA_SOURCE_MODULE;
+                break;
+            case 2:
+                return self::DATA_SET_MODULE;
+                break;
+            default:
+                return self::UNSUPPORTED_MODULE;
+                break;
+        }
     }
 }
