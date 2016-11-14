@@ -32,7 +32,8 @@ class ParamsBuilder implements ParamsBuilderInterface
         if (array_key_exists(ReportBuilderConstant::TRANSFORMS_KEY, $params)) {
             $allTransformations = $params[ReportBuilderConstant::TRANSFORMS_KEY];
             $convertAllTransformations = json_decode($allTransformations);
-            $transformationObjects = $this->createTransformationObjects($convertAllTransformations);
+            $aggregatedTransformations = $this->transformMultipleGroupByAndSortByToOne($convertAllTransformations);
+            $transformationObjects = $this->createTransformationObjects($aggregatedTransformations);
         }
 
         if (array_key_exists(ReportBuilderConstant::JOIN_BY_KEY, $params)) {
@@ -50,6 +51,72 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         return $dataSetObjects;
+    }
+
+    /**
+     * @param array $convertedTransformations
+     * @return array
+     * @throws \Exception
+     */
+    protected function transformMultipleGroupByAndSortByToOne(array $convertedTransformations)
+    {
+        $aggregatedGroupByObject = null;
+        $aggregatedSortByObject = null;
+
+        foreach ($convertedTransformations as $key => $transformation) {
+            if (!property_exists($transformation, ReportBuilderConstant::TARGET_TRANSFORMATION_KEY) || !property_exists($transformation, ReportBuilderConstant::TYPE_TRANSFORMATION_KEY)) {
+                throw new \Exception(sprintf('Transformations must have key = %s', ReportBuilderConstant::TARGET_TRANSFORMATION_KEY));
+            }
+
+            if ($transformation->{ReportBuilderConstant::TARGET_TRANSFORMATION_KEY} == ReportBuilderConstant::TARGET_TRANSFORMATION_ALL_VALUE) {
+                if ($transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} == ReportBuilderConstant::GROUP_BY_TRANSFORMATION_VALUE) {
+
+                    if (null == $aggregatedGroupByObject) {
+                        $aggregatedGroupByObject = $transformation;
+                        unset($convertedTransformations[$key]);
+                        continue;
+                    }
+
+                    if (!property_exists($aggregatedGroupByObject, ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE) || !property_exists($transformation, ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE)) {
+                        throw new \Exception(sprintf('No field for group  by in report builder'));
+                    }
+
+                    $allFields = array_merge($aggregatedGroupByObject->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE}, $transformation->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE});
+                    $aggregatedGroupByObject->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE} = $allFields;
+                    unset($convertedTransformations[$key]);
+                    continue;
+
+                }
+
+                if ($transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} == ReportBuilderConstant::SORT_BY_TRANSFORMATION_VALUE) {
+
+                    if (null == $aggregatedSortByObject) {
+                        $aggregatedSortByObject = $transformation;
+                        unset($convertedTransformations[$key]);
+                        continue;
+                    }
+
+                    if (!property_exists($aggregatedSortByObject, ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE) || !property_exists($transformation, ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE)) {
+                        throw new \Exception(sprintf('No field for sort by in report builder'));
+                    }
+
+                    $allFields = array_merge($aggregatedSortByObject->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE}, $transformation->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE});
+                    $aggregatedSortByObject->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE} = $allFields;
+                    unset($convertedTransformations[$key]);
+                }
+            }
+
+        }
+
+        if (null != $aggregatedGroupByObject) {
+            array_push($convertedTransformations, $aggregatedGroupByObject);
+        }
+
+        if (null != $aggregatedSortByObject) {
+            array_push($convertedTransformations, $aggregatedSortByObject);
+        }
+
+        return $convertedTransformations;
     }
 
     /**
