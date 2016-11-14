@@ -4,7 +4,9 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 
-class FormatNumberTransform extends SingleFieldTransform
+use UR\Service\DTO\Collection;
+
+class FormatNumberTransform implements FormatNumberTransformInterface
 {
     protected $precision;
 
@@ -12,10 +14,10 @@ class FormatNumberTransform extends SingleFieldTransform
 
     protected $thousandSeparator;
 
-    function __construct($precision, $scale, $thousandSeparator, $fieldName, $type, $target)
+    protected $fieldName;
+
+    function __construct($precision, $scale, $thousandSeparator, $fieldName)
     {
-        $this->target = $target;
-        $this->type = $type;
         $this->fieldName = $fieldName;
         $this->precision = $precision;
         $this->scale = $scale;
@@ -44,5 +46,18 @@ class FormatNumberTransform extends SingleFieldTransform
     public function getThousandSeparator()
     {
         return $this->thousandSeparator;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFieldName()
+    {
+        return $this->fieldName;
+    }
+
+    public function transform(Collection $collection)
+    {
+        // TODO: Implement transform() method.
     }
 }

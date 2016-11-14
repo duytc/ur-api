@@ -4,16 +4,18 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 
-class FormatDateTransform extends SingleFieldTransform
+use UR\Service\DTO\Collection;
+
+class FormatDateTransform implements FormatDateTransformInterface
 {
     protected $fromFormat;
 
     protected $toFormat;
 
-    function __construct($fromFormat, $toFormat, $fieldName, $type, $target)
+    protected $fieldName;
+
+    function __construct($fromFormat, $toFormat, $fieldName)
     {
-        $this->target = $target;
-        $this->type = $type;
         $this->fieldName = $fieldName;
         $this->fromFormat = $fromFormat;
         $this->toFormat = $toFormat;
@@ -33,5 +35,18 @@ class FormatDateTransform extends SingleFieldTransform
     public function getToFormat()
     {
         return $this->toFormat;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFieldName()
+    {
+        return $this->fieldName;
+    }
+
+    public function transform(Collection $collection)
+    {
+        // TODO: Implement transform() method.
     }
 }

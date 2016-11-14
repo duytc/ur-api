@@ -4,7 +4,7 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 
-interface GroupByTransformInterface extends AllFiledTransformInterface
+interface GroupByTransformInterface extends TransformInterface
 {
     /**
      * @return array

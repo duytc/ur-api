@@ -4,16 +4,17 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 
-class GroupByTransform extends AllFieldTransform implements GroupByTransformInterface
+use UR\Service\DTO\Collection;
+
+class GroupByTransform implements GroupByTransformInterface
 {
     /**
      * @var array
      */
     protected $fields;
 
-    function __construct($fields, $type, $target)
+    function __construct($fields)
     {
-        parent::__construct($type, $target);
         $this->fields = $fields;
     }
 
@@ -23,5 +24,10 @@ class GroupByTransform extends AllFieldTransform implements GroupByTransformInte
     public function getFields()
     {
         return $this->fields;
+    }
+
+    public function transform(Collection $collection)
+    {
+        // TODO: Implement transform() method.
     }
 }

@@ -4,7 +4,7 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 
-abstract class SingleFieldTransform extends AbstractTransform implements SingleFieldTransformInterface
+abstract class SingleFieldTransform extends Transform implements SingleFieldTransformInterface
 {
     const TYPE_FORMAT_NUMBER = 1;
     const TYPE_FORMAT_TEXT = 2;

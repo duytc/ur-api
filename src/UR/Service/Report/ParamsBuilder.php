@@ -105,24 +105,24 @@ class ParamsBuilder implements ParamsBuilderInterface
 
                     $fieldGroup = property_exists($transformation, ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE) ?
                         $transformation->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE} : null;
-                    $typeTransformation = property_exists($transformation, ReportBuilderConstant::TYPE_TRANSFORMATION_KEY) ?
-                        $transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} : null;
-                    $targetTransformation = property_exists($transformation, ReportBuilderConstant::TARGET_TRANSFORMATION_KEY) ?
-                        $transformation->{ReportBuilderConstant::TARGET_TRANSFORMATION_KEY} : null;
+//                    $typeTransformation = property_exists($transformation, ReportBuilderConstant::TYPE_TRANSFORMATION_KEY) ?
+//                        $transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} : null;
+//                    $targetTransformation = property_exists($transformation, ReportBuilderConstant::TARGET_TRANSFORMATION_KEY) ?
+//                        $transformation->{ReportBuilderConstant::TARGET_TRANSFORMATION_KEY} : null;
 
-                    $transformationObjects [] = new GroupByTransform($fieldGroup, $typeTransformation, $targetTransformation);
+                    $transformationObjects [] = new GroupByTransform($fieldGroup);
                 }
 
                 if ($transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} == ReportBuilderConstant::SORT_BY_TRANSFORMATION_VALUE) {
 
                     $fieldGroup = property_exists($transformation, ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE) ?
                         $transformation->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE} : null;
-                    $typeTransformation = property_exists($transformation, ReportBuilderConstant::TYPE_TRANSFORMATION_KEY) ?
-                        $transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} : null;
-                    $targetTransformation = property_exists($transformation, ReportBuilderConstant::TARGET_TRANSFORMATION_KEY) ?
-                        $transformation->{ReportBuilderConstant::TARGET_TRANSFORMATION_KEY} : null;
+//                    $typeTransformation = property_exists($transformation, ReportBuilderConstant::TYPE_TRANSFORMATION_KEY) ?
+//                        $transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} : null;
+//                    $targetTransformation = property_exists($transformation, ReportBuilderConstant::TARGET_TRANSFORMATION_KEY) ?
+//                        $transformation->{ReportBuilderConstant::TARGET_TRANSFORMATION_KEY} : null;
 
-                    $transformationObjects [] = new SortByTransform($fieldGroup, $typeTransformation, $targetTransformation);
+                    $transformationObjects [] = new SortByTransform($fieldGroup, 'desc');
                 }
             }
         }

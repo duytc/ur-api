@@ -4,7 +4,9 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 
-class SortByTransform extends AllFieldTransform implements SortByTransformInterface
+use UR\Service\DTO\Collection;
+
+class SortByTransform implements SortByTransformInterface
 {
     const SORT_DESC = 'desc';
     const SORT_ASC = 'asc';
@@ -16,9 +18,8 @@ class SortByTransform extends AllFieldTransform implements SortByTransformInterf
 
     protected $direction;
 
-    function __construct($fields, $direction, $type, $target)
+    function __construct($fields, $direction)
     {
-        parent::__construct($type, $target);
         $this->fields = $fields;
         $this->direction = $direction;
     }
@@ -37,5 +38,10 @@ class SortByTransform extends AllFieldTransform implements SortByTransformInterf
     public function getDirection()
     {
         return $this->direction;
+    }
+
+    public function transform(Collection $collection)
+    {
+        // TODO: Implement transform() method.
     }
 }

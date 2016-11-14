@@ -1,15 +1,11 @@
 <?php
-
-
 namespace UR\Service\Report\Groupers;
-
-
 
 use Doctrine\DBAL\Driver\Statement;
 
 abstract class AbstractGrouper implements GrouperInterface
 {
-    public function getGroupedReport($groupingFields, Statement $statement, array $metrics, array $dimensions)
+    public function getGroupedReport($groupingFields, Statement $statement, array $metrics)
     {
         $groupedReports = $this->generateGroupedArray($groupingFields, $statement);
 
@@ -55,17 +51,6 @@ abstract class AbstractGrouper implements GrouperInterface
             $key = md5($key);
             $groupedArray[$key][] = $report;
         }
-//        foreach($reports as $report) {
-//            $key = '';
-//            foreach ($groupingFields as $groupField) {
-//                if (array_key_exists($groupField, $report)) {
-//                    $key .= is_array($report[$groupField]) ? json_encode($report[$groupField], JSON_UNESCAPED_UNICODE) : $report[$groupField];
-//                }
-//            }
-//            $key = md5($key);
-//            $groupedArray[$key][] = $report;
-//        }
-
         return $groupedArray;
     }
 }
