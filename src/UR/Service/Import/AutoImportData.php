@@ -9,8 +9,10 @@ use Liuggio\ExcelBundle\Factory;
 use UR\DomainManager\AlertManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Entity\Core\ImportHistory;
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Service\Alert\AlertParams;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
@@ -91,6 +93,12 @@ class AutoImportData implements AutoImportDataInterface
 
         $connectedDataSources = $dataSourceEntry->getDataSource()->getConnectedDataSources();
         foreach ($connectedDataSources as $connectedDataSource) {
+            // to do alert
+            $alertParams = array(
+                AlertParams::CODE => AlertInterface::IMPORT_DATA_SUCCESS,
+                AlertParams::DATA_SOURCE_ENTRY => $dataSourceEntry->getId(),
+                AlertParams::CONNECTED_DATA_SOURCE => $connectedDataSource->getId(),
+            );
 
             $importUtils->mappingFile($connectedDataSource, $parserConfig, $file);
 
@@ -107,8 +115,10 @@ class AutoImportData implements AutoImportDataInterface
             }
 
             if (!$validRequires) {
-
+                $alertParams[AlertParams::ERROR] = AlertParams::REQUIRE_FAIL_IMPORT;
+                $this->workerManager->processAlert($alertParams);
                 continue;
+                // to do alert
             }
 
             //filter
@@ -121,6 +131,11 @@ class AutoImportData implements AutoImportDataInterface
             $collectionParser = $parser->parse($file, $parserConfig);
 
             if (is_array($collectionParser)) {
+                // to do alert
+                $alertParams[AlertParams::ERROR] = $collectionParser[AlertParams::CODE];
+                $alertParams[AlertParams::ROW] = $collectionParser[AlertParams::ROW];
+                $alertParams[AlertParams::COLUMN] = $collectionParser[AlertParams::COLUMN];
+                $this->workerManager->processAlert($alertParams);
                 continue;
             }
 
@@ -129,7 +144,9 @@ class AutoImportData implements AutoImportDataInterface
             $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
             $importHistoryEntity->setDataSet($dataSet);
             $this->importHistoryManager->save($importHistoryEntity);
+            // to do alert
             $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
+            $this->workerManager->processAlert($alertParams);
         }
     }
 }

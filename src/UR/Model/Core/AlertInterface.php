@@ -3,9 +3,23 @@
 namespace UR\Model\Core;
 
 use UR\Model\ModelInterface;
+use UR\Model\User\Role\PublisherInterface;
 
 interface AlertInterface extends ModelInterface
 {
+    //UPLOAD 10-20
+    const UPLOAD_DATA_SUCCESS = 10;
+    const UPLOAD_DATA_FAILURE = 11;
+    const UPLOAD_DATA_WARNING = 12;
+
+
+    //IMPORT 0-9
+    const IMPORT_DATA_SUCCESS = 0;
+    const REQUIRE_FAIL = 1;
+    const FILTER_FAIL = 2;
+    const TRANSFORM_FAIL = 3;
+    const UNKNOWN_FAIL = 4;
+
     /**
      * @return mixed
      */
@@ -19,12 +33,12 @@ interface AlertInterface extends ModelInterface
     /**
      * @return mixed
      */
-    public function getType();
+    public function getCode();
 
     /**
      * @param mixed $type
      */
-    public function setType($type);
+    public function setCode($type);
 
     /**
      * @return mixed
@@ -35,16 +49,6 @@ interface AlertInterface extends ModelInterface
      * @param mixed $isRead
      */
     public function setIsRead($isRead);
-
-    /**
-     * @return mixed
-     */
-    public function getTitle();
-
-    /**
-     * @param mixed $title
-     */
-    public function setTitle($title);
 
     /**
      * @return mixed
@@ -67,12 +71,12 @@ interface AlertInterface extends ModelInterface
     public function setCreatedDate($createdDate);
 
     /**
-     * @return DataSourceEntryInterface
+     * @return PublisherInterface
      */
-    public function getDataSourceEntry();
+    public function getPublisher();
 
     /**
-     * @param DataSourceEntryInterface $dataSourceEntry
+     * @param PublisherInterface $publisher
      */
-    public function setDataSourceEntry($dataSourceEntry);
+    public function setPublisher($publisher);
 }

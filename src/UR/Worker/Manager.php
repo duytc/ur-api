@@ -39,10 +39,10 @@ class Manager
         $this->queueTask('importDataWhenConnectedDataSourceChange', $params);
     }
 
-    public function alertWhenConnectedDataSourceChange($errors){
+    public function processAlert($parameters){
         $params = new StdClass;
-        $params->errors = $errors;
-        $this->queueTask('alertWhenConnectedDataSourceChange', $params);
+        $params->parameters = $parameters;
+        $this->queueTask('processAlert', $params);
     }
 
     /**

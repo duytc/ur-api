@@ -12,9 +12,7 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
     public function getAlertsForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null)
     {
         $qb = $this->createQueryBuilder('a')
-            ->join('a.dataSourceEntry', 'dse')
-            ->join('dse.dataSource', 'ds')
-            ->where('ds.publisher = :publisher')
+            ->where('a.publisher = :publisher')
             ->setParameter('publisher', $publisher);
 
         if (is_int($limit)) {
@@ -38,11 +36,7 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
 
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
-            if (!$user instanceof PublisherInterface) {
-                $qb
-                    ->join('a.dataSourceEntry', 'dse')
-                    ->join('dse.dataSource', 'ds');
-            }
+
             $orX = $qb->expr()->orX();
             $conditions = array(
                 $qb->expr()->like('a.id', ':searchKey'),
