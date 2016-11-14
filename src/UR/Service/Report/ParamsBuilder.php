@@ -85,35 +85,12 @@ class ParamsBuilder implements ParamsBuilderInterface
                     $aggregatedGroupByObject->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE} = $allFields;
                     unset($convertedTransformations[$key]);
                     continue;
-
-                }
-
-                if ($transformation->{ReportBuilderConstant::TYPE_TRANSFORMATION_KEY} == ReportBuilderConstant::SORT_BY_TRANSFORMATION_VALUE) {
-
-                    if (null == $aggregatedSortByObject) {
-                        $aggregatedSortByObject = $transformation;
-                        unset($convertedTransformations[$key]);
-                        continue;
-                    }
-
-                    if (!property_exists($aggregatedSortByObject, ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE) || !property_exists($transformation, ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE)) {
-                        throw new \Exception(sprintf('No field for sort by in report builder'));
-                    }
-
-                    $allFields = array_merge($aggregatedSortByObject->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE}, $transformation->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE});
-                    $aggregatedSortByObject->{ReportBuilderConstant::FIELDS_GROUP_BY_TRANSFORMATION_VALUE} = $allFields;
-                    unset($convertedTransformations[$key]);
                 }
             }
-
         }
 
         if (null != $aggregatedGroupByObject) {
             array_push($convertedTransformations, $aggregatedGroupByObject);
-        }
-
-        if (null != $aggregatedSortByObject) {
-            array_push($convertedTransformations, $aggregatedSortByObject);
         }
 
         return $convertedTransformations;
