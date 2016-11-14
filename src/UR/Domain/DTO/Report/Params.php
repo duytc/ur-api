@@ -6,6 +6,8 @@ namespace UR\Domain\DTO\Report;
 
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
+use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
+use UR\Domain\DTO\Report\Transforms\SortByTransformInterface;
 
 
 class Params implements ParamsInterface
@@ -102,13 +104,29 @@ class Params implements ParamsInterface
         }
 
         foreach ($this->getTransformations() as $transform) {
-            if ($transform instanceof GroupByTransform) {
+            if ($transform instanceof GroupByTransformInterface) {
                 return $transform;
             }
         }
 
         return false;
     }
+
+    public function getSortByTransform()
+    {
+        if (empty($this->getTransformations())) {
+            return false;
+        }
+
+        foreach ($this->getTransformations() as $transform) {
+            if ($transform instanceof SortByTransformInterface) {
+                return $transform;
+            }
+        }
+
+        return false;
+    }
+
 
     /**
      * @inheritdoc

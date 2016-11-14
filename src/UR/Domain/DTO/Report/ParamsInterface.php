@@ -9,6 +9,7 @@ use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Domain\DTO\Report\JoinBy\JoinByInterface;
 use UR\Domain\DTO\Report\Transforms\AbstractTransformInterface;
 use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
+use UR\Domain\DTO\Report\Transforms\SortByTransformInterface;
 
 interface ParamsInterface
 {
@@ -16,6 +17,11 @@ interface ParamsInterface
      * @return boolean|GroupByTransformInterface
      */
     public function getGroupByTransform();
+
+    /**
+     * @return boolean|SortByTransformInterface
+     */
+    public function getSortByTransform();
 
     /**
      * @return AbstractTransformInterface[]
