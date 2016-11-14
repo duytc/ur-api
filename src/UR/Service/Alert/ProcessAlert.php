@@ -17,10 +17,6 @@ class ProcessAlert implements ProcessAlertInterface
     const NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT = 104;
     const NEW_DATA_IS_AD_TO_CONNECTED_DATA_SOURCE = 200;
     const DATA_IMPORT_FAILS = 201;
-
-    protected $alertManager;
-    protected $publisherManager;
-
     /**
      * Status codes translation table.
      *
@@ -36,6 +32,9 @@ class ProcessAlert implements ProcessAlertInterface
         201 => 'Data import fails',
     );
 
+    protected $alertManager;
+    protected $publisherManager;
+
     public function __construct(AlertManagerInterface $alertManager, PublisherManagerInterface $publisherManager)
     {
         $this->alertManager = $alertManager;
@@ -48,7 +47,7 @@ class ProcessAlert implements ProcessAlertInterface
     public function createAlert($alertCode, $publisherId, $messageDetail)
     {
         if (!in_array($alertCode, self::$alertCodes)) {
-            throw new \Exception('Alert code is not valid');
+            throw new \Exception(sprintf('Alert code %d is not valid', $alertCode));
         }
 
         $publisher = $this->publisherManager->findPublisher($publisherId);
