@@ -109,11 +109,11 @@ services:
             - @phpexcel
             - %upload_file_dir%
 
-    ur.worker.workers.re_import_data_set_changed:
-        class: UR\Worker\Workers\AutoImportDataSetChangedWorker
+    ur.worker.workers.re_import_new_entry_received:
+        class: UR\Worker\Workers\ReImportWhenNewEntryReceived
         arguments:
-            - @ur.worker.workers.auto_import_data
             - @ur.domain_manager.data_set
+            - @ur.worker.workers.auto_import_data
             - @ur.domain_manager.data_source_entry
 
     ur.worker.workers.auto_import_when_connected_datasource_change_worker:
@@ -127,3 +127,16 @@ services:
             class: UR\Worker\Workers\AlertWhenConnectedDataSourceChangeWorker
             arguments:
                 - @ur.domain_manager.alert
+
+    ur.service.alert.process_alert:
+            class: UR\Service\Alert\ProcessAlert
+            arguments:
+                - @ur.domain_manager.alert
+                - @ur.domain_manager.data_source_entry
+                - @ur.domain_manager.connected_data_source
+                - @ur_user.domain_manager.publisher
+
+    ur.worker.workers.alert_worker:
+            class: UR\Worker\Workers\AlertWorker
+            arguments:
+                - @ur.service.alert.process_alert
