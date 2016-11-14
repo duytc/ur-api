@@ -5,7 +5,6 @@ namespace UR\Service\Alert;
 
 interface ProcessAlertInterface
 {
-    public function importAlert(array $error);
+    public function createAlert($alertCode, $publisherId, $messageDetail);
 
-    public function uploadAlert(array $error);
 }
