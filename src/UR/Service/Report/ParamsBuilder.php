@@ -4,8 +4,11 @@
 namespace UR\Service\Report;
 
 
+use Symfony\Component\ExpressionLanguage\Expression;
+use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Params;
+use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
 use UR\Domain\DTO\Report\Transforms\FormatDateTransform;
 use UR\Domain\DTO\Report\Transforms\FormatNumberTransform;
@@ -20,7 +23,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 
     const DATA_SET_KEY = 'dataSets';
     const TRANSFORM_KEY = 'transforms';
-    const JOIN_BY_KEY  = 'joinBy';
+    const JOIN_BY_KEY = 'joinBy';
 
     /**
      * @inheritdoc
@@ -79,11 +82,15 @@ class ParamsBuilder implements ParamsBuilderInterface
 
             switch ($transform[TransformInterface::TRANSFORM_TYPE_KEY]) {
                 case TransformInterface::ADD_FIELD_TRANSFORM:
-                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField){
+                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField) {
                         $transformObjects[] = new AddFieldTransform($addField);
                     }
                     break;
                 case TransformInterface::ADD_CALCULATED_FIELD_TRANSFORM:
+                    $expressionLanguage = new ExpressionLanguage();
+                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField) {
+                        $transformObjects[] = new AddCalculatedFieldTransform($expressionLanguage, $addField);
+                    }
                     break;
                 case TransformInterface::FORMAT_DATE_TRANSFORM:
                     $transformObjects[] = new FormatDateTransform($transform);
