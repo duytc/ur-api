@@ -8,14 +8,14 @@ use UR\Service\DTO\Collection;
 
 interface TransformInterface
 {
-    const TRANSFORM_TYPE_KEY = 'transformType';
+    const TRANSFORM_TYPE_KEY = 'type';
 
     const ADD_FIELD_TRANSFORM = 'addField';
     const ADD_CALCULATED_FIELD_TRANSFORM = 'addCalculatedField';
-    const GROUP_TRANSFORM = 'group';
-    const SORT_TRANSFORM = 'sort';
-    const FORMAT_NUMBER_TRANSFORM = 'formatNumber';
-    const FORMAT_DATE_TRANSFORM = 'formatDate';
+    const GROUP_TRANSFORM = 'groupBy';
+    const SORT_TRANSFORM = 'sortBy';
+    const FORMAT_NUMBER_TRANSFORM = 'number';
+    const FORMAT_DATE_TRANSFORM = 'date';
 
     /**
      * @param Collection $collection

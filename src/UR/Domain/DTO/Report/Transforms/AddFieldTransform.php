@@ -9,7 +9,7 @@ use UR\Service\DTO\Collection;
 
 class AddFieldTransform implements TransformInterface
 {
-    const FIELD_NAME_KEY = 'fieldName';
+    const FIELD_NAME_KEY = 'fields';
     const FIELD_VALUE = 'fieldValue';
 
     protected $fieldName;
@@ -23,7 +23,7 @@ class AddFieldTransform implements TransformInterface
     public function __construct(array $data)
     {
         if (!array_key_exists(self::FIELD_NAME_KEY, $data) || !array_key_exists(self::FIELD_VALUE, $data)) {
-            throw new InvalidArgumentException('either "fieldName" or "fieldValue" is missing');
+            throw new InvalidArgumentException('either "fields" or "fieldValue" is missing');
         }
 
         $this->fieldName = $data[self::FIELD_NAME_KEY];

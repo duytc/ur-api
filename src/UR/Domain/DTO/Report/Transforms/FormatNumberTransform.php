@@ -13,7 +13,7 @@ class FormatNumberTransform implements FormatNumberTransformInterface
     const DEFAULT_THOUSAND_SEPARATOR = ',';
     const DEFAULT_PRECISION = 3;
 
-    const FIELD_NAME_KEY = 'fieldName';
+    const FIELD_NAME_KEY = 'field';
     const PRECISION_KEY = 'precision';
     const THOUSAND_SEPARATOR_KEY = 'thousandSeparator';
 
@@ -26,7 +26,7 @@ class FormatNumberTransform implements FormatNumberTransformInterface
     function __construct(array $data)
     {
         if (!array_key_exists(self::FIELD_NAME_KEY, $data)) {
-            throw new InvalidArgumentException('"fieldName" is missing');
+            throw new InvalidArgumentException('"field name" is missing');
         }
 
         $this->fieldName = $data[self::FIELD_NAME_KEY];

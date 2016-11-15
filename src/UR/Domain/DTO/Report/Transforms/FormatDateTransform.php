@@ -10,9 +10,9 @@ use UR\Service\DTO\Collection;
 
 class FormatDateTransform implements FormatDateTransformInterface
 {
-    const FROM_FORMAT_KEY = 'fromFormat';
-    const TO_FORMAT_KEY = 'toFormat';
-    const FIELD_NAME_KEY = 'fieldName';
+    const FROM_FORMAT_KEY = 'from';
+    const TO_FORMAT_KEY = 'to';
+    const FIELD_NAME_KEY = 'field';
 
     protected $fromFormat;
 
@@ -23,7 +23,7 @@ class FormatDateTransform implements FormatDateTransformInterface
     function __construct(array $data)
     {
         if (!array_key_exists(self::TO_FORMAT_KEY, $data) || !array_key_exists(self::FROM_FORMAT_KEY, $data) || !array_key_exists(self::FIELD_NAME_KEY, $data)) {
-            throw new InvalidArgumentException('either "fromFormat" or "toFormat" or "fieldName" is missing');
+            throw new InvalidArgumentException('either "from" or "to" or "field" is missing');
         }
 
         $this->fieldName = $data[self::FIELD_NAME_KEY];
