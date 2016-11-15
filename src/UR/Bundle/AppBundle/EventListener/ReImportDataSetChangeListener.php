@@ -3,11 +3,14 @@
 namespace UR\Bundle\AppBundle\EventListener;
 
 
-use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\ModelInterface;
+use UR\Service\DataSet\FilterType;
+use UR\Service\DataSet\TransformType;
+use UR\Service\Parser\ImportUtils;
 use UR\Worker\Manager;
 
 /**
@@ -19,13 +22,8 @@ use UR\Worker\Manager;
  */
 class ReImportDataSetChangeListener
 {
-
-    protected $changedEntity;
-    protected $insertedEntity;
-    protected $removedEntity;
-
     /**
-     * @var array|ModelInterface[]
+     * @var array|DataSetInterface[]
      */
     protected $changedEntities = [];
 
@@ -54,66 +52,128 @@ class ReImportDataSetChangeListener
         if (count($this->changedEntities) < 1) {
             return;
         }
+
         $em = $args->getEntityManager();
         $uow = $em->getUnitOfWork();
 
+        // detect all changed fields
         foreach ($this->changedEntities as $entity) {
             if (!$entity instanceof DataSetInterface) {
                 continue;
             }
 
+            // detect changed metrics, dimensions
             $changedFields = $uow->getEntityChangeSet($entity);
-            $dataSetId = $entity->getId();
+            $deletedMetrics = [];
+            $deletedDimensions = [];
+            $newDimensions = [];
+            $newMetrics = [];
+
+            foreach ($changedFields as $field => $values) {
+                if (strcmp($field, 'dimensions') === 0) {
+                    array_diff($values[0], $values[1]);
+                    $deletedDimensions = array_diff_key($values[0], $values[1]);
+                    $newDimensions = array_diff_key($values[1], $values[0]);
+                }
+
+                if (strcmp($field, 'metrics') === 0) {
+                    array_diff($values[0], $values[1]);
+                    $deletedMetrics = array_diff_key($values[0], $values[1]);
+                    $newMetrics = array_diff_key($values[1], $values[0]);
+                }
+            }
+
+            $deletedFields = array_merge($deletedDimensions, $deletedMetrics);
+            $newFields = array_merge($newDimensions, $newMetrics);
+
+            // alter data_import table
+            $conn = $em->getConnection();
+            $importUtils = new ImportUtils();
+            $importUtils->alterDataSetTable($entity, $conn, $deletedFields, $newFields);
+
+            // delete all configs of connected dataSources related to deletedFields
+            $connectedDataSources = $entity->getConnectedDataSources();
+
+            foreach ($connectedDataSources as &$connectedDataSource) {
+                $this->deleteConfigForConnectedDataSource($connectedDataSource, $deletedFields);
+            }
+
+            $entity->setConnectedDataSources($connectedDataSources);
+            $em->merge($entity);
         }
 
         // reset for new onFlush event
         $this->changedEntities = [];
+        $em->flush();
     }
 
-    public function postPersist(LifecycleEventArgs $args)
+    /**
+     * delete Config For Connected DataSource
+     *
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param array $deletedFields
+     */
+    private function deleteConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, array $deletedFields)
     {
-        $entity = $args->getEntity();
-        $this->insertedEntity = $entity;
-    }
+        $mapFields = $connectedDataSource->getMapFields();
+        $requires = $connectedDataSource->getRequires();
+        $filters = $connectedDataSource->getFilters();
+        $transforms = $connectedDataSource->getTransforms();
 
-    public function postUpdate(LifecycleEventArgs $args)
-    {
-        $entity = $args->getEntity();
+        foreach ($deletedFields as $deletedField => $type) {
+            if (in_array($deletedField, $mapFields)) {
+                if (($key = array_search($deletedField, $mapFields)) !== false) {
+                    unset($mapFields[$key]);
+                }
+            }
 
-        if (!$entity instanceof DataSetInterface) {
-            return;
-        }
-        $em = $args->getEntityManager();
-        $uow = $em->getUnitOfWork();
-        $changedFields = $uow->getEntityChangeSet($entity);
-        foreach ($changedFields as $field => $values) {
-            if (strcmp($field, 'dimensions') === 0) {
-                array_diff($values[0], $values[1]);
-                $deletedDimensions = array_diff_key($values[0], $values[1]);
-                $newDimensions = array_diff_key($values[1], $values[0]);
+            if (in_array($deletedField, $requires)) {
+                if (($key = array_search($deletedField, $requires)) !== false) {
+                    unset($requires[$key]);
+                }
+            }
+
+            foreach ($filters as $key => $filter) {
+                if (strcmp($deletedField, $filter[FilterType::FIELD]) === 0) {
+                    unset($filters[$key]);
+                }
+            }
+
+            foreach ($transforms as $key => $transform) {
+                if (TransformType::isTransformSingleField($transform[TransformType::TRANSFORM_TYPE])) {
+                    if (strcmp($deletedField, $transform[TransformType::FIELD]) === 0) {
+                        unset($transforms[$key]);
+                    }
+                } else {
+                    if (TransformType::isGroupOrSortType($transform[TransformType::TYPE])) {
+                        foreach ($transform[TransformType::FIELDS] as $k => $value) {
+                            if (strcmp($value, $deletedField) === 0) {
+                                unset($transforms[$key][TransformType::FIELDS][$k]);
+                            }
+                        }
+                    }
+                    if (TransformType::isAddingType($transform[TransformType::TYPE])) {
+                        foreach ($transform[TransformType::FIELDS] as $k => $field) {
+                            if (strcmp($field[TransformType::FIELD], $deletedField) === 0) {
+                                unset($transforms[$key][$k]);
+                            }
+                        }
+
+                        if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
+                            foreach ($transform[TransformType::FIELDS] as $k => $field) {
+                                if (in_array($deletedField, $field[TransformType::COMPARISON])) {
+                                    unset($transforms[$key]);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-        foreach ($deletedDimensions as $deletedDimension) {
-            foreach ($entity->getConnectedDataSources() as $connectedDataSource) {
-                $mapFields = $connectedDataSource->getMapFields();
-                $requires = $connectedDataSource->getRequires();
-                $filters = $connectedDataSource->getFilters();
-                $transforms = $connectedDataSource->getTransforms();
-            }
-        }
 
-        $this->changedEntity = $entity;
+        $connectedDataSource->setMapFields($mapFields);
+        $connectedDataSource->setRequires($requires);
+        $connectedDataSource->setFilters($filters);
+        $connectedDataSource->setTransforms($transforms);
     }
-
-    public function postRemove(LifecycleEventArgs $args)
-    {
-        $entity = $args->getEntity();
-        $this->removedEntity = $entity;
-    }
-
-    public function removeDimensions()
-    {
-
-    }
-
 }
