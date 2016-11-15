@@ -33,20 +33,15 @@ class ReImportWhenNewEntryReceived
         $this->dataSourceEntryManager = $dataSourceEntryManager;
     }
 
-    function reImportWhenDataSetChange(StdClass $params)
+    function reImportWhenNewEntryReceived(StdClass $params)
     {
         $entryIds = $params->entryIds;
         foreach ($entryIds as $entryId) {
             /**@var DataSourceEntryInterface $dataSourceEntry */
             $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
-            $dataSets = $this->dataSetManager->getDataSetByDataSource($dataSourceEntry->getDataSource());
-            foreach ($dataSets as $dataSet) {
-                if ($dataSet === null) {
-                    throw new InvalidArgumentException('not found Dataset with this ID');
-                }
+            $connectedDataSources = $dataSourceEntry->getDataSource()->getConnectedDataSources();
 
-                $this->autoImport->autoCreateDataImport($dataSet, $dataSourceEntry);
-            }
+            $this->autoImport->autoCreateDataImport($connectedDataSources, $dataSourceEntry);
         }
     }
 }

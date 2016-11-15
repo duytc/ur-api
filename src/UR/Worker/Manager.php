@@ -27,10 +27,10 @@ class Manager
         $this->queue = $queue;
     }
 
-    public function reImportWhenDataSetChange($entryIds){
+    public function reImportWhenNewEntryReceived($entryIds){
         $params = new StdClass;
         $params->entryIds = $entryIds;
-        $this->queueTask('reImportWhenDataSetChange', $params);
+        $this->queueTask('reImportWhenNewEntryReceived', $params);
     }
 
     public function importDataWhenConnectedDataSourceChange($entryIds){
