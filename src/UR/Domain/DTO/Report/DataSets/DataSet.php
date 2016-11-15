@@ -8,16 +8,26 @@ use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Filters\NumberFilter;
 use UR\Domain\DTO\Report\Filters\TextFilter;
 use UR\Exception\InvalidArgumentException;
-use UR\Service\Report\ReportBuilderConstant;
 
 class DataSet implements DataSetInterface
 {
-    const DATA_SET_ID_KEY = 'dataSetId';
+    const DATA_SET_ID_KEY = 'dataSet';
     const FILTERS_KEY = 'filters';
     const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';
 
+    const FIELD_TYPE_FILTER_KEY = 'type';
+    const FILED_NAME_FILTER_KEY = 'field';
+    const DATE_FORMAT_FILTER_KEY = 'format';
+    const START_DATE_FILTER_KEY = 'startDate';
+    const END_DATE_FILTER_KEY = 'endDate';
 
+    const COMPARISON_TYPE_FILTER_KEY = 'comparison';
+    const COMPARISON_VALUE_FILTER_KEY = 'compareValue';
+
+    const DATE_FIELD_TYPE_FILTER_KEY = 'date';
+    const NUMBER_FIELD_TYPE_FILTER_KEY = 'number';
+    const TEXT_FIELD_TYPE_FILTER_KEY = 'text';
     /**
      * @var int
      */
@@ -69,53 +79,24 @@ class DataSet implements DataSetInterface
         $filterObjects = [];
         foreach ($allFilters as $filter) {
 
-            if (!property_exists($filter, ReportBuilderConstant::FIELD_TYPE_FILTER_KEY)) {
-                throw new \Exception(sprintf('Filter must have key = %s', ReportBuilderConstant::FIELD_TYPE_FILTER_KEY));
+            if (!array_key_exists(self::FIELD_TYPE_FILTER_KEY, $filter)) {
+                throw new \Exception(sprintf('Filter must have key = %s', self::FIELD_TYPE_FILTER_KEY));
             }
 
-            if ($filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} == ReportBuilderConstant::DATE_FIELD_TYPE_FILTER_KEY) {
+            $filterType = $filter[self::FIELD_TYPE_FILTER_KEY];
 
-                $filedName = property_exists($filter, ReportBuilderConstant::FIELD_NAME_KEY) ?
-                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY} : null;
-                $filedType = property_exists($filter, ReportBuilderConstant::FIELD_TYPE_FILTER_KEY) ?
-                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} : null;
-                $formatDate = property_exists($filter, ReportBuilderConstant::DATE_FORMAT_FILTER_KEY) ?
-                    $filter->{ReportBuilderConstant::DATE_FORMAT_FILTER_KEY} : null;
-                $startDate = property_exists($filter, ReportBuilderConstant::START_DATE_FILTER_KEY) ?
-                    $filter->{ReportBuilderConstant::START_DATE_FILTER_KEY} : null;
-                $endDate = property_exists($filter, ReportBuilderConstant::END_DATE_FILTER_KEY) ?
-                    $filter->{ReportBuilderConstant::END_DATE_FILTER_KEY} : null;
-
-
-                $filterObjects[] = new DateFilter($filedName, $filedType, $formatDate, $startDate, $endDate);
-            }
-
-            if ($filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} == ReportBuilderConstant::TEXT_FIELD_TYPE_FILTER_KEY) {
-
-                $fieldName = property_exists($filter, ReportBuilderConstant::FIELD_NAME_KEY) ?
-                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY} : null;
-                $fieldType = property_exists($filter, ReportBuilderConstant::FIELD_TYPE_FILTER_KEY) ?
-                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} : null;
-                $comparisonType = property_exists($filter, ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY) ?
-                    $filter->{ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY} : null;
-                $comparisonValue = property_exists($filter, ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY) ?
-                    $filter->{ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY} : null;
-
-                $filterObjects[] = new TextFilter($fieldName, $fieldType, $comparisonType, $comparisonValue);
-            }
-
-            if ($filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} == ReportBuilderConstant::NUMBER_FIELD_TYPE_FILTER_KEY) {
-
-                $fieldName = property_exists($filter, ReportBuilderConstant::FIELD_NAME_KEY) ?
-                    $filter->{ReportBuilderConstant::FIELD_NAME_KEY} : null;
-                $fieldType = property_exists($filter, ReportBuilderConstant::FIELD_TYPE_FILTER_KEY) ?
-                    $filter->{ReportBuilderConstant::FIELD_TYPE_FILTER_KEY} : null;
-                $comparisonType = property_exists($filter, ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY) ?
-                    $filter->{ReportBuilderConstant::COMPARISON_TYPE_FILTER_KEY} : null;
-                $comparisonValue = property_exists($filter, ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY) ?
-                    $filter->{ReportBuilderConstant::COMPARISON_VALUE_FILTER_KEY} : null;
-
-                $filterObjects[] = new NumberFilter($fieldName, $fieldType, $comparisonType, $comparisonValue);
+            switch ($filterType) {
+                case self::DATE_FIELD_TYPE_FILTER_KEY:
+                    $filterObjects[] = new DateFilter($filter);
+                    break;
+                case self::TEXT_FIELD_TYPE_FILTER_KEY:
+                    $filterObjects[] = new TextFilter($filter);
+                    break;
+                case self:: NUMBER_FIELD_TYPE_FILTER_KEY:
+                    $filterObjects[] = new NumberFilter($filter);
+                    break;
+                default:
+                    break;
             }
         }
 

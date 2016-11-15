@@ -4,8 +4,16 @@
 namespace UR\Domain\DTO\Report\Filters;
 
 
+use Symfony\Component\Config\Definition\Exception\Exception;
+
 class DateFilter extends AbstractFilter implements DateFilterInterface
 {
+    const FIELD_TYPE_FILTER_KEY = 'type';
+    const FILED_NAME_FILTER_KEY = 'field';
+    const DATE_FORMAT_FILTER_KEY = 'format';
+    const START_DATE_FILTER_KEY = 'startDate';
+    const END_DATE_FILTER_KEY = 'endDate';
+
     /**
      * @var string
      */
@@ -19,20 +27,26 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
     protected $endDate;
 
     /**
-     * DateFilter constructor.
-     * @param string $fieldName
-     * @param int $fieldType
-     * @param string $dateFormat
-     * @param $startDate
-     * @param $endDate
+     * @param array $dateFilter
      */
-    public function __construct($fieldName, $fieldType, $dateFormat, $startDate, $endDate)
+
+    public function __construct(array $dateFilter)
     {
-        $this->fieldName = $fieldName;
-        $this->fieldType = $fieldType;
-        $this->dateFormat = $dateFormat;
-        $this->startDate = $startDate;
-        $this->endDate = $endDate;
+        if (!array_key_exists(self::FIELD_TYPE_FILTER_KEY, $dateFilter)
+            || !array_key_exists(self::FILED_NAME_FILTER_KEY, $dateFilter)
+            || !array_key_exists(self::DATE_FORMAT_FILTER_KEY, $dateFilter)
+            || !array_key_exists(self::START_DATE_FILTER_KEY, $dateFilter)
+            || !array_key_exists(self::END_DATE_FILTER_KEY, $dateFilter)
+        ) {
+            throw new Exception (sprintf('Either parameters: %s, %s, %s, %s, %s not exits in date filter', self::FIELD_TYPE_FILTER_KEY, self::FILED_NAME_FILTER_KEY,
+                self::DATE_FORMAT_FILTER_KEY, self::START_DATE_FILTER_KEY, self::END_DATE_FILTER_KEY));
+        }
+
+        $this->fieldName = $dateFilter[self::FILED_NAME_FILTER_KEY];
+        $this->fieldType = $dateFilter[self::FIELD_TYPE_FILTER_KEY];
+        $this->dateFormat = $dateFilter[self::DATE_FORMAT_FILTER_KEY];
+        $this->startDate = $dateFilter[self::START_DATE_FILTER_KEY];
+        $this->endDate = $dateFilter[self::END_DATE_FILTER_KEY];
     }
 
     /**

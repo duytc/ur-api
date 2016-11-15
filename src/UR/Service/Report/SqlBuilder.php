@@ -64,6 +64,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         $qb = $this->connection->createQueryBuilder();
+
         foreach ($fields as $field) {
             $qb->addSelect($field);
         }

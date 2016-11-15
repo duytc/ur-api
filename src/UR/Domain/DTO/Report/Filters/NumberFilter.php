@@ -12,24 +12,34 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
     const COMPARISON_TYPE_GREATER = 4;
     const COMPARISON_TYPE_GREATER_OR_EQUAL = 5;
 
+    const FIELD_TYPE_FILTER_KEY = 'type';
+    const FILED_NAME_FILTER_KEY = 'field';
+    const COMPARISON_TYPE_FILTER_KEY = 'comparison';
+    const COMPARISON_VALUE_FILTER_KEY = 'compareValue';
 
     protected $comparisonType;
 
     protected $comparisonValue;
 
     /**
-     * TextFilter constructor.
-     * @param $fieldName
-     * @param $fieldType
-     * @param $comparisonType
-     * @param $comparisonValue
+     * @param array $numberFilter
+     * @throws \Exception
      */
-    public function __construct($fieldName, $fieldType, $comparisonType, $comparisonValue)
+    public function __construct(array $numberFilter)
     {
-        $this->fieldName = $fieldName;
-        $this->fieldType = $fieldType;
-        $this->comparisonType = $comparisonType;
-        $this->comparisonValue = $comparisonValue;
+        if (!array_key_exists(self::FILED_NAME_FILTER_KEY, $numberFilter)
+            || !array_key_exists(self::FIELD_TYPE_FILTER_KEY, $numberFilter)
+            || !array_key_exists(self::COMPARISON_TYPE_FILTER_KEY, $numberFilter)
+            || !array_key_exists(self::COMPARISON_VALUE_FILTER_KEY, $numberFilter)
+        ) {
+            throw new \Exception(sprintf('Either parameters: %s, %s, %s, %s, %s does not exits in text filter',
+                self::FILED_NAME_FILTER_KEY, self::FIELD_TYPE_FILTER_KEY, self::COMPARISON_TYPE_FILTER_KEY, self::COMPARISON_VALUE_FILTER_KEY));
+        }
+
+        $this->fieldName = $numberFilter[self::FILED_NAME_FILTER_KEY];
+        $this->fieldType = $numberFilter[self::FIELD_TYPE_FILTER_KEY];
+        $this->comparisonType = $numberFilter[self::COMPARISON_TYPE_FILTER_KEY];
+        $this->comparisonValue = $numberFilter[self::COMPARISON_VALUE_FILTER_KEY];
     }
 
     /**
