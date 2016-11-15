@@ -16,6 +16,6 @@ UR\Entity\Core\Alert:
         createdDate:
             expose: true
             groups: [alert.detail, alert.summary]
-        dataSourceEntry:
+        publisher:
             expose: true
-            groups: [alert.detail]
+            groups: [alert.detail, alert.summary]

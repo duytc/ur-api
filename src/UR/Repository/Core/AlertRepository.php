@@ -6,12 +6,15 @@ use Doctrine\ORM\EntityRepository;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
+use UR\Service\Alert\ProcessAlert;
 
 class AlertRepository extends EntityRepository implements AlertRepositoryInterface
 {
     public function getAlertsForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null)
     {
         $qb = $this->createQueryBuilder('a')
+            ->leftJoin('a.publisher', 'p')
+            ->select('a, p')
             ->where('a.publisher = :publisher')
             ->setParameter('publisher', $publisher);
 
