@@ -2,19 +2,21 @@
 
 namespace UR\Model\Core;
 
+use UR\Model\User\Role\PublisherInterface;
+
 class Alert implements AlertInterface
 {
     protected $id;
-    protected $type;
+    protected $code;
     protected $isRead;
     protected $title;
     protected $message;
     protected $createdDate;
 
     /**
-     * @var DataSourceEntryInterface
+     * @var PublisherInterface
      */
-    protected $dataSourceEntry;
+    protected $publisher;
 
     public function __construct()
     {
@@ -38,19 +40,21 @@ class Alert implements AlertInterface
     }
 
     /**
-     * @inheritdoc
+     * @return mixed
      */
-    public function getType()
+    public function getCode()
     {
-        return $this->type;
+        return $this->code;
     }
 
     /**
-     * @inheritdoc
+     * @param mixed $code
+     * @return $this
      */
-    public function setType($type)
+    public function setCode($code)
     {
-        $this->type = $type;
+        $this->code = $code;
+        return $this;
     }
 
     /**
@@ -67,22 +71,6 @@ class Alert implements AlertInterface
     public function setIsRead($isRead)
     {
         $this->isRead = $isRead;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getTitle()
-    {
-        return $this->title;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setTitle($title)
-    {
-        $this->title = $title;
     }
 
     /**
@@ -120,16 +108,16 @@ class Alert implements AlertInterface
     /**
      * @inheritdoc
      */
-    public function getDataSourceEntry()
+    public function getPublisher()
     {
-        return $this->dataSourceEntry;
+        return $this->publisher;
     }
 
     /**
      * @inheritdoc
      */
-    public function setDataSourceEntry($dataSourceEntry)
+    public function setPublisher($publisher)
     {
-        $this->dataSourceEntry = $dataSourceEntry;
+        $this->publisher = $publisher;
     }
 }

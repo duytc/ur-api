@@ -4,7 +4,7 @@ UR\Entity\Core\Alert:
         id:
             expose: true
             groups: [alert.detail, alert.summary]
-        type:
+        code:
             expose: true
             groups: [alert.detail, alert.summary]
         isRead:
@@ -16,9 +16,6 @@ UR\Entity\Core\Alert:
         createdDate:
             expose: true
             groups: [alert.detail, alert.summary]
-        title:
+        publisher:
             expose: true
             groups: [alert.detail, alert.summary]
-        dataSourceEntry:
-            expose: true
-            groups: [alert.detail]

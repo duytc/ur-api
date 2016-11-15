@@ -110,4 +110,14 @@ interface DataSourceInterface extends ModelInterface
      * @param mixed $enable
      */
     public function setEnable($enable);
+
+    /**
+     * @return ConnectedDataSourceInterface[]
+     */
+    public function getConnectedDataSources();
+
+    /**
+     * @param ConnectedDataSourceInterface[] $connectedDataSources
+     */
+    public function setConnectedDataSources($connectedDataSources);
 }

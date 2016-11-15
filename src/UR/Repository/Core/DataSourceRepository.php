@@ -95,15 +95,29 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
         return $qb->getQuery()->getResult();
     }
 
+    public function getDataSourceNotInByDataSetQuery(DataSetInterface $dataSet)
+    {
+        $dataSources = $this->getDataSourceByDataSet($dataSet);
+        $dataSourceIds = [];
+        foreach ($dataSources as $dataSource) {
+            $dataSourceIds[] = $dataSource->getId();
+        }
+
+        $qb = $this->createQueryBuilder('ds')
+            ->where('ds.publisher = :publisher')
+            ->setParameter('publisher', $dataSet->getPublisher());
+
+        $qb
+            ->andWhere('ds.id NOT IN (:dataSourceIds)')
+            ->setParameter('dataSourceIds', implode($dataSourceIds, ', '));
+
+        return $qb;
+    }
     public function getDataSourceNotInByDataSet(DataSetInterface $dataSet)
     {
-        $inQb = $this->getDataSourceByDataSetQuery($dataSet);
+        $qb = $this->getDataSourceNotInByDataSetQuery($dataSet);
 
-        $allQb = $this->getDataSourcesForPublisherQuery($dataSet->getPublisher());
-
-        $notIn = array_diff($allQb->getQuery()->getResult(), $inQb->getQuery()->getResult());
-
-        return $notIn;
+        return $qb->getQuery()->getResult();
     }
 
     /**

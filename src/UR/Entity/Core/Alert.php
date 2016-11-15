@@ -2,22 +2,23 @@
 
 namespace UR\Entity\Core;
 
+
 use UR\Model\Core\Alert as AlertModel;
-use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\User\UserEntityInterface;
 
 class Alert extends AlertModel
 {
     protected $id;
-    protected $type;
+    protected $code;
     protected $isRead;
     protected $title;
     protected $message;
     protected $createdDate;
 
     /**
-     * @var DataSourceEntryInterface
+     * @var UserEntityInterface
      */
-    protected $dataSourceEntry;
+    protected $publisher;
 
     /**
      * @inheritdoc

@@ -4,7 +4,6 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use UR\Entity\Core\Alert;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -13,17 +12,22 @@ use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\DataSourceEntryRepository;
 use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use ReflectionClass;
-use UR\Repository\Core\DataSourceRepository;
+use UR\Service\Alert\AlertParams;
+use UR\Service\Alert\ProcessAlert;
+use UR\Worker\Manager;
 
 class DataSourceEntryManager implements DataSourceEntryManagerInterface
 {
     protected $om;
     protected $repository;
 
-    public function __construct(ObjectManager $om, DataSourceEntryRepositoryInterface $repository)
+    protected $workerManager;
+
+    public function __construct(ObjectManager $om, DataSourceEntryRepositoryInterface $repository, Manager $workerManager)
     {
         $this->om = $om;
         $this->repository = $repository;
+        $this->workerManager = $workerManager;
     }
 
     /**
@@ -111,28 +115,24 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
                 $this->save($dataSourceEntry);
 
-                $alertSetting = $dataSource->getAlertSetting();
-                if (in_array(DataSourceRepository::DATA_RECEIVED, $alertSetting)) {
-                    $alert = new Alert();
-                    $alert->setDataSourceEntry($dataSourceEntry);
-                    $alert->setTitle(sprintf('Upload file successfully'));
-                    $alert->setType(sprintf('info'));
-                    $alert->setMessage(sprintf('File %s of %s is uploaded', $file_name . "." . $file->getClientOriginalExtension(), $dataSourceEntry->getDataSource()->getName()));
-                    $this->om->persist($alert);
-                    $this->om->flush();
-                }
+                $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD;
+                $publisherId = $dataSource->getPublisher()->getId();
+                $params = array (
+                    ProcessAlert::FILE_NAME => $file_name,
+                    ProcessAlert::DATA_SOURCE_NAME => $dataSource->getName(),
+                    ProcessAlert::FORMAT_FILE => $file->getClientOriginalExtension()
+                );
+                $this->workerManager->processAlert($code, $publisherId, $params);
 
                 $result[$origin_name] = 'success';
             } else {
-                $alertSetting = $dataSource->getAlertSetting();
-                if (in_array(DataSourceRepository::WRONG_FORMAT, $alertSetting)) {
-                    $alert = new Alert();
-                    $alert->setTitle(sprintf('Upload file failure'));
-                    $alert->setType(sprintf('error'));
-                    $alert->setMessage(sprintf('File %s is not uploaded', $file_name . "." . $file->getClientOriginalExtension()));
-                    $this->om->persist($alert);
-                    $this->om->flush();
-                }
+                $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT;
+                $publisherId = $dataSource->getPublisher()->getId();
+                $params = array (
+                    ProcessAlert::FILE_NAME => $file_name,
+                    ProcessAlert::FORMAT_FILE => $file->getClientOriginalExtension()
+                );
+                $this->workerManager->processAlert($code, $publisherId, $params);
 
                 throw new \Exception(sprintf("File %s is not valid", $origin_name));
             }

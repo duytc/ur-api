@@ -4,6 +4,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -77,6 +78,27 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
             }
         }
         return $qb;
+    }
+
+    public function getDataSetByDataSourceQuery(DataSourceInterface $dataSource)
+    {
+        $qb = $this->createQueryBuilder('ds')
+            ->join('ds.connectedDataSources', 'cds')
+            ->where('cds.dataSource = :dataSource')
+            ->setParameter('dataSource', $dataSource)
+            ->andWhere('ds.publisher = :publisherId')
+            ->setParameter('publisherId', $dataSource->getPublisherId());
+        return $qb;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSetByDataSource(DataSourceInterface $dataSource)
+    {
+        $qb = $this->getDataSetByDataSourceQuery($dataSource);
+
+        return $qb->getQuery()->getResult();
     }
 
     private function createQueryBuilderForUser(UserRoleInterface $user)

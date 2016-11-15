@@ -27,11 +27,25 @@ class Manager
         $this->queue = $queue;
     }
 
-    public function autoCreateDataImport($dataSetId){
+    public function reImportWhenNewEntryReceived($entryIds){
         $params = new StdClass;
-        $params->$dataSetId = $dataSetId;
+        $params->entryIds = $entryIds;
+        $this->queueTask('reImportWhenNewEntryReceived', $params);
+    }
 
-        $this->queueTask('autoCreateDataImport', $params);
+    public function importDataWhenConnectedDataSourceChange($entryIds){
+        $params = new StdClass;
+        $params->entryIds = $entryIds;
+        $this->queueTask('importDataWhenConnectedDataSourceChange', $params);
+    }
+
+    public function processAlert($code, $publisherId, array $parameters){
+        $params = new StdClass;
+        $params->code = $code;
+        $params->publisherId = $publisherId;
+        $params->params = $parameters;
+
+        $this->queueTask('processAlert', $params);
     }
 
     /**

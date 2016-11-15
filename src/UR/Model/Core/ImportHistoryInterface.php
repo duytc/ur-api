@@ -27,12 +27,22 @@ interface ImportHistoryInterface extends ModelInterface
     public function setDescription($description);
 
     /**
-     * @return ConnectedDataSourceInterface
+     * @return DataSetInterface
      */
-    public function getConnectedDataSource();
+    public function getDataSet();
 
     /**
-     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param DataSetInterface $dataSet
      */
-    public function setConnectedDataSource($connectedDataSource);
+    public function setDataSet($dataSet);
+
+    /**
+     * @return DataSourceEntryInterface
+     */
+    public function getDataSourceEntry();
+
+    /**
+     * @param DataSourceEntryInterface $dataSourceEntry
+     */
+    public function setDataSourceEntry($dataSourceEntry);
 }

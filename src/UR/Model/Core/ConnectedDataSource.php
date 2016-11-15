@@ -9,6 +9,7 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $filters;
     protected $transforms;
     protected $requires;
+    protected $alertSetting;
 
     /**
      * @var DataSourceInterface
@@ -94,6 +95,22 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setRequires($requires)
     {
         $this->requires = $requires;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getAlertSetting()
+    {
+        return $this->alertSetting;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setAlertSetting($alertSetting)
+    {
+        $this->alertSetting = $alertSetting;
     }
 
     /**

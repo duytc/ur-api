@@ -12,12 +12,10 @@ UR\Entity\Core\Alert:
             type: boolean
             option:
                 default: false
-        title:
-            type: string
-        type:
-            type: string
+        code:
+            type: integer
         message:
-            type: string
+            type: json_array
             nullable: true
         createdDate:
             type: datetime
@@ -25,10 +23,5 @@ UR\Entity\Core\Alert:
                 timestampable:
                     on: create
     manyToOne:
-        dataSourceEntry:
-            targetEntity: UR\Entity\Core\DataSourceEntry
-            inversedBy: Alert
-            joinColumn:
-                name: data_source_entry_id
-                referencedColumnName: id
-                onDelete: CASCADE
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
