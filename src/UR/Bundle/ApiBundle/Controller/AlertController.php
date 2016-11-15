@@ -180,6 +180,10 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
         $delete =  filter_var($request->query->get('delete', null), FILTER_VALIDATE_BOOLEAN);
         $status = filter_var($request->query->get('status', null), FILTER_VALIDATE_BOOLEAN);
 
+        if (!$ids) {
+            throw new \Exception('No alert is selected');
+        }
+
         if ($delete === true) {
             return $alertManager->deleteAlertsByIds($ids);
         } else if ($status === true) {
