@@ -40,7 +40,6 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
             $orX = $qb->expr()->orX();
             $conditions = array(
                 $qb->expr()->like('a.id', ':searchKey'),
-                $qb->expr()->like('a.title', ':searchKey'),
                 $qb->expr()->like('a.code', ':searchKey')
             );
             $orX->addMultiple($conditions);
