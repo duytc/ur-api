@@ -7,7 +7,6 @@ use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Model\ModelInterface;
 use UR\Service\DataSet\FilterType;
 use UR\Service\DataSet\TransformType;
 use UR\Service\Parser\ImportUtils;

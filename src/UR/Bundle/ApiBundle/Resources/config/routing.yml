@@ -47,3 +47,8 @@ api_connected_data_source:
     type: rest
     resource: UR\Bundle\ApiBundle\Controller\ConnectedDataSourceController
     name_prefix:  api_1_
+
+api_import_history:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ImportHistoryController
+    name_prefix:  api_1_

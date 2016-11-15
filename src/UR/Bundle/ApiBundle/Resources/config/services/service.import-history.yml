@@ -1,8 +1,16 @@
 parameters:
     # entity class
     ur.entity.core.import_history.class: UR\Entity\Core\ImportHistory
+    # form class
+    ur.form.type.core.import_history.class: UR\Form\Type\ImportHistoryFormType
 
 services:
+    ur_api.handler.import_history:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.import_history
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
 
     ur.repository.import_history:
         class: UR\Repository\Core\ImportHistoryRepositoryInterface
@@ -16,3 +24,37 @@ services:
         arguments:
             - @doctrine.orm.entity_manager
             - @ur.repository.import_history
+
+    ur.form.type.import_history:
+        class: %ur.form.type.core.import_history.class%
+        tags:
+            - { name: form.type, alias: ur_form_import_history }
+
+    ur.handler.handlers.import_history.abstract:
+        class: UR\Handler\Handlers\Core\ImportHistoryHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.import_history
+            - @ur.domain_manager.import_history
+
+    ur.handler.handlers.import_history.admin:
+        class: UR\Handler\Handlers\Core\Admin\ImportHistoryHandler
+        parent: ur.handler.handlers.import_history.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.import_history.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\ImportHistoryHandler
+        parent: ur.handler.handlers.import_history.abstract
+        public: false
+
+    ur.handler.handler_manager.import_history:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.import_history.class%
+            -
+                - @ur.handler.handlers.import_history.admin
+                - @ur.handler.handlers.import_history.publisher
