@@ -13,41 +13,56 @@ class ProcessAlert implements ProcessAlertInterface
     const NEW_DATA_IS_RECEIVED_FROM_UPLOAD = 100;
     const NEW_DATA_IS_RECEIVED_FROM_EMAIL = 101;
     const NEW_DATA_IS_RECEIVED_FROM_API = 102;
-    const NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT = 103;
-    const NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT = 104;
+    const NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT = 103;
+    const NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT = 104;
+    const NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT = 105;
     const NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE = 200;
-    const DATA_IMPORT_FAILS = 201;
+    const DATA_IMPORT_REQUIRED_FAIL = 201;
+    const DATA_IMPORT_FILTER_FAIL = 202;
+    const DATA_IMPORT_TRANSFORM_FAIL = 203;
 
     const DATA_SOURCE_MODULE = 1;
     const DATA_SET_MODULE = 2;
     const UNSUPPORTED_MODULE = 0;
+
+    const FILE_NAME = 'fileName';
+    const DATA_SOURCE_NAME = 'dataSourceName';
+    const FORMAT_FILE = 'formatFile';
+    const DATA_SET_NAME = 'dataSetName';
+    const DATA_SOURCE_ENTRY_PATH = 'dataSourceEntryPath';
+    const ROW = 'row';
+    const COLUMN = 'column';
+
     /**
      * Status codes translation table.
      *
      * @var array
      */
     public static $alertCodes = array(
-        100 => 'New data is received from Upload',      // error codes for dataSource
-        101 => 'New data is received from Email',
-        102 => 'New data is received from API',
-        103 => 'New data is received from Email in wrong format',
-        104 => 'New data is received API in wrong format',
-        200 => 'New data is add to the connected data source',              // error codes for dataSet
-        201 => 'Data import fails',
+        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD => 'New data is received from Upload',      // error codes for dataSource
+        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_EMAIL => 'New data is received from Email',
+        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_API => 'New data is received from API',
+        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT => 'New data is received from Upload in wrong format',
+        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT => 'New data is received from Email in wrong format',
+        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT => 'New data is received API in wrong format',
+        ProcessAlert::NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE => 'New data is add to the connected data source',              // error codes for dataSet
+        ProcessAlert::DATA_IMPORT_REQUIRED_FAIL => 'Data import required fail',
+        ProcessAlert::DATA_IMPORT_FILTER_FAIL => 'Data import filter fail',
+        ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL => 'Data import transform fail'
     );
 
     public static $datSourceErrorParams = array(
-        'dataSourceName' => 'require',
-        'dataEntryName' => 'require',
-        'formatEntryName' => 'option'
+        ProcessAlert::FILE_NAME => 'require',
+        ProcessAlert::DATA_SOURCE_NAME => 'option',
+        ProcessAlert::FORMAT_FILE => 'require'
     );
 
     public static $datSetErrorParams = array(
-        'dataSetName' => 'require',
-        'dataSourceName' => 'require',
-        'dataSourceEntryName' => 'option',
-        'row' => 'option',
-        'column' => 'option'
+        ProcessAlert::DATA_SET_NAME => 'require',
+        ProcessAlert::DATA_SOURCE_NAME => 'require',
+        ProcessAlert::DATA_SOURCE_ENTRY_PATH => 'require',
+        ProcessAlert::ROW => 'option',
+        ProcessAlert::COLUMN => 'option'
     );
 
     protected $alertManager;

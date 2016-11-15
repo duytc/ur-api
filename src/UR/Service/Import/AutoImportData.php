@@ -11,7 +11,7 @@ use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Entity\Core\ImportHistory;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
-use UR\Service\Alert\AlertParams;
+use UR\Service\Alert\ProcessAlert;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
@@ -93,10 +93,12 @@ class AutoImportData implements AutoImportDataInterface
         $connectedDataSources = $dataSourceEntry->getDataSource()->getConnectedDataSources();
         foreach ($connectedDataSources as $connectedDataSource) {
             // to do alert
-            $alertParams = array(
-                AlertParams::CODE => AlertParams::IMPORT_DATA_SUCCESS,
-                AlertParams::DATA_SOURCE_ENTRY => $dataSourceEntry->getId(),
-                AlertParams::CONNECTED_DATA_SOURCE => $connectedDataSource->getId(),
+            $code = ProcessAlert::NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE;
+            $publisherId = $dataSourceEntry->getDataSource()->getPublisherId();
+            $params = array (
+                ProcessAlert::DATA_SET_NAME => $dataSet->getName(),
+                ProcessAlert::DATA_SOURCE_NAME => $dataSourceEntry->getDataSource()->getName(),
+                ProcessAlert::DATA_SOURCE_ENTRY_PATH => $dataSourceEntry->getPath()
             );
 
             $importUtils->mappingFile($connectedDataSource, $parserConfig, $file);
@@ -114,11 +116,10 @@ class AutoImportData implements AutoImportDataInterface
             }
 
             if (!$validRequires) {
-                $alertParams[AlertParams::CODE] = AlertParams::IMPORT_DATA_FAILURE;
-                $alertParams[AlertParams::ERROR] = AlertParams::REQUIRE_FAIL_IMPORT;
-                $this->workerManager->processAlert($alertParams);
-                continue;
                 // to do alert
+                $code = ProcessAlert::DATA_IMPORT_REQUIRED_FAIL;
+                $this->workerManager->processAlert($code, $publisherId, $params);
+                continue;
             }
 
             //filter
@@ -132,11 +133,10 @@ class AutoImportData implements AutoImportDataInterface
 
             if (is_array($collectionParser)) {
                 // to do alert
-                $alertParams[AlertParams::CODE] = AlertParams::IMPORT_DATA_FAILURE;
-                $alertParams[AlertParams::ERROR] = $collectionParser[AlertParams::CODE];
-                $alertParams[AlertParams::ROW] = $collectionParser[AlertParams::ROW];
-                $alertParams[AlertParams::COLUMN] = $collectionParser[AlertParams::COLUMN];
-                $this->workerManager->processAlert($alertParams);
+                $code = $collectionParser['error'];
+                $params[ProcessAlert::ROW] = $collectionParser[ProcessAlert::ROW];
+                $params[ProcessAlert::COLUMN] = $collectionParser[ProcessAlert::COLUMN];
+                $this->workerManager->processAlert($code, $publisherId, $params);
                 continue;
             }
 
@@ -145,9 +145,9 @@ class AutoImportData implements AutoImportDataInterface
             $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
             $importHistoryEntity->setDataSet($dataSet);
             $this->importHistoryManager->save($importHistoryEntity);
-            // to do alert
             $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
-            $this->workerManager->processAlert($alertParams);
+            // to do alert
+            $this->workerManager->processAlert($code, $publisherId, $params );
         }
     }
 }

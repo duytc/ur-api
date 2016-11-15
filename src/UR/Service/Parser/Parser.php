@@ -4,6 +4,7 @@ namespace UR\Service\Parser;
 
 use UR\Model\Core\AlertInterface;
 use UR\Service\Alert\AlertParams;
+use UR\Service\Alert\ProcessAlert;
 use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
@@ -46,9 +47,9 @@ class Parser implements ParserInterface
                 foreach ($filters as $filter) {
                     $filterResult = $filter->filter($row[$column]);
                     if ($filterResult > 1) {
-                        return array(AlertParams::ERROR => AlertParams::FILTER_FAIL_IMPORT,
-                            AlertParams::ROW => $cur_row + 2,
-                            AlertParams::COLUMN => $column);
+                        return array('error' => ProcessAlert::DATA_IMPORT_FILTER_FAIL,
+                            'row' => $cur_row + 2,
+                            'column' => $column);
                     } else {
                         $isValidFilter = $isValidFilter & $filterResult;
                     }
@@ -69,9 +70,9 @@ class Parser implements ParserInterface
                 foreach ($transforms as $transform) {
                     $row[$column] = $transform->transform($row[$column]);
                     if (!$row[$column]) {
-                        return array(AlertParams::ERROR => AlertParams::TRANSFORM_FAIL_IMPORT,
-                            AlertParams::ROW => $cur_row + 2,
-                            AlertParams::COLUMN => $column);
+                        return array('error' => ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL,
+                            'row' => $cur_row + 2,
+                            'column' => $column);
                     }
                 }
             }
