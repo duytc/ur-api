@@ -22,6 +22,6 @@ class AlertVoter extends EntityVoterAbstract
      */
     protected function isPublisherActionAllowed($alert, UserEntityInterface $user, $action)
     {
-        return $user->getId() == $alert->getDataSourceEntry()->getDataSource()->getPublisherId();
+        return $user->getId() == $alert->getPublisher()->getId();
     }
 }

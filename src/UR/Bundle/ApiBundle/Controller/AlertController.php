@@ -21,7 +21,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     /**
      * Get all alerts
      *
-     * @Rest\View(serializerGroups={"alert.summary","user.summary"})
+     * @Rest\View(serializerGroups={"alert.summary", "user.summary"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
@@ -60,7 +60,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     /**
      * Get a single alert group for the given id
      *
-     * @Rest\View(serializerGroups={"alert.detail"})
+     * @Rest\View(serializerGroups={"alert.detail", "user.summary"})
      *
      * @ApiDoc(
      *  section = "Alert",
@@ -179,6 +179,10 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
         $ids = $params['ids'];
         $delete =  filter_var($request->query->get('delete', null), FILTER_VALIDATE_BOOLEAN);
         $status = filter_var($request->query->get('status', null), FILTER_VALIDATE_BOOLEAN);
+
+        if (!$ids) {
+            throw new \Exception('No alert is selected');
+        }
 
         if ($delete === true) {
             return $alertManager->deleteAlertsByIds($ids);

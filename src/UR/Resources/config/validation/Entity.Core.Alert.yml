@@ -10,7 +10,3 @@ UR\Entity\Core\Alert:
 #            -
 #        createdDate:
 #            -
-        dataSourceEntry:
-            - NotBlank:
-                message: "DataSource Entry should not be blank"
-            - Valid: ~
