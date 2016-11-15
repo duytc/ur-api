@@ -97,6 +97,11 @@ class ProcessAlert implements ProcessAlertInterface
         $this->alertManager->save($alert);
     }
 
+    /**
+     * @param $alertCode
+     * @param $params
+     * @throws \Exception
+     */
     protected function validateParams($alertCode, $params)
     {
         $caller = $this->getCallerFromAlertCode($alertCode);

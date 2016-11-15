@@ -33,8 +33,6 @@ class AlertWorker implements AlertWorkerInterface
         $publisherId = $inputAlert->publisherId;
         $params = $inputAlert->params;
 
-        var_dump($params);
-
         $this->alert->createAlert($code, $publisherId, (array)$params);
     }
 }
