@@ -5,6 +5,7 @@ namespace UR\Model\Core;
 
 
 use UR\Model\ModelInterface;
+use UR\Model\User\Role\PublisherInterface;
 
 interface ReportViewInterface extends ModelInterface
 {
@@ -51,4 +52,15 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setTransforms($transform);
+
+    /**
+     * @return PublisherInterface
+     */
+    public function getPublisher();
+
+    /**
+     * @param PublisherInterface $publisher
+     * @return self
+     */
+    public function setPublisher($publisher);
 }

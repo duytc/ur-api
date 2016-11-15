@@ -4,6 +4,8 @@
 namespace UR\Model\Core;
 
 
+use UR\Model\User\Role\PublisherInterface;
+
 class ReportView implements ReportViewInterface
 {
     /**
@@ -30,6 +32,11 @@ class ReportView implements ReportViewInterface
      * @var array
      */
     protected $transforms;
+
+    /**
+     * @var PublisherInterface
+     */
+    protected $publisher;
 
     /**
      * @return int
@@ -108,6 +115,24 @@ class ReportView implements ReportViewInterface
     public function setTransforms($transforms)
     {
         $this->transforms = $transforms;
+        return $this;
+    }
+
+    /**
+     * @return PublisherInterface
+     */
+    public function getPublisher()
+    {
+        return $this->publisher;
+    }
+
+    /**
+     * @param PublisherInterface $publisher
+     * @return self
+     */
+    public function setPublisher($publisher)
+    {
+        $this->publisher = $publisher;
         return $this;
     }
 }

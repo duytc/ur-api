@@ -22,7 +22,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     /**
      * Get all report views
      *
-     * @Rest\View(serializerGroups={"report_view.summary"})
+     * @Rest\View(serializerGroups={"report_view.summary", "user.summary"})
      *
      * @ApiDoc(
      *  section = "ReportView",
@@ -42,7 +42,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     /**
      * Get a single report view group for the given id
      *
-     * @Rest\View(serializerGroups={"report_view.detail"})
+     * @Rest\View(serializerGroups={"report_view.detail", "user.summary"})
      *
      * @ApiDoc(
      *  section = "ReportView",

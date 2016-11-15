@@ -12,4 +12,6 @@ class ReportView extends ReportViewModel
     protected $name;
     protected $transform;
     protected $createdDate;
+
+    protected $publisher;
 }

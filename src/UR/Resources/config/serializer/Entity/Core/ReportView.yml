@@ -16,3 +16,6 @@ UR\Entity\Core\ReportView:
         dataSets:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        publisher:
+            expose: true
+            groups: [report_view.detail, report_view.summary]

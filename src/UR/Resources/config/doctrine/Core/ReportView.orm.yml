@@ -25,3 +25,7 @@ UR\Entity\Core\ReportView:
             gedmo:
                 timestampable:
                     on: create
+
+    manyToOne:
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
