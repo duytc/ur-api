@@ -6,6 +6,7 @@ namespace UR\Bundle\AppBundle\EventListener;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\ModelInterface;
 use UR\Worker\Manager;
 
@@ -21,9 +22,7 @@ class ConnectedDataSourceChangeListener
     /**
      * @var array|ModelInterface[]
      */
-    protected $changedEntity;
     protected $insertedEntity;
-    protected $removedEntity;
 
     /** @var Manager */
     private $workerManager;
@@ -36,8 +35,6 @@ class ConnectedDataSourceChangeListener
     public function postFlush(PostFlushEventArgs $args)
     {
         $this->importWhenInsertOrUpdate($this->insertedEntity);
-        $this->importWhenInsertOrUpdate($this->changedEntity);
-        $this->importWhenDeleted($this->removedEntity);
     }
 
     public function postPersist(LifecycleEventArgs $args)
@@ -46,32 +43,17 @@ class ConnectedDataSourceChangeListener
         $this->insertedEntity = $entity;
     }
 
-    public function postUpdate(LifecycleEventArgs $args)
-    {
-        $entity = $args->getEntity();
-        $this->changedEntity = $entity;
-    }
-
-    public function postRemove(LifecycleEventArgs $args)
-    {
-        $entity = $args->getEntity();
-        $this->removedEntity = $entity;
-    }
-
     public function importWhenInsertOrUpdate($entity)
     {
         if (!$entity instanceof ConnectedDataSourceInterface) {
             return;
         }
-        $this->workerManager->importDataWhenConnectedDataSourceChange($entity->getId());
-    }
-
-    public function importWhenDeleted($entity)
-    {
-        if (!$entity instanceof ConnectedDataSourceInterface) {
-            return;
+        $entryIds = [];
+        /**@var DataSourceEntryInterface $dataSourceEntry */
+        foreach ($entity->getDataSource()->getDataSourceEntries() as $dataSourceEntry) {
+            $entryIds[] = $dataSourceEntry->getId();
         }
-        $this->workerManager->reImportWhenDataSetChange($entity->getDataSet()->getId());
+        $this->workerManager->reImportWhenNewEntryReceived($entryIds);
     }
 
 

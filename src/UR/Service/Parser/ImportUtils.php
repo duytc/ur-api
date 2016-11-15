@@ -4,7 +4,9 @@ namespace UR\Service\Parser;
 
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\TableDiff;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\FilterType;
@@ -54,6 +56,40 @@ class ImportUtils
             $dataSetSynchronizer->syncSchema($schema);
             $truncateSql = $conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
             $conn->exec($truncateSql);
+        } catch (\Exception $e) {
+            echo "could not sync schema";
+            exit(1);
+        }
+    }
+
+    function alterDataSetTable(DataSetInterface $dataSet, Connection $conn, $deletedColumns, $newColumns)
+    {
+        $schema = new Schema();
+        $dataSetLocator = new Locator($conn);
+        $dataSetSynchronizer = new Synchronizer($conn, new Comparator());
+        $dataTable = $dataSetLocator->getDataSetImportTable($dataSet->getId());
+        // check if table not existed
+        if(!$dataTable){
+            return;
+        }
+        $dataTable->getName();
+        $delCols = [];
+        $addCols = [];
+        foreach ($deletedColumns as $deletedColumn => $type) {
+            $delCols[] = $dataTable->getColumn($deletedColumn);
+        }
+
+        foreach ($newColumns as $newColumn => $type) {
+            $addCols[] = $dataTable->addColumn($newColumn, $type);
+        }
+
+        $updateTable = new TableDiff($dataTable->getName(), $delCols, array(), $addCols);
+        try {
+            $dataSetSynchronizer->syncSchema($schema);
+            $truncateSqls = $conn->getDatabasePlatform()->getAlterTableSQL($updateTable);
+            foreach ($truncateSqls as $truncateSql) {
+                $conn->exec($truncateSql);
+            }
         } catch (\Exception $e) {
             echo "could not sync schema";
             exit(1);

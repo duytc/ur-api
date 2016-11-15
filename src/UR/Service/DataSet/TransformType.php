@@ -119,4 +119,13 @@ final class TransformType
         return in_array($type, self::$addTypes);
     }
 
+    public static function isTransformSingleField($type)
+    {
+        if (strcmp($type, Type::SINGLE_FIELD) === 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 }
