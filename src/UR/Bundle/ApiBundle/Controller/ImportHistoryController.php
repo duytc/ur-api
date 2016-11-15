@@ -10,6 +10,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\ImportHistoryInterface;
 
 /**
  * @Rest\RouteResource("importhistory")
@@ -99,6 +100,34 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
     public function deleteAction($id)
     {
         return $this->delete($id);
+    }
+
+
+    /**
+     * Download a Import History
+     *
+     * @Rest\Get("/downloadimporteddata/{id}/download" )
+     *
+     * @ApiDoc(
+     *  section = "Imported Data",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @return mixed
+     * @throws NotFoundHttpException when the resource does not exist
+     */
+    public function downloadImportedDataAction($id)
+    {
+        /**@var ImportHistoryInterface $importHistory */
+        $importHistory = $this->one($id);
+        $dataSetId = $importHistory->getDataSet()->getId();
+        $importHistoryRepository = $this->get('ur.repository.import_history');
+        return $importHistoryRepository->getImportedDataByIdQuery($dataSetId, $id);
     }
 
     /**

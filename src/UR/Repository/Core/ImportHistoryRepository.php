@@ -4,10 +4,10 @@ namespace UR\Repository\Core;
 
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
-use Doctrine\ORM\QueryBuilder;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
+use UR\Service\DataSet\Locator;
 
 class ImportHistoryRepository extends EntityRepository implements ImportHistoryRepositoryInterface
 {
@@ -75,5 +75,16 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         }
 
         return $qb;
+    }
+
+    public function getImportedDataByIdQuery($dataSetId, $importId)
+    {
+        $conn = $this->_em->getConnection();
+        $query = "select * from __data_import_" . $dataSetId . " where __import_id = ?";
+        $stmt = $conn->prepare($query);
+            $stmt->bindValue(1, $importId);
+        $stmt->execute();
+        $results = $stmt->fetchAll();
+        return $results;
     }
 }

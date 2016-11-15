@@ -4,6 +4,7 @@ namespace UR\Service\DataSet;
 
 final class Type
 {
+    const PREFIX_DATA_IMPORT_TABLE = '__data_import_%d';
     const DATE = 'date';
     const DATETIME = 'datetime';
     const TEXT = 'text'; // varchar
