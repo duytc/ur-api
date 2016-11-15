@@ -93,7 +93,7 @@ class ProcessAlert implements ProcessAlertInterface
         $alert = new Alert();
         $alert->setCode($alertCode);
         $alert->setPublisher($publisher);
-        $alert->setMessage(json_encode($params));
+        $alert->setMessage($params);
         $this->alertManager->save($alert);
     }
 
