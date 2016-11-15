@@ -119,12 +119,8 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         }
 
         foreach ($dimensions as $dimension) {
-            foreach ($dimension as $key=>$value) {
-                if ($key == 'type') {
-                    if (!in_array($value, self::$SUPPORTED_DIMENSION_VALUES)) {
-                        return false;
-                    }
-                }
+            if (!in_array($dimension, self::$SUPPORTED_DIMENSION_VALUES)) {
+                return false;
             }
         }
         return true;
@@ -137,12 +133,8 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         }
 
         foreach ($metrics as $metric) {
-            foreach ($metric as $key=>$value) {
-                if ($key == 'type') {
-                    if (!in_array($value, self::$SUPPORTED_METRIC_VALUES)) {
-                        return false;
-                    }
-                }
+            if (!in_array($metric, self::$SUPPORTED_METRIC_VALUES)) {
+                return false;
             }
         }
         return true;
