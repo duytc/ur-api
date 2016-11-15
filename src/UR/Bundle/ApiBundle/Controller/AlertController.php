@@ -19,9 +19,9 @@ use Psr\Log\LoggerInterface;
 class AlertController extends RestControllerAbstract implements ClassResourceInterface
 {
     /**
-     * Get all alert
+     * Get all alerts
      *
-     * @Rest\View(serializerGroups={"alert.summary","dataSourceEntry.summary", "datasource.summary", "user.summary"})
+     * @Rest\View(serializerGroups={"alert.summary","dataSourceEntry.summary"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")

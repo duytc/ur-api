@@ -13,6 +13,7 @@ use UR\Repository\Core\DataSourceEntryRepository;
 use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use ReflectionClass;
 use UR\Service\Alert\AlertParams;
+use UR\Service\Alert\ProcessAlert;
 use UR\Worker\Manager;
 
 class DataSourceEntryManager implements DataSourceEntryManagerInterface
@@ -114,19 +115,24 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
                 $this->save($dataSourceEntry);
 
-                $params[AlertParams::CODE] = AlertParams::UPLOAD_DATA_SUCCESS;
-                $params[AlertParams::PUBLISHER] = $dataSource->getPublisher()->getId();
-                $params[AlertParams::FILE_NAME] = $file_name . "." . $file->getClientOriginalExtension();
-                $params[AlertParams::DATA_SOURCE_ENTRY] = $dataSourceEntry->getId();
-                $this->workerManager->processAlert($params);
+                $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD;
+                $publisherId = $dataSource->getPublisher()->getId();
+                $params = array (
+                    ProcessAlert::FILE_NAME => $file_name,
+                    ProcessAlert::DATA_SOURCE_NAME => $dataSource->getName(),
+                    ProcessAlert::FORMAT_FILE => $file->getClientOriginalExtension()
+                );
+                $this->workerManager->processAlert($code, $publisherId, $params);
 
                 $result[$origin_name] = 'success';
             } else {
-                $params[AlertParams::CODE] = AlertParams::UPLOAD_DATA_FAILURE;
-                $params[AlertParams::ERROR] = AlertParams::FAIL_UPLOAD;
-                $params[AlertParams::PUBLISHER] = $dataSource->getPublisher()->getId();
-                $params[AlertParams::FILE_NAME] = $file_name . "." . $file->getClientOriginalExtension();
-                $this->workerManager->processAlert($params);
+                $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT;
+                $publisherId = $dataSource->getPublisher()->getId();
+                $params = array (
+                    ProcessAlert::FILE_NAME => $file_name,
+                    ProcessAlert::FORMAT_FILE => $file->getClientOriginalExtension()
+                );
+                $this->workerManager->processAlert($code, $publisherId, $params);
 
                 throw new \Exception(sprintf("File %s is not valid", $origin_name));
             }
