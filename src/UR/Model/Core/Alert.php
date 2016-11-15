@@ -2,19 +2,19 @@
 
 namespace UR\Model\Core;
 
-use UR\Model\User\Role\PublisherInterface;
+
+use UR\Model\User\UserEntityInterface;
 
 class Alert implements AlertInterface
 {
     protected $id;
     protected $code;
     protected $isRead;
-    protected $title;
     protected $message;
     protected $createdDate;
 
     /**
-     * @var PublisherInterface
+     * @var UserEntityInterface
      */
     protected $publisher;
 
