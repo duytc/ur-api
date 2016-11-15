@@ -79,7 +79,9 @@ class ParamsBuilder implements ParamsBuilderInterface
 
             switch ($transform[TransformInterface::TRANSFORM_TYPE_KEY]) {
                 case TransformInterface::ADD_FIELD_TRANSFORM:
-                    $transformObjects[] = new AddFieldTransform($transform);
+                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField){
+                        $transformObjects[] = new AddFieldTransform($addField);
+                    }
                     break;
                 case TransformInterface::ADD_CALCULATED_FIELD_TRANSFORM:
                     break;

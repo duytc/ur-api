@@ -9,8 +9,8 @@ use UR\Service\DTO\Collection;
 
 class AddFieldTransform implements TransformInterface
 {
-    const FIELD_NAME_KEY = 'fields';
-    const FIELD_VALUE = 'fieldValue';
+    const FIELD_NAME_KEY = 'field';
+    const FIELD_VALUE = 'value';
 
     protected $fieldName;
 
@@ -46,10 +46,15 @@ class AddFieldTransform implements TransformInterface
         return $this->value;
     }
 
+    /**
+     * @param Collection $collection
+     * @return Collection
+     */
     public function transform(Collection $collection)
     {
         $collection->addColumn($this->fieldName);
         $rows = $collection->getRows();
+
         foreach($rows as $row) {
             $row[$this->fieldName] = $this->value;
         }

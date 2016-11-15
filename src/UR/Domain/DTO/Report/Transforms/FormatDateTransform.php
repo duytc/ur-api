@@ -47,18 +47,10 @@ class FormatDateTransform implements FormatDateTransformInterface
         return $this->toFormat;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getFieldName()
-    {
-        return $this->fieldName;
-    }
-
     public function transform(Collection $collection)
     {
         $rows = $collection->getRows();
-        foreach($rows as $row) {
+        foreach ($rows as $row) {
             if (!array_key_exists($this->getFieldName(), $row)) {
                 continue;
             }
@@ -68,5 +60,13 @@ class FormatDateTransform implements FormatDateTransformInterface
         }
 
         return $collection;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFieldName()
+    {
+        return $this->fieldName;
     }
 }

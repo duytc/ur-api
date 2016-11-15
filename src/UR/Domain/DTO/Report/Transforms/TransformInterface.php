@@ -17,6 +17,8 @@ interface TransformInterface
     const FORMAT_NUMBER_TRANSFORM = 'number';
     const FORMAT_DATE_TRANSFORM = 'date';
 
+    const FIELDS_TRANSFORM = 'fields';
+
     /**
      * @param Collection $collection
      * @return Collection
