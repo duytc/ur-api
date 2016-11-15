@@ -130,7 +130,6 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $publisherId = $dataSource->getPublisher()->getId();
                 $params = array (
                     ProcessAlert::FILE_NAME => $file_name,
-                    ProcessAlert::DATA_SOURCE_NAME => null,
                     ProcessAlert::FORMAT_FILE => $file->getClientOriginalExtension()
                 );
                 $this->workerManager->processAlert($code, $publisherId, $params);

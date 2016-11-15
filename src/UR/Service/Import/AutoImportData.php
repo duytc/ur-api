@@ -5,11 +5,11 @@ namespace UR\Service\Import;
 
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
+use InvalidArgumentException;
 use Liuggio\ExcelBundle\Factory;
 use UR\DomainManager\AlertManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Entity\Core\ImportHistory;
-use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Alert\ProcessAlert;
 use UR\Service\DataSet\Importer;
@@ -61,7 +61,7 @@ class AutoImportData implements AutoImportDataInterface
         $this->uploadFileDir = $uploadFileDir;
     }
 
-    public function autoCreateDataImport(DataSetInterface $dataSet, DataSourceEntryInterface $dataSourceEntry)
+    public function autoCreateDataImport($connectedDataSources, DataSourceEntryInterface $dataSourceEntry)
     {
         $conn = $this->em->getConnection();
         $dataSetLocator = new Locator($conn);
@@ -70,33 +70,35 @@ class AutoImportData implements AutoImportDataInterface
 
         $importUtils = new ImportUtils();
 
-        //create or update empty dataSet table
-        if (!$dataSetLocator->getDataSetImportTable($dataSet->getId())) {
-            $importUtils->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $conn);
-        }
-
-        $parser = new Parser();
-
-        // mapping
-        $parserConfig = new ParserConfig();
-
-        if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'csv') === 0) {
-            /**@var Csv $file */
-            $file = (new Csv($this->uploadFileDir . $dataSourceEntry->getPath()))->setDelimiter(',');
-        } else if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'excel') === 0) {
-            /**@var Excel $file */
-            $file = new \UR\Service\DataSource\Excel($this->uploadFileDir . $dataSourceEntry->getPath(), $this->phpExcel);
-        } else {
-            $file = new Json($dataSourceEntry->getPath());
-        }
-
-        $connectedDataSources = $dataSourceEntry->getDataSource()->getConnectedDataSources();
         foreach ($connectedDataSources as $connectedDataSource) {
-            // to do alert
+            if ($connectedDataSource->getDataSet() === null) {
+                throw new InvalidArgumentException('not found Dataset with this ID');
+            }
+            //create or update empty dataSet table
+            if (!$dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId())) {
+                $importUtils->createEmptyDataSetTable($connectedDataSource->getDataSet(), $dataSetLocator, $dataSetSynchronizer, $conn);
+            }
+
+            $parser = new Parser();
+
+            // mapping
+            $parserConfig = new ParserConfig();
+
+            if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'csv') === 0) {
+                /**@var Csv $file */
+                $file = (new Csv($this->uploadFileDir . $dataSourceEntry->getPath()))->setDelimiter(',');
+            } else if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'excel') === 0) {
+                /**@var Excel $file */
+                $file = new \UR\Service\DataSource\Excel($this->uploadFileDir . $dataSourceEntry->getPath(), $this->phpExcel);
+            } else {
+                $file = new Json($dataSourceEntry->getPath());
+            }
+
             $code = ProcessAlert::NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE;
             $publisherId = $dataSourceEntry->getDataSource()->getPublisherId();
+            // to do alert
             $params = array (
-                ProcessAlert::DATA_SET_NAME => $dataSet->getName(),
+                ProcessAlert::DATA_SET_NAME => $connectedDataSource->getDataSet()->getName(),
                 ProcessAlert::DATA_SOURCE_NAME => $dataSourceEntry->getDataSource()->getName(),
                 ProcessAlert::DATA_SOURCE_ENTRY_PATH => $dataSourceEntry->getPath()
             );
@@ -120,6 +122,7 @@ class AutoImportData implements AutoImportDataInterface
                 $code = ProcessAlert::DATA_IMPORT_REQUIRED_FAIL;
                 $this->workerManager->processAlert($code, $publisherId, $params);
                 continue;
+                // to do alert
             }
 
             //filter
@@ -140,13 +143,13 @@ class AutoImportData implements AutoImportDataInterface
                 continue;
             }
 
-            $ds1 = $dataSetLocator->getDataSetImportTable($dataSet->getId());
+            $ds1 = $dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId());
             $importHistoryEntity = new ImportHistory();
             $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
-            $importHistoryEntity->setDataSet($dataSet);
+            $importHistoryEntity->setDataSet($connectedDataSource->getDataSet());
             $this->importHistoryManager->save($importHistoryEntity);
-            $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
             // to do alert
+            $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
             $this->workerManager->processAlert($code, $publisherId, $params );
         }
     }
