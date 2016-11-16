@@ -6,6 +6,7 @@ namespace UR\Repository\Core;
 use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;
 
@@ -29,5 +30,17 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
      * @param DataSetInterface $dataSet
      * @return mixed
      */
-    public function getImportedDataByDataSet(DataSetInterface $dataSet);
+    public function getImportedHistoryByDataSet(DataSetInterface $dataSet);
+
+    /**
+     * @param DataSourceEntryInterface $dataSourceEntry
+     * @return mixed
+     */
+    public function getImportHistoryByDataSourceEntry(DataSourceEntryInterface $dataSourceEntry);
+
+    /**
+     * @param DataSourceEntryInterface $dataSourceEntry
+     * @return mixed
+     */
+    public function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry);
 }
