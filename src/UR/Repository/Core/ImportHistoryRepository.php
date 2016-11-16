@@ -4,6 +4,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -50,6 +51,12 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         return $qb;
     }
 
+    public function getImportedDataByDataSet(DataSetInterface $dataSet)
+    {
+        $qb = $this->createQueryBuilder('ih')->where('ih.dataSet=:dataSet')->setParameter('dataSet', $dataSet);
+        return $qb->getQuery()->getResult();
+    }
+
     private function createQueryBuilderForUser(UserRoleInterface $user)
     {
         return $user instanceof PublisherInterface ? $this->getDataSetsForPublisherQuery($user) : $this->createQueryBuilder('ih')->join('ih.dataSet', 'ds');
@@ -77,12 +84,15 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         return $qb;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getImportedDataByIdQuery($dataSetId, $importId)
     {
         $conn = $this->_em->getConnection();
         $query = "select * from __data_import_" . $dataSetId . " where __import_id = ?";
         $stmt = $conn->prepare($query);
-            $stmt->bindValue(1, $importId);
+        $stmt->bindValue(1, $importId);
         $stmt->execute();
         $results = $stmt->fetchAll();
         return $results;

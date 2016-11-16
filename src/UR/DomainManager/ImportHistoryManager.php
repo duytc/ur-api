@@ -5,6 +5,7 @@ namespace UR\DomainManager;
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\ImportHistoryRepositoryInterface;
@@ -73,5 +74,10 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     public function all($limit = null, $offset = null)
     {
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
+    }
+
+    public function getImportedDataByDataSet(DataSetInterface $dataSet)
+    {
+        return $this->repository->getImportedDataByDataSet($dataSet);
     }
 }
