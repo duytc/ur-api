@@ -10,6 +10,7 @@ class ConnectedDataSourceRepository extends EntityRepository implements Connecte
 {
     const DATA_ADDED = 'dataAdded';
     const IMPORT_FAILURE= 'importFailure';
+    public static $alertSetting = [ConnectedDataSourceRepository::DATA_ADDED, ConnectedDataSourceRepository::IMPORT_FAILURE];
 
     public function getConnectedDataSourceByDataSet(DataSetInterface $dataSet)
     {
