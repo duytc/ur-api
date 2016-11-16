@@ -205,6 +205,33 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     }
 
     /**
+     * Get all data sources of a data set
+     *
+     * @Rest\Get("datasets/{id}/importhistories", requirements={"id" = "\d+"})
+     * @Rest\View(serializerGroups={"importHistory.detail", "user.summary", "dataset.importhistory", "dataSourceEntry.summary", "datasource.importhistory"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     * @return array
+     * @throws \Exception
+     */
+    public function getImportHistoriesByDataSetAction($id)
+    {
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $this->one($id);
+        $importHistoryManager = $this->get('ur.domain_manager.import_history');
+
+        return $importHistoryManager->getImportedDataByDataSet($dataSet);
+    }
+
+    /**
      * Get all connected data sources of a data set
      *
      * @Rest\Get("datasets/{id}/connecteddatasources", requirements={"id" = "\d+"})
