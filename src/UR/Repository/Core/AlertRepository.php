@@ -10,6 +10,7 @@ use UR\Service\Alert\ProcessAlert;
 
 class AlertRepository extends EntityRepository implements AlertRepositoryInterface
 {
+    protected $SORT_FIELDS = ['id' => 'id', 'createdDate' => 'createdDate'];
     public function getAlertsForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null)
     {
         $qb = $this->createQueryBuilder('a')

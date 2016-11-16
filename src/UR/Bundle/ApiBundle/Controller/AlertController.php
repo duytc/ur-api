@@ -177,23 +177,18 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
         $params = $request->request->all();
 
         $ids = $params['ids'];
-        $delete =  filter_var($request->query->get('delete', null), FILTER_VALIDATE_BOOLEAN);
+        $delete = filter_var($request->query->get('delete', null), FILTER_VALIDATE_BOOLEAN);
         $status = filter_var($request->query->get('status', null), FILTER_VALIDATE_BOOLEAN);
-
-        if (!$ids) {
-            throw new \Exception('No alert is selected');
-        }
 
         if ($delete === true) {
             return $alertManager->deleteAlertsByIds($ids);
         } else if ($status === true) {
             return $alertManager->updateMarkAsReadByIds($ids);
-        }
-        else if ($status === false) {
+        } else if ($status === false) {
             return $alertManager->updateMarkAsUnreadByIds($ids);
         }
 
-         throw new \Exception("param is not valid");
+        throw new \Exception("param is not valid");
     }
     /**
      * Delete an existing alert

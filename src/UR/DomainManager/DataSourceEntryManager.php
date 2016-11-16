@@ -118,9 +118,8 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD;
                 $publisherId = $dataSource->getPublisher()->getId();
                 $params = array (
-                    ProcessAlert::FILE_NAME => $file_name,
-                    ProcessAlert::DATA_SOURCE_NAME => $dataSource->getName(),
-                    ProcessAlert::FORMAT_FILE => $file->getClientOriginalExtension()
+                    ProcessAlert::FILE_NAME => $file_name.".".$file->getClientOriginalExtension(),
+                    ProcessAlert::DATA_SOURCE_NAME => $dataSource->getName()
                 );
                 $this->workerManager->processAlert($code, $publisherId, $params);
 
@@ -129,8 +128,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT;
                 $publisherId = $dataSource->getPublisher()->getId();
                 $params = array (
-                    ProcessAlert::FILE_NAME => $file_name,
-                    ProcessAlert::FORMAT_FILE => $file->getClientOriginalExtension()
+                    ProcessAlert::FILE_NAME => $file_name.".".$file->getClientOriginalExtension()
                 );
                 $this->workerManager->processAlert($code, $publisherId, $params);
 

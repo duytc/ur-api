@@ -53,8 +53,7 @@ class ProcessAlert implements ProcessAlertInterface
 
     public static $datSourceErrorParams = array(
         ProcessAlert::FILE_NAME => 'require',
-        ProcessAlert::DATA_SOURCE_NAME => 'option',
-        ProcessAlert::FORMAT_FILE => 'require'
+        ProcessAlert::DATA_SOURCE_NAME => 'option'
     );
 
     public static $datSetErrorParams = array(
