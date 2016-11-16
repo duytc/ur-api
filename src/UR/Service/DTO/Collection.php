@@ -46,4 +46,13 @@ class Collection
         $this->columns[] = $column;
         return $this;
     }
+
+    /**
+     * @param array $rows
+     */
+    public function setRows($rows)
+    {
+        $this->rows = $rows;
+    }
+
 }
