@@ -1,0 +1,60 @@
+parameters:
+    # entity class
+    ur.entity.core.report_view.class: UR\Entity\Core\ReportView
+    # form class
+    ur.form.type.core.report_view.class: UR\Form\Type\ReportViewFormType
+
+services:
+    ur_api.handler.report_view:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.report_view
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.report_view:
+        class: UR\Repository\Core\ReportViewRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.report_view.class%
+
+    ur.domain_manager.report_view:
+        class: UR\DomainManager\ReportViewManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.report_view
+
+    ur.form.type.report_view:
+        class: %ur.form.type.core.report_view.class%
+        tags:
+            - { name: form.type, alias: ur_form_report_view }
+
+    ur.handler.handlers.report_view.abstract:
+        class: UR\Handler\Handlers\Core\ReportViewHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.report_view
+            - @ur.domain_manager.report_view
+
+    ur.handler.handlers.report_view.admin:
+        class: UR\Handler\Handlers\Core\Admin\ReportViewHandler
+        parent: ur.handler.handlers.report_view.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.report_view.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\ReportViewHandler
+        parent: ur.handler.handlers.report_view.abstract
+        public: false
+
+    ur.handler.handler_manager.report_view:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.report_view.class%
+            -
+                - @ur.handler.handlers.report_view.admin
+                - @ur.handler.handlers.report_view.publisher

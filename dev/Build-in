@@ -1,0 +1,14 @@
+
+INSERT INTO `core_integration_group`(`id`, `name`) VALUES (1,"Demand Partner");
+INSERT INTO `core_integration_group`(`id`, `name`) VALUES (2,"Pubvantage");
+INSERT INTO `core_integration_group`(`id`, `name`) VALUES (3,"JW Player");
+
+
+INSERT INTO `core_integration`(`id`, `integration_group_id`, `name`, `url`, `type`) VALUES (1,1,"Openx",'http://openx.com','http://openx.com');
+INSERT INTO `core_integration`(`id`, `integration_group_id`, `name`, `url`, `type`) VALUES (2,1,"Sorvn",'http://openx.com','http://openx.com');
+INSERT INTO `core_integration`(`id`, `integration_group_id`, `name`, `url`, `type`) VALUES (3,1,"PulsePoint",'http://openx.com','http://openx.com');
+
+INSERT INTO `core_integration`(`id`, `integration_group_id`, `name`, `url`, `type`) VALUES (4,2,"Account Report",'http://openx.com','http://openx.com');
+INSERT INTO `core_integration`(`id`, `integration_group_id`, `name`, `url`, `type`) VALUES (5,2,"Demand Part Report",'http://openx.com','http://openx.com');
+
+INSERT INTO `core_integration`(`id`, `integration_group_id`, `name`, `url`, `type`) VALUES (6,2,"Daily Stats",'http://openx.com','http://openx.com');

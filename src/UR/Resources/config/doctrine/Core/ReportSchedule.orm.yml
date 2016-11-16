@@ -1,0 +1,22 @@
+UR\Entity\Core\ReportSchedule:
+    type: entity
+    table: core_report_schedule
+    repositoryClass: UR\Repository\Core\ReportScheduleRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        alertMissingData:
+            type: boolean
+        emails:
+            type: json_array
+            nullable: true
+        schedule:
+            type: integer
+            nullable: false
+
+    manyToOne:
+        reportView:
+            targetEntity: UR\Entity\Core\ReportView

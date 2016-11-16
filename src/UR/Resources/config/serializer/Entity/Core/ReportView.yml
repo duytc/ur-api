@@ -1,0 +1,21 @@
+UR\Entity\Core\ReportView:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+        name:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+        joinBy:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+        transforms:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+        dataSets:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+        publisher:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
