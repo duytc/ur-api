@@ -75,4 +75,14 @@ interface DataSourceEntryInterface extends ModelInterface
      * @param mixed $receivedVia
      */
     public function setReceivedVia($receivedVia);
+
+    /**
+     * @return mixed
+     */
+    public function getFileName();
+
+    /**
+     * @param mixed $fileName
+     */
+    public function setFileName($fileName);
 }

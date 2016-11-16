@@ -8,6 +8,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $receivedDate;
     protected $isValid;
     protected $path;
+    protected $fileName;
     protected $metaData;
     protected $receivedVia;
 
@@ -80,6 +81,7 @@ class DataSourceEntry implements DataSourceEntryInterface
 
         return $this;
     }
+
     /**
      * @inheritdoc
      */
@@ -130,5 +132,21 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setReceivedVia($receivedVia)
     {
         $this->receivedVia = $receivedVia;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFileName()
+    {
+        return $this->fileName;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setFileName($fileName)
+    {
+        $this->fileName = $fileName;
     }
 }

@@ -115,6 +115,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 ;
 
                 $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
+                $dataSourceEntry->setFileName($origin_name);
                 $this->save($dataSourceEntry);
 
                 if (in_array(DataSourceRepository::DATA_RECEIVED, $dataSource->getAlertSetting())) {

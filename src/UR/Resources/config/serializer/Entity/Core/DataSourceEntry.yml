@@ -13,6 +13,9 @@ UR\Entity\Core\DataSourceEntry:
         path:
             expose: true
             groups: [dataSourceEntry.detail]
+        fileName:
+            expose: true
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary]
         metaData:
             expose: true
             groups: [dataSourceEntry.detail, dataSourceEntry.summary]

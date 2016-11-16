@@ -14,6 +14,8 @@ UR\Entity\Core\DataSourceEntry:
                 default: false
         path:
             type: string
+        fileName:
+            type: string
         metaData:
             type: json_array
             nullable: true

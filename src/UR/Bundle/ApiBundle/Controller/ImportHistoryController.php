@@ -106,7 +106,7 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
     /**
      * Download a Import History
      *
-     * @Rest\Get("/downloadimporteddata/{id}/download" )
+     * @Rest\Get("/importhistories/{id}/download" )
      *
      * @ApiDoc(
      *  section = "Imported Data",
