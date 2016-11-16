@@ -74,7 +74,7 @@ class AlertManager implements AlertManagerInterface
     {
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
     }
-    
+
     public function deleteAlertsByIds($ids)
     {
         return $this->repository->deleteAlertsByIds($ids);
