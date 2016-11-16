@@ -19,6 +19,9 @@ UR\Entity\Core\ConnectedDataSource:
         transforms:
             expose: true
             groups: [connectedDataSource.detail, connectedDataSource.summary]
+        alertSetting:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
         dataSet:
             expose: true
             groups: [connectedDataSource.detail]
