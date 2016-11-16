@@ -1,2 +1,2 @@
-UR\Entity\Core\ReportView:
+UR\Model\Core\ReportView:
     exclusion_policy: ALL
