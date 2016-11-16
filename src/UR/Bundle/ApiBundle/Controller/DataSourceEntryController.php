@@ -147,17 +147,44 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
         $filePath = $uploadRootDir . $dataSourceEntry->getPath();
 
-        if(!file_exists($filePath)) {
+        if (!file_exists($filePath)) {
             throw new NotFoundHttpException('The file was not found or you do not have access');
         }
 
         $response = new Response();
         $response->headers->set('Cache-Control', 'private');
         $response->headers->set('Content-type', 'application/download');
-        $response->headers->set('Content-Disposition', 'inline; filename="'.basename($filePath).'"');
+        $response->headers->set('Content-Disposition', 'inline; filename="' . basename($filePath) . '"');
         $response->setContent(file_get_contents($filePath));
 
         return $response;
+    }
+
+
+    /**
+     * Replay Data of an Entry
+     *
+     * @Rest\Get("/datasourceentries/{id}/replaydata" )
+     *
+     * @ApiDoc(
+     *  section = "Data Source Entry",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @return mixed
+     * @throws NotFoundHttpException when the resource does not exist
+     */
+    public function replayDataAction($id)
+    {
+        /** @var DataSourceEntryInterface $dataSourceEntry */
+        $dataSourceEntry = $this->one($id);
+        $importHistoryManager = $this->get('ur.domain_manager.import_history');
+        $importHistoryManager->replayDataSourceEntryData($dataSourceEntry);
     }
 
     /**

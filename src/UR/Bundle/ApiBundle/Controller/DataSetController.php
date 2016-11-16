@@ -228,7 +228,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         $dataSet = $this->one($id);
         $importHistoryManager = $this->get('ur.domain_manager.import_history');
 
-        return $importHistoryManager->getImportedDataByDataSet($dataSet);
+        return $importHistoryManager->getImportedHistoryByDataSet($dataSet);
     }
 
     /**

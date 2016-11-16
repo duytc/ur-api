@@ -9,6 +9,9 @@ imports:
     - { resource: services/service.dataset.yml }
     - { resource: services/service.connected-data-source.yml }
     - { resource: services/service.import-history.yml }
+    - { resource: services/service.report_view.yml }
+    - { resource: services/service.report.yml }
+    - { resource: services/service.report_schedule.yml }
 
 
 parameters:
