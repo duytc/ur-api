@@ -131,6 +131,33 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
     }
 
     /**
+     * Undo a Import History, delete all data of this import history on imported table
+     *
+     * @Rest\Get("/importhistories/{id}/undo" )
+     *
+     * @ApiDoc(
+     *  section = "Imported Data",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @return mixed
+     * @throws NotFoundHttpException when the resource does not exist
+     */
+    public function undoImportedHistoryAction($id)
+    {
+        /**@var ImportHistoryInterface $importHistory */
+        $importHistory = $this->one($id);
+        $importHistories[] = $importHistory;
+        $importHistoryRepository = $this->get('ur.repository.import_history');
+        $importHistoryRepository->deleteImportedData($importHistories);
+    }
+
+    /**
      * @return string
      */
     protected function getResourceName()

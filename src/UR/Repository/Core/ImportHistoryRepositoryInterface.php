@@ -7,6 +7,7 @@ use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;
 
@@ -43,4 +44,10 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry);
+
+    /**
+     * @param ImportHistoryInterface[] $importHistories
+     * @return mixed
+     */
+    public function deleteImportedData($importHistories);
 }
