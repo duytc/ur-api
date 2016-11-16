@@ -6,12 +6,14 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
+use UR\Model\Core\DataSource;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\DataSourceEntryRepository;
 use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use ReflectionClass;
+use UR\Repository\Core\DataSourceRepository;
 use UR\Service\Alert\AlertParams;
 use UR\Service\Alert\ProcessAlert;
 use UR\Worker\Manager;
@@ -115,23 +117,25 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
                 $this->save($dataSourceEntry);
 
-                $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD;
-                $publisherId = $dataSource->getPublisher()->getId();
-                $params = array (
-                    ProcessAlert::FILE_NAME => $file_name.".".$file->getClientOriginalExtension(),
-                    ProcessAlert::DATA_SOURCE_NAME => $dataSource->getName()
-                );
-                $this->workerManager->processAlert($code, $publisherId, $params);
-
+                if (in_array(DataSourceRepository::DATA_RECEIVED, $dataSource->getAlertSetting())) {
+                    $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD;
+                    $publisherId = $dataSource->getPublisher()->getId();
+                    $params = array(
+                        ProcessAlert::FILE_NAME => $file_name . "." . $file->getClientOriginalExtension(),
+                        ProcessAlert::DATA_SOURCE_NAME => $dataSource->getName()
+                    );
+                    $this->workerManager->processAlert($code, $publisherId, $params);
+                }
                 $result[$origin_name] = 'success';
             } else {
-                $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT;
-                $publisherId = $dataSource->getPublisher()->getId();
-                $params = array (
-                    ProcessAlert::FILE_NAME => $file_name.".".$file->getClientOriginalExtension()
-                );
-                $this->workerManager->processAlert($code, $publisherId, $params);
-
+                if (in_array(DataSourceRepository::WRONG_FORMAT, $dataSource->getAlertSetting())) {
+                    $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT;
+                    $publisherId = $dataSource->getPublisher()->getId();
+                    $params = array(
+                        ProcessAlert::FILE_NAME => $file_name . "." . $file->getClientOriginalExtension()
+                    );
+                    $this->workerManager->processAlert($code, $publisherId, $params);
+                }
                 throw new \Exception(sprintf("File %s is not valid", $origin_name));
             }
         }
