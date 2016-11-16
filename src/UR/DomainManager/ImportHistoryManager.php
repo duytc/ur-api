@@ -6,19 +6,23 @@ use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\ImportHistoryRepositoryInterface;
+use UR\Worker\Manager;
 
 class ImportHistoryManager implements ImportHistoryManagerInterface
 {
     protected $om;
     protected $repository;
+    protected $workerManager;
 
-    public function __construct(ObjectManager $om, ImportHistoryRepositoryInterface $repository)
+    public function __construct(ObjectManager $om, ImportHistoryRepositoryInterface $repository, Manager $workerManager)
     {
         $this->om = $om;
         $this->repository = $repository;
+        $this->workerManager = $workerManager;
     }
 
     /**
@@ -76,8 +80,29 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
     }
 
-    public function getImportedDataByDataSet(DataSetInterface $dataSet)
+    /**
+     * @inheritdoc
+     */
+    public function getImportedHistoryByDataSet(DataSetInterface $dataSet)
     {
-        return $this->repository->getImportedDataByDataSet($dataSet);
+        return $this->repository->getImportedHistoryByDataSet($dataSet);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getImportHistoryByDataSourceEntry(DataSourceEntryInterface $dataSourceEntry)
+    {
+        return $this->repository->getImportHistoryByDataSourceEntry($dataSourceEntry);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry)
+    {
+        $this->repository->replayDataSourceEntryData($dataSourceEntry);
+        $entryIds[]=$dataSourceEntry->getId();
+        $this->workerManager->reImportWhenNewEntryReceived($entryIds);
     }
 }

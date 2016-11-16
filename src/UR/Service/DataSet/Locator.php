@@ -35,6 +35,6 @@ class Locator
 
     public function getDataSetImportTableName($id)
     {
-        return sprintf('__data_import_%d', $id);
+        return sprintf(Type::PREFIX_DATA_IMPORT_TABLE, $id);
     }
 }

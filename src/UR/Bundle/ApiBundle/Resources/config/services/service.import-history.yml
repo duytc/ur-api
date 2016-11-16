@@ -24,6 +24,7 @@ services:
         arguments:
             - @doctrine.orm.entity_manager
             - @ur.repository.import_history
+            - @ur.worker.manager
 
     ur.form.type.import_history:
         class: %ur.form.type.core.import_history.class%

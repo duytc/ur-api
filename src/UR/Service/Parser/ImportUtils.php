@@ -46,6 +46,8 @@ class ImportUtils
                 $dataSetTable->addColumn($key, "decimal", ["notnull" => false]);
             } else if (strcmp($value, Type::DECIMAL) === 0) {
                 $dataSetTable->addColumn($key, $value, ["scale" => 2, "notnull" => false]);
+            } else if (strcmp($value, Type::MULTI_LINE_TEXT) === 0) {
+                $dataSetTable->addColumn($key, Type::TEXT, ["notnull" => false]);
             } else {
                 $dataSetTable->addColumn($key, $value, ["notnull" => false]);
             }
@@ -69,7 +71,7 @@ class ImportUtils
         $dataSetSynchronizer = new Synchronizer($conn, new Comparator());
         $dataTable = $dataSetLocator->getDataSetImportTable($dataSet->getId());
         // check if table not existed
-        if(!$dataTable){
+        if (!$dataTable) {
             return;
         }
         $dataTable->getName();
