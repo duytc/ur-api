@@ -11,7 +11,7 @@ use UR\Exception\InvalidArgumentException;
 
 class DataSet implements DataSetInterface
 {
-    const DATA_SET_ID_KEY = 'dataSet';
+    const DATA_SET_ID_KEY = 'dataSetId';
     const FILTERS_KEY = 'filters';
     const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';

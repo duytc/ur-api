@@ -6,11 +6,11 @@ namespace UR\Domain\DTO\Report\Filters;
 
 class NumberFilter extends AbstractFilter implements NumberFilterInterface
 {
-    const COMPARISON_TYPE_EQUAL = 1;
-    const COMPARISON_TYPE_SMALLER = 2;
-    const COMPARISON_TYPE_SMALLER_OR_EQUAL = 3;
-    const COMPARISON_TYPE_GREATER = 4;
-    const COMPARISON_TYPE_GREATER_OR_EQUAL = 5;
+    const COMPARISON_TYPE_EQUAL = 'equal';
+    const COMPARISON_TYPE_SMALLER = 'smaller';
+    const COMPARISON_TYPE_SMALLER_OR_EQUAL = 'equal';
+    const COMPARISON_TYPE_GREATER = 'greater';
+    const COMPARISON_TYPE_GREATER_OR_EQUAL = 'greater or equal';
 
     const FIELD_TYPE_FILTER_KEY = 'type';
     const FILED_NAME_FILTER_KEY = 'field';
