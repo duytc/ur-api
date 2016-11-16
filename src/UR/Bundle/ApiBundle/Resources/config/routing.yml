@@ -52,3 +52,13 @@ api_import_history:
     type: rest
     resource: UR\Bundle\ApiBundle\Controller\ImportHistoryController
     name_prefix:  api_1_
+
+api_report_schedule:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ReportScheduleController
+    name_prefix:  api_1_
+
+api_report_view:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ReportViewController
+    name_prefix:  api_1_

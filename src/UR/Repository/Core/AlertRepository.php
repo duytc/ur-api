@@ -10,7 +10,7 @@ use UR\Service\Alert\ProcessAlert;
 
 class AlertRepository extends EntityRepository implements AlertRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'createdDate' => 'createdDate'];
+    protected $SORT_FIELDS = ['id' => 'id', 'createdDate' => 'createdDate', 'title' => 'code'];
     public function getAlertsForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null)
     {
         $qb = $this->createQueryBuilder('a')
@@ -60,14 +60,17 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
         if (is_string($param->getSortField()) &&
             is_string($param->getSortDirection()) &&
             in_array($param->getSortDirection(), ['asc', 'desc', 'ASC', 'DESC']) &&
-            in_array($param->getSortField(), $this->SORT_FIELDS)
+            array_key_exists($param->getSortField(), $this->SORT_FIELDS)
         ) {
             switch ($param->getSortField()) {
-                case $this->SORT_FIELDS['id']:
-                    $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
+                case 'id':
+                    $qb->addOrderBy('a.' . $param->getSortField(), $param->getSortDirection());
                     break;
-                case $this->SORT_FIELDS['createdDate']:
-                    $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
+                case 'createdDate':
+                    $qb->addOrderBy('a.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                case 'title':
+                    $qb->addOrderBy('a.' . $this->SORT_FIELDS['title'], $param->getSortDirection());
                     break;
                 default:
                     break;

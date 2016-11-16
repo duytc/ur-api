@@ -37,6 +37,7 @@ class AppKernel extends Kernel
 
             new Doctrine\Bundle\DoctrineCacheBundle\DoctrineCacheBundle(),
             new Liuggio\ExcelBundle\LiuggioExcelBundle(),
+            new UR\Bundle\ReportApiBundle\ReportApiBundle(),
         );
 
         if (in_array($this->getEnvironment(), array('dev', 'test'))) {

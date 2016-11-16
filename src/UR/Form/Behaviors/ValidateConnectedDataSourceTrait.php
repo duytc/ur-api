@@ -5,6 +5,7 @@ namespace UR\Form\Behaviors;
 
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Repository\Core\ConnectedDataSourceRepository;
 use UR\Service\DataSet\FilterType;
 use UR\Service\DataSet\TransformType;
 use UR\Service\DataSet\Type;
@@ -135,6 +136,17 @@ trait ValidateConnectedDataSourceTrait
                 if (in_array($field[TransformType::FIELD], $connectedDataSource->getMapFields())) {
                     return false;
                 }
+            }
+        }
+
+        return true;
+    }
+
+    public function validateAlertSetting(ConnectedDataSourceInterface $connDataSource)
+    {
+        if ($connDataSource->getAlertSetting() !== null) {
+            if (array_diff(array_intersect(ConnectedDataSourceRepository::$alertSetting, $connDataSource->getAlertSetting()), $connDataSource->getAlertSetting())) {
+                return false;
             }
         }
 
