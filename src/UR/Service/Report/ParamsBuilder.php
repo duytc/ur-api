@@ -32,17 +32,17 @@ class ParamsBuilder implements ParamsBuilderInterface
     {
         $param = new Params();
 
-        if (array_key_exists(self::DATA_SET_KEY, $params)) {
+        if (array_key_exists(self::DATA_SET_KEY, $params) && !empty($params[self::DATA_SET_KEY])) {
             $dataSets = $this->createDataSets(json_decode($params[self::DATA_SET_KEY], true));
             $param->setDataSets($dataSets);
         }
 
-        if (array_key_exists(self::TRANSFORM_KEY, $params)) {
+        if (array_key_exists(self::TRANSFORM_KEY, $params) && !empty($params[self::TRANSFORM_KEY])) {
             $transforms = $this->createTransforms(json_decode($params[self::TRANSFORM_KEY], true));
             $param->setTransforms($transforms);
         }
 
-        if (array_key_exists(self::JOIN_BY_KEY, $params)) {
+        if (array_key_exists(self::JOIN_BY_KEY, $params) && !empty($params[self::JOIN_BY_KEY])) {
             $param->setJoinByFields($params[self::JOIN_BY_KEY]);
         }
 

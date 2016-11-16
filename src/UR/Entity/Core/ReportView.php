@@ -10,7 +10,7 @@ class ReportView extends ReportViewModel
     protected $dataSets;
     protected $joinBy;
     protected $name;
-    protected $transform;
+    protected $transforms;
     protected $createdDate;
 
     protected $publisher;
