@@ -59,7 +59,6 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                         $form->get('transforms')->addError(new FormError('Transforms Setting error'));
                     }
 
-
                     if (!$this->validateAlertSetting($connDataSource)) {
                         $form->get('transforms')->addError(new FormError('Alerts Setting error'));
                     }
