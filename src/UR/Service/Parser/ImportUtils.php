@@ -45,7 +45,7 @@ class ImportUtils
             if (strcmp($value, Type::NUMBER) === 0) {
                 $dataSetTable->addColumn($key, "decimal", ["notnull" => false]);
             } else if (strcmp($value, Type::DECIMAL) === 0) {
-                $dataSetTable->addColumn($key, $value, ["scale" => 2, "notnull" => false]);
+                $dataSetTable->addColumn($key, $value, ["scale" => 8, "notnull" => false]);
             } else if (strcmp($value, Type::MULTI_LINE_TEXT) === 0) {
                 $dataSetTable->addColumn($key, Type::TEXT, ["notnull" => false]);
             } else {
@@ -85,7 +85,7 @@ class ImportUtils
             $addCols[] = $dataTable->addColumn($newColumn, $type);
         }
 
-        $updateTable = new TableDiff($dataTable->getName(), $delCols, array(), $addCols);
+        $updateTable = new TableDiff($dataTable->getName(), $addCols, array(), $delCols);
         try {
             $dataSetSynchronizer->syncSchema($schema);
             $truncateSqls = $conn->getDatabasePlatform()->getAlterTableSQL($updateTable);

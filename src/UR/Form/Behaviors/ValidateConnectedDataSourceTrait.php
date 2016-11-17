@@ -37,10 +37,8 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
-    public function validateFilters(DataSetInterface $dataSet, $connDataSource)
+    public function validateFilters(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
     {
-
-        /**@var ConnectedDataSourceInterface $connDataSource */
         if ($connDataSource->getFilters() !== null)
             foreach ($connDataSource->getFilters() as $filters) {
 
@@ -77,7 +75,7 @@ trait ValidateConnectedDataSourceTrait
         return 0;
     }
 
-    public function validateTransforms(ConnectedDataSourceInterface $connDataSource)
+    public function validateTransforms(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
     {
         if ($connDataSource->getTransforms() !== null) {
 
@@ -87,23 +85,38 @@ trait ValidateConnectedDataSourceTrait
                     return false;
                 }
 
-                if ((strcmp($transform[TransformType::TRANSFORM_TYPE], Type::SINGLE_FIELD) === 0) && !$this->validateSingleFieldTransform($connDataSource, $transform)) {
+                if (Type::isTransformSingleField($transform) && !$this->validateSingleFieldTransform($connDataSource, $transform)) {
                     return false;
                 }
 
-                if ((strcmp($transform[TransformType::TRANSFORM_TYPE], Type::ALL_FIELD) === 0) && !$this->validateAllFieldsTransform($connDataSource, $transform)) {
+                if (Type::isTransformAllField($transform) && !$this->validateAllFieldsTransform($connDataSource, $transform)) {
                     return false;
                 }
 
             }
         }
+
+        foreach ($dataSet->getDimensions() as $field => $type) {
+            if (strcmp($type, Type::DATE) === 0) {
+                $count = 0;
+                foreach ($connDataSource->getTransforms() as $transform) {
+                    if (Type::isTransformSingleField($transform)) {
+                        if (strcmp($transform[TransformType::FIELD], $field) === 0) {
+                            $count++;
+                        }
+                    }
+                }
+                if ($count === 0) {
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 
     public function validateSingleFieldTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
-//        foreach ($fields as $fieldName => $formats) {
-
         if (!in_array($transform[TransformType::FIELD], $connectedDataSource->getMapFields())) {
             return false;
         }
@@ -111,9 +124,6 @@ trait ValidateConnectedDataSourceTrait
         if (!TransformType::isValidSingleFieldTransformType($transform)) {
             return false;
         }
-
-//        }
-
         return true;
     }
 

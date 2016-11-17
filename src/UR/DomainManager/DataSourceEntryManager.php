@@ -6,7 +6,6 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
-use UR\Model\Core\DataSource;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
@@ -14,7 +13,6 @@ use UR\Repository\Core\DataSourceEntryRepository;
 use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use ReflectionClass;
 use UR\Repository\Core\DataSourceRepository;
-use UR\Service\Alert\AlertParams;
 use UR\Service\Alert\ProcessAlert;
 use UR\Worker\Manager;
 

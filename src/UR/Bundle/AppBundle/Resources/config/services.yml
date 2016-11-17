@@ -11,6 +11,7 @@ services:
             - @ur.worker.manager
         tags:
             - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postUpdate }
             - { name: doctrine.event_listener, event: postFlush }
 
     tagcade_app.event_listener.connected_data_source_change_listener:

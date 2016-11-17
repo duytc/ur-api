@@ -49,4 +49,20 @@ final class Type
     {
         return in_array($name, self::$transformTypes, true);
     }
+
+    public static function isTransformSingleField(array $transform)
+    {
+        if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::SINGLE_FIELD) === 0) {
+            return true;
+        }
+        return false;
+    }
+
+    public static function isTransformAllField(array $transform)
+    {
+        if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::ALL_FIELD) === 0) {
+            return true;
+        }
+        return false;
+    }
 }

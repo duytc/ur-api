@@ -3,6 +3,7 @@
 namespace UR\Bundle\AppBundle\EventListener;
 
 
+use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use UR\Model\Core\ConnectedDataSourceInterface;
@@ -26,6 +27,13 @@ class ReImportDataSetChangeListener
      */
     protected $changedEntities = [];
 
+    /**
+     * @var array|DataSetInterface[]
+     */
+    protected $updatedEntity = [];
+
+    protected $deletedFields;
+
     /** @var Manager */
     private $workerManager;
 
@@ -46,6 +54,48 @@ class ReImportDataSetChangeListener
         });
     }
 
+    public function postUpdate(LifecycleEventArgs $args)
+    {
+        $em = $args->getEntityManager();
+        $entity = $args->getEntity();
+        $uow = $em->getUnitOfWork();
+        $this->updatedEntity = $entity;
+
+        if (!$entity instanceof DataSetInterface) {
+            return;
+        }
+
+        // detect changed metrics, dimensions
+        $changedFields = $uow->getEntityChangeSet($entity);
+        $deletedMetrics = [];
+        $deletedDimensions = [];
+        $newDimensions = [];
+        $newMetrics = [];
+
+        foreach ($changedFields as $field => $values) {
+            if (strcmp($field, 'dimensions') === 0) {
+                array_diff($values[0], $values[1]);
+                $deletedDimensions = array_diff_key($values[0], $values[1]);
+                $newDimensions = array_diff_key($values[1], $values[0]);
+            }
+
+            if (strcmp($field, 'metrics') === 0) {
+                array_diff($values[0], $values[1]);
+                $deletedMetrics = array_diff_key($values[0], $values[1]);
+                $newMetrics = array_diff_key($values[1], $values[0]);
+            }
+        }
+
+        $deletedFields = array_merge($deletedDimensions, $deletedMetrics);
+        $newFields = array_merge($newDimensions, $newMetrics);
+
+        // alter data_import table
+        $conn = $em->getConnection();
+        $importUtils = new ImportUtils();
+        $importUtils->alterDataSetTable($entity, $conn, $deletedFields, $newFields);
+        $this->deletedFields=$deletedFields;
+    }
+
     public function postFlush(PostFlushEventArgs $args)
     {
         if (count($this->changedEntities) < 1) {
@@ -57,44 +107,11 @@ class ReImportDataSetChangeListener
 
         // detect all changed fields
         foreach ($this->changedEntities as $entity) {
-            if (!$entity instanceof DataSetInterface) {
-                continue;
-            }
-
-            // detect changed metrics, dimensions
-            $changedFields = $uow->getEntityChangeSet($entity);
-            $deletedMetrics = [];
-            $deletedDimensions = [];
-            $newDimensions = [];
-            $newMetrics = [];
-
-            foreach ($changedFields as $field => $values) {
-                if (strcmp($field, 'dimensions') === 0) {
-                    array_diff($values[0], $values[1]);
-                    $deletedDimensions = array_diff_key($values[0], $values[1]);
-                    $newDimensions = array_diff_key($values[1], $values[0]);
-                }
-
-                if (strcmp($field, 'metrics') === 0) {
-                    array_diff($values[0], $values[1]);
-                    $deletedMetrics = array_diff_key($values[0], $values[1]);
-                    $newMetrics = array_diff_key($values[1], $values[0]);
-                }
-            }
-
-            $deletedFields = array_merge($deletedDimensions, $deletedMetrics);
-            $newFields = array_merge($newDimensions, $newMetrics);
-
-            // alter data_import table
-            $conn = $em->getConnection();
-            $importUtils = new ImportUtils();
-            $importUtils->alterDataSetTable($entity, $conn, $deletedFields, $newFields);
-
             // delete all configs of connected dataSources related to deletedFields
             $connectedDataSources = $entity->getConnectedDataSources();
 
             foreach ($connectedDataSources as &$connectedDataSource) {
-                $this->deleteConfigForConnectedDataSource($connectedDataSource, $deletedFields);
+                $this->deleteConfigForConnectedDataSource($connectedDataSource, $this->deletedFields);
             }
 
             $entity->setConnectedDataSources($connectedDataSources);
@@ -150,6 +167,9 @@ class ReImportDataSetChangeListener
                                 unset($transforms[$key][TransformType::FIELDS][$k]);
                             }
                         }
+                        if (count($transform[TransformType::FIELDS]) === 0) {
+                            unset($transforms[$key]);
+                        }
                     }
                     if (TransformType::isAddingType($transform[TransformType::TYPE])) {
                         foreach ($transform[TransformType::FIELDS] as $k => $field) {
@@ -164,6 +184,10 @@ class ReImportDataSetChangeListener
                                     unset($transforms[$key]);
                                 }
                             }
+                        }
+
+                        if (count($transform[TransformType::FIELDS]) === 0) {
+                            unset($transforms[$key]);
                         }
                     }
                 }
