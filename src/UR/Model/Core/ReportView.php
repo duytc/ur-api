@@ -24,7 +24,7 @@ class ReportView implements ReportViewInterface
     protected $dataSets;
 
     /**
-     * @var array
+     * @var string
      */
     protected $joinBy;
 
@@ -83,7 +83,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return array
+     * @return string
      */
     public function getJoinBy()
     {
@@ -91,7 +91,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param array $joinBy
+     * @param string $joinBy
      * @return self
      */
     public function setJoinBy($joinBy)

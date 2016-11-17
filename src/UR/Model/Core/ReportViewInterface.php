@@ -32,12 +32,12 @@ interface ReportViewInterface extends ModelInterface
     public function setDataSets($dataSets);
 
     /**
-     * @return array
+     * @return string
      */
     public function getJoinBy();
 
     /**
-     * @param array $joinBy
+     * @param string $joinBy
      * @return self
      */
     public function setJoinBy($joinBy);

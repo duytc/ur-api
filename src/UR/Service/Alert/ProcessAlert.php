@@ -29,7 +29,6 @@ class ProcessAlert implements ProcessAlertInterface
     const DATA_SOURCE_NAME = 'dataSourceName';
     const FORMAT_FILE = 'formatFile';
     const DATA_SET_NAME = 'dataSetName';
-    const DATA_SOURCE_ENTRY_PATH = 'dataSourceEntryPath';
     const ROW = 'row';
     const COLUMN = 'column';
 
@@ -59,7 +58,7 @@ class ProcessAlert implements ProcessAlertInterface
     public static $datSetErrorParams = array(
         ProcessAlert::DATA_SET_NAME => 'require',
         ProcessAlert::DATA_SOURCE_NAME => 'require',
-        ProcessAlert::DATA_SOURCE_ENTRY_PATH => 'require',
+        ProcessAlert::FILE_NAME => 'require',
         ProcessAlert::ROW => 'option',
         ProcessAlert::COLUMN => 'option'
     );

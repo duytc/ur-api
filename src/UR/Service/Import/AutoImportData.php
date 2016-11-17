@@ -95,25 +95,27 @@ class AutoImportData implements AutoImportDataInterface
                 $file = new Json($dataSourceEntry->getPath());
             }
 
-            $code = ProcessAlert::NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE;
-            $publisherId = $dataSourceEntry->getDataSource()->getPublisherId();
-
             $importUtils->mappingFile($connectedDataSource, $parserConfig, $file);
 
             if (count($parserConfig->getAllColumnMappings()) === 0) {
                 continue;
             }
 
+            $code = ProcessAlert::NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE;
+            $publisherId = $dataSourceEntry->getDataSource()->getPublisherId();
+
             // prepare alert params: default is success
             $params = array (
                 ProcessAlert::DATA_SET_NAME => $connectedDataSource->getDataSet()->getName(),
                 ProcessAlert::DATA_SOURCE_NAME => $dataSourceEntry->getDataSource()->getName(),
-                ProcessAlert::DATA_SOURCE_ENTRY_PATH => $dataSourceEntry->getPath()
+                ProcessAlert::FILE_NAME => $dataSourceEntry->getFileName()
             );
 
             $validRequires = true;
+            $columnRequire = '';
             foreach ($connectedDataSource->getRequires() as $require) {
                 if (!array_key_exists($require, $parserConfig->getAllColumnMappings())) {
+                    $columnRequire = $require;
                     $validRequires = false;
                     break;
                 }
@@ -123,6 +125,7 @@ class AutoImportData implements AutoImportDataInterface
                 // to do alert
                 if (in_array(ConnectedDataSourceRepository::IMPORT_FAILURE, $connectedDataSource->getAlertSetting())){
                     $code = ProcessAlert::DATA_IMPORT_REQUIRED_FAIL;
+                    $params[ProcessAlert::COLUMN] = $columnRequire;
                     $this->workerManager->processAlert($code, $publisherId, $params);
                 }
                 continue;
