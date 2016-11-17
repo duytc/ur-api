@@ -6,7 +6,6 @@ use Doctrine\ORM\EntityRepository;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
-use UR\Service\Alert\ProcessAlert;
 
 class AlertRepository extends EntityRepository implements AlertRepositoryInterface
 {

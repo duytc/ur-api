@@ -21,7 +21,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     /**
      * Get all alerts
      *
-     * @Rest\View(serializerGroups={"alert.summary", "user.summary"})
+     * @Rest\View(serializerGroups={"alert.detail", "user.summary"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
@@ -40,7 +40,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      * )
      *
      * @param Request $request
-     * @return AlertInterface[]
+     * @return \UR\Model\Core\AlertInterface[]
      */
     public function cgetAction(Request $request)
     {
