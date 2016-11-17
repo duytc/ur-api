@@ -82,7 +82,16 @@ class ImportUtils
         }
 
         foreach ($newColumns as $newColumn => $type) {
-            $addCols[] = $dataTable->addColumn($newColumn, $type);
+
+            if (strcmp($type, Type::NUMBER) === 0) {
+                $addCols[] = $dataTable->addColumn($newColumn, "decimal", ["notnull" => false]);
+            } else if (strcmp($type, Type::DECIMAL) === 0) {
+                $addCols[] = $dataTable->addColumn($newColumn, $type, ["scale" => 8, "notnull" => false]);
+            } else if (strcmp($type, Type::MULTI_LINE_TEXT) === 0) {
+                $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false]);
+            } else {
+                $addCols[] = $dataTable->addColumn($newColumn, $type, ["notnull" => false]);
+            }
         }
 
         $updateTable = new TableDiff($dataTable->getName(), $addCols, array(), $delCols);
