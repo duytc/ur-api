@@ -13,6 +13,7 @@ parameters:
     ur.security.auth.voter.data_set.class: UR\Security\Authorization\Voter\DataSetVoter
     ur.security.auth.voter.connected_data_source.class: UR\Security\Authorization\Voter\ConnectedDataSourceVoter
     ur.security.auth.voter.import_history.class: UR\Security\Authorization\Voter\ImportHistoryVoter
+    ur.security.auth.voter.report_view.class: UR\Security\Authorization\Voter\ReportViewVoter
 
     # event dispatched on user action such as add, remove, delete
     ur.events.handler_event: 'ur.events.handler_event'
@@ -62,6 +63,12 @@ services:
 
     ur.security.auth.voter.import_history:
         class:  %ur.security.auth.voter.import_history.class%
+        public: false
+        tags:
+            - { name: security.voter }
+
+    ur.security.auth.voter.report_view:
+        class:  %ur.security.auth.voter.report_view.class%
         public: false
         tags:
             - { name: security.voter }
