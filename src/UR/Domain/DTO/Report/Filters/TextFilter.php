@@ -4,12 +4,15 @@
 namespace UR\Domain\DTO\Report\Filters;
 
 
-class TextFilter extends AbstractFilter
+class TextFilter extends AbstractFilter implements TextFilterInterface
 {
-    const COMPARISON_TYPE_EQUAL = 1;
-    const COMPARISON_TYPE_NOT_EQUAL = 2;
-    const COMPARISON_TYPE_CONTAINS = 3;
-    const COMPARISON_TYPE_START_WITH = 4;
+    const COMPARISON_TYPE_EQUAL = 'equal';
+    const COMPARISON_TYPE_NOT_EQUAL = 'not equal';
+    const COMPARISON_TYPE_CONTAINS = 'contains';
+    const COMPARISON_TYPE_START_WITH = 'start with';
+    const COMPARISON_TYPE_END_WITH = 'end with';
+    const COMPARISON_TYPE_IN = 'in';
+    const COMPARISON_TYPE_NOT = 'not';
 
     const FIELD_TYPE_FILTER_KEY = 'type';
     const FILED_NAME_FILTER_KEY = 'field';
