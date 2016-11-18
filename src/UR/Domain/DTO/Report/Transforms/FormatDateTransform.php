@@ -60,9 +60,8 @@ class FormatDateTransform implements FormatDateTransformInterface
             $row[$this->getFieldName()] = $date->format($this->toFormat);
             $newRows[] = $row;
         }
-        $collection->setRows($newRows);
 
-        return $collection;
+        $collection->setRows($newRows);
     }
 
     /**

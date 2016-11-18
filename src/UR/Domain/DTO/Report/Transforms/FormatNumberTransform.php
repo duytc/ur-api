@@ -69,7 +69,5 @@ class FormatNumberTransform implements FormatNumberTransformInterface
 
             $row[$this->getFieldName()] = number_format($row[$this->getFieldName()], $this->precision, self::DEFAULT_DECIMAL_SEPARATOR, $this->thousandSeparator);
         }
-
-        return $collection;
     }
 }

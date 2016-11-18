@@ -60,8 +60,7 @@ class AddFieldTransform implements TransformInterface
             $tmp[$this->fieldName] = $this->value;
             $newRows[] = array_merge($row, $tmp);
         }
-        $collection->setRows($newRows);
 
-        return $collection;
+        $collection->setRows($newRows);
     }
 }

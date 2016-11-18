@@ -56,8 +56,6 @@ class AddCalculatedFieldTransform implements AddCalculatedFieldTransformInterfac
         foreach ($rows as $row) {
             $row[$this->fieldName] = $calculatedValue;
         }
-
-        return $collection;
     }
 
     /**
