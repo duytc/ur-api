@@ -106,4 +106,23 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
         return $user instanceof PublisherInterface ? $this->getDataSetsForPublisherQuery($user) : $this->createQueryBuilder('ds');
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getDataSetByName($dataSetName, $limit= null, $offset= null)
+    {
+        $qb = $this->createQueryBuilder('ds')
+            ->where('ds.name = :name')
+            ->setParameter('name', $dataSetName);
+
+        if (is_int($limit)) {
+            $qb->setMaxResults($limit);
+        }
+        if (is_int($offset)) {
+            $qb->setFirstResult($offset);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
 }

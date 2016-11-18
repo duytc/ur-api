@@ -21,4 +21,10 @@ interface DataSetManagerInterface extends ManagerInterface
      * @return DataSetInterface[]
      */
     public function getDataSetByDataSource(DataSourceInterface $dataSource);
+
+    /**
+     * @param $dataSetName
+     * @return mixed
+     */
+    public function getDataSetByName($dataSetName);
 }

@@ -4,11 +4,16 @@
 namespace tagcade\dev;
 
 use AppKernel;
+use Doctrine\DBAL\Schema\Comparator;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use UR\Entity\Core\DataSet;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Service\DataSet\Importer;
+use UR\Service\DataSet\Locator;
+use UR\Service\DataSet\Synchronizer;
 use UR\Service\DTO\Collection;
+use UR\Service\Parser\ImportUtils;
 
 $loader = require_once __DIR__ . '/../app/autoload.php';
 require_once __DIR__ . '/../app/AppKernel.php';
@@ -19,9 +24,16 @@ $kernel->boot();
 /** @var ContainerInterface $container */
 $container = $kernel->getContainer();
 
+$dataSetInputs = [
+    ["name" => "dataSet_1", "dimensions" => ["date" => "date", "tagname" => "text"], "metrics" => ["request" => "number", "impressions" => "number"]],
+    ["name" => "dataSet_2", "dimensions" => ["date2" => "date", "tagname" => "text"], "metrics" => ["request2" => "number", "impressions2" => "number"]]
+];
+
 $publisherId = 2;
-$importId = 20;
-$dataSourceId = 20;
+
+$importId = 1;
+$dataSourceId = 2;
+
 $startDate = '2016-11-05';
 $endDate = '2016-11-30';
 
@@ -34,7 +46,23 @@ if (!$publisher instanceof PublisherInterface) {
     throw new \Exception(sprintf('Publisher Id = %d doest not exit in systems'));
 }
 
+// Create new DataSet for this publisher
 $dataSetManager = $container->get('ur.domain_manager.data_set');
+
+foreach ($dataSetInputs as $dataSetInput) {
+    $exitsDataSet = $dataSetManager->getDataSetByName($dataSetInput['name']);
+    if (!empty($exitsDataSet)) {
+        continue;
+    }
+
+    $dataSet = new DataSet();
+    $dataSet->setPublisher($publisher);
+    $dataSet->setName($dataSetInput['name']);
+    $dataSet->setMetrics($dataSetInput['metrics']);
+    $dataSet->setDimensions(($dataSetInput['dimensions']));
+    $dataSetManager->save($dataSet);
+}
+
 $dataSets = $dataSetManager->getDataSetForPublisher($publisher);
 
 if (empty($dataSets)) {
@@ -46,9 +74,15 @@ const DATA_SET_TABLE_NAME_TEMPLATE = '__data_import_%d';
 $em = $container->get('doctrine.orm.entity_manager');
 $connection = $em->getConnection();
 $sm = $connection->getSchemaManager();
+$dataSetLocator = new Locator($connection);
+$dataSetSynchronizer = new Synchronizer($connection, new Comparator());
+
+$importUtils = new ImportUtils();
+foreach ($dataSets as $dataSet) {
+    $importUtils->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $connection);
+}
 
 $dataImporter = new Importer($connection);
-
 $startDateObject = date_create_from_format('Y-m-d', $startDate);
 $endDateObject = date_create_from_format('Y-m-d', $endDate);
 
@@ -74,7 +108,7 @@ foreach ($dataSets as $dataSet) {
         $columnOfCollection[] = $column->getName();
         $types[$column->getName()] = $column->getType()->getName();
         if ($column->getType()->getName() == 'decimal') {
-            $scaleDecimalColumns[$column->getName()] =$column->getScale();
+            $scaleDecimalColumns[$column->getName()] = $column->getScale();
         }
     }
 
@@ -92,9 +126,8 @@ foreach ($dataSets as $dataSet) {
                     if ($scaleDecimalColumns[$columnName] == 0) {
                         $oneRow[$columnName] = mt_rand(100, 90000);
                     } else {
-                        $oneRow[$columnName] = mt_rand(100, 90000)/1000;
+                        $oneRow[$columnName] = mt_rand(100, 90000) / 1000;
                     }
-
                     break;
                 default:
                     break;
