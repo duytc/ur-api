@@ -44,9 +44,13 @@ class ReportViewHandler extends ReportViewHandlerAbstract
     /**
      * @inheritdoc
      */
-    protected function processForm(ModelInterface $reportSchedule, array $parameters, $method = "PUT")
+    protected function processForm(ModelInterface $reportView, array $parameters, $method = "PUT")
     {
-        /** @var ReportViewInterface $reportSchedule */
-        return parent::processForm($reportSchedule, $parameters, $method);
+        /** @var ReportViewInterface $reportView */
+        if (null == $reportView->getPublisher()) {
+            $reportView->setPublisher($this->getUserRole());
+        }
+
+        return parent::processForm($reportView, $parameters, $method);
     }
 }
