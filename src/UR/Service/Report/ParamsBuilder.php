@@ -102,7 +102,10 @@ class ParamsBuilder implements ParamsBuilderInterface
                     $transformObjects[] = new GroupByTransform($transform);
                     break;
                 case TransformInterface::SORT_TRANSFORM:
-                    $transformObjects[] = new SortByTransform($transform);
+                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
+                        $transformObjects[] = new SortByTransform($sortField);
+                    }
+
                     break;
             }
         }
