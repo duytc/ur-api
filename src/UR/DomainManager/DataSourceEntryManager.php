@@ -23,6 +23,9 @@ use UR\Worker\Manager;
 
 class DataSourceEntryManager implements DataSourceEntryManagerInterface
 {
+    const UPLOAD = 'upload';
+    const DELETE = 'delete';
+
     protected $om;
     protected $repository;
     private $uploadFileDir;
@@ -63,6 +66,8 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     {
         if (!$dataSourceEntry instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
         $this->om->remove($dataSourceEntry);
+        $detectedFields = $this->detectedFieldsForDataSource($dataSourceEntry, DataSourceEntryManager::DELETE);
+        $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
         $this->om->flush();
     }
 
@@ -152,7 +157,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
             $dataSourceEntry->setFileName($origin_name);
-            $detectedFields = $this->detectedFieldsForDataSource($dataSourceEntry);
+            $detectedFields = $this->detectedFieldsForDataSource($dataSourceEntry, DataSourceEntryManager::UPLOAD);
             $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
             $this->save($dataSourceEntry);
 
@@ -180,7 +185,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         return $this->repository->getDataSourceEntriesForPublisher($publisher, $limit, $offset);
     }
 
-    public function detectedFieldsForDataSource(DataSourceEntryInterface $item)
+    public function detectedFieldsForDataSource(DataSourceEntryInterface $item, $option)
     {
         /**@var \UR\Service\DataSource\DataSourceInterface $file */
         /**@var DataSourceInterface $dataSource */
@@ -207,12 +212,31 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         });
 
         foreach ($newFields as $newField) {
-            if (!array_key_exists($newField, $detectedFields)) {
-                $detectedFields[$newField] = 1;
-            } else {
-                $detectedFields[$newField] += 1;
-            }
+            $detectedFields = $this->updateDetectedField($newField, $detectedFields, $option);
         }
+        return $detectedFields;
+    }
+
+    private function updateDetectedField($newField, $detectedFields, $option)
+    {
+        switch ($option) {
+            case DataSourceEntryManager::UPLOAD:
+                if (!array_key_exists($newField, $detectedFields)) {
+                    $detectedFields[$newField] = 1;
+                } else {
+                    $detectedFields[$newField] += 1;
+                }
+                break;
+            case DataSourceEntryManager::DELETE:
+                if (isset($detectedFields[$newField])) {
+                    $detectedFields[$newField] -= 1;
+                    if ($detectedFields[$newField] <= 0) {
+                        unset($detectedFields[$newField]);
+                    }
+                }
+                break;
+        }
+
         return $detectedFields;
     }
 }
