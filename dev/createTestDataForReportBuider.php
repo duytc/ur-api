@@ -34,8 +34,8 @@ $publisherId = 2;
 $importId = 1;
 $dataSourceId = 2;
 
-$startDate = '2016-11-05';
-$endDate = '2016-11-30';
+$startDate = '2016-12-05';
+$endDate = '2016-12-17';
 
 $tagName = ['tagName1', 'tagName2', 'tagName3', 'tagName4'];
 
@@ -79,7 +79,9 @@ $dataSetSynchronizer = new Synchronizer($connection, new Comparator());
 
 $importUtils = new ImportUtils();
 foreach ($dataSets as $dataSet) {
-    $importUtils->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $connection);
+    if (!$sm->tablesExist(sprintf(DATA_SET_TABLE_NAME_TEMPLATE,$dataSet->getId()))){
+        $importUtils->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $connection);
+    }
 }
 
 $dataImporter = new Importer($connection);
