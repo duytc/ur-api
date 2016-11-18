@@ -49,20 +49,20 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     /**
      * @inheritdoc
      */
-    public function save(ModelInterface $dataSource)
+    public function save(ModelInterface $dataSourceEntry)
     {
-        if (!$dataSource instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
-        $this->om->persist($dataSource);
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
+        $this->om->persist($dataSourceEntry);
         $this->om->flush();
     }
 
     /**
      * @inheritdoc
      */
-    public function delete(ModelInterface $dataSource)
+    public function delete(ModelInterface $dataSourceEntry)
     {
-        if (!$dataSource instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
-        $this->om->remove($dataSource);
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
+        $this->om->remove($dataSourceEntry);
         $this->om->flush();
     }
 
@@ -99,7 +99,6 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $result = [];
         /** @var  $files */
         $keys = $files->keys();
-
         foreach ($keys as $key) {
             /**@var UploadedFile $file */
             $file = $files->get($key);
@@ -153,9 +152,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
             $dataSourceEntry->setFileName($origin_name);
-
-            $detectedFields= $this->detectedFieldsForDataSource($dataSourceEntry);
-
+            $detectedFields = $this->detectedFieldsForDataSource($dataSourceEntry);
             $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
             $this->save($dataSourceEntry);
 
@@ -202,12 +199,20 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         }
 
         $columns = $file->getColumns();
-        $detectedFields = array_merge($detectedFields, $columns);
-        $detectedFields = array_unique($detectedFields);
-        $detectedFields = array_filter($detectedFields, function ($value) {
+        $newFields = [];
+        $newFields = array_merge($newFields, $columns);
+        $newFields = array_unique($newFields);
+        $newFields = array_filter($newFields, function ($value) {
             return $value !== '';
         });
 
-        return array_values($detectedFields);
+        foreach ($newFields as $newField) {
+            if (!array_key_exists($newField, $detectedFields)) {
+                $detectedFields[$newField] = 1;
+            } else {
+                $detectedFields[$newField] += 1;
+            }
+        }
+        return $detectedFields;
     }
 }
