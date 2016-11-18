@@ -97,6 +97,10 @@ trait ValidateConnectedDataSourceTrait
         }
 
         foreach ($dataSet->getDimensions() as $field => $type) {
+            if (!in_array($field, $connDataSource->getMapFields())) {
+                continue;
+            }
+
             if (strcmp($type, Type::DATE) === 0) {
                 $count = 0;
                 foreach ($connDataSource->getTransforms() as $transform) {

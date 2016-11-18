@@ -167,7 +167,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * Get all data sources of a data set
      *
      * @Rest\Get("datasets/{id}/datasources", requirements={"id" = "\d+"})
-     * @Rest\View(serializerGroups={"datasource.summary","dataset.summary"})
+     * @Rest\View(serializerGroups={"datasource.dataset","dataset.summary"})
      * @Rest\QueryParam(name="connected", nullable=true, requirements="\d+", description="relation between datasource and dataset option")
      *
      * @ApiDoc(
