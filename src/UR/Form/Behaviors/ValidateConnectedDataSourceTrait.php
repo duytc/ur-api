@@ -82,15 +82,15 @@ trait ValidateConnectedDataSourceTrait
             foreach ($connDataSource->getTransforms() as $transform) {
 
                 if (!Type::isValidTransformType($transform[TransformType::TRANSFORM_TYPE])) {
-                    return false;
+                    return "Transform type should be All fields or Single field";
                 }
 
                 if (Type::isTransformSingleField($transform) && !$this->validateSingleFieldTransform($connDataSource, $transform)) {
-                    return false;
+                    return "Error when transform single field";
                 }
 
                 if (Type::isTransformAllField($transform) && !$this->validateAllFieldsTransform($connDataSource, $transform)) {
-                    return false;
+                    return "Error when transform all fields";
                 }
 
             }
@@ -111,12 +111,12 @@ trait ValidateConnectedDataSourceTrait
                     }
                 }
                 if ($count === 0) {
-                    return false;
+                    return "Date type mapped should have a single field transformation";
                 }
             }
         }
 
-        return true;
+        return 0;
     }
 
     public function validateSingleFieldTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
