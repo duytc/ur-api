@@ -2,9 +2,6 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
-use Box\Spout\Common\Type;
-use Box\Spout\Reader\ReaderFactory;
-use DataDog\PagerBundle\Pagination;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
@@ -13,7 +10,6 @@ use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -21,9 +17,6 @@ use UR\Model\Core\DataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\User\Role\AdminInterface;
-use UR\Service\DataSource\Csv;
-use UR\Service\DataSource\Excel;
-use UR\Service\DataSource\Json;
 
 /**
  * @Rest\RouteResource("DataSource")
@@ -290,55 +283,6 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $em = $this->get('ur.domain_manager.data_source');
 
         return $em->getDataSourceByEmailKey($emailKey);
-    }
-
-    /**
-     * Get data sources by API Key
-     *
-     * @Rest\Get("/datasources/{id}/detectedfields")
-     *
-     *
-     * @ApiDoc(
-     *  section = "Data Source",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful"
-     *  }
-     * )
-     *
-     * @param int $id
-     * @return array
-     */
-    public function getDetectedFieldsAction($id)
-    {
-        /**@var DataSourceInterface $dataSource */
-        $dataSource = $this->one($id);
-        $dse = $dataSource->getDataSourceEntries();
-
-        $phpExcel = $this->container->get('phpexcel');
-        $arr = array();
-        /**@var DataSourceEntryInterface $item */
-        /**@var DataSourceInterface $file */
-        foreach ($dse as $item) {
-            $inputFile = $this->container->getParameter('upload_file_dir') . $item->getPath();
-            if (strcmp($dataSource->getFormat(), 'csv') === 0) {
-                /**@var Csv $file */
-                $file = (new Csv($inputFile))->setDelimiter(',');
-            } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
-                /**@var Excel $file */
-                $file = new \UR\Service\DataSource\Excel($inputFile, $phpExcel);
-            } else {
-                $file = new Json($item->getPath());
-            }
-            $columns = $file->getColumns();
-            $arr = array_merge($arr, $columns);
-            $arr = array_unique($arr);
-            $arr = array_filter($arr, function ($value) {
-                return $value !== '';
-            });
-        }
-
-        return array_values($arr);
     }
 
     /**
