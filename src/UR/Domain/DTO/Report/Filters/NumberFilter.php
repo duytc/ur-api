@@ -8,9 +8,12 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
 {
     const COMPARISON_TYPE_EQUAL = 'equal';
     const COMPARISON_TYPE_SMALLER = 'smaller';
-    const COMPARISON_TYPE_SMALLER_OR_EQUAL = 'equal';
+    const COMPARISON_TYPE_SMALLER_OR_EQUAL = 'smaller or equal';
     const COMPARISON_TYPE_GREATER = 'greater';
     const COMPARISON_TYPE_GREATER_OR_EQUAL = 'greater or equal';
+    const COMPARISON_TYPE_NOT_EQUAL = 'not equal';
+    const COMPARISON_TYPE_IN = 'in';
+    const COMPARISON_TYPE_NOT = 'not in';
 
     const FIELD_TYPE_FILTER_KEY = 'type';
     const FILED_NAME_FILTER_KEY = 'field';
