@@ -34,8 +34,8 @@ $publisherId = 2;
 $importId = 1;
 $dataSourceId = 2;
 
-$startDate = '2016-12-05';
-$endDate = '2016-12-17';
+$startDate = '2016-11-01';
+$endDate = '2016-11-17';
 
 $tagName = ['tagName1', 'tagName2', 'tagName3', 'tagName4'];
 

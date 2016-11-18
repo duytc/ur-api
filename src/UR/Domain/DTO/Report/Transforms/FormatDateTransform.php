@@ -50,6 +50,7 @@ class FormatDateTransform implements FormatDateTransformInterface
     public function transform(Collection $collection)
     {
         $rows = $collection->getRows();
+        $newRows = [];
         foreach ($rows as $row) {
             if (!array_key_exists($this->getFieldName(), $row)) {
                 continue;
@@ -57,7 +58,9 @@ class FormatDateTransform implements FormatDateTransformInterface
 
             $date = DateTime::createFromFormat($this->fromFormat, $row[$this->getFieldName()]);
             $row[$this->getFieldName()] = $date->format($this->toFormat);
+            $newRows[] = $row;
         }
+        $collection->setRows($newRows);
 
         return $collection;
     }
