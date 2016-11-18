@@ -152,7 +152,8 @@ class SqlBuilder implements SqlBuilderInterface
                 continue;
             }
 
-            $qb->addSelect(sprintf('t%d.%s as %s_%d', $dataSetIndex, $field, $field, $dataSet->getDataSetId()));
+          //  $qb->addSelect(sprintf('t%d.%s as %s_%d', $dataSetIndex, $field, $field, $dataSet->getDataSetId()));
+            $qb->addSelect(sprintf('t%d.%s as %s', $dataSetIndex, $field, $field));
         }
 
         if ($dataSetIndex === 0) {
