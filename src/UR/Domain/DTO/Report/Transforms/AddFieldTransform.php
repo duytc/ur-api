@@ -52,6 +52,12 @@ class AddFieldTransform implements TransformInterface
      */
     public function transform(Collection $collection)
     {
+        $columns = $collection->getColumns();
+        // new field already existed
+        if (array_key_exists($this->fieldName, $columns)) {
+            return;
+        }
+
         $collection->addColumn($this->fieldName);
         $rows = $collection->getRows();
 

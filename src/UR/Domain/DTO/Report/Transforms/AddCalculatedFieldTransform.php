@@ -46,6 +46,12 @@ class AddCalculatedFieldTransform implements AddCalculatedFieldTransformInterfac
      */
     public function transform(Collection $collection)
     {
+        $columns = $collection->getColumns();
+        // new field already existed
+        if (array_key_exists($this->fieldName, $columns)) {
+            return;
+        }
+
         $row = $collection->getRows();
         $calculatedValue = $this->language->evaluate($this->expression, ['row' => $row]);
         $calculatedValue = $calculatedValue ? $calculatedValue : $this->defaultValue;
