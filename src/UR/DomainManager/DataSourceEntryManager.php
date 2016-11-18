@@ -208,6 +208,6 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             return $value !== '';
         });
 
-        return $detectedFields;
+        return array_values($detectedFields);
     }
 }

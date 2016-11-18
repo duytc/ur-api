@@ -22,6 +22,9 @@ UR\Entity\Core\DataSource:
         alertSetting:
             expose: true
             groups: [datasource.detail, datasource.summary]
+        detectedFields:
+            expose: true
+            groups: [datasource.detail, datasource.summary]
         apiKey:
             expose: true
             groups: [datasource.apikey]
