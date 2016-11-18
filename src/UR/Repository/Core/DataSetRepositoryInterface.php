@@ -40,4 +40,12 @@ interface DataSetRepositoryInterface extends ObjectRepository
      * @return DataSetInterface[]
      */
     public function getDataSetByDataSource(DataSourceInterface $dataSource);
+
+    /**
+     * @param $dataSetName
+     * @param null $limit
+     * @param null $offset
+     * @return mixed
+     */
+    public function getDataSetByName($dataSetName, $limit= null, $offset= null);
 }

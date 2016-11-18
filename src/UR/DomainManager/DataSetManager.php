@@ -90,4 +90,11 @@ class DataSetManager implements DataSetManagerInterface
     {
         return $this->repository->getDataSetByDataSource($dataSource);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSetByName($dataSetName) {
+        return $this->repository->getDataSetByName($dataSetName);
+    }
 }
