@@ -34,13 +34,12 @@ $publisherId = 2;
 $importId = 1;
 $dataSourceId = 2;
 
-$startDate = '2016-11-05';
-$endDate = '2016-11-30';
+$startDate = '2016-12-05';
+$endDate = '2016-12-17';
 
 $tagName = ['tagName1', 'tagName2', 'tagName3', 'tagName4'];
 
 $publisherManager = $container->get('ur_user.domain_manager.publisher');
-
 $publisher = $publisherManager->findPublisher($publisherId);
 if (!$publisher instanceof PublisherInterface) {
     throw new \Exception(sprintf('Publisher Id = %d doest not exit in systems'));
@@ -62,7 +61,7 @@ foreach ($dataSetInputs as $dataSetInput) {
     $dataSet->setDimensions(($dataSetInput['dimensions']));
     $dataSetManager->save($dataSet);
 }
-
+/** @var DataSetInterface[] $dataSets */
 $dataSets = $dataSetManager->getDataSetForPublisher($publisher);
 
 if (empty($dataSets)) {
@@ -79,7 +78,9 @@ $dataSetSynchronizer = new Synchronizer($connection, new Comparator());
 
 $importUtils = new ImportUtils();
 foreach ($dataSets as $dataSet) {
-    $importUtils->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $connection);
+    if (!$sm->tablesExist(sprintf(DATA_SET_TABLE_NAME_TEMPLATE,$dataSet->getId()))){
+        $importUtils->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $connection);
+    }
 }
 
 $dataImporter = new Importer($connection);
