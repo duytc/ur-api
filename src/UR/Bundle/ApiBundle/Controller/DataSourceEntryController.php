@@ -53,7 +53,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $publisher = $this->getUser();
 
         $dataSourceEntryRepository = $this->get('ur.repository.data_source_entry');
-        $qb = $dataSourceEntryRepository->getDataSourceEntriesForDataSourceQuery($publisher, $this->getParams());
+        $qb = $dataSourceEntryRepository->getDataSourceEntriesForUserQuery($publisher, $this->getParams());
 
         $params = array_merge($request->query->all(), $request->attributes->all());
         if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {

@@ -2,7 +2,6 @@
 
 namespace UR\Repository\Core;
 
-use DateTime;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSourceInterface;
@@ -44,7 +43,7 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
     /**
      * @inheritdoc
      */
-    public function getDataSourceEntriesForDataSourceQuery(UserRoleInterface $user, PagerParam $param)
+    public function getDataSourceEntriesForUserQuery(UserRoleInterface $user, PagerParam $param)
     {
         $qb = $this->createQueryBuilderForUser($user);
 

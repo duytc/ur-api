@@ -3,7 +3,7 @@
 namespace UR\Repository\Core;
 
 use Doctrine\Common\Persistence\ObjectRepository;
-use Doctrine\DBAL\Query\QueryBuilder;
+use Doctrine\ORM\QueryBuilder;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
@@ -24,12 +24,12 @@ interface DataSourceEntryRepositoryInterface extends ObjectRepository
      * @param PagerParam $param
      * @return QueryBuilder
      */
-    public  function  getDataSourceEntriesForDataSourceQuery(UserRoleInterface $user, PagerParam $param);
+    public function getDataSourceEntriesForUserQuery(UserRoleInterface $user, PagerParam $param);
 
     /**
      * @param DataSourceInterface $dataSource
      * @param PagerParam $param
-     * @return mixed
+     * @return QueryBuilder
      */
     public function getDataSourceEntriesByDataSourceIdQuery(DataSourceInterface $dataSource, PagerParam $param);
 
