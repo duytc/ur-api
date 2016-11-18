@@ -17,6 +17,7 @@ class DataSource extends DataSourceModel
     protected $apiKey;
     protected $urEmail;
     protected $enable;
+    protected $detectedFields;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -29,7 +30,7 @@ class DataSource extends DataSourceModel
     /**
      * @var DataSourceEntryInterface[]
      */
-        protected $dataSourceEntries;
+    protected $dataSourceEntries;
 
     /**
      * @var ConnectedDataSourceInterface[]

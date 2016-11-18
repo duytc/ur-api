@@ -29,6 +29,9 @@ UR\Entity\Core\DataSource:
             type: boolean
             option:
                 default: true
+        detectedFields:
+            type: json_array
+            nullable: true
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

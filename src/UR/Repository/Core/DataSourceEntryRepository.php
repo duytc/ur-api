@@ -2,7 +2,6 @@
 
 namespace UR\Repository\Core;
 
-use DateTime;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSourceInterface;
@@ -13,11 +12,6 @@ use UR\Model\User\Role\UserRoleInterface;
 class DataSourceEntryRepository extends EntityRepository implements DataSourceEntryRepositoryInterface
 {
     protected $SORT_FIELDS = ['id' => 'id', 'receivedDate' => 'receivedDate'];
-
-    public static $excelType = [
-        'xls','xlsx', 'xlsm', 'xlsb', 'xltx', 'xltm', 'xlt', 'xlam', 'xla', 'xlw', 'ods', 'ots'
-    ];
-    const EXCEL_FORMAT = 'excel';
 
     /**
      * @inheritdoc
@@ -44,7 +38,7 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
     /**
      * @inheritdoc
      */
-    public function getDataSourceEntriesForDataSourceQuery(UserRoleInterface $user, PagerParam $param)
+    public function getDataSourceEntriesForUserQuery(UserRoleInterface $user, PagerParam $param)
     {
         $qb = $this->createQueryBuilderForUser($user);
 

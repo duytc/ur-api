@@ -25,6 +25,8 @@ services:
             - @doctrine.orm.entity_manager
             - @ur.repository.data_source_entry
             - @ur.worker.manager
+            - %upload_file_dir%
+            - @phpexcel
 
     ur.form.type.data_source_entry:
         class: %ur.form.type.data_source_entry.class%

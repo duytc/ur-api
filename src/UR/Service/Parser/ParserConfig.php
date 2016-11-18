@@ -41,6 +41,7 @@ class ParserConfig
         }
 
         if (array_key_exists($toColumn, $this->columnMapping)) {
+            return $this;
             throw new \InvalidArgumentException(sprintf('The column "%s" already exists', $toColumn));
         }
 
