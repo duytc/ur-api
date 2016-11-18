@@ -56,6 +56,7 @@ $numDays = ($endDateObject->diff($startDateObject)->days);
 
 /** @var DataSetInterface[] $dataSets */
 foreach ($dataSets as $dataSet) {
+    $startDateObject = date_create_from_format('Y-m-d', $startDate);
     $tableName = sprintf(DATA_SET_TABLE_NAME_TEMPLATE, $dataSet->getId());
     $table = $sm->listTableDetails($tableName);
     $columns = $table->getColumns();
