@@ -120,4 +120,14 @@ interface DataSourceInterface extends ModelInterface
      * @param ConnectedDataSourceInterface[] $connectedDataSources
      */
     public function setConnectedDataSources($connectedDataSources);
+
+    /**
+     * @return mixed
+     */
+    public function getDetectedFields();
+
+    /**
+     * @param mixed $detectedFields
+     */
+    public function setDetectedFields($detectedFields);
 }

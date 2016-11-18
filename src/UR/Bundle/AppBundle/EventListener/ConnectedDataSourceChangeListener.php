@@ -53,6 +53,7 @@ class ConnectedDataSourceChangeListener
         foreach ($entity->getDataSource()->getDataSourceEntries() as $dataSourceEntry) {
             $entryIds[] = $dataSourceEntry->getId();
         }
+
         $this->workerManager->reImportWhenNewEntryReceived($entryIds);
     }
 

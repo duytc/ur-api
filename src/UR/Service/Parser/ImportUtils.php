@@ -14,6 +14,7 @@ use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
 use UR\Service\DataSet\TransformType;
 use UR\Service\DataSet\Type;
+use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\Parser\Filter\DateFilter;
 use UR\Service\Parser\Filter\NumberFilter;
 use UR\Service\Parser\Filter\TextFilter;
@@ -45,7 +46,7 @@ class ImportUtils
             if (strcmp($value, Type::NUMBER) === 0) {
                 $dataSetTable->addColumn($key, "decimal", ["notnull" => false]);
             } else if (strcmp($value, Type::DECIMAL) === 0) {
-                $dataSetTable->addColumn($key, $value, ["scale" => 8, "notnull" => false]);
+                $dataSetTable->addColumn($key, $value, ["precision" => 20, "scale" => 8, "notnull" => false]);
             } else if (strcmp($value, Type::MULTI_LINE_TEXT) === 0) {
                 $dataSetTable->addColumn($key, Type::TEXT, ["notnull" => false]);
             } else {
@@ -86,7 +87,7 @@ class ImportUtils
             if (strcmp($type, Type::NUMBER) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, "decimal", ["notnull" => false]);
             } else if (strcmp($type, Type::DECIMAL) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, $type, ["scale" => 8, "notnull" => false]);
+                $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 20, "scale" => 8, "notnull" => false]);
             } else if (strcmp($type, Type::MULTI_LINE_TEXT) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false]);
             } else {
@@ -107,9 +108,8 @@ class ImportUtils
         }
     }
 
-    function mappingFile(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, $file)
+    function mappingFile(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, DataSourceInterface $file)
     {
-
         $columns = $file->getColumns();
 
         foreach ($columns as $column) {

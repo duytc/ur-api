@@ -14,6 +14,7 @@ class DataSource implements DataSourceInterface
     protected $apiKey;
     protected $urEmail;
     protected $enable;
+    protected $detectedFields;
     const UR_EMAIL = "@unifiedreportemail";
 
     /** @var UserEntityInterface */
@@ -228,5 +229,21 @@ class DataSource implements DataSourceInterface
     public function setConnectedDataSources($connectedDataSources)
     {
         $this->connectedDataSources = $connectedDataSources;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDetectedFields()
+    {
+        return $this->detectedFields;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setDetectedFields($detectedFields)
+    {
+        $this->detectedFields = $detectedFields;
     }
 }

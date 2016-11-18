@@ -14,11 +14,6 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
 {
     protected $SORT_FIELDS = ['id' => 'id', 'receivedDate' => 'receivedDate'];
 
-    public static $excelType = [
-        'xls','xlsx', 'xlsm', 'xlsb', 'xltx', 'xltm', 'xlt', 'xlam', 'xla', 'xlw', 'ods', 'ots'
-    ];
-    const EXCEL_FORMAT = 'excel';
-
     /**
      * @inheritdoc
      */
