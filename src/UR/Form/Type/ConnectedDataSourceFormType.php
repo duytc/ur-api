@@ -57,8 +57,10 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                         $form->get('filters')->addError(new FormError($isValidFilter));
                     }
 
-                    if (!$this->validateTransforms($dataSet, $connDataSource)) {
-                        $form->get('transforms')->addError(new FormError('Transforms Setting error'));
+                    $isValidTransform = $this->validateTransforms($dataSet, $connDataSource);
+
+                    if ($isValidTransform !== 0) {
+                        $form->get('transforms')->addError(new FormError($isValidTransform));
                     }
 
                     if (!$this->validateAlertSetting($connDataSource)) {
