@@ -13,7 +13,7 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
     const COMPARISON_TYPE_GREATER_OR_EQUAL = 'greater or equal';
     const COMPARISON_TYPE_NOT_EQUAL = 'not equal';
     const COMPARISON_TYPE_IN = 'in';
-    const COMPARISON_TYPE_NOT = 'not in';
+    const COMPARISON_TYPE_NOT = 'not';
 
     const FIELD_TYPE_FILTER_KEY = 'type';
     const FILED_NAME_FILTER_KEY = 'field';
@@ -35,7 +35,7 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
             || !array_key_exists(self::COMPARISON_TYPE_FILTER_KEY, $numberFilter)
             || !array_key_exists(self::COMPARISON_VALUE_FILTER_KEY, $numberFilter)
         ) {
-            throw new \Exception(sprintf('Either parameters: %s, %s, %s, %s, %s does not exits in text filter',
+            throw new \Exception(sprintf('Either parameters: %s, %s, %s, %s does not exits in text filter',
                 self::FILED_NAME_FILTER_KEY, self::FIELD_TYPE_FILTER_KEY, self::COMPARISON_TYPE_FILTER_KEY, self::COMPARISON_VALUE_FILTER_KEY));
         }
 

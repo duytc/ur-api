@@ -23,6 +23,9 @@ use UR\Worker\Manager;
 
 class DataSourceEntryManager implements DataSourceEntryManagerInterface
 {
+    const UPLOAD = 'upload';
+    const DELETE = 'delete';
+
     protected $om;
     protected $repository;
     private $uploadFileDir;
@@ -49,20 +52,22 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     /**
      * @inheritdoc
      */
-    public function save(ModelInterface $dataSource)
+    public function save(ModelInterface $dataSourceEntry)
     {
-        if (!$dataSource instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
-        $this->om->persist($dataSource);
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
+        $this->om->persist($dataSourceEntry);
         $this->om->flush();
     }
 
     /**
      * @inheritdoc
      */
-    public function delete(ModelInterface $dataSource)
+    public function delete(ModelInterface $dataSourceEntry)
     {
-        if (!$dataSource instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
-        $this->om->remove($dataSource);
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
+        $this->om->remove($dataSourceEntry);
+        $detectedFields = $this->detectedFieldsForDataSource($dataSourceEntry, DataSourceEntryManager::DELETE);
+        $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
         $this->om->flush();
     }
 
@@ -99,7 +104,6 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $result = [];
         /** @var  $files */
         $keys = $files->keys();
-
         foreach ($keys as $key) {
             /**@var UploadedFile $file */
             $file = $files->get($key);
@@ -153,9 +157,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
             $dataSourceEntry->setFileName($origin_name);
-
-            $detectedFields= $this->detectedFieldsForDataSource($dataSourceEntry);
-
+            $detectedFields = $this->detectedFieldsForDataSource($dataSourceEntry, DataSourceEntryManager::UPLOAD);
             $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
             $this->save($dataSourceEntry);
 
@@ -183,7 +185,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         return $this->repository->getDataSourceEntriesForPublisher($publisher, $limit, $offset);
     }
 
-    public function detectedFieldsForDataSource(DataSourceEntryInterface $item)
+    public function detectedFieldsForDataSource(DataSourceEntryInterface $item, $option)
     {
         /**@var \UR\Service\DataSource\DataSourceInterface $file */
         /**@var DataSourceInterface $dataSource */
@@ -202,12 +204,39 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         }
 
         $columns = $file->getColumns();
-        $detectedFields = array_merge($detectedFields, $columns);
-        $detectedFields = array_unique($detectedFields);
-        $detectedFields = array_filter($detectedFields, function ($value) {
+        $newFields = [];
+        $newFields = array_merge($newFields, $columns);
+        $newFields = array_unique($newFields);
+        $newFields = array_filter($newFields, function ($value) {
             return $value !== '';
         });
 
-        return array_values($detectedFields);
+        foreach ($newFields as $newField) {
+            $detectedFields = $this->updateDetectedField($newField, $detectedFields, $option);
+        }
+        return $detectedFields;
+    }
+
+    private function updateDetectedField($newField, $detectedFields, $option)
+    {
+        switch ($option) {
+            case DataSourceEntryManager::UPLOAD:
+                if (!array_key_exists(strtolower(trim($newField)), $detectedFields)) {
+                    $detectedFields[strtolower(trim($newField))] = 1;
+                } else {
+                    $detectedFields[strtolower(trim($newField))] += 1;
+                }
+                break;
+            case DataSourceEntryManager::DELETE:
+                if (isset($detectedFields[strtolower(trim($newField))])) {
+                    $detectedFields[strtolower(trim($newField))] -= 1;
+                    if ($detectedFields[strtolower(trim($newField))] <= 0) {
+                        unset($detectedFields[strtolower(trim($newField))]);
+                    }
+                }
+                break;
+        }
+
+        return $detectedFields;
     }
 }

@@ -152,7 +152,8 @@ class SqlBuilder implements SqlBuilderInterface
                 continue;
             }
 
-            $qb->addSelect(sprintf('t%d.%s as %s_%d', $dataSetIndex, $field, $field, $dataSet->getDataSetId()));
+          //  $qb->addSelect(sprintf('t%d.%s as %s_%d', $dataSetIndex, $field, $field, $dataSet->getDataSetId()));
+            $qb->addSelect(sprintf('t%d.%s as %s', $dataSetIndex, $field, $field));
         }
 
         if ($dataSetIndex === 0) {
@@ -204,15 +205,19 @@ class SqlBuilder implements SqlBuilderInterface
         if ($filter instanceof NumberFilterInterface) {
             switch ($filter->getComparisonType()) {
                 case NumberFilter::COMPARISON_TYPE_EQUAL :
-                    return sprintf('%s = %d', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s = %f', $fieldName, $filter->getComparisonValue());
                 case NumberFilter::COMPARISON_TYPE_GREATER:
-                    return sprintf('%s > %d', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s > %f', $fieldName, $filter->getComparisonValue());
                 case NumberFilter::COMPARISON_TYPE_SMALLER:
-                    return sprintf('%s < %d', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s < %f', $fieldName, $filter->getComparisonValue());
                 case NumberFilter::COMPARISON_TYPE_SMALLER_OR_EQUAL:
-                    return sprintf('%s <= %d', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s <= %f', $fieldName, $filter->getComparisonValue());
                 case NumberFilter::COMPARISON_TYPE_GREATER_OR_EQUAL:
-                    return sprintf('%s >= %d', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s >= %f', $fieldName, $filter->getComparisonValue());
+                case NumberFilter::COMPARISON_TYPE_IN:
+                    return sprintf('%s in (%s)', $fieldName, $filter->getComparisonValue());
+                case NumberFilter::COMPARISON_TYPE_NOT:
+                    return sprintf('%s not in (%s)', $fieldName, $filter->getComparisonValue());
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));
             }

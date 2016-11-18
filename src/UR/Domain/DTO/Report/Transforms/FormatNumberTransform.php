@@ -14,8 +14,8 @@ class FormatNumberTransform implements FormatNumberTransformInterface
     const DEFAULT_PRECISION = 3;
 
     const FIELD_NAME_KEY = 'field';
-    const PRECISION_KEY = 'precision';
-    const THOUSAND_SEPARATOR_KEY = 'thousandSeparator';
+    const PRECISION_KEY = 'decimals';
+    const THOUSAND_SEPARATOR_KEY = 'thousandsSeparator';
 
     protected $precision;
 
@@ -51,23 +51,31 @@ class FormatNumberTransform implements FormatNumberTransformInterface
         return $this->thousandSeparator;
     }
 
+    public function transform(Collection $collection)
+    {
+        $rows = $collection->getRows();
+        $newRows = [];
+
+        $decimalSeparator = !strcmp($this->thousandSeparator,self::DEFAULT_THOUSAND_SEPARATOR) ?  self::DEFAULT_DECIMAL_SEPARATOR: self::DEFAULT_THOUSAND_SEPARATOR;
+
+        foreach ($rows as $row) {
+            if (!array_key_exists($this->getFieldName(), $row)) {
+                continue;
+            }
+
+            $row[$this->getFieldName()] = number_format($row[$this->getFieldName()], $this->precision, $decimalSeparator, $this->thousandSeparator);
+            $newRows[] = $row;
+        }
+        $collection->setRows($newRows);
+
+        return $collection;
+    }
+
     /**
      * @return mixed
      */
     public function getFieldName()
     {
         return $this->fieldName;
-    }
-
-    public function transform(Collection $collection)
-    {
-        $rows = $collection->getRows();
-        foreach($rows as $row) {
-            if (!array_key_exists($this->getFieldName(), $row)) {
-                continue;
-            }
-
-            $row[$this->getFieldName()] = number_format($row[$this->getFieldName()], $this->precision, self::DEFAULT_DECIMAL_SEPARATOR, $this->thousandSeparator);
-        }
     }
 }
