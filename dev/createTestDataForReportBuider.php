@@ -127,7 +127,7 @@ foreach ($dataSets as $dataSet) {
                     if ($scaleDecimalColumns[$columnName] == 0) {
                         $oneRow[$columnName] = mt_rand(100, 90000);
                     } else {
-                        $oneRow[$columnName] = mt_rand(100, 90000) / 1000;
+                        $oneRow[$columnName] = number_format((mt_rand(100, 90000) / 1000), 2);
                     }
                     break;
                 default:
