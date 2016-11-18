@@ -40,7 +40,6 @@ $endDate = '2016-12-17';
 $tagName = ['tagName1', 'tagName2', 'tagName3', 'tagName4'];
 
 $publisherManager = $container->get('ur_user.domain_manager.publisher');
-
 $publisher = $publisherManager->findPublisher($publisherId);
 if (!$publisher instanceof PublisherInterface) {
     throw new \Exception(sprintf('Publisher Id = %d doest not exit in systems'));
@@ -62,7 +61,7 @@ foreach ($dataSetInputs as $dataSetInput) {
     $dataSet->setDimensions(($dataSetInput['dimensions']));
     $dataSetManager->save($dataSet);
 }
-
+/** @var DataSetInterface[] $dataSets */
 $dataSets = $dataSetManager->getDataSetForPublisher($publisher);
 
 if (empty($dataSets)) {
