@@ -113,10 +113,13 @@ class ImportUtils
         $columns = $file->getColumns();
 
         foreach ($columns as $column) {
-            foreach ($connectedDataSource->getMapFields() as $k => $v) {
-                if (strcmp($column, $k) === 0) {
-                    $parserConfig->addColumn($k, $v);
-                    break;
+            {
+                $column = strtolower(trim($column));
+                foreach ($connectedDataSource->getMapFields() as $k => $v) {
+                    if (strcmp($column, $k) === 0) {
+                        $parserConfig->addColumn($k, $v);
+                        break;
+                    }
                 }
             }
         }

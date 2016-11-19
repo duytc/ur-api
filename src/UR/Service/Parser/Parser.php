@@ -18,8 +18,9 @@ class Parser implements ParserInterface
     {
         $columnFromMap = array_flip($config->getAllColumnMappings());
 
-        $columns = array_intersect($dataSource->getColumns(), $config->getAllColumnMappings());
-
+        $fileCols = array_map("strtolower", $dataSource->getColumns());
+        $fileCols = array_map("trim", $fileCols);
+        $columns = array_intersect($fileCols, $config->getAllColumnMappings());
         $columns = array_map(function ($fromColumn) use ($columnFromMap) {
             return $columnFromMap[$fromColumn];
         }, $columns);
