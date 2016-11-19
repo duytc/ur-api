@@ -97,10 +97,6 @@ class AutoImportData implements AutoImportDataInterface
 
             $importUtils->mappingFile($connectedDataSource, $parserConfig, $file);
 
-            if (count($parserConfig->getAllColumnMappings()) === 0) {
-                continue;
-            }
-
             $code = ProcessAlert::NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE;
             $publisherId = $dataSourceEntry->getDataSource()->getPublisherId();
 
@@ -110,6 +106,12 @@ class AutoImportData implements AutoImportDataInterface
                 ProcessAlert::DATA_SOURCE_NAME => $dataSourceEntry->getDataSource()->getName(),
                 ProcessAlert::FILE_NAME => $dataSourceEntry->getFileName()
             );
+
+            if (count($parserConfig->getAllColumnMappings()) === 0) {
+                $code = ProcessAlert::DATA_IMPORT_MAPPING_FAIL;
+                $this->workerManager->processAlert($code, $publisherId, $params);
+                continue;
+            }
 
             $validRequires = true;
             $columnRequire = '';
