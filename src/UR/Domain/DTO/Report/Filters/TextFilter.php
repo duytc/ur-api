@@ -12,7 +12,7 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
     const COMPARISON_TYPE_START_WITH = 'start with';
     const COMPARISON_TYPE_END_WITH = 'end with';
     const COMPARISON_TYPE_IN = 'in';
-    const COMPARISON_TYPE_NOT = 'not';
+    const COMPARISON_TYPE_NOT = 'not in';
 
     const FIELD_TYPE_FILTER_KEY = 'type';
     const FILED_NAME_FILTER_KEY = 'field';
@@ -41,7 +41,31 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
         $this->fieldName = $textFilter[self::FILED_NAME_FILTER_KEY];
         $this->fieldType = $textFilter[self::FIELD_TYPE_FILTER_KEY];
         $this->comparisonType = $textFilter[self::COMPARISON_TYPE_FILTER_KEY];
-        $this->comparisonValue = $textFilter[self::COMPARISON_VALUE_FILTER_KEY];
+
+        if ($this->comparisonType == self::COMPARISON_TYPE_IN
+            || $this->comparisonType == self::COMPARISON_TYPE_NOT
+        ) {
+            $this->comparisonValue = implode(",", $this->makeQuote($textFilter[self::COMPARISON_VALUE_FILTER_KEY]));
+        } else {
+            $this->comparisonValue = $textFilter[self::COMPARISON_VALUE_FILTER_KEY];
+        }
+
+    }
+
+    /**
+     * @param $str
+     * @return array
+     */
+    protected function makeQuote($str)
+    {
+        $newString = [];
+        $subStrings = explode(',', $str);
+        foreach ($subStrings as $subString) {
+            $newSubString = '"' . trim($subString) . '"';
+            $newString [] = $newSubString;
+        }
+
+        return $newString;
     }
 
     /**
