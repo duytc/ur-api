@@ -69,11 +69,11 @@ class SortByTransform implements SortByTransformInterface
             $this->sortDirection = self::SORT_DIRECTION_DESC;
         }
 
-        usort($reports, "compare");
-    }
+        $rows = $collection->getRows();
+        usort($rows, function ($a, $b) {
+            return ($a <= $b) ? $this->sortDirection : -1 * $this->sortDirection;
+        });
 
-    protected function compare($a, $b)
-    {
-        return ($a <= $b) ? $this->sortDirection : -1 * $this->sortDirection;
+        $collection->setRows($rows);
     }
 }

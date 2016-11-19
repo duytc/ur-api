@@ -233,6 +233,12 @@ class SqlBuilder implements SqlBuilderInterface
                     return sprintf('CONTAINS(%s, %s)', $fieldName, $filter->getComparisonValue());
                 case TextFilter::COMPARISON_TYPE_START_WITH:
                     return sprintf('%s LIKE %s%', $fieldName, $filter->getComparisonValue());
+                case TextFilter::COMPARISON_TYPE_END_WITH:
+                    return sprintf('%s LIKE %s%', $fieldName, $filter->getComparisonValue());
+                case TextFilter::COMPARISON_TYPE_IN:
+                    return sprintf('%s IN (%s)', $fieldName, $filter->getComparisonValue());
+                case TextFilter::COMPARISON_TYPE_NOT:
+                    return sprintf('%s NOT IN (%s)', $fieldName, $filter->getComparisonValue());
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));
             }
