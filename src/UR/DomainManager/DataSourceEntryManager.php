@@ -219,19 +219,20 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
     private function updateDetectedField($newField, $detectedFields, $option)
     {
+        $newField = strtolower(trim($newField));
         switch ($option) {
             case DataSourceEntryManager::UPLOAD:
-                if (!array_key_exists(strtolower(trim($newField)), $detectedFields)) {
-                    $detectedFields[strtolower(trim($newField))] = 1;
+                if (!array_key_exists($newField, $detectedFields)) {
+                    $detectedFields[$newField] = 1;
                 } else {
-                    $detectedFields[strtolower(trim($newField))] += 1;
+                    $detectedFields[$newField] += 1;
                 }
                 break;
             case DataSourceEntryManager::DELETE:
-                if (isset($detectedFields[strtolower(trim($newField))])) {
-                    $detectedFields[strtolower(trim($newField))] -= 1;
-                    if ($detectedFields[strtolower(trim($newField))] <= 0) {
-                        unset($detectedFields[strtolower(trim($newField))]);
+                if (isset($detectedFields[$newField])) {
+                    $detectedFields[$newField] -= 1;
+                    if ($detectedFields[$newField] <= 0) {
+                        unset($detectedFields[$newField]);
                     }
                 }
                 break;

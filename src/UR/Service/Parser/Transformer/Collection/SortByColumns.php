@@ -22,7 +22,7 @@ class SortByColumns implements CollectionTransformerInterface
 
         if (count($sortByColumns) != count($this->sortByColumns)) {
             return new Collection($columns, $rows);
-            throw new \InvalidArgumentException('Cannot sort the collection, some of the columns do not exist');
+//            throw new \InvalidArgumentException('Cannot sort the collection, some of the columns do not exist');
         }
         // todo implement sorting
 
