@@ -47,7 +47,7 @@ class FormatDateTransform implements FormatDateTransformInterface
         return $this->toFormat;
     }
 
-    public function transform(Collection $collection)
+    public function transform(Collection $collection,  array $metrics, array $dimensions)
     {
         $rows = $collection->getRows();
         $newRows = [];

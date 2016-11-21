@@ -21,7 +21,9 @@ interface TransformInterface
 
     /**
      * @param Collection $collection
-     * @return Collection
+     * @param array $metrics
+     * @param array $dimensions
+     * @return mixed
      */
-    public function transform(Collection $collection);
+    public function transform(Collection $collection,  array $metrics, array $dimensions);
 }

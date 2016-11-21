@@ -48,21 +48,79 @@ class SortByTransform implements SortByTransformInterface
     /**
      * @return mixed
      */
-    public function getFields()
-    {
-        return $this->fields;
-    }
-
-    /**
-     * @return mixed
-     */
     public function getDirection()
     {
         return $this->direction;
     }
 
-    public function transform(Collection $collection)
+    /**
+     * @param Collection $collection
+     * @param array $metrics
+     * @param array $dimensions
+     * @return mixed
+     */
+    public function transform(Collection $collection, array $metrics, array $dimensions)
     {
+        $this->sortByFields($this->getFields(), $collection, $metrics, $dimensions);
+    }
 
+    /**
+     * @inheritdoc
+     */
+    protected function sortByFields(array $sortFields, Collection $reports, array $metrics = null, array $dimensions = null)
+    {
+        $rows = $reports->getRows();
+
+        $sortCriteria = [];
+        foreach ($sortFields as $field) {
+            $sortCriteria[$field] = [$this->getDirection(), SORT_STRING];
+        }
+
+        $newRows = $this->multiSort($rows, $sortCriteria, false);
+        $reports->setRows($newRows);
+
+        return $reports;
+    }
+
+    /**
+     * Sort array by multi fields
+     * @param $data
+     * @param $sortCriteria
+     * $sortCriteria = array('field1' => array(SORT_DESC, SORT_NUMERIC),'field3' => array(SORT_DESC, SORT_NUMERIC));
+     * @param bool $caseInSensitive
+     * @return mixed
+     */
+    protected function multiSort($data, $sortCriteria, $caseInSensitive = true)
+    {
+        if (!is_array($data) || !is_array($sortCriteria))
+            return false;
+        $args = array();
+        $i = 0;
+        foreach ($sortCriteria as $sortColumn => $sortAttributes) {
+            $colList = array();
+            foreach ($data as $key => $row) {
+                $convertToLower = $caseInSensitive && (in_array(SORT_STRING, $sortAttributes) || in_array(SORT_REGULAR, $sortAttributes));
+                $rowData = $convertToLower ? strtolower($row[$sortColumn]) : $row[$sortColumn];
+                $colLists[$sortColumn][$key] = $rowData;
+            }
+            $args[] = &$colLists[$sortColumn];
+
+            foreach ($sortAttributes as $sortAttribute) {
+                $tmp[$i] = $sortAttribute;
+                $args[] = &$tmp[$i];
+                $i++;
+            }
+        }
+        $args[] = &$data;
+        call_user_func_array('array_multisort', $args);
+        return end($args);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFields()
+    {
+        return $this->fields;
     }
 }

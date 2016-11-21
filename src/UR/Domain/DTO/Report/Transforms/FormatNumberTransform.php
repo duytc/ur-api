@@ -51,7 +51,7 @@ class FormatNumberTransform implements FormatNumberTransformInterface
         return $this->thousandSeparator;
     }
 
-    public function transform(Collection $collection)
+    public function transform(Collection $collection,  array $metrics, array $dimensions)
     {
         $rows = $collection->getRows();
         $newRows = [];

@@ -48,9 +48,11 @@ class AddFieldTransform implements TransformInterface
 
     /**
      * @param Collection $collection
-     * @return Collection
+     * @param array $metrics
+     * @param array $dimensions
+     * @return mixed|void
      */
-    public function transform(Collection $collection)
+    public function transform(Collection $collection,  array $metrics, array $dimensions)
     {
         $columns = $collection->getColumns();
         // new field already existed

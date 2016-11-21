@@ -68,17 +68,19 @@ class ReportBuilder implements ReportBuilderInterface
          * @var TransformInterface $transform
          */
         foreach ($transforms as $transform) {
-            $transform->transform($collection);
+            $transform->transform($collection, $metrics, $dimensions);
         }
 
-        if ($groupBy instanceof GroupByTransformInterface) {
+
+       /* if ($groupBy instanceof GroupByTransformInterface) {
             return $this->reportGrouper->groupReports($groupBy, $collection, $metrics, $dimensions);
         }
 
         $sortByFields = $params->getSortByFields();
         if (!empty($sortByFields)) {
             $this->sorter->sortByFields($sortByFields, $collection, $metrics, $dimensions);
-        }
+        }*/
+
 
         return $collection->getRows();
     }
