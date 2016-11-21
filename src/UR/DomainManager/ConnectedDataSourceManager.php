@@ -4,11 +4,13 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
+use UR\Domain\DTO\Report\Params;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\ModelInterface;
+use UR\Model\PagerParam;
 use UR\Repository\Core\ConnectedDataSourceRepositoryInterface;
 
     class ConnectedDataSourceManager implements ConnectedDataSourceManagerInterface
@@ -91,5 +93,13 @@ use UR\Repository\Core\ConnectedDataSourceRepositoryInterface;
     public function getConnectedDataSourceByDataSource(DataSourceInterface $dataSource)
     {
         return $this->repository->getConnectedDataSourceByDataSource($dataSource);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getConnectedDataSourceByDataSetQuery(DataSetInterface $dataSet, PagerParam $params)
+    {
+        return $this->repository->getConnectedDataSourceByDataSetQuery($dataSet, $params);
     }
 }
