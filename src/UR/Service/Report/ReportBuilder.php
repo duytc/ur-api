@@ -42,31 +42,31 @@ class ReportBuilder implements ReportBuilderInterface
             $metrics = $dataSets[0]->getMetrics();
             $dimensions = $dataSets[0]->getDimensions();
         } else {
-            foreach($dataSets as $dataSet) {
-                foreach($dataSet->getMetrics() as $item) {
+            foreach ($dataSets as $dataSet) {
+                foreach ($dataSet->getMetrics() as $item) {
                     $metrics[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
                 }
 
-                foreach($dataSet->getDimensions() as $item) {
+                foreach ($dataSet->getDimensions() as $item) {
                     $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
                 }
             }
         }
 
         $statement = $this->reportSelector->getReportData($params);
-        $collection = new Collection(array_merge($metrics,  $dimensions), $statement->fetchAll());
+        $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll());
 
         $groupBy = $params->getGroupByTransform();
         $transforms = $params->getTransforms();
         /**
          * @var TransformInterface $transform
          */
-        foreach($transforms as $transform) {
+        foreach ($transforms as $transform) {
             $transform->transform($collection);
         }
 
         if ($groupBy instanceof GroupByTransformInterface) {
-            return $this->reportGrouper->groupReports($groupBy, $collection, $metrics);
+            return $this->reportGrouper->groupReports($groupBy, $collection, $metrics, $dimensions);
         }
 
         return $collection->getRows();
