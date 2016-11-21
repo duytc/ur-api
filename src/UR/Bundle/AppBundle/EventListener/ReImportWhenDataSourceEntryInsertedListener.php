@@ -13,11 +13,11 @@ use UR\Worker\Manager;
 /**
  * Class ConnectedDataSourceChangeListener
  *
- * Handle event ConnectedDataSource changed for updating
+ * when a file received or be replayed, doing import
  *
  * @package UR\Bundle\AppBundle\EventListener
  */
-class ReImportDataSourceEntryInsertedListener
+class ReImportWhenDataSourceEntryInsertedListener
 {
     /**
      * @var array|ModelInterface[]

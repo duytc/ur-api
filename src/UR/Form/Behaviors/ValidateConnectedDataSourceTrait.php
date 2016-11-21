@@ -85,14 +85,18 @@ trait ValidateConnectedDataSourceTrait
                     return "Transform type should be All fields or Single field";
                 }
 
-                if (Type::isTransformSingleField($transform) && !$this->validateSingleFieldTransform($connDataSource, $transform)) {
-                    return "Error when transform single field";
+                if (Type::isTransformSingleField($transform)) {
+                    if ($this->validateSingleFieldTransform($connDataSource, $transform) !== 0) {
+                        return $this->validateSingleFieldTransform($connDataSource, $transform);
+                    }
                 }
 
-                if (Type::isTransformAllField($transform) && !$this->validateAllFieldsTransform($connDataSource, $transform)) {
-                    return "Error when transform all fields";
-                }
 
+                if (Type::isTransformAllField($transform)) {
+                    if ($this->validateAllFieldsTransform($connDataSource, $transform) !== 0) {
+                        return $this->validateAllFieldsTransform($connDataSource, $transform);
+                    }
+                }
             }
         }
 
@@ -122,25 +126,22 @@ trait ValidateConnectedDataSourceTrait
     public function validateSingleFieldTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
         if (!in_array($transform[TransformType::FIELD], $connectedDataSource->getMapFields())) {
-            return false;
+            return "Transform setting error: field [" . $transform[TransformType::FIELD] . "] should be mapped";
         }
 
-        if (!TransformType::isValidSingleFieldTransformType($transform)) {
-            return false;
-        }
-        return true;
+        return TransformType::isValidSingleFieldTransformType($transform);
     }
 
     public function validateAllFieldsTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
         if (!TransformType::isValidAllFieldTransformType($transform[TransformType::TYPE])) {
-            return false;
+            return "Transform all fields setting error: field [" . $transform[TransformType::FIELD] . "] transform type should be one of " . implode(", ", TransformType::$transformTypes);
         }
 
         if (TransformType::isGroupOrSortType($transform[TransformType::TYPE])) {
             foreach ($transform[TransformType::FIELDS] as $field) {
                 if (!in_array($field, $connectedDataSource->getMapFields())) {
-                    return false;
+                    return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field . "] hasn't been mapped ";
                 }
             }
         }
@@ -148,12 +149,15 @@ trait ValidateConnectedDataSourceTrait
         if (TransformType::isAddingType($transform[TransformType::TYPE])) {
             foreach ($transform[TransformType::FIELDS] as $field) {
                 if (in_array($field[TransformType::FIELD], $connectedDataSource->getMapFields())) {
-                    return false;
+                    return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] hasn't been mapped ";
+                }
+                if (!$this->isDataSetFields($field[TransformType::FIELD], $connectedDataSource->getDataSet())) {
+                    return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] dose not exist in dimensions or metrics ";
                 }
             }
         }
 
-        return true;
+        return 0;
     }
 
     public function validateAlertSetting(ConnectedDataSourceInterface $connDataSource)
@@ -164,6 +168,15 @@ trait ValidateConnectedDataSourceTrait
             }
         }
 
+        return true;
+    }
+
+    public function isDataSetFields($field, DataSetInterface $dataSet)
+    {
+        $dataSetFields = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+        if (!in_array($field, $dataSetFields)) {
+            return false;
+        }
         return true;
     }
 }

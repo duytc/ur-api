@@ -15,6 +15,7 @@ final class FilterType
     const GREATER_OR_EQUAL = 'greater or equal'; // double/float
     const IN = 'in';
     const NOT = 'not';
+    const NOT_IN = 'not in';
     const FIELD='field';
     const FORMAT = 'format';
     const FROM = 'startDate';
@@ -44,7 +45,7 @@ final class FilterType
         self::START_WITH,
         self::END_WITH,
         self::IN,
-        self::NOT
+        self::NOT_IN
     ];
 
     public static function isValidFilterDateType($arr)

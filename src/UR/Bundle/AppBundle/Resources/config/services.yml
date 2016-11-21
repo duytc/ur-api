@@ -6,7 +6,7 @@ parameters:
 
 services:
     tagcade_app.event_listener.data_set_change_listener:
-        class: UR\Bundle\AppBundle\EventListener\ReImportDataSetChangeListener
+        class: UR\Bundle\AppBundle\EventListener\ReConfigConnectedDataSourceListener
         arguments:
             - @ur.worker.manager
         tags:
@@ -15,7 +15,7 @@ services:
             - { name: doctrine.event_listener, event: postFlush }
 
     tagcade_app.event_listener.connected_data_source_change_listener:
-        class: UR\Bundle\AppBundle\EventListener\ConnectedDataSourceChangeListener
+        class: UR\Bundle\AppBundle\EventListener\ImportDataWhenCreateConnectedDataSourceListener
         arguments:
             - @ur.worker.manager
         tags:
@@ -23,7 +23,7 @@ services:
             - { name: doctrine.event_listener, event: postPersist }
 
     ur_app.event_listener.data_source_entry_inserted_listener:
-        class: UR\Bundle\AppBundle\EventListener\ReImportDataSourceEntryInsertedListener
+        class: UR\Bundle\AppBundle\EventListener\ReImportWhenDataSourceEntryInsertedListener
         arguments:
             - @ur.worker.manager
         tags:
