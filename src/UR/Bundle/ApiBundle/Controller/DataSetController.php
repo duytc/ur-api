@@ -210,6 +210,14 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * @Rest\Get("datasets/{id}/importhistories", requirements={"id" = "\d+"})
      * @Rest\View(serializerGroups={"importHistory.detail", "user.summary", "dataset.importhistory", "dataSourceEntry.summary", "datasource.importhistory"})
      *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     *
      * @ApiDoc(
      *  section = "Data Source",
      *  resource = true,
@@ -219,16 +227,23 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * )
      *
      * @param int $id the resource id
+     * @param Request $request
      * @return array
      * @throws \Exception
      */
-    public function getImportHistoriesByDataSetAction($id)
+    public function getImportHistoriesByDataSetAction(Request $request, $id)
     {
         /** @var DataSetInterface $dataSet */
         $dataSet = $this->one($id);
         $importHistoryManager = $this->get('ur.domain_manager.import_history');
+        $qb = $importHistoryManager->getImportedHistoryByDataSetQuery($dataSet, $this->getParams());
 
-        return $importHistoryManager->getImportedHistoryByDataSet($dataSet);
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
     }
 
     /**
@@ -237,6 +252,14 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * @Rest\Get("datasets/{id}/connecteddatasources", requirements={"id" = "\d+"})
      * @Rest\View(serializerGroups={"connectedDataSource.summary", "datasource.summary"})
      *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     *
      * @ApiDoc(
      *  section = "Data Source",
      *  resource = true,
@@ -246,17 +269,23 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * )
      *
      * @param int $id the resource id
-     * @return array
+     * @param Request $request
+     * @return \UR\Model\Core\ConnectedDataSourceInterface
      */
-    public function getConnectedDataSourceByDataSetAction($id)
+    public function getConnectedDataSourceByDataSetAction(Request $request, $id)
     {
         /** @var DataSetInterface $dataSet */
         $dataSet = $this->one($id);
 
         $connectedDataSourceManager = $this->get('ur.domain_manager.connected_data_source');
-        $connectedDataSource = $connectedDataSourceManager->getConnectedDataSourceByDataSet($dataSet);
+        $qb = $connectedDataSourceManager->getConnectedDataSourceByDataSetQuery($dataSet, $this->getParams());
 
-        return $connectedDataSource;
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
     }
 
     /**

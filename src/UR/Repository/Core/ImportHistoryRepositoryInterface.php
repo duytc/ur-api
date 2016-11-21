@@ -21,6 +21,13 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
     public function getImportHistoriesForUserPaginationQuery(UserRoleInterface $userRole, PagerParam $param);
 
     /**
+     * @param DataSetInterface $dataSet
+     * @param PagerParam $param
+     * @return QueryBuilder
+     */
+
+    public function getImportedHistoryByDataSetQuery(DataSetInterface $dataSet, PagerParam $param);
+    /**
      * @param int $dataSetId
      * @param int $importId
      * @return QueryBuilder
