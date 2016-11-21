@@ -13,7 +13,7 @@ use UR\Model\User\Role\UserRoleInterface;
 
 class ImportHistoryRepository extends EntityRepository implements ImportHistoryRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'dataSet' => 'dataSet'];
+    protected $SORT_FIELDS = ['id' => 'id', 'dataSet' => 'dataSet', 'dataSource' => 'dataSource', 'createDate' => 'createDate'];
 
     /**
      * @inheritdoc
@@ -42,6 +42,55 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
                     $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 case $this->SORT_FIELDS['dataSet']:
+                    $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return $qb;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getImportedHistoryByDataSetQuery(DataSetInterface $dataSet, PagerParam $param)
+    {
+        $qb = $this->createQueryBuilder('ih')
+            ->leftJoin('ih.dataSourceEntry','dse')
+            ->leftJoin('dse.dataSource','ds')
+            ->where('ih.dataSet=:dataSet')
+            ->setParameter('dataSet', $dataSet);
+
+        if (is_string($param->getSearchKey())) {
+            $searchLike = sprintf('%%%s%%', $param->getSearchKey());
+            $qb
+                ->andWhere($qb->expr()->orX(
+                    $qb->expr()->like('ds.name', ':searchKey'),
+                    $qb->expr()->like('ih.id', ':searchKey')
+                ))
+                ->setParameter('searchKey', $searchLike);
+        }
+
+        $searchLike = sprintf('%%%s%%', str_replace("/", "-", $param->getSearchKey()));
+        $qb
+            ->orWhere($qb->expr()->like('SUBSTRING(ih.createdDate,0,10)', ':date'))
+            ->setParameter('date', $searchLike);
+
+        if (is_string($param->getSortField()) &&
+            is_string($param->getSortDirection()) &&
+            in_array($param->getSortDirection(), ['asc', 'desc', 'ASC', 'DESC']) &&
+            in_array($param->getSortField(), $this->SORT_FIELDS)
+        ) {
+            switch ($param->getSortField()) {
+                case $this->SORT_FIELDS['id']:
+                    $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['dataSource']:
+                    $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['createDate']:
                     $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 default:

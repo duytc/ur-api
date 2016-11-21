@@ -9,6 +9,7 @@ use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\ModelInterface;
+use UR\Model\PagerParam;
 use UR\Repository\Core\ImportHistoryRepositoryInterface;
 use UR\Worker\Manager;
 
@@ -86,6 +87,14 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     public function getImportedHistoryByDataSet(DataSetInterface $dataSet)
     {
         return $this->repository->getImportedHistoryByDataSet($dataSet);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getImportedHistoryByDataSetQuery(DataSetInterface $dataSet, PagerParam $param)
+    {
+        return $this->repository->getImportedHistoryByDataSetQuery($dataSet, $param);
     }
 
     /**
