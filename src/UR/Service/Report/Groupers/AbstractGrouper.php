@@ -7,7 +7,7 @@ abstract class AbstractGrouper implements GrouperInterface
 {
     public function getGroupedReport($groupingFields, Collection $collection, array $metrics, array $dimensions)
     {
-        $groupedReports = $this->generateGroupedArray($groupingFields, $collection, $dimensions);
+        $groupedReports = $this->generateGroupedArray($groupingFields, $collection, []);
 
         $results = [];
         foreach ($groupedReports as $groupedReport) {
