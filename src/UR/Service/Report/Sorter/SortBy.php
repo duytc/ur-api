@@ -9,10 +9,6 @@ use UR\Service\DTO\Collection;
 
 class SortBy implements SortByInterface
 {
-    function __construct()
-    {
-    }
-
     /**
      * @inheritdoc
      */
