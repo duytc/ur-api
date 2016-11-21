@@ -11,7 +11,7 @@ use UR\Model\User\Role\UserRoleInterface;
 
 class DataSourceEntryRepository extends EntityRepository implements DataSourceEntryRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'receivedDate' => 'receivedDate'];
+    protected $SORT_FIELDS = ['id' => 'id', 'receivedDate' => 'receivedDate', 'fileName' => 'fileName'];
 
     /**
      * @inheritdoc
@@ -101,7 +101,11 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
             $qb
                 ->andWhere($qb->expr()->orX(
                     $qb->expr()->like('ds.name', ':searchKey'),
-                    $qb->expr()->like('dse.id', ':searchKey')
+                    $qb->expr()->like('ds.format', ':searchKey'),
+                    $qb->expr()->like('dse.receivedVia', ':searchKey'),
+                    $qb->expr()->like('dse.id', ':searchKey'),
+                    $qb->expr()->like('dse.fileName', ':searchKey'),
+                    $qb->expr()->like('dse.receivedDate', ':searchKey')
                 ))
                 ->setParameter('searchKey', $searchLike);
         }
@@ -112,10 +116,13 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
         ) {
             switch ($param->getSortField()) {
                 case $this->SORT_FIELDS['id']:
-                    $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
+                    $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
                     break;
-                case $this->SORT_FIELDS['name']:
-                    $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
+                case $this->SORT_FIELDS['receivedDate']:
+                    $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['fileName']:
+                    $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 default:
                     break;
