@@ -174,7 +174,7 @@ trait ValidateConnectedDataSourceTrait
     public function isDataSetFields($field, DataSetInterface $dataSet)
     {
         $dataSetFields = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
-        if (!in_array($field, $dataSetFields)) {
+        if (!array_key_exists($field, $dataSetFields)) {
             return false;
         }
         return true;

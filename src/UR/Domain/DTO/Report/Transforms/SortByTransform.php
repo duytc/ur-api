@@ -7,8 +7,9 @@ namespace UR\Domain\DTO\Report\Transforms;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
-class SortByTransform implements SortByTransformInterface
+class SortByTransform extends AbstractTransform implements SortByTransformInterface
 {
+    const PRIORITY = 4;
     const SORT_DESC = 'desc';
     const SORT_ASC = 'asc';
 
@@ -30,6 +31,7 @@ class SortByTransform implements SortByTransformInterface
 
     function __construct(array $data)
     {
+        parent::__construct();
         if (!array_key_exists(self::FIELDS_KEY, $data)) {
             throw new InvalidArgumentException('"fields" is missing');
         }

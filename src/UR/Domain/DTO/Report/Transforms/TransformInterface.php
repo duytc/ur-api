@@ -1,8 +1,5 @@
 <?php
-
-
 namespace UR\Domain\DTO\Report\Transforms;
-
 
 use UR\Service\DTO\Collection;
 
@@ -26,4 +23,9 @@ interface TransformInterface
      * @return mixed
      */
     public function transform(Collection $collection,  array $metrics, array $dimensions);
+
+    /**
+     * @return int
+     */
+    public function getPriority();
 }

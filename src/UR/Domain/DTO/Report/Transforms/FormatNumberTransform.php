@@ -7,8 +7,9 @@ namespace UR\Domain\DTO\Report\Transforms;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
-class FormatNumberTransform implements FormatNumberTransformInterface
+class FormatNumberTransform extends AbstractTransform implements FormatNumberTransformInterface
 {
+    const PRIORITY = 1;
     const DEFAULT_DECIMAL_SEPARATOR = '.';
     const DEFAULT_THOUSAND_SEPARATOR = ',';
     const DEFAULT_PRECISION = 3;
@@ -25,6 +26,7 @@ class FormatNumberTransform implements FormatNumberTransformInterface
 
     function __construct(array $data)
     {
+        parent::__construct();
         if (!array_key_exists(self::FIELD_NAME_KEY, $data)) {
             throw new InvalidArgumentException('"field name" is missing');
         }

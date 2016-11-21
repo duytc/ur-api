@@ -7,8 +7,9 @@ namespace UR\Domain\DTO\Report\Transforms;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Service\DTO\Collection;
 
-class AddCalculatedFieldTransform implements AddCalculatedFieldTransformInterface
+class AddCalculatedFieldTransform extends AbstractTransform implements AddCalculatedFieldTransformInterface
 {
+    const PRIORITY = 3;
     const NAME_CALCULATED_FIELD = 'field';
     const EXPRESSION_CALCULATED_FIELD = 'expression';
     const DEFAULT_VALUE_CALCULATED_FIELD = 'defaultValue';
@@ -26,6 +27,7 @@ class AddCalculatedFieldTransform implements AddCalculatedFieldTransformInterfac
 
     public function __construct(ExpressionLanguage $language, array $addCalculatedField)
     {
+        parent::__construct();
         if (!array_key_exists(self::NAME_CALCULATED_FIELD, $addCalculatedField)
             || !array_key_exists(self::EXPRESSION_CALCULATED_FIELD, $addCalculatedField)
 //            || !array_key_exists(self::DEFAULT_VALUE_CALCULATED_FIELD, $addCalculatedField)

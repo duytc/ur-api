@@ -8,8 +8,9 @@ use DateTime;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
-class FormatDateTransform implements FormatDateTransformInterface
+class FormatDateTransform extends AbstractTransform implements FormatDateTransformInterface
 {
+    const PRIORITY = 1;
     const FROM_FORMAT_KEY = 'from';
     const TO_FORMAT_KEY = 'to';
     const FIELD_NAME_KEY = 'field';
@@ -22,6 +23,7 @@ class FormatDateTransform implements FormatDateTransformInterface
 
     function __construct(array $data)
     {
+        parent::__construct();
         if (!array_key_exists(self::TO_FORMAT_KEY, $data) || !array_key_exists(self::FROM_FORMAT_KEY, $data) || !array_key_exists(self::FIELD_NAME_KEY, $data)) {
             throw new InvalidArgumentException('either "from" or "to" or "field" is missing');
         }

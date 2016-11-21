@@ -7,7 +7,7 @@ namespace UR\Domain\DTO\Report\Transforms;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
-class GroupByTransform implements GroupByTransformInterface
+class GroupByTransform extends AbstractTransform implements GroupByTransformInterface
 {
     const FIELDS_KEY = 'fields';
     /**
