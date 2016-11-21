@@ -42,7 +42,10 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
      */
     public function transform(Collection $collection, array $metrics, array $dimensions)
     {
-        $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions);
+       $results =  $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions);
+        $collection->setRows($results);
+
+        return $collection;
     }
 
     /**

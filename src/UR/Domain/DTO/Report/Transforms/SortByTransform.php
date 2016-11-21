@@ -63,7 +63,10 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
      */
     public function transform(Collection $collection, array $metrics, array $dimensions)
     {
-        $this->sortByFields($this->getFields(), $collection, $metrics, $dimensions);
+       $results =  $this->sortByFields($this->getFields(), $collection, $metrics, $dimensions);
+       $collection->setRows($results);
+
+        return $collection;
     }
 
     /**
@@ -78,9 +81,7 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
             $sortCriteria[$field] = [$this->getDirection(), SORT_STRING];
         }
 
-        $newRows = $this->multiSort($rows, $sortCriteria, false);
-        $reports->setRows($newRows);
-
+        $reports = $this->multiSort($rows, $sortCriteria, false);
         return $reports;
     }
 
