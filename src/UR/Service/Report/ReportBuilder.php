@@ -62,8 +62,15 @@ class ReportBuilder implements ReportBuilderInterface
         $statement = $this->reportSelector->getReportData($params);
         $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll());
 
-        $groupBy = $params->getGroupByTransform();
+//        $groupBy = $params->getGroupByTransform();
         $transforms = $params->getTransforms();
+        usort($transforms, function(TransformInterface $a, TransformInterface $b){
+            if ($a->getPriority() == $b->getPriority()) {
+                return 0;
+            }
+            return ($a->getPriority() < $b->getPriority()) ? -1 : 1;
+        });
+
         /**
          * @var TransformInterface $transform
          */
@@ -71,9 +78,9 @@ class ReportBuilder implements ReportBuilderInterface
             $transform->transform($collection);
         }
 
-        if ($groupBy instanceof GroupByTransformInterface) {
-            return $this->reportGrouper->groupReports($groupBy, $collection, $metrics, $dimensions);
-        }
+//        if ($groupBy instanceof GroupByTransformInterface) {
+//            return $this->reportGrouper->groupReports($groupBy, $collection, $metrics, $dimensions);
+//        }
 
         $sortByFields = $params->getSortByFields();
         if (!empty($sortByFields)) {
