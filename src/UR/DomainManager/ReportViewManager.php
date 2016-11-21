@@ -7,6 +7,9 @@ use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\ModelInterface;
+use UR\Model\PagerParam;
+use UR\Model\User\Role\PublisherInterface;
+use UR\Model\User\Role\UserRoleInterface;
 use UR\Repository\Core\ReportViewRepositoryInterface;
 
 class ReportViewManager implements ReportViewManagerInterface
@@ -73,5 +76,10 @@ class ReportViewManager implements ReportViewManagerInterface
     public function all($limit = null, $offset = null)
     {
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
+    }
+
+    public function getReportViewsForUserPaginationQuery(UserRoleInterface $publisher, PagerParam $param)
+    {
+        return $this->repository->getReportViewsForUserPaginationQuery($publisher, $param);
     }
 }
