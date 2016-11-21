@@ -62,7 +62,7 @@ class ReportBuilder implements ReportBuilderInterface
         $statement = $this->reportSelector->getReportData($params);
         $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll());
 
-//        $groupBy = $params->getGroupByTransform();
+//      $groupBy = $params->getGroupByTransform();
         $transforms = $params->getTransforms();
         usort($transforms, function(TransformInterface $a, TransformInterface $b){
             if ($a->getPriority() == $b->getPriority()) {
