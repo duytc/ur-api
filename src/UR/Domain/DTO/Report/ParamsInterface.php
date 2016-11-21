@@ -18,6 +18,10 @@ interface ParamsInterface
     public function getGroupByTransform();
 
     /**
+     * @return mixed
+     */
+    public function getSortByFields();
+    /**
      * @return TransformInterface[]
      */
     public function getTransforms();

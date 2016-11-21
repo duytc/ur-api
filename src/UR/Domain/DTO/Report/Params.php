@@ -6,6 +6,7 @@ namespace UR\Domain\DTO\Report;
 
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
+use UR\Domain\DTO\Report\Transforms\SortByTransformInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 
 
@@ -133,14 +134,31 @@ class Params implements ParamsInterface
         if (empty($this->getTransforms())) {
             return false;
         }
-
+        /** @var GroupByTransformInterface[] $groupByTransforms */
+        $groupByTransforms = [];
         foreach ($this->getTransforms() as $transform) {
             if ($transform instanceof GroupByTransformInterface) {
-                return $transform;
+                $groupByTransforms[] = $transform;
             }
         }
 
-        return false;
+        if (empty($groupByTransforms)) {
+            return false;
+        }
+
+        /** @var GroupByTransformInterface $transformThatMergeFields */
+        $transformThatMergeFields = reset($groupByTransforms);
+
+        foreach ($groupByTransforms as $groupByTransform) {
+            foreach ($groupByTransform->getFields() as $groupField) {
+                if (!in_array($groupField, $transformThatMergeFields->getFields())) {
+                    $transformThatMergeFields->addField($groupField);
+                }
+            }
+        }
+
+        return $transformThatMergeFields;
+
     }
 
     /**
@@ -163,5 +181,26 @@ class Params implements ParamsInterface
     {
         $this->transforms = $transforms;
         return $this;
+    }
+
+    /**
+     * @return array|bool
+     */
+    public function getSortByFields()
+    {
+        $transforms = $this->getTransforms();
+        if (empty($transforms)) {
+            return false;
+        }
+
+        $sortByTransforms = [];
+        foreach ($transforms as $transform) {
+            if ($transform instanceof SortByTransformInterface) {
+                $sortByTransforms [] = $transform ;
+            }
+        }
+
+        return $sortByTransforms;
+
     }
 }
