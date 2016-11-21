@@ -16,11 +16,11 @@ use UR\Worker\Manager;
 /**
  * Class DataSetChangeListener
  *
- * Handle event Data Set changed for updating
+ * Handle event Data Set changed for updating Connected DataSource configuration
  *
  * @package UR\Bundle\AppBundle\EventListener
  */
-class ReImportDataSetChangeListener
+class ReConfigConnectedDataSourceListener
 {
     /**
      * @var array|DataSetInterface[]
@@ -103,8 +103,6 @@ class ReImportDataSetChangeListener
         }
 
         $em = $args->getEntityManager();
-        $uow = $em->getUnitOfWork();
-
         // detect all changed fields
         foreach ($this->changedEntities as $entity) {
             // delete all configs of connected dataSources related to deletedFields

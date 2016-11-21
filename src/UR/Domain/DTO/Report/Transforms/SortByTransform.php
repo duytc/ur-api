@@ -12,11 +12,11 @@ class SortByTransform implements SortByTransformInterface
     const SORT_DESC = 'desc';
     const SORT_ASC = 'asc';
 
-    const SORT_DIRECTION_ASC = -1;
-    const SORT_DIRECTION_DESC = 1;
+    const SORT_DIRECTION_ASC = SORT_ASC;
+    const SORT_DIRECTION_DESC = SORT_DESC; //Importance: not change to use in array_multisort when sorting report
 
     const DEFAULT_SORT_DIRECTION = 'asc';
-    const FIELDS_KEY = 'fields';
+    const FIELDS_KEY = 'names';
     const SORT_DIRECTION_KEY = 'direction';
 
     /**
@@ -63,17 +63,6 @@ class SortByTransform implements SortByTransformInterface
 
     public function transform(Collection $collection)
     {
-        if ($this->getDirection() === SortByTransform::SORT_ASC) {
-            $this->sortDirection = self::SORT_DIRECTION_ASC;
-        } else {
-            $this->sortDirection = self::SORT_DIRECTION_DESC;
-        }
 
-        $rows = $collection->getRows();
-        usort($rows, function ($a, $b) {
-            return ($a <= $b) ? $this->sortDirection : -1 * $this->sortDirection;
-        });
-
-        $collection->setRows($rows);
     }
 }

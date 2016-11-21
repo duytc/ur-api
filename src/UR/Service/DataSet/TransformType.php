@@ -23,8 +23,7 @@ final class TransformType
     const COMPARISON = 'comparison';
     const COMPARISON_PERCENT = 'comparisonPercent';
 
-    private static $transformTypes = [
-        self::TRANSFORM_TYPE,
+    public static $transformTypes = [
         self::GROUP_BY,
         self::SORT_BY,
         self::ADD_FIELD,
@@ -80,29 +79,28 @@ final class TransformType
     public static function isValidSingleFieldTransformType($arr)
     {
         if (!in_array($arr[self::TYPE], self::$singleTransformTypes)) {
-            return false;
+            return "Transform setting error: Single transform type should be one of " . self::$singleTransformTypes;
         }
 
         if ($arr[self::TYPE] === self::DATE) {
             if (count($arr) !== 5 || !array_key_exists(self::TRANSFORM_TYPE, $arr) || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::TYPE, $arr) || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr)) {
-                return false;
+                return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] missing config information";
             }
 
             if (!in_array($arr[self::TO], self::$supportedDateFormats) || !in_array($arr[self::FROM], self::$supportedDateFormats)) {
-                return false;
+                return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] not support date format";
             }
         }
 
         if ($arr[self::TYPE] === self::NUMBER) {
             if (count($arr) !== 5 || !array_key_exists(self::TRANSFORM_TYPE, $arr) || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::TYPE, $arr) || !array_key_exists(self::DECIMALS, $arr) || !array_key_exists(self::THOUSANDS_SEPARATOR, $arr)) {
-                return false;
+                return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] missing config information";
             }
             if (!is_numeric($arr[self::DECIMALS]) || !in_array($arr[self::THOUSANDS_SEPARATOR], self::$supportedThousandsSeparator)) {
-                return false;
+                return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] number config error";
             }
         }
-
-        return true;
+        return 0;
     }
 
     public static function isGroupOrSortType($type)

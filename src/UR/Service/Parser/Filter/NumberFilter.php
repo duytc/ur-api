@@ -17,6 +17,9 @@ class NumberFilter implements ColumnFilterInterface
 
     public function filter($filter)
     {
+        if (!is_numeric($filter)) {
+            return 2;
+        }
         if (strcmp($this->comparison, FilterType::SMALLER) === 0) {
 
             return $filter < $this->compareValue ? true : false;

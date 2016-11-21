@@ -8,6 +8,7 @@ use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Service\DTO\Collection;
+use UR\Service\Report\Sorter\SortByInterface;
 
 class ReportBuilder implements ReportBuilderInterface
 {
@@ -20,16 +21,21 @@ class ReportBuilder implements ReportBuilderInterface
      * @var ReportGrouperInterface
      */
     protected $reportGrouper;
+    /**
+     * @var SortByInterface
+     */
+    private $sorter;
 
     /**
-     * ReportBuilder constructor.
      * @param ReportSelectorInterface $reportSelector
      * @param ReportGrouperInterface $reportGrouper
+     * @param SortByInterface $sorter
      */
-    public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper)
+    public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper, SortByInterface $sorter)
     {
         $this->reportSelector = $reportSelector;
         $this->reportGrouper = $reportGrouper;
+        $this->sorter = $sorter;
     }
 
     public function getReport(ParamsInterface $params)
@@ -42,31 +48,36 @@ class ReportBuilder implements ReportBuilderInterface
             $metrics = $dataSets[0]->getMetrics();
             $dimensions = $dataSets[0]->getDimensions();
         } else {
-            foreach($dataSets as $dataSet) {
-                foreach($dataSet->getMetrics() as $item) {
+            foreach ($dataSets as $dataSet) {
+                foreach ($dataSet->getMetrics() as $item) {
                     $metrics[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
                 }
 
-                foreach($dataSet->getDimensions() as $item) {
+                foreach ($dataSet->getDimensions() as $item) {
                     $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
                 }
             }
         }
 
         $statement = $this->reportSelector->getReportData($params);
-        $collection = new Collection(array_merge($metrics,  $dimensions), $statement->fetchAll());
+        $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll());
 
         $groupBy = $params->getGroupByTransform();
         $transforms = $params->getTransforms();
         /**
          * @var TransformInterface $transform
          */
-        foreach($transforms as $transform) {
+        foreach ($transforms as $transform) {
             $transform->transform($collection);
         }
 
         if ($groupBy instanceof GroupByTransformInterface) {
-            return $this->reportGrouper->groupReports($groupBy, $collection, $metrics);
+            return $this->reportGrouper->groupReports($groupBy, $collection, $metrics, $dimensions);
+        }
+
+        $sortByFields = $params->getSortByFields();
+        if (!empty($sortByFields)) {
+            $this->sorter->sortByFields($sortByFields, $collection, $metrics, $dimensions);
         }
 
         return $collection->getRows();

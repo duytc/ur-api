@@ -36,6 +36,12 @@ class GroupByTransform implements GroupByTransformInterface
         return $this->fields;
     }
 
+    public function addField($field)
+    {
+        $this->fields [] = $field;
+        return $this;
+    }
+
     public function transform(Collection $collection)
     {
         // TODO: Implement transform() method.
