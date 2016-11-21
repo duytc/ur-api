@@ -7,8 +7,9 @@ namespace UR\Domain\DTO\Report\Transforms;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
-class AddFieldTransform implements TransformInterface
+class AddFieldTransform extends AbstractTransform implements TransformInterface
 {
+    const PRIORITY = 1;
     const FIELD_NAME_KEY = 'field';
     const FIELD_VALUE = 'value';
 
@@ -22,6 +23,7 @@ class AddFieldTransform implements TransformInterface
      */
     public function __construct(array $data)
     {
+        parent::__construct();
         if (!array_key_exists(self::FIELD_NAME_KEY, $data) || !array_key_exists(self::FIELD_VALUE, $data)) {
             throw new InvalidArgumentException('either "fields" or "fieldValue" is missing');
         }

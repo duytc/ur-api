@@ -64,6 +64,13 @@ class ReportBuilder implements ReportBuilderInterface
 
         $groupBy = $params->getGroupByTransform();
         $transforms = $params->getTransforms();
+        usort($transforms, function(TransformInterface $a, TransformInterface $b){
+            if ($a->getPriority() == $b->getPriority()) {
+                return 0;
+            }
+            return ($a->getPriority() < $b->getPriority()) ? -1 : 1;
+        });
+
         /**
          * @var TransformInterface $transform
          */

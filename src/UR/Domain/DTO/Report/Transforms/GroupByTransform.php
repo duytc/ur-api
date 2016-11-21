@@ -7,8 +7,9 @@ namespace UR\Domain\DTO\Report\Transforms;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
-class GroupByTransform implements GroupByTransformInterface
+class GroupByTransform extends AbstractTransform implements GroupByTransformInterface
 {
+    const PRIORITY = 2;
     const FIELDS_KEY = 'fields';
     /**
      * @var array
@@ -17,6 +18,7 @@ class GroupByTransform implements GroupByTransformInterface
 
     function __construct(array $data)
     {
+        parent::__construct();
         if (!array_key_exists(self::FIELDS_KEY, $data)) {
             throw new InvalidArgumentException('"fields" is missing');
         }
