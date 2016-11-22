@@ -199,11 +199,11 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
             $selectedFields[] = 'd.' . $field;
         }
 
-//        $dataImportTable=$dataSetLocator->getDataSetImportTable($dataSetId);
-//        $dataImportTable->getColumns();
         $qb = $conn->createQueryBuilder();
         $query = $qb->select($selectedFields)
-            ->from($dataSetLocator->getDataSetImportTableName($dataSetId), 'd');
+            ->from($dataSetLocator->getDataSetImportTableName($dataSetId), 'd')
+            ->where('d.__import_id = ' . $importHistory->getId());
+
         $stmt = $query->execute();
         $results = $stmt->fetchAll();
         $conn->close();
