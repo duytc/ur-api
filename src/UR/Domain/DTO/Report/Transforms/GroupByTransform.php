@@ -4,7 +4,6 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 
-use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
 class GroupByTransform extends AbstractTransform implements GroupByTransformInterface
@@ -34,7 +33,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
      */
     public function transform(Collection $collection, array $metrics, array $dimensions)
     {
-       $results =  $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions);
+        $results = $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions);
         $collection->setRows($results);
 
         return $collection;
@@ -64,8 +63,16 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
             foreach ($groupedReport as $report) {
                 foreach ($report as $key => $value) {
-                    if (in_array($key, $metrics)) {
+                    /*if (in_array($key, $metrics)) {
+                        $result[$key] += $value; // Metric may be text or multiline text
+                    }*/
+
+                    if (is_numeric($value)) {
                         $result[$key] += $value;
+                    } else {
+                        if (!in_array($key,$groupingFields)) {
+                            $result[$key] = sprintf('%s, %s', $result[$key], $value);
+                        }
                     }
                 }
             }
@@ -94,13 +101,13 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
                 }
             }
 
-            //Note: Remove all dimensions that do not group
+           /* //Note: Remove all dimensions that do not group
             foreach ($dimensions as $dimension) {
                 if (!empty($groupingFields) && in_array($dimension, $groupingFields)) {
                     continue;
                 }
                 unset($report[$dimension]);
-            }
+            }*/
 
             $key = md5($key);
             $groupedArray[$key][] = $report;
