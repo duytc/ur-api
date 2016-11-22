@@ -27,12 +27,12 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
      */
 
     public function getImportedHistoryByDataSetQuery(DataSetInterface $dataSet, PagerParam $param);
+
     /**
-     * @param int $dataSetId
-     * @param int $importId
+     * @param ImportHistoryInterface $importHistory
      * @return QueryBuilder
      */
-    public function getImportedDataByIdQuery($dataSetId, $importId);
+    public function getImportedData(ImportHistoryInterface $importHistory);
 
     /**
      * @param DataSetInterface $dataSet

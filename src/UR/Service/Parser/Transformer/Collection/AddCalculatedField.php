@@ -29,12 +29,14 @@ class AddCalculatedField extends AbstractAddField
     protected function getValue(array $row)
     {
         try {
-            $this->language->register('abs', function ($a) {
-            }, function ($arguments, $a) {
-                if (!is_numeric($a)) {
-                    return 0;
+            $this->language->register('abs', function ($number) {
+                return sprintf('(is_numeric(%1$s) ? abs(%1$s) : %1$s)', $number);
+            }, function ($arguments, $number) {
+                if (!is_numeric($number)) {
+                    return $number;
                 }
-                return abs($a);
+
+                return abs($number);
             });
 
             $result = $this->language->evaluate($this->expression, ['row' => $row]);
