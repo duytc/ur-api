@@ -9,6 +9,7 @@ interface TransformInterface
 
     const ADD_FIELD_TRANSFORM = 'addField';
     const ADD_CALCULATED_FIELD_TRANSFORM = 'addCalculatedField';
+    const COMPARISON_PERCENT_TRANSFORM = 'comparisonPercent';
     const GROUP_TRANSFORM = 'groupBy';
     const SORT_TRANSFORM = 'sortBy';
     const FORMAT_NUMBER_TRANSFORM = 'number';
