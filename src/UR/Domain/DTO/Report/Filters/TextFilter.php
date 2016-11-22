@@ -9,6 +9,7 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
     const COMPARISON_TYPE_EQUAL = 'equal';
     const COMPARISON_TYPE_NOT_EQUAL = 'not equal';
     const COMPARISON_TYPE_CONTAINS = 'contains';
+    const COMPARISON_TYPE_NOT_CONTAINS = 'not contains';
     const COMPARISON_TYPE_START_WITH = 'start with';
     const COMPARISON_TYPE_END_WITH = 'end with';
     const COMPARISON_TYPE_IN = 'in';
@@ -59,7 +60,9 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
     protected function makeQuote($str)
     {
         $newString = [];
+        $str = strpos($str,";") ? str_replace(';', ',', $str): $str;
         $subStrings = explode(',', $str);
+
         foreach ($subStrings as $subString) {
             $newSubString = '"' . trim($subString) . '"';
             $newString [] = $newSubString;

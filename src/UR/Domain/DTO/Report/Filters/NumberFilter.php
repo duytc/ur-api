@@ -13,7 +13,7 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
     const COMPARISON_TYPE_GREATER_OR_EQUAL = 'greater or equal';
     const COMPARISON_TYPE_NOT_EQUAL = 'not equal';
     const COMPARISON_TYPE_IN = 'in';
-    const COMPARISON_TYPE_NOT = 'not';
+    const COMPARISON_TYPE_NOT = 'not in';
 
     const FIELD_TYPE_FILTER_KEY = 'type';
     const FILED_NAME_FILTER_KEY = 'field';
@@ -42,6 +42,11 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
         $this->fieldName = $numberFilter[self::FILED_NAME_FILTER_KEY];
         $this->fieldType = $numberFilter[self::FIELD_TYPE_FILTER_KEY];
         $this->comparisonType = $numberFilter[self::COMPARISON_TYPE_FILTER_KEY];
+
+        if (false !== strpos($numberFilter[self::COMPARISON_VALUE_FILTER_KEY],';')) {
+            $numberFilter[self::COMPARISON_VALUE_FILTER_KEY] = str_replace(';',',', $numberFilter[self::COMPARISON_VALUE_FILTER_KEY]);
+        }
+
         $this->comparisonValue = $numberFilter[self::COMPARISON_VALUE_FILTER_KEY];
     }
 

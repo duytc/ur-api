@@ -233,6 +233,8 @@ class SqlBuilder implements SqlBuilderInterface
                     return sprintf('%s != %s', $fieldName, $filter->getComparisonValue());
                 case TextFilter::COMPARISON_TYPE_CONTAINS :
                     return sprintf('%s LIKE \'%%%s%%\'', $fieldName, $filter->getComparisonValue());
+                case TextFilter::COMPARISON_TYPE_NOT_CONTAINS :
+                    return sprintf('%s NOT LIKE \'%%%s%%\'', $fieldName, $filter->getComparisonValue());
                 case TextFilter::COMPARISON_TYPE_START_WITH:
                     return sprintf('%s LIKE \'%s%%\'', $fieldName, $filter->getComparisonValue());
                 case TextFilter::COMPARISON_TYPE_END_WITH:
