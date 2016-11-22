@@ -96,7 +96,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
             //Note: Remove all dimensions that do not group
             foreach ($dimensions as $dimension) {
-                if (in_array($dimension, $groupingFields)) {
+                if (!empty($groupingFields) && in_array($dimension, $groupingFields)) {
                     continue;
                 }
                 unset($report[$dimension]);
