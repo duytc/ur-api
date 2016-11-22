@@ -29,6 +29,14 @@ class AddCalculatedField extends AbstractAddField
     protected function getValue(array $row)
     {
         try {
+            $this->language->register('abs', function ($a) {
+            }, function ($arguments, $a) {
+                if (!is_numeric($a)) {
+                    return 0;
+                }
+                return abs($a);
+            });
+
             $result = $this->language->evaluate($this->expression, ['row' => $row]);
         } catch (\Exception $exception) {
             $message = $exception->getMessage();
