@@ -83,7 +83,11 @@ class Parser implements ParserInterface
 
         foreach ($config->getCollectionTransforms() as $transform) {
             /** @var CollectionTransformerInterface $transform */
-            $collection = $transform->transform($collection);
+            try {
+                $collection = $transform->transform($collection);
+            } catch (\Exception $e) {
+                return $collection;
+            }
         }
 
         return $collection;

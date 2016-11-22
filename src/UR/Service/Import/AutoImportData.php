@@ -16,6 +16,7 @@ use UR\Service\Alert\ProcessAlert;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
+use UR\Service\DataSet\TransformType;
 use UR\Service\DataSource\Csv;
 use UR\Service\DataSource\Excel;
 use UR\Service\DataSource\Json;
@@ -101,7 +102,7 @@ class AutoImportData implements AutoImportDataInterface
             $publisherId = $dataSourceEntry->getDataSource()->getPublisherId();
 
             // prepare alert params: default is success
-            $params = array (
+            $params = array(
                 ProcessAlert::DATA_SET_NAME => $connectedDataSource->getDataSet()->getName(),
                 ProcessAlert::DATA_SOURCE_NAME => $dataSourceEntry->getDataSource()->getName(),
                 ProcessAlert::FILE_NAME => $dataSourceEntry->getFileName()
@@ -125,7 +126,7 @@ class AutoImportData implements AutoImportDataInterface
 
             if (!$validRequires) {
                 // to do alert
-                if (in_array(ConnectedDataSourceRepository::IMPORT_FAILURE, $connectedDataSource->getAlertSetting())){
+                if (in_array(ConnectedDataSourceRepository::IMPORT_FAILURE, $connectedDataSource->getAlertSetting())) {
                     $code = ProcessAlert::DATA_IMPORT_REQUIRED_FAIL;
                     $params[ProcessAlert::COLUMN] = $columnRequire;
                     $this->workerManager->processAlert($code, $publisherId, $params);
@@ -145,9 +146,14 @@ class AutoImportData implements AutoImportDataInterface
             if (is_array($collectionParser)) {
                 // to do alert
                 if (in_array(ConnectedDataSourceRepository::IMPORT_FAILURE, $connectedDataSource->getAlertSetting())) {
-                    $code = $collectionParser['error'];
-                    $params[ProcessAlert::ROW] = $collectionParser[ProcessAlert::ROW];
-                    $params[ProcessAlert::COLUMN] = $collectionParser[ProcessAlert::COLUMN];
+                    $code = $collectionParser[ProcessAlert::ERROR];
+                    if (array_key_exists(ProcessAlert::MESSAGE, $collectionParser)) {
+                        $params[ProcessAlert::MESSAGE] = $collectionParser[ProcessAlert::MESSAGE];
+                    } else {
+                        $params[ProcessAlert::ROW] = $collectionParser[ProcessAlert::ROW];
+                        $params[ProcessAlert::COLUMN] = $collectionParser[ProcessAlert::COLUMN];
+                    }
+
                     $this->workerManager->processAlert($code, $publisherId, $params);
                 }
                 continue;

@@ -32,6 +32,8 @@ class ProcessAlert implements ProcessAlertInterface
     const DATA_SET_NAME = 'dataSetName';
     const ROW = 'row';
     const COLUMN = 'column';
+    const MESSAGE = 'message';
+    const ERROR = 'error';
 
     /**
      * Status codes translation table.

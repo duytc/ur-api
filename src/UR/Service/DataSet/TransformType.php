@@ -22,6 +22,7 @@ final class TransformType
     const ADD_CALCULATED_FIELD = 'addCalculatedField';
     const COMPARISON = 'comparison';
     const COMPARISON_PERCENT = 'comparisonPercent';
+    const EXPRESSION = 'expression';
 
     public static $transformTypes = [
         self::GROUP_BY,
