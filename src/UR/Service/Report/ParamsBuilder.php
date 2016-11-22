@@ -10,6 +10,7 @@ use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Params;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
+use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\FormatDateTransform;
 use UR\Domain\DTO\Report\Transforms\FormatNumberTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
@@ -104,6 +105,9 @@ class ParamsBuilder implements ParamsBuilderInterface
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $groupField) {
                         $groupByInputObjects [] = $groupField;
                     }
+                    break;
+                case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
+                    $transformObjects[] = new ComparisonPercentTransform($transform);
                     break;
                 case TransformInterface::SORT_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {

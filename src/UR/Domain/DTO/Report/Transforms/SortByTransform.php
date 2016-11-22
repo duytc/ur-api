@@ -76,7 +76,12 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
 
         $sortCriteria = [];
         foreach ($sortFields as $field) {
-            $sortCriteria[$field] = [$this->direction[$field], SORT_STRING];
+            if (in_array($field, $metrics)) {
+                $sortCriteria[$field] = [$this->direction[$field], SORT_NUMERIC];
+            } else {
+                $sortCriteria[$field] = [$this->direction[$field], SORT_STRING];
+            }
+
         }
 
         $reports = $this->multiSort($rows, $sortCriteria, false);
