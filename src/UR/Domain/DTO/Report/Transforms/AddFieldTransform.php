@@ -58,17 +58,21 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
     {
         $columns = $collection->getColumns();
         // new field already existed
-        if (array_key_exists($this->fieldName, $columns)) {
+        if (in_array($this->fieldName, $columns)) {
             return;
         }
 
         $collection->addColumn($this->fieldName);
         $rows = $collection->getRows();
 
+        if (is_numeric($this->fieldName)) {
+            $this->fieldName = strval($this->fieldName);
+        }
+
         $newRows = [];
         foreach ($rows as $row) {
             $tmp[$this->fieldName] = $this->value;
-            $newRows[] = array_merge($row, $tmp);
+            $newRows[] = ($row + $tmp);
         }
 
         $collection->setRows($newRows);

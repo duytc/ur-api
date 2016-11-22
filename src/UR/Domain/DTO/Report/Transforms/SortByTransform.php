@@ -29,30 +29,28 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
 
     protected $sortDirection;
 
-    function __construct(array $data)
+    function __construct(array $sortObjects)
     {
         parent::__construct();
-        if (!array_key_exists(self::FIELDS_KEY, $data)) {
-            throw new InvalidArgumentException('"fields" is missing');
+
+        foreach ($sortObjects as $sortObject) {
+
+            if (!array_key_exists(self::FIELDS_KEY, $sortObject)) {
+                throw new InvalidArgumentException('"fields" is missing');
+            }
+
+            foreach ($sortObject[self::FIELDS_KEY] as $field) {
+                $this->fields[] = $field;
+
+                if (0 == strcmp($sortObject[self::SORT_DIRECTION_KEY], self::SORT_DESC)) {
+                    $sortObject[self::SORT_DIRECTION_KEY] = SORT_DESC;
+                } else {
+                    $sortObject[self::SORT_DIRECTION_KEY] = SORT_ASC;
+                }
+
+                $this->direction[$field] = $sortObject[self::SORT_DIRECTION_KEY];
+            }
         }
-
-        $this->fields = $data[self::FIELDS_KEY];
-
-        $this->direction = array_key_exists(self::SORT_DIRECTION_KEY, $data) ? $data[self::SORT_DIRECTION_KEY] : self::DEFAULT_SORT_DIRECTION;
-
-        if ($this->direction === self::SORT_ASC) {
-            $this->direction = self::SORT_DIRECTION_ASC;
-        } else {
-            $this->direction = self::SORT_DIRECTION_DESC;
-        }
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getDirection()
-    {
-        return $this->direction;
     }
 
     /**
@@ -63,8 +61,8 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
      */
     public function transform(Collection $collection, array $metrics, array $dimensions)
     {
-       $results =  $this->sortByFields($this->getFields(), $collection, $metrics, $dimensions);
-       $collection->setRows($results);
+        $results = $this->sortByFields($this->getFields(), $collection, $metrics, $dimensions);
+        $collection->setRows($results);
 
         return $collection;
     }
@@ -78,7 +76,12 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
 
         $sortCriteria = [];
         foreach ($sortFields as $field) {
-            $sortCriteria[$field] = [$this->getDirection(), SORT_STRING];
+            if (in_array($field, $metrics)) {
+                $sortCriteria[$field] = [$this->direction[$field], SORT_NUMERIC];
+            } else {
+                $sortCriteria[$field] = [$this->direction[$field], SORT_STRING];
+            }
+
         }
 
         $reports = $this->multiSort($rows, $sortCriteria, false);
@@ -125,5 +128,13 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
     public function getFields()
     {
         return $this->fields;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDirection()
+    {
+        return $this->direction;
     }
 }

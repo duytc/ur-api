@@ -75,6 +75,8 @@ class ParamsBuilder implements ParamsBuilderInterface
      */
     protected function createTransforms(array $transforms)
     {
+        $sortByInputObjects = [];
+        $groupByInputObjects = [];
         $transformObjects = [];
         foreach ($transforms as $transform) {
             if (!array_key_exists(TransformInterface::TRANSFORM_TYPE_KEY, $transform)) {
@@ -100,18 +102,27 @@ class ParamsBuilder implements ParamsBuilderInterface
                     $transformObjects[] = new FormatNumberTransform($transform);
                     break;
                 case TransformInterface::GROUP_TRANSFORM:
-                    $transformObjects[] = new GroupByTransform($transform);
+                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $groupField) {
+                        $groupByInputObjects [] = $groupField;
+                    }
                     break;
                 case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
                     $transformObjects[] = new ComparisonPercentTransform($transform);
                     break;
                 case TransformInterface::SORT_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
-                        $transformObjects[] = new SortByTransform($sortField);
+                        $sortByInputObjects[] = $sortField;
                     }
-
                     break;
             }
+        }
+
+        if (!empty ($sortByInputObjects)) {
+            $transformObjects[] = new SortByTransform($sortByInputObjects);
+        }
+
+        if (!empty ($groupByInputObjects)) {
+            $transformObjects[] = new GroupByTransform($groupByInputObjects);
         }
 
         return $transformObjects;
