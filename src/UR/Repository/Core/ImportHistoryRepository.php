@@ -80,12 +80,12 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
                     $qb->expr()->like('ih.id', ':searchKey')
                 ))
                 ->setParameter('searchKey', $searchLike);
-        }
 
-        $searchLike = sprintf('%%%s%%', str_replace("/", "-", $param->getSearchKey()));
-        $qb
-            ->orWhere($qb->expr()->like('SUBSTRING(ih.createdDate,0,10)', ':date'))
-            ->setParameter('date', $searchLike);
+            $searchLike = sprintf('%%%s%%', str_replace("/", "-", $param->getSearchKey()));
+            $qb
+                ->orWhere($qb->expr()->like('ih.createdDate', ':date'))
+                ->setParameter('date', $searchLike);
+        }
 
         if (is_string($param->getSortField()) &&
             is_string($param->getSortDirection()) &&
@@ -187,16 +187,29 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
      */
     public function getImportedData(ImportHistoryInterface $importHistory)
     {
+        $dataSetId = $importHistory->getDataSet()->getId();
         $conn = $this->_em->getConnection();
 
-        $query = "select * from " . sprintf(\UR\Service\DataSet\Type::PREFIX_DATA_IMPORT_TABLE, $importHistory->getDataSet()->getId()) . " where __import_id = ?";
-        $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $importHistory->getId());
-        $stmt->execute();
+        $dataSetLocator = new Locator($conn);
+        $dimensions = $importHistory->getDataSet()->getDimensions();
+        $metrics = $importHistory->getDataSet()->getMetrics();
+        $fields = array_merge($dimensions, $metrics);
+        $selectedFields = [];
+        foreach ($fields as $field => $type) {
+            $selectedFields[] = 'd.' . $field;
+        }
+
+        $qb = $conn->createQueryBuilder();
+        $query = $qb->select($selectedFields)
+            ->from($dataSetLocator->getDataSetImportTableName($dataSetId), 'd')
+            ->where('d.__import_id = ' . $importHistory->getId());
+
+        $stmt = $query->execute();
         $results = $stmt->fetchAll();
         $conn->close();
-        if (count($results) < 1)
+        if (count($results) < 1) {
             return $results;
+        }
 
         $result = $results[0];
         $parserConfig = new ParserConfig();
@@ -213,6 +226,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
                 break;
             }
         }
+
         $transforms = $connDataSource->getTransforms();
         foreach ($transforms as $transform) {
             if (TransformType::isTransformSingleField($transform[TransformType::TRANSFORM_TYPE])) {
@@ -225,6 +239,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
                 }
             }
         }
+
         $parser = new Parser();
         $collection = $parser->parse($collection, $parserConfig);
 
