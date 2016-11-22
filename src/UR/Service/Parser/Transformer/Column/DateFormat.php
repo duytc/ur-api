@@ -17,10 +17,14 @@ class DateFormat implements ColumnTransformerInterface
 
     public function transform($value)
     {
+        if (strcmp($value, "0000-00-00") === 0) {
+            return "";
+        }
+
         $date = DateTime::createFromFormat($this->fromDateFormat, $value);
 
         if (!$date) {
-            return 0;
+            return 2;
         }
 
         return $date->format($this->toDateFormat);

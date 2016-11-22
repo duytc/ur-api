@@ -2,14 +2,23 @@
 
 namespace UR\Repository\Core;
 
+use Box\Spout\Writer\Exception\InvalidSheetNameException;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
+use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
+use UR\Service\DataSet\Locator;
+use UR\Service\DataSet\TransformType;
+use UR\Service\DataSource\Collection;
+use UR\Service\Parser\Parser;
+use UR\Service\Parser\ParserConfig;
+use UR\Service\Parser\Transformer\Column\DateFormat;
+use UR\Service\Parser\Transformer\Column\NumberFormat;
 
 class ImportHistoryRepository extends EntityRepository implements ImportHistoryRepositoryInterface
 {
@@ -58,8 +67,8 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
     public function getImportedHistoryByDataSetQuery(DataSetInterface $dataSet, PagerParam $param)
     {
         $qb = $this->createQueryBuilder('ih')
-            ->leftJoin('ih.dataSourceEntry','dse')
-            ->leftJoin('dse.dataSource','ds')
+            ->leftJoin('ih.dataSourceEntry', 'dse')
+            ->leftJoin('dse.dataSource', 'ds')
             ->where('ih.dataSet=:dataSet')
             ->setParameter('dataSet', $dataSet);
 
@@ -176,15 +185,49 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
     /**
      * @inheritdoc
      */
-    public function getImportedDataByIdQuery($dataSetId, $importId)
+    public function getImportedData(ImportHistoryInterface $importHistory)
     {
         $conn = $this->_em->getConnection();
-        $query = "select * from " . sprintf(\UR\Service\DataSet\Type::PREFIX_DATA_IMPORT_TABLE, $dataSetId) . " where __import_id = ?";
+
+        $query = "select * from " . sprintf(\UR\Service\DataSet\Type::PREFIX_DATA_IMPORT_TABLE, $importHistory->getDataSet()->getId()) . " where __import_id = ?";
         $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $importId);
+        $stmt->bindValue(1, $importHistory->getId());
         $stmt->execute();
         $results = $stmt->fetchAll();
         $conn->close();
-        return $results;
+        if (count($results) < 1)
+            return $results;
+
+        $result = $results[0];
+        $parserConfig = new ParserConfig();
+        $collection = new Collection($results);
+        foreach ($result as $column => $row) {
+            $parserConfig->addColumn($column);
+        }
+
+        $connDataSources = $importHistory->getDataSet()->getConnectedDataSources();
+        $connDataSource = null;
+        foreach ($connDataSources as $item) {
+            if ($item->getDataSource()->getId() === $importHistory->getDataSourceEntry()->getDataSource()->getId()) {
+                $connDataSource = $item;
+                break;
+            }
+        }
+        $transforms = $connDataSource->getTransforms();
+        foreach ($transforms as $transform) {
+            if (TransformType::isTransformSingleField($transform[TransformType::TRANSFORM_TYPE])) {
+                if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
+                    $parserConfig->transformColumn($transform[TransformType::FIELD], new DateFormat('Y-m-d', $transform[TransformType::TO]));
+                }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::NUMBER) === 0) {
+                    $parserConfig->transformColumn($transform[TransformType::FIELD], new NumberFormat($transform[TransformType::DECIMALS], $transform[TransformType::THOUSANDS_SEPARATOR]));
+                }
+            }
+        }
+        $parser = new Parser();
+        $collection = $parser->parse($collection, $parserConfig);
+
+        return $collection->getRows();
     }
 }

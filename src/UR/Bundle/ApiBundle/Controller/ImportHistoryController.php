@@ -125,9 +125,8 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
     {
         /**@var ImportHistoryInterface $importHistory */
         $importHistory = $this->one($id);
-        $dataSetId = $importHistory->getDataSet()->getId();
         $importHistoryRepository = $this->get('ur.repository.import_history');
-        return $importHistoryRepository->getImportedDataByIdQuery($dataSetId, $id);
+        return $importHistoryRepository->getImportedData($importHistory);
     }
 
     /**
