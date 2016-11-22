@@ -43,7 +43,7 @@ class ConnectedDataSourceRepository extends EntityRepository implements Connecte
                     $qb->addOrderBy('cds.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 case $this->SORT_FIELDS['name']:
-                    $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
+                    $qb->addOrderBy('cds.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 default:
                     break;
