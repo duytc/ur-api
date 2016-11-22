@@ -51,6 +51,8 @@ class ImportUtils
                 $dataSetTable->addColumn($key, $value, ["precision" => 20, "scale" => 8, "notnull" => false]);
             } else if (strcmp($value, Type::MULTI_LINE_TEXT) === 0) {
                 $dataSetTable->addColumn($key, Type::TEXT, ["notnull" => false]);
+            } else if (strcmp($value, Type::DATE) === 0) {
+                $dataSetTable->addColumn($key, Type::DATE, ["notnull" => false]);
             } else {
                 $dataSetTable->addColumn($key, $value, ["notnull" => false]);
             }

@@ -70,7 +70,7 @@ class Parser implements ParserInterface
 
                 foreach ($transforms as $transform) {
                     $row[$column] = $transform->transform($row[$column]);
-                    if (!$row[$column]) {
+                    if ($row[$column] === 2) {
                         return array('error' => ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL,
                             'row' => $cur_row + 2,
                             'column' => $column);
