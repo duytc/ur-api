@@ -18,11 +18,13 @@ use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\Parser\Filter\DateFilter;
 use UR\Service\Parser\Filter\NumberFilter;
 use UR\Service\Parser\Filter\TextFilter;
+use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
 use UR\Service\Parser\Transformer\Collection\AddField;
 use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Parser\Transformer\Column\DateFormat;
+use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 class ImportUtils
 {
@@ -183,9 +185,9 @@ class ImportUtils
                 }
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CALCULATED_FIELD) === 0) {
-
-                    foreach ($transform[TransformType::FIELDS] as $f => $expression) {
-                        //todo will be change in future
+                    $expressionLanguage = new ExpressionLanguage;
+                    foreach ($transform[TransformType::FIELDS] as $f => $addCalculatedFields) {
+                        $parserConfig->transformCollection(new AddCalculatedField($expressionLanguage, $addCalculatedFields[TransformType::FIELD], $addCalculatedFields[TransformType::EXPRESSION]));
                     }
                     continue;
                 }

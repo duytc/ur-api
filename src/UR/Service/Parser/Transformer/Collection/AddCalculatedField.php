@@ -3,6 +3,7 @@
 namespace UR\Service\Parser\Transformer\Collection;
 
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use UR\Service\Alert\ProcessAlert;
 
 class AddCalculatedField extends AbstractAddField
 {
@@ -27,6 +28,14 @@ class AddCalculatedField extends AbstractAddField
 
     protected function getValue(array $row)
     {
-        return $this->language->evaluate($this->expression, ['row' => $row]);
+        try {
+            $result = $this->language->evaluate($this->expression, ['row' => $row]);
+        } catch (\Exception $exception) {
+            $message = $exception->getMessage();
+            $result = array(ProcessAlert::ERROR => ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL,
+                ProcessAlert::MESSAGE => $message
+            );
+        }
+        return $result;
     }
 }

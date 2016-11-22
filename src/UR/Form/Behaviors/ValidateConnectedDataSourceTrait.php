@@ -151,6 +151,7 @@ trait ValidateConnectedDataSourceTrait
                 if (in_array($field[TransformType::FIELD], $connectedDataSource->getMapFields())) {
                     return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] hasn't been mapped ";
                 }
+
                 if (!$this->isDataSetFields($field[TransformType::FIELD], $connectedDataSource->getDataSet())) {
                     return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] dose not exist in dimensions or metrics ";
                 }
