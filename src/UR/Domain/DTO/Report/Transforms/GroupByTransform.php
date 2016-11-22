@@ -70,7 +70,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
                     if (is_numeric($value)) {
                         $result[$key] += $value;
                     } else {
-                        if (!in_array($key,$groupingFields)) {
+                        if (!in_array($key, $groupingFields)) {
                             $result[$key] = sprintf('%s, %s', $result[$key], $value);
                         }
                     }
@@ -88,6 +88,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
      * @param Collection $collection
      * @param $dimensions
      * @return array
+     * @throws \Exception
      */
     protected function generateGroupedArray($groupingFields, Collection $collection, $dimensions)
     {
@@ -96,18 +97,22 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
         foreach ($rows as $report) {
             $key = '';
             foreach ($groupingFields as $groupField) {
+                if (!in_array($groupField, $dimensions)) {
+                    throw new \Exception(sprintf('%s is not a dimensions', $groupField));
+                }
+
                 if (array_key_exists($groupField, $report)) {
                     $key .= is_array($report[$groupField]) ? json_encode($report[$groupField], JSON_UNESCAPED_UNICODE) : $report[$groupField];
                 }
             }
 
-           /* //Note: Remove all dimensions that do not group
-            foreach ($dimensions as $dimension) {
-                if (!empty($groupingFields) && in_array($dimension, $groupingFields)) {
-                    continue;
-                }
-                unset($report[$dimension]);
-            }*/
+            /* //Note: Remove all dimensions that do not group
+             foreach ($dimensions as $dimension) {
+                 if (!empty($groupingFields) && in_array($dimension, $groupingFields)) {
+                     continue;
+                 }
+                 unset($report[$dimension]);
+             }*/
 
             $key = md5($key);
             $groupedArray[$key][] = $report;
