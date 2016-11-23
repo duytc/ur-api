@@ -11,8 +11,6 @@ use UR\Domain\DTO\Report\ParamsInterface;
 
 class ReportSelector implements ReportSelectorInterface
 {
-    const DATA_SET_TABLE_NAME_TEMPLATE = '__data_set_%d';
-
     /**
      * @var Connection
      */

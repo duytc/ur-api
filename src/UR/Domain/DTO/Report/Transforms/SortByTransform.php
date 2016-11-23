@@ -13,10 +13,6 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
     const SORT_DESC = 'desc';
     const SORT_ASC = 'asc';
 
-//    const SORT_DIRECTION_ASC = SORT_ASC;
-//    const SORT_DIRECTION_DESC = SORT_DESC; //Importance: not change to use in array_multisort when sorting report
-
-//    const DEFAULT_SORT_DIRECTION = 'asc';
     const FIELDS_KEY = 'names';
     const SORT_DIRECTION_KEY = 'direction';
 
