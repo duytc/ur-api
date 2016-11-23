@@ -9,10 +9,10 @@ interface SortByTransformInterface extends TransformInterface
     /**
      * @return array
      */
-    public function getFields();
+    public function getAscSorts();
 
     /**
-     * @return string
+     * @return array
      */
-    public function getDirection();
+    public function getDescSorts();
 }

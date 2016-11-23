@@ -13,43 +13,48 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
     const SORT_DESC = 'desc';
     const SORT_ASC = 'asc';
 
-    const SORT_DIRECTION_ASC = SORT_ASC;
-    const SORT_DIRECTION_DESC = SORT_DESC; //Importance: not change to use in array_multisort when sorting report
+//    const SORT_DIRECTION_ASC = SORT_ASC;
+//    const SORT_DIRECTION_DESC = SORT_DESC; //Importance: not change to use in array_multisort when sorting report
 
-    const DEFAULT_SORT_DIRECTION = 'asc';
+//    const DEFAULT_SORT_DIRECTION = 'asc';
     const FIELDS_KEY = 'names';
     const SORT_DIRECTION_KEY = 'direction';
 
     /**
      * @var array
      */
-    protected $fields;
+    protected $ascSorts;
 
-    protected $direction;
-
-    protected $sortDirection;
+    /**
+     * @var array
+     */
+    protected $descSorts;
 
     function __construct(array $sortObjects)
     {
         parent::__construct();
 
+        $this->ascSorts = [];
+        $this->descSorts = [];
         foreach ($sortObjects as $sortObject) {
 
             if (!array_key_exists(self::FIELDS_KEY, $sortObject)) {
                 throw new InvalidArgumentException('"fields" is missing');
             }
 
-            foreach ($sortObject[self::FIELDS_KEY] as $field) {
-                $this->fields[] = $field;
-
-                if (0 == strcmp($sortObject[self::SORT_DIRECTION_KEY], self::SORT_DESC)) {
-                    $sortObject[self::SORT_DIRECTION_KEY] = SORT_DESC;
-                } else {
-                    $sortObject[self::SORT_DIRECTION_KEY] = SORT_ASC;
-                }
-
-                $this->direction[$field] = $sortObject[self::SORT_DIRECTION_KEY];
+            switch($sortObject[self::SORT_DIRECTION_KEY]) {
+                case self::SORT_ASC:
+                    $this->ascSorts = array_merge($this->ascSorts, $sortObject[self::FIELDS_KEY]);
+                    break;
+                case self::SORT_DESC:
+                    $this->descSorts = array_merge($this->descSorts, $sortObject[self::FIELDS_KEY]);
+                    break;
             }
+        }
+
+        $intersect = array_intersect($this->ascSorts, $this->descSorts);
+        if (count($intersect) > 0) {
+            throw new InvalidArgumentException(sprintf('"%s" are present in both sort direction', implode(',', $intersect)));
         }
     }
 
@@ -61,10 +66,34 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
      */
     public function transform(Collection $collection, array $metrics, array $dimensions)
     {
-        $results = $this->sortByFields($this->getFields(), $collection, $metrics, $dimensions);
-        $collection->setRows($results);
+        $rows = $collection->getRows();
+        $params = [];
+        // collect column data
+        foreach($rows as $row) {
+            foreach($this->ascSorts as $ascSortField) {
+                ${$ascSortField."value"}[] = $row[$ascSortField];
+            }
 
-        return $collection;
+            foreach($this->descSorts as $descSortField) {
+                ${$descSortField."value"}[] = $row[$descSortField];
+            }
+        }
+
+        // build param
+        foreach($this->ascSorts as $ascSortField) {
+            $params[] = ${$ascSortField . "value"};
+            $params[] = SORT_ASC;
+        }
+
+        foreach($this->descSorts as $descSortField) {
+            $params[] = ${$descSortField . "value"};
+            $params[] = SORT_DESC;
+        }
+
+        $params[] = &$rows;
+
+        call_user_func_array('array_multisort', $params);
+        $collection->setRows($rows);
     }
 
     /**
@@ -118,18 +147,18 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
     }
 
     /**
-     * @return mixed
+     * @return array
      */
-    public function getFields()
+    public function getAscSorts()
     {
-        return $this->fields;
+        return $this->ascSorts;
     }
 
     /**
-     * @return mixed
+     * @return array
      */
-    public function getDirection()
+    public function getDescSorts()
     {
-        return $this->direction;
+        return $this->descSorts;
     }
 }

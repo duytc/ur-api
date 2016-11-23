@@ -5,7 +5,6 @@ namespace UR\Service\Report;
 
 
 use UR\Domain\DTO\Report\ParamsInterface;
-use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\Report\Sorter\SortByInterface;
