@@ -5,6 +5,7 @@ namespace UR\Domain\DTO\Report\Transforms;
 
 
 use DateTime;
+use Symfony\Component\Validator\Constraints\Date;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
@@ -58,7 +59,10 @@ class FormatDateTransform extends AbstractTransform implements FormatDateTransfo
                 continue;
             }
 
-            $date = DateTime::createFromFormat($this->fromFormat, $row[$this->getFieldName()]);
+            $date = new DateTime($row[$this->getFieldName()]);
+            if (!$date instanceof DateTime) {
+                throw new \Exception(sprintf('System can not create date from format: %s', $this->fromFormat));
+            }
             $row[$this->getFieldName()] = $date->format($this->toFormat);
             $newRows[] = $row;
         }

@@ -47,7 +47,7 @@ class Importer
         try {
             foreach ($rows as $row) {
                 $query = $qb
-                    ->insert($tableName);
+                        ->insert($tableName);
 
                 $positionKey = 0;
                 $query->setValue('__data_source_id', '?');
@@ -65,6 +65,7 @@ class Importer
                 }
 
                 $query->execute();
+
 
                 unset($query);
             }
