@@ -67,7 +67,7 @@ class SqlBuilder implements SqlBuilderInterface
         $qb = $this->connection->createQueryBuilder();
 
         foreach ($fields as $field) {
-            $qb->addSelect($field);
+            $qb->addSelect(sprintf('%s as %s_%d', $field, $field, $dataSet->getDataSetId()));
         }
 
         $qb->from($table->getName());
