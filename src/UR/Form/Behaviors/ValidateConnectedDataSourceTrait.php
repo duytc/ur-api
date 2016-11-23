@@ -138,10 +138,18 @@ trait ValidateConnectedDataSourceTrait
             return "Transform all fields setting error: field [" . $transform[TransformType::FIELD] . "] transform type should be one of " . implode(", ", TransformType::$transformTypes);
         }
 
-        if (TransformType::isGroupOrSortType($transform[TransformType::TYPE])) {
+        if (TransformType::isGroupType($transform[TransformType::TYPE])) {
             foreach ($transform[TransformType::FIELDS] as $field) {
                 if (!in_array($field, $connectedDataSource->getMapFields())) {
                     return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field . "] hasn't been mapped ";
+                }
+            }
+        }
+
+        if (TransformType::isSortType($transform[TransformType::TYPE])) {
+            foreach ($transform[TransformType::FIELDS] as $field) {
+                if (array_intersect( $field[TransformType::NAMES], array_values($connectedDataSource->getMapFields())) != $field[TransformType::NAMES]) {
+                    return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::NAMES] . "] hasn't been mapped ";
                 }
             }
         }
