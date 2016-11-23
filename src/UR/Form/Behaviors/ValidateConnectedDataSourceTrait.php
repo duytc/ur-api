@@ -99,8 +99,9 @@ trait ValidateConnectedDataSourceTrait
                 }
             }
         }
+        $fields=array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
 
-        foreach ($dataSet->getDimensions() as $field => $type) {
+        foreach ($fields as $field => $type) {
             if (!in_array($field, $connDataSource->getMapFields())) {
                 continue;
             }

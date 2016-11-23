@@ -36,7 +36,7 @@ final class FilterType
         self::GREATER,
         self::GREATER_OR_EQUAL,
         self::IN,
-        self::NOT
+        self::NOT_IN
     ];
 
     private static $comparisonForTexts = [
