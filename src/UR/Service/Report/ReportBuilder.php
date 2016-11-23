@@ -7,7 +7,6 @@ namespace UR\Service\Report;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Service\DTO\Collection;
-use UR\Service\Report\Sorter\SortByInterface;
 
 class ReportBuilder implements ReportBuilderInterface
 {
@@ -17,24 +16,11 @@ class ReportBuilder implements ReportBuilderInterface
     protected $reportSelector;
 
     /**
-     * @var ReportGrouperInterface
-     */
-    protected $reportGrouper;
-    /**
-     * @var SortByInterface
-     */
-    private $sorter;
-
-    /**
      * @param ReportSelectorInterface $reportSelector
-     * @param ReportGrouperInterface $reportGrouper
-     * @param SortByInterface $sorter
      */
-    public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper, SortByInterface $sorter)
+    public function __construct(ReportSelectorInterface $reportSelector)
     {
         $this->reportSelector = $reportSelector;
-        $this->reportGrouper = $reportGrouper;
-        $this->sorter = $sorter;
     }
 
     public function getReport(ParamsInterface $params)
@@ -53,6 +39,11 @@ class ReportBuilder implements ReportBuilderInterface
                 }
 
                 foreach ($dataSet->getDimensions() as $item) {
+                    if ($item == $params->getJoinByFields()) {
+                        $dimensions[] = $item;
+                        continue;
+                    }
+
                     $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
                 }
             }
@@ -61,8 +52,8 @@ class ReportBuilder implements ReportBuilderInterface
         $statement = $this->reportSelector->getReportData($params);
         $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll());
 
-//      $groupBy = $params->getGroupByTransform();
         $transforms = $params->getTransforms();
+        // sort transform by priority
         usort($transforms, function(TransformInterface $a, TransformInterface $b){
             if ($a->getPriority() == $b->getPriority()) {
                 return 0;
@@ -76,17 +67,6 @@ class ReportBuilder implements ReportBuilderInterface
         foreach ($transforms as $transform) {
             $transform->transform($collection, $metrics, $dimensions);
         }
-
-
-       /* if ($groupBy instanceof GroupByTransformInterface) {
-            return $this->reportGrouper->groupReports($groupBy, $collection, $metrics, $dimensions);
-        }
-
-        $sortByFields = $params->getSortByFields();
-        if (!empty($sortByFields)) {
-            $this->sorter->sortByFields($sortByFields, $collection, $metrics, $dimensions);
-        }*/
-
 
         return $collection->getRows();
     }

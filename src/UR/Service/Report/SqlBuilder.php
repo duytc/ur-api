@@ -20,6 +20,7 @@ use UR\Exception\RuntimeException;
 
 class SqlBuilder implements SqlBuilderInterface
 {
+    const FIRST_ELEMENT = 0;
     const START_DATE_INDEX = 0;
     const END_DATE_INDEX = 1;
     const DATA_SET_TABLE_NAME_TEMPLATE = '__data_import_%d';
@@ -78,7 +79,7 @@ class SqlBuilder implements SqlBuilderInterface
         $conditions = $this->buildFilters($filters);
 
         if (count($conditions) == 1) {
-            $qb->where($conditions[0]);
+            $qb->where($conditions[self::FIRST_ELEMENT]);
             return $qb->execute();
         }
 
@@ -94,7 +95,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         if (count($dataSets) == 1) {
-            $dataSet = $dataSets[0];
+            $dataSet = $dataSets[self::FIRST_ELEMENT];
             if (!$dataSet instanceof DataSetInterface) {
                 throw new RuntimeException('expect an DataSetInterface object');
             }
@@ -119,7 +120,7 @@ class SqlBuilder implements SqlBuilderInterface
         // add WHERE clause
         if (!empty($conditions)) {
             if (count($conditions) == 1) {
-                $qb->where($conditions[0]);
+                $qb->where($conditions[self::FIRST_ELEMENT]);
             } else {
                 $qb->where(implode(' AND ', $conditions));
             }
@@ -156,7 +157,7 @@ class SqlBuilder implements SqlBuilderInterface
 //            $qb->addSelect(sprintf('t%d.%s as %s', $dataSetIndex, $field, $field));
         }
 
-        if ($dataSetIndex === 0) {
+        if ($dataSetIndex === self::FIRST_ELEMENT) {
             $qb->from($table->getName(), sprintf('t%d', $dataSetIndex));
         } else {
             $qb->join('t0', $table->getName(), sprintf('t%d', $dataSetIndex), sprintf('t0.%s = t%d.%s', $joinBy, $dataSetIndex, $joinBy));
@@ -218,7 +219,7 @@ class SqlBuilder implements SqlBuilderInterface
                     return sprintf('%s >= %f', $fieldName, $filter->getComparisonValue());
                 case NumberFilter::COMPARISON_TYPE_IN:
                     return sprintf('%s in (%s)', $fieldName, $filter->getComparisonValue());
-                case NumberFilter::COMPARISON_TYPE_NOT:
+                case NumberFilter::COMPARISON_TYPE_NOT_IN:
                     return sprintf('%s not in (%s)', $fieldName, $filter->getComparisonValue());
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));

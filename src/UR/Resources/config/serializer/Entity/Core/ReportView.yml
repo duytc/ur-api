@@ -19,3 +19,7 @@ UR\Entity\Core\ReportView:
         publisher:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        createdDate:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+            type: DateTime<'Y-m-d'>

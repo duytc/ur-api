@@ -6,19 +6,11 @@ services:
         class: UR\Service\Report\ReportBuilder
         arguments:
             - '@ur.services.report.report_selector'
-            - '@ur.services.report.report_grouper'
-            - '@ur.services.report.report_sorter'
 
     ur.services.report.sql_builder:
         class: UR\Service\Report\SqlBuilder
         arguments:
             - '@doctrine.orm.entity_manager'
-
-    ur.services.report.report_grouper:
-        class: UR\Service\Report\ReportGrouper
-
-    ur.services.report.report_sorter:
-        class: UR\Service\Report\Sorter\SortBy
 
     ur.services.report.report_selector:
         class: UR\Service\Report\ReportSelector
