@@ -17,7 +17,7 @@ class DateFormat implements ColumnTransformerInterface
 
     public function transform($value)
     {
-        if (strcmp($value, "0000-00-00") === 0) {
+        if (strcmp($value, "0000-00-00") === 0 || $value === null) {
             return "";
         }
 
