@@ -48,9 +48,18 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
     /**
      * @inheritdoc
      */
-    public function getDataSetsForUserPaginationQuery(UserRoleInterface $user, PagerParam $param)
+    public function getDataSetsForUserPaginationQuery(UserRoleInterface $user, PagerParam $param, $hasConnectedDataSource = null)
     {
         $qb = $this->createQueryBuilderForUser($user);
+
+        switch ($hasConnectedDataSource) {
+            case 'true':
+                $qb = $this->getDataSetHasConnectedDataSourceQuery($user);
+                break;
+            case 'false':
+                $qb = $this->getDataSetHasNotConnectedDataSourceQuery($user);
+                break;
+        }
 
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
@@ -89,6 +98,46 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
             ->andWhere('ds.publisher = :publisherId')
             ->setParameter('publisherId', $dataSource->getPublisherId());
         return $qb;
+    }
+
+    public function getDataSetHasConnectedDataSourceQuery(UserRoleInterface $publisher)
+    {
+        $qb = $this->createQueryBuilderForUser($publisher)
+            ->join('ds.connectedDataSources', 'cds');
+
+        return $qb;
+    }
+
+    public function getDataSetHasConnectedDataSource(UserRoleInterface $publisher)
+    {
+        $qb = $this->getDataSetHasConnectedDataSourceQuery($publisher);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function getDataSetHasNotConnectedDataSourceQuery(UserRoleInterface $publisher)
+    {
+        $dataSets = $this->getDataSetHasConnectedDataSource($publisher);
+
+        $qb = $this->createQueryBuilderForUser($publisher);
+
+        $dataSetIds = [];
+        foreach ($dataSets as $dataSet) {
+            $dataSetIds[] = $dataSet->getId();
+        }
+
+        $qb
+            ->andWhere('ds.id NOT IN (:dataSetIds)')
+            ->setParameter('dataSetIds', implode($dataSetIds, ', '));
+
+        return $qb;
+    }
+
+    public function getDataSetHasNotConnectedDataSource(UserRoleInterface $publisher)
+    {
+        $qb = $this->getDataSetHasNotConnectedDataSourceQuery($publisher);
+
+        return $qb->getQuery()->getResult();
     }
 
     /**

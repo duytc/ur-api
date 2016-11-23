@@ -31,6 +31,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
      * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
      * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     * @Rest\QueryParam(name="hasConnectedDataSource", nullable=true, description="has connected data source option")
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -42,13 +43,24 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      *
      * @param Request $request
      * @return \UR\Model\Core\DataSetInterface[]
+     * @throws \Exception
      */
     public function cgetAction(Request $request)
     {
         $publisher = $this->getUser();
 
         $dataSetRepository = $this->get('ur.repository.data_set');
-        $qb = $dataSetRepository->getDataSetsForUserPaginationQuery($publisher, $this->getParams());
+        $hasConnectedDataSource = $request->query->get('hasConnectedDataSource', null);
+
+        if ($hasConnectedDataSource) {
+            $hasConnectedDataSource = strtolower($hasConnectedDataSource);
+        }
+
+        if ($hasConnectedDataSource !== 'true' && $hasConnectedDataSource !== 'false' && !is_null($hasConnectedDataSource)) {
+            throw new \Exception(sprintf('hasConnectedDataSource is not valid', $hasConnectedDataSource));
+        }
+
+        $qb = $dataSetRepository->getDataSetsForUserPaginationQuery($publisher, $this->getParams(), $hasConnectedDataSource);
 
         $params = array_merge($request->query->all(), $request->attributes->all());
         if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {

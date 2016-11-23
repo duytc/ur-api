@@ -31,9 +31,10 @@ interface DataSetRepositoryInterface extends ObjectRepository
     /**
      * @param UserRoleInterface $userRole
      * @param PagerParam $param
+     * @param $hasConnectedDataSource
      * @return QueryBuilder
      */
-    public function getDataSetsForUserPaginationQuery(UserRoleInterface $userRole, PagerParam $param);
+    public function getDataSetsForUserPaginationQuery(UserRoleInterface $userRole, PagerParam $param, $hasConnectedDataSource);
 
     /**
      * @param DataSourceInterface $dataSource
