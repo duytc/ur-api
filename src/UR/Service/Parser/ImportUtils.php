@@ -48,7 +48,7 @@ class ImportUtils
             if (strcmp($value, Type::NUMBER) === 0) {
                 $dataSetTable->addColumn($key, "decimal", ["notnull" => false]);
             } else if (strcmp($value, Type::DECIMAL) === 0) {
-                $dataSetTable->addColumn($key, $value, ["precision" => 20, "scale" => 8, "notnull" => false]);
+                $dataSetTable->addColumn($key, $value, ["precision" => 25, "scale" => 12, "notnull" => false]);
             } else if (strcmp($value, Type::MULTI_LINE_TEXT) === 0) {
                 $dataSetTable->addColumn($key, Type::TEXT, ["notnull" => false]);
             } else if (strcmp($value, Type::DATE) === 0) {
@@ -91,7 +91,7 @@ class ImportUtils
             if (strcmp($type, Type::NUMBER) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, "decimal", ["notnull" => false]);
             } else if (strcmp($type, Type::DECIMAL) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 20, "scale" => 8, "notnull" => false]);
+                $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false]);
             } else if (strcmp($type, Type::MULTI_LINE_TEXT) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false]);
             } else {

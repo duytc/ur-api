@@ -59,7 +59,7 @@ class NumberFilter implements ColumnFilterInterface
             return true;
         }
 
-        if (strcmp($this->comparison, FilterType::NOT) === 0) {
+        if (strcmp($this->comparison, FilterType::NOT_IN) === 0) {
 
             if (strpos($this->compareValue, $filter) !== false) {
                 return false;
