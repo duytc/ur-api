@@ -54,7 +54,7 @@ class TextFilter implements ColumnFilterInterface
 
         if (strcmp($this->comparison, FilterType::IN) === 0) {
 
-            if (strpos($this->compareValue, $filter) === false) {
+            if (strpos($filter, $this->compareValue) === false) {
                 return false;
             }
 
@@ -63,7 +63,7 @@ class TextFilter implements ColumnFilterInterface
 
         if (strcmp($this->comparison, FilterType::NOT_IN) === 0) {
 
-            if (strpos($this->compareValue, $filter) !== false) {
+            if (strpos($filter, $this->compareValue) !== false) {
                 return false;
             }
 
