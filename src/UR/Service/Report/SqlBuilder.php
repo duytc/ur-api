@@ -148,13 +148,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         foreach ($fields as $field) {
-            if ($field === $joinBy) {
-                $qb->addSelect(sprintf('t%d.%s', $dataSetIndex, $field));
-                continue;
-            }
-
             $qb->addSelect(sprintf('t%d.%s as %s_%d', $dataSetIndex, $field, $field, $dataSet->getDataSetId()));
-//            $qb->addSelect(sprintf('t%d.%s as %s', $dataSetIndex, $field, $field));
         }
 
         if ($dataSetIndex === self::FIRST_ELEMENT) {

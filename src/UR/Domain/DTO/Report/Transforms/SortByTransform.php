@@ -26,29 +26,32 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
      */
     protected $descSorts;
 
+    protected $ascFirst;
+
+    protected $sortObjects;
+
     function __construct(array $sortObjects)
     {
         parent::__construct();
 
         $this->ascSorts = [];
         $this->descSorts = [];
+        $this->ascFirst = true;
         foreach ($sortObjects as $sortObject) {
 
-            if (!array_key_exists(self::FIELDS_KEY, $sortObject)) {
-                throw new InvalidArgumentException('"fields" is missing');
+            if (!array_key_exists(self::FIELDS_KEY, $sortObject) || !array_key_exists(self::SORT_DIRECTION_KEY, $sortObject)) {
+                throw new InvalidArgumentException('either "fields" or "direction" is missing');
+
             }
 
-            switch($sortObject[self::SORT_DIRECTION_KEY]) {
-                case self::SORT_ASC:
-                    $this->ascSorts = array_merge($this->ascSorts, $sortObject[self::FIELDS_KEY]);
-                    break;
-                case self::SORT_DESC:
-                    $this->descSorts = array_merge($this->descSorts, $sortObject[self::FIELDS_KEY]);
-                    break;
-            }
+            $this->sortObjects[] = $sortObject;
         }
 
-        $intersect = array_intersect($this->ascSorts, $this->descSorts);
+        if (count($this->sortObjects) !== 2) {
+            throw new InvalidArgumentException('only "asc" and "desc" sort is supported');
+        }
+
+        $intersect = array_intersect($this->sortObjects[0][self::FIELDS_KEY], $this->sortObjects[1][self::FIELDS_KEY]);
         if (count($intersect) > 0) {
             throw new InvalidArgumentException(sprintf('"%s" are present in both sort direction', implode(',', $intersect)));
         }
@@ -62,28 +65,35 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
      */
     public function transform(Collection $collection, array $metrics, array $dimensions)
     {
+        $excludeFields= [];
         $rows = $collection->getRows();
         $params = [];
         // collect column data
         foreach($rows as $row) {
-            foreach($this->ascSorts as $ascSortField) {
-                ${$ascSortField."value"}[] = $row[$ascSortField];
-            }
-
-            foreach($this->descSorts as $descSortField) {
-                ${$descSortField."value"}[] = $row[$descSortField];
+            foreach($this->sortObjects as $sortObject) {
+                foreach($sortObject[self::FIELDS_KEY] as $field) {
+                    if (!array_key_exists($field, $row)) {
+                        $excludeFields[] = $field;
+                        break;
+                    }
+                    ${$field . "values"}[] = $row[$field];
+                }
             }
         }
 
         // build param
-        foreach($this->ascSorts as $ascSortField) {
-            $params[] = ${$ascSortField . "value"};
-            $params[] = SORT_ASC;
-        }
-
-        foreach($this->descSorts as $descSortField) {
-            $params[] = ${$descSortField . "value"};
-            $params[] = SORT_DESC;
+        foreach($this->sortObjects as $sortObject) {
+            foreach($sortObject[self::FIELDS_KEY] as $field) {
+                if (in_array($field, $excludeFields)) {
+                    break;
+                }
+                $params[] = ${$field . "values"};
+                if ($sortObject[self::SORT_DIRECTION_KEY] === self::SORT_ASC) {
+                    $params[] = SORT_ASC;
+                } else {
+                    $params[] = SORT_DESC;
+                }
+            }
         }
 
         $params[] = &$rows;

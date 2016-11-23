@@ -39,11 +39,6 @@ class ReportBuilder implements ReportBuilderInterface
                 }
 
                 foreach ($dataSet->getDimensions() as $item) {
-                    if ($item == $params->getJoinByFields()) {
-                        $dimensions[] = $item;
-                        continue;
-                    }
-
                     $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
                 }
             }
