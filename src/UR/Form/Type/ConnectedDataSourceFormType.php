@@ -27,7 +27,6 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
             ->add('filters')
             ->add('transforms')
             ->add('requires')
-            ->add('autoImport')
             ->add('alertSetting');
 
         $builder->addEventListener(
