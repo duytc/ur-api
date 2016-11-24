@@ -26,6 +26,10 @@ UR\Entity\Core\DataSourceEntry:
                     on: create
         receivedVia:
             type: string
+        autoImport:
+            type: boolean
+            options:
+                default: true
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

@@ -66,6 +66,10 @@ class AutoImportData implements AutoImportDataInterface
 
     public function autoCreateDataImport($connectedDataSources, DataSourceEntryInterface $dataSourceEntry)
     {
+        if ($dataSourceEntry->getAutoImport() === false) {
+            return;
+        }
+
         $conn = $this->em->getConnection();
         $dataSetLocator = new Locator($conn);
         $dataSetSynchronizer = new Synchronizer($conn, new Comparator());
@@ -77,10 +81,6 @@ class AutoImportData implements AutoImportDataInterface
          * @var ConnectedDataSourceInterface $connectedDataSource
          */
         foreach ($connectedDataSources as $connectedDataSource) {
-            if ($connectedDataSource->getAutoImport() === false) {
-                continue;
-            }
-
             if ($connectedDataSource->getDataSet() === null) {
                 throw new InvalidArgumentException('not found Dataset with this ID');
             }

@@ -341,6 +341,11 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     {
         /** @var DataSourceInterface $dataSource */
         $dataSource = $this->one($id);
+        $params = $this->get('fos_rest.request.param_fetcher')->all($strict = true);
+        $autoImport = false;
+        if (array_key_exists('autoImport', $params)) {
+            $autoImport = filter_var($params['autoImport'], FILTER_VALIDATE_BOOLEAN);
+        }
 
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
         $dirItem = '/' . $dataSource->getPublisherId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
@@ -349,7 +354,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         /** @var FileBag $files */
         $files = $request->files;
         $em = $this->get('ur.domain_manager.data_source_entry');
-        $result = $em->uploadDataSourceEntryFiles($files, $uploadPath, $dirItem, $dataSource);
+        $result = $em->uploadDataSourceEntryFiles($files, $uploadPath, $dirItem, $dataSource, $autoImport);
 
         return $result;
     }

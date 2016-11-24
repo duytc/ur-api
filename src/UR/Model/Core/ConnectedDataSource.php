@@ -9,7 +9,6 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $filters;
     protected $transforms;
     protected $requires;
-    protected $autoImport;
     protected $alertSetting;
 
     /**
@@ -112,24 +111,6 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setAlertSetting($alertSetting)
     {
         $this->alertSetting = $alertSetting;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getAutoImport()
-    {
-        return $this->autoImport;
-    }
-
-    /**
-     * @param mixed $autoImport
-     * @return self
-     */
-    public function setAutoImport($autoImport)
-    {
-        $this->autoImport = $autoImport;
-        return $this;
     }
 
     /**

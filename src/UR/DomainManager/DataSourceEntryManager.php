@@ -99,7 +99,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     /**
      * @inheritdoc
      */
-    public function uploadDataSourceEntryFiles($files, $path, $dirItem, $dataSource)
+    public function uploadDataSourceEntryFiles($files, $path, $dirItem, $dataSource, $autoImport = true)
     {
         $result = [];
         /** @var  $files */
@@ -150,6 +150,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $dataSourceEntry = (new DataSourceEntry())
                 ->setDataSource($dataSource)
                 ->setPath($dirItem . '/' . $name)
+                ->setAutoImport($autoImport)
                 //->setValid() // set later by parser module
                 //->setMetaData() // only for email...
                 //->setReceivedDate() // auto

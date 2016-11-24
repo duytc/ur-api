@@ -23,10 +23,6 @@ UR\Entity\Core\ConnectedDataSource:
         alertSetting:
             type: json_array
             nullable: true
-        autoImport:
-            type: boolean
-            options:
-                default: true
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

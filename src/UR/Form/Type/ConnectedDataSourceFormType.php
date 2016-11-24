@@ -40,10 +40,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                 // validate mapping fields
                 /** @var DataSetInterface $dataSet */
                 $dataSet = $connDataSource->getDataSet();
-                if (is_bool($connDataSource->getAutoImport())) {
-                    $connDataSource->setAutoImport(true);
-                }
-                
+
                 if ($dataSet !== null || $connDataSource->getId() !== null) {
 
                     if (!$this->validateMappingFields($dataSet, $connDataSource)) {
