@@ -42,7 +42,6 @@ class Excel implements DataSourceInterface
                 }
                 break;
             }
-
         }
 
     }

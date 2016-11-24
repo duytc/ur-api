@@ -29,23 +29,13 @@ class ReportBuilder implements ReportBuilderInterface
         $dimensions = [];
         $dataSets = $params->getDataSets();
 
-        if (count($dataSets) < 2) {
-            $metrics = $dataSets[0]->getMetrics();
-            $dimensions = $dataSets[0]->getDimensions();
-        } else {
-            foreach ($dataSets as $dataSet) {
-                foreach ($dataSet->getMetrics() as $item) {
-                    $metrics[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
-                }
+        foreach ($dataSets as $dataSet) {
+            foreach ($dataSet->getMetrics() as $item) {
+                $metrics[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
+            }
 
-                foreach ($dataSet->getDimensions() as $item) {
-                    if ($item == $params->getJoinByFields()) {
-                        $dimensions[] = $item;
-                        continue;
-                    }
-
-                    $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
-                }
+            foreach ($dataSet->getDimensions() as $item) {
+                $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
             }
         }
 
