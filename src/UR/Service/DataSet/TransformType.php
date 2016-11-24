@@ -24,6 +24,7 @@ final class TransformType
     const COMPARISON_PERCENT = 'comparisonPercent';
     const EXPRESSION = 'expression';
     const NAMES = 'names';
+    const DIRECTION = 'direction';
 
     public static $transformTypes = [
         self::GROUP_BY,
@@ -33,7 +34,7 @@ final class TransformType
         self::COMPARISON_PERCENT
     ];
 
-    private static $groupSortTypes = [
+    private static $groupTypes = [
         self::GROUP_BY
     ];
 
@@ -110,7 +111,7 @@ final class TransformType
 
     public static function isGroupType($type)
     {
-        return in_array($type, self::$groupSortTypes);
+        return in_array($type, self::$groupTypes);
     }
 
     public static function isSortType($type)
