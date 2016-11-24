@@ -67,7 +67,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @Rest\Get("/datasources/{id}", requirements={"id" = "\d+"})
      *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.summary", "integration.summary", "user.summary"})
+     * @Rest\View(serializerGroups={"datasource.summary", "dataSourceIntegration.summary", "integration.summary", "user.summary"})
      *
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
      *
@@ -87,6 +87,20 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     public function getAction($id)
     {
         return $this->one($id);
+    }
+
+    /**
+     * @param $id
+     * @return mixed
+     */
+    public function getDetectedfieldsAction($id)
+    {
+        /**
+         * @var DataSourceInterface $dataSource
+         */
+        $dataSource = $this->one($id);
+
+        return $dataSource->getDetectedFields();
     }
 
     /**
