@@ -21,7 +21,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
     public function addField($field)
     {
-        $this->fields [] = $field;
+        $this->fields[] = $field;
         return $this;
     }
 

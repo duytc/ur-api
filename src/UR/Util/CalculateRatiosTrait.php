@@ -16,7 +16,7 @@ trait CalculateRatiosTrait
         $ratio = null;
 
         if (is_numeric($denominator) && $denominator > 0 && is_numeric($numerator)) {
-            $ratio = $numerator / $denominator;
+            $ratio = abs($numerator- $denominator) / $denominator;
         }
 
         return $ratio;
