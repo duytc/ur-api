@@ -65,7 +65,7 @@ class ComparisonPercentTransform extends AbstractTransform implements Comparison
     public function transform(Collection $collection, array $metrics, array $dimensions)
     {
         $rows = $collection->getRows();
-        foreach($rows as &$row) {
+        foreach ($rows as &$row) {
             $calculatedValue = $this->getPercentage($row[$this->numerator], $row[$this->denominator]);
             $row[$this->field] = $calculatedValue;
         }

@@ -25,7 +25,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
     public function addField($field)
     {
-        $this->fields [] = $field;
+        $this->fields[] = $field;
         return $this;
     }
 
@@ -70,16 +70,6 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
                     if (is_numeric($value)) {
                         $result[$key] += $value;
                     }
-//                    else if (!in_array($key, $groupingFields)) {
-//                        unset($result[$key]);
-//                    }
-
-
-//                    else {
-//                        if (!in_array($key, $groupingFields)) {
-//                            $result[$key] = sprintf('%s, %s', $result[$key], $value);
-//                        }
-//                    }
                 }
             }
 
@@ -112,13 +102,13 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
                 }
             }
 
-            /* //Note: Remove all dimensions that do not group
+             //Note: Remove all dimensions that do not group
              foreach ($dimensions as $dimension) {
                  if (!empty($groupingFields) && in_array($dimension, $groupingFields)) {
                      continue;
                  }
                  unset($report[$dimension]);
-             }*/
+             }
 
             $key = md5($key);
             $groupedArray[$key][] = $report;

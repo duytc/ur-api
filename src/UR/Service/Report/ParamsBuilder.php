@@ -107,7 +107,9 @@ class ParamsBuilder implements ParamsBuilderInterface
                     }
                     break;
                 case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
-                    $transformObjects[] = new ComparisonPercentTransform($transform);
+                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $comparisonField) {
+                        $transformObjects[] = new ComparisonPercentTransform($comparisonField);
+                    }
                     break;
                 case TransformInterface::SORT_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
