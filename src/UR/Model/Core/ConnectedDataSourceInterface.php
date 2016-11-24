@@ -80,4 +80,15 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @param mixed $alertSetting
      */
     public function setAlertSetting($alertSetting);
+
+    /**
+     * @return mixed
+     */
+    public function getAutoImport();
+
+    /**
+     * @param mixed $autoImport
+     * @return self
+     */
+    public function setAutoImport($autoImport);
 }

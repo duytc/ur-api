@@ -79,7 +79,6 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
      */
     public function postAction(Request $request)
     {
-
         return $this->post($request);
     }
 

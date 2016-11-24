@@ -10,6 +10,7 @@ use Liuggio\ExcelBundle\Factory;
 use UR\DomainManager\AlertManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Entity\Core\ImportHistory;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Repository\Core\ConnectedDataSourceRepository;
 use UR\Service\Alert\ProcessAlert;
@@ -72,7 +73,14 @@ class AutoImportData implements AutoImportDataInterface
 
         $importUtils = new ImportUtils();
 
+        /**
+         * @var ConnectedDataSourceInterface $connectedDataSource
+         */
         foreach ($connectedDataSources as $connectedDataSource) {
+            if ($connectedDataSource->getAutoImport() === false) {
+                continue;
+            }
+
             if ($connectedDataSource->getDataSet() === null) {
                 throw new InvalidArgumentException('not found Dataset with this ID');
             }
