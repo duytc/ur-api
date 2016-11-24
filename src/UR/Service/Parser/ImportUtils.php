@@ -152,6 +152,7 @@ class ImportUtils
     {
         $transforms = $connectedDataSource->getTransforms();
 
+        $sortByColumns = array();
         foreach ($transforms as $transform) {
 
             if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::SINGLE_FIELD) === 0 && $parserConfig->hasColumnMapping($transform[TransformType::FIELD])) {
@@ -175,7 +176,7 @@ class ImportUtils
                 }
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
-                    $parserConfig->transformCollection(new SortByColumns($transform[TransformType::FIELDS]));
+                    $sortByColumns[] = $transform[TransformType::FIELDS];
                     continue;
                 }
 
@@ -203,6 +204,10 @@ class ImportUtils
                 }
 
             }
+        }
+
+        if ($sortByColumns) {
+            $parserConfig->transformCollection(new SortByColumns($sortByColumns));
         }
     }
 }
