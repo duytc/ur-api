@@ -5,7 +5,6 @@ namespace UR\Domain\DTO\Report;
 
 
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
-use UR\Domain\DTO\Report\Transforms\GroupByTransformInterface;
 use UR\Domain\DTO\Report\Transforms\SortByTransformInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 
@@ -53,58 +52,8 @@ class Params implements ParamsInterface
     public function setDataSets($dataSets)
     {
         $this->dataSets = $dataSets;
+
         return $this;
-    }
-
-
-    /** @inheritdoc */
-    public function getFiltersByDataSet($dataSetId)
-    {
-        if (!is_array($this->dataSets)) {
-            throw new \Exception(sprintf('Expect dataSet is object'));
-        }
-
-        foreach ($this->dataSets as $dataSet) {
-            if ($dataSet->getDataSetId() == $dataSetId) {
-                return $dataSet->getFilters();
-            }
-        }
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getMetricsByDataSet($dataSetId)
-    {
-        if (!is_array($this->dataSets)) {
-            throw new \Exception(sprintf('Expect dataSet is object'));
-        }
-
-        foreach ($this->dataSets as $dataSet) {
-            if ($dataSet->getDataSetId() == $dataSetId) {
-                return $dataSet->getMetrics();
-            }
-        }
-
-        return [];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getDimensionByDataSet($dataSetId)
-    {
-        if (!is_array($this->dataSets)) {
-            throw new \Exception(sprintf('Expect dataSet is object'));
-        }
-
-        foreach ($this->dataSets as $dataSet) {
-            if ($dataSet->getDataSetId() == $dataSetId) {
-                return $dataSet->getDimensions();
-            }
-        }
-
-        return [];
     }
 
     /**
@@ -122,43 +71,8 @@ class Params implements ParamsInterface
     public function setJoinByFields($joinByFields)
     {
         $this->joinByFields = $joinByFields;
+
         return $this;
-    }
-
-
-    /**
-     * @inheritdoc
-     */
-    public function getGroupByTransform()
-    {
-        if (empty($this->getTransforms())) {
-            return false;
-        }
-        /** @var GroupByTransformInterface[] $groupByTransforms */
-        $groupByTransforms = [];
-        foreach ($this->getTransforms() as $transform) {
-            if ($transform instanceof GroupByTransformInterface) {
-                $groupByTransforms[] = $transform;
-            }
-        }
-
-        if (empty($groupByTransforms)) {
-            return false;
-        }
-
-        /** @var GroupByTransformInterface $transformThatMergeFields */
-        $transformThatMergeFields = reset($groupByTransforms);
-
-        foreach ($groupByTransforms as $groupByTransform) {
-            foreach ($groupByTransform->getFields() as $groupField) {
-                if (!in_array($groupField, $transformThatMergeFields->getFields())) {
-                    $transformThatMergeFields->addField($groupField);
-                }
-            }
-        }
-
-        return $transformThatMergeFields;
-
     }
 
     /**
@@ -180,6 +94,7 @@ class Params implements ParamsInterface
     public function setTransforms($transforms)
     {
         $this->transforms = $transforms;
+
         return $this;
     }
 
@@ -201,6 +116,5 @@ class Params implements ParamsInterface
         }
 
         return $sortByTransforms;
-
     }
 }

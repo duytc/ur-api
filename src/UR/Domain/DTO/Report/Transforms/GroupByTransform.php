@@ -4,10 +4,13 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 
+use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
 class GroupByTransform extends AbstractTransform implements GroupByTransformInterface
 {
+    const PRIORITY = 2;
+
     const FIELDS_KEY = 'fields';
     /**
      * @var array
@@ -16,6 +19,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
     function __construct(array $data)
     {
+        parent::__construct();
         $this->fields = $data;
     }
 
@@ -63,17 +67,19 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
             foreach ($groupedReport as $report) {
                 foreach ($report as $key => $value) {
-                    /*if (in_array($key, $metrics)) {
-                        $result[$key] += $value; // Metric may be text or multiline text
-                    }*/
-
                     if (is_numeric($value)) {
                         $result[$key] += $value;
-                    } else {
-                        if (!in_array($key, $groupingFields)) {
-                            $result[$key] = sprintf('%s, %s', $result[$key], $value);
-                        }
                     }
+//                    else if (!in_array($key, $groupingFields)) {
+//                        unset($result[$key]);
+//                    }
+
+
+//                    else {
+//                        if (!in_array($key, $groupingFields)) {
+//                            $result[$key] = sprintf('%s, %s', $result[$key], $value);
+//                        }
+//                    }
                 }
             }
 
@@ -98,7 +104,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
             $key = '';
             foreach ($groupingFields as $groupField) {
                 if (!in_array($groupField, $dimensions)) {
-                    throw new \Exception(sprintf('%s is not a dimensions', $groupField));
+                    throw new InvalidArgumentException(sprintf('%s is not a dimensions', $groupField));
                 }
 
                 if (array_key_exists($groupField, $report)) {

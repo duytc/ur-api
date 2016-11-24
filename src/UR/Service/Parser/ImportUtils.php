@@ -46,15 +46,15 @@ class ImportUtils
         foreach ($dataSet->getMetrics() as $key => $value) {
 
             if (strcmp($value, Type::NUMBER) === 0) {
-                $dataSetTable->addColumn($key, "decimal", ["notnull" => false]);
+                $dataSetTable->addColumn($key, "decimal", ["notnull" => false, "default" => null]);
             } else if (strcmp($value, Type::DECIMAL) === 0) {
-                $dataSetTable->addColumn($key, $value, ["precision" => 25, "scale" => 12, "notnull" => false]);
+                $dataSetTable->addColumn($key, $value, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
             } else if (strcmp($value, Type::MULTI_LINE_TEXT) === 0) {
-                $dataSetTable->addColumn($key, Type::TEXT, ["notnull" => false]);
+                $dataSetTable->addColumn($key, Type::TEXT, ["notnull" => false, "default" => null]);
             } else if (strcmp($value, Type::DATE) === 0) {
-                $dataSetTable->addColumn($key, Type::DATE, ["notnull" => false]);
+                $dataSetTable->addColumn($key, Type::DATE, ["notnull" => false, "default" => null]);
             } else {
-                $dataSetTable->addColumn($key, $value, ["notnull" => false]);
+                $dataSetTable->addColumn($key, $value, ["notnull" => false, "default" => null]);
             }
         }
 
@@ -89,13 +89,13 @@ class ImportUtils
         foreach ($newColumns as $newColumn => $type) {
 
             if (strcmp($type, Type::NUMBER) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, "decimal", ["notnull" => false]);
+                $addCols[] = $dataTable->addColumn($newColumn, "decimal", ["notnull" => false, "default"=>null]);
             } else if (strcmp($type, Type::DECIMAL) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false]);
+                $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false, "default"=>null]);
             } else if (strcmp($type, Type::MULTI_LINE_TEXT) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false]);
+                $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false, "default"=>null]);
             } else {
-                $addCols[] = $dataTable->addColumn($newColumn, $type, ["notnull" => false]);
+                $addCols[] = $dataTable->addColumn($newColumn, $type, ["notnull" => false, "default"=>null]);
             }
         }
 
