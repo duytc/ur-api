@@ -11,7 +11,7 @@ use UR\Service\DTO\Collection;
 
 class FormatDateTransform extends AbstractTransform implements FormatDateTransformInterface
 {
-    const PRIORITY = 1;
+    const PRIORITY = 4;
     const FROM_FORMAT_KEY = 'from';
     const TO_FORMAT_KEY = 'to';
     const FIELD_NAME_KEY = 'field';

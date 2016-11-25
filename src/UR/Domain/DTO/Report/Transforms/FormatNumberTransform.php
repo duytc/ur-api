@@ -9,7 +9,7 @@ use UR\Service\DTO\Collection;
 
 class FormatNumberTransform extends AbstractTransform implements FormatNumberTransformInterface
 {
-    const PRIORITY = 1;
+    const PRIORITY = 4;
     const DEFAULT_DECIMAL_SEPARATOR = '.';
     const DEFAULT_THOUSAND_SEPARATOR = ',';
     const DEFAULT_PRECISION = 3;
