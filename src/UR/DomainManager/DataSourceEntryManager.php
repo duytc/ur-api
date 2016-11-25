@@ -5,6 +5,7 @@ namespace UR\DomainManager;
 use Doctrine\Common\Persistence\ObjectManager;
 use Liuggio\ExcelBundle\Factory;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\FileBag;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -66,7 +67,8 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     {
         if (!$dataSourceEntry instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
         $this->om->remove($dataSourceEntry);
-        $detectedFields = $this->detectedFieldsForDataSource($dataSourceEntry, DataSourceEntryManager::DELETE);
+        $newFields = $this->getNewFieldsFromFiles($this->uploadFileDir . $dataSourceEntry->getPath(), $dataSourceEntry->getDataSource());
+        $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSourceEntry->getDataSource()->getDetectedFields(), DataSourceEntryManager::DELETE);
         $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
         $this->om->flush();
     }
@@ -99,7 +101,27 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     /**
      * @inheritdoc
      */
-    public function uploadDataSourceEntryFiles($files, $path, $dirItem, $dataSource, $autoImport = true)
+    public function detectedFieldsFromFiles(FileBag $files, DataSourceInterface $dataSource)
+    {
+        $keys = $files->keys();
+        $currentFields = [];
+        foreach ($keys as $key) {
+            /**@var UploadedFile $file */
+            $file = $files->get($key);
+            $error = $this->validateFileUpload($file, $dataSource);
+            if ($error > 0) {
+                return $error;
+            }
+            $newFields = $this->getNewFieldsFromFiles($file->getRealPath(), $dataSource);
+            $currentFields = $this->detectedFieldsForDataSource($newFields, $currentFields, self::UPLOAD);
+        }
+        return $currentFields;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function uploadDataSourceEntryFiles($files, $path, $dirItem, $dataSource)
     {
         $result = [];
         /** @var  $files */
@@ -107,29 +129,10 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         foreach ($keys as $key) {
             /**@var UploadedFile $file */
             $file = $files->get($key);
+            $error = $this->validateFileUpload($file, $dataSource);
+
             $origin_name = $file->getClientOriginalName();
             $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
-            $error = 0;
-
-            if (strcmp(DataSourceType::DS_EXCEL_FORMAT, $dataSource->getFormat()) === 0) {
-                if (!DataSourceType::isExcelType($file->getClientOriginalExtension())) {
-                    $error = 1;
-                }
-
-            } else if (strcmp(DataSourceType::DS_CSV_FORMAT, $dataSource->getFormat()) === 0) {
-                if (!DataSourceType::isCsvType($file->getClientOriginalExtension())) {
-                    $error = 2;
-                }
-
-            } else if (strcmp(DataSourceType::DS_JSON_FORMAT, $dataSource->getFormat()) === 0) {
-                if (!DataSourceType::isJsonType($file->getClientOriginalExtension())) {
-                    $error = 3;
-                }
-
-            } else {
-                $error = 4;
-            }
-
             if ($error > 0) {
                 if (in_array(DataSourceRepository::WRONG_FORMAT, $dataSource->getAlertSetting())) {
                     $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT;
@@ -142,15 +145,14 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 throw new \Exception(sprintf("File %s is not valid", $origin_name));
             }
 
+            $newFields = $this->getNewFieldsFromFiles($file->getRealPath(), $dataSource);
             // save file to upload dir
             $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
             $file->move($path, $name);
-
             // create new data source entry
             $dataSourceEntry = (new DataSourceEntry())
                 ->setDataSource($dataSource)
                 ->setPath($dirItem . '/' . $name)
-                ->setAutoImport($autoImport)
                 //->setValid() // set later by parser module
                 //->setMetaData() // only for email...
                 //->setReceivedDate() // auto
@@ -158,7 +160,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
             $dataSourceEntry->setFileName($origin_name);
-            $detectedFields = $this->detectedFieldsForDataSource($dataSourceEntry, DataSourceEntryManager::UPLOAD);
+            $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), DataSourceEntryManager::UPLOAD);
             $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
             $this->save($dataSourceEntry);
 
@@ -171,8 +173,8 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 );
                 $this->workerManager->processAlert($code, $publisherId, $params);
             }
-            $result[$origin_name] = 'success';
 
+            $result[$origin_name] = 'success';
         }
 
         return $result;
@@ -186,13 +188,11 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         return $this->repository->getDataSourceEntriesForPublisher($publisher, $limit, $offset);
     }
 
-    public function detectedFieldsForDataSource(DataSourceEntryInterface $item, $option)
+    public function getNewFieldsFromFiles($inputFile, DataSourceInterface $dataSource)
     {
+//        $inputFile = $file->getRealPath();
+
         /**@var \UR\Service\DataSource\DataSourceInterface $file */
-        /**@var DataSourceInterface $dataSource */
-        $dataSource = $item->getDataSource();
-        $detectedFields = $dataSource->getDetectedFields();
-        $inputFile = $this->uploadFileDir . $item->getPath();
 
         if (strcmp($dataSource->getFormat(), 'csv') === 0) {
             /**@var Csv $file */
@@ -201,21 +201,25 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             /**@var Excel $file */
             $file = new \UR\Service\DataSource\Excel($inputFile, $this->phpExcel);
         } else {
-            $file = new Json($item->getPath());
+            $file = new Json($inputFile);
         }
 
-        $columns = $file->getColumns();
         $newFields = [];
+        $columns = $file->getColumns();
         $newFields = array_merge($newFields, $columns);
         $newFields = array_unique($newFields);
         $newFields = array_filter($newFields, function ($value) {
             return $value !== '';
         });
+        return $newFields;
+    }
 
+    public function detectedFieldsForDataSource(array $newFields, array $currentFields, $option)
+    {
         foreach ($newFields as $newField) {
-            $detectedFields = $this->updateDetectedField($newField, $detectedFields, $option);
+            $currentFields = $this->updateDetectedField($newField, $currentFields, $option);
         }
-        return $detectedFields;
+        return $currentFields;
     }
 
     private function updateDetectedField($newField, $detectedFields, $option)
@@ -240,5 +244,29 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         }
 
         return $detectedFields;
+    }
+
+    public function validateFileUpload(UploadedFile $file, DataSourceInterface $dataSource)
+    {
+        if (strcmp(DataSourceType::DS_EXCEL_FORMAT, $dataSource->getFormat()) === 0) {
+            if (!DataSourceType::isExcelType($file->getClientOriginalExtension())) {
+                return 1;
+            }
+
+        } else if (strcmp(DataSourceType::DS_CSV_FORMAT, $dataSource->getFormat()) === 0) {
+            if (!DataSourceType::isCsvType($file->getClientOriginalExtension())) {
+                return 2;
+            }
+
+        } else if (strcmp(DataSourceType::DS_JSON_FORMAT, $dataSource->getFormat()) === 0) {
+            if (!DataSourceType::isJsonType($file->getClientOriginalExtension())) {
+                return 3;
+            }
+
+        } else {
+            return 4;
+        }
+
+        return 0;
     }
 }

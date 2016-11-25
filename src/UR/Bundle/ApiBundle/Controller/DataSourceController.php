@@ -323,6 +323,36 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     /**
      * Upload
      *
+     * @Rest\Post("/datasources/{id}/uploadfordetectedfields")
+     * @ApiDoc(
+     *  section = "Data Sources",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request the request object
+     *
+     * @param $id
+     * @return mixed
+     */
+    public function postUploadForDetectedFieldsAction(Request $request, $id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+        /** @var FileBag $files */
+        $files = $request->files;
+        $em = $this->get('ur.domain_manager.data_source_entry');
+        $result = $em->detectedFieldsFromFiles($files, $dataSource);
+
+        return $result;
+    }
+
+    /**
+     * Upload
+     *
      * @ApiDoc(
      *  section = "Data Sources",
      *  resource = true,
@@ -341,12 +371,6 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     {
         /** @var DataSourceInterface $dataSource */
         $dataSource = $this->one($id);
-        $params = $this->get('fos_rest.request.param_fetcher')->all($strict = true);
-        $autoImport = false;
-        if (array_key_exists('autoImport', $params)) {
-            $autoImport = filter_var($params['autoImport'], FILTER_VALIDATE_BOOLEAN);
-        }
-
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
         $dirItem = '/' . $dataSource->getPublisherId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
         $uploadPath = $uploadRootDir . $dirItem;
@@ -354,7 +378,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         /** @var FileBag $files */
         $files = $request->files;
         $em = $this->get('ur.domain_manager.data_source_entry');
-        $result = $em->uploadDataSourceEntryFiles($files, $uploadPath, $dirItem, $dataSource, $autoImport);
+        $result = $em->uploadDataSourceEntryFiles($files, $uploadPath, $dirItem, $dataSource);
 
         return $result;
     }

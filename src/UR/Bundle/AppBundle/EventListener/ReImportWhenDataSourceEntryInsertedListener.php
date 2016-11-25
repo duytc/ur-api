@@ -56,9 +56,6 @@ class ReImportWhenDataSourceEntryInsertedListener
                 continue;
             }
 
-            if ($entity->getAutoImport() === false) {
-                continue;
-            }
             $entryIds[] = $entity->getId();
         }
         // running import data

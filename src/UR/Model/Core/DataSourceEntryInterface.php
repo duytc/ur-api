@@ -45,17 +45,6 @@ interface DataSourceEntryInterface extends ModelInterface
     public function setPath($path);
 
     /**
-     * @return mixed
-     */
-    public function getAutoImport();
-
-    /**
-     * @param mixed $autoImport
-     * @return self
-     */
-    public function setAutoImport($autoImport);
-
-    /**
      * @return array
      */
     public function getMetaData();

@@ -11,7 +11,6 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $fileName;
     protected $metaData;
     protected $receivedVia;
-    protected $autoImport;
 
     /**
      * @var DataSourceInterface
@@ -62,24 +61,6 @@ class DataSourceEntry implements DataSourceEntryInterface
     {
         $this->isValid = $isValid;
 
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getAutoImport()
-    {
-        return $this->autoImport;
-    }
-
-    /**
-     * @param mixed $autoImport
-     * @return self
-     */
-    public function setAutoImport($autoImport)
-    {
-        $this->autoImport = $autoImport;
         return $this;
     }
 
