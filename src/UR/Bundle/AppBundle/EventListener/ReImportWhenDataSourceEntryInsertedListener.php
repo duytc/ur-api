@@ -55,7 +55,10 @@ class ReImportWhenDataSourceEntryInsertedListener
             if (!$entity instanceof DataSourceEntryInterface) {
                 continue;
             }
-            /** @var DataSourceInterface $dataSource */
+
+            if ($entity->getAutoImport() === false) {
+                continue;
+            }
             $entryIds[] = $entity->getId();
         }
         // running import data

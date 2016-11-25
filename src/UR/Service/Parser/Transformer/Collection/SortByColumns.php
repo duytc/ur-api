@@ -2,7 +2,6 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
-use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Service\DataSet\TransformType;
 use UR\Service\DTO\Collection;
 
@@ -52,7 +51,8 @@ class SortByColumns implements CollectionTransformerInterface
         return 0;
     }
 
-    public function array_sort_by_column(&$arr, $cols) {
+    public function array_sort_by_column(&$arr, $cols)
+    {
         $sort_name = array();
         $sort_direction = array();
 
@@ -68,7 +68,7 @@ class SortByColumns implements CollectionTransformerInterface
         $params = array();
         $params[] = $arr;
         $sortCriteria = array();
-        for($i = 0; $i<count($sort_name); $i++) {
+        for ($i = 0; $i < count($sort_name); $i++) {
             $params[] = $sort_name[$i];
             $params[] = $sort_direction[$i];
             $sortCriteria[$sort_name[$i]][] = $sort_direction[$i];
@@ -87,23 +87,20 @@ class SortByColumns implements CollectionTransformerInterface
      */
     protected function multiSort($data, $sortCriteria, $caseInSensitive = true)
     {
-        if( !is_array($data) || !is_array($sortCriteria))
+        if (!is_array($data) || !is_array($sortCriteria))
             return false;
         $args = array();
         $i = 0;
-        foreach($sortCriteria as $sortColumn => $sortAttributes)
-        {
+        foreach ($sortCriteria as $sortColumn => $sortAttributes) {
             $colList = array();
-            foreach ($data as $key => $row)
-            {
+            foreach ($data as $key => $row) {
                 $convertToLower = $caseInSensitive && (in_array(SORT_STRING, $sortAttributes) || in_array(SORT_REGULAR, $sortAttributes));
                 $rowData = $convertToLower ? strtolower($row[$sortColumn]) : $row[$sortColumn];
                 $colLists[$sortColumn][$key] = $rowData;
             }
             $args[] = &$colLists[$sortColumn];
 
-            foreach($sortAttributes as $sortAttribute)
-            {
+            foreach ($sortAttributes as $sortAttribute) {
                 $tmp[$i] = $sortAttribute;
                 $args[] = &$tmp[$i];
                 $i++;

@@ -17,7 +17,6 @@ use UR\Service\Alert\ProcessAlert;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
-use UR\Service\DataSet\TransformType;
 use UR\Service\DataSource\Csv;
 use UR\Service\DataSource\Excel;
 use UR\Service\DataSource\Json;
@@ -66,10 +65,6 @@ class AutoImportData implements AutoImportDataInterface
 
     public function autoCreateDataImport($connectedDataSources, DataSourceEntryInterface $dataSourceEntry)
     {
-        if ($dataSourceEntry->getAutoImport() === false) {
-            return;
-        }
-
         $conn = $this->em->getConnection();
         $dataSetLocator = new Locator($conn);
         $dataSetSynchronizer = new Synchronizer($conn, new Comparator());
