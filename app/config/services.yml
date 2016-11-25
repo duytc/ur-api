@@ -90,6 +90,11 @@ services:
     ur.service.array_util:
         class: UR\Service\ArrayUtil
 
+    ur.service.synchronize_user:
+        class: UR\Service\SynchronizeUser\SynchronizeUser
+        arguments:
+            - @ur_user.domain_manager.publisher
+
     monolog.formatter.session_request:
         class: Monolog\Formatter\LineFormatter
         arguments:
@@ -142,8 +147,13 @@ services:
         arguments:
             - @ur.domain_manager.alert
             - @ur_user.domain_manager.publisher
+
     ur.worker.workers.alert_worker:
         class: UR\Worker\Workers\AlertWorker
         arguments:
             - @ur.service.alert.process_alert
 
+    ur.worker.workers.synchronize_user_worker:
+        class: UR\Worker\Workers\SynchronizeUserWorker
+        arguments:
+            - @ur.service.synchronize_user
