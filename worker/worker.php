@@ -28,6 +28,7 @@ $queue = $container->get("leezy.pheanstalk");
 $availableWorkers = [
     $container->get('ur.worker.workers.re_import_new_entry_received'),
     $container->get('ur.worker.workers.alert_worker'),
+    $container->get('ur.worker.workers.synchronize_user_worker')
 ];
 
 $workerPool = new \UR\Worker\Pool($availableWorkers);
