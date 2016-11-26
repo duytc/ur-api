@@ -64,6 +64,22 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                 // validate dimensions and metrics
                 $form = $event->getForm();
 
+                $dimensions = $dataSet->getDimensions();
+                $metrics = $dataSet->getMetrics();
+                $standardDimensions = [];
+                $standardMetrics = [];
+                foreach ($dimensions as $dimension => $type) {
+                    $dimension = $this->getStandardName($dimension);
+                    $standardDimensions[$dimension] = $type;
+                }
+                foreach ($metrics as $metric => $type) {
+                    $metric = $this->getStandardName($metric);
+                    $standardMetrics[$metric] = $type;
+                }
+                $dataSet->setDimensions($standardDimensions);
+                $dataSet->setMetrics($standardMetrics);
+
+
                 if (!$this->validateDimensions($dataSet->getDimensions())) {
                     $form->get('dimensions')->addError(new FormError('dimension values should not null and be one of ' . json_encode(self::$SUPPORTED_DIMENSION_VALUES)));
                 }
@@ -75,7 +91,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                 //validate connDataSources
                 $connDataSources = $dataSet->getConnectedDataSources();
 
-                if (count($connDataSources) <0) {
+                if (count($connDataSources) < 0) {
 
                     foreach ($connDataSources as $connDataSource) {
 
@@ -138,5 +154,16 @@ class DataSetFormType extends AbstractRoleSpecificFormType
             }
         }
         return true;
+    }
+
+    public function getStandardName($name)
+    {
+        $name = strtolower(trim($name));
+
+        $name = preg_replace("/ +/", "_", $name);
+        $name = preg_replace("/-+/", "_", $name);
+        $name = preg_replace("/[^a-zA-Z0-9]/ ", "_", $name);
+        $name = preg_replace("/_+/ ", "_", $name);
+        return $name;
     }
 }
