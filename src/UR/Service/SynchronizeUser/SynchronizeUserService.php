@@ -6,7 +6,7 @@ use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\Bundle\UserSystem\PublisherBundle\Entity\User;
 use UR\Model\User\UserEntityInterface;
 
-class SynchronizeUser implements SynchronizeUserInterface
+class SynchronizeUserService implements SynchronizeUserServiceInterface
 {
     private $publisherManager;
 
@@ -15,8 +15,9 @@ class SynchronizeUser implements SynchronizeUserInterface
         $this->publisherManager = $publisherManager;
     }
 
-    public function synchronizeUser($id, $entity)
+    public function synchronizeUser($entity)
     {
+        $id = $entity['id'];
         $publisher = $this->publisherManager->findPublisher($id);
         if (!in_array(User::MODULE_UNIFIED_REPORT, $entity['roles'])) {
             $entity['enabled'] = false;
@@ -65,7 +66,7 @@ class SynchronizeUser implements SynchronizeUserInterface
             $user->setPassword($entity['password']);
             $user->setEmail($entity['email']);
             $user->setEnabled($entity['enabled']);
-
+            $user->setId($id);
             $this->publisherManager->save($user);
         }
     }

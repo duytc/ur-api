@@ -36,6 +36,14 @@ class User extends BaseUser implements PublisherInterface
     /**
      * @inheritdoc
      */
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getBidders()
     {
         return $this->bidders;

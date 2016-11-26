@@ -4,24 +4,23 @@ namespace UR\Worker\Workers;
 
 
 use stdClass;
-use UR\Service\SynchronizeUser\SynchronizeUserInterface;
+use UR\Service\SynchronizeUser\SynchronizeUserServiceInterface;
 
 class SynchronizeUserWorker implements SynchronizeUserWorkerInterface
 {
     /**
-     * @var SynchronizeUserInterface
+     * @var SynchronizeUserServiceInterface
      */
     private $synchronizeUser;
 
-    public function __construct(SynchronizeUserInterface $synchronizeUser)
+    public function __construct(SynchronizeUserServiceInterface $synchronizeUser)
     {
         $this->synchronizeUser = $synchronizeUser;
     }
 
     public function synchronizeUser(StdClass $params)
     {
-        $id = $params->id;
         $entity = (array) $params->entity;
-        $this->synchronizeUser->synchronizeUser($id, $entity);
+        $this->synchronizeUser->synchronizeUser($entity);
     }
 }

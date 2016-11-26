@@ -90,8 +90,8 @@ services:
     ur.service.array_util:
         class: UR\Service\ArrayUtil
 
-    ur.service.synchronize_user:
-        class: UR\Service\SynchronizeUser\SynchronizeUser
+    ur.service.synchronize_user_service:
+        class: UR\Service\SynchronizeUser\SynchronizeUserService
         arguments:
             - @ur_user.domain_manager.publisher
 
@@ -156,4 +156,4 @@ services:
     ur.worker.workers.synchronize_user_worker:
         class: UR\Worker\Workers\SynchronizeUserWorker
         arguments:
-            - @ur.service.synchronize_user
+            - @ur.service.synchronize_user_service

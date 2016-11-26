@@ -5,6 +5,12 @@ namespace UR\Model\User\Role;
 interface PublisherInterface extends UserRoleInterface
 {
     /**
+     * @param $id
+     * @return self
+     */
+    public function setId($id);
+
+    /**
      * @return string
      */
     public function getUuid();
