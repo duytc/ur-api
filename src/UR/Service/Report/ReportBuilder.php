@@ -16,11 +16,19 @@ class ReportBuilder implements ReportBuilderInterface
     protected $reportSelector;
 
     /**
-     * @param ReportSelectorInterface $reportSelector
+     * @var ReportGrouperInterface
      */
-    public function __construct(ReportSelectorInterface $reportSelector)
+    protected $reportGrouper;
+
+    /**
+     * ReportBuilder constructor.
+     * @param ReportSelectorInterface $reportSelector
+     * @param ReportGrouperInterface $reportGrouper
+     */
+    public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper)
     {
         $this->reportSelector = $reportSelector;
+        $this->reportGrouper = $reportGrouper;
     }
 
     public function getReport(ParamsInterface $params)
@@ -58,6 +66,6 @@ class ReportBuilder implements ReportBuilderInterface
             $transform->transform($collection, $metrics, $dimensions);
         }
 
-        return $collection->getRows();
+        return $this->reportGrouper->group($collection, $metrics);
     }
 }
