@@ -346,7 +346,9 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $files = $request->files;
         $em = $this->get('ur.domain_manager.data_source_entry');
         $result = $em->detectedFieldsFromFiles($files, $dataSource);
-
+        if (!is_array($result)) {
+            throw new BadRequestHttpException('Could not detect fields from uploaded file');
+        }
         return $result;
     }
 
