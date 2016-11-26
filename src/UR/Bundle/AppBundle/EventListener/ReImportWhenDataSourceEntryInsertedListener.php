@@ -59,6 +59,9 @@ class ReImportWhenDataSourceEntryInsertedListener
             $entryIds[] = $entity->getId();
         }
         // running import data
+        if (count($entryIds) < 1)
+            return;
+
         $this->workerManager->reImportWhenNewEntryReceived($entryIds);
 
         // reset for new onFlush event
