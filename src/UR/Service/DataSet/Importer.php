@@ -39,18 +39,12 @@ class Importer
         }
 
         $rows = $collection->getRows();
-
         $qb = $this->conn->createQueryBuilder();
-
         $this->conn->beginTransaction();
-
         try {
             foreach ($rows as $row) {
-                if ($row['ratio'] === "") {
-                    $row['ratio'] = null;
-                }
                 $query = $qb
-                        ->insert($tableName);
+                    ->insert($tableName);
 
                 $positionKey = 0;
                 $query->setValue('__data_source_id', '?');
@@ -62,14 +56,13 @@ class Importer
                 foreach ($columns as $column) {
                     $query->setValue($column, '?');
                     // todo bind param type
-                    $query->setParameter($positionKey, $row[$column]);
+                    $query->setParameter($positionKey,
+                        strcmp($row[$column], "") === 0 ? null : $row[$column]);
 
                     $positionKey++;
                 }
 
                 $query->execute();
-
-
                 unset($query);
             }
 

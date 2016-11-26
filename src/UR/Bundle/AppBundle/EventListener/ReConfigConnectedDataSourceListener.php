@@ -93,7 +93,7 @@ class ReConfigConnectedDataSourceListener
         $conn = $em->getConnection();
         $importUtils = new ImportUtils();
         $importUtils->alterDataSetTable($entity, $conn, $deletedFields, $newFields);
-        $this->deletedFields=$deletedFields;
+        $this->deletedFields = $deletedFields;
     }
 
     public function postFlush(PostFlushEventArgs $args)
@@ -159,7 +159,7 @@ class ReConfigConnectedDataSourceListener
                         unset($transforms[$key]);
                     }
                 } else {
-                    if (TransformType::isGroupOrSortType($transform[TransformType::TYPE])) {
+                    if (TransformType::isGroupType($transform[TransformType::TYPE])) {
                         foreach ($transform[TransformType::FIELDS] as $k => $value) {
                             if (strcmp($value, $deletedField) === 0) {
                                 unset($transforms[$key][TransformType::FIELDS][$k]);
@@ -169,6 +169,7 @@ class ReConfigConnectedDataSourceListener
                             unset($transforms[$key]);
                         }
                     }
+                    //todo soft type
                     if (TransformType::isAddingType($transform[TransformType::TYPE])) {
                         foreach ($transform[TransformType::FIELDS] as $k => $field) {
                             if (strcmp($field[TransformType::FIELD], $deletedField) === 0) {
