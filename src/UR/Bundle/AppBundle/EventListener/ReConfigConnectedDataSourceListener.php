@@ -169,6 +169,24 @@ class ReConfigConnectedDataSourceListener
                             unset($transforms[$key]);
                         }
                     }
+
+                    if (TransformType::isSortType($transform[TransformType::TYPE])) {
+                        foreach ($transform[TransformType::FIELDS] as $sortKey => $fields) {
+
+                            foreach ($fields['names'] as $k => $field) {
+                                if (strcmp($field, $deletedField) === 0) {
+                                    unset($transforms[$key][TransformType::FIELDS][$sortKey]['names'][$k]);
+                                }
+                            }
+
+                            if (count($transforms[$key][TransformType::FIELDS][$sortKey]['names']) < 1) {
+                                unset($transforms[$key][TransformType::FIELDS][$sortKey]);
+                            }
+                        }
+                        if (count($transform[TransformType::FIELDS]) === 0) {
+                            unset($transforms[$key]);
+                        }
+                    }
                     //todo soft type
                     if (TransformType::isAddingType($transform[TransformType::TYPE])) {
                         foreach ($transform[TransformType::FIELDS] as $k => $field) {

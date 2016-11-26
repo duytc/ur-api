@@ -10,7 +10,6 @@ final class TransformType
     const TO = 'to';
     const DATE = 'date';
     const NUMBER = 'number';
-    const TRANSFORM_TYPE = 'transformType';
     const FIELD = 'field';
     const FIELDS = 'fields';
     const VALUE = 'value';
@@ -25,8 +24,12 @@ final class TransformType
     const EXPRESSION = 'expression';
     const NAMES = 'names';
     const DIRECTION = 'direction';
+    const NUMERATOR = 'numerator';
+    const DENOMINATOR = 'denominator';
 
     public static $transformTypes = [
+        self::DATE,
+        self::NUMBER,
         self::GROUP_BY,
         self::SORT_BY,
         self::ADD_FIELD,
@@ -34,21 +37,7 @@ final class TransformType
         self::COMPARISON_PERCENT
     ];
 
-    private static $groupTypes = [
-        self::GROUP_BY
-    ];
-
-    private static $sortType = [
-        self::SORT_BY
-    ];
-
-    private static $addTypes = [
-        self::ADD_FIELD,
-        self::ADD_CALCULATED_FIELD,
-        self::COMPARISON_PERCENT
-    ];
-
-    private static $singleTransformTypes = [
+    private static $dateOrNumberTransform = [
         self::DATE,
         self::NUMBER
     ];
@@ -77,19 +66,20 @@ final class TransformType
         'd/m/Y',  // 2/1/2016
     ];
 
-    public static function isValidAllFieldTransformType($name)
+    public static function isDateOrNumberTransform($type)
+    {
+        return in_array($type, self::$dateOrNumberTransform, true);
+    }
+
+    public static function isValidTransformType($name)
     {
         return in_array($name, self::$transformTypes, true);
     }
 
-    public static function isValidSingleFieldTransformType($arr)
+    public static function isValidDateOrNumberTransform($arr)
     {
-        if (!in_array($arr[self::TYPE], self::$singleTransformTypes)) {
-            return "Transform setting error: Single transform type should be one of " . self::$singleTransformTypes;
-        }
-
         if ($arr[self::TYPE] === self::DATE) {
-            if (count($arr) !== 5 || !array_key_exists(self::TRANSFORM_TYPE, $arr) || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::TYPE, $arr) || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr)) {
+            if (count($arr) !== 4 || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::TYPE, $arr) || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr)) {
                 return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] missing config information";
             }
 
@@ -99,7 +89,7 @@ final class TransformType
         }
 
         if ($arr[self::TYPE] === self::NUMBER) {
-            if (count($arr) !== 5 || !array_key_exists(self::TRANSFORM_TYPE, $arr) || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::TYPE, $arr) || !array_key_exists(self::DECIMALS, $arr) || !array_key_exists(self::THOUSANDS_SEPARATOR, $arr)) {
+            if (count($arr) !== 4 || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::TYPE, $arr) || !array_key_exists(self::DECIMALS, $arr) || !array_key_exists(self::THOUSANDS_SEPARATOR, $arr)) {
                 return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] missing config information";
             }
             if (!is_numeric($arr[self::DECIMALS]) || !in_array($arr[self::THOUSANDS_SEPARATOR], self::$supportedThousandsSeparator)) {
@@ -108,29 +98,4 @@ final class TransformType
         }
         return 0;
     }
-
-    public static function isGroupType($type)
-    {
-        return in_array($type, self::$groupTypes);
-    }
-
-    public static function isSortType($type)
-    {
-        return in_array($type, self::$sortType);
-    }
-
-    public static function isAddingType($type)
-    {
-        return in_array($type, self::$addTypes);
-    }
-
-    public static function isTransformSingleField($type)
-    {
-        if (strcmp($type, Type::SINGLE_FIELD) === 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
 }

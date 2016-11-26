@@ -89,13 +89,13 @@ class ImportUtils
         foreach ($newColumns as $newColumn => $type) {
 
             if (strcmp($type, Type::NUMBER) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, "decimal", ["notnull" => false, "default"=>null]);
+                $addCols[] = $dataTable->addColumn($newColumn, "decimal", ["notnull" => false, "default" => null]);
             } else if (strcmp($type, Type::DECIMAL) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false, "default"=>null]);
+                $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
             } else if (strcmp($type, Type::MULTI_LINE_TEXT) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false, "default"=>null]);
+                $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false, "default" => null]);
             } else {
-                $addCols[] = $dataTable->addColumn($newColumn, $type, ["notnull" => false, "default"=>null]);
+                $addCols[] = $dataTable->addColumn($newColumn, $type, ["notnull" => false, "default" => null]);
             }
         }
 
@@ -155,7 +155,7 @@ class ImportUtils
         $sortByColumns = array();
         foreach ($transforms as $transform) {
 
-            if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::SINGLE_FIELD) === 0 && $parserConfig->hasColumnMapping($transform[TransformType::FIELD])) {
+            if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE]) && $parserConfig->hasColumnMapping($transform[TransformType::FIELD])) {
 
                 //
                 //TODO WILL BE CHANGE IN FUTURE
@@ -166,9 +166,7 @@ class ImportUtils
                 if (strcmp($transform[TransformType::TYPE], TransformType::NUMBER) === 0) {
 
                 }
-            }
-
-            if (strcmp($transform[TransformType::TRANSFORM_TYPE], Type::ALL_FIELD) === 0) {
+            } else {
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
                     $parserConfig->transformCollection(new GroupByColumns($transform[TransformType::FIELDS]));
@@ -198,11 +196,10 @@ class ImportUtils
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
                     foreach ($transform[TransformType::FIELDS] as $comparisonPercents) {
-                        $parserConfig->transformCollection(new ComparisonPercent($comparisonPercents[TransformType::FIELD], $comparisonPercents[TransformType::COMPARISON][0], $comparisonPercents[TransformType::COMPARISON][1]));
+                        $parserConfig->transformCollection(new ComparisonPercent($comparisonPercents[TransformType::FIELD], $comparisonPercents[TransformType::NUMERATOR], $comparisonPercents[TransformType::DENOMINATOR]));
                     }
                     continue;
                 }
-
             }
         }
 
