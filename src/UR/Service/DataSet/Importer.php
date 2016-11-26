@@ -46,9 +46,6 @@ class Importer
 
         try {
             foreach ($rows as $row) {
-                if ($row['ratio'] === "") {
-                    $row['ratio'] = null;
-                }
                 $query = $qb
                         ->insert($tableName);
 
