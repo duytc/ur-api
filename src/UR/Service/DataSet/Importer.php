@@ -39,11 +39,8 @@ class Importer
         }
 
         $rows = $collection->getRows();
-
         $qb = $this->conn->createQueryBuilder();
-
         $this->conn->beginTransaction();
-
         try {
             foreach ($rows as $row) {
                 $query = $qb
