@@ -61,11 +61,12 @@ class ReportGrouper implements ReportGrouperInterface
             $average[$metric] = $this->getRatio($total[$metric], $count);
         }
         $columns = $collection->getColumns();
+        $headers = [];
         foreach($columns as $index => $column) {
-            $columns[$index] = $this->convertColumn($column);
+            $headers[$column] = $this->convertColumn($column);
         }
 
-        return new ReportResult($rows, $total, $average, $columns);
+        return new ReportResult($rows, $total, $average, $headers);
     }
 
     protected function convertColumn($column)
