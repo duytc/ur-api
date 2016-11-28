@@ -93,6 +93,7 @@ services:
     ur.service.synchronize_user_service:
         class: UR\Service\SynchronizeUser\SynchronizeUserService
         arguments:
+            - @doctrine.orm.entity_manager
             - @ur_user.domain_manager.publisher
 
     monolog.formatter.session_request:

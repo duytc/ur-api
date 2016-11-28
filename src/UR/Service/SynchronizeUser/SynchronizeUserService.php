@@ -2,6 +2,7 @@
 
 namespace UR\Service\SynchronizeUser;
 
+use Doctrine\ORM\EntityManagerInterface;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\Bundle\UserSystem\PublisherBundle\Entity\User;
 use UR\Model\User\UserEntityInterface;
@@ -9,9 +10,11 @@ use UR\Model\User\UserEntityInterface;
 class SynchronizeUserService implements SynchronizeUserServiceInterface
 {
     private $publisherManager;
+    private $em;
 
-    public function __construct(PublisherManagerInterface $publisherManager)
+    public function __construct(EntityManagerInterface $em, PublisherManagerInterface $publisherManager)
     {
+        $this->em = $em;
         $this->publisherManager = $publisherManager;
     }
 
@@ -66,8 +69,14 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
             $user->setPassword($entity['password']);
             $user->setEmail($entity['email']);
             $user->setEnabled($entity['enabled']);
-            $user->setId($id);
+
             $this->publisherManager->save($user);
+
+            $connection = $this->em->getConnection();
+            $statement = $connection->prepare("SET FOREIGN_KEY_CHECKS = 0;" . "UPDATE core_user SET id = " . $id ." WHERE id = " . $user->getId(). "; UPDATE core_publisher_user SET id = " . $id ." WHERE id = " . $user->getId());
+            $statement->execute();
+            $statement = $connection->prepare("SET FOREIGN_KEY_CHECKS = 1");
+            $statement->execute();
         }
     }
 }
