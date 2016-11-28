@@ -16,3 +16,8 @@ ur_api:
     resource: "@URApiBundle/Resources/config/routing.yml"
     type:   rest
     prefix: /api/v1
+
+ur_public:
+    resource: "@URPublicBundle/Resources/config/routing.yml"
+    type:     rest
+    prefix:   /public/v1

@@ -34,6 +34,7 @@ class AppKernel extends Kernel
             new UR\Bundle\AppBundle\URAppBundle(),
             new UR\Bundle\UserSystem\PublisherBundle\URUserSystemPublisherBundle(),
             new UR\Bundle\UserSystem\AdminBundle\URUserSystemAdminBundle(),
+            new UR\Bundle\PublicBundle\URPublicBundle(),
 
             new Doctrine\Bundle\DoctrineCacheBundle\DoctrineCacheBundle(),
             new Liuggio\ExcelBundle\LiuggioExcelBundle(),

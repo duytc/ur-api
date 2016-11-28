@@ -8,6 +8,7 @@ use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Exception\RuntimeException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\AlertInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
@@ -79,6 +80,32 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     public function getAction($id)
     {
         return $this->one($id);
+    }
+
+    /**
+     * Generate shareable link for ReportView
+     *
+     * @Rest\Get("/reportviews/{id}/shareablelink" )
+     *
+     * @ApiDoc(
+     *  section = "Report View",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @return string
+     * @throws NotFoundHttpException when the resource does not exist
+     */
+    public function getShareableLinkAction($id)
+    {
+        /** @var ReportViewInterface $reportView */
+        $reportView = $this->one($id);
+
+        return $this->getShareableLink($reportView);
     }
 
     /**
@@ -199,5 +226,17 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.report_view');
+    }
+
+    private function getShareableLink(ReportViewInterface $reportView)
+    {
+        $sharedReportViewLinkTemplate = $this->container->getParameter('shared_report_view_link');
+        if (strpos($sharedReportViewLinkTemplate, '$$SHARED_KEY$$') < 0) {
+            throw new RuntimeException('Missing server parameter key $$SHARED_KEY$$');
+        }
+
+        $sharedKey = $reportView->getSharedKey();
+
+        return str_replace('$$SHARED_KEY$$', $sharedKey, $sharedReportViewLinkTemplate);
     }
 }

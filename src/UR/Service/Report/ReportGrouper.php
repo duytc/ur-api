@@ -49,10 +49,18 @@ class ReportGrouper implements ReportGrouperInterface
         $rows = $collection->getRows();
 
         $total = $rows[0];
-        foreach($metrics as $metric) {
-            //reset metrics
-            $total[$metric] = 0;
+        foreach($total as $key=>$value) {
+            if (!in_array($key, $metrics)) {
+                unset($total[$key]);
+                continue;
+            }
+
+            $total[$key] = 0;
         }
+//        foreach($metrics as $metric) {
+//            //reset metrics
+//            $total[$metric] = 0;
+//        }
 
         // aggregate weighted field
         if ($weightedCalculation instanceof WeightedCalculationInterface && $weightedCalculation->hasCalculation()) {
