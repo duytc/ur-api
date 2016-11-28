@@ -104,7 +104,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     /**
      * @inheritdoc
      */
-    public function detectedFieldsFromFiles(FileBag $files, DataSourceInterface $dataSource)
+    public function detectedFieldsFromFiles(FileBag $files, $uploadPath, $dirItem, DataSourceInterface $dataSource)
     {
         $keys = $files->keys();
         $currentFields = [];
@@ -115,8 +115,16 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             if ($error > 0) {
                 return $error;
             }
-            $newFields = $this->getNewFieldsFromFiles($file->getRealPath(), $dataSource);
-            $currentFields = $this->detectedFieldsForDataSource($newFields, $currentFields, self::UPLOAD);
+            $origin_name = $file->getClientOriginalName();
+            $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
+            $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
+            $file->move($uploadPath, $name);
+            $convertResult = $this->convertToUtf8($uploadPath . '/' . $name);
+            if ($convertResult) {
+                $newFields = $this->getNewFieldsFromFiles($uploadPath . '/' . $name, $dataSource);
+                $currentFields = $this->detectedFieldsForDataSource($newFields, $currentFields, self::UPLOAD);
+            }
+            unlink($uploadPath . '/' . $name);
         }
         return $currentFields;
     }
@@ -124,7 +132,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     /**
      * @inheritdoc
      */
-    public function uploadDataSourceEntryFiles($files, $path, $dirItem, $dataSource)
+    public function uploadDataSourceEntryFiles(FileBag $files, $path, $dirItem, DataSourceInterface $dataSource)
     {
         $result = [];
         /** @var  $files */
@@ -148,10 +156,10 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 throw new \Exception(sprintf("File %s is not valid", $origin_name));
             }
 
-            $newFields = $this->getNewFieldsFromFiles($file->getRealPath(), $dataSource);
             // save file to upload dir
             $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
             $file->move($path, $name);
+            $convertResult = $this->convertToUtf8($path . '/' . $name);
             // create new data source entry
             $dataSourceEntry = (new DataSourceEntry())
                 ->setDataSource($dataSource)
@@ -163,10 +171,11 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
             $dataSourceEntry->setFileName($origin_name);
+            $newFields = $this->getNewFieldsFromFiles($path . '/' . $name, $dataSource);
             $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), DataSourceEntryManager::UPLOAD);
             $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
             $this->save($dataSourceEntry);
-            $convertResult = $this->convertToUtf8($path . '/' . $name);
+
 
             if (in_array(DataSourceRepository::DATA_RECEIVED, $dataSource->getAlertSetting())) {
                 $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD;
