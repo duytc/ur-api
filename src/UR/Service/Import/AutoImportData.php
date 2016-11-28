@@ -163,6 +163,7 @@ class AutoImportData implements AutoImportDataInterface
             }
 
             $ds1 = $dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId());
+            $this->importHistoryManager->reImportDataSourceEntry($dataSourceEntry, $connectedDataSource->getDataSet());
             $importHistoryEntity = new ImportHistory();
             $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
             $importHistoryEntity->setDataSet($connectedDataSource->getDataSet());

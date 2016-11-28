@@ -110,8 +110,15 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
      */
     public function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry)
     {
-        $this->repository->replayDataSourceEntryData($dataSourceEntry);
-        $entryIds[]=$dataSourceEntry->getId();
+        $entryIds[] = $dataSourceEntry->getId();
         $this->workerManager->reImportWhenNewEntryReceived($entryIds);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function reImportDataSourceEntry(DataSourceEntryInterface $dataSourceEntry, DataSetInterface $dataSet)
+    {
+        $this->repository->replayDataSourceEntryData($dataSourceEntry, $dataSet);
     }
 }

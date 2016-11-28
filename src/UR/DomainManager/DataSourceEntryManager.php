@@ -6,6 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Liuggio\ExcelBundle\Factory;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
+use UR\Behaviors\ConvertFileEncoding;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -24,6 +25,7 @@ use UR\Worker\Manager;
 
 class DataSourceEntryManager implements DataSourceEntryManagerInterface
 {
+    use ConvertFileEncoding;
     const UPLOAD = 'upload';
     const DELETE = 'delete';
 
@@ -164,6 +166,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), DataSourceEntryManager::UPLOAD);
             $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
             $this->save($dataSourceEntry);
+            $convertResult = $this->convertToUtf8($path . '/' . $name);
 
             if (in_array(DataSourceRepository::DATA_RECEIVED, $dataSource->getAlertSetting())) {
                 $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD;

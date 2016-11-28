@@ -33,4 +33,11 @@ interface ImportHistoryManagerInterface extends ManagerInterface
      * @return QueryBuilder
      */
     public function getImportedHistoryByDataSetQuery(DataSetInterface $dataSet, PagerParam $param);
+
+    /**
+     * @param DataSourceEntryInterface $dataSourceEntry
+     * @param DataSetInterface $dataSet
+     * @return mixed
+     */
+    public function reImportDataSourceEntry(DataSourceEntryInterface $dataSourceEntry, DataSetInterface $dataSet);
 }
