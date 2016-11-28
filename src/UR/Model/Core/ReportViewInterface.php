@@ -63,4 +63,15 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setPublisher($publisher);
+
+    /**
+     * @return array
+     */
+    public function getWeightedCalculations();
+
+    /**
+     * @param array $weightedCalculations
+     * @return self
+     */
+    public function setWeightedCalculations($weightedCalculations);
 }

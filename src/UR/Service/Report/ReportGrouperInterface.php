@@ -11,7 +11,8 @@ interface ReportGrouperInterface
     /**
      * @param Collection $collection
      * @param array $metrics
+     * @param $weightedCalculation
      * @return mixed
      */
-    public function group(Collection $collection, array $metrics);
+    public function group(Collection $collection, array $metrics, $weightedCalculation);
 }

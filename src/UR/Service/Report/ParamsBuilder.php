@@ -18,6 +18,7 @@ use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewInterface;
+use UR\Service\DTO\Report\WeightedCalculation;
 
 class ParamsBuilder implements ParamsBuilderInterface
 {
@@ -25,6 +26,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const DATA_SET_KEY = 'dataSets';
     const TRANSFORM_KEY = 'transforms';
     const JOIN_BY_KEY = 'joinBy';
+    const WEIGHTED_CALCULATION_KEY = 'calculations';
 
     /**
      * @inheritdoc
@@ -45,6 +47,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if (array_key_exists(self::JOIN_BY_KEY, $params) && !empty($params[self::JOIN_BY_KEY])) {
             $param->setJoinByFields($params[self::JOIN_BY_KEY]);
+        }
+
+        if (array_key_exists(self::WEIGHTED_CALCULATION_KEY, $params) && !empty($params[self::WEIGHTED_CALCULATION_KEY])) {
+            $param->setWeightedCalculations(new WeightedCalculation($params[self::WEIGHTED_CALCULATION_KEY]));
         }
 
         return $param;

@@ -66,6 +66,6 @@ class ReportBuilder implements ReportBuilderInterface
             $transform->transform($collection, $metrics, $dimensions);
         }
 
-        return $this->reportGrouper->group($collection, $metrics);
+        return $this->reportGrouper->group($collection, $metrics, $params->getWeightedCalculations());
     }
 }
