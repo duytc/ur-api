@@ -149,50 +149,62 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         foreach ($keys as $key) {
             /**@var UploadedFile $file */
             $file = $files->get($key);
+
             $error = $this->validateFileUpload($file, $dataSource);
 
             $origin_name = $file->getClientOriginalName();
+
             $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
+
             if ($error > 0) {
+
                 if (in_array(DataSourceRepository::WRONG_FORMAT, $dataSource->getAlertSetting())) {
                     $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT;
                     $publisherId = $dataSource->getPublisher()->getId();
+
                     $params = array(
                         ProcessAlert::FILE_NAME => $file_name . "." . $file->getClientOriginalExtension()
                     );
+
                     $this->workerManager->processAlert($code, $publisherId, $params);
                 }
+
                 throw new \Exception(sprintf("File %s is not valid", $origin_name));
             }
 
             // save file to upload dir
             $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
             $file->move($path, $name);
+
             $convertResult = $this->convertToUtf8($path . '/' . $name);
+            if (!$convertResult) {
+                throw new \Exception(sprintf("File %s is not valid", $origin_name));
+            }
+
             // create new data source entry
             $dataSourceEntry = (new DataSourceEntry())
                 ->setDataSource($dataSource)
                 ->setPath($dirItem . '/' . $name)
-                //->setValid() // set later by parser module
-                //->setMetaData() // only for email...
-                //->setReceivedDate() // auto
             ;
 
             $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
             $dataSourceEntry->setFileName($origin_name);
+
             $newFields = $this->getNewFieldsFromFiles($path . '/' . $name, $dataSource);
             $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), DataSourceEntryManager::UPLOAD);
+
             $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
             $this->save($dataSourceEntry);
-
 
             if (in_array(DataSourceRepository::DATA_RECEIVED, $dataSource->getAlertSetting())) {
                 $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD;
                 $publisherId = $dataSource->getPublisher()->getId();
+
                 $params = array(
                     ProcessAlert::FILE_NAME => $file_name . "." . $file->getClientOriginalExtension(),
                     ProcessAlert::DATA_SOURCE_NAME => $dataSource->getName()
                 );
+
                 $this->workerManager->processAlert($code, $publisherId, $params);
             }
 
