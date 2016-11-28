@@ -41,6 +41,12 @@ security:
                 failure_handler:    lexik_jwt_authentication.handler.authentication_failure
             provider: ur_user
 
+        public:
+            pattern: ^/api/public/v1/
+            stateless: true
+            security: false
+            anonymous: ~
+
         resetting:
             pattern: ^/api/v1/resetting/
             stateless: true
