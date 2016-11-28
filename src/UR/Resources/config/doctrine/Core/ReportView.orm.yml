@@ -14,6 +14,9 @@ UR\Entity\Core\ReportView:
         transforms:
             type: json_array
             nullable: true
+        weightedCalculations:
+            type: json_array
+            nullable: true
         name:
             type: string
             nullable: false

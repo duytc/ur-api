@@ -7,6 +7,7 @@ namespace UR\Domain\DTO\Report;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\Transforms\SortByTransformInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
+use UR\Service\DTO\Report\WeightedCalculationInterface;
 
 
 class Params implements ParamsInterface
@@ -20,6 +21,11 @@ class Params implements ParamsInterface
      * @var TransformInterface[]
      */
     protected $transforms;
+
+    /**
+     * @var WeightedCalculationInterface[]
+     */
+    protected $weightedCalculations;
 
     /**
      * @var null|string
@@ -95,6 +101,24 @@ class Params implements ParamsInterface
     {
         $this->transforms = $transforms;
 
+        return $this;
+    }
+
+    /**
+     * @return WeightedCalculationInterface
+     */
+    public function getWeightedCalculations()
+    {
+        return $this->weightedCalculations;
+    }
+
+    /**
+     * @param WeightedCalculationInterface $weightedCalculations
+     * @return self
+     */
+    public function setWeightedCalculations($weightedCalculations)
+    {
+        $this->weightedCalculations = $weightedCalculations;
         return $this;
     }
 

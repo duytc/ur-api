@@ -21,7 +21,8 @@ class ReportController extends FOSRestController
      *
      * @Rest\QueryParam(name="dataSets", nullable=false)
      * @Rest\QueryParam(name="joinBy", nullable=true)
-     * @Rest\QueryParam(name="transforms", nullable=true)*
+     * @Rest\QueryParam(name="transforms", nullable=true)
+     * @Rest\QueryParam(name="calculations", nullable=true)
      *
      * @ApiDoc(
      *  section = "admin",
@@ -32,7 +33,8 @@ class ReportController extends FOSRestController
      *  parameters={
      *      {"name"="dataSets", "dataType"="array", "required"=true, "description"="list of data set id to build report"},
      *      {"name"="joinBy", "dataType"="string", "required"=false, "description"="filter descriptor"},
-     *      {"name"="transforms", "dataType"="string", "required"=false, "description"="transform descriptor"}
+     *      {"name"="transforms", "dataType"="string", "required"=false, "description"="transform descriptor"},
+     *      {"name"="calculations", "dataType"="string", "required"=false, "description"="weighted value calculations descriptor"}
      *  }
      * )
      *

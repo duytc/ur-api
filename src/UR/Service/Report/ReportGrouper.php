@@ -9,11 +9,15 @@ use UR\DomainManager\DataSetManagerInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResult;
+use UR\Service\DTO\Report\WeightedCalculationInterface;
 use UR\Util\CalculateRatiosTrait;
+use UR\Util\CalculateWeightedValueTrait;
 
 class ReportGrouper implements ReportGrouperInterface
 {
     use CalculateRatiosTrait;
+    use CalculateWeightedValueTrait;
+
     /**
      * @var DataSetManagerInterface
      */
@@ -29,14 +33,18 @@ class ReportGrouper implements ReportGrouperInterface
     }
 
 
-    public function group(Collection $collection, array $metrics)
+    /**
+     * @param Collection $collection
+     * @param array $metrics
+     * @param $weightedCalculation
+     * @return ReportResult
+     */
+    public function group(Collection $collection, array $metrics, $weightedCalculation)
     {
         if (count($collection->getRows()) < 1) {
             throw new NotFoundHttpException('can not find the report');
         }
 
-//        $total = [];
-//        $average = [];
         $metrics = array_intersect($metrics, $collection->getColumns());
         $rows = $collection->getRows();
 
@@ -46,9 +54,21 @@ class ReportGrouper implements ReportGrouperInterface
             $total[$metric] = 0;
         }
 
+        // aggregate weighted field
+        if ($weightedCalculation instanceof WeightedCalculationInterface && $weightedCalculation->hasCalculation()) {
+            foreach($metrics as $index => $metric) {
+                if (!$weightedCalculation->hasCalculatingField($metric)) {
+                    continue;
+                }
+
+                $total[$metric ] = $this->calculateWeightedValue($rows, $weightedCalculation->getFrequencyField($metric), $weightedCalculation->getWeightedField($metric));
+                unset($metrics[$index]);
+            }
+        }
+
+        // aggregate normal fields
         foreach($rows as $row) {
             foreach($metrics as $metric) {
-                //aggregate metrics
                 if (is_numeric($row[$metric])) {
                     $total[$metric] += $row[$metric];
                 }
@@ -60,6 +80,7 @@ class ReportGrouper implements ReportGrouperInterface
         foreach($metrics as $metric) {
             $average[$metric] = $this->getRatio($total[$metric], $count);
         }
+
         $columns = $collection->getColumns();
         $headers = [];
         foreach($columns as $index => $column) {
@@ -69,6 +90,11 @@ class ReportGrouper implements ReportGrouperInterface
         return new ReportResult($rows, $total, $average, $headers);
     }
 
+    /**
+     * Convert column name in underscore format with data set id to real name
+     * @param $column
+     * @return mixed|string
+     */
     protected function convertColumn($column)
     {
         $lastOccur = strrchr($column, "_");
