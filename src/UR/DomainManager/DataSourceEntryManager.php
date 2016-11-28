@@ -108,24 +108,33 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     {
         $keys = $files->keys();
         $currentFields = [];
+
         foreach ($keys as $key) {
             /**@var UploadedFile $file */
             $file = $files->get($key);
+
             $error = $this->validateFileUpload($file, $dataSource);
             if ($error > 0) {
                 return $error;
             }
+
             $origin_name = $file->getClientOriginalName();
+
             $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
+
             $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
+
             $file->move($uploadPath, $name);
+
             $convertResult = $this->convertToUtf8($uploadPath . '/' . $name);
             if ($convertResult) {
                 $newFields = $this->getNewFieldsFromFiles($uploadPath . '/' . $name, $dataSource);
                 $currentFields = $this->detectedFieldsForDataSource($newFields, $currentFields, self::UPLOAD);
             }
+
             unlink($uploadPath . '/' . $name);
         }
+
         return $currentFields;
     }
 
@@ -203,8 +212,6 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
     public function getNewFieldsFromFiles($inputFile, DataSourceInterface $dataSource)
     {
-//        $inputFile = $file->getRealPath();
-
         /**@var \UR\Service\DataSource\DataSourceInterface $file */
 
         if (strcmp($dataSource->getFormat(), 'csv') === 0) {
@@ -212,7 +219,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $file = (new Csv($inputFile))->setDelimiter(',');
         } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
             /**@var Excel $file */
-            $file = new \UR\Service\DataSource\Excel($inputFile, $this->phpExcel);
+            $file = new Excel($inputFile, $this->phpExcel);
         } else {
             $file = new Json($inputFile);
         }
