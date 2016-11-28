@@ -50,7 +50,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(self::WEIGHTED_CALCULATION_KEY, $params) && !empty($params[self::WEIGHTED_CALCULATION_KEY])) {
-            $param->setWeightedCalculations(new WeightedCalculation($params[self::WEIGHTED_CALCULATION_KEY]));
+            $param->setWeightedCalculations(new WeightedCalculation(json_decode($params[self::WEIGHTED_CALCULATION_KEY], true)));
         }
 
         return $param;
