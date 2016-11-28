@@ -41,20 +41,20 @@ class DataSetManager implements DataSetManagerInterface
     /**
      * @inheritdoc
      */
-    public function save(ModelInterface $dataSource)
+    public function save(ModelInterface $dataSet)
     {
-        if (!$dataSource instanceof DataSetInterface) throw new InvalidArgumentException('expect DataSetInterface Object');
-        $this->om->persist($dataSource);
+        if (!$dataSet instanceof DataSetInterface) throw new InvalidArgumentException('expect DataSetInterface Object');
+        $this->om->persist($dataSet);
         $this->om->flush();
     }
 
     /**
      * @inheritdoc
      */
-    public function delete(ModelInterface $dataSource)
+    public function delete(ModelInterface $dataSet)
     {
-        if (!$dataSource instanceof DataSetInterface) throw new InvalidArgumentException('expect DataSetInterface Object');
-        $this->om->remove($dataSource);
+        if (!$dataSet instanceof DataSetInterface) throw new InvalidArgumentException('expect DataSetInterface Object');
+        $this->om->remove($dataSet);
         $this->om->flush();
     }
 
@@ -86,9 +86,9 @@ class DataSetManager implements DataSetManagerInterface
     /**
      * @inheritdoc
      */
-    public function getDataSetByDataSource(DataSourceInterface $dataSource)
+    public function getDataSetByDataSource(DataSourceInterface $dataSet)
     {
-        return $this->repository->getDataSetByDataSource($dataSource);
+        return $this->repository->getDataSetByDataSource($dataSet);
     }
 
     /**

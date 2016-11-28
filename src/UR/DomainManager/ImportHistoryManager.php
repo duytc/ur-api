@@ -100,9 +100,9 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     /**
      * @inheritdoc
      */
-    public function getImportHistoryByDataSourceEntry(DataSourceEntryInterface $dataSourceEntry)
+    public function getImportHistoryByDataSourceEntry(DataSourceEntryInterface $dataSourceEntry, DataSetInterface $dataSet)
     {
-        return $this->repository->getImportHistoryByDataSourceEntry($dataSourceEntry);
+        return $this->repository->getImportHistoryByDataSourceEntry($dataSourceEntry, $dataSet);
     }
 
     /**
@@ -110,6 +110,10 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
      */
     public function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry)
     {
+        if (!$dataSourceEntry->getDataSource()->getEnable()) {
+            throw new \Exception(sprintf("can't replay entry in the Disable DataSource"));
+        }
+
         $entryIds[] = $dataSourceEntry->getId();
         $this->workerManager->reImportWhenNewEntryReceived($entryIds);
     }
