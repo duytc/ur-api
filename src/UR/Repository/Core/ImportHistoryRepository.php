@@ -230,7 +230,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
 
         $transforms = $connDataSource->getTransforms();
         foreach ($transforms as $transform) {
-            if (TransformType::isTransformSingleField($transform[TransformType::TRANSFORM_TYPE])) {
+            if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE])) {
                 if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
                     $parserConfig->transformColumn($transform[TransformType::FIELD], new DateFormat('Y-m-d', $transform[TransformType::TO]));
                     unset($fields[$transform[TransformType::FIELD]]);

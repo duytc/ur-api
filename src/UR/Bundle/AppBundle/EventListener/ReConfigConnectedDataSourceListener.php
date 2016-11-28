@@ -134,86 +134,100 @@ class ReConfigConnectedDataSourceListener
         $filters = $connectedDataSource->getFilters();
         $transforms = $connectedDataSource->getTransforms();
 
+        $delFields = [];
         foreach ($deletedFields as $deletedField => $type) {
-            if (in_array($deletedField, $mapFields)) {
-                if (($key = array_search($deletedField, $mapFields)) !== false) {
-                    unset($mapFields[$key]);
-                }
-            }
+            $delFields[] = $deletedField;
+        }
+        $mapFields = array_diff($mapFields, $delFields);
+        $requires = array_values(array_diff($requires, $delFields));
 
-            if (in_array($deletedField, $requires)) {
-                if (($key = array_search($deletedField, $requires)) !== false) {
-                    unset($requires[$key]);
-                }
-            }
+        foreach ($delFields as $deletedField) {
 
             foreach ($filters as $key => $filter) {
                 if (strcmp($deletedField, $filter[FilterType::FIELD]) === 0) {
                     unset($filters[$key]);
                 }
             }
+        }
 
-            foreach ($transforms as $key => $transform) {
-                if (TransformType::isTransformSingleField($transform[TransformType::TRANSFORM_TYPE])) {
+        foreach ($transforms as $key => $transform) {
+            if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE])) {
+                foreach ($delFields as $deletedField) {
                     if (strcmp($deletedField, $transform[TransformType::FIELD]) === 0) {
                         unset($transforms[$key]);
                     }
-                } else {
-                    if (TransformType::isGroupType($transform[TransformType::TYPE])) {
-                        foreach ($transform[TransformType::FIELDS] as $k => $value) {
-                            if (strcmp($value, $deletedField) === 0) {
+                }
+            } else {
+                //GROUP BY
+                if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
+                    $transforms[$key][TransformType::FIELDS] = array_values(array_diff($transforms[$key][TransformType::FIELDS], $delFields));
+                }
+
+                //SORT BY
+                if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
+                    $count = 0;
+                    foreach ($transform[TransformType::FIELDS] as $sortKey => $fields) {
+
+                        $transforms[$key][TransformType::FIELDS][$sortKey]['names'] = array_values(array_diff($transforms[$key][TransformType::FIELDS][$sortKey]['names'], $delFields));
+                        if (count($transforms[$key][TransformType::FIELDS][$sortKey]['names']) < 1) {
+                            $count++;
+                        }
+                    }
+                    if ($count == 2) {
+                        unset($transforms[$key]);
+                    }
+                    continue;
+                }
+
+                //ADD FIELD
+                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
+                    foreach ($transform[TransformType::FIELDS] as $k => $field) {
+                        foreach ($delFields as $deletedField) {
+                            if (strcmp($field[TransformType::FIELD], $deletedField) === 0) {
                                 unset($transforms[$key][TransformType::FIELDS][$k]);
                             }
                         }
-                        if (count($transform[TransformType::FIELDS]) === 0) {
-                            unset($transforms[$key]);
-                        }
                     }
+                    $transforms[$key][TransformType::FIELDS] = array_values($transforms[$key][TransformType::FIELDS]);
+                }
 
-                    if (TransformType::isSortType($transform[TransformType::TYPE])) {
-                        foreach ($transform[TransformType::FIELDS] as $sortKey => $fields) {
-
-                            foreach ($fields['names'] as $k => $field) {
-                                if (strcmp($field, $deletedField) === 0) {
-                                    unset($transforms[$key][TransformType::FIELDS][$sortKey]['names'][$k]);
-                                }
-                            }
-
-                            if (count($transforms[$key][TransformType::FIELDS][$sortKey]['names']) < 1) {
-                                unset($transforms[$key][TransformType::FIELDS][$sortKey]);
-                            }
-                        }
-                        if (count($transform[TransformType::FIELDS]) === 0) {
-                            unset($transforms[$key]);
-                        }
-                    }
-                    //todo soft type
-                    if (TransformType::isAddingType($transform[TransformType::TYPE])) {
-                        foreach ($transform[TransformType::FIELDS] as $k => $field) {
+                //ADD CALCULATED FIELD
+                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CALCULATED_FIELD) === 0) {
+                    foreach ($transform[TransformType::FIELDS] as $k => $field) {
+                        foreach ($delFields as $deletedField) {
                             if (strcmp($field[TransformType::FIELD], $deletedField) === 0) {
-                                unset($transforms[$key][$k]);
+                                unset($transforms[$key][TransformType::FIELDS][$k]);
                             }
-                        }
 
-                        if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
-                            foreach ($transform[TransformType::FIELDS] as $k => $field) {
-                                if (in_array($deletedField, $field[TransformType::COMPARISON])) {
-                                    unset($transforms[$key]);
-                                }
+                            if (strpos($field[TransformType::EXPRESSION], "row['" . $deletedField . "']") !== false) {
+                                unset($transforms[$key][TransformType::FIELDS][$k]);
                             }
-                        }
-
-                        if (count($transform[TransformType::FIELDS]) === 0) {
-                            unset($transforms[$key]);
                         }
                     }
+                    $transforms[$key][TransformType::FIELDS] = array_values($transforms[$key][TransformType::FIELDS]);
+                }
+
+                //COMPARISON PERCENT
+                if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
+                    foreach ($transform[TransformType::FIELDS] as $k => $field) {
+                        foreach ($delFields as $deletedField) {
+                            if (strcmp($field[TransformType::FIELD], $deletedField) === 0 || strcmp($field[TransformType::NUMERATOR], $deletedField) === 0 || strcmp($field[TransformType::DENOMINATOR], $deletedField) === 0) {
+                                unset($transforms[$key][TransformType::FIELDS][$k]);
+                            }
+                        }
+                    }
+                    $transforms[$key][TransformType::FIELDS] = array_values($transforms[$key][TransformType::FIELDS]);
+                }
+
+                if (count($transforms[$key][TransformType::FIELDS]) === 0) {
+                    unset($transforms[$key]);
                 }
             }
         }
 
         $connectedDataSource->setMapFields($mapFields);
-        $connectedDataSource->setRequires($requires);
-        $connectedDataSource->setFilters($filters);
-        $connectedDataSource->setTransforms($transforms);
+        $connectedDataSource->setRequires(array_values($requires));
+        $connectedDataSource->setFilters(array_values($filters));
+        $connectedDataSource->setTransforms(array_values($transforms));
     }
 }
