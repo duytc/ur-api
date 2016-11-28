@@ -27,7 +27,9 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
         }
 
         if ($publisher instanceof UserEntityInterface) {
-            $publisher->setBillingRate($entity['bi?e']);
+            $publisher->setBillingRate($entity['billingRate']);
+            $publisher->setFirstName($entity['firstName']);
+            $publisher->setLastName($entity['lastName']);
             $publisher->setCompany($entity['company']);
             $publisher->setPhone($entity['phone']);
             $publisher->setCity($entity['city']);
