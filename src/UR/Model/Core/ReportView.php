@@ -39,6 +39,11 @@ class ReportView implements ReportViewInterface
     protected $weightedCalculations;
 
     /**
+     * @var string
+     */
+    protected $sharedKey;
+
+    /**
      * @var PublisherInterface
      */
     protected $publisher;
@@ -120,24 +125,6 @@ class ReportView implements ReportViewInterface
     public function setTransforms($transforms)
     {
         $this->transforms = $transforms;
-        return $this;
-    }
-
-    /**
-     * @return array
-     */
-    public function getWeightedCalculations()
-    {
-        return $this->weightedCalculations;
-    }
-
-    /**
-     * @param array $weightedCalculations
-     * @return self
-     */
-    public function setWeightedCalculations($weightedCalculations)
-    {
-        $this->weightedCalculations = $weightedCalculations;
         return $this;
     }
 

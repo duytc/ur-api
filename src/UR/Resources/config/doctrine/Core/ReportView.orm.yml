@@ -28,6 +28,10 @@ UR\Entity\Core\ReportView:
             gedmo:
                 timestampable:
                     on: create
+        sharedKey:
+            type: string
+            length: 100
+            nullable: false
 
     manyToOne:
         publisher:

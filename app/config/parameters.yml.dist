@@ -55,3 +55,4 @@ parameters:
                         url: http://jwplayer.com/report/daily_stat
                         type: json
     upload_file_dir: %kernel.root_dir%/../data/file_upload
+    shared_report_view_link: http://localhost:9010/#/public/unifiedReport/report/detail?reportView=2&token=$$SHARED_KEY$$

@@ -1,0 +1,3 @@
+ur_public_report_view:
+    resource: UR\Bundle\PublicBundle\Controller\ReportViewController
+    name_prefix:  public_1_

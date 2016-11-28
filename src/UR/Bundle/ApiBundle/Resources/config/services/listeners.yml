@@ -1,6 +1,5 @@
 services:
-#    ur_api.event_listener.update_ad_network_listener:
-#        class: UR\Bundle\ApiBundle\EventListener\UpdateAdNetworkListener
-#        tags:
-#            - { name: doctrine.event_listener, event: prePersist }
-#            - { name: doctrine.event_listener, event: preUpdate }
+    ur_api.event_listener.update_shareable_key_for_report_view_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateSharedKeyForReportViewListener
+        tags:
+            - { name: doctrine.event_listener, event: prePersist }
