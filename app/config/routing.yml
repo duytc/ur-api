@@ -20,4 +20,4 @@ ur_api:
 ur_public:
     resource: "@URPublicBundle/Resources/config/routing.yml"
     type:     rest
-    prefix:   /public/v1
+    prefix:   /api/public/v1
