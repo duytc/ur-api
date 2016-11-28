@@ -73,9 +73,8 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
             $this->publisherManager->save($user);
 
             $connection = $this->em->getConnection();
-            $statement = $connection->prepare("SET FOREIGN_KEY_CHECKS = 0;" . "UPDATE core_user SET id = " . $id ." WHERE id = " . $user->getId(). "; UPDATE core_publisher_user SET id = " . $id ." WHERE id = " . $user->getId());
-            $statement->execute();
-            $statement = $connection->prepare("SET FOREIGN_KEY_CHECKS = 1");
+            $userId = $user->getId();
+            $statement = $connection->prepare("SET FOREIGN_KEY_CHECKS = 0;" . "UPDATE core_user SET id = " . $id . " WHERE id = " . $userId . ";UPDATE core_user_publisher SET id = " . $id . " WHERE id = " . $userId . ";SET FOREIGN_KEY_CHECKS = 1" );
             $statement->execute();
         }
     }
