@@ -25,8 +25,6 @@ trait ConvertFileEncoding
             return false;
         }
 
-        echo "finish, result: " . $result . "\n";
-
         if (strpos($result, "[error]") > -1) {
             return false;
         }
