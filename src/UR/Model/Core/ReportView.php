@@ -145,4 +145,47 @@ class ReportView implements ReportViewInterface
         $this->publisher = $publisher;
         return $this;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getWeightedCalculations()
+    {
+        return $this->weightedCalculations;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setWeightedCalculations($weightedCalculations)
+    {
+        $this->weightedCalculations = $weightedCalculations;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSharedKey()
+    {
+        return $this->sharedKey;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setSharedKey($sharedKey)
+    {
+        $this->sharedKey = $sharedKey;
+        return $this;
+    }
+
+    /**
+     * Use this if need generate shared key automatically
+     * @return self
+     */
+    public static function generateSharedKey()
+    {
+        return uniqid(rand(1, 10000), true);
+    }
 }
