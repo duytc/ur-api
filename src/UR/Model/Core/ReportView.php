@@ -39,6 +39,31 @@ class ReportView implements ReportViewInterface
     protected $weightedCalculations;
 
     /**
+     * @var array
+     */
+    protected $filters;
+
+    /**
+     * @var boolean
+     */
+    protected $multiView;
+
+    /**
+     * @var array
+     */
+    protected $reportViews;
+
+    /**
+     * @var array
+     */
+    protected $metrics;
+
+    /**
+     * @var array
+     */
+    protected $dimensions;
+
+    /**
      * @var PublisherInterface
      */
     protected $publisher;
@@ -120,6 +145,96 @@ class ReportView implements ReportViewInterface
     public function setTransforms($transforms)
     {
         $this->transforms = $transforms;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMetrics()
+    {
+        return $this->metrics;
+    }
+
+    /**
+     * @param array $metrics
+     * @return self
+     */
+    public function setMetrics($metrics)
+    {
+        $this->metrics = $metrics;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDimensions()
+    {
+        return $this->dimensions;
+    }
+
+    /**
+     * @param array $dimensions
+     * @return self
+     */
+    public function setDimensions($dimensions)
+    {
+        $this->dimensions = $dimensions;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFilters()
+    {
+        return $this->filters;
+    }
+
+    /**
+     * @param array $filters
+     * @return self
+     */
+    public function setFilters($filters)
+    {
+        $this->filters = $filters;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isMultiView()
+    {
+        return $this->multiView;
+    }
+
+    /**
+     * @param boolean $multiView
+     * @return self
+     */
+    public function setMultiView($multiView)
+    {
+        $this->multiView = $multiView;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getReportViews()
+    {
+        return $this->reportViews;
+    }
+
+    /**
+     * @param array $reportViews
+     * @return self
+     */
+    public function setReportViews($reportViews)
+    {
+        $this->reportViews = $reportViews;
         return $this;
     }
 

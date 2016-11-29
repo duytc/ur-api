@@ -102,6 +102,12 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
         $collection->setRows($rows);
     }
 
+    public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
+    {
+        // nothing changed in metrics and dimensions
+    }
+
+
     /**
      * @inheritdoc
      */

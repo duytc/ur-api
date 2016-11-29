@@ -67,6 +67,12 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
         $collection->setRows($rows);
     }
 
+    public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
+    {
+        $dimensions[] = $this->fieldName;
+    }
+
+
     /**
      * @return string
      */

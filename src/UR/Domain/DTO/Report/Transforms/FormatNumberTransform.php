@@ -73,6 +73,12 @@ class FormatNumberTransform extends AbstractTransform implements FormatNumberTra
         return $collection;
     }
 
+    public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
+    {
+        // nothing changed in metrics and dimensions
+    }
+
+
     /**
      * @return mixed
      */

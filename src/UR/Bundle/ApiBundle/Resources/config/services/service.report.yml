@@ -12,6 +12,8 @@ services:
         arguments:
             - '@ur.services.report.report_selector'
             - '@ur.services.report.report_grouper'
+            - '@ur.domain_manager.report_view'
+            - '@ur.services.report.params_builder'
 
     ur.services.report.sql_builder:
         class: UR\Service\Report\SqlBuilder

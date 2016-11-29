@@ -17,8 +17,25 @@ UR\Entity\Core\ReportView:
         weightedCalculations:
             type: json_array
             nullable: true
+        filters:
+            type: json_array
+            nullable: true
+        reportViews:
+            type: json_array
+            nullable: true
+        metrics:
+            type: json_array
+            nullable: true
+        dimensions:
+            type: json_array
+            nullable: true
         name:
             type: string
+            nullable: false
+        multiView:
+            type: boolean
+            options:
+                default: false
             nullable: false
         joinBy:
             type: string

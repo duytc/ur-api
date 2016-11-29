@@ -26,6 +26,13 @@ interface TransformInterface
     public function transform(Collection $collection,  array $metrics, array $dimensions);
 
     /**
+     * @param array $metrics
+     * @param array $dimensions
+     * @return mixed
+     */
+    public function getMetricsAndDimensions(array &$metrics, array &$dimensions);
+
+    /**
      * @return int
      */
     public function getPriority();

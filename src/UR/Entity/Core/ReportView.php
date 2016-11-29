@@ -14,4 +14,10 @@ class ReportView extends ReportViewModel
     protected $createdDate;
     protected $weightedCalculations;
     protected $publisher;
+    protected $dimensions;
+    protected $metrics;
+    protected $reportViews;
+    protected $filters;
+    protected $multiView;
+
 }

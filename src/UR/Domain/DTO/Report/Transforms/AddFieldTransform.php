@@ -77,4 +77,9 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
 
         $collection->setRows($newRows);
     }
+
+    public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
+    {
+        $dimensions[] = $this->fieldName;
+    }
 }
