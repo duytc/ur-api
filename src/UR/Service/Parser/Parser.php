@@ -54,7 +54,9 @@ class Parser implements ParserInterface
                     }
 
                     if (!is_numeric($row[$metric])) {
-                        $row[$metric] = null;
+                        return array('error' => ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL,
+                            'row' => $cur_row + 2,
+                            'column' => $metric);
                     }
                 }
             }
