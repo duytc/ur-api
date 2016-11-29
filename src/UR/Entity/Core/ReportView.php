@@ -13,6 +13,8 @@ class ReportView extends ReportViewModel
     protected $transforms;
     protected $createdDate;
     protected $weightedCalculations;
+    protected $sharedKey;
+
     protected $publisher;
     protected $dimensions;
     protected $metrics;
