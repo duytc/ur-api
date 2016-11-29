@@ -65,7 +65,7 @@ class ReportViewChangedListener
         $reportView->setMetrics($columns[self::METRICS_KEY]);
         $reportView->setDimensions($columns[self::DIMENSIONS_KEY]);
 
-        $em->persist($reportView);
+        //$em->persist($reportView);
     }
 
     public function getMetricsAndDimensions(ParamsInterface $params)
