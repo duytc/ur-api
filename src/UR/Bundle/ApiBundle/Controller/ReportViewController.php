@@ -231,12 +231,16 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     private function getShareableLink(ReportViewInterface $reportView)
     {
         $sharedReportViewLinkTemplate = $this->container->getParameter('shared_report_view_link');
-        if (strpos($sharedReportViewLinkTemplate, '$$SHARED_KEY$$') < 0) {
-            throw new RuntimeException('Missing server parameter key $$SHARED_KEY$$');
+        if (strpos($sharedReportViewLinkTemplate, '$$REPORT_VIEW_ID$$') < 0 || strpos($sharedReportViewLinkTemplate, '$$SHARED_KEY$$') < 0) {
+            throw new RuntimeException('Missing server parameter key $$REPORT_VIEW_ID$$ or $$SHARED_KEY$$');
         }
 
         $sharedKey = $reportView->getSharedKey();
 
-        return str_replace('$$SHARED_KEY$$', $sharedKey, $sharedReportViewLinkTemplate);
+        $sharedLink = $sharedReportViewLinkTemplate;
+        $sharedLink = str_replace('$$REPORT_VIEW_ID$$', $reportView->getId(), $sharedLink);
+        $sharedLink = str_replace('$$SHARED_KEY$$', $sharedKey, $sharedLink);
+
+        return $sharedLink;
     }
 }
