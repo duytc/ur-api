@@ -63,4 +63,15 @@ interface ParamsInterface
      * @return self
      */
     public function setMultiView($multiView);
+
+    /**
+     * @return array
+     */
+    public function getShowInTotal();
+
+    /**
+     * @param array $showInTotal
+     * @return self
+     */
+    public function setShowInTotal($showInTotal);
 }

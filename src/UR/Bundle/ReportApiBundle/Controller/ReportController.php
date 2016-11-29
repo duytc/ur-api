@@ -26,6 +26,7 @@ class ReportController extends FOSRestController
      * @Rest\QueryParam(name="filters", nullable=true)
      * @Rest\QueryParam(name="multiView", nullable=true)
      * @Rest\QueryParam(name="reportViews", nullable=true)
+     * @Rest\QueryParam(name="showInTotal", nullable=true)
      *
      * @ApiDoc(
      *  section = "admin",
@@ -40,7 +41,8 @@ class ReportController extends FOSRestController
      *      {"name"="weightedCalculations", "dataType"="string", "required"=false, "description"="weighted value calculations descriptor"},
      *      {"name"="filters", "dataType"="string", "required"=false, "description"="filters descriptor for multi view report"},
      *      {"name"="multiView", "dataType"="string", "required"=false, "description"="specify the current report is a multi view report"},
-     *      {"name"="reportViews", "dataType"="string", "required"=false, "description"="report views descriptor"}
+     *      {"name"="reportViews", "dataType"="string", "required"=false, "description"="report views descriptor"},
+     *      {"name"="showInTotal", "dataType"="string", "required"=false, "description"="those fields that are allowed to be shown in Total area"}
      *  }
      * )
      *

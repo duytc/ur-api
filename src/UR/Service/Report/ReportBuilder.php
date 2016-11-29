@@ -97,7 +97,11 @@ class ReportBuilder implements ReportBuilderInterface
             $transform->transform($collection, $metrics, $dimensions);
         }
 
-        return $this->reportGrouper->group($collection, $metrics, $params->getWeightedCalculations());
+        $showInTotal = $params->getShowInTotal();
+        if (empty($showInTotal)) {
+            $showInTotal = $metrics;
+        }
+        return $this->reportGrouper->group($collection, $showInTotal, $params->getWeightedCalculations());
     }
 
     protected function getMultipleReport(ParamsInterface $params)
@@ -141,7 +145,10 @@ class ReportBuilder implements ReportBuilderInterface
             $transform->transform($collection, $metrics, $dimensions);
         }
 
-        return $this->reportGrouper->group($collection, $metrics, $params->getWeightedCalculations());
-
+        $showInTotal = $params->getShowInTotal();
+        if (empty($showInTotal)) {
+            $showInTotal = $metrics;
+        }
+        return $this->reportGrouper->group($collection, $showInTotal, $params->getWeightedCalculations());
     }
 }

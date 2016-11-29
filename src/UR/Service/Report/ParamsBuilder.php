@@ -176,7 +176,9 @@ class ParamsBuilder implements ParamsBuilderInterface
             ->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()))
             ->setMultiView($reportView->isMultiView())
             ->setReportViews($reportView->getReportViews())
-            ->setFilters($reportView->getFilters());
+            ->setFilters($reportView->getFilters())
+            ->setShowInTotal($reportView->getShowInTotal())
+        ;
 
         return $param;
     }

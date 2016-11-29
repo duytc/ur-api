@@ -47,6 +47,11 @@ class Params implements ParamsInterface
      */
     protected $multiView;
 
+    /**
+     * @var array
+     */
+    protected $showInTotal;
+
     function __construct()
     {
         $this->dataSets = [];
@@ -209,5 +214,23 @@ class Params implements ParamsInterface
         }
 
         return $sortByTransforms;
+    }
+
+    /**
+     * @return array
+     */
+    public function getShowInTotal()
+    {
+        return $this->showInTotal;
+    }
+
+    /**
+     * @param array $showInTotal
+     * @return self
+     */
+    public function setShowInTotal($showInTotal)
+    {
+        $this->showInTotal = $showInTotal;
+        return $this;
     }
 }
