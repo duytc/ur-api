@@ -8,7 +8,6 @@ use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
-use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
 use UR\Repository\Core\ReportViewRepositoryInterface;
 
@@ -34,11 +33,11 @@ class ReportViewManager implements ReportViewManagerInterface
     /**
      * @inheritdoc
      */
-    public function save(ModelInterface $alert)
+    public function save(ModelInterface $reportView)
     {
-        if (!$alert instanceof ReportViewInterface) throw new InvalidArgumentException('expect ReportViewInterface object');
+        if (!$reportView instanceof ReportViewInterface) throw new InvalidArgumentException('expect ReportViewInterface object');
 
-        $this->om->persist($alert);
+        $this->om->persist($reportView);
         $this->om->flush();
     }
 
