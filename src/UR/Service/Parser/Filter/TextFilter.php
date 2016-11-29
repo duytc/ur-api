@@ -12,11 +12,12 @@ class TextFilter implements ColumnFilterInterface
     public function __construct($comparison, $compareValue)
     {
         $this->comparison = $comparison;
-        $this->compareValue = $compareValue;
+        $this->compareValue = strtolower($compareValue);
     }
 
     public function filter($filter)
     {
+        $filter = strtolower($filter);
         if (strcmp($this->comparison, FilterType::CONTAINS) === 0) {
 
             if (strpos($filter, $this->compareValue) === false) {
