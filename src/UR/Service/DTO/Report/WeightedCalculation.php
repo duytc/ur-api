@@ -10,7 +10,7 @@ class WeightedCalculation implements WeightedCalculationInterface
 {
     const CALCULATING_FIELD_KEY = 'field';
     const FREQUENCY_FIELD_KEY = 'frequency';
-    const WEIGHTED_FIELD_KEY = 'weighted';
+    const WEIGHTED_FIELD_KEY = 'weight';
 
     /**
      * @var array

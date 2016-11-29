@@ -50,22 +50,31 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
      */
     public function transform(Collection $collection,  array $metrics, array $dimensions)
     {
-        $columns = $collection->getColumns();
-        // new field already existed
-        if (array_key_exists($this->fieldName, $columns)) {
-            return;
-        }
-
         $rows = $collection->getRows();
+        $columns = $collection->getColumns();
         foreach($rows as &$row) {
-            $calculatedValue = $this->language->evaluate($this->expression, ['row' => $row]);
+            try {
+                $calculatedValue = $this->language->evaluate($this->expression, ['row' => $row]);
+            } catch (\Exception $ex) {
+                $calculatedValue = 0;
+            }
+
             $calculatedValue = $calculatedValue ? $calculatedValue : $this->defaultValue;
             $row[$this->fieldName] = $calculatedValue;
         }
 
-        $collection->addColumn($this->fieldName);
         $collection->setRows($rows);
+        if (!in_array($this->fieldName, $columns)) {
+            $columns[] = $this->fieldName;
+            $collection->setColumns($columns);
+        }
     }
+
+    public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
+    {
+        $dimensions[] = $this->fieldName;
+    }
+
 
     /**
      * @return string

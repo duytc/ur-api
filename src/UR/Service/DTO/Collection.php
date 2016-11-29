@@ -49,10 +49,23 @@ class Collection
 
     /**
      * @param array $rows
+     * @return self
      */
     public function setRows($rows)
     {
         $this->rows = $rows;
+
+        return $this;
     }
 
+    /**
+     * @param $columns
+     * @return $this
+     */
+    public function setColumns($columns)
+    {
+        $this->columns = $columns;
+
+        return $this;
+    }
 }

@@ -39,8 +39,21 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
     {
         $results = $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions);
         $collection->setRows($results);
+        $collection->setColumns(array_merge($metrics, $dimensions));
 
         return $collection;
+    }
+
+    public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
+    {
+        $groupingFields = $this->getFields();
+        foreach ($dimensions as $index=>$dimension) {
+            if (!empty($groupingFields) && in_array($dimension, $groupingFields)) {
+                continue;
+            }
+
+            unset($dimensions[$index]);
+        }
     }
 
     /**
@@ -50,7 +63,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
      * @param array $dimensions
      * @return array
      */
-    protected function getGroupedReport($groupingFields, Collection $collection, array $metrics, array $dimensions)
+    protected function getGroupedReport($groupingFields, Collection $collection, array $metrics, array &$dimensions)
     {
         $groupedReports = $this->generateGroupedArray($groupingFields, $collection, $dimensions);
 
@@ -86,7 +99,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
      * @return array
      * @throws \Exception
      */
-    protected function generateGroupedArray($groupingFields, Collection $collection, $dimensions)
+    protected function generateGroupedArray($groupingFields, Collection $collection, &$dimensions)
     {
         $groupedArray = [];
         $rows = $collection->getRows();
@@ -103,7 +116,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
             }
 
              //Note: Remove all dimensions that do not group
-             foreach ($dimensions as $dimension) {
+             foreach ($dimensions as $index=>$dimension) {
                  if (!empty($groupingFields) && in_array($dimension, $groupingFields)) {
                      continue;
                  }
@@ -112,7 +125,13 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
             $key = md5($key);
             $groupedArray[$key][] = $report;
+        }
 
+        foreach ($dimensions as $index=>$dimension) {
+            if (!empty($groupingFields) && in_array($dimension, $groupingFields)) {
+                continue;
+            }
+            unset($dimensions[$index]);
         }
 
         return $groupedArray;

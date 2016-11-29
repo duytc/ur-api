@@ -16,4 +16,10 @@ class ReportView extends ReportViewModel
     protected $sharedKey;
 
     protected $publisher;
+    protected $dimensions;
+    protected $metrics;
+    protected $reportViews;
+    protected $filters;
+    protected $multiView;
+
 }

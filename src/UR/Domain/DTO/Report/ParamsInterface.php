@@ -30,4 +30,37 @@ interface ParamsInterface
      * @return WeightedCalculationInterface
      */
     public function getWeightedCalculations();
+
+    /**
+     * @return array
+     */
+    public function getFilters();
+
+    /**
+     * @param array $filters
+     * @return self
+     */
+    public function setFilters($filters);
+
+    /**
+     * @return array
+     */
+    public function getReportViews();
+
+    /**
+     * @param array $reportViews
+     * @return self
+     */
+    public function setReportViews($reportViews);
+
+    /**
+     * @return boolean
+     */
+    public function isMultiView();
+
+    /**
+     * @param boolean $multiView
+     * @return self
+     */
+    public function setMultiView($multiView);
 }

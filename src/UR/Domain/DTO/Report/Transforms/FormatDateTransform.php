@@ -70,6 +70,12 @@ class FormatDateTransform extends AbstractTransform implements FormatDateTransfo
         $collection->setRows($newRows);
     }
 
+    public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
+    {
+        // nothing changed in metrics and dimensions
+    }
+
+
     /**
      * @return mixed
      */

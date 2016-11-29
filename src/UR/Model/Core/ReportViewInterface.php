@@ -54,6 +54,61 @@ interface ReportViewInterface extends ModelInterface
     public function setTransforms($transform);
 
     /**
+     * @return array
+     */
+    public function getMetrics();
+
+    /**
+     * @param array $metrics
+     * @return self
+     */
+    public function setMetrics($metrics);
+
+    /**
+     * @return array
+     */
+    public function getDimensions();
+
+    /**
+     * @param array $dimensions
+     * @return self
+     */
+    public function setDimensions($dimensions);
+
+    /**
+     * @return array
+     */
+    public function getFilters();
+
+    /**
+     * @param array $filters
+     * @return self
+     */
+    public function setFilters($filters);
+
+    /**
+     * @return boolean
+     */
+    public function isMultiView();
+
+    /**
+     * @param boolean $multiView
+     * @return self
+     */
+    public function setMultiView($multiView);
+
+    /**
+     * @return array
+     */
+    public function getReportViews();
+
+    /**
+     * @param array $reportViews
+     * @return self
+     */
+    public function setReportViews($reportViews);
+
+    /**
      * @return PublisherInterface
      */
     public function getPublisher();

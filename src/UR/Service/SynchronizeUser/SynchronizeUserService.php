@@ -27,7 +27,9 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
         }
 
         if ($publisher instanceof UserEntityInterface) {
-            $publisher->setBillingRate($entity['bi?e']);
+            $publisher->setBillingRate($entity['billingRate']);
+            $publisher->setFirstName($entity['firstName']);
+            $publisher->setLastName($entity['lastName']);
             $publisher->setCompany($entity['company']);
             $publisher->setPhone($entity['phone']);
             $publisher->setCity($entity['city']);
@@ -72,7 +74,10 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
 
             $connection = $this->em->getConnection();
             $userId = $user->getId();
-            $statement = $connection->prepare("SET FOREIGN_KEY_CHECKS = 0;" . "UPDATE core_user SET id = " . $id . " WHERE id = " . $userId . ";UPDATE core_user_publisher SET id = " . $id . " WHERE id = " . $userId . ";SET FOREIGN_KEY_CHECKS = 1" );
+            $statement = $connection->prepare("SET FOREIGN_KEY_CHECKS = 0;"
+                . "UPDATE core_user SET id = " . $id . " WHERE id = " . $userId
+                . ";UPDATE core_user_publisher SET id = " . $id . " WHERE id = " . $userId
+                . ";SET FOREIGN_KEY_CHECKS = 1" );
             $statement->execute();
         }
     }

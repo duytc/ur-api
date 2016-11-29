@@ -7,6 +7,7 @@ use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\FileBag;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -352,7 +353,8 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         if (!is_array($result)) {
             throw new BadRequestHttpException('Could not detect fields from uploaded file');
         }
-        return $result;
+
+        return new JsonResponse($result);
     }
 
     /**

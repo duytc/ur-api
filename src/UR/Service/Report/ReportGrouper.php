@@ -77,6 +77,10 @@ class ReportGrouper implements ReportGrouperInterface
         // aggregate normal fields
         foreach($rows as $row) {
             foreach($metrics as $metric) {
+                if (!array_key_exists($metric, $row)) {
+                    continue;
+                }
+
                 if (is_numeric($row[$metric])) {
                     $total[$metric] += $row[$metric];
                 }
@@ -86,10 +90,10 @@ class ReportGrouper implements ReportGrouperInterface
         $count = count($collection->getRows());
         $average = $total;
         foreach($metrics as $metric) {
-            $average[$metric] = $this->getRatio($total[$metric], $count);
+            $average[$metric] = $total[$metric] / $count;
         }
 
-        $columns = $collection->getColumns();
+        $columns = array_unique($collection->getColumns());
         $headers = [];
         foreach($columns as $index => $column) {
             $headers[$column] = $this->convertColumn($column);

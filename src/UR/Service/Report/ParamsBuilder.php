@@ -26,7 +26,10 @@ class ParamsBuilder implements ParamsBuilderInterface
     const DATA_SET_KEY = 'dataSets';
     const TRANSFORM_KEY = 'transforms';
     const JOIN_BY_KEY = 'joinBy';
-    const WEIGHTED_CALCULATION_KEY = 'calculations';
+    const WEIGHTED_CALCULATION_KEY = 'weightedCalculations';
+    const MULTI_VIEW_KEY = 'multiView';
+    const REPORT_VIEWS_KEY = 'reportViews';
+    const FILTERS_KEY = 'filters';
 
     /**
      * @inheritdoc
@@ -34,6 +37,31 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromArray(array $params)
     {
         $param = new Params();
+
+        $multiView = false;
+        if (array_key_exists(self::MULTI_VIEW_KEY, $params)) {
+            $multiView = filter_var($params[self::MULTI_VIEW_KEY], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        $param->setMultiView($multiView);
+
+        if ($param->isMultiView()) {
+            if (!array_key_exists(self::REPORT_VIEWS_KEY, $params) || empty($params[self::MULTI_VIEW_KEY])) {
+                throw new InvalidArgumentException('multi view require at least one report view is selected');
+            }
+
+            $param->setReportViews(json_decode($params[self::REPORT_VIEWS_KEY]));
+
+            if (array_key_exists(self::FILTERS_KEY, $params) && !empty($params[self::FILTERS_KEY])) {
+                $param->setFilters($params[self::FILTERS_KEY]);
+            }
+
+            if (array_key_exists(self::TRANSFORM_KEY, $params) && !empty($params[self::TRANSFORM_KEY])) {
+                $param->setTransforms($params[self::TRANSFORM_KEY]);
+            }
+
+            return $param;
+        }
 
         if (array_key_exists(self::DATA_SET_KEY, $params) && !empty($params[self::DATA_SET_KEY])) {
             $dataSets = $this->createDataSets(json_decode($params[self::DATA_SET_KEY], true));
@@ -141,15 +169,15 @@ class ParamsBuilder implements ParamsBuilderInterface
      */
     public function buildFromReportView(ReportViewInterface $reportView)
     {
-        $allDataSets = $reportView->getDataSets();
-        $allTransformations = $reportView->getTransforms();
-        $joinBy = $reportView->getJoinBy();
+        $param = new Params();
+        $param->setDataSets($this->createDataSets($reportView->getDataSets()))
+            ->setTransforms($this->createTransforms($reportView->getTransforms()))
+            ->setJoinByFields($reportView->getJoinBy())
+            ->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()))
+            ->setMultiView($reportView->isMultiView())
+            ->setReportViews($reportView->getReportViews())
+            ->setFilters($reportView->getFilters());
 
-        $dataSetObjects = $this->createDataSets($allDataSets);
-        $transformationObjects = $this->createTransforms($allTransformations);
-        $joinByObject = $joinBy;
-
-        return new Params($dataSetObjects, $joinByObject, $transformationObjects);
+        return $param;
     }
-
 }

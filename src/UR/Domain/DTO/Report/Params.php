@@ -32,6 +32,21 @@ class Params implements ParamsInterface
      */
     protected $joinByFields;
 
+    /**
+     * @var array
+     */
+    protected $filters;
+
+    /**
+     * @var array
+     */
+    protected $reportViews;
+
+    /**
+     * @var boolean
+     */
+    protected $multiView;
+
     function __construct()
     {
         $this->dataSets = [];
@@ -119,6 +134,60 @@ class Params implements ParamsInterface
     public function setWeightedCalculations($weightedCalculations)
     {
         $this->weightedCalculations = $weightedCalculations;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFilters()
+    {
+        return $this->filters;
+    }
+
+    /**
+     * @param array $filters
+     * @return self
+     */
+    public function setFilters($filters)
+    {
+        $this->filters = $filters;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getReportViews()
+    {
+        return $this->reportViews;
+    }
+
+    /**
+     * @param array $reportViews
+     * @return self
+     */
+    public function setReportViews($reportViews)
+    {
+        $this->reportViews = $reportViews;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isMultiView()
+    {
+        return $this->multiView;
+    }
+
+    /**
+     * @param boolean $multiView
+     * @return self
+     */
+    public function setMultiView($multiView)
+    {
+        $this->multiView = $multiView;
         return $this;
     }
 

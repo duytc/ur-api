@@ -21,3 +21,11 @@ services:
         tags:
             - { name: doctrine.event_listener, event: onFlush }
             - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.report_view_changed_listener:
+        class: UR\Bundle\ApiBundle\EventListener\ReportViewChangedListener
+        arguments:
+            - '@ur.services.report.params_builder'
+        tags:
+            - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: preUpdate }

@@ -9,7 +9,7 @@ use UR\Service\DTO\Collection;
 
 class AddFieldTransform extends AbstractTransform implements TransformInterface
 {
-    const PRIORITY = 1;
+    const PRIORITY = 3;
     const FIELD_NAME_KEY = 'field';
     const FIELD_VALUE = 'value';
 
@@ -56,12 +56,6 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
      */
     public function transform(Collection $collection,  array $metrics, array $dimensions)
     {
-        $columns = $collection->getColumns();
-        // new field already existed
-        if (in_array($this->fieldName, $columns)) {
-            return;
-        }
-
         $collection->addColumn($this->fieldName);
         $rows = $collection->getRows();
 
@@ -69,12 +63,20 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
             $this->fieldName = strval($this->fieldName);
         }
 
-        $newRows = [];
         foreach ($rows as $row) {
-            $tmp[$this->fieldName] = $this->value;
-            $newRows[] = ($row + $tmp);
+            $row[$this->fieldName] = $this->value;
         }
 
-        $collection->setRows($newRows);
+        $collection->setRows($rows);
+        $columns = $collection->getColumns();
+        if (!in_array($this->fieldName, $columns)) {
+            $columns[] = $this->fieldName;
+            $collection->setColumns($columns);
+        }
+    }
+
+    public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
+    {
+        $dimensions[] = $this->fieldName;
     }
 }

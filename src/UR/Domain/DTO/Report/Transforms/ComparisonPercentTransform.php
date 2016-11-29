@@ -72,4 +72,9 @@ class ComparisonPercentTransform extends AbstractTransform implements Comparison
 
         $collection->setRows($rows);
     }
+
+    public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
+    {
+        $dimensions[] = $this->field;
+    }
 }
