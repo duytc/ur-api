@@ -25,6 +25,9 @@ UR\Entity\Core\ReportView:
         filters:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        showInTotal:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
         publisher:
             expose: true
             groups: [report_view.detail, report_view.summary]

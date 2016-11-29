@@ -140,4 +140,15 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setSharedKey($sharedKey);
+
+    /**
+     * @return array
+     */
+    public function getShowInTotal();
+
+    /**
+     * @param array $showInTotal
+     * @return self
+     */
+    public function setShowInTotal($showInTotal);
 }

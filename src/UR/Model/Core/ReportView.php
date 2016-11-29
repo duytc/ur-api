@@ -69,6 +69,11 @@ class ReportView implements ReportViewInterface
     protected $sharedKey;
 
     /**
+     * @var array
+     */
+    protected $showInTotal;
+
+    /**
      * @var PublisherInterface
      */
     protected $publisher;
@@ -292,6 +297,24 @@ class ReportView implements ReportViewInterface
     public function setSharedKey($sharedKey)
     {
         $this->sharedKey = $sharedKey;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getShowInTotal()
+    {
+        return $this->showInTotal;
+    }
+
+    /**
+     * @param array $showInTotal
+     * @return self
+     */
+    public function setShowInTotal($showInTotal)
+    {
+        $this->showInTotal = $showInTotal;
         return $this;
     }
 
