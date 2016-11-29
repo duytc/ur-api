@@ -16,6 +16,15 @@ UR\Entity\Core\ReportView:
         dataSets:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        weightedCalculations:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+        reportViews:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+        filters:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
         publisher:
             expose: true
             groups: [report_view.detail, report_view.summary]

@@ -22,7 +22,7 @@ class ReportController extends FOSRestController
      * @Rest\QueryParam(name="dataSets", nullable=true)
      * @Rest\QueryParam(name="joinBy", nullable=true)
      * @Rest\QueryParam(name="transforms", nullable=true)
-     * @Rest\QueryParam(name="calculations", nullable=true)
+     * @Rest\QueryParam(name="weightedCalculations", nullable=true)
      * @Rest\QueryParam(name="filters", nullable=true)
      * @Rest\QueryParam(name="multiView", nullable=true)
      * @Rest\QueryParam(name="reportViews", nullable=true)
@@ -37,7 +37,7 @@ class ReportController extends FOSRestController
      *      {"name"="dataSets", "dataType"="array", "required"=false, "description"="list of data set id to build report"},
      *      {"name"="joinBy", "dataType"="string", "required"=false, "description"="filter descriptor"},
      *      {"name"="transforms", "dataType"="string", "required"=false, "description"="transform descriptor"},
-     *      {"name"="calculations", "dataType"="string", "required"=false, "description"="weighted value calculations descriptor"},
+     *      {"name"="weightedCalculations", "dataType"="string", "required"=false, "description"="weighted value calculations descriptor"},
      *      {"name"="filters", "dataType"="string", "required"=false, "description"="filters descriptor for multi view report"},
      *      {"name"="multiView", "dataType"="string", "required"=false, "description"="specify the current report is a multi view report"},
      *      {"name"="reportViews", "dataType"="string", "required"=false, "description"="report views descriptor"}

@@ -26,7 +26,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const DATA_SET_KEY = 'dataSets';
     const TRANSFORM_KEY = 'transforms';
     const JOIN_BY_KEY = 'joinBy';
-    const WEIGHTED_CALCULATION_KEY = 'calculations';
+    const WEIGHTED_CALCULATION_KEY = 'weightedCalculations';
     const MULTI_VIEW_KEY = 'multiView';
     const REPORT_VIEWS_KEY = 'reportViews';
     const FILTERS_KEY = 'filters';
