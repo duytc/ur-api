@@ -105,6 +105,15 @@ class ReportBuilder implements ReportBuilderInterface
         if (empty($showInTotal)) {
             $showInTotal = $metrics;
         }
+
+        /* format data */
+        /** @var FormatInterface[] $formats */
+        $formats = $params->getFormats();
+
+        foreach ($formats as $format) {
+            $format->format($collection, $metrics, $dimensions);
+        }
+
         return $this->reportGrouper->group($collection, $showInTotal, $params->getWeightedCalculations());
     }
 
