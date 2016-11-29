@@ -27,6 +27,7 @@ class ReportController extends FOSRestController
      * @Rest\QueryParam(name="multiView", nullable=true)
      * @Rest\QueryParam(name="reportViews", nullable=true)
      * @Rest\QueryParam(name="showInTotal", nullable=true)
+     * @Rest\QueryParam(name="formats", nullable=true)
      *
      * @ApiDoc(
      *  section = "admin",
@@ -43,6 +44,7 @@ class ReportController extends FOSRestController
      *      {"name"="multiView", "dataType"="string", "required"=false, "description"="specify the current report is a multi view report"},
      *      {"name"="reportViews", "dataType"="string", "required"=false, "description"="report views descriptor"},
      *      {"name"="showInTotal", "dataType"="string", "required"=false, "description"="those fields that are allowed to be shown in Total area"}
+     *      {"name"="formats", "dataType"="string", "required"=false, "description"="format descriptor"}
      *  }
      * )
      *

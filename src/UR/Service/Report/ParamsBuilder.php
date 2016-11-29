@@ -7,12 +7,14 @@ namespace UR\Service\Report;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Domain\DTO\Report\DataSets\DataSet;
+use UR\Domain\DTO\Report\Formats\CurrencyFormat;
+use UR\Domain\DTO\Report\Formats\DateFormat;
+use UR\Domain\DTO\Report\Formats\FormatInterface;
+use UR\Domain\DTO\Report\Formats\NumberFormat;
 use UR\Domain\DTO\Report\Params;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
-use UR\Domain\DTO\Report\Transforms\FormatDateTransform;
-use UR\Domain\DTO\Report\Transforms\FormatNumberTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
@@ -22,7 +24,6 @@ use UR\Service\DTO\Report\WeightedCalculation;
 
 class ParamsBuilder implements ParamsBuilderInterface
 {
-
     const DATA_SET_KEY = 'dataSets';
     const TRANSFORM_KEY = 'transforms';
     const JOIN_BY_KEY = 'joinBy';
@@ -30,6 +31,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const MULTI_VIEW_KEY = 'multiView';
     const REPORT_VIEWS_KEY = 'reportViews';
     const FILTERS_KEY = 'filters';
+    const FORMAT_KEY = 'formats';
 
     /**
      * @inheritdoc
@@ -81,6 +83,12 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setWeightedCalculations(new WeightedCalculation(json_decode($params[self::WEIGHTED_CALCULATION_KEY], true)));
         }
 
+        /* set output formatting */
+        if (array_key_exists(self::FORMAT_KEY, $params) && !empty($params[self::FORMAT_KEY])) {
+            $formats = $this->createFormats(json_decode($params[self::FORMAT_KEY], true));
+            $param->setFormats($formats);
+        }
+
         return $param;
     }
 
@@ -123,28 +131,26 @@ class ParamsBuilder implements ParamsBuilderInterface
                         $transformObjects[] = new AddFieldTransform($addField);
                     }
                     break;
+                
                 case TransformInterface::ADD_CALCULATED_FIELD_TRANSFORM:
                     $expressionLanguage = new ExpressionLanguage();
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField) {
                         $transformObjects[] = new AddCalculatedFieldTransform($expressionLanguage, $addField);
                     }
                     break;
-                case TransformInterface::FORMAT_DATE_TRANSFORM:
-                    $transformObjects[] = new FormatDateTransform($transform);
-                    break;
-                case TransformInterface::FORMAT_NUMBER_TRANSFORM:
-                    $transformObjects[] = new FormatNumberTransform($transform);
-                    break;
+                
                 case TransformInterface::GROUP_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $groupField) {
                         $groupByInputObjects [] = $groupField;
                     }
                     break;
+                
                 case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $comparisonField) {
                         $transformObjects[] = new ComparisonPercentTransform($comparisonField);
                     }
                     break;
+                
                 case TransformInterface::SORT_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
                         $sortByInputObjects[] = $sortField;
@@ -162,6 +168,41 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         return $transformObjects;
+    }
+
+    /**
+     * @param array $formats
+     * @throws \Exception
+     * @return array
+     */
+    protected function createFormats(array $formats)
+    {
+        $formatObjects = [];
+
+        foreach ($formats as $format) {
+            if (!array_key_exists(FormatInterface::FORMAT_TYPE_KEY, $format)) {
+                throw new InvalidArgumentException('format "type" is missing');
+            }
+
+            switch ($format[FormatInterface::FORMAT_TYPE_KEY]) {
+                case FormatInterface::FORMAT_TYPE_DATE:
+                    $formatObjects[] = new DateFormat($format);
+
+                    break;
+
+                case FormatInterface::FORMAT_TYPE_NUMBER:
+                    $formatObjects[] = new NumberFormat($format);
+
+                    break;
+                
+                case FormatInterface::FORMAT_TYPE_CURRENCY:
+                    $formatObjects[] = new CurrencyFormat($format);
+
+                    break;
+            }
+        }
+
+        return $formatObjects;
     }
 
     /**

@@ -63,6 +63,8 @@ class ReportViewController extends FOSRestController
      *    dataSets => [], // array, list of data set id to build report
      *    joinBy => "", // jsonString, filter descriptor
      *    transforms => "", // jsonString, transform descriptor
+     *    calculations => "", // jsonString, weighted value calculations descriptor
+     *    formats => "" // jsonString, format descriptor
      * }
      */
     protected function getParams($reportView)
@@ -70,11 +72,15 @@ class ReportViewController extends FOSRestController
         $dataSets = is_array($reportView->getDataSets()) ? $reportView->getDataSets() : [];
         $joinBy = is_array($reportView->getJoinBy()) ? $reportView->getJoinBy() : [];
         $transforms = is_array($reportView->getTransforms()) ? $reportView->getTransforms() : [];
+        $calculations = is_array($reportView->getWeightedCalculations()) ? $reportView->getWeightedCalculations() : [];
+        $formats = is_array($reportView->getFormats()) ? $reportView->getFormats() : [];
 
         $params = [
             'dataSets' => json_encode($dataSets),
             'joinBy' => json_encode($joinBy),
-            'transforms' => json_encode($transforms)
+            'transforms' => json_encode($transforms),
+            'calculations' => json_encode($calculations),
+            'formats' => json_encode($formats)
         ];
 
         return $this->get('ur.services.report.params_builder')->buildFromArray($params);

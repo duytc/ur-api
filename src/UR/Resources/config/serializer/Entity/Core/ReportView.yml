@@ -35,3 +35,6 @@ UR\Entity\Core\ReportView:
             expose: true
             groups: [report_view.detail, report_view.summary]
             type: DateTime<'Y-m-d'>
+        formats:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
