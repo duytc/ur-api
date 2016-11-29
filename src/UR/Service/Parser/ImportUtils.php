@@ -129,6 +129,11 @@ class ImportUtils
         }
     }
 
+    function symbolFields(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig){
+        $metrics=$connectedDataSource->getDataSet()->getMetrics();
+
+    }
+
     function filterDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
     {
         $filters = $connectedDataSource->getFilters();

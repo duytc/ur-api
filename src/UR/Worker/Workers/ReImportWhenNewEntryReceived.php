@@ -39,6 +39,8 @@ class ReImportWhenNewEntryReceived
         foreach ($entryIds as $entryId) {
             /**@var DataSourceEntryInterface $dataSourceEntry */
             $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
+            if ($dataSourceEntry === null)
+                continue;
             $connectedDataSources = $dataSourceEntry->getDataSource()->getConnectedDataSources();
 
             $this->autoImport->autoCreateDataImport($connectedDataSources, $dataSourceEntry);

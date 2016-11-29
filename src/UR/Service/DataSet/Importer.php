@@ -13,7 +13,7 @@ class Importer
      */
     protected $conn;
 
-    private static $restrictedColumns = ['__id', '__date_source_id', '__import_id'];
+    private static $restrictedColumns = ['__id', '__data_source_id', '__import_id'];
 
     public function __construct(Connection $conn)
     {
@@ -38,32 +38,39 @@ class Importer
             }
         }
 
+        array_push($columns, "__data_source_id", "__import_id");
+
         $rows = $collection->getRows();
-        $qb = $this->conn->createQueryBuilder();
+//        $qb = $this->conn->createQueryBuilder();
         $this->conn->beginTransaction();
         try {
+
             foreach ($rows as $row) {
-                $query = $qb
-                    ->insert($tableName);
-
-                $positionKey = 0;
-                $query->setValue('__data_source_id', '?');
-                $query->setParameter($positionKey, $dataSourceId);
-                $positionKey++;
-                $query->setValue('__import_id', '?');
-                $query->setParameter($positionKey, $importId);
-                $positionKey++;
+                $sql = 'INSERT INTO ' . $tableName . "( ";
+                $value = ' VALUES ' . "( ";
+                $onDuplicate = ' ON DUPLICATE KEY UPDATE ';
                 foreach ($columns as $column) {
-                    $query->setValue($column, '?');
-                    // todo bind param type
-                    $query->setParameter($positionKey,
-                        strcmp($row[$column], "") === 0 ? null : $row[$column]);
-
-                    $positionKey++;
+                    $sql = $sql . $column . ', ';
+                    $value = $value . ":" . $column . ', ';
+                    $onDuplicate .= $column . "= :" . $column . ', ';
                 }
+                $sql .= ')';
+                $sql = str_replace(", )", ")", $sql);
+                $value .= ')';
+                $value = str_replace(", )", ")", $value);
+                $onDuplicate .= ')';
+                $onDuplicate = str_replace(", )", "", $onDuplicate);
 
-                $query->execute();
-                unset($query);
+                $sql .= $value . $onDuplicate;
+                $qb = $this->conn->prepare($sql);
+                $row['__data_source_id'] = $dataSourceId;
+                $row['__import_id'] = $importId;
+                foreach ($columns as $column) {
+                    $rowValue = strcmp($row[$column], "") === 0 ? null : $row[$column];
+                    $qb->bindValue($column, $rowValue);
+                }
+                $qb->execute();
+                unset($qb);
             }
 
             $this->conn->commit();

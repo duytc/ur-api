@@ -3,8 +3,10 @@
 namespace UR\Service\Parser;
 
 use UR\Model\Core\AlertInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Service\Alert\AlertParams;
 use UR\Service\Alert\ProcessAlert;
+use UR\Service\DataSet\Type;
 use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
@@ -14,7 +16,7 @@ use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 
 class Parser implements ParserInterface
 {
-    public function parse(DataSourceInterface $dataSource, ParserConfig $config)
+    public function parse(DataSourceInterface $dataSource, ParserConfig $config, DataSetInterface $dataSet)
     {
         $columnFromMap = array_flip($config->getAllColumnMappings());
 
@@ -37,6 +39,25 @@ class Parser implements ParserInterface
             }, array_keys($row));
 
             $row = array_combine($keys, $row);
+
+            foreach ($dataSet->getMetrics() as $metric => $type) {
+                if (array_key_exists($metric, $row)) {
+                    if (strcmp($type, Type::NUMBER) === 0) {
+                        $row[$metric] = str_replace("$", "", $row[$metric]);
+                        $row[$metric] = str_replace(",", "", $row[$metric]);
+                    }
+
+                    if (strcmp($type, Type::DECIMAL) === 0) {
+                        $row[$metric] = str_replace("$", "", $row[$metric]);
+                        $row[$metric] = str_replace(",", "", $row[$metric]);
+                        $row[$metric] = str_replace(" ", "", $row[$metric]);
+                    }
+
+                    if (!is_numeric($row[$metric])) {
+                        $row[$metric] = null;
+                    }
+                }
+            }
 
             $isValidFilter = 1;
             foreach ($config->getColumnFilters() as $column => $filters) {

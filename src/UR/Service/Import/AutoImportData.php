@@ -144,7 +144,7 @@ class AutoImportData implements AutoImportDataInterface
             $importUtils->transformDataSetTable($connectedDataSource, $parserConfig);
 
             // import
-            $collectionParser = $parser->parse($file, $parserConfig);
+            $collectionParser = $parser->parse($file, $parserConfig, $connectedDataSource->getDataSet());
 
             if (is_array($collectionParser)) {
                 // to do alert
