@@ -53,7 +53,7 @@ class Parser implements ParserInterface
                         $row[$metric] = str_replace(" ", "", $row[$metric]);
                     }
 
-                    if (!is_numeric($row[$metric])) {
+                    if (strcmp(trim($row[$metric]), "") !== 0 && !is_numeric($row[$metric])) {
                         return array('error' => ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL,
                             'row' => $cur_row + 2,
                             'column' => $metric);
