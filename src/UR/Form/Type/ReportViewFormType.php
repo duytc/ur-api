@@ -17,7 +17,11 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             ->add('dataSets')
             ->add('name')
             ->add('transforms')
-            ->add('joinBy');
+            ->add('joinBy')
+            ->add('weightedCalculations')
+            ->add('multiView')
+            ->add('reportViews')
+        ;
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(

@@ -93,7 +93,7 @@ class ReportGrouper implements ReportGrouperInterface
             $average[$metric] = $total[$metric] / $count;
         }
 
-        $columns = $collection->getColumns();
+        $columns = array_unique($collection->getColumns());
         $headers = [];
         foreach($columns as $index => $column) {
             $headers[$column] = $this->convertColumn($column);
