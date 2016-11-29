@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Exception\RuntimeException;
 use UR\Handler\HandlerInterface;
-use UR\Model\Core\AlertInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\ReportViewInterface;
@@ -126,7 +125,6 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      */
     public function postAction(Request $request)
     {
-
         return $this->post($request);
     }
 

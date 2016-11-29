@@ -37,8 +37,12 @@ class ReportViewManager implements ReportViewManagerInterface
     {
         if (!$reportView instanceof ReportViewInterface) throw new InvalidArgumentException('expect ReportViewInterface object');
 
-        $this->om->persist($reportView);
-        $this->om->flush();
+        try {
+            $this->om->persist($reportView);
+            $this->om->flush();
+        } catch (\Exception $e) {
+            $msg = $e->getMessage();
+        }
     }
 
     /**

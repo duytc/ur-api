@@ -24,4 +24,12 @@ class ReportView extends ReportViewModel
     protected $formats;
 
     protected $publisher;
+
+    /**
+     * @inheritdoc
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
 }

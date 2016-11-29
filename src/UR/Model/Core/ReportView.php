@@ -84,6 +84,14 @@ class ReportView implements ReportViewInterface
     protected $publisher;
 
     /**
+     * ReportView constructor.
+     */
+    public function __construct()
+    {
+        $this->multiView = false;
+    }
+
+    /**
      * @return int
      */
     public function getId()
