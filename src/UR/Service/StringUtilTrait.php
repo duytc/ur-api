@@ -94,7 +94,7 @@ trait StringUtilTrait
     }
 
 
-    protected function removeIdPrefix($column)
+    protected function removeIdSuffix($column)
     {
         $lastOccur = strrchr($column, "_");
         return str_replace($lastOccur, "", $column);

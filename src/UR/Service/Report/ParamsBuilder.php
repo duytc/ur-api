@@ -25,6 +25,7 @@ use UR\Service\DTO\Report\WeightedCalculation;
 class ParamsBuilder implements ParamsBuilderInterface
 {
     const DATA_SET_KEY = 'dataSets';
+    const FIELD_TYPES_KEY = 'fieldTypes';
     const TRANSFORM_KEY = 'transforms';
     const JOIN_BY_KEY = 'joinBy';
     const WEIGHTED_CALCULATION_KEY = 'weightedCalculations';
@@ -86,6 +87,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if (array_key_exists(self::SHOW_IN_TOTAL_KEY, $params)) {
             $param->setShowInTotal(json_decode($params[self::SHOW_IN_TOTAL_KEY], true));
+        }
+
+        if (array_key_exists(self::FIELD_TYPES_KEY, $params)) {
+            $param->setFieldTypes(json_decode($params[self::FIELD_TYPES_KEY], true));
         }
 
         /* set output formatting */

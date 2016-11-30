@@ -77,7 +77,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
             foreach ($groupedReport as $report) {
                 foreach ($report as $key => $value) {
-                    if (is_numeric($value)) {
+                    if (in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
                         $result[$key] += $value;
                     }
                 }
@@ -103,7 +103,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
         $rows = $collection->getRows();
 
         foreach($groupingFields as $index=>$groupingField) {
-            if ($joinBy === $this->removeIdPrefix($groupingField)) {
+            if ($joinBy === $this->removeIdSuffix($groupingField)) {
                 $groupingFields[$index] = $joinBy;
             }
         }
@@ -134,5 +134,4 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
     {
         return $this->fields;
     }
-
 }

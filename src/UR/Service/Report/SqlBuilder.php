@@ -1,6 +1,4 @@
 <?php
-
-
 namespace UR\Service\Report;
 
 
@@ -50,8 +48,8 @@ class SqlBuilder implements SqlBuilderInterface
 
     public function buildQueryForSingleDataSet(DataSetInterface $dataSet)
     {
-        $metrics = $dataSet->getMetrics();
-        $dimensions = $dataSet->getDimensions();
+        $metrics = array_keys($dataSet->getMetrics());
+        $dimensions = array_keys($dataSet->getDimensions());
         $filters = $dataSet->getFilters();
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $fields = array_merge($metrics, $dimensions);
@@ -134,8 +132,8 @@ class SqlBuilder implements SqlBuilderInterface
 
     protected function buildSelectQuery(QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, $joinBy)
     {
-        $metrics = $dataSet->getMetrics();
-        $dimensions = $dataSet->getDimensions();
+        $metrics = array_keys($dataSet->getMetrics());
+        $dimensions = array_keys($dataSet->getDimensions());
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $fields = array_merge($metrics, $dimensions);
         $tableColumns = array_keys($table->getColumns());
@@ -151,7 +149,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         foreach ($fields as $field) {
-            if ($joinBy === $this->removeIdPrefix($field)) {
+            if ($joinBy === $this->removeIdSuffix($field)) {
                 continue;
             }
             $qb->addSelect(sprintf('t%d.%s as %s_%d', $dataSetIndex, $field, $field, $dataSet->getDataSetId()));
