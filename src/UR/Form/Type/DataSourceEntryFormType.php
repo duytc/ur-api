@@ -34,7 +34,7 @@ class DataSourceEntryFormType extends AbstractRoleSpecificFormType
             ))
             ->add('metaData')
             ->add('isValid')
-            ->add('autoImport')
+            ->add('isActive')
             ->add('path')
             ->add('receivedVia', ChoiceType::class, [
                 'choices' => [
@@ -52,10 +52,8 @@ class DataSourceEntryFormType extends AbstractRoleSpecificFormType
                 // $event->getData() will get you the client data (that is, the ID)
                 /** @var DataSourceEntryInterface $dataSourceEntry */
                 $dataSourceEntry = $event->getData();
+                $dataSourceEntry->setIsActive(true);
                 $form = $event->getForm();
-                if (!is_bool($dataSourceEntry->getAutoImport())) {
-                    $dataSourceEntry->setAutoImport(true);
-                }
 
                 if (!$this->validateMetaData($dataSourceEntry->getMetaData())) {
                     $form->get('metaData')->addError(new FormError('Metadata should be null or array'));

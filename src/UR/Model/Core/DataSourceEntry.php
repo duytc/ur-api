@@ -7,6 +7,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $id;
     protected $receivedDate;
     protected $isValid;
+    protected $isActive;
     protected $path;
     protected $fileName;
     protected $metaData;
@@ -20,6 +21,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function __construct()
     {
         $this->isValid = false;
+        $this->isActive = true;
     }
 
     /**
@@ -148,5 +150,21 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setFileName($fileName)
     {
         $this->fileName = $fileName;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getIsActive()
+    {
+        return $this->isActive;
+    }
+
+    /**
+     * @@inheritdoc
+     */
+    public function setIsActive($active)
+    {
+        $this->isActive = $active;
     }
 }

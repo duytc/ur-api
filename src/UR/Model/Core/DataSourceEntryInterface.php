@@ -34,6 +34,17 @@ interface DataSourceEntryInterface extends ModelInterface
     public function setIsValid($valid);
 
     /**
+     * @return boolean
+     */
+    public function getIsActive();
+
+    /**
+     * @param boolean $active
+     * @return self
+     */
+    public function setIsActive($active);
+
+    /**
      * @return string
      */
     public function getPath();
