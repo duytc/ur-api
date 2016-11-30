@@ -86,4 +86,15 @@ interface ParamsInterface
      * @return self
      */
     public function setFormats($formats);
+
+    /**
+     * @return array
+     */
+    public function getFieldTypes();
+
+    /**
+     * @param array $dataSetTypes
+     * @return self
+     */
+    public function setFieldTypes($dataSetTypes);
 }

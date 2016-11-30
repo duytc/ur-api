@@ -53,21 +53,18 @@ class UpdateMetricsAndDimensionsForReportViewListener
             return;
         }
 
-//        if (!$args->hasChangedField('dataSets') || !$args->hasChangedField('transforms')) {
-//            return;
-//        }
-
-        $this->updateMetricsAndDimensionsForReportView($entity, $em);
+        if ($args->hasChangedField('dataSets') || $args->hasChangedField('transforms')) {
+            $this->updateMetricsAndDimensionsForReportView($entity, $em);
+        }
     }
 
     protected function updateMetricsAndDimensionsForReportView(ReportViewInterface $reportView, EntityManagerInterface $em)
     {
         $param = $this->paramsBuilder->buildFromReportView($reportView);
         $columns = $this->getMetricsAndDimensions($param);
+
         $reportView->setMetrics($columns[self::METRICS_KEY]);
         $reportView->setDimensions($columns[self::DIMENSIONS_KEY]);
-
-        //$em->persist($reportView);
     }
 
     public function getMetricsAndDimensions(ParamsInterface $params)
@@ -82,7 +79,7 @@ class UpdateMetricsAndDimensionsForReportViewListener
             }
 
             foreach ($dataSet->getDimensions() as $item) {
-                if ($joinBy === $this->removeIdPrefix($item)) {
+                if ($joinBy === $this->removeIdSuffix($item)) {
                     continue;
                 }
 

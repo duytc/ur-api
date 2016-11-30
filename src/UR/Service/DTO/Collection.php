@@ -14,10 +14,16 @@ class Collection
      */
     protected $rows;
 
-    public function __construct(array $columns, array $rows)
+    /**
+     * @var array
+     */
+    protected $types;
+
+    public function __construct(array $columns, array $rows, $types = [])
     {
         $this->columns = $columns;
         $this->rows = $rows;
+        $this->types = $types;
     }
 
     /**
@@ -67,5 +73,14 @@ class Collection
         $this->columns = $columns;
 
         return $this;
+    }
+
+    public function getTypeOf($field)
+    {
+        if (array_key_exists($field, $this->types)) {
+            return $this->types[$field];
+        }
+
+        return null;
     }
 }
