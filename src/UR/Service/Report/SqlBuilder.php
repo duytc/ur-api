@@ -17,9 +17,12 @@ use UR\Domain\DTO\Report\Filters\TextFilter;
 use UR\Domain\DTO\Report\Filters\TextFilterInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
+use UR\Service\StringUtilTrait;
 
 class SqlBuilder implements SqlBuilderInterface
 {
+    use StringUtilTrait;
+
     const FIRST_ELEMENT = 0;
     const START_DATE_INDEX = 0;
     const END_DATE_INDEX = 1;
@@ -148,8 +151,13 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         foreach ($fields as $field) {
+            if ($joinBy === $this->removeIdPrefix($field)) {
+                continue;
+            }
             $qb->addSelect(sprintf('t%d.%s as %s_%d', $dataSetIndex, $field, $field, $dataSet->getDataSetId()));
         }
+
+        $qb->addSelect(sprintf('t%d.%s as %s', $dataSetIndex, $joinBy, $joinBy));
 
         if ($dataSetIndex === self::FIRST_ELEMENT) {
             $qb->from($table->getName(), sprintf('t%d', $dataSetIndex));

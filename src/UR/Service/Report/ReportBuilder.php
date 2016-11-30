@@ -4,6 +4,7 @@
 namespace UR\Service\Report;
 
 
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
@@ -11,9 +12,12 @@ use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\DTO\Collection;
+use UR\Service\StringUtilTrait;
 
 class ReportBuilder implements ReportBuilderInterface
 {
+    use StringUtilTrait;
+
     const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';
 
@@ -67,7 +71,7 @@ class ReportBuilder implements ReportBuilderInterface
         $metrics = [];
         $dimensions = [];
         $dataSets = $params->getDataSets();
-
+        $joinBy = $params->getJoinByFields();
         /* get all metrics and dimensions from dataSets */
         foreach ($dataSets as $dataSet) {
             foreach ($dataSet->getMetrics() as $item) {
@@ -75,8 +79,15 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             foreach ($dataSet->getDimensions() as $item) {
+                if ($joinBy === $this->removeIdPrefix($item)) {
+                    continue;
+                }
                 $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
             }
+        }
+
+        if (is_string($joinBy)) {
+            $dimensions[] = $joinBy;
         }
 
         /* get all reports data */
@@ -98,12 +109,7 @@ class ReportBuilder implements ReportBuilderInterface
          * @var TransformInterface $transform
          */
         foreach ($transforms as $transform) {
-            $transform->transform($collection, $metrics, $dimensions);
-        }
-
-        $showInTotal = $params->getShowInTotal();
-        if (empty($showInTotal)) {
-            $showInTotal = $metrics;
+            $transform->transform($collection, $metrics, $dimensions, $joinBy);
         }
 
         /* format data */
@@ -114,7 +120,12 @@ class ReportBuilder implements ReportBuilderInterface
             $format->format($collection, $metrics, $dimensions);
         }
 
-        return $this->reportGrouper->group($collection, $showInTotal, $params->getWeightedCalculations());
+        $showInTotal = $params->getShowInTotal();
+        if (empty($showInTotal)) {
+            $showInTotal = $metrics;
+        }
+
+        return $this->reportGrouper->group($collection, $showInTotal, $params->getWeightedCalculations(), count($dataSets) < 2);
     }
 
     protected function getMultipleReport(ParamsInterface $params)

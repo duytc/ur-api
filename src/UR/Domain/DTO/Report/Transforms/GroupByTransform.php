@@ -6,9 +6,11 @@ namespace UR\Domain\DTO\Report\Transforms;
 
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
+use UR\Service\StringUtilTrait;
 
 class GroupByTransform extends AbstractTransform implements GroupByTransformInterface
 {
+    use StringUtilTrait;
     const PRIORITY = 2;
 
     const FIELDS_KEY = 'fields';
@@ -33,11 +35,12 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
      * @param Collection $collection
      * @param array $metrics
      * @param array $dimensions
+     * @param $joinBy
      * @return mixed
      */
-    public function transform(Collection $collection, array $metrics, array $dimensions)
+    public function transform(Collection $collection, array $metrics, array $dimensions, $joinBy = null)
     {
-        $results = $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions);
+        $results = $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions, $joinBy);
         $collection->setRows($results);
         $collection->setColumns(array_merge($metrics, $dimensions));
 
@@ -61,11 +64,12 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
      * @param Collection $collection
      * @param array $metrics
      * @param array $dimensions
+     * @param $joinBy
      * @return array
      */
-    protected function getGroupedReport($groupingFields, Collection $collection, array $metrics, array &$dimensions)
+    protected function getGroupedReport($groupingFields, Collection $collection, array $metrics, array &$dimensions, $joinBy = null)
     {
-        $groupedReports = $this->generateGroupedArray($groupingFields, $collection, $dimensions);
+        $groupedReports = $this->generateGroupedArray($groupingFields, $collection, $dimensions, $joinBy);
 
         $results = [];
         foreach ($groupedReports as $groupedReport) {
@@ -96,13 +100,21 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
      * @param $groupingFields
      * @param Collection $collection
      * @param $dimensions
+     * @param $joinBy
      * @return array
      * @throws \Exception
      */
-    protected function generateGroupedArray($groupingFields, Collection $collection, &$dimensions)
+    protected function generateGroupedArray($groupingFields, Collection $collection, &$dimensions, $joinBy = null)
     {
         $groupedArray = [];
         $rows = $collection->getRows();
+
+        foreach($groupingFields as $index=>$groupingField) {
+            if ($joinBy === $this->removeIdPrefix($groupingField)) {
+                $groupingFields[$index] = $joinBy;
+            }
+        }
+
         foreach ($rows as $report) {
             $key = '';
             foreach ($groupingFields as $groupField) {
@@ -115,23 +127,8 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
                 }
             }
 
-             //Note: Remove all dimensions that do not group
-             foreach ($dimensions as $index=>$dimension) {
-                 if (!empty($groupingFields) && in_array($dimension, $groupingFields)) {
-                     continue;
-                 }
-                 unset($report[$dimension]);
-             }
-
             $key = md5($key);
             $groupedArray[$key][] = $report;
-        }
-
-        foreach ($dimensions as $index=>$dimension) {
-            if (!empty($groupingFields) && in_array($dimension, $groupingFields)) {
-                continue;
-            }
-            unset($dimensions[$index]);
         }
 
         return $groupedArray;
