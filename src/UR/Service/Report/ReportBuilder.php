@@ -99,7 +99,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* get final reports */
         $isSingleDataSet = count($dataSets) < 2;
-        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $isSingleDataSet);
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $isSingleDataSet, $joinBy);
     }
 
     protected function getMultipleReport(ParamsInterface $params)
@@ -146,13 +146,14 @@ class ReportBuilder implements ReportBuilderInterface
      * @param array $metrics
      * @param array $dimensions
      * @param bool $isSingleDataSet
+     * @param $joinBy
      * @return mixed
      */
-    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $isSingleDataSet = false)
+    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $isSingleDataSet = false, $joinBy = null)
     {
         /* transform data */
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        $this->transformReports($reportCollection, $transforms, $metrics, $dimensions);
+        $this->transformReports($reportCollection, $transforms, $metrics, $dimensions, $joinBy);
 
         /* format data */
         /** @var FormatInterface[] $formats */
@@ -174,8 +175,9 @@ class ReportBuilder implements ReportBuilderInterface
      * @param array $transforms
      * @param array $metrics
      * @param array $dimensions
+     * @param $joinBy
      */
-    private function transformReports(Collection $reportCollection, array  $transforms, array $metrics, array $dimensions)
+    private function transformReports(Collection $reportCollection, array  $transforms, array $metrics, array $dimensions, $joinBy = null)
     {
         // sort transform by priority
         usort($transforms, function (TransformInterface $a, TransformInterface $b) {
@@ -189,7 +191,7 @@ class ReportBuilder implements ReportBuilderInterface
          * @var TransformInterface $transform
          */
         foreach ($transforms as $transform) {
-            $transform->transform($reportCollection, $metrics, $dimensions);
+            $transform->transform($reportCollection, $metrics, $dimensions, $joinBy);
         }
     }
 
