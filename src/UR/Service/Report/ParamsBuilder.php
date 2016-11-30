@@ -219,6 +219,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             ->setReportViews($reportView->getReportViews())
             ->setFilters($reportView->getFilters())
             ->setShowInTotal($reportView->getShowInTotal())
+            ->setFormats($this->createFormats($reportView->getFormats()))
         ;
 
         return $param;

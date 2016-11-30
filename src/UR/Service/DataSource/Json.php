@@ -14,7 +14,7 @@ class Json implements DataSourceInterface
         return [];
     }
 
-    public function getRows()
+    public function getRows($fromDateFormat)
     {
         // todo
         return [];

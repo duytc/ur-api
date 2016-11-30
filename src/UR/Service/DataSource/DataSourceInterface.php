@@ -5,5 +5,6 @@ namespace UR\Service\DataSource;
 interface DataSourceInterface
 {
     public function getColumns();
-    public function getRows();
+
+    public function getRows($fromDateFormat);
 }
