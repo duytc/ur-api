@@ -93,7 +93,6 @@ class ReportBuilder implements ReportBuilderInterface
             $dimensions[] = $joinBy;
         }
 
-
         /* get all reports data */
         $statement = $this->reportSelector->getReportData($params);
         $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll(), $types);
