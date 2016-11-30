@@ -6,9 +6,7 @@ use FOS\RestBundle\Controller\FOSRestController;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
-use UR\Domain\DTO\Report\Params;
 use UR\Domain\DTO\Report\ParamsInterface;
-use UR\Service\Report\ParamsBuilderInterface;
 
 /**
  * Class ReportController

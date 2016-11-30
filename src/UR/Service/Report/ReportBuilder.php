@@ -4,6 +4,7 @@
 namespace UR\Service\Report;
 
 
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
