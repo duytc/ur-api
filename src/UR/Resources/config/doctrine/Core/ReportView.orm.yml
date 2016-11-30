@@ -52,6 +52,10 @@ UR\Entity\Core\ReportView:
         showInTotal:
             type: json_array
             nullable: true
+        formats:
+            type: json_array
+            nullable: true
+
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

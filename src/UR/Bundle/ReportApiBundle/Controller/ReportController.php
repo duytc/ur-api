@@ -6,9 +6,7 @@ use FOS\RestBundle\Controller\FOSRestController;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
-use UR\Domain\DTO\Report\Params;
 use UR\Domain\DTO\Report\ParamsInterface;
-use UR\Service\Report\ParamsBuilderInterface;
 
 /**
  * Class ReportController
@@ -27,6 +25,7 @@ class ReportController extends FOSRestController
      * @Rest\QueryParam(name="multiView", nullable=true)
      * @Rest\QueryParam(name="reportViews", nullable=true)
      * @Rest\QueryParam(name="showInTotal", nullable=true)
+     * @Rest\QueryParam(name="formats", nullable=true)
      *
      * @ApiDoc(
      *  section = "admin",
@@ -42,7 +41,8 @@ class ReportController extends FOSRestController
      *      {"name"="filters", "dataType"="string", "required"=false, "description"="filters descriptor for multi view report"},
      *      {"name"="multiView", "dataType"="string", "required"=false, "description"="specify the current report is a multi view report"},
      *      {"name"="reportViews", "dataType"="string", "required"=false, "description"="report views descriptor"},
-     *      {"name"="showInTotal", "dataType"="string", "required"=false, "description"="those fields that are allowed to be shown in Total area"}
+     *      {"name"="showInTotal", "dataType"="string", "required"=false, "description"="those fields that are allowed to be shown in Total area"},
+     *      {"name"="formats", "dataType"="string", "required"=false, "description"="format descriptor"}
      *  }
      * )
      *

@@ -5,6 +5,7 @@ namespace UR\Domain\DTO\Report;
 
 
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
+use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\Transforms\SortByTransformInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Service\DTO\Report\WeightedCalculationInterface;
@@ -51,6 +52,11 @@ class Params implements ParamsInterface
      * @var array
      */
     protected $showInTotal;
+
+    /**
+     * @var FormatInterface[]
+     */
+    protected $formats;
 
     function __construct()
     {
@@ -231,6 +237,23 @@ class Params implements ParamsInterface
     public function setShowInTotal($showInTotal)
     {
         $this->showInTotal = $showInTotal;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFormats()
+    {
+        return $this->formats;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setFormats($formats)
+    {
+        $this->formats = $formats;
         return $this;
     }
 }

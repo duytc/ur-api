@@ -5,6 +5,7 @@ namespace UR\Service\Report;
 
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\DomainManager\ReportViewManagerInterface;
@@ -68,6 +69,7 @@ class ReportBuilder implements ReportBuilderInterface
         $dimensions = [];
         $dataSets = $params->getDataSets();
 
+        /* get all metrics and dimensions from dataSets */
         foreach ($dataSets as $dataSet) {
             foreach ($dataSet->getMetrics() as $item) {
                 $metrics[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
@@ -78,10 +80,13 @@ class ReportBuilder implements ReportBuilderInterface
             }
         }
 
+        /* get all reports data */
         $statement = $this->reportSelector->getReportData($params);
         $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll());
 
+        /* transform data */
         $transforms = $params->getTransforms();
+
         // sort transform by priority
         usort($transforms, function(TransformInterface $a, TransformInterface $b){
             if ($a->getPriority() == $b->getPriority()) {
@@ -101,6 +106,15 @@ class ReportBuilder implements ReportBuilderInterface
         if (empty($showInTotal)) {
             $showInTotal = $metrics;
         }
+
+        /* format data */
+        /** @var FormatInterface[] $formats */
+        $formats = $params->getFormats();
+
+        foreach ($formats as $format) {
+            $format->format($collection, $metrics, $dimensions);
+        }
+
         return $this->reportGrouper->group($collection, $showInTotal, $params->getWeightedCalculations());
     }
 
@@ -149,6 +163,16 @@ class ReportBuilder implements ReportBuilderInterface
         if (empty($showInTotal)) {
             $showInTotal = $metrics;
         }
+        
+        /* format data */
+        /** @var FormatInterface[] $formats */
+        $formats = $params->getFormats();
+
+        foreach ($formats as $format) {
+            $format->format($collection, $metrics, $dimensions);
+        }
+
+        /* group data */
         return $this->reportGrouper->group($collection, $showInTotal, $params->getWeightedCalculations());
     }
 }

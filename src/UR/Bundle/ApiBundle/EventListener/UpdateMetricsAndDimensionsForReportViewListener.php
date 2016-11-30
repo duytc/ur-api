@@ -12,7 +12,7 @@ use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\Report\ParamsBuilderInterface;
 
-class ReportViewChangedListener
+class UpdateMetricsAndDimensionsForReportViewListener
 {
     const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';
@@ -65,7 +65,7 @@ class ReportViewChangedListener
         $reportView->setMetrics($columns[self::METRICS_KEY]);
         $reportView->setDimensions($columns[self::DIMENSIONS_KEY]);
 
-        $em->persist($reportView);
+        //$em->persist($reportView);
     }
 
     public function getMetricsAndDimensions(ParamsInterface $params)

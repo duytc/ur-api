@@ -60,24 +60,21 @@ class ReportViewController extends FOSRestController
      * @param ReportViewInterface $reportView
      * @return ParamsInterface formatted as:
      * {
-     *    dataSets => [], // array, list of data set id to build report
-     *    joinBy => "", // jsonString, filter descriptor
-     *    transforms => "", // jsonString, transform descriptor
+     *      {"name"="dataSets", "dataType"="array", "required"=false, "description"="list of data set id to build report"},
+     *      {"name"="joinBy", "dataType"="string", "required"=false, "description"="filter descriptor"},
+     *      {"name"="transforms", "dataType"="string", "required"=false, "description"="transform descriptor"},
+     *      {"name"="weightedCalculations", "dataType"="string", "required"=false, "description"="weighted value calculations descriptor"},
+     *      {"name"="filters", "dataType"="string", "required"=false, "description"="filters descriptor for multi view report"},
+     *      {"name"="multiView", "dataType"="string", "required"=false, "description"="specify the current report is a multi view report"},
+     *      {"name"="reportViews", "dataType"="string", "required"=false, "description"="report views descriptor"},
+     *      {"name"="showInTotal", "dataType"="string", "required"=false, "description"="those fields that are allowed to be shown in Total area"},
+     *      {"name"="formats", "dataType"="string", "required"=false, "description"="format descriptor"}
      * }
+     * @see UR\Bundle\ReportApiBundle\Controller\ReportController
      */
     protected function getParams($reportView)
     {
-        $dataSets = is_array($reportView->getDataSets()) ? $reportView->getDataSets() : [];
-        $joinBy = is_array($reportView->getJoinBy()) ? $reportView->getJoinBy() : [];
-        $transforms = is_array($reportView->getTransforms()) ? $reportView->getTransforms() : [];
-
-        $params = [
-            'dataSets' => json_encode($dataSets),
-            'joinBy' => json_encode($joinBy),
-            'transforms' => json_encode($transforms)
-        ];
-
-        return $this->get('ur.services.report.params_builder')->buildFromArray($params);
+        return $this->get('ur.services.report.params_builder')->buildFromReportView($reportView);
     }
 
     protected function getReportBuilder()

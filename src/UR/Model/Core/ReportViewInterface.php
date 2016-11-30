@@ -151,4 +151,15 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setShowInTotal($showInTotal);
+
+    /**
+     * @return array
+     */
+    public function getFormats();
+
+    /**
+     * @param array $formats
+     * @return self
+     */
+    public function setFormats($formats);
 }

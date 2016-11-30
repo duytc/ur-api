@@ -5,6 +5,7 @@ namespace UR\Domain\DTO\Report;
 
 
 use UR\Domain\DTO\Report\DataSets\DataSet;
+use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinByInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Service\DTO\Report\WeightedCalculationInterface;
@@ -74,4 +75,15 @@ interface ParamsInterface
      * @return self
      */
     public function setShowInTotal($showInTotal);
+
+    /**
+     * @return null|array|FormatInterface[]
+     */
+    public function getFormats();
+
+    /**
+     * @param null|array|FormatInterface[] $formats
+     * @return self
+     */
+    public function setFormats($formats);
 }

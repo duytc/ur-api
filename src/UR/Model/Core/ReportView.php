@@ -74,9 +74,22 @@ class ReportView implements ReportViewInterface
     protected $showInTotal;
 
     /**
+     * @var array
+     */
+    protected $formats;
+
+    /**
      * @var PublisherInterface
      */
     protected $publisher;
+
+    /**
+     * ReportView constructor.
+     */
+    public function __construct()
+    {
+        $this->multiView = false;
+    }
 
     /**
      * @return int
@@ -325,5 +338,22 @@ class ReportView implements ReportViewInterface
     public static function generateSharedKey()
     {
         return uniqid(rand(1, 10000), true);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFormats()
+    {
+        return $this->formats;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setFormats($formats)
+    {
+        $this->formats = $formats;
+        return $this;
     }
 }

@@ -22,6 +22,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             ->add('multiView')
             ->add('reportViews')
             ->add('showInTotal')
+            ->add('formats')
         ;
 
         if ($this->userRole instanceof AdminInterface) {

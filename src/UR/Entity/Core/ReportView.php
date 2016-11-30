@@ -4,6 +4,7 @@
 namespace UR\Entity\Core;
 
 use UR\Model\Core\ReportView as ReportViewModel;
+
 class ReportView extends ReportViewModel
 {
     protected $id;
@@ -15,12 +16,20 @@ class ReportView extends ReportViewModel
     protected $weightedCalculations;
     protected $sharedKey;
     protected $showInTotal;
-
-    protected $publisher;
     protected $dimensions;
     protected $metrics;
     protected $reportViews;
     protected $filters;
     protected $multiView;
+    protected $formats;
 
+    protected $publisher;
+
+    /**
+     * @inheritdoc
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
 }
