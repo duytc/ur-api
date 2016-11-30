@@ -19,6 +19,11 @@ class Params implements ParamsInterface
     protected $dataSets;
 
     /**
+     * @var array
+     */
+    protected $fieldTypes;
+
+    /**
      * @var TransformInterface[]
      */
     protected $transforms;
@@ -61,6 +66,7 @@ class Params implements ParamsInterface
     function __construct()
     {
         $this->dataSets = [];
+        $this->dataSetTypes = [];
         $this->joinByFields = null;
         $this->transforms = [];
     }
@@ -254,6 +260,24 @@ class Params implements ParamsInterface
     public function setFormats($formats)
     {
         $this->formats = $formats;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFieldTypes()
+    {
+        return $this->fieldTypes;
+    }
+
+    /**
+     * @param array $fieldTypes
+     * @return self
+     */
+    public function setFieldTypes($fieldTypes)
+    {
+        $this->fieldTypes = $fieldTypes;
         return $this;
     }
 }

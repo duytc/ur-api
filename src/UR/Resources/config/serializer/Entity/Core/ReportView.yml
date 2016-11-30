@@ -28,6 +28,12 @@ UR\Entity\Core\ReportView:
         showInTotal:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        metrics:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+        dimensions:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
         publisher:
             expose: true
             groups: [report_view.detail, report_view.summary]

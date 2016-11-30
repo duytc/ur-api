@@ -72,6 +72,8 @@ class ReportBuilder implements ReportBuilderInterface
         $dimensions = [];
         $dataSets = $params->getDataSets();
         $joinBy = $params->getJoinByFields();
+        $types = $params->getFieldTypes();
+
         /* get all metrics and dimensions from dataSets */
         foreach ($dataSets as $dataSet) {
             foreach ($dataSet->getMetrics() as $item) {
@@ -79,7 +81,8 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             foreach ($dataSet->getDimensions() as $item) {
-                if ($joinBy === $this->removeIdPrefix($item)) {
+                if ($joinBy === $this->removeIdSuffix($item)) {
+                    $types[$joinBy] = $types[$item];
                     continue;
                 }
                 $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
@@ -90,9 +93,10 @@ class ReportBuilder implements ReportBuilderInterface
             $dimensions[] = $joinBy;
         }
 
+
         /* get all reports data */
         $statement = $this->reportSelector->getReportData($params);
-        $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll());
+        $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll(), $types);
 
         /* transform data */
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
