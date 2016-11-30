@@ -49,14 +49,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
     {
-        $groupingFields = $this->getFields();
-        foreach ($dimensions as $index=>$dimension) {
-            if (!empty($groupingFields) && in_array($dimension, $groupingFields)) {
-                continue;
-            }
 
-            unset($dimensions[$index]);
-        }
     }
 
     /**
