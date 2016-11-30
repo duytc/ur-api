@@ -38,6 +38,14 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
     /**
      * @inheritdoc
      */
+    public function getPriority()
+    {
+        return self::FORMAT_PRIORITY_CURRENCY;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function format(Collection $collection, array $metrics, array $dimensions)
     {
         $rows = $collection->getRows();

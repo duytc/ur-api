@@ -35,7 +35,7 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
     }
 
     /**
-     * @return mixed
+     * @inheritdoc
      */
     public function getPrecision()
     {
@@ -43,11 +43,19 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
     }
 
     /**
-     * @return mixed
+     * @inheritdoc
      */
     public function getThousandSeparator()
     {
         return $this->thousandSeparator;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getPriority()
+    {
+        return self::FORMAT_PRIORITY_NUMBER;
     }
 
     /**
