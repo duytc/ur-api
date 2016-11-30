@@ -63,11 +63,12 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
             $this->fieldName = strval($this->fieldName);
         }
 
-        foreach ($rows as $row) {
+        $newRows = array_map(function ($row) {
             $row[$this->fieldName] = $this->value;
-        }
+            return $row;
+        }, $rows);
 
-        $collection->setRows($rows);
+        $collection->setRows($newRows);
         $columns = $collection->getColumns();
         if (!in_array($this->fieldName, $columns)) {
             $columns[] = $this->fieldName;
