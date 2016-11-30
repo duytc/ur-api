@@ -4,7 +4,6 @@ namespace UR\Bundle\ApiBundle\Controller;
 
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
-use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -267,21 +266,15 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      *  }
      * )
      *
-     * @param Request $request
      * @param int $id the resource id
+     *
      * @return View
+     *
+     * @throws NotFoundHttpException when the resource not exist
      */
-    public function deleteAction(Request $request, $id)
+    public function deleteAction($id)
     {
-        /**@var DataSourceEntryInterface $entry */
-        $entry = $this->one($id);
-        $entry->setIsActive(false);
-        $this->getHandler()->patch($entry, $request->request->all());
-        $routeOptions = array(
-            '_format' => $request->get('_format')
-        );
-
-        return $this->addRedirectToResource($entry, Codes::HTTP_NO_CONTENT, $routeOptions);
+        return $this->delete($id);
     }
 
     /**
