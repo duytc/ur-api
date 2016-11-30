@@ -39,7 +39,7 @@ class ImportUtils
         // create import table
         // add dimensions
         foreach ($dataSet->getDimensions() as $key => $value) {
-            $dataSetTable->addColumn($key, $value);
+            $dataSetTable->addColumn($key, $value, ["notnull" => false, "default" => null]);
         }
 
         // add metrics
@@ -94,6 +94,8 @@ class ImportUtils
                 $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
             } else if (strcmp($type, Type::MULTI_LINE_TEXT) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false, "default" => null]);
+            } else if (strcmp($type, Type::DATE) === 0) {
+                $addCols[] = $dataTable->addColumn($newColumn, Type::DATE, ["notnull" => false, "default" => null]);
             } else {
                 $addCols[] = $dataTable->addColumn($newColumn, $type, ["notnull" => false, "default" => null]);
             }
