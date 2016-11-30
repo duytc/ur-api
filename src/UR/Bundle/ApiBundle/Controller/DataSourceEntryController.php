@@ -2,11 +2,10 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
-use DataDog\PagerBundle\Pagination;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
+use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -15,7 +14,6 @@ use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
-use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\AdminInterface;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -269,15 +267,21 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      *  }
      * )
      *
+     * @param Request $request
      * @param int $id the resource id
-     *
      * @return View
-     *
-     * @throws NotFoundHttpException when the resource not exist
      */
-    public function deleteAction($id)
+    public function deleteAction(Request $request, $id)
     {
-        return $this->delete($id);
+        /**@var DataSourceEntryInterface $entry */
+        $entry = $this->one($id);
+        $entry->setIsActive(false);
+        $this->getHandler()->patch($entry, $request->request->all());
+        $routeOptions = array(
+            '_format' => $request->get('_format')
+        );
+
+        return $this->addRedirectToResource($entry, Codes::HTTP_NO_CONTENT, $routeOptions);
     }
 
     /**

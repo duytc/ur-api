@@ -40,12 +40,12 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
      */
     public function getDataSourceEntriesForUserQuery(UserRoleInterface $user, PagerParam $param)
     {
-        $qb = $this->createQueryBuilderForUser($user);
+        $qb = $this->createQueryBuilderForUser($user)->andWhere('dse.isActive=1');
 
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
             if (!$user instanceof PublisherInterface) {
-                $qb ->join('dse.dataSource', 'ds');
+                $qb->join('dse.dataSource', 'ds');
             }
             $orX = $qb->expr()->orX();
             $conditions = array(
@@ -94,6 +94,7 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
         $qb = $this->createQueryBuilder('dse')
             ->join('dse.dataSource', 'ds')
             ->where('dse.dataSource = :dataSource')
+            ->andWhere('dse.isActive=1')
             ->setParameter('dataSource', $dataSource);
 
         if (is_string($param->getSearchKey())) {
@@ -134,6 +135,7 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
     public function getDataSourceEntriesForPublisher(PublisherInterface $publisher, $limit = null, $offset = null)
     {
         $qb = $this->getDataSourceEntriesForPublisherQuery($publisher, $limit, $offset);
+        $qb->andWhere('dse.isActive=1');
 
         return $qb->getQuery()->getResult();
     }

@@ -27,7 +27,7 @@ UR\Entity\Core\DataSource:
             nullable: true
         enable:
             type: boolean
-            option:
+            options:
                 default: true
         detectedFields:
             type: json_array

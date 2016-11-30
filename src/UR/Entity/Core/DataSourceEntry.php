@@ -10,6 +10,7 @@ class DataSourceEntry extends DataSourceEntryModel
     protected $id;
     protected $receivedDate;
     protected $isValid;
+    protected $isActive;
     protected $path;
     protected $fileName;
     protected $metaData;

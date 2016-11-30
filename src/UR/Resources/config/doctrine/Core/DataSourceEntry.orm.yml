@@ -10,8 +10,12 @@ UR\Entity\Core\DataSourceEntry:
     fields:
         isValid:
             type: boolean
-            option:
-                default: false
+            options:
+                default: true
+        isActive:
+            type: boolean
+            options:
+                default: true
         path:
             type: string
         fileName:
