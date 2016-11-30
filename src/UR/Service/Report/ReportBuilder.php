@@ -97,26 +97,15 @@ class ReportBuilder implements ReportBuilderInterface
         $statement = $this->reportSelector->getReportData($params);
         $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll(), $types);
 
-        /* transform data */
-        $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        $this->transformReports($collection, $transforms, $metrics, $dimensions);
-
-        /* format data */
-        /** @var FormatInterface[] $formats */
-        $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
-        $this->formatReports($collection, $formats, $metrics, $dimensions);
-
-        /* build columns that will be showed in total */
-        $showInTotal = is_array($params->getShowInTotal()) ? $params->getShowInTotal() : [];
-        $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
-
-        /* group reports */
-        return $this->reportGrouper->group($collection, $showInTotal, $params->getWeightedCalculations(), count($dataSets) < 2);
+        /* get final reports */
+        $isSingleDataSet = count($dataSets) < 2;
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $isSingleDataSet);
     }
 
     protected function getMultipleReport(ParamsInterface $params)
     {
         $reportViews = $params->getReportViews();
+
         if (empty($reportViews)) {
             throw new NotFoundHttpException('can not find the report');
         }
@@ -124,6 +113,8 @@ class ReportBuilder implements ReportBuilderInterface
         $rows = [];
         $dimensions = [];
         $metrics = [];
+
+        /* get all reports data */
         foreach ($reportViews as $reportViewId) {
             $reportView = $this->reportViewManager->find($reportViewId);
             if (!$reportView instanceof ReportViewInterface) {
@@ -139,21 +130,37 @@ class ReportBuilder implements ReportBuilderInterface
 
         $collection = new Collection(array_merge($metrics, $dimensions), $rows);
 
+        /* get final reports */
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions);
+    }
+
+    /**
+     * prepare Reports Before Grouping
+     *
+     * @param Collection $reportCollection
+     * @param ParamsInterface $params
+     * @param array $metrics
+     * @param array $dimensions
+     * @param bool $isSingleDataSet
+     * @return mixed
+     */
+    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $isSingleDataSet = false)
+    {
         /* transform data */
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        $this->transformReports($collection, $transforms, $metrics, $dimensions);
+        $this->transformReports($reportCollection, $transforms, $metrics, $dimensions);
 
         /* format data */
         /** @var FormatInterface[] $formats */
         $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
-        $this->formatReports($collection, $formats, $metrics, $dimensions);
+        $this->formatReports($reportCollection, $formats, $metrics, $dimensions);
 
         /* build columns that will be showed in total */
         $showInTotal = is_array($params->getShowInTotal()) ? $params->getShowInTotal() : [];
         $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
 
         /* group reports */
-        return $this->reportGrouper->group($collection, $showInTotal, $params->getWeightedCalculations());
+        return $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $isSingleDataSet);
     }
 
     /**
