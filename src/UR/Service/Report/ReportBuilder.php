@@ -49,7 +49,7 @@ class ReportBuilder implements ReportBuilderInterface
      * @param ParamsBuilderInterface $paramsBuilder
      */
     public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper,
-        ReportViewManagerInterface $reportViewManager, ParamsBuilderInterface $paramsBuilder)
+                                ReportViewManagerInterface $reportViewManager, ParamsBuilderInterface $paramsBuilder)
     {
         $this->reportSelector = $reportSelector;
         $this->reportGrouper = $reportGrouper;
@@ -93,56 +93,19 @@ class ReportBuilder implements ReportBuilderInterface
             $dimensions[] = $joinBy;
         }
 
-
         /* get all reports data */
         $statement = $this->reportSelector->getReportData($params);
         $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll(), $types);
 
-        /* transform data */
-        $transforms = $params->getTransforms();
-
-        // sort transform by priority
-        usort($transforms, function(TransformInterface $a, TransformInterface $b){
-            if ($a->getPriority() == $b->getPriority()) {
-                return 0;
-            }
-            return ($a->getPriority() < $b->getPriority()) ? -1 : 1;
-        });
-
-        /**
-         * @var TransformInterface $transform
-         */
-        foreach ($transforms as $transform) {
-            $transform->transform($collection, $metrics, $dimensions, $joinBy);
-        }
-
-        /* format data */
-        /** @var FormatInterface[] $formats */
-        $formats = $params->getFormats();
-
-        // sort format by priority
-        usort($formats, function(FormatInterface $a, FormatInterface $b){
-            if ($a->getPriority() == $b->getPriority()) {
-                return 0;
-            }
-            return ($a->getPriority() < $b->getPriority()) ? -1 : 1;
-        });
-
-        foreach ($formats as $format) {
-            $format->format($collection, $metrics, $dimensions);
-        }
-
-        $showInTotal = $params->getShowInTotal();
-        if (empty($showInTotal)) {
-            $showInTotal = $metrics;
-        }
-
-        return $this->reportGrouper->group($collection, $showInTotal, $params->getWeightedCalculations(), count($dataSets) < 2);
+        /* get final reports */
+        $isSingleDataSet = count($dataSets) < 2;
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $isSingleDataSet);
     }
 
     protected function getMultipleReport(ParamsInterface $params)
     {
         $reportViews = $params->getReportViews();
+
         if (empty($reportViews)) {
             throw new NotFoundHttpException('can not find the report');
         }
@@ -150,7 +113,9 @@ class ReportBuilder implements ReportBuilderInterface
         $rows = [];
         $dimensions = [];
         $metrics = [];
-        foreach($reportViews as $reportViewId) {
+
+        /* get all reports data */
+        foreach ($reportViews as $reportViewId) {
             $reportView = $this->reportViewManager->find($reportViewId);
             if (!$reportView instanceof ReportViewInterface) {
                 throw new InvalidArgumentException(sprintf('The report view %d does not exist', $reportViewId));
@@ -165,9 +130,55 @@ class ReportBuilder implements ReportBuilderInterface
 
         $collection = new Collection(array_merge($metrics, $dimensions), $rows);
 
-        $transforms = $params->getTransforms();
+        /* get final reports */
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions);
+    }
+
+    /**
+     * get final Reports, includes:
+     * - transform report
+     * - format report
+     * - build columns will be showed in total
+     * - group report
+     *
+     * @param Collection $reportCollection
+     * @param ParamsInterface $params
+     * @param array $metrics
+     * @param array $dimensions
+     * @param bool $isSingleDataSet
+     * @return mixed
+     */
+    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $isSingleDataSet = false)
+    {
+        /* transform data */
+        $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
+        $this->transformReports($reportCollection, $transforms, $metrics, $dimensions);
+
+        /* format data */
+        /** @var FormatInterface[] $formats */
+        $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
+        $this->formatReports($reportCollection, $formats, $metrics, $dimensions);
+
+        /* build columns that will be showed in total */
+        $showInTotal = is_array($params->getShowInTotal()) ? $params->getShowInTotal() : [];
+        $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
+
+        /* group reports */
+        return $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $isSingleDataSet);
+    }
+
+    /**
+     * transform reports
+     *
+     * @param Collection $reportCollection
+     * @param array $transforms
+     * @param array $metrics
+     * @param array $dimensions
+     */
+    private function transformReports(Collection $reportCollection, array  $transforms, array $metrics, array $dimensions)
+    {
         // sort transform by priority
-        usort($transforms, function(TransformInterface $a, TransformInterface $b){
+        usort($transforms, function (TransformInterface $a, TransformInterface $b) {
             if ($a->getPriority() == $b->getPriority()) {
                 return 0;
             }
@@ -178,20 +189,22 @@ class ReportBuilder implements ReportBuilderInterface
          * @var TransformInterface $transform
          */
         foreach ($transforms as $transform) {
-            $transform->transform($collection, $metrics, $dimensions);
+            $transform->transform($reportCollection, $metrics, $dimensions);
         }
+    }
 
-        $showInTotal = $params->getShowInTotal();
-        if (empty($showInTotal)) {
-            $showInTotal = $metrics;
-        }
-        
-        /* format data */
-        /** @var FormatInterface[] $formats */
-        $formats = $params->getFormats();
-
+    /**
+     * format reports
+     *
+     * @param Collection $reportCollection
+     * @param array $formats
+     * @param array $metrics
+     * @param array $dimensions
+     */
+    private function formatReports(Collection $reportCollection, array $formats, array $metrics, array $dimensions)
+    {
         // sort format by priority
-        usort($formats, function(FormatInterface $a, FormatInterface $b){
+        usort($formats, function (FormatInterface $a, FormatInterface $b) {
             if ($a->getPriority() == $b->getPriority()) {
                 return 0;
             }
@@ -199,10 +212,23 @@ class ReportBuilder implements ReportBuilderInterface
         });
 
         foreach ($formats as $format) {
-            $format->format($collection, $metrics, $dimensions);
+            $format->format($reportCollection, $metrics, $dimensions);
+        }
+    }
+
+    /**
+     * get columns will be showed in total
+     *
+     * @param $showInTotal
+     * @param array $metrics
+     * @return array
+     */
+    private function getShowInTotal($showInTotal, array $metrics)
+    {
+        if (empty($showInTotal)) {
+            $showInTotal = $metrics;
         }
 
-        /* group data */
-        return $this->reportGrouper->group($collection, $showInTotal, $params->getWeightedCalculations());
+        return $showInTotal;
     }
 }

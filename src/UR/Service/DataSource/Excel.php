@@ -89,7 +89,7 @@ class Excel implements DataSourceInterface
             foreach ($this->excel->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
                     if ($curRow >= 1)
-                        $this->rows[$curRow] = $row;
+                        $this->rows[$curRow - 1] = $row;
                     $curRow++;
                 }
             }
