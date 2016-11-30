@@ -175,7 +175,6 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 
         $startDate = '';
         $endDate = '';
-        $currentDate = new \DateTime();
 
         if (self::DATE_DYNAMIC_VALUE_TODAY == $this->dateValue) {
             $startDate = $endDate = date('Y-m-d', strtotime('now'));
@@ -197,7 +196,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 
         if (self::DATE_DYNAMIC_VALUE_THIS_MONTH == $this->dateValue) {
             $startDate = date('Y-m-01', strtotime('this month'));
-            $endDate = $currentDate;
+            $endDate = date('Y-m-d', strtotime('now'));
         }
 
         if (self::DATE_DYNAMIC_VALUE_LAST_MONTH == $this->dateValue) {

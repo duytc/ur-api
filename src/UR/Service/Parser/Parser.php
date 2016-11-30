@@ -50,21 +50,19 @@ class Parser implements ParserInterface
 
             foreach ($dataSet->getMetrics() as $metric => $type) {
                 if (array_key_exists($metric, $row)) {
-                    if (strcmp($type, Type::NUMBER) === 0) {
+                    if (strcmp($type, Type::NUMBER) === 0 || strcmp($type, Type::DECIMAL) === 0) {
+
                         $row[$metric] = str_replace("$", "", $row[$metric]);
                         $row[$metric] = str_replace(",", "", $row[$metric]);
-                    }
+                        if (strcmp($type, Type::DECIMAL) === 0) {
+                            $row[$metric] = str_replace(" ", "", $row[$metric]);
+                        }
 
-                    if (strcmp($type, Type::DECIMAL) === 0) {
-                        $row[$metric] = str_replace("$", "", $row[$metric]);
-                        $row[$metric] = str_replace(",", "", $row[$metric]);
-                        $row[$metric] = str_replace(" ", "", $row[$metric]);
-                    }
-
-                    if (strcmp(trim($row[$metric]), "") !== 0 && !is_numeric($row[$metric])) {
-                        return array('error' => ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL,
-                            'row' => $cur_row + 2,
-                            'column' => $metric);
+                        if (strcmp(trim($row[$metric]), "") !== 0 && !is_numeric($row[$metric])) {
+                            return array('error' => ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL,
+                                'row' => $cur_row + 2,
+                                'column' => $metric);
+                        }
                     }
                 }
             }
