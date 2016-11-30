@@ -48,8 +48,8 @@ class SqlBuilder implements SqlBuilderInterface
 
     public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $overridingFilters = null)
     {
-        $metrics = array_keys($dataSet->getMetrics());
-        $dimensions = array_keys($dataSet->getDimensions());
+        $metrics = $dataSet->getMetrics();
+        $dimensions = $dataSet->getDimensions();
         $filters = $dataSet->getFilters();
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $fields = array_merge($metrics, $dimensions);
@@ -141,8 +141,8 @@ class SqlBuilder implements SqlBuilderInterface
 
     protected function buildSelectQuery(QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, $joinBy)
     {
-        $metrics = array_keys($dataSet->getMetrics());
-        $dimensions = array_keys($dataSet->getDimensions());
+        $metrics = $dataSet->getMetrics();
+        $dimensions = $dataSet->getDimensions();
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $fields = array_merge($metrics, $dimensions);
         $tableColumns = array_keys($table->getColumns());
