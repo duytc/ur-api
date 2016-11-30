@@ -55,27 +55,33 @@ class Excel implements DataSourceInterface
         return [];
     }
 
-    public function getRows()
+    public function getRows($fromDateFormats)
     {
         if (strcmp($this->inputFileType, 'Excel5') === 0) {
             $highestColumn = $this->sheet->getHighestColumn();
             $columns = range('A', $highestColumn);
             $highestRow = $this->sheet->getHighestRow();
             $this->rows = [];
-            for ($row = 1; $row <= $highestRow; $row++) {
+            $columnsHeaders = array_combine($columns, $this->headers);
+
+            for ($row = 2; $row <= $highestRow; $row++) {
                 $rowData = [];
-                foreach ($columns as $column) {
+                foreach ($columnsHeaders as $column => $header) {
                     $cell = $this->sheet->getCell($column . $row);
                     if (\PHPExcel_Shared_Date::isDateTime($cell)) {
-                        $rowData[] = date('d/m/Y', \PHPExcel_Shared_Date::ExcelToPHP($cell->getValue()));
+                        foreach ($fromDateFormats as $field => $format) {
+                            if (strcmp($header, $field) === 0) {
+                                $rowData[] = date($format, \PHPExcel_Shared_Date::ExcelToPHP($cell->getValue()));
+                            }
+                        }
                     } else {
                         $rowData[] = $cell->getFormattedValue();
                     }
                 }
-                if ($row === 1) {
-                    $this->headers = $rowData;
-                    continue;
-                }
+//                if ($row === 1) {
+//                    $this->headers = $rowData;
+//                    continue;
+//                }
                 $this->rows[$row - 2] = $rowData;
             }
 

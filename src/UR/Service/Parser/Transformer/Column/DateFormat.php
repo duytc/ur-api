@@ -29,4 +29,9 @@ class DateFormat implements ColumnTransformerInterface
 
         return $date->format($this->toDateFormat);
     }
+
+    public function getFromDateForMat()
+    {
+        return $this->fromDateFormat;
+    }
 }

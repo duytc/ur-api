@@ -2,7 +2,6 @@
 
 namespace UR\Service\Parser;
 
-use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\Alert\AlertParams;
 use UR\Service\Alert\ProcessAlert;
@@ -10,9 +9,9 @@ use UR\Service\DataSet\Type;
 use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
-use UR\Service\Parser\History\HistoryType;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class Parser implements ParserInterface
 {
@@ -27,7 +26,16 @@ class Parser implements ParserInterface
             return $columnFromMap[$fromColumn];
         }, $columns);
 
-        $rows = $dataSource->getRows();
+        $format = [];
+        foreach ($config->getColumnTransforms() as $field => $columnTransform) {
+            foreach ($columnTransform as $item) {
+                if ($item instanceof DateFormat) {
+                    $format[$field] = $item->getFromDateForMat();
+                }
+            }
+        }
+
+        $rows = $dataSource->getRows($format);
 
         $cur_row = -1;
         foreach ($rows as &$row) {

@@ -59,7 +59,7 @@ class Csv implements DataSourceInterface
         return $this->csv->fetchOne($this->headerRow);
     }
 
-    public function getRows()
+    public function getRows($fromDateFormat)
     {
         $this->csv->setOffset($this->dataRow);
 

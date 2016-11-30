@@ -24,7 +24,7 @@ class Collection implements DataSourceInterface
         return $this->columns;
     }
 
-    public function getRows()
+    public function getRows($fromDateFormat)
     {
         return $this->rows;
     }
