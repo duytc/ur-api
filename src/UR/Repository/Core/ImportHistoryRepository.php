@@ -210,7 +210,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         $results = $stmt->fetchAll();
         $conn->close();
         if (count($results) < 1) {
-            return $results;
+            return [0 => array_fill_keys(array_keys($fields), "")];
         }
 
         $result = $results[0];
