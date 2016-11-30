@@ -78,7 +78,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         $conditions = $this->buildFilters($filters);
-        if (is_array($overridingFilters)) {
+        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
             $overridingConditions = $this->buildFilters($overridingFilters);
             $conditions = array_merge($conditions, $overridingConditions);
         }
@@ -122,7 +122,7 @@ class SqlBuilder implements SqlBuilderInterface
             $conditions = array_merge($conditions, $this->buildFilters($dataSet->getFilters(), sprintf('t%d', $dataSetIndex)));
         }
 
-        if (is_array($overridingFilters)) {
+        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
             $overridingConditions = $this->buildFilters($overridingFilters);
             $conditions = array_merge($conditions, $overridingConditions);
         }

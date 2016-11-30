@@ -66,7 +66,7 @@ class ReportBuilder implements ReportBuilderInterface
         return $this->getSingleReport($params);
     }
 
-    protected function getSingleReport(ParamsInterface $params)
+    protected function getSingleReport(ParamsInterface $params, $overridingFilters = null)
     {
         $metrics = [];
         $dimensions = [];
@@ -94,7 +94,7 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         /* get all reports data */
-        $statement = $this->reportSelector->getReportData($params);
+        $statement = $this->reportSelector->getReportData($params, $overridingFilters);
         $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll(), $types);
 
         /* get final reports */
@@ -122,7 +122,7 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             $reportParam = $this->paramsBuilder->buildFromReportView($reportView);
-            $result = $this->getReport($reportParam);
+            $result = $this->getSingleReport($reportParam, $params->getFilters());
             $rows[] = $result->getTotal();
             $metrics = array_unique(array_merge($metrics, $reportView->getMetrics()));
             $dimensions = array_unique(array_merge($dimensions, $reportView->getDimensions()));

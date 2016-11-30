@@ -40,16 +40,17 @@ class ReportSelector implements ReportSelectorInterface
 
     /**
      * @param ParamsInterface $params
+     * @param $overridingFilters
      * @return Statement
      */
-    public function getReportData(ParamsInterface $params)
+    public function getReportData(ParamsInterface $params, $overridingFilters = null)
     {
         $dataSets = $params->getDataSets();
 
         if (count($dataSets) < 2) {
-            return $this->sqlBuilder->buildQueryForSingleDataSet($dataSets[0]);
+            return $this->sqlBuilder->buildQueryForSingleDataSet($dataSets[0], $overridingFilters);
         }
 
-        return $this->sqlBuilder->buildQuery($dataSets, $params->getJoinByFields());
+        return $this->sqlBuilder->buildQuery($dataSets, $params->getJoinByFields(), $overridingFilters);
     }
 }
