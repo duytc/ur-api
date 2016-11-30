@@ -3,6 +3,7 @@ namespace UR\Service\DataSet;
 
 use \Doctrine\DBAL\Connection;
 use \Doctrine\DBAL\Schema\Table;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
 class Importer
@@ -18,7 +19,7 @@ class Importer
         $this->conn = $conn;
     }
 
-    public function importCollection(Collection $collection, Table $table, $importId, $dataSourceId)
+    public function importCollection(Collection $collection, Table $table, $importId, ConnectedDataSourceInterface $connectedDataSource)
     {
         $tableName = $table->getName();
         $tableColumns = array_keys($table->getColumns());
@@ -38,14 +39,17 @@ class Importer
         $rows = $collection->getRows();
         $qb = $this->conn->createQueryBuilder();
         $this->conn->beginTransaction();
+
         try {
             foreach ($rows as $row) {
+
+                $duplicates = $connectedDataSource->getDuplicates();
 
                 $query = $qb
                     ->insert($tableName);
                 $positionKey = 0;
                 $query->setValue('__data_source_id', '?');
-                $query->setParameter($positionKey, $dataSourceId);
+                $query->setParameter($positionKey, $connectedDataSource->getDataSource()->getId());
                 $positionKey++;
                 $query->setValue('__import_id', '?');
                 $query->setParameter($positionKey, $importId);
