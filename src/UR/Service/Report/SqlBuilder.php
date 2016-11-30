@@ -158,7 +158,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         foreach ($fields as $field) {
-            if ($joinBy === $this->removeIdSuffix($field)) {
+            if ($joinBy === $field) {
                 continue;
             }
             $qb->addSelect(sprintf('t%d.%s as %s_%d', $dataSetIndex, $field, $field, $dataSet->getDataSetId()));

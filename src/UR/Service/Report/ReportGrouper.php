@@ -112,8 +112,11 @@ class ReportGrouper implements ReportGrouperInterface
     protected function convertColumn($column, $singleDataSet = false)
     {
         $lastOccur = strrchr($column, "_");
-        $column = str_replace($lastOccur, "", $column);
         $dataSetId = str_replace("_", "", $lastOccur);
+        if (!preg_match('/^[0-9]+$/', $dataSetId)) {
+            return ucwords(str_replace("_", " ", $column));
+        }
+        $column = str_replace($lastOccur, "", $column);
         $dataSetId = filter_var($dataSetId, FILTER_VALIDATE_INT);
         $column = ucwords(str_replace("_", " ", $column));
         $dataSet = $this->dataSetManager->find($dataSetId);

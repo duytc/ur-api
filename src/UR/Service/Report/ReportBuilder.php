@@ -81,8 +81,8 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             foreach ($dataSet->getDimensions() as $item) {
-                if ($joinBy === $this->removeIdSuffix($item)) {
-                    $types[$joinBy] = $types[$item];
+                if ($joinBy === $item) {
+//                    $types[$joinBy] = $types[$item];
                     continue;
                 }
                 $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
