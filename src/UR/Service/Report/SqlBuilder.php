@@ -46,10 +46,10 @@ class SqlBuilder implements SqlBuilderInterface
         $this->connection = $this->em->getConnection();
     }
 
-    public function buildQueryForSingleDataSet(DataSetInterface $dataSet)
+    public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $overridingFilters = null)
     {
-        $metrics = array_keys($dataSet->getMetrics());
-        $dimensions = array_keys($dataSet->getDimensions());
+        $metrics = $dataSet->getMetrics();
+        $dimensions = $dataSet->getDimensions();
         $filters = $dataSet->getFilters();
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $fields = array_merge($metrics, $dimensions);
@@ -78,6 +78,10 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         $conditions = $this->buildFilters($filters);
+        if (is_array($overridingFilters)) {
+            $overridingConditions = $this->buildFilters($overridingFilters);
+            $conditions = array_merge($conditions, $overridingConditions);
+        }
 
         if (count($conditions) == 1) {
             $qb->where($conditions[self::FIRST_ELEMENT]);
@@ -89,7 +93,7 @@ class SqlBuilder implements SqlBuilderInterface
     }
 
 
-    public function buildQuery(array $dataSets, $joinedField = null)
+    public function buildQuery(array $dataSets, $joinedField, $overridingFilters = null)
     {
         if (empty($dataSets)) {
             throw new InvalidArgumentException('no dataSet');
@@ -118,6 +122,11 @@ class SqlBuilder implements SqlBuilderInterface
             $conditions = array_merge($conditions, $this->buildFilters($dataSet->getFilters(), sprintf('t%d', $dataSetIndex)));
         }
 
+        if (is_array($overridingFilters)) {
+            $overridingConditions = $this->buildFilters($overridingFilters);
+            $conditions = array_merge($conditions, $overridingConditions);
+        }
+
         // add WHERE clause
         if (!empty($conditions)) {
             if (count($conditions) == 1) {
@@ -132,8 +141,8 @@ class SqlBuilder implements SqlBuilderInterface
 
     protected function buildSelectQuery(QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, $joinBy)
     {
-        $metrics = array_keys($dataSet->getMetrics());
-        $dimensions = array_keys($dataSet->getDimensions());
+        $metrics = $dataSet->getMetrics();
+        $dimensions = $dataSet->getDimensions();
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $fields = array_merge($metrics, $dimensions);
         $tableColumns = array_keys($table->getColumns());

@@ -11,14 +11,16 @@ interface SqlBuilderInterface
 {
     /**
      * @param DataSetInterface $dataSet
+     * @param $overridingFilters
      * @return Statement
      */
-    public function buildQueryForSingleDataSet(DataSetInterface $dataSet);
+    public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $overridingFilters = null);
 
     /**
      * @param array $dataSets
-     * @param $joinedField = null
+     * @param $joinedField
+     * @param $overridingFilters
      * @return Statement
      */
-    public function buildQuery(array $dataSets, $joinedField = null);
+    public function buildQuery(array $dataSets, $joinedField, $overridingFilters = null);
 }

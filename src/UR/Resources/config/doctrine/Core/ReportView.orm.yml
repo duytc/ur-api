@@ -37,6 +37,9 @@ UR\Entity\Core\ReportView:
             options:
                 default: false
             nullable: false
+        fieldTypes:
+            type: json_array
+            nullable: false
         joinBy:
             type: string
             nullable: true

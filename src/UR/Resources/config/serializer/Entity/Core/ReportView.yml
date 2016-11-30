@@ -44,3 +44,6 @@ UR\Entity\Core\ReportView:
         formats:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        fieldTypes:
+            expose: true
+            groups: [report_view.detail, report_view.summary]

@@ -22,7 +22,7 @@ class ReportView extends ReportViewModel
     protected $filters;
     protected $multiView;
     protected $formats;
-
+    protected $fieldTypes;
     protected $publisher;
 
     /**
