@@ -27,11 +27,19 @@ class DateFormat extends AbstractFormat implements DateFormatInterface
     }
 
     /**
-     * @return mixed
+     * @inheritdoc
      */
     public function getOutputFormat()
     {
         return $this->outputFormat;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getPriority()
+    {
+        return self::FORMAT_PRIORITY_DATE;
     }
 
     /**

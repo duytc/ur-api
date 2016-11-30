@@ -26,7 +26,7 @@ class Parser implements ParserInterface
             return $columnFromMap[$fromColumn];
         }, $columns);
 
-        $format = [];
+        $format = [];//format date
         foreach ($config->getColumnTransforms() as $field => $columnTransform) {
             foreach ($columnTransform as $item) {
                 if ($item instanceof DateFormat) {

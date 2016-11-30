@@ -27,6 +27,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
             ->add('filters')
             ->add('transforms')
             ->add('requires')
+            ->add('duplicates')
             ->add('alertSetting');
 
         $builder->addEventListener(
@@ -49,6 +50,12 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                     if ($connDataSource->getRequires() !== null) {
                         if (!$this->validateRequireFields($dataSet, $connDataSource)) {
                             $form->get('requires')->addError(new FormError('one or more fields of your require fields dose not exist in your Mapping'));
+                        }
+                    }
+
+                    if ($connDataSource->getDuplicates() !== null) {
+                        if (!$this->validateDuplicateFields($connDataSource)) {
+                            $form->get('duplicates')->addError(new FormError('one or more fields of your duplicates fields dose not exist in your Mapping'));
                         }
                     }
 

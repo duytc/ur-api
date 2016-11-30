@@ -169,7 +169,7 @@ class AutoImportData implements AutoImportDataInterface
             $importHistoryEntity->setDataSet($connectedDataSource->getDataSet());
             $this->importHistoryManager->save($importHistoryEntity);
             // to do alert
-            $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource->getDataSource()->getId());
+            $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource);
             if (in_array(ConnectedDataSourceRepository::DATA_ADDED, $connectedDataSource->getAlertSetting())) {
                 $this->workerManager->processAlert($code, $publisherId, $params);
             }

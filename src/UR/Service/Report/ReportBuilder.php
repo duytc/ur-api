@@ -120,6 +120,14 @@ class ReportBuilder implements ReportBuilderInterface
         /** @var FormatInterface[] $formats */
         $formats = $params->getFormats();
 
+        // sort format by priority
+        usort($formats, function(FormatInterface $a, FormatInterface $b){
+            if ($a->getPriority() == $b->getPriority()) {
+                return 0;
+            }
+            return ($a->getPriority() < $b->getPriority()) ? -1 : 1;
+        });
+
         foreach ($formats as $format) {
             $format->format($collection, $metrics, $dimensions);
         }
@@ -181,6 +189,14 @@ class ReportBuilder implements ReportBuilderInterface
         /* format data */
         /** @var FormatInterface[] $formats */
         $formats = $params->getFormats();
+
+        // sort format by priority
+        usort($formats, function(FormatInterface $a, FormatInterface $b){
+            if ($a->getPriority() == $b->getPriority()) {
+                return 0;
+            }
+            return ($a->getPriority() < $b->getPriority()) ? -1 : 1;
+        });
 
         foreach ($formats as $format) {
             $format->format($collection, $metrics, $dimensions);

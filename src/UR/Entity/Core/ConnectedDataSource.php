@@ -13,6 +13,7 @@ class ConnectedDataSource extends ConnectedDataSourceModel
     protected $filters;
     protected $transforms;
     protected $requires;
+    protected $duplicates;
     protected $alertSetting;
 
     /**

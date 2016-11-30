@@ -46,7 +46,7 @@ class ImportUtils
         foreach ($dataSet->getMetrics() as $key => $value) {
 
             if (strcmp($value, Type::NUMBER) === 0) {
-                $dataSetTable->addColumn($key, "decimal", ["notnull" => false, "default" => null]);
+                $dataSetTable->addColumn($key, "decimal", ["precision" => 20, "scale" => 0, "notnull" => false, "default" => null]);
             } else if (strcmp($value, Type::DECIMAL) === 0) {
                 $dataSetTable->addColumn($key, $value, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
             } else if (strcmp($value, Type::MULTI_LINE_TEXT) === 0) {
@@ -89,7 +89,7 @@ class ImportUtils
         foreach ($newColumns as $newColumn => $type) {
 
             if (strcmp($type, Type::NUMBER) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, "decimal", ["notnull" => false, "default" => null]);
+                $addCols[] = $dataTable->addColumn($newColumn, "decimal", ["precision" => 20, "scale" => 0, "notnull" => false, "default" => null]);
             } else if (strcmp($type, Type::DECIMAL) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
             } else if (strcmp($type, Type::MULTI_LINE_TEXT) === 0) {
@@ -129,8 +129,9 @@ class ImportUtils
         }
     }
 
-    function symbolFields(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig){
-        $metrics=$connectedDataSource->getDataSet()->getMetrics();
+    function symbolFields(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
+    {
+        $metrics = $connectedDataSource->getDataSet()->getMetrics();
 
     }
 
