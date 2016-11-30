@@ -63,6 +63,9 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
     protected function getGroupedReport($groupingFields, Collection $collection, array $metrics, array &$dimensions, $joinBy = null)
     {
         $groupedReports = $this->generateGroupedArray($groupingFields, $collection, $dimensions, $joinBy);
+        foreach($groupingFields as $index=>$groupingField) {
+            $groupingFields[$index] = $this->removeIdSuffix($groupingField);
+        }
 
         $results = [];
         foreach ($groupedReports as $groupedReport) {
@@ -77,9 +80,11 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
             foreach ($groupedReport as $report) {
                 foreach ($report as $key => $value) {
-                    if (in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
+                    if (is_numeric($value)) {
                         $result[$key] += $value;
                     }
+//                    if (in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
+//                    }
                 }
             }
 
