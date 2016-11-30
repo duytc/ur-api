@@ -131,6 +131,7 @@ class ReConfigConnectedDataSourceListener
     {
         $mapFields = $connectedDataSource->getMapFields();
         $requires = $connectedDataSource->getRequires();
+        $duplicates = $connectedDataSource->getDuplicates();
         $filters = $connectedDataSource->getFilters();
         $transforms = $connectedDataSource->getTransforms();
 
@@ -140,6 +141,7 @@ class ReConfigConnectedDataSourceListener
         }
         $mapFields = array_diff($mapFields, $delFields);
         $requires = array_values(array_diff($requires, $delFields));
+        $duplicates = array_values(array_diff($duplicates, $delFields));
 
         foreach ($delFields as $deletedField) {
 
@@ -227,6 +229,7 @@ class ReConfigConnectedDataSourceListener
 
         $connectedDataSource->setMapFields($mapFields);
         $connectedDataSource->setRequires(array_values($requires));
+        $connectedDataSource->setDuplicates(array_values($duplicates));
         $connectedDataSource->setFilters(array_values($filters));
         $connectedDataSource->setTransforms(array_values($transforms));
     }
