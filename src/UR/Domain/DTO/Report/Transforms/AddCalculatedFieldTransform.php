@@ -46,9 +46,10 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
      * @param Collection $collection
      * @param array $metrics
      * @param array $dimensions
+     * @param $joinBy
      * @return mixed|void
      */
-    public function transform(Collection $collection,  array $metrics, array $dimensions)
+    public function transform(Collection $collection,  array $metrics, array $dimensions, $joinBy = null)
     {
         $rows = $collection->getRows();
         $columns = $collection->getColumns();

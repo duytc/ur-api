@@ -32,6 +32,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const REPORT_VIEWS_KEY = 'reportViews';
     const FILTERS_KEY = 'filters';
     const FORMAT_KEY = 'formats';
+    const SHOW_IN_TOTAL_KEY = 'showInTotal';
 
     /**
      * @inheritdoc
@@ -81,6 +82,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if (array_key_exists(self::WEIGHTED_CALCULATION_KEY, $params) && !empty($params[self::WEIGHTED_CALCULATION_KEY])) {
             $param->setWeightedCalculations(new WeightedCalculation(json_decode($params[self::WEIGHTED_CALCULATION_KEY], true)));
+        }
+
+        if (array_key_exists(self::SHOW_IN_TOTAL_KEY, $params)) {
+            $param->setShowInTotal(json_decode($params[self::SHOW_IN_TOTAL_KEY], true));
         }
 
         /* set output formatting */
