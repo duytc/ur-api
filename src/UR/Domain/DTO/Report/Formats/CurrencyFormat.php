@@ -50,7 +50,7 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
                     continue;
                 }
 
-                $row[$field] = $this->getCurrency() . $row[$field];
+                $row[$field] = $this->getCurrency() . ' ' .  $row[$field];
             }
 
             $newRows[] = $row;
