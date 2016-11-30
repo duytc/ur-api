@@ -135,7 +135,11 @@ class ReportBuilder implements ReportBuilderInterface
     }
 
     /**
-     * prepare Reports Before Grouping
+     * get final Reports, includes:
+     * - transform report
+     * - format report
+     * - build columns will be showed in total
+     * - group report
      *
      * @param Collection $reportCollection
      * @param ParamsInterface $params
