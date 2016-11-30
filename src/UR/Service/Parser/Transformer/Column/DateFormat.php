@@ -20,6 +20,9 @@ class DateFormat implements ColumnTransformerInterface
         if (strcmp($value, "0000-00-00") === 0 || $value === null) {
             return null;
         }
+        if ($value instanceof DateTime) {
+            return $value->format($this->toDateFormat);
+        }
 
         $date = DateTime::createFromFormat($this->fromDateFormat, $value);
 
