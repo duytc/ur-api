@@ -21,9 +21,10 @@ interface TransformInterface
      * @param Collection $collection
      * @param array $metrics
      * @param array $dimensions
+     * @param $joinBy
      * @return mixed
      */
-    public function transform(Collection $collection,  array $metrics, array $dimensions);
+    public function transform(Collection $collection,  array $metrics, array $dimensions, $joinBy = null);
 
     /**
      * @param array $metrics

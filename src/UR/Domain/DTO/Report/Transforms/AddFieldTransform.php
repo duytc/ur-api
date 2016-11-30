@@ -52,9 +52,10 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
      * @param Collection $collection
      * @param array $metrics
      * @param array $dimensions
+     * @param $joinBy
      * @return mixed|void
      */
-    public function transform(Collection $collection,  array $metrics, array $dimensions)
+    public function transform(Collection $collection,  array $metrics, array $dimensions, $joinBy = null)
     {
         $collection->addColumn($this->fieldName);
         $rows = $collection->getRows();
@@ -63,11 +64,12 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
             $this->fieldName = strval($this->fieldName);
         }
 
-        foreach ($rows as $row) {
+        $newRows = array_map(function ($row) {
             $row[$this->fieldName] = $this->value;
-        }
+            return $row;
+        }, $rows);
 
-        $collection->setRows($rows);
+        $collection->setRows($newRows);
         $columns = $collection->getColumns();
         if (!in_array($this->fieldName, $columns)) {
             $columns[] = $this->fieldName;

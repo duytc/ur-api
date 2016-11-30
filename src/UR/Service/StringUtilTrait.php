@@ -92,4 +92,11 @@ trait StringUtilTrait
 
         return $parentId;
     }
+
+
+    protected function removeIdPrefix($column)
+    {
+        $lastOccur = strrchr($column, "_");
+        return str_replace($lastOccur, "", $column);
+    }
 }

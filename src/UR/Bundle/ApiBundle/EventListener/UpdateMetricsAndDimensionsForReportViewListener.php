@@ -11,9 +11,11 @@ use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\Report\ParamsBuilderInterface;
+use UR\Service\StringUtilTrait;
 
 class UpdateMetricsAndDimensionsForReportViewListener
 {
+    use StringUtilTrait;
     const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';
 
@@ -73,15 +75,23 @@ class UpdateMetricsAndDimensionsForReportViewListener
         $metrics = [];
         $dimensions = [];
         $dataSets = $params->getDataSets();
-
+        $joinBy = $params->getJoinByFields();
         foreach ($dataSets as $dataSet) {
             foreach ($dataSet->getMetrics() as $item) {
                 $metrics[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
             }
 
             foreach ($dataSet->getDimensions() as $item) {
+                if ($joinBy === $this->removeIdPrefix($item)) {
+                    continue;
+                }
+
                 $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
             }
+        }
+
+        if (is_string($joinBy)) {
+            $dimensions[] = $joinBy;
         }
 
         $transforms = $params->getTransforms();

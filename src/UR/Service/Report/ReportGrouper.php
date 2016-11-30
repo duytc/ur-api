@@ -37,9 +37,10 @@ class ReportGrouper implements ReportGrouperInterface
      * @param Collection $collection
      * @param array $metrics
      * @param $weightedCalculation
+     * @param $singleDataSet
      * @return ReportResult
      */
-    public function group(Collection $collection, array $metrics, $weightedCalculation)
+    public function group(Collection $collection, array $metrics, $weightedCalculation, $singleDataSet = false)
     {
         if (count($collection->getRows()) < 1) {
             throw new NotFoundHttpException('can not find the report');
@@ -96,7 +97,7 @@ class ReportGrouper implements ReportGrouperInterface
         $columns = array_unique($collection->getColumns());
         $headers = [];
         foreach($columns as $index => $column) {
-            $headers[$column] = $this->convertColumn($column);
+            $headers[$column] = $this->convertColumn($column, $singleDataSet);
         }
 
         return new ReportResult($rows, $total, $average, $headers);
@@ -105,9 +106,10 @@ class ReportGrouper implements ReportGrouperInterface
     /**
      * Convert column name in underscore format with data set id to real name
      * @param $column
+     * @param $singleDataSet
      * @return mixed|string
      */
-    protected function convertColumn($column)
+    protected function convertColumn($column, $singleDataSet = false)
     {
         $lastOccur = strrchr($column, "_");
         $column = str_replace($lastOccur, "", $column);
@@ -120,6 +122,10 @@ class ReportGrouper implements ReportGrouperInterface
             return $column;
         }
 
-        return sprintf("%s (%s)", $column, $dataSet->getName());
+        if ($singleDataSet === false) {
+            return sprintf("%s (%s)", $column, $dataSet->getName());
+        }
+
+        return $column;
     }
 }
