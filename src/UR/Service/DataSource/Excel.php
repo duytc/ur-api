@@ -68,20 +68,19 @@ class Excel implements DataSourceInterface
                 $rowData = [];
                 foreach ($columnsHeaders as $column => $header) {
                     $cell = $this->sheet->getCell($column . $row);
+
                     if (\PHPExcel_Shared_Date::isDateTime($cell)) {
                         foreach ($fromDateFormats as $field => $format) {
                             if (strcmp($header, $field) === 0) {
                                 $rowData[] = date($format, \PHPExcel_Shared_Date::ExcelToPHP($cell->getValue()));
                             }
                         }
+
                     } else {
                         $rowData[] = $cell->getFormattedValue();
                     }
                 }
-//                if ($row === 1) {
-//                    $this->headers = $rowData;
-//                    continue;
-//                }
+
                 $this->rows[$row - 2] = $rowData;
             }
 
