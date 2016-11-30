@@ -67,6 +67,17 @@ interface ReportViewInterface extends ModelInterface
     /**
      * @return array
      */
+    public function getFieldTypes();
+
+    /**
+     * @param array $fieldTypes
+     * @return self
+     */
+    public function setFieldTypes($fieldTypes);
+
+    /**
+     * @return array
+     */
     public function getDimensions();
 
     /**

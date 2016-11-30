@@ -61,6 +61,11 @@ class ReportView implements ReportViewInterface
     /**
      * @var array
      */
+    protected $fieldTypes;
+
+    /**
+     * @var array
+     */
     protected $dimensions;
 
     /**
@@ -186,6 +191,24 @@ class ReportView implements ReportViewInterface
     public function setMetrics($metrics)
     {
         $this->metrics = $metrics;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFieldTypes()
+    {
+        return $this->fieldTypes;
+    }
+
+    /**
+     * @param array $fieldTypes
+     * @return self
+     */
+    public function setFieldTypes($fieldTypes)
+    {
+        $this->fieldTypes = $fieldTypes;
         return $this;
     }
 

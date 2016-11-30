@@ -221,6 +221,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromReportView(ReportViewInterface $reportView)
     {
         $param = new Params();
+
         $param->setDataSets($this->createDataSets($reportView->getDataSets()))
             ->setTransforms($this->createTransforms($reportView->getTransforms()))
             ->setJoinByFields($reportView->getJoinBy())
@@ -229,6 +230,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             ->setReportViews($reportView->getReportViews())
             ->setFilters($reportView->getFilters())
             ->setShowInTotal($reportView->getShowInTotal())
+            ->setFieldTypes($reportView->getFieldTypes())
             ->setFormats($this->createFormats($reportView->getFormats()))
         ;
 

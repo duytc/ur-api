@@ -46,7 +46,7 @@ class SqlBuilder implements SqlBuilderInterface
         $this->connection = $this->em->getConnection();
     }
 
-    public function buildQueryForSingleDataSet(DataSetInterface $dataSet)
+    public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $overridingFilters = null)
     {
         $metrics = array_keys($dataSet->getMetrics());
         $dimensions = array_keys($dataSet->getDimensions());
@@ -78,6 +78,10 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         $conditions = $this->buildFilters($filters);
+        if (is_array($overridingFilters)) {
+            $overridingConditions = $this->buildFilters($overridingFilters);
+            $conditions = array_merge($conditions, $overridingConditions);
+        }
 
         if (count($conditions) == 1) {
             $qb->where($conditions[self::FIRST_ELEMENT]);
@@ -89,7 +93,7 @@ class SqlBuilder implements SqlBuilderInterface
     }
 
 
-    public function buildQuery(array $dataSets, $joinedField = null)
+    public function buildQuery(array $dataSets, $joinedField, $overridingFilters = null)
     {
         if (empty($dataSets)) {
             throw new InvalidArgumentException('no dataSet');
@@ -116,6 +120,11 @@ class SqlBuilder implements SqlBuilderInterface
         foreach($dataSets as $dataSetIndex=>$dataSet) {
             $qb = $this->buildSelectQuery($qb, $dataSet, $dataSetIndex, $joinedField);
             $conditions = array_merge($conditions, $this->buildFilters($dataSet->getFilters(), sprintf('t%d', $dataSetIndex)));
+        }
+
+        if (is_array($overridingFilters)) {
+            $overridingConditions = $this->buildFilters($overridingFilters);
+            $conditions = array_merge($conditions, $overridingConditions);
         }
 
         // add WHERE clause
