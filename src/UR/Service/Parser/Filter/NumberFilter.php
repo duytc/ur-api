@@ -12,7 +12,7 @@ class NumberFilter implements ColumnFilterInterface
     public function __construct($comparison, $compareValue)
     {
         $this->comparison = $comparison;
-        $this->compareValue = $compareValue;
+        $this->compareValue = explode(",", trim(str_replace(";", ",", $compareValue)));
     }
 
     public function filter($filter)
@@ -20,39 +20,10 @@ class NumberFilter implements ColumnFilterInterface
         if (!is_numeric($filter)) {
             return 2;
         }
-        if (strcmp($this->comparison, FilterType::SMALLER) === 0) {
-
-            return $filter < $this->compareValue ? true : false;
-        }
-
-        if (strcmp($this->comparison, FilterType::SMALLER_OR_EQUAL) === 0) {
-
-            return $filter <= $this->compareValue ? true : false;
-        }
-
-        if (strcmp($this->comparison, FilterType::EQUAL) === 0) {
-
-            return $this->compareValue === $filter ? true : false;
-        }
-
-        if (strcmp($this->comparison, FilterType::NOT_EQUAL) === 0) {
-
-            return $this->compareValue !== $filter ? true : false;
-        }
-
-        if (strcmp($this->comparison, FilterType::GREATER) === 0) {
-
-            return $filter > $this->compareValue ? true : false;
-        }
-
-        if (strcmp($this->comparison, FilterType::GREATER_OR_EQUAL) === 0) {
-
-            return $filter >= $this->compareValue ? true : false;
-        }
 
         if (strcmp($this->comparison, FilterType::IN) === 0) {
 
-            if (strpos($this->compareValue, $filter) === false) {
+            if (!in_array($filter, $this->compareValue)) {
                 return false;
             }
 
@@ -61,11 +32,41 @@ class NumberFilter implements ColumnFilterInterface
 
         if (strcmp($this->comparison, FilterType::NOT_IN) === 0) {
 
-            if (strpos($this->compareValue, $filter) !== false) {
+            if (in_array($filter, $this->compareValue)) {
                 return false;
             }
 
             return true;
+        }
+
+        if (strcmp($this->comparison, FilterType::SMALLER) === 0) {
+
+            return $filter < $this->compareValue[0] ? true : false;
+        }
+
+        if (strcmp($this->comparison, FilterType::SMALLER_OR_EQUAL) === 0) {
+
+            return $filter <= $this->compareValue[0] ? true : false;
+        }
+
+        if (strcmp($this->comparison, FilterType::EQUAL) === 0) {
+
+            return $this->compareValue[0] === $filter ? true : false;
+        }
+
+        if (strcmp($this->comparison, FilterType::NOT_EQUAL) === 0) {
+
+            return $this->compareValue[0] !== $filter ? true : false;
+        }
+
+        if (strcmp($this->comparison, FilterType::GREATER) === 0) {
+
+            return $filter > $this->compareValue[0] ? true : false;
+        }
+
+        if (strcmp($this->comparison, FilterType::GREATER_OR_EQUAL) === 0) {
+
+            return $filter >= $this->compareValue[0] ? true : false;
         }
 
         return true;
