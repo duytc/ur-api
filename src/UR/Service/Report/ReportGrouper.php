@@ -48,7 +48,12 @@ class ReportGrouper implements ReportGrouperInterface
             throw new NotFoundHttpException('can not find the report');
         }
 
-        $metrics = array_intersect($metrics, $collection->getColumns());
+        if ($this->isAssociativeArray($metrics) === false) {
+            $metrics = array_keys($metrics);
+            $metrics = array_intersect($metrics, array_keys($collection->getColumns()));
+        } else {
+            $metrics = array_intersect($metrics, $collection->getColumns());
+        }
         $rows = $collection->getRows();
 
         $total = $rows[0];
@@ -97,9 +102,13 @@ class ReportGrouper implements ReportGrouperInterface
         }
 
         $columns = array_unique($collection->getColumns());
-        $headers = [];
-        foreach($columns as $index => $column) {
-            $headers[$column] = $this->convertColumn($column, $singleDataSet);
+        if ($this->isAssociativeArray($columns) === false) {
+            $headers = $columns;
+        } else {
+            $headers = [];
+            foreach($columns as $index => $column) {
+                $headers[$column] = $this->convertColumn($column, $singleDataSet);
+            }
         }
 
         return new ReportResult($rows, $total, $average, $headers);
@@ -108,5 +117,10 @@ class ReportGrouper implements ReportGrouperInterface
     protected function getDataSetManager()
     {
         return $this->dataSetManager;
+    }
+
+    protected function isAssociativeArray($array)
+    {
+        return array_values($array) === $array;
     }
 }
