@@ -74,11 +74,11 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
 
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
     {
-        if (in_array($this->fieldName, $metrics) || in_array($this->fieldName, $dimensions)) {
+        if (array_key_exists($this->fieldName, $metrics) || array_key_exists($this->fieldName, $dimensions)) {
             return;
         }
 
-        $dimensions[] = $this->fieldName;
+        $dimensions[$this->fieldName] = ucwords(str_replace("_", " ", $this->fieldName));
     }
 
 

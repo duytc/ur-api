@@ -123,8 +123,20 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            $overridingConditions = $this->buildFilters($overridingFilters);
-            $conditions = array_merge($conditions, $overridingConditions);
+            foreach($overridingFilters as $filter) {
+                if (!$filter instanceof AbstractFilterInterface) {
+                    continue;
+                }
+
+                /** @var DataSetInterface $dataSet */
+                foreach($dataSets as $dataSetIndex=>$dataSet) {
+                    if (in_array($filter->getFieldName(), $dataSet->getDimensions()) ||
+                        in_array($filter->getFieldName(), $dataSet->getMetrics())
+                    ){
+                        $conditions[] = $this->buildSingleFilter($filter, sprintf('t%d', $dataSetIndex));
+                    }
+                }
+            }
         }
 
         // add WHERE clause

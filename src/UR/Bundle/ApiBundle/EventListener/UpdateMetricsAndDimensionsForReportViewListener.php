@@ -6,102 +6,73 @@ namespace UR\Bundle\ApiBundle\EventListener;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LifecycleEventArgs;
+use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\Report\ParamsBuilderInterface;
 use UR\Service\StringUtilTrait;
+use UR\Worker\Manager;
 
 class UpdateMetricsAndDimensionsForReportViewListener
 {
-    use StringUtilTrait;
-    const METRICS_KEY = 'metrics';
-    const DIMENSIONS_KEY = 'dimensions';
+    /**
+     * @var array
+     */
+    protected $changedEntities;
 
     /**
-     * @var ParamsBuilderInterface
+     * @var Manager
      */
-    protected $paramsBuilder;
+    protected $manager;
 
     /**
-     * ReportViewChangedListener constructor.
-     * @param ParamsBuilderInterface $paramsBuilder
+     * UpdateMetricsAndDimensionsForReportViewListener constructor.
+     * @param Manager $manager
      */
-    public function __construct(ParamsBuilderInterface $paramsBuilder)
+    public function __construct(Manager $manager)
     {
-        $this->paramsBuilder = $paramsBuilder;
+        $this->manager = $manager;
     }
+
 
     public function prePersist(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        $em = $args->getEntityManager();
 
         if (!$entity instanceof ReportViewInterface) {
             return;
         }
 
-        $this->updateMetricsAndDimensionsForReportView($entity, $em);
+        $this->changedEntities[] = $entity;
     }
 
     public function preUpdate(PreUpdateEventArgs $args)
     {
         $entity = $args->getEntity();
-        $em = $args->getEntityManager();
         if (!$entity instanceof ReportViewInterface) {
             return;
         }
 
         if ($args->hasChangedField('dataSets') || $args->hasChangedField('transforms')) {
-            $this->updateMetricsAndDimensionsForReportView($entity, $em);
+            $this->changedEntities[] = $entity;
         }
     }
 
-    protected function updateMetricsAndDimensionsForReportView(ReportViewInterface $reportView, EntityManagerInterface $em)
+    public function postFlush(PostFlushEventArgs $args)
     {
-        $param = $this->paramsBuilder->buildFromReportView($reportView);
-        $columns = $this->getMetricsAndDimensions($param);
-
-        $reportView->setMetrics($columns[self::METRICS_KEY]);
-        $reportView->setDimensions($columns[self::DIMENSIONS_KEY]);
-    }
-
-    public function getMetricsAndDimensions(ParamsInterface $params)
-    {
-        $metrics = [];
-        $dimensions = [];
-        $dataSets = $params->getDataSets();
-        $joinBy = $params->getJoinByFields();
-        foreach ($dataSets as $dataSet) {
-            foreach ($dataSet->getMetrics() as $item) {
-                $metrics[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
-            }
-
-            foreach ($dataSet->getDimensions() as $item) {
-                if ($joinBy === $this->removeIdSuffix($item)) {
-                    continue;
-                }
-
-                $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
-            }
+        if (count($this->changedEntities) < 1) {
+            return;
         }
 
-        if (is_string($joinBy)) {
-            $dimensions[] = $joinBy;
-        }
-
-        $transforms = $params->getTransforms();
         /**
-         * @var TransformInterface $transform
+         * @var ReportViewInterface $entity
          */
-        foreach ($transforms as $transform) {
-            $transform->getMetricsAndDimensions($metrics, $dimensions);
+        foreach($this->changedEntities as $entity) {
+            $this->manager->updateDimensionsAndMetricsForReportView($entity->getId());
         }
 
-        return array (
-            self::METRICS_KEY => $metrics,
-            self::DIMENSIONS_KEY => $dimensions
-        );
+        $this->changedEntities = [];
     }
 }

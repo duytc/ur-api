@@ -7,7 +7,8 @@ services:
     ur_api.event_listener.update_metrics_and_dimensions_for_report_view_listener:
         class: UR\Bundle\ApiBundle\EventListener\UpdateMetricsAndDimensionsForReportViewListener
         arguments:
-            - '@ur.services.report.params_builder'
+            - '@ur.worker.manager'
         tags:
             - { name: doctrine.event_listener, event: prePersist }
             - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
