@@ -7,6 +7,7 @@ namespace UR\Service\Report;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Service\ColumnUtilTrait;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResult;
 use UR\Service\DTO\Report\WeightedCalculationInterface;
@@ -17,6 +18,7 @@ class ReportGrouper implements ReportGrouperInterface
 {
     use CalculateRatiosTrait;
     use CalculateWeightedValueTrait;
+    use ColumnUtilTrait;
 
     /**
      * @var DataSetManagerInterface
@@ -46,7 +48,12 @@ class ReportGrouper implements ReportGrouperInterface
             throw new NotFoundHttpException('can not find the report');
         }
 
-        $metrics = array_intersect($metrics, $collection->getColumns());
+        if ($this->isAssociativeArray($metrics) === false) {
+            $metrics = array_keys($metrics);
+            $metrics = array_intersect($metrics, array_keys($collection->getColumns()));
+        } else {
+            $metrics = array_intersect($metrics, $collection->getColumns());
+        }
         $rows = $collection->getRows();
 
         $total = $rows[0];
@@ -95,40 +102,25 @@ class ReportGrouper implements ReportGrouperInterface
         }
 
         $columns = array_unique($collection->getColumns());
-        $headers = [];
-        foreach($columns as $index => $column) {
-            $headers[$column] = $this->convertColumn($column, $singleDataSet);
+        if ($this->isAssociativeArray($columns) === false) {
+            $headers = $columns;
+        } else {
+            $headers = [];
+            foreach($columns as $index => $column) {
+                $headers[$column] = $this->convertColumn($column, $singleDataSet);
+            }
         }
 
         return new ReportResult($rows, $total, $average, $headers);
     }
 
-    /**
-     * Convert column name in underscore format with data set id to real name
-     * @param $column
-     * @param $singleDataSet
-     * @return mixed|string
-     */
-    protected function convertColumn($column, $singleDataSet = false)
+    protected function getDataSetManager()
     {
-        $lastOccur = strrchr($column, "_");
-        $dataSetId = str_replace("_", "", $lastOccur);
-        if (!preg_match('/^[0-9]+$/', $dataSetId)) {
-            return ucwords(str_replace("_", " ", $column));
-        }
-        $column = str_replace($lastOccur, "", $column);
-        $dataSetId = filter_var($dataSetId, FILTER_VALIDATE_INT);
-        $column = ucwords(str_replace("_", " ", $column));
-        $dataSet = $this->dataSetManager->find($dataSetId);
+        return $this->dataSetManager;
+    }
 
-        if (!$dataSet instanceof DataSetInterface) {
-            return sprintf('%s %d', $column, $dataSetId);
-        }
-
-        if ($singleDataSet === false) {
-            return sprintf("%s (%s)", $column, $dataSet->getName());
-        }
-
-        return $column;
+    protected function isAssociativeArray($array)
+    {
+        return array_values($array) === $array;
     }
 }

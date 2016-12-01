@@ -27,25 +27,36 @@ class Manager
         $this->queue = $queue;
     }
 
-    public function reImportWhenNewEntryReceived($entryIds){
+    public function reImportWhenNewEntryReceived($entryIds)
+    {
         $params = new StdClass;
         $params->entryIds = $entryIds;
         $this->queueTask('reImportWhenNewEntryReceived', $params);
     }
 
-    public function importDataWhenConnectedDataSourceChange($entryIds){
+    public function importDataWhenConnectedDataSourceChange($entryIds)
+    {
         $params = new StdClass;
         $params->entryIds = $entryIds;
         $this->queueTask('importDataWhenConnectedDataSourceChange', $params);
     }
 
-    public function processAlert($code, $publisherId, array $parameters){
+    public function processAlert($code, $publisherId, array $parameters)
+    {
         $params = new StdClass;
         $params->code = $code;
         $params->publisherId = $publisherId;
         $params->params = $parameters;
 
         $this->queueTask('processAlert', $params);
+    }
+
+    public function updateDimensionsAndMetricsForReportView($reportViewId)
+    {
+        $params = new StdClass;
+        $params->id = $reportViewId;
+
+        $this->queueTask('updateDimensionsAndMetricsForReportView', $params);
     }
 
     /**

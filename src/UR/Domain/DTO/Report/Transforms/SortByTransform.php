@@ -108,7 +108,6 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
         // nothing changed in metrics and dimensions
     }
 
-
     /**
      * @inheritdoc
      */

@@ -123,7 +123,10 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             $reportParam = $this->paramsBuilder->buildFromReportView($reportView);
-            $filters = DataSet::createFilterObjects($params->getFilters());
+            $filters = null;
+            if (is_array($params->getFilters())) {
+                $filters = DataSet::createFilterObjects($params->getFilters());
+            }
             $result = $this->getSingleReport($reportParam, $filters);
             $rows[] = $result->getTotal();
             $metrics = array_unique(array_merge($metrics, $reportView->getMetrics()));

@@ -75,6 +75,10 @@ class ComparisonPercentTransform extends AbstractTransform implements Comparison
 
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
     {
-        $dimensions[] = $this->field;
+        if (array_key_exists($this->field, $metrics) || array_key_exists($this->field, $dimensions)) {
+            return;
+        }
+
+        $metrics[$this->field] = ucwords(str_replace("_", " ", $this->field));
     }
 }
