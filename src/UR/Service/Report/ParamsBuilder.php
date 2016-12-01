@@ -222,15 +222,25 @@ class ParamsBuilder implements ParamsBuilderInterface
     {
         $param = new Params();
 
-        $param->setDataSets($this->createDataSets($reportView->getDataSets()))
-            ->setTransforms($this->createTransforms($reportView->getTransforms()))
-            ->setJoinByFields($reportView->getJoinBy())
-            ->setMultiView($reportView->isMultiView())
-            ->setReportViews($reportView->getReportViews())
-            ->setFilters($reportView->getFilters())
-            ->setShowInTotal($reportView->getShowInTotal())
-            ->setFieldTypes($reportView->getFieldTypes())
-        ;
+        if ($reportView->isMultiView()) {
+            $param
+                ->setTransforms($this->createTransforms($reportView->getTransforms()))
+                ->setMultiView($reportView->isMultiView())
+                ->setReportViews($reportView->getReportViews())
+                ->setFilters($reportView->getFilters())
+                ->setShowInTotal($reportView->getShowInTotal())
+                ->setFieldTypes($reportView->getFieldTypes())
+            ;
+        } else {
+            $param
+                ->setDataSets($this->createDataSets($reportView->getDataSets()))
+                ->setTransforms($this->createTransforms($reportView->getTransforms()))
+                ->setJoinByFields($reportView->getJoinBy())
+                ->setMultiView($reportView->isMultiView())
+                ->setShowInTotal($reportView->getShowInTotal())
+                ->setFieldTypes($reportView->getFieldTypes())
+            ;
+        }
 
         if (is_array($reportView->getWeightedCalculations())) {
             $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
