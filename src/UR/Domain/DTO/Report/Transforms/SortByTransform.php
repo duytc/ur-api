@@ -64,7 +64,7 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
      * @param $joinBy
      * @return mixed
      */
-    public function transform(Collection $collection, array $metrics, array $dimensions, $joinBy = null)
+    public function transform(Collection $collection, array &$metrics, array &$dimensions, $joinBy = null)
     {
         $excludeFields= [];
         $rows = $collection->getRows();

@@ -5,6 +5,7 @@ namespace UR\Service\Report;
 
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
@@ -122,7 +123,8 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             $reportParam = $this->paramsBuilder->buildFromReportView($reportView);
-            $result = $this->getSingleReport($reportParam, $params->getFilters());
+            $filters = DataSet::createFilterObjects($params->getFilters());
+            $result = $this->getSingleReport($reportParam, $filters);
             $rows[] = $result->getTotal();
             $metrics = array_unique(array_merge($metrics, $reportView->getMetrics()));
             $dimensions = array_unique(array_merge($dimensions, $reportView->getDimensions()));
@@ -177,7 +179,7 @@ class ReportBuilder implements ReportBuilderInterface
      * @param array $dimensions
      * @param $joinBy
      */
-    private function transformReports(Collection $reportCollection, array  $transforms, array $metrics, array $dimensions, $joinBy = null)
+    private function transformReports(Collection $reportCollection, array $transforms, array &$metrics, array &$dimensions, $joinBy = null)
     {
         // sort transform by priority
         usort($transforms, function (TransformInterface $a, TransformInterface $b) {

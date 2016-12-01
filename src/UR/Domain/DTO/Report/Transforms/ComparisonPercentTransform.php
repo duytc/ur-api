@@ -62,7 +62,7 @@ class ComparisonPercentTransform extends AbstractTransform implements Comparison
         return $this->field;
     }
 
-    public function transform(Collection $collection, array $metrics, array $dimensions, $joinBy = null)
+    public function transform(Collection $collection, array &$metrics, array &$dimensions, $joinBy = null)
     {
         $rows = $collection->getRows();
         foreach ($rows as &$row) {

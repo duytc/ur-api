@@ -74,7 +74,7 @@ class DataSet implements DataSetInterface
      * @throws \Exception
      * @return array
      */
-    protected function createFilterObjects(array $allFilters)
+    public static function createFilterObjects(array $allFilters)
     {
         $filterObjects = [];
         foreach ($allFilters as $filter) {

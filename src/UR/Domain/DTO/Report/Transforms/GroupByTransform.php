@@ -38,7 +38,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
      * @param $joinBy
      * @return mixed
      */
-    public function transform(Collection $collection, array $metrics, array $dimensions, $joinBy = null)
+    public function transform(Collection $collection, array &$metrics, array &$dimensions, $joinBy = null)
     {
         $results = $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions, $joinBy);
         $collection->setRows($results);

@@ -55,7 +55,7 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
      * @param $joinBy
      * @return mixed|void
      */
-    public function transform(Collection $collection,  array $metrics, array $dimensions, $joinBy = null)
+    public function transform(Collection $collection,  array &$metrics, array &$dimensions, $joinBy = null)
     {
         $collection->addColumn($this->fieldName);
         $rows = $collection->getRows();
@@ -74,6 +74,7 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
         if (!in_array($this->fieldName, $columns)) {
             $columns[] = $this->fieldName;
             $collection->setColumns($columns);
+            $metrics[] = $this->fieldName;
         }
     }
 

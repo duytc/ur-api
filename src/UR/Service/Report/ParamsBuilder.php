@@ -57,7 +57,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setReportViews(json_decode($params[self::REPORT_VIEWS_KEY]));
 
             if (array_key_exists(self::FILTERS_KEY, $params) && !empty($params[self::FILTERS_KEY])) {
-                $param->setFilters($params[self::FILTERS_KEY]);
+                $param->setFilters(json_decode($params[self::FILTERS_KEY], true));
             }
 
             if (array_key_exists(self::TRANSFORM_KEY, $params) && !empty($params[self::TRANSFORM_KEY])) {

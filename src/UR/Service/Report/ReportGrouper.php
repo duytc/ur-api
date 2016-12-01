@@ -122,7 +122,7 @@ class ReportGrouper implements ReportGrouperInterface
         $dataSet = $this->dataSetManager->find($dataSetId);
 
         if (!$dataSet instanceof DataSetInterface) {
-            return $column;
+            return sprintf('%s %d', $column, $dataSetId);
         }
 
         if ($singleDataSet === false) {
