@@ -79,6 +79,6 @@ class ComparisonPercentTransform extends AbstractTransform implements Comparison
             return;
         }
 
-        $metrics[$this->field] = ucwords(str_replace("_", " ", $this->field));
+        $metrics[] = $this->field;
     }
 }

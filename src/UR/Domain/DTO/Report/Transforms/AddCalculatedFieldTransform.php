@@ -13,6 +13,7 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
     const NAME_CALCULATED_FIELD = 'field';
     const EXPRESSION_CALCULATED_FIELD = 'expression';
     const DEFAULT_VALUE_CALCULATED_FIELD = 'defaultValue';
+    const FIELD_TYPE_KEY = 'type';
 
     /**
      * @var string
@@ -24,22 +25,22 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
     protected $expression;
     protected $defaultValue;
     protected $language;
+    protected $type;
 
     public function __construct(ExpressionLanguage $language, array $addCalculatedField)
     {
         parent::__construct();
         if (!array_key_exists(self::NAME_CALCULATED_FIELD, $addCalculatedField)
             || !array_key_exists(self::EXPRESSION_CALCULATED_FIELD, $addCalculatedField)
-//            || !array_key_exists(self::DEFAULT_VALUE_CALCULATED_FIELD, $addCalculatedField)
+            || !array_key_exists(self::FIELD_TYPE_KEY, $addCalculatedField)
         ) {
-            throw new \Exception(sprintf('either name or expression or default value does not exits'));
+            throw new \Exception(sprintf('either "field" or "expression" or "type" does not exits'));
         }
 
         $this->language = $language;
         $this->fieldName = $addCalculatedField[self::NAME_CALCULATED_FIELD];
         $this->expression = $addCalculatedField[self::EXPRESSION_CALCULATED_FIELD];
-//        $this->defaultValue = $addCalculatedField[self::DEFAULT_VALUE_CALCULATED_FIELD];
-
+        $this->type = $addCalculatedField[self::FIELD_TYPE_KEY];
     }
 
     /**
@@ -78,7 +79,7 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
             return;
         }
 
-        $dimensions[$this->fieldName] = ucwords(str_replace("_", " ", $this->fieldName));
+        $dimensions[] = $this->fieldName;
     }
 
 
@@ -96,5 +97,13 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
     public function getFieldName()
     {
         return $this->fieldName;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 }

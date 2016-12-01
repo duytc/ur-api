@@ -84,6 +84,6 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
             return;
         }
 
-        $dimensions[$this->fieldName] = ucwords(str_replace("_", " ", $this->fieldName));
+        $dimensions[] = $this->fieldName;
     }
 }

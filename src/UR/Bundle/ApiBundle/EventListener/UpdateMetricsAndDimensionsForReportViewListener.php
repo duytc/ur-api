@@ -67,27 +67,21 @@ class UpdateMetricsAndDimensionsForReportViewListener
     protected function updateMetricsAndDimensionsForReportView(ReportViewInterface $reportView, EntityManagerInterface $em)
     {
         $param = $this->paramsBuilder->buildFromReportView($reportView);
-        $dataSetRepository = $em->getRepository(DataSet::class);
-        $columns = $this->getMetricsAndDimensions($param, $dataSetRepository);
+        $columns = $this->getMetricsAndDimensions($param);
 
         $reportView->setMetrics($columns[self::METRICS_KEY]);
         $reportView->setDimensions($columns[self::DIMENSIONS_KEY]);
     }
 
-    public function getMetricsAndDimensions(ParamsInterface $params, DataSetRepositoryInterface $dataSetRepository)
+    public function getMetricsAndDimensions(ParamsInterface $params)
     {
         $metrics = [];
         $dimensions = [];
         $dataSets = $params->getDataSets();
         $joinBy = $params->getJoinByFields();
         foreach ($dataSets as $dataSet) {
-            $dts = $dataSetRepository->find($dataSet->getDataSetId());
-            if (!$dts instanceof DataSetInterface) {
-                continue;
-            }
-
             foreach ($dataSet->getMetrics() as $item) {
-                $metrics[sprintf('%s_%d', $item, $dataSet->getDataSetId())] = sprintf('%s (%s)', ucwords(str_replace("_", " ", $item)), $dts->getName());
+                $metrics[] = $item;
             }
 
             foreach ($dataSet->getDimensions() as $item) {
@@ -95,12 +89,12 @@ class UpdateMetricsAndDimensionsForReportViewListener
                     continue;
                 }
 
-                $dimensions[sprintf('%s_%d', $item, $dataSet->getDataSetId())] = sprintf('%s (%s)', ucwords(str_replace("_", " ", $item)), $dts->getName());
+                $dimensions[] = $item;
             }
         }
 
         if (is_string($joinBy)) {
-            $dimensions[$joinBy] = ucwords(str_replace("_", " ", $joinBy));
+            $dimensions[] = $joinBy;
         }
 
         $transforms = $params->getTransforms();
