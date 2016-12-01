@@ -19,7 +19,7 @@ trait ConvertFileEncoding
             return false;
         }
 
-        $result = shell_exec(__DIR__ . '/../../../app/convert_to_utf8.sh' . ' ' . $filePath);
+        $result = shell_exec(sprintf('%s "%s"', (__DIR__ . '/../../../app/convert_to_utf8.sh'), $filePath)); // important: put filePath into "" allows special character in filePath
 
         if (null == $result) {
             return false;
