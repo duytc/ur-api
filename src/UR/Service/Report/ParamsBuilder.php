@@ -225,14 +225,20 @@ class ParamsBuilder implements ParamsBuilderInterface
         $param->setDataSets($this->createDataSets($reportView->getDataSets()))
             ->setTransforms($this->createTransforms($reportView->getTransforms()))
             ->setJoinByFields($reportView->getJoinBy())
-            ->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()))
             ->setMultiView($reportView->isMultiView())
             ->setReportViews($reportView->getReportViews())
             ->setFilters($reportView->getFilters())
             ->setShowInTotal($reportView->getShowInTotal())
             ->setFieldTypes($reportView->getFieldTypes())
-            ->setFormats($this->createFormats($reportView->getFormats()))
         ;
+
+        if (is_array($reportView->getWeightedCalculations())) {
+            $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
+        }
+
+        if (is_array($reportView->getFormats())) {
+            $param->setFormats($this->createFormats($reportView->getFormats()));
+        }
 
         return $param;
     }

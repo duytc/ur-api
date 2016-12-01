@@ -1,12 +1,9 @@
 <?php
-
-
 namespace UR\Service\Report;
 
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSetManagerInterface;
-use UR\Model\Core\DataSetInterface;
 use UR\Service\ColumnUtilTrait;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResult;
@@ -101,7 +98,7 @@ class ReportGrouper implements ReportGrouperInterface
             $average[$metric] = $total[$metric] / $count;
         }
 
-        $columns = array_unique($collection->getColumns());
+        $columns = $collection->getColumns();
         if ($this->isAssociativeArray($columns) === false) {
             $headers = $columns;
         } else {

@@ -51,14 +51,6 @@ class Manager
         $this->queueTask('processAlert', $params);
     }
 
-    public function updateDimensionsAndMetricsForReportView($reportViewId)
-    {
-        $params = new StdClass;
-        $params->id = $reportViewId;
-
-        $this->queueTask('updateDimensionsAndMetricsForReportView', $params);
-    }
-
     /**
      * @param string $task
      * @param StdClass $params

@@ -129,8 +129,8 @@ class ReportBuilder implements ReportBuilderInterface
             }
             $result = $this->getSingleReport($reportParam, $filters);
             $rows[] = $result->getTotal();
-            $metrics = array_unique(array_merge($metrics, $reportView->getMetrics()));
-            $dimensions = array_unique(array_merge($dimensions, $reportView->getDimensions()));
+            $metrics = array_merge($metrics, $reportView->getMetrics());
+            $dimensions = array_merge($dimensions, $reportView->getDimensions());
         }
 
         $collection = new Collection(array_merge($metrics, $dimensions), $rows);

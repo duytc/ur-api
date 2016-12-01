@@ -158,10 +158,3 @@ services:
         class: UR\Worker\Workers\SynchronizeUserWorker
         arguments:
             - @ur.service.synchronize_user_service
-
-    ur.worker.workers.update_dimensions_metrics_for_report_view_worker:
-        class: UR\Worker\Workers\UpdateReportViewDimensionsAndMetricsWorker
-        arguments:
-            - '@ur.domain_manager.data_set'
-            - '@ur.domain_manager.report_view'
-            - '@ur.services.report.params_builder'
