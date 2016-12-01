@@ -30,7 +30,7 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
             throw new InvalidArgumentException('either "decimals" or "thousandsSeparator" is missing');
         }
 
-        $this->precision = empty($data[self::PRECISION_KEY]) ? self::DEFAULT_PRECISION : $data[self::PRECISION_KEY];
+        $this->precision = (0 != $data[self::PRECISION_KEY] && empty($data[self::PRECISION_KEY])) ? self::DEFAULT_PRECISION : $data[self::PRECISION_KEY];
         $this->thousandSeparator = empty($data[self::THOUSAND_SEPARATOR_KEY]) ? self::DEFAULT_THOUSAND_SEPARATOR : $data[self::THOUSAND_SEPARATOR_KEY];
     }
 
