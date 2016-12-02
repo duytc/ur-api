@@ -8,11 +8,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Domain\DTO\Report\ParamsInterface;
+use UR\Domain\DTO\Report\ReportViews\ReportViewInterface as ReportViewDTO;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
-use UR\Entity\Core\DataSet;
-use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewInterface;
-use UR\Repository\Core\DataSetRepositoryInterface;
 use UR\Service\Report\ParamsBuilderInterface;
 use UR\Service\StringUtilTrait;
 use UR\Worker\Manager;
@@ -59,7 +57,7 @@ class UpdateMetricsAndDimensionsForReportViewListener
             return;
         }
 
-        if ($args->hasChangedField('dataSets') || $args->hasChangedField('transforms')) {
+        if ($args->hasChangedField('dataSets') || $args->hasChangedField('transforms') || $args->hasChangedField('reportViews')) {
             $this->updateMetricsAndDimensionsForReportView($entity, $em);
         }
     }
@@ -67,13 +65,38 @@ class UpdateMetricsAndDimensionsForReportViewListener
     protected function updateMetricsAndDimensionsForReportView(ReportViewInterface $reportView, EntityManagerInterface $em)
     {
         $param = $this->paramsBuilder->buildFromReportView($reportView);
-        $columns = $this->getMetricsAndDimensions($param);
+        if ($param->isMultiView()) {
+            $columns = $this->getMetricsAndDimensionsForMultiView($param);
+        } else {
+            $columns = $this->getMetricsAndDimensionsForSingleView($param);
+        }
 
         $reportView->setMetrics($columns[self::METRICS_KEY]);
         $reportView->setDimensions($columns[self::DIMENSIONS_KEY]);
     }
 
-    public function getMetricsAndDimensions(ParamsInterface $params)
+    protected function getMetricsAndDimensionsForMultiView(ParamsInterface $params)
+    {
+        $metrics = [];
+        $dimensions = [];
+        $reportViews = $params->getReportViews();
+        /**
+         * @var ReportViewDTO $reportView
+         */
+        foreach ($reportViews as $reportView) {
+            $metrics = array_merge($metrics, $reportView->getMetrics());
+            $dimensions = array_merge($dimensions, $reportView->getDimensions());
+        }
+
+        //TODO add transform operations
+
+        return array (
+            self::METRICS_KEY => $metrics,
+            self::DIMENSIONS_KEY => $dimensions
+        );
+    }
+
+    protected function getMetricsAndDimensionsForSingleView(ParamsInterface $params)
     {
         $metrics = [];
         $dimensions = [];

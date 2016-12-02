@@ -2,6 +2,8 @@
 
 namespace UR\Service\DTO;
 
+use UR\Exception\InvalidArgumentException;
+
 class Collection
 {
     /**
@@ -23,6 +25,9 @@ class Collection
     {
         $this->columns = $columns;
         $this->rows = $rows;
+        if (!is_array($types)) {
+            throw new InvalidArgumentException(sprintf('expect array, got %s', $types));
+        }
         $this->types = $types;
     }
 
