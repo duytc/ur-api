@@ -39,67 +39,67 @@ class ParamsBuilder implements ParamsBuilderInterface
     /**
      * @inheritdoc
      */
-    public function buildFromArray(array $params)
+    public function buildFromArray(array $data)
     {
         $param = new Params();
 
         $multiView = false;
-        if (array_key_exists(self::MULTI_VIEW_KEY, $params)) {
-            $multiView = filter_var($params[self::MULTI_VIEW_KEY], FILTER_VALIDATE_BOOLEAN);
+        if (array_key_exists(self::MULTI_VIEW_KEY, $data)) {
+            $multiView = filter_var($data[self::MULTI_VIEW_KEY], FILTER_VALIDATE_BOOLEAN);
         }
 
         $param->setMultiView($multiView);
 
         if ($param->isMultiView()) {
-            if (!array_key_exists(self::REPORT_VIEWS_KEY, $params) || empty($params[self::MULTI_VIEW_KEY])) {
+            if (!array_key_exists(self::REPORT_VIEWS_KEY, $data) || empty($data[self::MULTI_VIEW_KEY])) {
                 throw new InvalidArgumentException('multi view require at least one report view is selected');
             }
 
-            if (!empty($params[self::REPORT_VIEWS_KEY])) {
-                $reportViews = $this->createReportViews(json_decode($params[self::REPORT_VIEWS_KEY], true));
+            if (!empty($data[self::REPORT_VIEWS_KEY])) {
+                $reportViews = $this->createReportViews(json_decode($data[self::REPORT_VIEWS_KEY], true));
                 $param->setReportViews($reportViews);
             }
 
-            if (array_key_exists(self::FILTERS_KEY, $params) && !empty($params[self::FILTERS_KEY])) {
-                $param->setFilters(json_decode($params[self::FILTERS_KEY], true));
+            if (array_key_exists(self::FILTERS_KEY, $data) && !empty($data[self::FILTERS_KEY])) {
+                $param->setFilters(json_decode($data[self::FILTERS_KEY], true));
             }
 
-            if (array_key_exists(self::TRANSFORM_KEY, $params) && !empty($params[self::TRANSFORM_KEY])) {
-                $param->setTransforms($params[self::TRANSFORM_KEY]);
+            if (array_key_exists(self::TRANSFORM_KEY, $data) && !empty($data[self::TRANSFORM_KEY])) {
+                $param->setTransforms($data[self::TRANSFORM_KEY]);
             }
 
             return $param;
         }
 
-        if (array_key_exists(self::DATA_SET_KEY, $params) && is_array($param[self::DATA_SET_KEY]) && !empty($params[self::DATA_SET_KEY])) {
-            $dataSets = $this->createDataSets(json_decode($params[self::DATA_SET_KEY], true));
+        if (array_key_exists(self::DATA_SET_KEY, $data) && !empty($data[self::DATA_SET_KEY])) {
+            $dataSets = $this->createDataSets(json_decode($data[self::DATA_SET_KEY], true));
             $param->setDataSets($dataSets);
         }
 
-        if (array_key_exists(self::TRANSFORM_KEY, $params) && !empty($params[self::TRANSFORM_KEY])) {
-            $transforms = $this->createTransforms(json_decode($params[self::TRANSFORM_KEY], true));
+        if (array_key_exists(self::TRANSFORM_KEY, $data) && !empty($data[self::TRANSFORM_KEY])) {
+            $transforms = $this->createTransforms(json_decode($data[self::TRANSFORM_KEY], true));
             $param->setTransforms($transforms);
         }
 
-        if (array_key_exists(self::JOIN_BY_KEY, $params) && !empty($params[self::JOIN_BY_KEY])) {
-            $param->setJoinByFields($params[self::JOIN_BY_KEY]);
+        if (array_key_exists(self::JOIN_BY_KEY, $data) && !empty($data[self::JOIN_BY_KEY])) {
+            $param->setJoinByFields($data[self::JOIN_BY_KEY]);
         }
 
-        if (array_key_exists(self::WEIGHTED_CALCULATION_KEY, $params) && !empty($params[self::WEIGHTED_CALCULATION_KEY])) {
-            $param->setWeightedCalculations(new WeightedCalculation(json_decode($params[self::WEIGHTED_CALCULATION_KEY], true)));
+        if (array_key_exists(self::WEIGHTED_CALCULATION_KEY, $data) && !empty($data[self::WEIGHTED_CALCULATION_KEY])) {
+            $param->setWeightedCalculations(new WeightedCalculation(json_decode($data[self::WEIGHTED_CALCULATION_KEY], true)));
         }
 
-        if (array_key_exists(self::SHOW_IN_TOTAL_KEY, $params)) {
-            $param->setShowInTotal(json_decode($params[self::SHOW_IN_TOTAL_KEY], true));
+        if (array_key_exists(self::SHOW_IN_TOTAL_KEY, $data)) {
+            $param->setShowInTotal(json_decode($data[self::SHOW_IN_TOTAL_KEY], true));
         }
 
-        if (array_key_exists(self::FIELD_TYPES_KEY, $params)) {
-            $param->setFieldTypes(json_decode($params[self::FIELD_TYPES_KEY], true));
+        if (array_key_exists(self::FIELD_TYPES_KEY, $data)) {
+            $param->setFieldTypes(json_decode($data[self::FIELD_TYPES_KEY], true));
         }
 
         /* set output formatting */
-        if (array_key_exists(self::FORMAT_KEY, $params) && !empty($params[self::FORMAT_KEY])) {
-            $formats = $this->createFormats(json_decode($params[self::FORMAT_KEY], true));
+        if (array_key_exists(self::FORMAT_KEY, $data) && !empty($data[self::FORMAT_KEY])) {
+            $formats = $this->createFormats(json_decode($data[self::FORMAT_KEY], true));
             $param->setFormats($formats);
         }
 
