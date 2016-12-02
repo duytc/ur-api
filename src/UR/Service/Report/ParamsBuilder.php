@@ -12,6 +12,7 @@ use UR\Domain\DTO\Report\Formats\DateFormat;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\Formats\NumberFormat;
 use UR\Domain\DTO\Report\Params;
+use UR\Domain\DTO\Report\ReportViews\ReportView;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
@@ -54,7 +55,10 @@ class ParamsBuilder implements ParamsBuilderInterface
                 throw new InvalidArgumentException('multi view require at least one report view is selected');
             }
 
-            $param->setReportViews(json_decode($params[self::REPORT_VIEWS_KEY]));
+            if (!empty($params[self::REPORT_VIEWS_KEY])) {
+                $reportViews = $this->createReportViews(json_decode($params[self::REPORT_VIEWS_KEY], true));
+                $param->setReportViews($reportViews);
+            }
 
             if (array_key_exists(self::FILTERS_KEY, $params) && !empty($params[self::FILTERS_KEY])) {
                 $param->setFilters(json_decode($params[self::FILTERS_KEY], true));
@@ -67,7 +71,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             return $param;
         }
 
-        if (array_key_exists(self::DATA_SET_KEY, $params) && !empty($params[self::DATA_SET_KEY])) {
+        if (array_key_exists(self::DATA_SET_KEY, $params) && is_array($param[self::DATA_SET_KEY]) && !empty($params[self::DATA_SET_KEY])) {
             $dataSets = $this->createDataSets(json_decode($params[self::DATA_SET_KEY], true));
             $param->setDataSets($dataSets);
         }
@@ -104,10 +108,6 @@ class ParamsBuilder implements ParamsBuilderInterface
 
     protected function createDataSets(array $dataSets)
     {
-        if (!is_array($dataSets)) {
-            throw new InvalidArgumentException(sprintf('expect array, got %s', gettype($dataSets)));
-        }
-
         $dataSetObjects = [];
         foreach ($dataSets as $dataSet) {
             if (!is_array($dataSet)) {
@@ -118,6 +118,20 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         return $dataSetObjects;
+    }
+
+    protected function createReportViews(array $reportViews)
+    {
+        $reportViewObjects = [];
+        foreach ($reportViews as $reportView) {
+            if (!is_array($reportView)) {
+                throw new InvalidArgumentException(sprintf('expect array, got %s', gettype($reportView)));
+            }
+
+            $reportViewObjects[] = new ReportView($reportView);
+        }
+
+        return $reportViewObjects;
     }
 
     /**

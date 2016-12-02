@@ -78,7 +78,7 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
 
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
     {
-        if (array_key_exists($this->fieldName, $metrics) || array_key_exists($this->fieldName, $dimensions)) {
+        if (in_array($this->fieldName, $metrics) || in_array($this->fieldName, $dimensions)) {
             return;
         }
 

@@ -116,10 +116,10 @@ class ReportBuilder implements ReportBuilderInterface
         $metrics = [];
         $types = [];
         /* get all reports data */
-        foreach ($reportViews as $reportViewId) {
-            $reportView = $this->reportViewManager->find($reportViewId);
+        foreach ($reportViews as $reportView) {
+            $reportView = $this->reportViewManager->find($reportView->getReportViewId());
             if (!$reportView instanceof ReportViewInterface) {
-                throw new InvalidArgumentException(sprintf('The report view %d does not exist', $reportViewId));
+                throw new InvalidArgumentException(sprintf('The report view %d does not exist', $reportView->getReportViewId()));
             }
 
             $reportParam = $this->paramsBuilder->buildFromReportView($reportView);
