@@ -55,7 +55,7 @@ class ReportGrouper implements ReportGrouperInterface
 
         $total = $rows[0];
         foreach($total as $key=>$value) {
-            if (!in_array($key, $metrics)) {
+            if (!in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
                 unset($total[$key]);
                 continue;
             }
@@ -86,7 +86,7 @@ class ReportGrouper implements ReportGrouperInterface
                     continue;
                 }
 
-                if (is_numeric($row[$metric])) {
+                if (in_array($collection->getTypeOf($metric), ['number', 'decimal'])) {
                     $total[$metric] += $row[$metric];
                 }
             }
@@ -95,6 +95,9 @@ class ReportGrouper implements ReportGrouperInterface
         $count = count($collection->getRows());
         $average = $total;
         foreach($metrics as $metric) {
+            if (!in_array($collection->getTypeOf($metric), ['number', 'decimal'])) {
+                continue;
+            }
             $average[$metric] = $total[$metric] / $count;
         }
 

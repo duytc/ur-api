@@ -70,10 +70,8 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
         }, $rows);
 
         $collection->setRows($newRows);
-        $columns = $collection->getColumns();
-        if (!in_array($this->fieldName, $columns)) {
-            $columns[] = $this->fieldName;
-            $collection->setColumns($columns);
+
+        if (!in_array($this->fieldName, $metrics)) {
             $metrics[] = $this->fieldName;
         }
     }
@@ -84,6 +82,6 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
             return;
         }
 
-        $dimensions[] = $this->fieldName;
+        $metrics[] = $this->fieldName;
     }
 }

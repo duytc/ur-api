@@ -80,11 +80,9 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
             foreach ($groupedReport as $report) {
                 foreach ($report as $key => $value) {
-                    if (is_numeric($value)) {
+                    if (in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
                         $result[$key] += $value;
                     }
-//                    if (in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
-//                    }
                 }
             }
 

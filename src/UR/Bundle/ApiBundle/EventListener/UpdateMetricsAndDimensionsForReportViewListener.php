@@ -81,7 +81,7 @@ class UpdateMetricsAndDimensionsForReportViewListener
         $joinBy = $params->getJoinByFields();
         foreach ($dataSets as $dataSet) {
             foreach ($dataSet->getMetrics() as $item) {
-                $metrics[] = $item;
+                $metrics[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
             }
 
             foreach ($dataSet->getDimensions() as $item) {
@@ -89,7 +89,7 @@ class UpdateMetricsAndDimensionsForReportViewListener
                     continue;
                 }
 
-                $dimensions[] = $item;
+                $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());;
             }
         }
 

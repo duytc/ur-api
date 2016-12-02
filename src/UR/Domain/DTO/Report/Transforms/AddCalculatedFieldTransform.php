@@ -53,7 +53,6 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
     public function transform(Collection $collection,  array &$metrics, array &$dimensions, $joinBy = null)
     {
         $rows = $collection->getRows();
-        $columns = $collection->getColumns();
         foreach($rows as &$row) {
             try {
                 $calculatedValue = $this->language->evaluate($this->expression, ['row' => $row]);
@@ -66,9 +65,7 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
         }
 
         $collection->setRows($rows);
-        if (!in_array($this->fieldName, $columns)) {
-            $columns[] = $this->fieldName;
-            $collection->setColumns($columns);
+        if (!in_array($this->fieldName, $metrics)) {
             $metrics[] = $this->fieldName;
         }
     }
@@ -79,7 +76,7 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
             return;
         }
 
-        $dimensions[] = $this->fieldName;
+        $metrics[] = $this->fieldName;
     }
 
 
