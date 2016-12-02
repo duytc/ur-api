@@ -22,7 +22,20 @@ interface ReportViewRepositoryInterface extends ObjectRepository
     /**
      * @param UserRoleInterface $user
      * @param PagerParam $param
+     * @param null $multiView
      * @return QueryBuilder
      */
-    public function getReportViewsForUserPaginationQuery(UserRoleInterface $user, PagerParam $param);
+    public function getReportViewsForUserPaginationQuery(UserRoleInterface $user, PagerParam $param, $multiView = null);
+
+    /**
+     * @param UserRoleInterface $user
+     * @return QueryBuilder
+     */
+    public function getDataSourceHasMultiViewForUserQuery(UserRoleInterface $user);
+
+    /**
+     * @param UserRoleInterface $user
+     * @return QueryBuilder
+     */
+    public function getDataSourceHasNotMultiViewForUserQuery(UserRoleInterface $user);
 }

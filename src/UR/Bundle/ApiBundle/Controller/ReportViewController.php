@@ -31,6 +31,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
      * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
      * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     * @Rest\QueryParam(name="multiView", nullable=true, description="value of multi view")
      *
      * @ApiDoc(
      *  section = "ReportView",
@@ -42,13 +43,19 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      *
      * @param Request $request
      * @return ReportViewInterface[]
+     * @throws \Exception
      */
     public function cgetAction(Request $request)
     {
         $publisher = $this->getUser();
 
+        $multiView = $request->query->get('multiView', null);
+        if (!is_null($multiView) && $multiView !== 'true' && $multiView !== 'false') {
+            throw new \Exception('Multi view param is not valid');
+        }
+
         $reportViewManager = $this->get('ur.domain_manager.report_view');
-        $qb = $reportViewManager->getReportViewsForUserPaginationQuery($publisher, $this->getParams());
+        $qb = $reportViewManager->getReportViewsForUserPaginationQuery($publisher, $this->getParams(), $multiView);
 
         $params = array_merge($request->query->all(), $request->attributes->all());
         if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {

@@ -11,7 +11,8 @@ interface ReportViewManagerInterface extends ManagerInterface
     /**
      * @param UserRoleInterface $reportView
      * @param PagerParam $param
+     * @param $multiView
      * @return QueryBuilder
      */
-    public function getReportViewsForUserPaginationQuery(UserRoleInterface $reportView, PagerParam $param);
+    public function getReportViewsForUserPaginationQuery(UserRoleInterface $reportView, PagerParam $param, $multiView);
 }
