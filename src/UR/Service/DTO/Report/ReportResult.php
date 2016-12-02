@@ -27,18 +27,25 @@ class ReportResult implements ReportResultInterface
     protected $average;
 
     /**
+     * @var array
+     */
+    protected $types;
+
+    /**
      * ReportResult constructor.
      * @param array $reports
      * @param array $total
      * @param array $average
      * @param array $columns
+     * @param array $types
      */
-    public function __construct(array $reports, array $total, array $average, $columns = [])
+    public function __construct(array $reports, array $total, array $average, $columns = [], $types = [])
     {
         $this->reports = $reports;
         $this->total = $total;
         $this->average = $average;
         $this->columns = $columns;
+        $this->types = $types;
     }
 
     /**
@@ -71,5 +78,13 @@ class ReportResult implements ReportResultInterface
     public function getColumns()
     {
         return $this->columns;
+    }
+
+    /**
+     * @return array
+     */
+    public function getTypes()
+    {
+        return $this->types;
     }
 }

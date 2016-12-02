@@ -45,27 +45,15 @@ class ReportGrouper implements ReportGrouperInterface
             throw new NotFoundHttpException('can not find the report');
         }
 
-        if ($this->isAssociativeArray($metrics) === false) {
-            $metrics = array_keys($metrics);
-            $metrics = array_intersect($metrics, array_keys($collection->getColumns()));
-        } else {
-            $metrics = array_intersect($metrics, $collection->getColumns());
-        }
+        $metrics = array_intersect($metrics, $collection->getColumns());
         $rows = $collection->getRows();
 
-        $total = $rows[0];
-        foreach($total as $key=>$value) {
-            if (!in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
-                unset($total[$key]);
-                continue;
+        $total = [];
+        foreach($metrics as $key) {
+            if (in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
+                $total[$key] = 0;
             }
-
-            $total[$key] = 0;
         }
-//        foreach($metrics as $metric) {
-//            //reset metrics
-//            $total[$metric] = 0;
-//        }
 
         // aggregate weighted field
         if ($weightedCalculation instanceof WeightedCalculationInterface && $weightedCalculation->hasCalculation()) {
@@ -83,7 +71,11 @@ class ReportGrouper implements ReportGrouperInterface
         foreach($rows as $row) {
             foreach($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
-                    continue;
+                    if (in_array($collection->getTypeOf($metric), ['number', 'decimal'])) {
+                        $row[$metric] = 0;
+                    } else {
+                        $row[$metric] = '';
+                    }
                 }
 
                 if (in_array($collection->getTypeOf($metric), ['number', 'decimal'])) {
@@ -102,16 +94,12 @@ class ReportGrouper implements ReportGrouperInterface
         }
 
         $columns = $collection->getColumns();
-        if ($this->isAssociativeArray($columns) === false) {
-            $headers = $columns;
-        } else {
-            $headers = [];
-            foreach($columns as $index => $column) {
-                $headers[$column] = $this->convertColumn($column, $singleDataSet);
-            }
+        $headers = [];
+        foreach($columns as $index => $column) {
+            $headers[$column] = $this->convertColumn($column, $singleDataSet);
         }
 
-        return new ReportResult($rows, $total, $average, $headers);
+        return new ReportResult($rows, $total, $average, $headers, $collection->getTypes());
     }
 
     protected function getDataSetManager()

@@ -114,7 +114,7 @@ class ReportBuilder implements ReportBuilderInterface
         $rows = [];
         $dimensions = [];
         $metrics = [];
-
+        $types = [];
         /* get all reports data */
         foreach ($reportViews as $reportViewId) {
             $reportView = $this->reportViewManager->find($reportViewId);
@@ -128,12 +128,13 @@ class ReportBuilder implements ReportBuilderInterface
                 $filters = DataSet::createFilterObjects($params->getFilters());
             }
             $result = $this->getSingleReport($reportParam, $filters);
+            $types = array_merge($types, $result->getTypes());
             $rows[] = $result->getTotal();
-            $metrics = array_merge($metrics, $reportView->getMetrics());
-            $dimensions = array_merge($dimensions, $reportView->getDimensions());
+            $metrics = array_unique(array_merge($metrics, $reportView->getMetrics()));
+            $dimensions = array_unique(array_merge($dimensions, $reportView->getDimensions()));
         }
 
-        $collection = new Collection(array_merge($metrics, $dimensions), $rows);
+        $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
 
         /* get final reports */
         return $this->getFinalReports($collection, $params, $metrics, $dimensions);

@@ -75,6 +75,14 @@ class Collection
         return $this;
     }
 
+    /**
+     * @return array
+     */
+    public function getTypes()
+    {
+        return $this->types;
+    }
+
     public function getTypeOf($field)
     {
         if (array_key_exists($field, $this->types)) {
