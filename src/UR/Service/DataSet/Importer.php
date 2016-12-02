@@ -41,16 +41,23 @@ class Importer
             $duplicateFields = $connectedDataSource->getDuplicates();
 
             foreach ($rows as $row) {
-                $duplicateSql = 'SELECT * FROM ' . $tableName . " WHERE ";
-                foreach ($duplicateFields as $duplicateField) {
-                    $duplicateSql .= $duplicateField . "= :" . $duplicateField . ' AND ';
-                }
-                $duplicateSql = substr($duplicateSql, 0, -4);
-                $dupQb = $this->conn->prepare($duplicateSql);
+                $duplicateSql = 'SELECT * FROM ' . $tableName;
+                if (count($duplicateFields)) {
+                    $duplicateSql .= " WHERE ";
+                    foreach ($duplicateFields as $duplicateField) {
+                        $duplicateSql .= $duplicateField . "= :" . $duplicateField . ' AND ';
+                    }
+                    $duplicateSql = substr($duplicateSql, 0, -4);
 
-                foreach ($duplicateFields as $duplicateField) {
-                    $dupQb->bindValue($duplicateField, $row[$duplicateField]);
+                    $dupQb = $this->conn->prepare($duplicateSql);
+
+                    foreach ($duplicateFields as $duplicateField) {
+                        $dupQb->bindValue($duplicateField, $row[$duplicateField]);
+                    }
+                } else {
+                    $dupQb = $this->conn->prepare($duplicateSql);
                 }
+
                 $dupQb->execute();
                 $isDup = $dupQb->fetchAll();
 
