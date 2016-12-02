@@ -81,8 +81,8 @@ class ReportViewManager implements ReportViewManagerInterface
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
     }
 
-    public function getReportViewsForUserPaginationQuery(UserRoleInterface $publisher, PagerParam $param)
+    public function getReportViewsForUserPaginationQuery(UserRoleInterface $publisher, PagerParam $param, $multiView)
     {
-        return $this->repository->getReportViewsForUserPaginationQuery($publisher, $param);
+        return $this->repository->getReportViewsForUserPaginationQuery($publisher, $param, $multiView);
     }
 }

@@ -41,9 +41,15 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
     /**
      * @inheritdoc
      */
-    public function getReportViewsForUserPaginationQuery(UserRoleInterface $user, PagerParam $param)
+    public function getReportViewsForUserPaginationQuery(UserRoleInterface $user, PagerParam $param, $multiView = null)
     {
-        $qb = $this->createQueryBuilderForUser($user);
+        if ($multiView === 'true') {
+            $qb = $this->getDataSourceHasMultiViewForUserQuery($user);
+        } else if ($multiView === 'false') {
+            $qb = $this->getDataSourceHasNotMultiViewForUserQuery($user);
+        } else {
+            $qb = $this->createQueryBuilderForUser($user);
+        }
 
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
@@ -72,5 +78,35 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
             }
         }
         return $qb;
+    }
+
+    public function getDataSourceHasMultiViewForUserQuery(UserRoleInterface $user)
+    {
+        $qb = $this->createQueryBuilderForUser($user);
+        $qb->andWhere('rv.multiView = 1');
+
+        return $qb;
+    }
+
+    public function getDataSourceHasMultiViewForUser(UserRoleInterface $user)
+    {
+        $qb = $this->getDataSourceHasMultiViewForUserQuery($user);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function getDataSourceHasNotMultiViewForUserQuery(UserRoleInterface $user)
+    {
+        $qb = $this->createQueryBuilderForUser($user);
+        $qb->andWhere('rv.multiView = 0');
+
+        return $qb;
+    }
+
+    public function getDataSourceHasNotMultiViewForUser(UserRoleInterface $user)
+    {
+        $qb = $this->getDataSourceHasNotMultiViewForUserQuery($user);
+
+        return $qb->getQuery()->getResult();
     }
 }
