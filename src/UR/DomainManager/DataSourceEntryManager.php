@@ -144,20 +144,17 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     public function uploadDataSourceEntryFiles(FileBag $files, $path, $dirItem, DataSourceInterface $dataSource)
     {
         $result = [];
-        /** @var  $files */
+
+        /** @var $files */
         $keys = $files->keys();
         foreach ($keys as $key) {
             /**@var UploadedFile $file */
             $file = $files->get($key);
-
             $error = $this->validateFileUpload($file, $dataSource);
-
             $origin_name = $file->getClientOriginalName();
-
             $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
 
             if ($error > 0) {
-
                 if (in_array(DataSourceRepository::WRONG_FORMAT, $dataSource->getAlertSetting())) {
                     $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT;
                     $publisherId = $dataSource->getPublisher()->getId();

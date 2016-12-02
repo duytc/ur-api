@@ -20,8 +20,21 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
     const COMPARISON_TYPE_FILTER_KEY = 'comparison';
     const COMPARISON_VALUE_FILTER_KEY = 'compareValue';
 
+    public static $SUPPORTED_COMPARISON_TYPES = [
+        self::COMPARISON_TYPE_EQUAL,
+        self::COMPARISON_TYPE_SMALLER,
+        self::COMPARISON_TYPE_SMALLER_OR_EQUAL,
+        self::COMPARISON_TYPE_GREATER,
+        self::COMPARISON_TYPE_GREATER_OR_EQUAL,
+        self::COMPARISON_TYPE_NOT_EQUAL,
+        self::COMPARISON_TYPE_IN,
+        self::COMPARISON_TYPE_NOT_IN
+    ];
+
+    /** @var string */
     protected $comparisonType;
 
+    /** @var string|array due to comparisonType */
     protected $comparisonValue;
 
     /**
@@ -42,12 +55,13 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
         $this->fieldName = $numberFilter[self::FILED_NAME_FILTER_KEY];
         $this->fieldType = $numberFilter[self::FIELD_TYPE_FILTER_KEY];
         $this->comparisonType = $numberFilter[self::COMPARISON_TYPE_FILTER_KEY];
-
-        if (false !== strpos($numberFilter[self::COMPARISON_VALUE_FILTER_KEY],';')) {
-            $numberFilter[self::COMPARISON_VALUE_FILTER_KEY] = str_replace(';',',', $numberFilter[self::COMPARISON_VALUE_FILTER_KEY]);
-        }
-
         $this->comparisonValue = $numberFilter[self::COMPARISON_VALUE_FILTER_KEY];
+
+        // validate comparisonType
+        $this->validateComparisonType();
+
+        // validate comparisonValue
+        $this->validateComparisonValue();
     }
 
     /**
@@ -64,5 +78,34 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
     public function getComparisonValue()
     {
         return $this->comparisonValue;
+    }
+
+    /**
+     * validate ComparisonType
+     *
+     * @throws \Exception
+     */
+    private function validateComparisonType()
+    {
+        if (!in_array($this->comparisonType, self::$SUPPORTED_COMPARISON_TYPES)) {
+            throw new \Exception(sprintf('Not supported comparisonType %s', $this->comparisonType));
+        }
+    }
+
+    /**
+     * validate ComparisonValue
+     *
+     * @throws \Exception
+     */
+    private function validateComparisonValue()
+    {
+        // expect array
+        if ($this->comparisonType == self::COMPARISON_TYPE_IN
+            || $this->comparisonType == self::COMPARISON_TYPE_NOT_IN
+        ) {
+            if (!is_array($this->comparisonValue)) {
+                throw new \Exception(sprintf('Expect comparisonValue is array with comparisonType %s, got %s', $this->comparisonType, $this->comparisonValue));
+            }
+        }
     }
 }
