@@ -13,6 +13,7 @@ use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\DTO\Collection;
+use UR\Service\DTO\Report\ReportResultInterface;
 use UR\Service\StringUtilTrait;
 
 class ReportBuilder implements ReportBuilderInterface
@@ -161,17 +162,21 @@ class ReportBuilder implements ReportBuilderInterface
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
         $this->transformReports($reportCollection, $transforms, $metrics, $dimensions, $joinBy);
 
-        /* format data */
-        /** @var FormatInterface[] $formats */
-        $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
-        $this->formatReports($reportCollection, $formats, $metrics, $dimensions);
-
         /* build columns that will be showed in total */
         $showInTotal = is_array($params->getShowInTotal()) ? $params->getShowInTotal() : [];
         $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
 
         /* group reports */
-        return $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $isSingleDataSet);
+        /** @var ReportResultInterface $reportResult */
+        $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $isSingleDataSet);
+
+        /* format data */
+        /** @var FormatInterface[] $formats */
+        $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
+        $this->formatReports($reportResult, $formats, $metrics, $dimensions);
+
+        /* return report result */
+        return $reportResult;
     }
 
     /**
@@ -204,12 +209,12 @@ class ReportBuilder implements ReportBuilderInterface
     /**
      * format reports
      *
-     * @param Collection $reportCollection
+     * @param ReportResultInterface $reportResult
      * @param array $formats
      * @param array $metrics
      * @param array $dimensions
      */
-    private function formatReports(Collection $reportCollection, array $formats, array $metrics, array $dimensions)
+    private function formatReports(ReportResultInterface $reportResult, array $formats, array $metrics, array $dimensions)
     {
         // sort format by priority
         usort($formats, function (FormatInterface $a, FormatInterface $b) {
@@ -220,7 +225,11 @@ class ReportBuilder implements ReportBuilderInterface
         });
 
         foreach ($formats as $format) {
-            $format->format($reportCollection, $metrics, $dimensions);
+            if (!($format instanceof FormatInterface)) {
+                continue;
+            }
+
+            $format->format($reportResult, $metrics, $dimensions);
         }
     }
 

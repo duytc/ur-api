@@ -1,7 +1,7 @@
 <?php
 namespace UR\Domain\DTO\Report\Formats;
 
-use UR\Service\DTO\Collection;
+use UR\Service\DTO\Report\ReportResultInterface;
 
 interface FormatInterface
 {
@@ -27,10 +27,10 @@ interface FormatInterface
     public function getPriority();
 
     /**
-     * @param Collection $collection
+     * @param ReportResultInterface $reportResult
      * @param array $metrics
      * @param array $dimensions
      * @return mixed
      */
-    public function format(Collection $collection,  array $metrics, array $dimensions);
+    public function format(ReportResultInterface $reportResult, array $metrics, array $dimensions);
 }

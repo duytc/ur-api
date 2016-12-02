@@ -87,4 +87,28 @@ class ReportResult implements ReportResultInterface
     {
         return $this->types;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function setReports($reports)
+    {
+        $this->reports = $reports;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setTotal($total)
+    {
+        $this->total = $total;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setAverage($average)
+    {
+        $this->average = $average;
+    }
 }

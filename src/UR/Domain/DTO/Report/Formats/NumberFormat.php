@@ -5,7 +5,7 @@ namespace UR\Domain\DTO\Report\Formats;
 
 
 use UR\Exception\InvalidArgumentException;
-use UR\Service\DTO\Collection;
+use UR\Service\DTO\Report\ReportResultInterface;
 
 class NumberFormat extends AbstractFormat implements NumberFormatInterface
 {
@@ -61,28 +61,64 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
     /**
      * @inheritdoc
      */
-    public function format(Collection $collection, array $metrics, array $dimensions)
+    public function format(ReportResultInterface $reportResult, array $metrics, array $dimensions)
     {
-        $rows = $collection->getRows();
-        $newRows = [];
-        $fields = $this->getFields();
+        $reports = $reportResult->getReports();
+        $totals = $reportResult->getTotal();
+        $averages = $reportResult->getAverage();
 
         $decimalSeparator = !strcmp($this->thousandSeparator, self::DEFAULT_THOUSAND_SEPARATOR) ? self::DEFAULT_DECIMAL_SEPARATOR : self::DEFAULT_THOUSAND_SEPARATOR;
+        $fields = $this->getFields();
 
-        foreach ($rows as $row) {
+        /* format for all records of reports */
+        $newReports = [];
+        foreach ($reports as $row) {
             foreach ($fields as $field) {
                 if (!array_key_exists($field, $row)) {
                     continue;
                 }
 
-                $row[$field] = number_format($row[$field], $this->precision, $decimalSeparator, $this->thousandSeparator);
+                $row[$field] = $this->formatOneNumber($row[$field], $decimalSeparator);
             }
 
-            $newRows[] = $row;
+            $newReports[] = $row;
         }
 
-        $collection->setRows($newRows);
+        /* format for totals */
+        $newTotals = $totals;
+        foreach ($fields as $field) {
+            if (!array_key_exists($field, $totals)) {
+                continue;
+            }
 
-        return $collection;
+            $newTotals[$field] = $this->formatOneNumber($totals[$field], $decimalSeparator);
+        }
+
+        /* format for averages */
+        $newAverages = $averages;
+        foreach ($fields as $field) {
+            if (!array_key_exists($field, $averages)) {
+                continue;
+            }
+
+            $newAverages[$field] = $this->formatOneNumber($averages[$field], $decimalSeparator);
+        }
+
+        /* set value again */
+        $reportResult->setReports($newReports);
+        $reportResult->setTotal($newTotals);
+        $reportResult->setAverage($newAverages);
+    }
+
+    /**
+     * format one number
+     *
+     * @param $fieldValue
+     * @param $decimalSeparator
+     * @return string
+     */
+    private function formatOneNumber($fieldValue, $decimalSeparator)
+    {
+        return number_format($fieldValue, $this->precision, $decimalSeparator, $this->thousandSeparator);
     }
 }

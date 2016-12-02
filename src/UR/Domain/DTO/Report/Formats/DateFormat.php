@@ -6,7 +6,7 @@ namespace UR\Domain\DTO\Report\Formats;
 
 use DateTime;
 use UR\Exception\InvalidArgumentException;
-use UR\Service\DTO\Collection;
+use UR\Service\DTO\Report\ReportResultInterface;
 
 class DateFormat extends AbstractFormat implements DateFormatInterface
 {
@@ -45,29 +45,68 @@ class DateFormat extends AbstractFormat implements DateFormatInterface
     /**
      * @inheritdoc
      */
-    public function format(Collection $collection, array $metrics, array $dimensions)
+    public function format(ReportResultInterface $reportResult, array $metrics, array $dimensions)
     {
-        $rows = $collection->getRows();
-        $newRows = [];
+        $reports = $reportResult->getReports();
+        $totals = $reportResult->getTotal();
+        $averages = $reportResult->getAverage();
+
         $fields = $this->getFields();
 
-        foreach ($rows as $row) {
+        /* format for all records of reports */
+        $newReports = [];
+        foreach ($reports as $row) {
             foreach ($fields as $field) {
                 if (!array_key_exists($field, $row)) {
                     continue;
                 }
 
-                $date = date_create_from_format('Y-m-d', $row[$field]);
-                if (!$date instanceof DateTime) {
-                    throw new \Exception(sprintf('System can not create date from value: %s', $row[$field]));
-                }
-
-                $row[$field] = $date->format($this->outputFormat);
+                $row[$field] = $this->formatOneDate($row[$field]);
             }
 
-            $newRows[] = $row;
+            $newReports[] = $row;
         }
 
-        $collection->setRows($newRows);
+        /* format for totals */
+        $newTotals = $totals;
+        foreach ($fields as $field) {
+            if (!array_key_exists($field, $totals)) {
+                continue;
+            }
+
+            $newTotals[$field] = $this->formatOneDate($totals[$field]);
+        }
+
+        /* format for averages */
+        $newAverages = $averages;
+        foreach ($fields as $field) {
+            if (!array_key_exists($field, $averages)) {
+                continue;
+            }
+
+            $newAverages[$field] = $this->formatOneDate($averages[$field]);
+        }
+
+        /* set value again */
+        $reportResult->setReports($newReports);
+        $reportResult->setTotal($newTotals);
+        $reportResult->setAverage($newAverages);
+    }
+
+    /**
+     * format one date
+     *
+     * @param $fieldValue
+     * @return string
+     * @throws \Exception
+     */
+    private function formatOneDate($fieldValue)
+    {
+        $date = date_create_from_format('Y-m-d', $fieldValue);
+        if (!$date instanceof DateTime) {
+            throw new \Exception(sprintf('System can not create date from value: %s', $fieldValue));
+        }
+
+        return $date->format($this->outputFormat);
     }
 }

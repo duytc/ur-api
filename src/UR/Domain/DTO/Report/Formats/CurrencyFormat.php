@@ -5,7 +5,7 @@ namespace UR\Domain\DTO\Report\Formats;
 
 
 use UR\Exception\InvalidArgumentException;
-use UR\Service\DTO\Collection;
+use UR\Service\DTO\Report\ReportResultInterface;
 
 class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
 {
@@ -46,26 +46,62 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
     /**
      * @inheritdoc
      */
-    public function format(Collection $collection, array $metrics, array $dimensions)
+    public function format(ReportResultInterface $reportResult, array $metrics, array $dimensions)
     {
-        $rows = $collection->getRows();
-        $newRows = [];
+        $reports = $reportResult->getReports();
+        $totals = $reportResult->getTotal();
+        $averages = $reportResult->getAverage();
+
         $fields = $this->getFields();
 
-        foreach ($rows as $row) {
+        /* format for all records of reports */
+        $newReports = [];
+        foreach ($reports as $row) {
             foreach ($fields as $field) {
                 if (!array_key_exists($field, $row)) {
                     continue;
                 }
 
-                $row[$field] = $this->getCurrency() . ' ' .  $row[$field];
+                $row[$field] = $this->formatOneCurrency($row[$field]);
             }
 
-            $newRows[] = $row;
+            $newReports[] = $row;
         }
 
-        $collection->setRows($newRows);
+        /* format for totals */
+        $newTotals = $totals;
+        foreach ($fields as $field) {
+            if (!array_key_exists($field, $totals)) {
+                continue;
+            }
 
-        return $collection;
+            $newTotals[$field] = $this->formatOneCurrency($totals[$field]);
+        }
+
+        /* format for averages */
+        $newAverages = $averages;
+        foreach ($fields as $field) {
+            if (!array_key_exists($field, $averages)) {
+                continue;
+            }
+
+            $newAverages[$field] = $this->formatOneCurrency($averages[$field]);
+        }
+
+        /* set value again */
+        $reportResult->setReports($newReports);
+        $reportResult->setTotal($newTotals);
+        $reportResult->setAverage($newAverages);
+    }
+
+    /**
+     * format one currency
+     *
+     * @param $fieldValue
+     * @return string
+     */
+    private function formatOneCurrency($fieldValue)
+    {
+        return $this->getCurrency() . ' ' . $fieldValue;
     }
 }
