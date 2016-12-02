@@ -4,5 +4,9 @@ namespace UR\Service\Parser\Filter;
 
 interface ColumnFilterInterface
 {
-    public function filter($filter);
+    /**
+     * @param $value
+     * @return bool|int true if passed, false if not passed or an int code if other error
+     */
+    public function filter($value);
 }

@@ -231,6 +231,45 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     }
 
     /**
+     * Update an array existing data source entries
+     *
+     * @Rest\Put("/datasourceentries")
+     * @Rest\QueryParam(name="replay", requirements="(true|false)", nullable=true, description="replay data source entries")
+     *
+     * Update an array existing data source entries
+     *
+     * @ApiDoc(
+     *  section = "Data Sources Entry",
+     *  resource = true,
+     *  statusCodes = {
+     *      201 = "Returned when the resource is created",
+     *      204 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return mixed
+     * @throws \Exception
+     */
+    public function putDataSourceEntriesAction(Request $request)
+    {
+        $params = $request->request->all();
+        $ids = $params['ids'];
+
+        $replay = $request->query->get('replay', null);
+        $replay = ($replay === 'true') ? true : false;
+
+        if ($replay === true) {
+            foreach ($ids as $id) {
+                $dataSourceEntry = $this->one($id);
+                $importHistoryManager = $this->get('ur.domain_manager.import_history');
+                $importHistoryManager->replayDataSourceEntryData($dataSourceEntry);
+            }
+        }
+    }
+
+    /**
      * Update an existing data source entry from the submitted data or create a new data source at a specific location
      *
      * @ApiDoc(

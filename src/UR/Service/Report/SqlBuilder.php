@@ -55,7 +55,7 @@ class SqlBuilder implements SqlBuilderInterface
         $fields = array_merge($metrics, $dimensions);
         $tableColumns = array_keys($table->getColumns());
 
-        foreach($fields as $index=>$field) {
+        foreach ($fields as $index => $field) {
             if (!in_array($field, $tableColumns)) {
                 unset($fields[$index]);
             }
@@ -117,22 +117,22 @@ class SqlBuilder implements SqlBuilderInterface
 
         // add select clause
         /** @var DataSetInterface $dataSet */
-        foreach($dataSets as $dataSetIndex=>$dataSet) {
+        foreach ($dataSets as $dataSetIndex => $dataSet) {
             $qb = $this->buildSelectQuery($qb, $dataSet, $dataSetIndex, $joinedField);
             $conditions = array_merge($conditions, $this->buildFilters($dataSet->getFilters(), sprintf('t%d', $dataSetIndex)));
         }
 
         if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            foreach($overridingFilters as $filter) {
+            foreach ($overridingFilters as $filter) {
                 if (!$filter instanceof AbstractFilterInterface) {
                     continue;
                 }
 
                 /** @var DataSetInterface $dataSet */
-                foreach($dataSets as $dataSetIndex=>$dataSet) {
+                foreach ($dataSets as $dataSetIndex => $dataSet) {
                     if (in_array($filter->getFieldName(), $dataSet->getDimensions()) ||
                         in_array($filter->getFieldName(), $dataSet->getMetrics())
-                    ){
+                    ) {
                         $conditions[] = $this->buildSingleFilter($filter, sprintf('t%d', $dataSetIndex));
                     }
                 }
@@ -158,7 +158,7 @@ class SqlBuilder implements SqlBuilderInterface
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $fields = array_merge($metrics, $dimensions);
         $tableColumns = array_keys($table->getColumns());
-        foreach($fields as $index=>$field) {
+        foreach ($fields as $index => $field) {
 
             if (!in_array($field, $tableColumns)) {
                 unset($fields[$index]);
@@ -196,7 +196,7 @@ class SqlBuilder implements SqlBuilderInterface
     {
         $sqlConditions = [];
 
-        foreach($filters as $filter) {
+        foreach ($filters as $filter) {
             if (!$filter instanceof AbstractFilterInterface) {
                 continue;
             }
@@ -225,46 +225,94 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         if ($filter instanceof NumberFilterInterface) {
+            $numberFilterComparisonValue = $filter->getComparisonValue();
+
             switch ($filter->getComparisonType()) {
                 case NumberFilter::COMPARISON_TYPE_EQUAL :
-                    return sprintf('%s = %f', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s = %f', $fieldName, $numberFilterComparisonValue);
+
                 case NumberFilter::COMPARISON_TYPE_NOT_EQUAL:
-                    return sprintf('%s != %f', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s != %f', $fieldName, $numberFilterComparisonValue);
+
                 case NumberFilter::COMPARISON_TYPE_GREATER:
-                    return sprintf('%s > %f', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s > %f', $fieldName, $numberFilterComparisonValue);
+
                 case NumberFilter::COMPARISON_TYPE_SMALLER:
-                    return sprintf('%s < %f', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s < %f', $fieldName, $numberFilterComparisonValue);
+
                 case NumberFilter::COMPARISON_TYPE_SMALLER_OR_EQUAL:
-                    return sprintf('%s <= %f', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s <= %f', $fieldName, $numberFilterComparisonValue);
+
                 case NumberFilter::COMPARISON_TYPE_GREATER_OR_EQUAL:
-                    return sprintf('%s >= %f', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s >= %f', $fieldName, $numberFilterComparisonValue);
+
                 case NumberFilter::COMPARISON_TYPE_IN:
-                    return sprintf('%s in (%s)', $fieldName, $filter->getComparisonValue());
+                    $numberFilterInValue = implode(',', $numberFilterComparisonValue);
+                    return sprintf('%s IN (%s)', $fieldName, $numberFilterInValue);
+
                 case NumberFilter::COMPARISON_TYPE_NOT_IN:
-                    return sprintf('%s not in (%s)', $fieldName, $filter->getComparisonValue());
+                    $numberFilterNotInValue = implode(',', $numberFilterComparisonValue);
+                    return sprintf('%s NOT IN (%s)', $fieldName, $numberFilterNotInValue);
+
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));
             }
         }
 
         if ($filter instanceof TextFilterInterface) {
+            $textFilterComparisonValue = $filter->getComparisonValue();
+
             switch ($filter->getComparisonType()) {
                 case TextFilter::COMPARISON_TYPE_EQUAL :
-                    return sprintf('%s = %s', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s = %s', $fieldName, $textFilterComparisonValue);
+
                 case TextFilter::COMPARISON_TYPE_NOT_EQUAL:
-                    return sprintf('%s != %s', $fieldName, $filter->getComparisonValue());
+                    return sprintf('%s != %s', $fieldName, $textFilterComparisonValue);
+
                 case TextFilter::COMPARISON_TYPE_CONTAINS :
-                    return sprintf('%s LIKE \'%%%s%%\'', $fieldName, $filter->getComparisonValue());
+                    $contains = array_map(function ($tcv) use ($fieldName) {
+                        return sprintf('%s LIKE \'%%%s%%\'', $fieldName, $tcv);
+                    }, $textFilterComparisonValue);
+
+                    return sprintf("(%s)", implode(' OR ', $contains)); // cover conditions in "()" to keep inner AND/OR of conditions
+
                 case TextFilter::COMPARISON_TYPE_NOT_CONTAINS :
-                    return sprintf('%s NOT LIKE \'%%%s%%\'', $fieldName, $filter->getComparisonValue());
+                    $notContains = array_map(function ($tcv) use ($fieldName) {
+                        return sprintf('%s NOT LIKE \'%%%s%%\'', $fieldName, $tcv);
+                    }, $textFilterComparisonValue);
+
+                    return sprintf("(%s)", implode(' AND ', $notContains)); // cover conditions in "()" to keep inner AND/OR of conditions
+
                 case TextFilter::COMPARISON_TYPE_START_WITH:
-                    return sprintf('%s LIKE \'%s%%\'', $fieldName, $filter->getComparisonValue());
+                    $startWiths = array_map(function ($tcv) use ($fieldName) {
+                        return sprintf('%s LIKE \'%s%%\'', $fieldName, $tcv);
+                    }, $textFilterComparisonValue);
+
+                    return sprintf("(%s)", implode(' OR ', $startWiths)); // cover conditions in "()" to keep inner AND/OR of conditions
+
                 case TextFilter::COMPARISON_TYPE_END_WITH:
-                    return sprintf('%s LIKE \'%%%s\'', $fieldName, $filter->getComparisonValue());
+                    $endWiths = array_map(function ($tcv) use ($fieldName) {
+                        return sprintf('%s LIKE \'%%%s\'', $fieldName, $tcv);
+                    }, $textFilterComparisonValue);
+
+                    return sprintf("(%s)", implode(' OR ', $endWiths)); // cover conditions in "()" to keep inner AND/OR of conditions
+
                 case TextFilter::COMPARISON_TYPE_IN:
-                    return sprintf('%s IN (%s)', $fieldName, $filter->getComparisonValue());
-                case TextFilter::COMPARISON_TYPE_NOT:
-                    return sprintf('%s NOT IN (%s)', $fieldName, $filter->getComparisonValue());
+                    $quotedTextFilterComparisonValue = array_map(function ($tcv) {
+                        return sprintf('\'%s\'', $tcv); // add quote to each string value
+                    }, $textFilterComparisonValue);
+
+                    $textFilterInValue = implode(',', $quotedTextFilterComparisonValue);
+                    return sprintf('%s IN (%s)', $fieldName, $textFilterInValue);
+
+                case TextFilter::COMPARISON_TYPE_NOT_IN:
+                    $quotedTextFilterComparisonValue = array_map(function ($tcv) {
+                        return sprintf('\'%s\'', $tcv); // add quote to each string value
+                    }, $textFilterComparisonValue);
+
+                    $textFilterNotInValue = implode(',', $quotedTextFilterComparisonValue);
+                    return sprintf('%s NOT IN (%s)', $fieldName, $textFilterNotInValue);
+
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));
             }

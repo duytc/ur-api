@@ -50,41 +50,60 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
+    /**
+     * validate Filters of a connectDataSource
+     *
+     * @param DataSetInterface $dataSet
+     * @param ConnectedDataSourceInterface $connDataSource
+     * @return int|string return 0 if success, or a string if an error occurred
+     */
     public function validateFilters(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
     {
-        if ($connDataSource->getFilters() !== null)
-            foreach ($connDataSource->getFilters() as $filters) {
+        $connDataSourceFilters = $connDataSource->getFilters();
 
-                if (!array_key_exists(FilterType::FIELD, $filters)) {
-                    return "Filter Setting should have 'field' property";
-                }
+        if ($connDataSourceFilters === null) {
+            return 0; // no filter
+        }
 
-                if (!array_key_exists($filters[FilterType::FIELD], $dataSet->getDimensions()) && !array_key_exists($filters[FilterType::FIELD], $dataSet->getMetrics())) {
-                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] dose not exist in Dimensions or Metrics";
-                }
+        if (!is_array($connDataSourceFilters)) {
+            return "ConnectedDataSource Filters Setting should be an array";
+        }
 
-
-                if (!array_key_exists(FilterType::TYPE, $filters)) {
-                    return "filter Setting error: cant find 'type' of field [" . $filters[FilterType::FIELD] . "]";
-                }
-
-                if (!Type::isValidFilterType($filters[FilterType::TYPE])) {
-                    return "filter Setting error: type of field [" . $filters[FilterType::FIELD] . "] should be one of ['date', 'text', 'number']";
-                }
-
-                if ((strcmp($filters[FilterType::TYPE], Type::DATE) === 0) && !FilterType::isValidFilterDateType($filters)) {
-                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Date Setting";
-                }
-
-                if (strcmp($filters[FilterType::TYPE], Type::NUMBER) === 0 && !FilterType::isValidFilterNumberType($filters)) {
-                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Number Setting";
-                }
-
-                if (strcmp($filters[FilterType::TYPE], Type::TEXT) === 0 && !FilterType::isValidFilterTextType($filters)) {
-                    return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Text Setting";
-                }
-
+        foreach ($connDataSourceFilters as $filters) {
+            if (!is_array($filters)) {
+                return "Each element Filter Setting should be an array";
             }
+
+            if (!array_key_exists(FilterType::FIELD, $filters)) {
+                return "Filter Setting should have 'field' property";
+            }
+
+            if (!array_key_exists($filters[FilterType::FIELD], $dataSet->getDimensions()) && !array_key_exists($filters[FilterType::FIELD], $dataSet->getMetrics())) {
+                return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] dose not exist in Dimensions or Metrics";
+            }
+
+
+            if (!array_key_exists(FilterType::TYPE, $filters)) {
+                return "filter Setting error: cant find 'type' of field [" . $filters[FilterType::FIELD] . "]";
+            }
+
+            if (!Type::isValidFilterType($filters[FilterType::TYPE])) {
+                return "filter Setting error: type of field [" . $filters[FilterType::FIELD] . "] should be one of ['date', 'text', 'number']";
+            }
+
+            if ((strcmp($filters[FilterType::TYPE], Type::DATE) === 0) && !FilterType::isValidFilterDateType($filters)) {
+                return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Date Setting";
+            }
+
+            if (strcmp($filters[FilterType::TYPE], Type::NUMBER) === 0 && !FilterType::isValidFilterNumberType($filters)) {
+                return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Number Setting";
+            }
+
+            if (strcmp($filters[FilterType::TYPE], Type::TEXT) === 0 && !FilterType::isValidFilterTextType($filters)) {
+                return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Text Setting";
+            }
+        }
+
         return 0;
     }
 

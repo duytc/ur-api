@@ -5,13 +5,11 @@ namespace UR\Worker\Workers;
 use StdClass;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\DataSourceEntryManagerInterface;
-use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Import\AutoImportDataInterface;
 
 class ReImportWhenNewEntryReceived
 {
-
     /** @var AutoImportDataInterface $autoImport */
     private $autoImport;
 
