@@ -57,32 +57,26 @@ class NumberFilter implements ColumnFilterInterface
         }
 
         if (FilterType::SMALLER === $this->comparison) {
-
             return $filter < $this->compareValue ? true : false;
         }
 
         if (FilterType::SMALLER_OR_EQUAL === $this->comparison) {
-
             return $filter <= $this->compareValue ? true : false;
         }
 
         if (FilterType::EQUAL === $this->comparison) {
-
             return $this->compareValue === $filter ? true : false;
         }
 
         if (FilterType::NOT_EQUAL === $this->comparison) {
-
             return $this->compareValue !== $filter ? true : false;
         }
 
         if (FilterType::GREATER === $this->comparison) {
-
             return $filter > $this->compareValue ? true : false;
         }
 
         if (FilterType::GREATER_OR_EQUAL === $this->comparison) {
-
             return $filter >= $this->compareValue ? true : false;
         }
 
