@@ -229,22 +229,22 @@ class SqlBuilder implements SqlBuilderInterface
 
             switch ($filter->getComparisonType()) {
                 case NumberFilter::COMPARISON_TYPE_EQUAL :
-                    return sprintf('%s = %f', $fieldName, $numberFilterComparisonValue);
+                    return sprintf('%s = %.12f', $fieldName, $numberFilterComparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_NOT_EQUAL:
-                    return sprintf('%s != %f', $fieldName, $numberFilterComparisonValue);
+                    return sprintf('%s != %.12f', $fieldName, $numberFilterComparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_GREATER:
-                    return sprintf('%s > %f', $fieldName, $numberFilterComparisonValue);
+                    return sprintf('%s > %.12f', $fieldName, $numberFilterComparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_SMALLER:
-                    return sprintf('%s < %f', $fieldName, $numberFilterComparisonValue);
+                    return sprintf('%s < %.12f', $fieldName, $numberFilterComparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_SMALLER_OR_EQUAL:
-                    return sprintf('%s <= %f', $fieldName, $numberFilterComparisonValue);
+                    return sprintf('%s <= %.12f', $fieldName, $numberFilterComparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_GREATER_OR_EQUAL:
-                    return sprintf('%s >= %f', $fieldName, $numberFilterComparisonValue);
+                    return sprintf('%s >= %.12f', $fieldName, $numberFilterComparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_IN:
                     $numberFilterInValue = implode(',', $numberFilterComparisonValue);
