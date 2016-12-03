@@ -84,7 +84,6 @@ class ReportBuilder implements ReportBuilderInterface
 
             foreach ($dataSet->getDimensions() as $item) {
                 if ($joinBy === $item) {
-//                    $types[$joinBy] = $types[$item];
                     continue;
                 }
                 $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
@@ -97,7 +96,12 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* get all reports data */
         $statement = $this->reportSelector->getReportData($params, $overridingFilters);
-        $collection = new Collection(array_merge($metrics, $dimensions), $statement->fetchAll(), $types);
+        $rows = $statement->fetchAll();
+        if (count($rows) < 1) {
+            throw new NotFoundHttpException();
+        }
+
+        $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
 
         /* get final reports */
         $isSingleDataSet = count($dataSets) < 2;
