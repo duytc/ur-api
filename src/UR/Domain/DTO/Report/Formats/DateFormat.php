@@ -97,16 +97,19 @@ class DateFormat extends AbstractFormat implements DateFormatInterface
      * format one date
      *
      * @param $fieldValue
-     * @return string
-     * @throws \Exception
+     * @return string|null null if can not format
      */
     private function formatOneDate($fieldValue)
     {
-        $date = date_create_from_format('Y-m-d', $fieldValue);
-        if (!$date instanceof DateTime) {
-            throw new \Exception(sprintf('System can not create date from value: %s', $fieldValue));
-        }
+        try {
+            $date = date_create_from_format('Y-m-d', $fieldValue);
+            if (!$date instanceof DateTime) {
+                throw new \Exception(sprintf('System can not create date from value: %s', $fieldValue));
+            }
 
-        return $date->format($this->outputFormat);
+            return $date->format($this->outputFormat);
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }
