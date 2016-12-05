@@ -4,6 +4,8 @@
 namespace UR\Service\DTO\Report;
 
 
+use UR\Domain\DTO\Report\DateRange;
+
 class ReportResult implements ReportResultInterface
 {
     /**
@@ -32,20 +34,27 @@ class ReportResult implements ReportResultInterface
     protected $types;
 
     /**
+     * @var DateRange
+     */
+    protected $dateRange;
+
+    /**
      * ReportResult constructor.
      * @param array $reports
      * @param array $total
      * @param array $average
+     * @param array $dateRange
      * @param array $columns
      * @param array $types
      */
-    public function __construct(array $reports, array $total, array $average, $columns = [], $types = [])
+    public function __construct(array $reports, array $total, array $average, $dateRange, $columns = [], $types = [])
     {
         $this->reports = $reports;
         $this->total = $total;
         $this->average = $average;
         $this->columns = $columns;
         $this->types = $types;
+        $this->dateRange = $dateRange;
     }
 
     /**

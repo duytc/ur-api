@@ -95,8 +95,8 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         /* get all reports data */
-        $statement = $this->reportSelector->getReportData($params, $overridingFilters);
-        $rows = $statement->fetchAll();
+        $data = $this->reportSelector->getReportData($params, $overridingFilters);
+        $rows = $data[SqlBuilder::STATEMENT_KEY]->fetchAll();
         if (count($rows) < 1) {
             throw new NotFoundHttpException();
         }
@@ -105,6 +105,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* get final reports */
         $isSingleDataSet = count($dataSets) < 2;
+        $dateRanges = $data[SqlBuilder::DATE_RANGE_KEY];
         return $this->getFinalReports($collection, $params, $metrics, $dimensions, $isSingleDataSet, $joinBy);
     }
 
