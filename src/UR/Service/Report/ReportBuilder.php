@@ -105,7 +105,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* get final reports */
         $isSingleDataSet = count($dataSets) < 2;
-        
+
         return $this->getFinalReports($collection, $params, $metrics, $dimensions, $data[SqlBuilder::DATE_RANGE_KEY], $isSingleDataSet, $joinBy);
     }
 
