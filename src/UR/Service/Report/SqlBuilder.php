@@ -101,7 +101,7 @@ class SqlBuilder implements SqlBuilderInterface
             $qb->where($conditions[self::FIRST_ELEMENT]);
 
             return array (
-                self::DATE_RANGE_KEY => [],
+                self::DATE_RANGE_KEY => $dateRange,
                 self::STATEMENT_KEY => $qb->execute()
             );
         }
