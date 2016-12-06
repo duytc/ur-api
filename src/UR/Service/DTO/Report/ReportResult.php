@@ -98,6 +98,14 @@ class ReportResult implements ReportResultInterface
     }
 
     /**
+     * @return DateRange
+     */
+    public function getDateRange()
+    {
+        return $this->dateRange;
+    }
+
+    /**
      * @inheritdoc
      */
     public function setReports($reports)
