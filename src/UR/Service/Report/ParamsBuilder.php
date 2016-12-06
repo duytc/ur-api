@@ -59,21 +59,15 @@ class ParamsBuilder implements ParamsBuilderInterface
                 $reportViews = $this->createReportViews(json_decode($data[self::REPORT_VIEWS_KEY], true));
                 $param->setReportViews($reportViews);
             }
-
-            if (array_key_exists(self::FILTERS_KEY, $data) && !empty($data[self::FILTERS_KEY])) {
-                $param->setFilters(json_decode($data[self::FILTERS_KEY], true));
+        } else {
+            if (array_key_exists(self::DATA_SET_KEY, $data) && !empty($data[self::DATA_SET_KEY])) {
+                $dataSets = $this->createDataSets(json_decode($data[self::DATA_SET_KEY], true));
+                $param->setDataSets($dataSets);
             }
 
-            if (array_key_exists(self::TRANSFORM_KEY, $data) && !empty($data[self::TRANSFORM_KEY])) {
-                $param->setTransforms($data[self::TRANSFORM_KEY]);
+            if (array_key_exists(self::JOIN_BY_KEY, $data) && !empty($data[self::JOIN_BY_KEY])) {
+                $param->setJoinByFields($data[self::JOIN_BY_KEY]);
             }
-
-            return $param;
-        }
-
-        if (array_key_exists(self::DATA_SET_KEY, $data) && !empty($data[self::DATA_SET_KEY])) {
-            $dataSets = $this->createDataSets(json_decode($data[self::DATA_SET_KEY], true));
-            $param->setDataSets($dataSets);
         }
 
         if (array_key_exists(self::TRANSFORM_KEY, $data) && !empty($data[self::TRANSFORM_KEY])) {
@@ -81,12 +75,12 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setTransforms($transforms);
         }
 
-        if (array_key_exists(self::JOIN_BY_KEY, $data) && !empty($data[self::JOIN_BY_KEY])) {
-            $param->setJoinByFields($data[self::JOIN_BY_KEY]);
-        }
 
-        if (array_key_exists(self::WEIGHTED_CALCULATION_KEY, $data) && !empty($data[self::WEIGHTED_CALCULATION_KEY])) {
-            $param->setWeightedCalculations(new WeightedCalculation(json_decode($data[self::WEIGHTED_CALCULATION_KEY], true)));
+        if (array_key_exists(self::WEIGHTED_CALCULATION_KEY, $data)) {
+            $calculations = json_decode($data[self::WEIGHTED_CALCULATION_KEY], true);
+            if (!empty($calculations)) {
+                $param->setWeightedCalculations(new WeightedCalculation($calculations));
+            }
         }
 
         if (array_key_exists(self::SHOW_IN_TOTAL_KEY, $data)) {

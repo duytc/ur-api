@@ -142,6 +142,14 @@ class ReportBuilder implements ReportBuilderInterface
             $dimensions = array_unique(array_merge($dimensions, $reportView->getDimensions()));
         }
 
+        foreach($rows as &$row) {
+            foreach($metrics as $metric) {
+                if (!array_key_exists($metric, $row)) {
+                    $row[$metric] = 0;
+                }
+            }
+        }
+
         $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
 
         /* get final reports */

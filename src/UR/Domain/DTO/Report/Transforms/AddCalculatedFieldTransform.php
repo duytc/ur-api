@@ -54,6 +54,7 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
     {
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
+        $types = $collection->getTypes();
         foreach($rows as &$row) {
             try {
                 $calculatedValue = $this->language->evaluate($this->expression, ['row' => $row]);
@@ -72,7 +73,9 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
 
         if (!in_array($this->fieldName, $columns)) {
             $columns[] = $this->fieldName;
+            $types[$this->fieldName] = $this->type;
             $collection->setColumns($columns);
+            $collection->setTypes($types);
         }
     }
 
