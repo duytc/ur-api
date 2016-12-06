@@ -132,7 +132,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      */
     public function postAction(Request $request)
     {
-        return $this->post($request);
+        return $this->postAndReturnEntityData($request);
     }
 
     /**
