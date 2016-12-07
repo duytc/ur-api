@@ -111,4 +111,12 @@ class ReportResult implements ReportResultInterface
     {
         $this->average = $average;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function setColumns($columns)
+    {
+        $this->columns = $columns;
+    }
 }
