@@ -124,12 +124,12 @@ class ReportBuilder implements ReportBuilderInterface
         $dateRanges = [];
         /* get all reports data */
         foreach ($reportViews as $reportView) {
-            $reportView = $this->reportViewManager->find($reportView->getReportViewId());
-            if (!$reportView instanceof ReportViewInterface) {
+            $view = $this->reportViewManager->find($reportView->getReportViewId());
+            if (!$view instanceof ReportViewInterface) {
                 throw new InvalidArgumentException(sprintf('The report view %d does not exist', $reportView->getReportViewId()));
             }
 
-            $reportParam = $this->paramsBuilder->buildFromReportView($reportView);
+            $reportParam = $this->paramsBuilder->buildFromReportView($view);
             $filters = null;
             if (is_array($params->getFilters())) {
                 $filters = DataSet::createFilterObjects($params->getFilters());
@@ -146,6 +146,12 @@ class ReportBuilder implements ReportBuilderInterface
             foreach($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
                     $row[$metric] = 0;
+                }
+            }
+
+            foreach($row as $key=>$value) {
+                if (!in_array($key, $metrics) && !in_array($key, $dimensions)) {
+                    unset($row[$key]);
                 }
             }
         }
