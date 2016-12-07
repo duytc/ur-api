@@ -95,8 +95,8 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         /* get all reports data */
-        $statement = $this->reportSelector->getReportData($params, $overridingFilters);
-        $rows = $statement->fetchAll();
+        $data = $this->reportSelector->getReportData($params, $overridingFilters);
+        $rows = $data[SqlBuilder::STATEMENT_KEY]->fetchAll();
         if (count($rows) < 1) {
             throw new NotFoundHttpException();
         }
@@ -105,7 +105,8 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* get final reports */
         $isSingleDataSet = count($dataSets) < 2;
-        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $isSingleDataSet, $joinBy);
+
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $data[SqlBuilder::DATE_RANGE_KEY], $isSingleDataSet, $joinBy);
     }
 
     protected function getMultipleReport(ParamsInterface $params)
@@ -120,6 +121,7 @@ class ReportBuilder implements ReportBuilderInterface
         $dimensions = [];
         $metrics = [];
         $types = [];
+        $dateRanges = [];
         /* get all reports data */
         foreach ($reportViews as $reportView) {
             $reportView = $this->reportViewManager->find($reportView->getReportViewId());
@@ -134,15 +136,24 @@ class ReportBuilder implements ReportBuilderInterface
             }
             $result = $this->getSingleReport($reportParam, $filters);
             $types = array_merge($types, $result->getTypes());
+            $dateRanges = array_merge($dateRanges, $result->getDateRange());
             $rows[] = $result->getTotal();
             $metrics = array_unique(array_merge($metrics, $reportView->getMetrics()));
             $dimensions = array_unique(array_merge($dimensions, $reportView->getDimensions()));
         }
 
+        foreach($rows as &$row) {
+            foreach($metrics as $metric) {
+                if (!array_key_exists($metric, $row)) {
+                    $row[$metric] = 0;
+                }
+            }
+        }
+
         $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
 
         /* get final reports */
-        return $this->getFinalReports($collection, $params, $metrics, $dimensions);
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $dateRanges);
     }
 
     /**
@@ -156,11 +167,12 @@ class ReportBuilder implements ReportBuilderInterface
      * @param ParamsInterface $params
      * @param array $metrics
      * @param array $dimensions
+     * @param $dateRanges
      * @param bool $isSingleDataSet
      * @param $joinBy
      * @return mixed
      */
-    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $isSingleDataSet = false, $joinBy = null)
+    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $dateRanges, $isSingleDataSet = false, $joinBy = null)
     {
         /* transform data */
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
@@ -172,7 +184,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* group reports */
         /** @var ReportResultInterface $reportResult */
-        $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $isSingleDataSet);
+        $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $isSingleDataSet);
 
         /* format data */
         /** @var FormatInterface[] $formats */

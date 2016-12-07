@@ -16,10 +16,12 @@ class ComparisonPercentTransform extends AbstractTransform implements Comparison
     const NUMERATOR_KEY = 'numerator';
     const DENOMINATOR_KEY = 'denominator';
     const FIELD_NAME = 'field';
+    const TYPE_KEY = 'type';
 
     protected $numerator;
     protected $denominator;
     protected $field;
+    protected $type;
 
     /**
      * ComparisonPercentTransform constructor.
@@ -29,13 +31,15 @@ class ComparisonPercentTransform extends AbstractTransform implements Comparison
     {
         parent::__construct();
 
-        if (!array_key_exists(self::NUMERATOR_KEY, $data) || !array_key_exists(self::DENOMINATOR_KEY, $data) || !array_key_exists(self::FIELD_NAME, $data)) {
-            throw new InvalidArgumentException('either "numerator" or "denominator" or "field name" is missing');
+        if (!array_key_exists(self::NUMERATOR_KEY, $data) || !array_key_exists(self::DENOMINATOR_KEY, $data) ||
+            !array_key_exists(self::FIELD_NAME, $data) || !array_key_exists(self::TYPE_KEY, $data)) {
+            throw new InvalidArgumentException('either "numerator" or "denominator" or "field name" or "type" is missing');
         }
 
         $this->numerator = $data[self::NUMERATOR_KEY];
         $this->denominator = $data[self::DENOMINATOR_KEY];
         $this->field = $data[self::FIELD_NAME];
+        $this->type = $data[self::TYPE_KEY];
     }
 
     /**
@@ -62,15 +66,37 @@ class ComparisonPercentTransform extends AbstractTransform implements Comparison
         return $this->field;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+
     public function transform(Collection $collection, array &$metrics, array &$dimensions, $joinBy = null)
     {
         $rows = $collection->getRows();
+        $columns = $collection->getColumns();
+        $types = $collection->getTypes();
         foreach ($rows as &$row) {
             $calculatedValue = $this->getPercentage($row[$this->numerator], $row[$this->denominator]);
             $row[$this->field] = $calculatedValue;
         }
 
         $collection->setRows($rows);
+
+        if (!in_array($this->field, $metrics)) {
+            $metrics[] = $this->field;
+        }
+
+        if (!in_array($this->field, $columns)) {
+            $columns[] = $this->field;
+            $types[$this->field] = $this->type;
+            $collection->setColumns($columns);
+            $collection->setTypes($types);
+        }
     }
 
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)

@@ -4,6 +4,8 @@
 namespace UR\Domain\DTO\Report\Filters;
 
 
+use DateTime;
+
 interface DateFilterInterface extends AbstractFilterInterface
 {
     /**
@@ -11,13 +13,12 @@ interface DateFilterInterface extends AbstractFilterInterface
      */
     public function getDateFormat();
     /**
-     * @return mixed
+     * @return DateTime
      */
     public function getEndDate();
 
     /**
-     * @return array
+     * @return DateTime
      */
     public function getStartDate();
-
 }
