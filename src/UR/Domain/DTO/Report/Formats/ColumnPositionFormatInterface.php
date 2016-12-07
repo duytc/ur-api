@@ -4,6 +4,7 @@
 namespace UR\Domain\DTO\Report\Formats;
 
 
-interface ColumnPositionFormatInterface extends FormatInterface {
+interface ColumnPositionFormatInterface extends FormatInterface
+{
 
 } 

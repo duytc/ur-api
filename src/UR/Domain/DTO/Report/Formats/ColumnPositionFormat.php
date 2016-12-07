@@ -74,7 +74,7 @@ class ColumnPositionFormat extends AbstractFormat implements ColumnPositionForma
             return $output;
         }
 
-        foreach ($report as $key=>$remainElement) {
+        foreach ($report as $key => $remainElement) {
             $output[$key] = $remainElement;
         }
 
