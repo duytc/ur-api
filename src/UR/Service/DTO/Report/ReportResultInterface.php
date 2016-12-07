@@ -43,4 +43,11 @@ interface ReportResultInterface
      * @param array $average
      */
     public function setAverage($average);
+
+    /**
+     * generate for format
+     * @param $columns
+     * @return mixed
+     */
+    public function setColumns($columns);
 }
