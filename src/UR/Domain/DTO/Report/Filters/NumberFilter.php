@@ -104,7 +104,18 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
             || $this->comparisonType == self::COMPARISON_TYPE_NOT_IN
         ) {
             if (!is_array($this->comparisonValue)) {
-                throw new \Exception(sprintf('Expect comparisonValue is array with comparisonType %s, got %s', $this->comparisonType, $this->comparisonValue));
+                throw new \Exception(sprintf('Expect comparisonValue is array with comparisonType %s', $this->comparisonType));
+            }
+
+            foreach ($this->comparisonValue as $cv) {
+                if (!is_numeric($cv)) {
+                    throw new \Exception(sprintf('Expect comparisonValue is array of numeric with comparisonType %s', $this->comparisonType));
+                }
+            }
+        } else {
+            // expect single value
+            if (!is_numeric($this->comparisonValue)) {
+                throw new \Exception(sprintf('Expect comparisonValue is numeric with comparisonType %s', $this->comparisonType));
             }
         }
     }
