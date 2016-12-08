@@ -327,7 +327,7 @@ class SqlBuilder implements SqlBuilderInterface
                         return sprintf('%s NOT LIKE \'%%%s%%\'', $fieldName, $tcv);
                     }, $textFilterComparisonValue);
 
-                    return sprintf("(%s)", implode(' AND ', $notContains)); // cover conditions in "()" to keep inner AND/OR of conditions
+                    return sprintf("(%s IS NULL OR %s = '' OR %s)", $fieldName, $fieldName, implode(' AND ', $notContains)); // cover conditions in "()" to keep inner AND/OR of conditions
 
                 case TextFilter::COMPARISON_TYPE_START_WITH:
                     $startWiths = array_map(function ($tcv) use ($fieldName) {
