@@ -89,7 +89,7 @@ class SqlBuilder implements SqlBuilderInterface
         $conditions = $buildResult[self::CONDITION_KEY];
         $dateRange = $buildResult[self::DATE_RANGE_KEY];
         if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            $overridingResult = $this->buildFilters($overridingFilters);
+            $overridingResult = $this->buildFilters($overridingFilters, null, $dataSet->getDataSetId());
             $conditions = array_merge($conditions, $overridingResult[self::CONDITION_KEY]);
             // override date range
             if (!empty($buildResult[self::DATE_RANGE_KEY])) {
@@ -223,9 +223,10 @@ class SqlBuilder implements SqlBuilderInterface
     /**
      * @param array $filters
      * @param null $tableAlias
+     * @param null $dataSetId
      * @return array
      */
-    protected function buildFilters(array $filters, $tableAlias = null)
+    protected function buildFilters(array $filters, $tableAlias = null, $dataSetId = null)
     {
         $sqlConditions = [];
         $dateRanges = [];
@@ -238,7 +239,7 @@ class SqlBuilder implements SqlBuilderInterface
                 $dateRanges[] = new DateRange($filter->getStartDate(), $filter->getEndDate());
             }
 
-            $sqlConditions[] = $this->buildSingleFilter($filter, $tableAlias);
+            $sqlConditions[] = $this->buildSingleFilter($filter, $tableAlias, $dataSetId);
         }
 
         return array (
@@ -250,10 +251,15 @@ class SqlBuilder implements SqlBuilderInterface
     /**
      * @param AbstractFilterInterface $filter
      * @param null $tableAlias
+     * @param null $dataSetId
      * @return string
      */
-    protected function buildSingleFilter(AbstractFilterInterface $filter, $tableAlias = null)
+    protected function buildSingleFilter(AbstractFilterInterface $filter, $tableAlias = null, $dataSetId = null)
     {
+        if ($dataSetId !== null) {
+            $filter->trimTrailingAlias($dataSetId);
+        }
+
         $fieldName = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, $filter->getFieldName()) : $filter->getFieldName();
 
         if ($filter instanceof DateFilterInterface) {

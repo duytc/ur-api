@@ -130,10 +130,7 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             $reportParam = $this->paramsBuilder->buildFromReportView($view);
-            $filters = null;
-            if (is_array($params->getFilters())) {
-                $filters = DataSet::createFilterObjects($params->getFilters());
-            }
+            $filters = $reportView->getFilters();
             $result = $this->getSingleReport($reportParam, $filters);
             $types = array_merge($types, $result->getTypes());
             $dateRanges = array_merge($dateRanges, $result->getDateRange());

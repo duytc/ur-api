@@ -40,11 +40,10 @@ class ReportSelector implements ReportSelectorInterface
 
     /**
      * @param ParamsInterface $params
-     * @param $dateRange
      * @param $overridingFilters
      * @return Statement
      */
-    public function getReportData(ParamsInterface $params, &$dateRange, $overridingFilters = null)
+    public function getReportData(ParamsInterface $params, $overridingFilters = null)
     {
         $dataSets = $params->getDataSets();
 

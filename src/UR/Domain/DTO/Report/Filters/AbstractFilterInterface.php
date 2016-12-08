@@ -15,4 +15,10 @@ interface AbstractFilterInterface
      * @return int
      */
     public function getFieldType();
+
+    /**
+     * @param $dataSetId
+     * @return mixed
+     */
+    public function trimTrailingAlias($dataSetId);
 }
