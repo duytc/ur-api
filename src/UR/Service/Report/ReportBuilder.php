@@ -69,7 +69,7 @@ class ReportBuilder implements ReportBuilderInterface
         return $this->getSingleReport($params);
     }
 
-    protected function getSingleReport(ParamsInterface $params, $overridingFilters = null)
+    protected function getSingleReport(ParamsInterface $params, $overridingFilters = null, $isNeedFormatReport = true)
     {
         $metrics = [];
         $dimensions = [];
@@ -107,7 +107,7 @@ class ReportBuilder implements ReportBuilderInterface
         /* get final reports */
         $isSingleDataSet = count($dataSets) < 2;
 
-        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $data[SqlBuilder::DATE_RANGE_KEY], $isSingleDataSet, $joinBy);
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $data[SqlBuilder::DATE_RANGE_KEY], $isSingleDataSet, $joinBy, $isNeedFormatReport);
     }
 
     protected function getMultipleReport(ParamsInterface $params)
@@ -136,7 +136,7 @@ class ReportBuilder implements ReportBuilderInterface
 
             $reportParam = $this->paramsBuilder->buildFromReportView($view);
             $filters = $reportView->getFilters();
-            $result = $this->getSingleReport($reportParam, $filters);
+            $result = $this->getSingleReport($reportParam, $filters, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
             $types = array_merge($types, $result->getTypes());
             $dateRanges = array_merge($dateRanges, $result->getDateRange());
             $rows[] = $result->getTotal();
@@ -178,9 +178,10 @@ class ReportBuilder implements ReportBuilderInterface
      * @param $dateRanges
      * @param bool $isSingleDataSet
      * @param $joinBy
+     * @param bool $isNeedFormatReport
      * @return mixed
      */
-    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $dateRanges, $isSingleDataSet = false, $joinBy = null)
+    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $dateRanges, $isSingleDataSet = false, $joinBy = null, $isNeedFormatReport = true)
     {
         /* transform data */
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
@@ -194,10 +195,12 @@ class ReportBuilder implements ReportBuilderInterface
         /** @var ReportResultInterface $reportResult */
         $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $isSingleDataSet);
 
-        /* format data */
-        /** @var FormatInterface[] $formats */
-        $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
-        $this->formatReports($reportResult, $formats, $metrics, $dimensions);
+        /* format data if need */
+        if ($isNeedFormatReport) {
+            /** @var FormatInterface[] $formats */
+            $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
+            $this->formatReports($reportResult, $formats, $metrics, $dimensions);
+        }
 
         /* return report result */
         return $reportResult;
