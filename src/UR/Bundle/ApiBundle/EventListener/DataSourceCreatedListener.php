@@ -12,7 +12,7 @@ class DataSourceCreatedListener
     {
         $entity = $args->getEntity();
         if ($entity instanceof DataSource) {
-            $tokenString = uniqid(rand(1, 10000), true);
+            $tokenString = str_replace(".", "", uniqid(rand(1, 10000), true));
             $entity->setUrEmail($tokenString . $entity::UR_EMAIL);
             $entity->setApiKey($entity->getPublisher()->getUsername() . $tokenString);
         }

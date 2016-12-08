@@ -298,7 +298,7 @@ class SqlBuilder implements SqlBuilderInterface
 
                 case NumberFilter::COMPARISON_TYPE_NOT_IN:
                     $numberFilterNotInValue = implode(',', $numberFilterComparisonValue);
-                    return sprintf('%s NOT IN (%s)', $fieldName, $numberFilterNotInValue);
+                    return sprintf('(%s IS NULL OR %s NOT IN (%s))', $fieldName, $fieldName, $numberFilterNotInValue);
 
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));

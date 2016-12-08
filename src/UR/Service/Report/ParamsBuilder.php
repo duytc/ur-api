@@ -7,6 +7,7 @@ namespace UR\Service\Report;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Domain\DTO\Report\DataSets\DataSet;
+use UR\Domain\DTO\Report\Formats\ColumnPositionFormat;
 use UR\Domain\DTO\Report\Formats\CurrencyFormat;
 use UR\Domain\DTO\Report\Formats\DateFormat;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
@@ -215,6 +216,11 @@ class ParamsBuilder implements ParamsBuilderInterface
                 
                 case FormatInterface::FORMAT_TYPE_CURRENCY:
                     $formatObjects[] = new CurrencyFormat($format);
+
+                    break;
+
+                case FormatInterface::FORMAT_TYPE_COLUMN_POSITION:
+                    $formatObjects[] = new ColumnPositionFormat($format);
 
                     break;
             }
