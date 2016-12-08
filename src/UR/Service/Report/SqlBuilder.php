@@ -78,7 +78,7 @@ class SqlBuilder implements SqlBuilderInterface
 
         $qb->from($table->getName());
 
-        if (empty($filters)) {
+        if (empty($filters) &&  empty($overridingFilters)) {
             return array (
                 self::DATE_RANGE_KEY => [],
                 self::STATEMENT_KEY => $qb->execute()

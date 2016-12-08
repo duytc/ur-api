@@ -36,6 +36,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const FILTERS_KEY = 'filters';
     const FORMAT_KEY = 'formats';
     const SHOW_IN_TOTAL_KEY = 'showInTotal';
+    const SUB_REPORT_INCLUDED_KEY = 'subReport';
 
     /**
      * @inheritdoc
@@ -50,6 +51,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         $param->setMultiView($multiView);
+        $param->setSubReportIncluded(false);
 
         if ($param->isMultiView()) {
             if (!array_key_exists(self::REPORT_VIEWS_KEY, $data) || empty($data[self::MULTI_VIEW_KEY])) {
@@ -60,6 +62,11 @@ class ParamsBuilder implements ParamsBuilderInterface
                 $reportViews = $this->createReportViews(json_decode($data[self::REPORT_VIEWS_KEY], true));
                 $param->setReportViews($reportViews);
             }
+
+            if (array_key_exists(self::SUB_REPORT_INCLUDED_KEY, $data)) {
+                $param->setSubReportIncluded(filter_var($data[self::SUB_REPORT_INCLUDED_KEY]));
+            }
+
         } else {
             if (array_key_exists(self::DATA_SET_KEY, $data) && !empty($data[self::DATA_SET_KEY])) {
                 $dataSets = $this->createDataSets(json_decode($data[self::DATA_SET_KEY], true));

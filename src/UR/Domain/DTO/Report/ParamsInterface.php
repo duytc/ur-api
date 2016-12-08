@@ -97,4 +97,15 @@ interface ParamsInterface
      * @return self
      */
     public function setFieldTypes($dataSetTypes);
+
+    /**
+     * @return boolean
+     */
+    public function isSubReportIncluded();
+
+    /**
+     * @param boolean $subReportIncluded
+     * @return self
+     */
+    public function setSubReportIncluded($subReportIncluded);
 }

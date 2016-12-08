@@ -173,4 +173,15 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setFormats($formats);
+
+    /**
+     * @return boolean
+     */
+    public function isSubReportsIncluded();
+
+    /**
+     * @param boolean $subReportsIncluded
+     * @return self
+     */
+    public function setSubReportsIncluded($subReportsIncluded);
 }

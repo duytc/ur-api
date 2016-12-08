@@ -58,6 +58,11 @@ UR\Entity\Core\ReportView:
         formats:
             type: json_array
             nullable: true
+        subReportsIncluded:
+            type: boolean
+            nullable: false
+            options:
+                default: false
 
     manyToOne:
         publisher:

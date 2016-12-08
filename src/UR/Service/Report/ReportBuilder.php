@@ -5,13 +5,13 @@ namespace UR\Service\Report;
 
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewInterface;
+use UR\Domain\DTO\Report\ReportViews\ReportViewInterface as ReportViewDTO;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResultInterface;
 use UR\Service\StringUtilTrait;
@@ -123,6 +123,10 @@ class ReportBuilder implements ReportBuilderInterface
         $types = [];
         $dateRanges = [];
         /* get all reports data */
+
+        /**
+         * @var ReportViewDTO $reportView
+         */
         foreach ($reportViews as $reportView) {
             $view = $this->reportViewManager->find($reportView->getReportViewId());
             if (!$view instanceof ReportViewInterface) {

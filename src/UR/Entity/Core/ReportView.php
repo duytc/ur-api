@@ -24,6 +24,7 @@ class ReportView extends ReportViewModel
     protected $formats;
     protected $fieldTypes;
     protected $publisher;
+    protected $subReportsIncluded;
 
     /**
      * @inheritdoc
