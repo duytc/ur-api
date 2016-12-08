@@ -73,7 +73,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
             // clear all metrics
             foreach ($result as $key => $value) {
-                if (in_array($key, $metrics)) {
+                if (in_array($key, $metrics) && in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
                     $result[$key] = 0;
                 }
             }
