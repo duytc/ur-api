@@ -13,6 +13,7 @@ use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewInterface;
 use UR\Domain\DTO\Report\ReportViews\ReportViewInterface as ReportViewDTO;
 use UR\Service\DTO\Collection;
+use UR\Service\DTO\Report\ReportResult;
 use UR\Service\DTO\Report\ReportResultInterface;
 use UR\Service\StringUtilTrait;
 
@@ -98,7 +99,7 @@ class ReportBuilder implements ReportBuilderInterface
         $data = $this->reportSelector->getReportData($params, $overridingFilters);
         $rows = $data[SqlBuilder::STATEMENT_KEY]->fetchAll();
         if (count($rows) < 1) {
-            throw new NotFoundHttpException();
+            return new ReportResult([], [], [], []);
         }
 
         $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
