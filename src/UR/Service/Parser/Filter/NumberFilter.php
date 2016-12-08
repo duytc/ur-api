@@ -2,25 +2,12 @@
 
 namespace UR\Service\Parser\Filter;
 
-use UR\Exception\InvalidArgumentException;
-use UR\Service\DataSet\FilterType;
 
-class NumberFilter implements ColumnFilterInterface
+class NumberFilter extends \UR\Domain\DTO\Report\Filters\NumberFilter implements ColumnFilterInterface
 {
-    protected $comparison;
-    protected $compareValue;
-
-    public function __construct($comparison, $compareValue)
+    public function __construct(array $numberFilter)
     {
-        $this->comparison = $comparison;
-        $this->compareValue = $compareValue;
-
-        // validate special cases
-        if (FilterType::IN === $this->comparison || FilterType::NOT_IN === $this->comparison) {
-            if (!is_array($this->compareValue)) {
-                throw new InvalidArgumentException('expect compareValue is array for cases IN and NOT_IN');
-            }
-        }
+        parent::__construct($numberFilter);
     }
 
     /**
@@ -28,56 +15,60 @@ class NumberFilter implements ColumnFilterInterface
      */
     public function filter($filter)
     {
+        if ($filter === null || $filter === "") {
+            return false;
+        }
+
         if (!is_numeric($filter)) {
             return 2;
         }
 
-        if (FilterType::IN === $this->comparison) {
-            if (!is_array($this->compareValue)) {
+        if (self::COMPARISON_TYPE_IN === $this->comparisonType) {
+            if (!is_array($this->comparisonValue)) {
                 return false;
             }
 
-            if (!in_array($filter, $this->compareValue)) {
-                return false;
-            }
-
-            return true;
-        }
-
-        if (FilterType::NOT_IN === $this->comparison) {
-            if (!is_array($this->compareValue)) {
-                return false;
-            }
-
-            if (in_array($filter, $this->compareValue)) {
+            if (!in_array($filter, $this->comparisonValue)) {
                 return false;
             }
 
             return true;
         }
 
-        if (FilterType::SMALLER === $this->comparison) {
-            return $filter < $this->compareValue ? true : false;
+        if (self::COMPARISON_TYPE_NOT_IN === $this->comparisonType) {
+            if (!is_array($this->comparisonValue)) {
+                return false;
+            }
+
+            if (in_array($filter, $this->comparisonValue)) {
+                return false;
+            }
+
+            return true;
         }
 
-        if (FilterType::SMALLER_OR_EQUAL === $this->comparison) {
-            return $filter <= $this->compareValue ? true : false;
+        if (self::COMPARISON_TYPE_SMALLER === $this->comparisonType) {
+            return $filter < $this->comparisonValue ? true : false;
         }
 
-        if (FilterType::EQUAL === $this->comparison) {
-            return $this->compareValue === $filter ? true : false;
+        if (self::COMPARISON_TYPE_SMALLER_OR_EQUAL === $this->comparisonType) {
+            return $filter <= $this->comparisonValue ? true : false;
         }
 
-        if (FilterType::NOT_EQUAL === $this->comparison) {
-            return $this->compareValue !== $filter ? true : false;
+        if (self::COMPARISON_TYPE_EQUAL === $this->comparisonType) {
+            return $this->comparisonValue === $filter ? true : false;
         }
 
-        if (FilterType::GREATER === $this->comparison) {
-            return $filter > $this->compareValue ? true : false;
+        if (self::COMPARISON_TYPE_NOT_EQUAL === $this->comparisonType) {
+            return $this->comparisonValue !== $filter ? true : false;
         }
 
-        if (FilterType::GREATER_OR_EQUAL === $this->comparison) {
-            return $filter >= $this->compareValue ? true : false;
+        if (self::COMPARISON_TYPE_GREATER === $this->comparisonType) {
+            return $filter > $this->comparisonValue ? true : false;
+        }
+
+        if (self::COMPARISON_TYPE_GREATER_OR_EQUAL === $this->comparisonType) {
+            return $filter >= $this->comparisonValue ? true : false;
         }
 
         return true;

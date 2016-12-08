@@ -6,7 +6,7 @@ namespace UR\Domain\DTO\Report\Formats;
 
 use UR\Exception\InvalidArgumentException;
 
-abstract class AbstractFormat implements FormatInterface
+abstract class AbstractFormat
 {
     const FIELDS_NAME_KEY = 'fields';
 

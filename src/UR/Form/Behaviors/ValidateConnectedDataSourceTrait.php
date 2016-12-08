@@ -3,12 +3,16 @@
 namespace UR\Form\Behaviors;
 
 
+use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Repository\Core\ConnectedDataSourceRepository;
 use UR\Service\DataSet\FilterType;
 use UR\Service\DataSet\TransformType;
 use UR\Service\DataSet\Type;
+use UR\Service\Parser\Filter\DateFilter;
+use UR\Service\Parser\Filter\NumberFilter;
+use UR\Service\Parser\Filter\TextFilter;
 
 trait ValidateConnectedDataSourceTrait
 {
@@ -66,41 +70,27 @@ trait ValidateConnectedDataSourceTrait
         }
 
         if (!is_array($connDataSourceFilters)) {
-            return "ConnectedDataSource Filters Setting should be an array";
+            throw new Exception(sprintf("ConnectedDataSource Filters Setting should be an array"));
         }
 
         foreach ($connDataSourceFilters as $filters) {
+
             if (!is_array($filters)) {
-                return "Each element Filter Setting should be an array";
+                throw new Exception(sprintf("Each element Filter Setting should be an array"));
             }
 
-            if (!array_key_exists(FilterType::FIELD, $filters)) {
-                return "Filter Setting should have 'field' property";
+            if ($filters[FilterType::TYPE] === Type::NUMBER) {
+                $numberFilter = new NumberFilter($filters);
+            } else if ($filters[FilterType::TYPE] === Type::TEXT) {
+                $textFilter = new TextFilter($filters);
+            } else if ($filters[FilterType::TYPE] === Type::DATE) {
+                $dateFilter = new DateFilter($filters);
+            } else {
+                throw new Exception(sprintf("filter Setting error: filter of type [%s] is not supported", $filters[FilterType::TYPE]));
             }
 
             if (!array_key_exists($filters[FilterType::FIELD], $dataSet->getDimensions()) && !array_key_exists($filters[FilterType::FIELD], $dataSet->getMetrics())) {
-                return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] dose not exist in Dimensions or Metrics";
-            }
-
-
-            if (!array_key_exists(FilterType::TYPE, $filters)) {
-                return "filter Setting error: cant find 'type' of field [" . $filters[FilterType::FIELD] . "]";
-            }
-
-            if (!Type::isValidFilterType($filters[FilterType::TYPE])) {
-                return "filter Setting error: type of field [" . $filters[FilterType::FIELD] . "] should be one of ['date', 'text', 'number']";
-            }
-
-            if ((strcmp($filters[FilterType::TYPE], Type::DATE) === 0) && !FilterType::isValidFilterDateType($filters)) {
-                return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Date Setting";
-            }
-
-            if (strcmp($filters[FilterType::TYPE], Type::NUMBER) === 0 && !FilterType::isValidFilterNumberType($filters)) {
-                return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Number Setting";
-            }
-
-            if (strcmp($filters[FilterType::TYPE], Type::TEXT) === 0 && !FilterType::isValidFilterTextType($filters)) {
-                return "filter Setting error: field [" . $filters[FilterType::FIELD] . "] not valid Text Setting";
+                throw new Exception(sprintf("filter Setting error: field [%s] dose not exist in Dimensions or Metrics", $filters[FilterType::FIELD]));
             }
         }
 

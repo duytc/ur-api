@@ -7,7 +7,7 @@ use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
-use UR\Domain\DTO\Report\Filters\AbstractFilterInterface;
+use UR\Domain\DTO\Report\Filters\FilterInterface;
 use UR\Domain\DTO\Report\Filters\DateFilterInterface;
 use UR\Domain\DTO\Report\Filters\NumberFilter;
 use UR\Domain\DTO\Report\Filters\NumberFilterInterface;
@@ -124,7 +124,7 @@ class SqlBuilder implements SqlBuilderInterface
 
         if (is_array($overridingFilters) && count($overridingFilters) > 0) {
             foreach ($overridingFilters as $filter) {
-                if (!$filter instanceof AbstractFilterInterface) {
+                if (!$filter instanceof FilterInterface) {
                     continue;
                 }
 
@@ -197,7 +197,7 @@ class SqlBuilder implements SqlBuilderInterface
         $sqlConditions = [];
 
         foreach ($filters as $filter) {
-            if (!$filter instanceof AbstractFilterInterface) {
+            if (!$filter instanceof FilterInterface) {
                 continue;
             }
 
@@ -208,11 +208,11 @@ class SqlBuilder implements SqlBuilderInterface
     }
 
     /**
-     * @param AbstractFilterInterface $filter
+     * @param FilterInterface $filter
      * @param null $tableAlias
      * @return string
      */
-    protected function buildSingleFilter(AbstractFilterInterface $filter, $tableAlias = null)
+    protected function buildSingleFilter(FilterInterface $filter, $tableAlias = null)
     {
         $fieldName = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, $filter->getFieldName()) : $filter->getFieldName();
 

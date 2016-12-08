@@ -4,7 +4,7 @@
 namespace UR\Domain\DTO\Report\Filters;
 
 
-abstract class AbstractFilter implements AbstractFilterInterface
+abstract class AbstractFilter
 {
     const TYPE_DATE = 1;
     const TYPE_TEXT = 2;

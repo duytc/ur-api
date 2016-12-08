@@ -4,7 +4,7 @@
 namespace UR\Domain\DTO\Report\Filters;
 
 
-interface NumberFilterInterface extends AbstractFilterInterface
+interface NumberFilterInterface extends FilterInterface
 {
     /**
      * @return mixed

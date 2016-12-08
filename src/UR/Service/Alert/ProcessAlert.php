@@ -48,6 +48,7 @@ class ProcessAlert implements ProcessAlertInterface
         ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT => 'New data is received from Email in wrong format',
         ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT => 'New data is received API in wrong format',
         ProcessAlert::NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE => 'New data is add to the connected data source',              // error codes for dataSet
+        ProcessAlert::DATA_IMPORT_MAPPING_FAIL => 'Data import required fail',
         ProcessAlert::DATA_IMPORT_REQUIRED_FAIL => 'Data import required fail',
         ProcessAlert::DATA_IMPORT_FILTER_FAIL => 'Data import filter fail',
         ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL => 'Data import transform fail'

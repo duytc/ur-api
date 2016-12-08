@@ -2,7 +2,7 @@
 
 namespace UR\Service\Parser\Filter;
 
-interface ColumnFilterInterface
+interface   ColumnFilterInterface
 {
     /**
      * @param $value

@@ -35,7 +35,7 @@ class Parser implements ParserInterface
             }
         }
 
-        $rows = $dataSource->getRows($format);
+        $rows = array_values($dataSource->getRows($format));
 
         $cur_row = -1;
         foreach ($rows as &$row) {

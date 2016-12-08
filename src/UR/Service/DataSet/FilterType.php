@@ -5,6 +5,7 @@ namespace UR\Service\DataSet;
 final class FilterType
 {
     const TYPE = 'type';
+    const FIELD='field';
     const COMPARISON = 'comparison';
     const COMPARE_VALUE = 'compareValue';
     const SMALLER = 'smaller';
@@ -14,9 +15,8 @@ final class FilterType
     const GREATER = 'greater'; // integer
     const GREATER_OR_EQUAL = 'greater or equal'; // double/float
     const IN = 'in';
-    const NOT = 'not';
     const NOT_IN = 'not in';
-    const FIELD='field';
+
     const FORMAT = 'format';
     const FROM = 'startDate';
     const TO = 'endDate';
@@ -59,8 +59,9 @@ final class FilterType
         if (count($arr) !== 5 || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr) || !array_key_exists(self::FORMAT, $arr)) {
             return false;
         }
+
         $dateFrom = \DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $arr[self::FROM]);
-        $dateTo = \DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $arr[self::FROM]);
+        $dateTo = \DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $arr[self::TO]);
 
         if (!$dateFrom || !$dateTo) {
             return false;

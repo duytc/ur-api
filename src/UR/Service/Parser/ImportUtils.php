@@ -143,15 +143,15 @@ class ImportUtils
         foreach ($filters as $filter) {
             // filter Date
             if (strcmp($filter[FilterType::TYPE], Type::DATE) === 0) {
-                $parserConfig->filtersColumn($filter[FilterType::FIELD], new DateFilter($filter[FilterType::FORMAT], $filter[FilterType::FROM], $filter[FilterType::TO]));
+                $parserConfig->filtersColumn($filter[FilterType::FIELD], new DateFilter($filter));
             }
 
             if (strcmp($filter[FilterType::TYPE], Type::TEXT) === 0) {
-                $parserConfig->filtersColumn($filter[FilterType::FIELD], new TextFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
+                $parserConfig->filtersColumn($filter[FilterType::FIELD], new TextFilter($filter));
             }
 
             if (strcmp($filter[FilterType::TYPE], Type::NUMBER) === 0) {
-                $parserConfig->filtersColumn($filter[FilterType::FIELD], new NumberFilter($filter[FilterType::COMPARISON], $filter[FilterType::COMPARE_VALUE]));
+                $parserConfig->filtersColumn($filter[FilterType::FIELD], new NumberFilter($filter));
             }
         }
     }

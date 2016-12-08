@@ -4,7 +4,7 @@
 namespace UR\Domain\DTO\Report\Filters;
 
 
-interface AbstractFilterInterface
+interface FilterInterface
 {
     /**
      * @return string

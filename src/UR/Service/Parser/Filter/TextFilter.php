@@ -2,27 +2,12 @@
 
 namespace UR\Service\Parser\Filter;
 
-use UR\Exception\InvalidArgumentException;
-use UR\Service\DataSet\FilterType;
 
-class TextFilter implements ColumnFilterInterface
+class TextFilter extends \UR\Domain\DTO\Report\Filters\TextFilter implements ColumnFilterInterface
 {
-    /** @var string */
-    protected $comparison;
-    /** @var string|array due to comparison */
-    protected $compareValue;
-
-    public function __construct($comparison, $compareValue)
+    public function __construct(array $textFilter)
     {
-        $this->comparison = $comparison;
-
-        if (!is_array($compareValue)) {
-            throw new InvalidArgumentException('Expect compareValue is array, got ' . $compareValue);
-        }
-
-        $this->compareValue = array_map(function ($cv) {
-            return strtolower($cv);
-        }, $compareValue);
+        parent::__construct($textFilter);
     }
 
     /**
@@ -31,14 +16,15 @@ class TextFilter implements ColumnFilterInterface
     public function filter($value)
     {
         $value = strtolower($value);
+        $this->comparisonValue = array_map('strtolower', $this->comparisonValue);
 
-        if (!is_array($this->compareValue)) {
+        if (!is_array($this->comparisonValue)) {
             return false;
         }
 
-        if (FilterType::CONTAINS === $this->comparison) {
-            foreach ($this->compareValue as $compareValue) {
-                if (strpos($value, $compareValue) !== false) {
+        if (self::COMPARISON_TYPE_CONTAINS === $this->comparisonType) {
+            foreach ($this->comparisonValue as $comparisonValue) {
+                if (strpos($value, $comparisonValue) !== false) {
                     return true; // accept if one satisfied
                 }
             }
@@ -46,9 +32,9 @@ class TextFilter implements ColumnFilterInterface
             return false;
         }
 
-        if (FilterType::NOT_CONTAINS === $this->comparison) {
-            foreach ($this->compareValue as $compareValue) {
-                if (strpos($value, $compareValue) !== false) {
+        if (self::COMPARISON_TYPE_NOT_CONTAINS === $this->comparisonType) {
+            foreach ($this->comparisonValue as $comparisonValue) {
+                if (strpos($value, $comparisonValue) !== false) {
                     return false; // decline if one not satisfied
                 }
             }
@@ -56,9 +42,9 @@ class TextFilter implements ColumnFilterInterface
             return true;
         }
 
-        if (FilterType::START_WITH === $this->comparison) {
-            foreach ($this->compareValue as $compareValue) {
-                if (substr($value, 0, strlen($compareValue)) === $compareValue) {
+        if (self::COMPARISON_TYPE_START_WITH === $this->comparisonType) {
+            foreach ($this->comparisonValue as $comparisonValue) {
+                if (substr($value, 0, strlen($comparisonValue)) === $comparisonValue) {
                     return true; // accept if one satisfied
                 }
             }
@@ -66,9 +52,9 @@ class TextFilter implements ColumnFilterInterface
             return false;
         }
 
-        if (FilterType::END_WITH === $this->comparison) {
-            foreach ($this->compareValue as $compareValue) {
-                if (substr($value, 0 - strlen($compareValue)) === $compareValue) {
+        if (self::COMPARISON_TYPE_END_WITH === $this->comparisonType) {
+            foreach ($this->comparisonValue as $comparisonValue) {
+                if (substr($value, 0 - strlen($comparisonValue)) === $comparisonValue) {
                     return true; // accept if one satisfied
                 }
             }
@@ -76,12 +62,12 @@ class TextFilter implements ColumnFilterInterface
             return false;
         }
 
-        if (FilterType::IN === $this->comparison) {
-            return in_array($value, $this->compareValue);
+        if (self::COMPARISON_TYPE_IN === $this->comparisonType) {
+            return in_array($value, $this->comparisonValue);
         }
 
-        if (FilterType::NOT_IN === $this->comparison) {
-            return !in_array($value, $this->compareValue);
+        if (self::COMPARISON_TYPE_NOT_IN === $this->comparisonType) {
+            return !in_array($value, $this->comparisonValue);
         }
 
         return true;
