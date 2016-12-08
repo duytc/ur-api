@@ -365,7 +365,7 @@ class ReportView implements ReportViewInterface
      */
     public static function generateSharedKey()
     {
-        return uniqid(rand(1, 10000), true);
+        return str_replace(".", "", uniqid(rand(1, 10000), true));
     }
 
     /**
