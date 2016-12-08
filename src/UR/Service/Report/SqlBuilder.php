@@ -357,7 +357,7 @@ class SqlBuilder implements SqlBuilderInterface
                     }, $textFilterComparisonValue);
 
                     $textFilterNotInValue = implode(',', $quotedTextFilterComparisonValue);
-                    return sprintf('%s NOT IN (%s)', $fieldName, $textFilterNotInValue);
+                    return sprintf('(%s IS NULL OR %s = \'\' OR %s NOT IN (%s))', $fieldName, $fieldName, $fieldName, $textFilterNotInValue);
 
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));
