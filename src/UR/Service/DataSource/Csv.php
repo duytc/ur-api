@@ -64,10 +64,10 @@ class Csv implements DataSourceInterface
             if (count($cur_columns) > $max) {
                 $this->headers = $cur_columns;
                 $max = count($this->headers);
-                $this->headerRow = $i + 1;
+                $this->headerRow = $i;
             }
 
-            if ((count($cur_columns) !== count($pre_columns)) && count($cur_columns) > 0) {
+            if ((count($cur_columns) !== count($pre_columns))) {
                 $match = 0;
                 $pre_columns = $cur_columns;
                 continue;
@@ -75,7 +75,10 @@ class Csv implements DataSourceInterface
 
             $match++;
             if ($match === 1) {
-                $this->dataRow = $i;
+                if ($i === 1)
+                    $this->dataRow = $i;
+                else
+                    $this->dataRow = $i - 1;
             }
             if ($match > 10) {
                 break;

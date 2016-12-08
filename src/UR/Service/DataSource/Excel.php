@@ -56,7 +56,10 @@ class Excel implements DataSourceInterface
 
                 $match++;
                 if ($match === 1) {
-                    $this->dataRow = $row;
+                    if ($row === 2)
+                        $this->dataRow = $row;
+                    else
+                        $this->dataRow = $row - 1;
                 }
 
                 if ($match > 10) {
@@ -94,7 +97,10 @@ class Excel implements DataSourceInterface
 
                     $match++;
                     if ($match === 1) {
-                        $this->dataRow = $i;
+                        if ($i === 2)
+                            $this->dataRow = $i;
+                        else
+                            $this->dataRow = $i - 1;
                     }
                     if ($match > 10) {
                         break;
@@ -167,6 +173,7 @@ class Excel implements DataSourceInterface
                 unset($arr[$key]);
             }
         }
+
         return $arr;
     }
 }
