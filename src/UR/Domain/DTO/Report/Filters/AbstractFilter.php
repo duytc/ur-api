@@ -35,4 +35,10 @@ abstract class AbstractFilter
     {
         return $this->fieldType;
     }
+
+    public function trimTrailingAlias($dataSetId)
+    {
+        $this->fieldName = str_replace(sprintf('_%d', $dataSetId), '', $this->fieldName);
+        return $this;
+    }
 }

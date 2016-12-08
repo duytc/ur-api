@@ -88,6 +88,16 @@ class Collection
         return $this->types;
     }
 
+    /**
+     * @param array $types
+     * @return self
+     */
+    public function setTypes($types)
+    {
+        $this->types = $types;
+        return $this;
+    }
+
     public function getTypeOf($field)
     {
         if (array_key_exists($field, $this->types)) {

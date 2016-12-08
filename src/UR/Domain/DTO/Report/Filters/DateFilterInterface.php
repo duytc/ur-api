@@ -3,6 +3,7 @@
 
 namespace UR\Domain\DTO\Report\Filters;
 
+use DateTime;
 
 interface DateFilterInterface extends FilterInterface
 {
@@ -10,14 +11,13 @@ interface DateFilterInterface extends FilterInterface
      * @return string
      */
     public function getDateFormat();
-
     /**
-     * @return mixed
+     * @return DateTime
      */
     public function getEndDate();
 
     /**
-     * @return array
+     * @return DateTime
      */
     public function getStartDate();
 }

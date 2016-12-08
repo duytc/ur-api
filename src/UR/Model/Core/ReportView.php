@@ -84,6 +84,11 @@ class ReportView implements ReportViewInterface
     protected $formats;
 
     /**
+     * @var boolean
+     */
+    protected $subReportsIncluded;
+
+    /**
      * @var PublisherInterface
      */
     protected $publisher;
@@ -360,7 +365,7 @@ class ReportView implements ReportViewInterface
      */
     public static function generateSharedKey()
     {
-        return uniqid(rand(1, 10000), true);
+        return str_replace(".", "", uniqid(rand(1, 10000), true));
     }
 
     /**
@@ -377,6 +382,24 @@ class ReportView implements ReportViewInterface
     public function setFormats($formats)
     {
         $this->formats = $formats;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isSubReportsIncluded()
+    {
+        return $this->subReportsIncluded;
+    }
+
+    /**
+     * @param boolean $subReportsIncluded
+     * @return self
+     */
+    public function setSubReportsIncluded($subReportsIncluded)
+    {
+        $this->subReportsIncluded = $subReportsIncluded;
         return $this;
     }
 }

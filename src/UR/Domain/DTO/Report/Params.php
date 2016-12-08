@@ -63,6 +63,11 @@ class Params implements ParamsInterface
      */
     protected $formats;
 
+    /**
+     * @var boolean
+     */
+    protected $subReportIncluded;
+
     function __construct()
     {
         $this->dataSets = [];
@@ -278,6 +283,24 @@ class Params implements ParamsInterface
     public function setFieldTypes($fieldTypes)
     {
         $this->fieldTypes = $fieldTypes;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isSubReportIncluded()
+    {
+        return $this->subReportIncluded;
+    }
+
+    /**
+     * @param boolean $subReportIncluded
+     * @return self
+     */
+    public function setSubReportIncluded($subReportIncluded)
+    {
+        $this->subReportIncluded = $subReportIncluded;
         return $this;
     }
 }

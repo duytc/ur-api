@@ -5,14 +5,15 @@ namespace UR\Service\Report;
 
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewInterface;
+use UR\Domain\DTO\Report\ReportViews\ReportViewInterface as ReportViewDTO;
 use UR\Service\DTO\Collection;
+use UR\Service\DTO\Report\ReportResult;
 use UR\Service\DTO\Report\ReportResultInterface;
 use UR\Service\StringUtilTrait;
 
@@ -68,7 +69,7 @@ class ReportBuilder implements ReportBuilderInterface
         return $this->getSingleReport($params);
     }
 
-    protected function getSingleReport(ParamsInterface $params, $overridingFilters = null)
+    protected function getSingleReport(ParamsInterface $params, $overridingFilters = null, $isNeedFormatReport = true)
     {
         $metrics = [];
         $dimensions = [];
@@ -95,17 +96,18 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         /* get all reports data */
-        $statement = $this->reportSelector->getReportData($params, $overridingFilters);
-        $rows = $statement->fetchAll();
+        $data = $this->reportSelector->getReportData($params, $overridingFilters);
+        $rows = $data[SqlBuilder::STATEMENT_KEY]->fetchAll();
         if (count($rows) < 1) {
-            throw new NotFoundHttpException();
+            return new ReportResult([], [], [], []);
         }
 
         $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
 
         /* get final reports */
         $isSingleDataSet = count($dataSets) < 2;
-        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $isSingleDataSet, $joinBy);
+
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $data[SqlBuilder::DATE_RANGE_KEY], $isSingleDataSet, $joinBy, $isNeedFormatReport);
     }
 
     protected function getMultipleReport(ParamsInterface $params)
@@ -120,29 +122,46 @@ class ReportBuilder implements ReportBuilderInterface
         $dimensions = [];
         $metrics = [];
         $types = [];
+        $dateRanges = [];
         /* get all reports data */
+
+        /**
+         * @var ReportViewDTO $reportView
+         */
         foreach ($reportViews as $reportView) {
-            $reportView = $this->reportViewManager->find($reportView->getReportViewId());
-            if (!$reportView instanceof ReportViewInterface) {
+            $view = $this->reportViewManager->find($reportView->getReportViewId());
+            if (!$view instanceof ReportViewInterface) {
                 throw new InvalidArgumentException(sprintf('The report view %d does not exist', $reportView->getReportViewId()));
             }
 
-            $reportParam = $this->paramsBuilder->buildFromReportView($reportView);
-            $filters = null;
-            if (is_array($params->getFilters())) {
-                $filters = DataSet::createFilterObjects($params->getFilters());
-            }
-            $result = $this->getSingleReport($reportParam, $filters);
+            $reportParam = $this->paramsBuilder->buildFromReportView($view);
+            $filters = $reportView->getFilters();
+            $result = $this->getSingleReport($reportParam, $filters, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
             $types = array_merge($types, $result->getTypes());
+            $dateRanges = array_merge($dateRanges, $result->getDateRange());
             $rows[] = $result->getTotal();
             $metrics = array_unique(array_merge($metrics, $reportView->getMetrics()));
             $dimensions = array_unique(array_merge($dimensions, $reportView->getDimensions()));
         }
 
+        foreach($rows as &$row) {
+            foreach($metrics as $metric) {
+                if (!array_key_exists($metric, $row)) {
+                    $row[$metric] = 0;
+                }
+            }
+
+            foreach($row as $key=>$value) {
+                if (!in_array($key, $metrics) && !in_array($key, $dimensions)) {
+                    unset($row[$key]);
+                }
+            }
+        }
+
         $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
 
         /* get final reports */
-        return $this->getFinalReports($collection, $params, $metrics, $dimensions);
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $dateRanges);
     }
 
     /**
@@ -156,11 +175,13 @@ class ReportBuilder implements ReportBuilderInterface
      * @param ParamsInterface $params
      * @param array $metrics
      * @param array $dimensions
+     * @param $dateRanges
      * @param bool $isSingleDataSet
      * @param $joinBy
+     * @param bool $isNeedFormatReport
      * @return mixed
      */
-    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $isSingleDataSet = false, $joinBy = null)
+    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $dateRanges, $isSingleDataSet = false, $joinBy = null, $isNeedFormatReport = true)
     {
         /* transform data */
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
@@ -172,12 +193,14 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* group reports */
         /** @var ReportResultInterface $reportResult */
-        $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $isSingleDataSet);
+        $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $isSingleDataSet);
 
-        /* format data */
-        /** @var FormatInterface[] $formats */
-        $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
-        $this->formatReports($reportResult, $formats, $metrics, $dimensions);
+        /* format data if need */
+        if ($isNeedFormatReport) {
+            /** @var FormatInterface[] $formats */
+            $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
+            $this->formatReports($reportResult, $formats, $metrics, $dimensions);
+        }
 
         /* return report result */
         return $reportResult;

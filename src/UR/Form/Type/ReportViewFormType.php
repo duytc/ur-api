@@ -27,6 +27,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             ->add('showInTotal')
             ->add('formats')
             ->add('fieldTypes')
+            ->add('subReportsIncluded')
         ;
 
         if ($this->userRole instanceof AdminInterface) {

@@ -7,6 +7,7 @@ use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
+use UR\Domain\DTO\Report\DateRange;
 use UR\Domain\DTO\Report\Filters\FilterInterface;
 use UR\Domain\DTO\Report\Filters\DateFilterInterface;
 use UR\Domain\DTO\Report\Filters\NumberFilter;
@@ -20,6 +21,10 @@ use UR\Service\StringUtilTrait;
 class SqlBuilder implements SqlBuilderInterface
 {
     use StringUtilTrait;
+
+    const STATEMENT_KEY = 'statement';
+    const DATE_RANGE_KEY = 'dateRange';
+    const CONDITION_KEY = 'condition';
 
     const FIRST_ELEMENT = 0;
     const START_DATE_INDEX = 0;
@@ -73,23 +78,40 @@ class SqlBuilder implements SqlBuilderInterface
 
         $qb->from($table->getName());
 
-        if (empty($filters)) {
-            return $qb->execute();
+        if (empty($filters) &&  empty($overridingFilters)) {
+            return array (
+                self::DATE_RANGE_KEY => [],
+                self::STATEMENT_KEY => $qb->execute()
+            );
         }
 
-        $conditions = $this->buildFilters($filters);
+        $buildResult = $this->buildFilters($filters);
+        $conditions = $buildResult[self::CONDITION_KEY];
+        $dateRange = $buildResult[self::DATE_RANGE_KEY];
         if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            $overridingConditions = $this->buildFilters($overridingFilters);
-            $conditions = array_merge($conditions, $overridingConditions);
+            $overridingResult = $this->buildFilters($overridingFilters, null, $dataSet->getDataSetId());
+            $conditions = array_merge($conditions, $overridingResult[self::CONDITION_KEY]);
+            // override date range
+            if (!empty($buildResult[self::DATE_RANGE_KEY])) {
+                $dateRange =$overridingResult[self::DATE_RANGE_KEY];
+            }
         }
 
         if (count($conditions) == 1) {
             $qb->where($conditions[self::FIRST_ELEMENT]);
-            return $qb->execute();
+
+            return array (
+                self::DATE_RANGE_KEY => $dateRange,
+                self::STATEMENT_KEY => $qb->execute()
+            );
         }
 
         $qb->where(implode(' AND ', $conditions));
-        return $qb->execute();
+
+        return array (
+            self::STATEMENT_KEY => $qb->execute(),
+            self::DATE_RANGE_KEY => $dateRange
+        );
     }
 
 
@@ -114,12 +136,16 @@ class SqlBuilder implements SqlBuilderInterface
 
         $qb = $this->connection->createQueryBuilder();
         $conditions = [];
+        $dateRange = [];
 
         // add select clause
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
             $qb = $this->buildSelectQuery($qb, $dataSet, $dataSetIndex, $joinedField);
-            $conditions = array_merge($conditions, $this->buildFilters($dataSet->getFilters(), sprintf('t%d', $dataSetIndex)));
+            $buildResult = $this->buildFilters($dataSet->getFilters(), sprintf('t%d', $dataSetIndex));
+
+            $conditions = array_merge($conditions, $buildResult[self::CONDITION_KEY]);
+            $dateRange = array_merge($dateRange, $buildResult[self::DATE_RANGE_KEY]);
         }
 
         if (is_array($overridingFilters) && count($overridingFilters) > 0) {
@@ -128,12 +154,16 @@ class SqlBuilder implements SqlBuilderInterface
                     continue;
                 }
 
+                if ($filter instanceof DateFilterInterface) {
+                    $dateRange = new DateRange($filter->getStartDate(), $filter->getEndDate());
+                }
+
                 /** @var DataSetInterface $dataSet */
                 foreach ($dataSets as $dataSetIndex => $dataSet) {
                     if (in_array($filter->getFieldName(), $dataSet->getDimensions()) ||
                         in_array($filter->getFieldName(), $dataSet->getMetrics())
                     ) {
-                        $conditions[] = $this->buildSingleFilter($filter, sprintf('t%d', $dataSetIndex));
+                        $conditions[] = $this->buildSingleFilter($filter, sprintf('t%d', $dataSetIndex))[self::CONDITION_KEY];
                     }
                 }
             }
@@ -148,7 +178,10 @@ class SqlBuilder implements SqlBuilderInterface
             }
         }
 
-        return $qb->execute();
+        return array(
+            self::STATEMENT_KEY => $qb->execute(),
+            self::DATE_RANGE_KEY => $dateRange
+        );
     }
 
     protected function buildSelectQuery(QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, $joinBy)
@@ -190,30 +223,43 @@ class SqlBuilder implements SqlBuilderInterface
     /**
      * @param array $filters
      * @param null $tableAlias
+     * @param null $dataSetId
      * @return array
      */
-    protected function buildFilters(array $filters, $tableAlias = null)
+    protected function buildFilters(array $filters, $tableAlias = null, $dataSetId = null)
     {
         $sqlConditions = [];
-
+        $dateRanges = [];
         foreach ($filters as $filter) {
             if (!$filter instanceof FilterInterface) {
                 continue;
             }
 
-            $sqlConditions[] = $this->buildSingleFilter($filter, $tableAlias);
+            if ($filter instanceof DateFilterInterface) {
+                $dateRanges[] = new DateRange($filter->getStartDate(), $filter->getEndDate());
+            }
+
+            $sqlConditions[] = $this->buildSingleFilter($filter, $tableAlias, $dataSetId);
         }
 
-        return $sqlConditions;
+        return array (
+            self::CONDITION_KEY => $sqlConditions,
+            self::DATE_RANGE_KEY => $dateRanges
+        );
     }
 
     /**
      * @param FilterInterface $filter
      * @param null $tableAlias
+     * @param null $dataSetId
      * @return string
      */
-    protected function buildSingleFilter(FilterInterface $filter, $tableAlias = null)
+    protected function buildSingleFilter(FilterInterface $filter, $tableAlias = null, $dataSetId = null)
     {
+        if ($dataSetId !== null) {
+            $filter->trimTrailingAlias($dataSetId);
+        }
+
         $fieldName = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, $filter->getFieldName()) : $filter->getFieldName();
 
         if ($filter instanceof DateFilterInterface) {
@@ -252,7 +298,7 @@ class SqlBuilder implements SqlBuilderInterface
 
                 case NumberFilter::COMPARISON_TYPE_NOT_IN:
                     $numberFilterNotInValue = implode(',', $numberFilterComparisonValue);
-                    return sprintf('%s NOT IN (%s)', $fieldName, $numberFilterNotInValue);
+                    return sprintf('(%s IS NULL OR %s NOT IN (%s))', $fieldName, $fieldName, $numberFilterNotInValue);
 
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));
@@ -281,7 +327,7 @@ class SqlBuilder implements SqlBuilderInterface
                         return sprintf('%s NOT LIKE \'%%%s%%\'', $fieldName, $tcv);
                     }, $textFilterComparisonValue);
 
-                    return sprintf("(%s)", implode(' AND ', $notContains)); // cover conditions in "()" to keep inner AND/OR of conditions
+                    return sprintf("(%s IS NULL OR %s = '' OR %s)", $fieldName, $fieldName, implode(' AND ', $notContains)); // cover conditions in "()" to keep inner AND/OR of conditions
 
                 case TextFilter::COMPARISON_TYPE_START_WITH:
                     $startWiths = array_map(function ($tcv) use ($fieldName) {
@@ -311,7 +357,7 @@ class SqlBuilder implements SqlBuilderInterface
                     }, $textFilterComparisonValue);
 
                     $textFilterNotInValue = implode(',', $quotedTextFilterComparisonValue);
-                    return sprintf('%s NOT IN (%s)', $fieldName, $textFilterNotInValue);
+                    return sprintf('(%s IS NULL OR %s = \'\' OR %s NOT IN (%s))', $fieldName, $fieldName, $fieldName, $textFilterNotInValue);
 
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));

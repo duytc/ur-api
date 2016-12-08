@@ -36,10 +36,11 @@ class ReportGrouper implements ReportGrouperInterface
      * @param Collection $collection
      * @param array $metrics
      * @param $weightedCalculation
+     * @param $dateRanges
      * @param $singleDataSet
      * @return ReportResult
      */
-    public function group(Collection $collection, array $metrics, $weightedCalculation, $singleDataSet = false)
+    public function group(Collection $collection, array $metrics, $weightedCalculation, $dateRanges, $singleDataSet = false)
     {
         if (count($collection->getRows()) < 1) {
             throw new NotFoundHttpException('can not find the report');
@@ -71,10 +72,13 @@ class ReportGrouper implements ReportGrouperInterface
         foreach($rows as $row) {
             foreach($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
-                    if (in_array($collection->getTypeOf($metric), ['number', 'decimal'])) {
+                    $type = $collection->getTypeOf($metric);
+                    if (in_array($type, ['number', 'decimal'])) {
                         $row[$metric] = 0;
-                    } else {
+                    } else if (in_array($type, ['text', 'multiLineText'])) {
                         $row[$metric] = '';
+                    } else {
+                        $row[$metric] = null;
                     }
                 }
 
@@ -99,7 +103,7 @@ class ReportGrouper implements ReportGrouperInterface
             $headers[$column] = $this->convertColumn($column, $singleDataSet);
         }
 
-        return new ReportResult($rows, $total, $average, $headers, $collection->getTypes());
+        return new ReportResult($rows, $total, $average, $dateRanges, $headers, $collection->getTypes());
     }
 
     protected function getDataSetManager()
