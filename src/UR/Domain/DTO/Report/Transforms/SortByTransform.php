@@ -7,26 +7,14 @@ namespace UR\Domain\DTO\Report\Transforms;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
-class SortByTransform extends AbstractTransform implements SortByTransformInterface
+class SortByTransform extends AbstractTransform implements TransformInterface
 {
     const PRIORITY = 4;
+    
     const SORT_DESC = 'desc';
     const SORT_ASC = 'asc';
-
     const FIELDS_KEY = 'names';
     const SORT_DIRECTION_KEY = 'direction';
-
-    /**
-     * @var array
-     */
-    protected $ascSorts;
-
-    /**
-     * @var array
-     */
-    protected $descSorts;
-
-    protected $ascFirst;
 
     protected $sortObjects;
 
@@ -34,9 +22,6 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
     {
         parent::__construct();
 
-        $this->ascSorts = [];
-        $this->descSorts = [];
-        $this->ascFirst = true;
         foreach ($sortObjects as $sortObject) {
 
             if (!array_key_exists(self::FIELDS_KEY, $sortObject) || !array_key_exists(self::SORT_DIRECTION_KEY, $sortObject)) {
@@ -106,21 +91,5 @@ class SortByTransform extends AbstractTransform implements SortByTransformInterf
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
     {
         // nothing changed in metrics and dimensions
-    }
-
-    /**
-     * @return array
-     */
-    public function getAscSorts()
-    {
-        return $this->ascSorts;
-    }
-
-    /**
-     * @return array
-     */
-    public function getDescSorts()
-    {
-        return $this->descSorts;
     }
 }

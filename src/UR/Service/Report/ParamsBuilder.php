@@ -64,7 +64,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
 
             if (array_key_exists(self::SUB_REPORT_INCLUDED_KEY, $data)) {
-                $param->setSubReportIncluded(filter_var($data[self::SUB_REPORT_INCLUDED_KEY]));
+                $param->setSubReportIncluded(filter_var($data[self::SUB_REPORT_INCLUDED_KEY], FILTER_VALIDATE_BOOLEAN));
             }
 
         } else {
