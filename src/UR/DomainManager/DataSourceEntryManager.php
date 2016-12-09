@@ -236,6 +236,10 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
         $newFields = [];
         $columns = $file->getColumns();
+        if ($columns === null) {
+            throw new \Exception(sprintf("Cannot detect header of File %s", basename($inputFile)));
+        }
+
         $newFields = array_merge($newFields, $columns);
         $newFields = array_unique($newFields);
         $newFields = array_filter($newFields, function ($value) {
