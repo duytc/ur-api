@@ -16,6 +16,7 @@ use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResult;
 use UR\Service\DTO\Report\ReportResultInterface;
 use UR\Service\StringUtilTrait;
+use UR\Service\DataSet\Type;
 
 class ReportBuilder implements ReportBuilderInterface
 {
@@ -157,9 +158,9 @@ class ReportBuilder implements ReportBuilderInterface
             foreach($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
                     $type = array_key_exists($metric, $types) ? $types[$metric] : null;
-                    if (in_array($type, ['decimal', 'number'])) {
+                    if (in_array($type, [Type::DECIMAL, Type::NUMBER])) {
                         $row[$metric] = 0;
-                    } else if (in_array($type, ['text', 'multiLineText'])) {
+                    } else if (in_array($type, [Type::TEXT, Type::MULTI_LINE_TEXT])) {
                         $row[$metric] = '-';
                     } else {
                         $row[$metric] = null;

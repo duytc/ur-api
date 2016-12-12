@@ -5,6 +5,7 @@ namespace UR\Service\Report;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\Service\ColumnUtilTrait;
+use UR\Service\DataSet\Type;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResult;
 use UR\Service\DTO\Report\WeightedCalculationInterface;
@@ -51,7 +52,7 @@ class ReportGrouper implements ReportGrouperInterface
 
         $total = [];
         foreach($metrics as $key) {
-            if (in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
+            if (in_array($collection->getTypeOf($key), [Type::NUMBER, Type::DECIMAL])) {
                 $total[$key] = 0;
             }
         }
@@ -73,16 +74,16 @@ class ReportGrouper implements ReportGrouperInterface
             foreach($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
                     $type = $collection->getTypeOf($metric);
-                    if (in_array($type, ['number', 'decimal'])) {
+                    if (in_array($type, [Type::NUMBER, Type::DECIMAL])) {
                         $row[$metric] = 0;
-                    } else if (in_array($type, ['text', 'multiLineText'])) {
+                    } else if (in_array($type, [Type::TEXT, Type::MULTI_LINE_TEXT])) {
                         $row[$metric] = '';
                     } else {
                         $row[$metric] = null;
                     }
                 }
 
-                if (in_array($collection->getTypeOf($metric), ['number', 'decimal'])) {
+                if (in_array($collection->getTypeOf($metric), [Type::NUMBER, Type::DECIMAL])) {
                     $total[$metric] += $row[$metric];
                 }
             }
@@ -91,7 +92,7 @@ class ReportGrouper implements ReportGrouperInterface
         $count = count($collection->getRows());
         $average = $total;
         foreach($metrics as $metric) {
-            if (!in_array($collection->getTypeOf($metric), ['number', 'decimal'])) {
+            if (!in_array($collection->getTypeOf($metric), [Type::NUMBER, Type::DECIMAL])) {
                 continue;
             }
             $average[$metric] = $total[$metric] / $count;

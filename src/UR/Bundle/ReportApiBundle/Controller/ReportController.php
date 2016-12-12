@@ -27,7 +27,7 @@ class ReportController extends FOSRestController
      * @Rest\QueryParam(name="reportViews", nullable=true)
      * @Rest\QueryParam(name="showInTotal", nullable=true)
      * @Rest\QueryParam(name="formats", nullable=true)
-     * @Rest\QueryParam(name="subReport", nullable=true)
+     * @Rest\QueryParam(name="subReportsIncluded", nullable=true)
      *
      * @ApiDoc(
      *  section = "admin",
@@ -46,7 +46,7 @@ class ReportController extends FOSRestController
      *      {"name"="reportViews", "dataType"="string", "required"=false, "description"="report views descriptor"},
      *      {"name"="showInTotal", "dataType"="string", "required"=false, "description"="those fields that are allowed to be shown in Total area"},
      *      {"name"="formats", "dataType"="string", "required"=false, "description"="format descriptor"},
-     *      {"name"="subReport", "dataType"="bool", "required"=false, "description"="include sub reports in multi view report"}
+     *      {"name"="subReportsIncluded", "dataType"="bool", "required"=false, "description"="include sub reports in multi view report"}
      *  }
      * )
      *

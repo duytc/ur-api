@@ -36,7 +36,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const FILTERS_KEY = 'filters';
     const FORMAT_KEY = 'formats';
     const SHOW_IN_TOTAL_KEY = 'showInTotal';
-    const SUB_REPORT_INCLUDED_KEY = 'subReport';
+    const SUB_REPORT_INCLUDED_KEY = 'subReportsIncluded';
 
     /**
      * @inheritdoc
