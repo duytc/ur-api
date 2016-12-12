@@ -68,24 +68,30 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                 $metrics = $dataSet->getMetrics();
                 $standardDimensions = [];
                 $standardMetrics = [];
+
                 foreach ($dimensions as $dimension => $type) {
                     $dimension = $this->getStandardName($dimension);
                     $standardDimensions[$dimension] = $type;
                 }
+
                 foreach ($metrics as $metric => $type) {
                     $metric = $this->getStandardName($metric);
                     $standardMetrics[$metric] = $type;
                 }
+
                 $dataSet->setDimensions($standardDimensions);
                 $dataSet->setMetrics($standardMetrics);
 
-
                 if (!$this->validateDimensions($dataSet->getDimensions())) {
-                    $form->get('dimensions')->addError(new FormError('dimension values should not null and be one of ' . json_encode(self::$SUPPORTED_DIMENSION_VALUES)));
+                    $form->get('dimensions')->addError(new FormError('dimension types should not null and be one of ' . json_encode(self::$SUPPORTED_DIMENSION_VALUES)));
                 }
 
                 if (!$this->validateMetrics($dataSet->getMetrics())) {
-                    $form->get('metrics')->addError(new FormError('metric values should not null and be one of ' . json_encode(self::$SUPPORTED_METRIC_VALUES)));
+                    $form->get('metrics')->addError(new FormError('metric types should not null and be one of ' . json_encode(self::$SUPPORTED_METRIC_VALUES)));
+                }
+
+                if (!$this->validateDimensionsMetricsDuplication($dataSet->getDimensions(), $dataSet->getMetrics())) {
+                    $form->get('metrics')->addError(new FormError('dimension and metric names should not null and not be the same'));
                 }
 
                 //validate connDataSources
@@ -128,31 +134,65 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         return 'ur_form_data_source';
     }
 
+    /**
+     * validate dimensions
+     *
+     * @param array $dimensions
+     * @return bool
+     */
     public function validateDimensions($dimensions)
     {
-        if ($dimensions == null) {
+        if (!is_array($dimensions)) {
             return false;
         }
 
-        foreach ($dimensions as $dimension) {
-            if (!in_array($dimension, self::$SUPPORTED_DIMENSION_VALUES)) {
+        foreach ($dimensions as $dimensionName => $dimensionType) {
+            if (!in_array($dimensionType, self::$SUPPORTED_DIMENSION_VALUES)) {
                 return false;
             }
         }
+
         return true;
     }
 
+    /**
+     * validate metrics
+     *
+     * @param array $metrics
+     * @return bool
+     */
     public function validateMetrics($metrics)
     {
-        if ($metrics == null) {
+        if (!is_array($metrics)) {
             return false;
         }
 
-        foreach ($metrics as $metric) {
-            if (!in_array($metric, self::$SUPPORTED_METRIC_VALUES)) {
+        foreach ($metrics as $metricName => $metricType) {
+            if (!in_array($metricType, self::$SUPPORTED_METRIC_VALUES)) {
                 return false;
             }
         }
+
+        return true;
+    }
+
+    /**
+     * check if dimensions and metrics has same elements
+     * @param array $dimensions
+     * @param array $metrics
+     * @return bool
+     */
+    public function validateDimensionsMetricsDuplication($dimensions, $metrics)
+    {
+        if (!is_array($dimensions) || !is_array($metrics)) {
+            return false;
+        }
+
+        $commonNames = array_intersect_key($dimensions, $metrics);
+        if (is_array($commonNames) && count($commonNames) > 0) {
+            return false;
+        }
+
         return true;
     }
 
@@ -164,6 +204,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         $name = preg_replace("/-+/", "_", $name);
         $name = preg_replace("/[^a-zA-Z0-9]/ ", "_", $name);
         $name = preg_replace("/_+/ ", "_", $name);
+
         return $name;
     }
 }
