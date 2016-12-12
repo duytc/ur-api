@@ -38,4 +38,10 @@ interface ReportViewRepositoryInterface extends ObjectRepository
      * @return QueryBuilder
      */
     public function getDataSourceHasNotMultiViewForUserQuery(UserRoleInterface $user);
+
+    /**
+     * @param PublisherInterface $publisher
+     * @return mixed
+     */
+    public function getMultiViewReportForPublisher(PublisherInterface $publisher);
 }

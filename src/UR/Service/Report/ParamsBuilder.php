@@ -122,7 +122,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         return $dataSetObjects;
     }
 
-    protected function createReportViews(array $reportViews)
+    public static function createReportViews(array $reportViews)
     {
         $reportViewObjects = [];
         foreach ($reportViews as $reportView) {

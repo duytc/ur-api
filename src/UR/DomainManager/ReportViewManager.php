@@ -10,6 +10,7 @@ use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;
 use UR\Repository\Core\ReportViewRepositoryInterface;
+use UR\Service\Report\ParamsBuilder;
 
 class ReportViewManager implements ReportViewManagerInterface
 {
@@ -48,11 +49,14 @@ class ReportViewManager implements ReportViewManagerInterface
     /**
      * @inheritdoc
      */
-    public function delete(ModelInterface $alert)
+    public function delete(ModelInterface $reportView)
     {
-        if (!$alert instanceof ReportViewInterface) throw new InvalidArgumentException('expect ReportViewInterface object');
+        if (!$reportView instanceof ReportViewInterface) throw new InvalidArgumentException('expect ReportViewInterface object');
 
-        $this->om->remove($alert);
+        if ($this->checkIfReportViewBelongsToMultiView($reportView)) {
+            throw new InvalidArgumentException('This report view belongs to another report view');
+        }
+        $this->om->remove($reportView);
         $this->om->flush();
     }
 
@@ -84,5 +88,26 @@ class ReportViewManager implements ReportViewManagerInterface
     public function getReportViewsForUserPaginationQuery(UserRoleInterface $publisher, PagerParam $param, $multiView)
     {
         return $this->repository->getReportViewsForUserPaginationQuery($publisher, $param, $multiView);
+    }
+
+    public function checkIfReportViewBelongsToMultiView(ReportViewInterface $reportView)
+    {
+        $reports = $this->repository->getMultiViewReportForPublisher($reportView->getPublisher());
+        /**
+         * @var ReportViewInterface $report
+         */
+        foreach($reports as $report) {
+            $views = ParamsBuilder::createReportViews($report->getReportViews());
+            /**
+             * @var \UR\Domain\DTO\Report\ReportViews\ReportViewInterface $view
+             */
+            foreach($views as $view) {
+                if ($view->getReportViewId() === $reportView->getId()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
