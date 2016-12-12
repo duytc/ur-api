@@ -52,8 +52,11 @@ class ReportViewController extends FOSRestController
         }
 
         $params = $this->getParams($reportView);
-
-        return $this->getReportBuilder()->getReport($params);
+        $reportGroup = $this->getReportBuilder()->getReport($params);
+        $report['reportView'] = $reportView;
+        $report['reportGroup'] = $reportGroup;
+        return $report;
+//        return $this->getReportBuilder()->getReport($params);
     }
 
     /**

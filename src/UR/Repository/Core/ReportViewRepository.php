@@ -109,4 +109,12 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
 
         return $qb->getQuery()->getResult();
     }
+
+    public function getMultiViewReportForPublisher(PublisherInterface $publisher)
+    {
+        $qb = $this->createQueryBuilderForUser($publisher);
+        $qb->andWhere('rv.multiView = 1');
+
+        return $qb->getQuery()->getResult();
+    }
 }

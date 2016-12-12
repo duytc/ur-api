@@ -12,9 +12,18 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
     const PRECISION_KEY = 'decimals';
     const THOUSAND_SEPARATOR_KEY = 'thousandsSeparator';
 
-    const DEFAULT_DECIMAL_SEPARATOR = '.';
-    const DEFAULT_THOUSAND_SEPARATOR = ',';
+    const SEPARATOR_DOT = '.';
+    const SEPARATOR_COMMA = ',';
+    const SEPARATOR_NONE = 'none';
+
+    const DEFAULT_DECIMAL_SEPARATOR = self::SEPARATOR_DOT;
+    const DEFAULT_THOUSAND_SEPARATOR = self::SEPARATOR_NONE;
     const DEFAULT_PRECISION = 3;
+
+    static $SUPPORTED_THOUSAND_SEPARATORS = [
+        self::SEPARATOR_COMMA,
+        self::SEPARATOR_NONE
+    ];
 
     /** @var int */
     protected $precision;
@@ -28,6 +37,18 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
 
         if (!array_key_exists(self::PRECISION_KEY, $data) || !array_key_exists(self::THOUSAND_SEPARATOR_KEY, $data)) {
             throw new InvalidArgumentException('either "decimals" or "thousandsSeparator" is missing');
+        }
+
+        // check if decimal supported
+        $precision = $data[self::PRECISION_KEY];
+        if (!is_numeric($precision) || $precision < 0) {
+            throw new InvalidArgumentException('decimals must be number that greater than or equal 0');
+        }
+
+        // check if thousandSeparator supported
+        $thousandSeparator = $data[self::THOUSAND_SEPARATOR_KEY];
+        if (!in_array($thousandSeparator, self::$SUPPORTED_THOUSAND_SEPARATORS)) {
+            throw new InvalidArgumentException('thousandSeparator is not supported');
         }
 
         $this->precision = (0 != $data[self::PRECISION_KEY] && empty($data[self::PRECISION_KEY])) ? self::DEFAULT_PRECISION : $data[self::PRECISION_KEY];
@@ -67,7 +88,7 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
         $totals = $reportResult->getTotal();
         $averages = $reportResult->getAverage();
 
-        $decimalSeparator = !strcmp($this->thousandSeparator, self::DEFAULT_THOUSAND_SEPARATOR) ? self::DEFAULT_DECIMAL_SEPARATOR : self::DEFAULT_THOUSAND_SEPARATOR;
+        $decimalSeparator = self::SEPARATOR_DOT;
         $fields = $this->getFields();
 
         /* format for all records of reports */
@@ -119,6 +140,8 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
      */
     private function formatOneNumber($fieldValue, $decimalSeparator)
     {
-        return number_format($fieldValue, $this->precision, $decimalSeparator, $this->thousandSeparator);
+        $thousandSeparator = $this->thousandSeparator === self::SEPARATOR_NONE ? '' : $this->thousandSeparator;
+
+        return number_format($fieldValue, $this->precision, $decimalSeparator, $thousandSeparator);
     }
 }

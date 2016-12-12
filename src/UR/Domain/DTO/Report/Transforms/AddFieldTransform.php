@@ -7,18 +7,13 @@ namespace UR\Domain\DTO\Report\Transforms;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
-class AddFieldTransform extends AbstractTransform implements TransformInterface
+class AddFieldTransform extends NewFieldTransform implements TransformInterface
 {
     const PRIORITY = 3;
-    const FIELD_NAME_KEY = 'field';
-    const FIELD_VALUE = 'value';
-    const TYPE_KEY = 'type';
 
-    protected $fieldName;
+    const FIELD_VALUE = 'value';
 
     protected $value;
-
-    protected $type;
 
     /**
      * AddFieldTransform constructor.
@@ -27,6 +22,7 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
     public function __construct(array $data)
     {
         parent::__construct();
+
         if (!array_key_exists(self::FIELD_NAME_KEY, $data) || !array_key_exists(self::FIELD_VALUE, $data) || !array_key_exists(self::TYPE_KEY, $data)) {
             throw new InvalidArgumentException('either "fields" or "fieldValue" or "type" is missing');
         }
@@ -37,31 +33,6 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
     }
 
     /**
-     * @return mixed
-     */
-    public function getFieldName()
-    {
-        return $this->fieldName;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getValue()
-    {
-        return $this->value;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getType()
-    {
-        return $this->type;
-    }
-
-
-    /**
      * @param Collection $collection
      * @param array $metrics
      * @param array $dimensions
@@ -70,13 +41,12 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
      */
     public function transform(Collection $collection,  array &$metrics, array &$dimensions, $joinBy = null)
     {
-        $collection->addColumn($this->fieldName);
+        parent::transform($collection, $metrics, $dimensions, $joinBy);
+
         $rows = $collection->getRows();
-        $columns = $collection->getColumns();
-        $types = $collection->getTypes();
-        if (is_numeric($this->fieldName)) {
-            $this->fieldName = strval($this->fieldName);
-        }
+//        if (is_numeric($this->fieldName)) {
+//            $this->fieldName = strval($this->fieldName);
+//        }
 
         $newRows = array_map(function ($row) {
             $row[$this->fieldName] = $this->value;
@@ -84,17 +54,6 @@ class AddFieldTransform extends AbstractTransform implements TransformInterface
         }, $rows);
 
         $collection->setRows($newRows);
-
-        if (!in_array($this->fieldName, $metrics)) {
-            $metrics[] = $this->fieldName;
-        }
-
-        if (!in_array($this->fieldName, $columns)) {
-            $columns[] = $this->fieldName;
-            $types[$this->fieldName] = $this->type;
-            $collection->setColumns($columns);
-            $collection->setTypes($types);
-        }
     }
 
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)

@@ -16,6 +16,7 @@ use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResult;
 use UR\Service\DTO\Report\ReportResultInterface;
 use UR\Service\StringUtilTrait;
+use UR\Service\DataSet\Type;
 
 class ReportBuilder implements ReportBuilderInterface
 {
@@ -113,7 +114,7 @@ class ReportBuilder implements ReportBuilderInterface
     protected function getMultipleReport(ParamsInterface $params)
     {
         $reportViews = $params->getReportViews();
-
+        $subReport = $params->isSubReportIncluded();
         if (empty($reportViews)) {
             throw new NotFoundHttpException('can not find the report');
         }
@@ -137,9 +138,18 @@ class ReportBuilder implements ReportBuilderInterface
             $reportParam = $this->paramsBuilder->buildFromReportView($view);
             $filters = $reportView->getFilters();
             $result = $this->getSingleReport($reportParam, $filters, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
+            if (count($result->getReports()) < 1) {
+                continue;
+            }
+
             $types = array_merge($types, $result->getTypes());
             $dateRanges = array_merge($dateRanges, $result->getDateRange());
-            $rows[] = $result->getTotal();
+            if ($subReport === true){
+                $rows = array_merge($rows, $result->getReports());
+            } else {
+                $rows[] = $result->getTotal();
+            }
+
             $metrics = array_unique(array_merge($metrics, $reportView->getMetrics()));
             $dimensions = array_unique(array_merge($dimensions, $reportView->getDimensions()));
         }
@@ -147,7 +157,14 @@ class ReportBuilder implements ReportBuilderInterface
         foreach($rows as &$row) {
             foreach($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
-                    $row[$metric] = 0;
+                    $type = array_key_exists($metric, $types) ? $types[$metric] : null;
+                    if (in_array($type, [Type::DECIMAL, Type::NUMBER])) {
+                        $row[$metric] = 0;
+                    } else if (in_array($type, [Type::TEXT, Type::MULTI_LINE_TEXT])) {
+                        $row[$metric] = '-';
+                    } else {
+                        $row[$metric] = null;
+                    }
                 }
             }
 

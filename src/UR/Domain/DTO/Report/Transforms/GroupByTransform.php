@@ -5,15 +5,17 @@ namespace UR\Domain\DTO\Report\Transforms;
 
 
 use UR\Exception\InvalidArgumentException;
+use UR\Service\DataSet\Type;
 use UR\Service\DTO\Collection;
 use UR\Service\StringUtilTrait;
 
-class GroupByTransform extends AbstractTransform implements GroupByTransformInterface
+class GroupByTransform extends AbstractTransform implements TransformInterface
 {
     use StringUtilTrait;
     const PRIORITY = 2;
 
     const FIELDS_KEY = 'fields';
+
     /**
      * @var array
      */
@@ -22,6 +24,7 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
     function __construct(array $data)
     {
         parent::__construct();
+
         $this->fields = $data;
     }
 
@@ -73,14 +76,14 @@ class GroupByTransform extends AbstractTransform implements GroupByTransformInte
 
             // clear all metrics
             foreach ($result as $key => $value) {
-                if (in_array($key, $metrics) && in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
+                if (in_array($key, $metrics) && in_array($collection->getTypeOf($key), [Type::NUMBER, Type::DECIMAL])) {
                     $result[$key] = 0;
                 }
             }
 
             foreach ($groupedReport as $report) {
                 foreach ($report as $key => $value) {
-                    if (in_array($collection->getTypeOf($key), ['number', 'decimal'])) {
+                    if (in_array($collection->getTypeOf($key), [Type::NUMBER, Type::DECIMAL])) {
                         $result[$key] += $value;
                     }
                 }

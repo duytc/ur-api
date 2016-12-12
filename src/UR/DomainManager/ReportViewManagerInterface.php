@@ -3,6 +3,7 @@
 namespace UR\DomainManager;
 
 use Doctrine\ORM\QueryBuilder;
+use UR\Model\Core\ReportViewInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;
 
@@ -15,4 +16,10 @@ interface ReportViewManagerInterface extends ManagerInterface
      * @return QueryBuilder
      */
     public function getReportViewsForUserPaginationQuery(UserRoleInterface $reportView, PagerParam $param, $multiView);
+
+    /**
+     * @param ReportViewInterface $reportView
+     * @return mixed
+     */
+    public function checkIfReportViewBelongsToMultiView(ReportViewInterface $reportView);
 }

@@ -17,14 +17,13 @@ use UR\Model\User\Role\AdminInterface;
 
 class DataSetFormType extends AbstractRoleSpecificFormType
 {
-    use ValidateConnectedDataSourceTrait;
-    static $SUPPORTED_DIMENSION_VALUES = [
+    static $SUPPORTED_DIMENSION_TYPES = [
         'date',
         'datetime',
         'text'
     ];
 
-    static $SUPPORTED_METRIC_VALUES = [
+    static $SUPPORTED_METRIC_TYPES = [
         'date',
         'datetime',
         'text',
@@ -66,54 +65,38 @@ class DataSetFormType extends AbstractRoleSpecificFormType
 
                 $dimensions = $dataSet->getDimensions();
                 $metrics = $dataSet->getMetrics();
+
+                if (!$this->validateDimensions($dimensions)) {
+                    $form->get('dimensions')->addError(new FormError('dimensions should be array and each type should be one of ' . json_encode(self::$SUPPORTED_DIMENSION_TYPES)));
+                    return;
+                }
+
+                if (!$this->validateMetrics($metrics)) {
+                    $form->get('metrics')->addError(new FormError('metrics should be array and each type should be one of ' . json_encode(self::$SUPPORTED_METRIC_TYPES)));
+                    return;
+                }
+
+                if (!$this->validateDimensionsMetricsDuplication($dimensions, $metrics)) {
+                    $form->get('metrics')->addError(new FormError('dimensions and metrics should be array and their names should not be the same'));
+                    return;
+                }
+
+                // standardize dimensions and metrics names
                 $standardDimensions = [];
                 $standardMetrics = [];
+
                 foreach ($dimensions as $dimension => $type) {
                     $dimension = $this->getStandardName($dimension);
                     $standardDimensions[$dimension] = $type;
                 }
+
                 foreach ($metrics as $metric => $type) {
                     $metric = $this->getStandardName($metric);
                     $standardMetrics[$metric] = $type;
                 }
+
                 $dataSet->setDimensions($standardDimensions);
                 $dataSet->setMetrics($standardMetrics);
-
-
-                if (!$this->validateDimensions($dataSet->getDimensions())) {
-                    $form->get('dimensions')->addError(new FormError('dimension values should not null and be one of ' . json_encode(self::$SUPPORTED_DIMENSION_VALUES)));
-                }
-
-                if (!$this->validateMetrics($dataSet->getMetrics())) {
-                    $form->get('metrics')->addError(new FormError('metric values should not null and be one of ' . json_encode(self::$SUPPORTED_METRIC_VALUES)));
-                }
-
-                //validate connDataSources
-                $connDataSources = $dataSet->getConnectedDataSources();
-
-                if (count($connDataSources) < 0) {
-
-                    foreach ($connDataSources as $connDataSource) {
-
-                        //validate mapping fields
-                        if (!$this->validateMappingFields($dataSet, $connDataSource)) {
-                            $form->get('connectedDataSources')->addError(new FormError('one or more fields of your mapping dose not exist in DataSet Dimensions or Metrics'));
-                        }
-
-                        //validate filter
-                        if (!$this->validateFilters($dataSet, $connDataSource)) {
-                            $form->get('connectedDataSources')->addError(new FormError('Filters Mapping error'));
-                        }
-
-                        //validate transform
-                        if (!$this->validateTransforms($connDataSource)) {
-                            $form->get('connectedDataSources')->addError(new FormError('Transform Mapping error'));
-                        }
-
-                        /** @var ConnectedDataSourceInterface $connDataSource */
-                        $connDataSource->setDataSet($dataSet);
-                    }
-                }
             }
         );
     }
@@ -128,31 +111,65 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         return 'ur_form_data_source';
     }
 
+    /**
+     * validate dimensions
+     *
+     * @param array $dimensions
+     * @return bool
+     */
     public function validateDimensions($dimensions)
     {
-        if ($dimensions == null) {
+        if (!is_array($dimensions)) {
             return false;
         }
 
-        foreach ($dimensions as $dimension) {
-            if (!in_array($dimension, self::$SUPPORTED_DIMENSION_VALUES)) {
+        foreach ($dimensions as $dimensionName => $dimensionType) {
+            if (!in_array($dimensionType, self::$SUPPORTED_DIMENSION_TYPES)) {
                 return false;
             }
         }
+
         return true;
     }
 
+    /**
+     * validate metrics
+     *
+     * @param array $metrics
+     * @return bool
+     */
     public function validateMetrics($metrics)
     {
-        if ($metrics == null) {
+        if (!is_array($metrics)) {
             return false;
         }
 
-        foreach ($metrics as $metric) {
-            if (!in_array($metric, self::$SUPPORTED_METRIC_VALUES)) {
+        foreach ($metrics as $metricName => $metricType) {
+            if (!in_array($metricType, self::$SUPPORTED_METRIC_TYPES)) {
                 return false;
             }
         }
+
+        return true;
+    }
+
+    /**
+     * check if dimensions and metrics has same elements
+     * @param array $dimensions
+     * @param array $metrics
+     * @return bool
+     */
+    public function validateDimensionsMetricsDuplication($dimensions, $metrics)
+    {
+        if (!is_array($dimensions) || !is_array($metrics)) {
+            return false;
+        }
+
+        $commonNames = array_intersect_key($dimensions, $metrics);
+        if (is_array($commonNames) && count($commonNames) > 0) {
+            return false;
+        }
+
         return true;
     }
 
@@ -164,6 +181,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         $name = preg_replace("/-+/", "_", $name);
         $name = preg_replace("/[^a-zA-Z0-9]/ ", "_", $name);
         $name = preg_replace("/_+/ ", "_", $name);
+
         return $name;
     }
 }

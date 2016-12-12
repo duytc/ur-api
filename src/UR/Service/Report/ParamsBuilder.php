@@ -36,7 +36,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const FILTERS_KEY = 'filters';
     const FORMAT_KEY = 'formats';
     const SHOW_IN_TOTAL_KEY = 'showInTotal';
-    const SUB_REPORT_INCLUDED_KEY = 'subReport';
+    const SUB_REPORT_INCLUDED_KEY = 'subReportsIncluded';
 
     /**
      * @inheritdoc
@@ -64,7 +64,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
 
             if (array_key_exists(self::SUB_REPORT_INCLUDED_KEY, $data)) {
-                $param->setSubReportIncluded(filter_var($data[self::SUB_REPORT_INCLUDED_KEY]));
+                $param->setSubReportIncluded(filter_var($data[self::SUB_REPORT_INCLUDED_KEY], FILTER_VALIDATE_BOOLEAN));
             }
 
         } else {
@@ -122,7 +122,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         return $dataSetObjects;
     }
 
-    protected function createReportViews(array $reportViews)
+    public static function createReportViews(array $reportViews)
     {
         $reportViewObjects = [];
         foreach ($reportViews as $reportView) {

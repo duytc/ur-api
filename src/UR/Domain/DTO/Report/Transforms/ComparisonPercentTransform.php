@@ -8,20 +8,17 @@ use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 use UR\Util\CalculateRatiosTrait;
 
-class ComparisonPercentTransform extends AbstractTransform implements ComparisonPercentTransformInterface
+class ComparisonPercentTransform extends NewFieldTransform implements TransformInterface
 {
     use CalculateRatiosTrait;
+
     const PRIORITY = 3;
 
     const NUMERATOR_KEY = 'numerator';
     const DENOMINATOR_KEY = 'denominator';
-    const FIELD_NAME = 'field';
-    const TYPE_KEY = 'type';
 
     protected $numerator;
     protected $denominator;
-    protected $field;
-    protected $type;
 
     /**
      * ComparisonPercentTransform constructor.
@@ -32,79 +29,35 @@ class ComparisonPercentTransform extends AbstractTransform implements Comparison
         parent::__construct();
 
         if (!array_key_exists(self::NUMERATOR_KEY, $data) || !array_key_exists(self::DENOMINATOR_KEY, $data) ||
-            !array_key_exists(self::FIELD_NAME, $data) || !array_key_exists(self::TYPE_KEY, $data)) {
+            !array_key_exists(self::FIELD_NAME_KEY, $data) || !array_key_exists(self::TYPE_KEY, $data)) {
             throw new InvalidArgumentException('either "numerator" or "denominator" or "field name" or "type" is missing');
         }
 
         $this->numerator = $data[self::NUMERATOR_KEY];
         $this->denominator = $data[self::DENOMINATOR_KEY];
-        $this->field = $data[self::FIELD_NAME];
+        $this->fieldName = $data[self::FIELD_NAME_KEY];
         $this->type = $data[self::TYPE_KEY];
     }
 
-    /**
-     * @return mixed
-     */
-    public function getNumerator()
-    {
-        return $this->numerator;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getDenominator()
-    {
-        return $this->denominator;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getField()
-    {
-        return $this->field;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getType()
-    {
-        return $this->type;
-    }
-
-
     public function transform(Collection $collection, array &$metrics, array &$dimensions, $joinBy = null)
     {
+        parent::transform($collection, $metrics, $dimensions, $joinBy);
+
         $rows = $collection->getRows();
-        $columns = $collection->getColumns();
-        $types = $collection->getTypes();
         foreach ($rows as &$row) {
             $calculatedValue = $this->getPercentage($row[$this->numerator], $row[$this->denominator]);
-            $row[$this->field] = $calculatedValue;
+            $row[$this->fieldName] = $calculatedValue;
         }
 
         $collection->setRows($rows);
-
-        if (!in_array($this->field, $metrics)) {
-            $metrics[] = $this->field;
-        }
-
-        if (!in_array($this->field, $columns)) {
-            $columns[] = $this->field;
-            $types[$this->field] = $this->type;
-            $collection->setColumns($columns);
-            $collection->setTypes($types);
-        }
     }
 
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
     {
-        if (in_array($this->field, $metrics) || in_array($this->field, $dimensions)) {
+        if (in_array($this->fieldName, $metrics) || in_array($this->fieldName, $dimensions)) {
             return;
         }
 
-        $metrics[] = $this->field;
+        $metrics[] = $this->fieldName;
     }
 }

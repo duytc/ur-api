@@ -7,40 +7,34 @@ namespace UR\Domain\DTO\Report\Transforms;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Service\DTO\Collection;
 
-class AddCalculatedFieldTransform extends AbstractTransform implements AddCalculatedFieldTransformInterface
+class AddCalculatedFieldTransform extends NewFieldTransform implements TransformInterface
 {
     const PRIORITY = 3;
-    const NAME_CALCULATED_FIELD = 'field';
     const EXPRESSION_CALCULATED_FIELD = 'expression';
     const DEFAULT_VALUE_CALCULATED_FIELD = 'defaultValue';
-    const FIELD_TYPE_KEY = 'type';
 
-    /**
-     * @var string
-     */
-    protected $fieldName;
     /**
      * @var string
      */
     protected $expression;
     protected $defaultValue;
     protected $language;
-    protected $type;
 
     public function __construct(ExpressionLanguage $language, array $addCalculatedField)
     {
         parent::__construct();
-        if (!array_key_exists(self::NAME_CALCULATED_FIELD, $addCalculatedField)
+
+        if (!array_key_exists(self::FIELD_NAME_KEY, $addCalculatedField)
             || !array_key_exists(self::EXPRESSION_CALCULATED_FIELD, $addCalculatedField)
-            || !array_key_exists(self::FIELD_TYPE_KEY, $addCalculatedField)
+            || !array_key_exists(self::TYPE_KEY, $addCalculatedField)
         ) {
             throw new \Exception(sprintf('either "field" or "expression" or "type" does not exits'));
         }
 
         $this->language = $language;
-        $this->fieldName = $addCalculatedField[self::NAME_CALCULATED_FIELD];
+        $this->fieldName = $addCalculatedField[self::FIELD_NAME_KEY];
         $this->expression = $addCalculatedField[self::EXPRESSION_CALCULATED_FIELD];
-        $this->type = $addCalculatedField[self::FIELD_TYPE_KEY];
+        $this->type = $addCalculatedField[self::TYPE_KEY];
     }
 
     /**
@@ -52,9 +46,9 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
      */
     public function transform(Collection $collection,  array &$metrics, array &$dimensions, $joinBy = null)
     {
+        parent::transform($collection, $metrics, $dimensions, $joinBy);
+
         $rows = $collection->getRows();
-        $columns = $collection->getColumns();
-        $types = $collection->getTypes();
         foreach($rows as &$row) {
             try {
                 $calculatedValue = $this->language->evaluate($this->expression, ['row' => $row]);
@@ -67,16 +61,6 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
         }
 
         $collection->setRows($rows);
-        if (!in_array($this->fieldName, $metrics)) {
-            $metrics[] = $this->fieldName;
-        }
-
-        if (!in_array($this->fieldName, $columns)) {
-            $columns[] = $this->fieldName;
-            $types[$this->fieldName] = $this->type;
-            $collection->setColumns($columns);
-            $collection->setTypes($types);
-        }
     }
 
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
@@ -86,30 +70,5 @@ class AddCalculatedFieldTransform extends AbstractTransform implements AddCalcul
         }
 
         $metrics[] = $this->fieldName;
-    }
-
-
-    /**
-     * @return string
-     */
-    public function getExpression()
-    {
-        return $this->expression;
-    }
-
-    /**
-     * @return string
-     */
-    public function getFieldName()
-    {
-        return $this->fieldName;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getType()
-    {
-        return $this->type;
     }
 }
