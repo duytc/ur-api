@@ -18,13 +18,14 @@ use UR\Model\User\Role\AdminInterface;
 class DataSetFormType extends AbstractRoleSpecificFormType
 {
     use ValidateConnectedDataSourceTrait;
-    static $SUPPORTED_DIMENSION_VALUES = [
+
+    static $SUPPORTED_DIMENSION_TYPES = [
         'date',
         'datetime',
         'text'
     ];
 
-    static $SUPPORTED_METRIC_VALUES = [
+    static $SUPPORTED_METRIC_TYPES = [
         'date',
         'datetime',
         'text',
@@ -66,6 +67,22 @@ class DataSetFormType extends AbstractRoleSpecificFormType
 
                 $dimensions = $dataSet->getDimensions();
                 $metrics = $dataSet->getMetrics();
+
+                if (!$this->validateDimensions($dimensions)) {
+                    $form->get('dimensions')->addError(new FormError('dimensions should be array and each type should be one of ' . json_encode(self::$SUPPORTED_DIMENSION_TYPES)));
+                    return;
+                }
+
+                if (!$this->validateMetrics($metrics)) {
+                    $form->get('metrics')->addError(new FormError('metrics should be array and each type should be one of ' . json_encode(self::$SUPPORTED_METRIC_TYPES)));
+                    return;
+                }
+
+                if (!$this->validateDimensionsMetricsDuplication($dimensions, $metrics)) {
+                    $form->get('metrics')->addError(new FormError('dimensions and metrics should be array and their names should not be the same'));
+                    return;
+                }
+
                 $standardDimensions = [];
                 $standardMetrics = [];
 
@@ -82,25 +99,11 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                 $dataSet->setDimensions($standardDimensions);
                 $dataSet->setMetrics($standardMetrics);
 
-                if (!$this->validateDimensions($dataSet->getDimensions())) {
-                    $form->get('dimensions')->addError(new FormError('dimension types should not null and be one of ' . json_encode(self::$SUPPORTED_DIMENSION_VALUES)));
-                }
-
-                if (!$this->validateMetrics($dataSet->getMetrics())) {
-                    $form->get('metrics')->addError(new FormError('metric types should not null and be one of ' . json_encode(self::$SUPPORTED_METRIC_VALUES)));
-                }
-
-                if (!$this->validateDimensionsMetricsDuplication($dataSet->getDimensions(), $dataSet->getMetrics())) {
-                    $form->get('metrics')->addError(new FormError('dimension and metric names should not null and not be the same'));
-                }
-
                 //validate connDataSources
                 $connDataSources = $dataSet->getConnectedDataSources();
 
                 if (count($connDataSources) < 0) {
-
                     foreach ($connDataSources as $connDataSource) {
-
                         //validate mapping fields
                         if (!$this->validateMappingFields($dataSet, $connDataSource)) {
                             $form->get('connectedDataSources')->addError(new FormError('one or more fields of your mapping dose not exist in DataSet Dimensions or Metrics'));
@@ -147,7 +150,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         }
 
         foreach ($dimensions as $dimensionName => $dimensionType) {
-            if (!in_array($dimensionType, self::$SUPPORTED_DIMENSION_VALUES)) {
+            if (!in_array($dimensionType, self::$SUPPORTED_DIMENSION_TYPES)) {
                 return false;
             }
         }
@@ -168,7 +171,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         }
 
         foreach ($metrics as $metricName => $metricType) {
-            if (!in_array($metricType, self::$SUPPORTED_METRIC_VALUES)) {
+            if (!in_array($metricType, self::$SUPPORTED_METRIC_TYPES)) {
                 return false;
             }
         }
