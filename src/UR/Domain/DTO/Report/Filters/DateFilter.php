@@ -185,13 +185,13 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
         }
 
         if (self::DATE_DYNAMIC_VALUE_LAST_7_DAYS == $this->dateValue) {
-            $startDate = date('Y-m-d', strtotime('-6 day'));
-            $endDate = date('Y-m-d', strtotime('now'));
+            $startDate = date('Y-m-d', strtotime('-7 day'));
+            $endDate = date('Y-m-d', strtotime('-1 day'));
         }
 
         if (self::DATE_DYNAMIC_VALUE_LAST_30_DAYS == $this->dateValue) {
-            $startDate = date('Y-m-d', strtotime('-29 day'));
-            $endDate = date('Y-m-d', strtotime('now'));
+            $startDate = date('Y-m-d', strtotime('-30 day'));
+            $endDate = date('Y-m-d', strtotime('-1 day'));
         }
 
         if (self::DATE_DYNAMIC_VALUE_THIS_MONTH == $this->dateValue) {
