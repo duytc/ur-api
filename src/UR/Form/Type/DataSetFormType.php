@@ -17,8 +17,6 @@ use UR\Model\User\Role\AdminInterface;
 
 class DataSetFormType extends AbstractRoleSpecificFormType
 {
-    use ValidateConnectedDataSourceTrait;
-
     static $SUPPORTED_DIMENSION_TYPES = [
         'date',
         'datetime',
@@ -83,6 +81,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                     return;
                 }
 
+                // standardize dimensions and metrics names
                 $standardDimensions = [];
                 $standardMetrics = [];
 
@@ -98,31 +97,6 @@ class DataSetFormType extends AbstractRoleSpecificFormType
 
                 $dataSet->setDimensions($standardDimensions);
                 $dataSet->setMetrics($standardMetrics);
-
-                //validate connDataSources
-                $connDataSources = $dataSet->getConnectedDataSources();
-
-                if (count($connDataSources) < 0) {
-                    foreach ($connDataSources as $connDataSource) {
-                        //validate mapping fields
-                        if (!$this->validateMappingFields($dataSet, $connDataSource)) {
-                            $form->get('connectedDataSources')->addError(new FormError('one or more fields of your mapping dose not exist in DataSet Dimensions or Metrics'));
-                        }
-
-                        //validate filter
-                        if (!$this->validateFilters($dataSet, $connDataSource)) {
-                            $form->get('connectedDataSources')->addError(new FormError('Filters Mapping error'));
-                        }
-
-                        //validate transform
-                        if (!$this->validateTransforms($connDataSource)) {
-                            $form->get('connectedDataSources')->addError(new FormError('Transform Mapping error'));
-                        }
-
-                        /** @var ConnectedDataSourceInterface $connDataSource */
-                        $connDataSource->setDataSet($dataSet);
-                    }
-                }
             }
         );
     }
