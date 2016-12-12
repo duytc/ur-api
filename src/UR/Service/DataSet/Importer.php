@@ -12,7 +12,10 @@ class Importer
      * @var Connection
      */
     protected $conn;
+    protected $batchSize = 500;
     private static $restrictedColumns = ['__id', '__data_source_id', '__import_id'];
+    protected $preparedUpdateCount = 0;
+    protected $preparedInsertCount = 0;
 
     public function __construct(Connection $conn)
     {
@@ -35,70 +38,127 @@ class Importer
         }
         array_push($columns, "__data_source_id", "__import_id");
         $rows = $collection->getRows();
-//        $qb = $this->conn->createQueryBuilder();
-        $this->conn->beginTransaction();
-        try {
-            $duplicateFields = $connectedDataSource->getDuplicates();
 
-            foreach ($rows as $row) {
+        $duplicateFields = $connectedDataSource->getDuplicates();
+
+        $preparedCounts = 0;
+//        $preparedUpdateCounts = 0;
+
+        $insert_values = array();
+        foreach ($rows as $row) {
+
+            //check duplicate
+            $isDup = [];
+            if (count($duplicateFields) > 0) {
                 $duplicateSql = 'SELECT * FROM ' . $tableName;
-                if (count($duplicateFields)) {
-                    $duplicateSql .= " WHERE ";
-                    foreach ($duplicateFields as $duplicateField) {
-                        $duplicateSql .= $duplicateField . "= :" . $duplicateField . ' AND ';
-                    }
-                    $duplicateSql = substr($duplicateSql, 0, -4);
+                $duplicateSql .= " WHERE ";
+                foreach ($duplicateFields as $duplicateField) {
+                    $duplicateSql .= $duplicateField . "= :" . $duplicateField . ' AND ';
+                }
 
-                    $dupQb = $this->conn->prepare($duplicateSql);
+                $duplicateSql = substr($duplicateSql, 0, -4);
+                $dupQb = $this->conn->prepare($duplicateSql);
 
-                    foreach ($duplicateFields as $duplicateField) {
-                        $dupQb->bindValue($duplicateField, $row[$duplicateField]);
-                    }
-                } else {
-                    $dupQb = $this->conn->prepare($duplicateSql);
+                foreach ($duplicateFields as $duplicateField) {
+                    $dupQb->bindValue($duplicateField, $row[$duplicateField]);
                 }
 
                 $dupQb->execute();
                 $isDup = $dupQb->fetchAll();
+            }
 
-                if (count($duplicateFields) < 1 || count($isDup) < 1) {
-                    $sql = 'INSERT INTO ' . $tableName . "( ";
-                    $value = ' VALUES ' . "( ";
-                    foreach ($columns as $column) {
-                        $sql = $sql . $column . ', ';
-                        $value = $value . ":" . $column . ', ';
-                    }
-                    $sql = substr($sql, 0, -2);
-                    $sql .= ')';
-                    $value = substr($value, 0, -2);
-                    $value .= ')';
-                    $sql .= $value;
-                } else {
-                    $sql = 'UPDATE ' . $tableName;
-                    $value = ' SET ';
-                    $where = ' WHERE __id= ' . $isDup[0]['__id'];
-                    foreach ($columns as $column) {
-                        $value .= $column . "= :" . $column . ', ';
-                    }
-                    $value = substr($value, 0, -2);
-                    $sql .= $value . $where;
+            $row['__data_source_id'] = $connectedDataSource->getDataSource()->getId();
+            $row['__import_id'] = $importId;
+
+            //insert
+            if (count($duplicateFields) < 1 || count($isDup) < 1) {
+                $question_marks[] = '(' . $this->placeholders('?', sizeof($row)) . ')';
+                $insert_values = array_merge($insert_values, array_values($row));
+                $preparedCounts++;
+                if ($preparedCounts === $this->batchSize) {
+                    $preparedCounts = 0;
+                    $insertSql = "INSERT INTO " . $tableName . "(" . implode(",", $columns) . ") VALUES " . implode(',', $question_marks);
+                    $this->executeInsert($insertSql, $insert_values);
+                    $insert_values = [];
+                    $question_marks = [];
                 }
-                $qb = $this->conn->prepare($sql);
-                $row['__data_source_id'] = $connectedDataSource->getDataSource()->getId();
-                $row['__import_id'] = $importId;
+            } else { //update
+//                $updateSql = 'UPDATE ' . $tableName . ' SET ';
+                $updateSql = 'UPDATE ' . $tableName;
+                $value = ' SET ';
+                $where = ' WHERE __id= ' . $isDup[0]['__id'];
+                foreach ($columns as $column) {
+                    $value .= $column . "= :" . $column . ', ';
+                }
+
+                $value = substr($value, 0, -2);
+                $updateSql .= $value . $where;
+                if ($this->preparedUpdateCount === 0) {
+                    $this->conn->beginTransaction();
+                }
+
+                $qb = $this->conn->prepare($updateSql);
                 foreach ($columns as $column) {
                     $rowValue = strcmp($row[$column], "") === 0 ? null : $row[$column];
                     $qb->bindValue($column, $rowValue);
                 }
-                $qb->execute();
-                unset($qb);
+                $this->preparedUpdateCount++;
+
+                try {
+                    $qb->execute($updateSql);
+                } catch (\Exception $e) {
+                    $this->conn->rollBack();
+                    throw $e;
+                }
+
+                if ($this->preparedUpdateCount === $this->batchSize) {
+                    $this->preparedUpdateCount = 0;
+                    $this->conn->commit();
+                }
             }
+
+        }
+
+        if ($preparedCounts > 0) {
+            $insertSql = "INSERT INTO " . $tableName . "(" . implode(",", $columns) . ") VALUES " . implode(',', $question_marks);
+            $this->executeInsert($insertSql, $insert_values);
+        }
+
+        if ($this->preparedUpdateCount > 0) {
             $this->conn->commit();
+        }
+
+        return true;
+    }
+
+    function placeholders($text, $count = 0, $separator = ",")
+    {
+        $result = array();
+        if ($count > 0) {
+            for ($x = 0; $x < $count; $x++) {
+                $result[] = $text;
+            }
+        }
+
+        return implode($separator, $result);
+    }
+
+    function executeInsert($sql, array $values)
+    {
+        if ($this->preparedUpdateCount > 0) {
+            $this->conn->commit(); //commit updates fields
+            $this->preparedUpdateCount = 0;
+        }
+
+        $this->conn->beginTransaction();
+        $stmt = $this->conn->prepare($sql);
+        try {
+            $stmt->execute($values);
         } catch (\Exception $e) {
             $this->conn->rollBack();
             throw $e;
         }
-
-        return true;
+        $this->conn->commit();
+        $this->conn->close();
     }
 }
