@@ -5,6 +5,7 @@ namespace UR\Service\Report;
 
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Domain\DTO\Report\DateRange;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
@@ -143,7 +144,7 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             $types = array_merge($types, $result->getTypes());
-            $dateRanges = array_merge($dateRanges, $result->getDateRange());
+
             if ($subReport === true){
                 $rows = array_merge($rows, $result->getReports());
             } else {
@@ -152,6 +153,12 @@ class ReportBuilder implements ReportBuilderInterface
 
             $metrics = array_unique(array_merge($metrics, $reportView->getMetrics()));
             $dimensions = array_unique(array_merge($dimensions, $reportView->getDimensions()));
+
+            $dateRange = $result->getDateRange();
+            if (!$dateRange instanceof DateRange) {
+                continue;
+            }
+            $dateRanges[] = $dateRange;
         }
 
         foreach($rows as &$row) {
@@ -206,7 +213,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* build columns that will be showed in total */
         $showInTotal = is_array($params->getShowInTotal()) ? $params->getShowInTotal() : [];
-        $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
+//        $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
 
         /* group reports */
         /** @var ReportResultInterface $reportResult */

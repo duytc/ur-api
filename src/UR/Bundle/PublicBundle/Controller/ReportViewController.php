@@ -74,7 +74,8 @@ class ReportViewController extends FOSRestController
      *      {"name"="multiView", "dataType"="string", "required"=false, "description"="specify the current report is a multi view report"},
      *      {"name"="reportViews", "dataType"="string", "required"=false, "description"="report views descriptor"},
      *      {"name"="showInTotal", "dataType"="string", "required"=false, "description"="those fields that are allowed to be shown in Total area"},
-     *      {"name"="formats", "dataType"="string", "required"=false, "description"="format descriptor"}
+     *      {"name"="formats", "dataType"="string", "required"=false, "description"="format descriptor"},
+     *      {"name"="subReportsIncluded", "dataType"="bool", "required"=false, "description"="include sub reports in multi view report"}
      * }
      * @see UR\Bundle\ReportApiBundle\Controller\ReportController
      */

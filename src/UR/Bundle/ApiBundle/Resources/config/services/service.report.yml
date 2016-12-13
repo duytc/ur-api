@@ -6,6 +6,7 @@ services:
         class: UR\Service\Report\ReportGrouper
         arguments:
             - @ur.domain_manager.data_set
+            - @ur.service.date_util
 
     ur.services.report.report_builder:
         class: UR\Service\Report\ReportBuilder
