@@ -136,4 +136,19 @@ class ReportResult implements ReportResultInterface
     {
         $this->columns = $columns;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function toArray()
+    {
+        return [
+            'reports' => $this->reports,
+            'total' => $this->total,
+            'average' => $this->average,
+            'columns' => $this->columns,
+            'types' => $this->types,
+            'dateRange' => $this->dateRange
+        ];
+    }
 }
