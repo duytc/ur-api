@@ -52,11 +52,14 @@ class ReportViewController extends FOSRestController
         }
 
         $params = $this->getParams($reportView);
-        $reportGroup = $this->getReportBuilder()->getReport($params);
+        $reportResult = $this->getReportBuilder()->getReport($params);
+        $report = $reportResult->toArray();
+
+        // important: append element "reportView" to reportResult, only for sharedReport
+        // because sharedReport can not communicate to api to get reportView
         $report['reportView'] = $reportView;
-        $report['reportGroup'] = $reportGroup;
+
         return $report;
-//        return $this->getReportBuilder()->getReport($params);
     }
 
     /**
