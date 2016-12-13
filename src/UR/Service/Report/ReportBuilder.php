@@ -213,7 +213,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* build columns that will be showed in total */
         $showInTotal = is_array($params->getShowInTotal()) ? $params->getShowInTotal() : [];
-        $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
+//        $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
 
         /* group reports */
         /** @var ReportResultInterface $reportResult */
