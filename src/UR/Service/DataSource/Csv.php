@@ -57,28 +57,34 @@ class Csv implements DataSourceInterface
         $match = 0;
         $max = 0;
         $pre_columns = [];
+        $all_columns = $this->csv->fetchAll();
+        $i = 0;
 
-        for ($row = 0; $row <= DataSourceInterface::DETECT_HEADER_ROWS; $row++) {
-            $cur_columns = $this->validValue($this->csv->fetchOne($row));
+        for ($row = 0; $row <= count($all_columns); $row++) {
+            $cur_row = $this->validValue($this->csv->fetchOne($row));
 
-            if (count($cur_columns) > $max) {
-                $this->headers = $cur_columns;
+            if (count($cur_row) < 1) {
+                continue;
+            }
+
+            if (count($cur_row) > $max) {
+                $this->headers = $cur_row;
                 $max = count($this->headers);
                 $this->headerRow = $row;
             }
 
-            if ((count($cur_columns) !== count($pre_columns))) {
+            if ((count($cur_row) !== count($pre_columns))) {
                 $match = 0;
-                $pre_columns = $cur_columns;
+                $pre_columns = $cur_row;
                 continue;
             }
 
             $match++;
             if ($match === 1) {
-                if ($row === 1)
-                    $this->dataRow = $row;
-                else
+                if ($row === 2)
                     $this->dataRow = $row - 1;
+                else
+                    $this->dataRow = $row;
             }
             if ($match > 10 && count($this->headers) > 0) {
                 break;
