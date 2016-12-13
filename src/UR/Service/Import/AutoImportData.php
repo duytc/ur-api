@@ -111,7 +111,7 @@ class AutoImportData implements AutoImportDataInterface
 
             $columns = $file->getColumns();
             $dataRow = $file->getDataRow();
-            if (count($columns) < 1 || $dataRow < 0) {
+            if (count($columns) < 1 || $dataRow < 1) {
                 $code = ProcessAlert::DATA_IMPORT_NO_HEADER_FOUND;
                 $this->workerManager->processAlert($code, $publisherId, $params);
                 continue;

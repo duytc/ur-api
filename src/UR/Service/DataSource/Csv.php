@@ -67,6 +67,8 @@ class Csv implements DataSourceInterface
                 continue;
             }
 
+            $i++;
+
             if (count($cur_row) > $max) {
                 $this->headers = $cur_row;
                 $max = count($this->headers);
@@ -86,9 +88,13 @@ class Csv implements DataSourceInterface
                 else
                     $this->dataRow = $row;
             }
+
             if ($match > 10 && count($this->headers) > 0) {
                 break;
             }
+
+            if ($i >= DataSourceInterface::DETECT_HEADER_ROWS)
+                break;
         }
         // todo make sure there is no file encoding issues for UTF-8, UTF-16, remove special characters
 
