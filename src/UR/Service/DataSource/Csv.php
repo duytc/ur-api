@@ -58,13 +58,13 @@ class Csv implements DataSourceInterface
         $max = 0;
         $pre_columns = [];
 
-        for ($i = 0; $i <= DataSourceInterface::DETECT_HEADER_ROWS; $i++) {
-            $cur_columns = $this->validValue($this->csv->fetchOne($i));
+        for ($row = 0; $row <= DataSourceInterface::DETECT_HEADER_ROWS; $row++) {
+            $cur_columns = $this->validValue($this->csv->fetchOne($row));
 
             if (count($cur_columns) > $max) {
                 $this->headers = $cur_columns;
                 $max = count($this->headers);
-                $this->headerRow = $i;
+                $this->headerRow = $row;
             }
 
             if ((count($cur_columns) !== count($pre_columns))) {
@@ -75,12 +75,12 @@ class Csv implements DataSourceInterface
 
             $match++;
             if ($match === 1) {
-                if ($i === 1)
-                    $this->dataRow = $i;
+                if ($row === 1)
+                    $this->dataRow = $row;
                 else
-                    $this->dataRow = $i - 1;
+                    $this->dataRow = $row - 1;
             }
-            if ($match > 10) {
+            if ($match > 10 && count($this->headers) > 0) {
                 break;
             }
         }
@@ -105,5 +105,10 @@ class Csv implements DataSourceInterface
             }
         }
         return $arr;
+    }
+
+    public function getDataRow()
+    {
+        return $this->dataRow;
     }
 }

@@ -12,6 +12,7 @@ class Excel implements DataSourceInterface
     protected $excel;
     protected $sheet;
     protected $headers;
+    protected $ogiHeaders;
     protected $rows;
     protected $headerRow = 0;
     protected $dataRow = 0;
@@ -27,23 +28,27 @@ class Excel implements DataSourceInterface
             $max = 0;
             $pre_columns = [];
             $match = 0;
-            for ($row = 1; $row <= DataSourceInterface::DETECT_HEADER_ROWS; $row++) {
+            $i = 0;
+            for ($row = 1; $row <= $this->sheet->getHighestDataRow(); $row++) {
                 $highestDataColumn = $this->sheet->getHighestDataColumn($row);
                 $cur_rows = $this->sheet->rangeToArray('A' . $row . ':' . $highestDataColumn . $row,
                     NULL,
                     TRUE,
                     FALSE);
 
-                if (!is_array($cur_rows[0])) {
-                    $this->headers = [];
-                }
-
                 $cur_row = array_filter($cur_rows[0], function ($value) {
                     return (!is_null($value) && !empty($value)) || $value === '0';
                 });
 
+                if (count($cur_row) < 1) {
+                    continue;
+                }
+
+                $i++;
+
                 if (count($cur_row) > $max) {
                     $this->headers = $cur_row;
+                    $this->ogiHeaders = $cur_rows[0];
                     $max = count($cur_row);
                     $this->headerRow = $row;
                 }
@@ -62,11 +67,11 @@ class Excel implements DataSourceInterface
                         $this->dataRow = $row - 1;
                 }
 
-                if ($match > 10) {
+                if ($match > 10 && count($this->headers) > 0) {
                     break;
                 }
 
-                if ($row > DataSourceInterface::DETECT_HEADER_ROWS)
+                if ($i >= DataSourceInterface::DETECT_HEADER_ROWS)
                     break;
             }
         } else if ($this->inputFileType === 'Excel2007') {
@@ -83,7 +88,7 @@ class Excel implements DataSourceInterface
                     $i++;
                     $cur_row = $this->validValue($row);
 
-                    if (count($row) > $max) {
+                    if (count($cur_row) > $max) {
                         $this->headers = $cur_row;
                         $max = count($this->headers);
                         $this->headerRow = $i;
@@ -126,11 +131,14 @@ class Excel implements DataSourceInterface
     public function getRows($fromDateFormats)
     {
         if (in_array($this->inputFileType, ['Excel5', 'OOCalc', 'Excel2003XML'])) {
-            $highestColumn = $this->sheet->getHighestColumn();
+            $highestColumn = $this->sheet->getHighestDataColumn();
             $columns = range('A', $highestColumn);
-            $highestRow = $this->sheet->getHighestRow();
+            $highestRow = $this->sheet->getHighestDataRow();
             $this->rows = [];
-            $columnsHeaders = array_combine($columns, $this->headers);
+            $columnsHeaders = array_combine($columns, $this->ogiHeaders);
+            $columnsHeaders = array_filter($columnsHeaders, function ($value) {
+                return (!is_null($value) && !empty($value)) || $value === '0';
+            });
 
             for ($row = $this->dataRow; $row <= $highestRow; $row++) {
                 $rowData = [];
@@ -175,5 +183,10 @@ class Excel implements DataSourceInterface
         }
 
         return $arr;
+    }
+
+    public function getDataRow()
+    {
+        return $this->dataRow;
     }
 }

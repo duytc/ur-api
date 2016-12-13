@@ -9,4 +9,6 @@ interface DataSourceInterface
     public function getColumns();
 
     public function getRows($fromDateFormat);
+
+    public function getDataRow();
 }

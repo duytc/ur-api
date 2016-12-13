@@ -45,6 +45,10 @@ class Importer
 //        $preparedUpdateCounts = 0;
 
         $insert_values = array();
+//        $createTable='create table ' . $tableName . '_temp'. ' like '. $tableName;
+//        $this->conn->beginTransaction();
+//        $this->conn->prepare($createTable);
+//        $this->conn->executeQuery($createTable);
         foreach ($rows as $row) {
 
             //check duplicate

@@ -14,7 +14,6 @@ use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
 use UR\Service\DataSet\TransformType;
 use UR\Service\DataSet\Type;
-use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\Parser\Filter\DateFilter;
 use UR\Service\Parser\Filter\NumberFilter;
 use UR\Service\Parser\Filter\TextFilter;
@@ -114,10 +113,8 @@ class ImportUtils
         }
     }
 
-    function mappingFile(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, DataSourceInterface $file)
+    function mappingFile(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, $columns)
     {
-        $columns = $file->getColumns();
-
         foreach ($columns as $column) {
             {
                 $column = strtolower(trim($column));
