@@ -21,6 +21,7 @@ class ProcessAlert implements ProcessAlertInterface
     const DATA_IMPORT_REQUIRED_FAIL = 202;
     const DATA_IMPORT_FILTER_FAIL = 203;
     const DATA_IMPORT_TRANSFORM_FAIL = 204;
+    const DATA_IMPORT_NO_HEADER_FOUND = 205;
 
     const DATA_SOURCE_MODULE = 1;
     const DATA_SET_MODULE = 2;
@@ -51,7 +52,8 @@ class ProcessAlert implements ProcessAlertInterface
         ProcessAlert::DATA_IMPORT_MAPPING_FAIL => 'Data import required fail',
         ProcessAlert::DATA_IMPORT_REQUIRED_FAIL => 'Data import required fail',
         ProcessAlert::DATA_IMPORT_FILTER_FAIL => 'Data import filter fail',
-        ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL => 'Data import transform fail'
+        ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL => 'Data import transform fail',
+        ProcessAlert::DATA_IMPORT_NO_HEADER_FOUND => 'Data import fail - No header found'
     );
 
     public static $datSourceErrorParams = array(

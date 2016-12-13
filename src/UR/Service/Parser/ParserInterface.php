@@ -2,10 +2,10 @@
 
 namespace UR\Service\Parser;
 
-use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSource\DataSourceInterface;
 
 interface ParserInterface
 {
-    public function parse(DataSourceInterface $dataSource, ParserConfig $config, DataSetInterface $dataSet);
+    public function parse(DataSourceInterface $dataSource, ParserConfig $config, ConnectedDataSourceInterface $dataSet);
 }

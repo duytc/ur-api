@@ -99,7 +99,6 @@ class AutoImportData implements AutoImportDataInterface
                 $file = new Json($dataSourceEntry->getPath());
             }
 
-            $importUtils->mappingFile($connectedDataSource, $parserConfig, $file);
 
             $code = ProcessAlert::NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE;
             $publisherId = $dataSourceEntry->getDataSource()->getPublisherId();
@@ -111,6 +110,14 @@ class AutoImportData implements AutoImportDataInterface
                 ProcessAlert::FILE_NAME => $dataSourceEntry->getFileName()
             );
 
+            $columns = $file->getColumns();
+            if (count($columns) < 1) {
+                $code = ProcessAlert::DATA_IMPORT_NO_HEADER_FOUND;
+                $this->workerManager->processAlert($code, $publisherId, $params);
+                continue;
+            }
+
+            $importUtils->mappingFile($connectedDataSource, $parserConfig, $file);
             if (count($parserConfig->getAllColumnMappings()) === 0) {
                 $code = ProcessAlert::DATA_IMPORT_MAPPING_FAIL;
                 $this->workerManager->processAlert($code, $publisherId, $params);
@@ -144,7 +151,7 @@ class AutoImportData implements AutoImportDataInterface
             $importUtils->transformDataSetTable($connectedDataSource, $parserConfig);
 
             // import
-            $collectionParser = $parser->parse($file, $parserConfig, $connectedDataSource->getDataSet());
+            $collectionParser = $parser->parse($file, $parserConfig, $connectedDataSource);
 
             if (is_array($collectionParser)) {
                 // to do alert
