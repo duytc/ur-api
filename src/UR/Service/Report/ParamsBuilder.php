@@ -251,6 +251,7 @@ class ParamsBuilder implements ParamsBuilderInterface
                 ->setFilters($reportView->getFilters())
                 ->setShowInTotal($reportView->getShowInTotal())
                 ->setFieldTypes($reportView->getFieldTypes())
+                ->setSubReportIncluded($reportView->isSubReportsIncluded())
             ;
         } else {
             $param

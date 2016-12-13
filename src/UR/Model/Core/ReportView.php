@@ -386,7 +386,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return boolean
+     * @inheritdoc
      */
     public function isSubReportsIncluded()
     {
@@ -394,8 +394,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param boolean $subReportsIncluded
-     * @return self
+     * @inheritdoc
      */
     public function setSubReportsIncluded($subReportsIncluded)
     {
