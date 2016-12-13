@@ -3,6 +3,7 @@
 namespace UR\Service;
 
 use DateTime;
+use UR\Domain\DTO\Report\DateRange;
 use UR\Exception\Report\InvalidDateException;
 
 class DateUtil implements DateUtilInterface
@@ -104,5 +105,30 @@ class DateUtil implements DateUtilInterface
     public function isFirstDateOfMonth()
     {
         return $this->getNumberOfDatesPassedInMonth() === 0;
+    }
+
+    public function mergeDateRange($dateRanges)
+    {
+        if ($dateRanges instanceof DateRange) {
+            return $dateRanges;
+        }
+
+        if (empty($dateRanges)) {
+            return null;
+        }
+
+        if (count($dateRanges) == 1) {
+            return $dateRanges[0];
+        }
+
+        $startDates = array_map(function(DateRange $range) {
+            return $range->getStartDate();
+        }, $dateRanges);
+
+        $endDates = array_map(function(DateRange $range) {
+            return $range->getEndDate();
+        }, $dateRanges);
+
+        return new DateRange(min($startDates), max($endDates));
     }
 }

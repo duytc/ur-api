@@ -6,6 +6,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\Service\ColumnUtilTrait;
 use UR\Service\DataSet\Type;
+use UR\Service\DateUtil;
+use UR\Service\DateUtilInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResult;
 use UR\Service\DTO\Report\WeightedCalculationInterface;
@@ -24,12 +26,19 @@ class ReportGrouper implements ReportGrouperInterface
     protected $dataSetManager;
 
     /**
+     * @var DateUtilInterface
+     */
+    protected $dateUtil;
+
+    /**
      * ReportGrouper constructor.
      * @param DataSetManagerInterface $dataSetManager
+     * @param DateUtilInterface $dateUtil
      */
-    public function __construct(DataSetManagerInterface $dataSetManager)
+    public function __construct(DataSetManagerInterface $dataSetManager, DateUtilInterface $dateUtil)
     {
         $this->dataSetManager = $dataSetManager;
+        $this->dateUtil = $dateUtil;
     }
 
 
@@ -104,7 +113,7 @@ class ReportGrouper implements ReportGrouperInterface
             $headers[$column] = $this->convertColumn($column, $singleDataSet);
         }
 
-        return new ReportResult($rows, $total, $average, $dateRanges, $headers, $collection->getTypes());
+        return new ReportResult($rows, $total, $average, $this->dateUtil->mergeDateRange($dateRanges), $headers, $collection->getTypes());
     }
 
     protected function getDataSetManager()

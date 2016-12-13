@@ -3,6 +3,7 @@
 namespace UR\Service;
 
 use DateTime;
+use UR\Domain\DTO\Report\DateRange;
 use UR\Exception\Report\InvalidDateException;
 
 interface DateUtilInterface
@@ -48,4 +49,10 @@ interface DateUtilInterface
      * @return int
      */
     public function getNumberOfDatesPassedInMonth();
+
+    /**
+     * @param $dateRanges
+     * @return DateRange|null|array
+     */
+    public function mergeDateRange($dateRanges);
 }

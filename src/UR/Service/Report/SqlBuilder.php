@@ -93,7 +93,7 @@ class SqlBuilder implements SqlBuilderInterface
             $conditions = array_merge($conditions, $overridingResult[self::CONDITION_KEY]);
             // override date range
             if (!empty($buildResult[self::DATE_RANGE_KEY])) {
-                $dateRange =$overridingResult[self::DATE_RANGE_KEY];
+                $dateRange = $overridingResult[self::DATE_RANGE_KEY];
             }
         }
 
