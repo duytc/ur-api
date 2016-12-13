@@ -2,8 +2,7 @@
 
 namespace UR\Service\Parser;
 
-use UR\Model\Core\DataSetInterface;
-use UR\Service\Alert\AlertParams;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\Alert\ProcessAlert;
 use UR\Service\DataSet\Type;
 use UR\Service\DataSource\DataSourceInterface;
@@ -15,7 +14,7 @@ use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class Parser implements ParserInterface
 {
-    public function parse(DataSourceInterface $dataSource, ParserConfig $config, DataSetInterface $dataSet)
+    public function parse(DataSourceInterface $dataSource, ParserConfig $config, ConnectedDataSourceInterface $connectedDataSource)
     {
         $columnFromMap = array_flip($config->getAllColumnMappings());
 
@@ -48,7 +47,7 @@ class Parser implements ParserInterface
 
             $row = array_combine($keys, $row);
 
-            foreach ($dataSet->getMetrics() as $metric => $type) {
+            foreach ($connectedDataSource->getDataSet()->getMetrics() as $metric => $type) {
                 if (array_key_exists($metric, $row)) {
                     if (strcmp($type, Type::NUMBER) === 0 || strcmp($type, Type::DECIMAL) === 0) {
 

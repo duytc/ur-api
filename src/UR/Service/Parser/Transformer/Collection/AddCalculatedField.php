@@ -46,6 +46,7 @@ class AddCalculatedField extends AbstractAddField
                 ProcessAlert::MESSAGE => $message
             );
         }
+        
         return $result;
     }
 }

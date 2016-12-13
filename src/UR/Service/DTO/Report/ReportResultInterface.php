@@ -50,4 +50,11 @@ interface ReportResultInterface
      * @return mixed
      */
     public function setColumns($columns);
+
+    /**
+     * get array of all elements
+     * Note: use this if need to append other elements to reportResult without change its behavior
+     * @return mixed
+     */
+    public function toArray();
 }

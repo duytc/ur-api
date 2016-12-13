@@ -129,6 +129,10 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $convertResult = $this->convertToUtf8($uploadPath . '/' . $name);
             if ($convertResult) {
                 $newFields = $this->getNewFieldsFromFiles($uploadPath . '/' . $name, $dataSource);
+                if (count($newFields) < 1) {
+                    throw new \Exception(sprintf("Cannot detect header of File %s", $origin_name));
+                }
+
                 $currentFields = $this->detectedFieldsForDataSource($newFields, $currentFields, self::UPLOAD);
             }
 
@@ -237,7 +241,8 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $newFields = [];
         $columns = $file->getColumns();
         if ($columns === null) {
-            throw new \Exception(sprintf("Cannot detect header of File %s", basename($inputFile)));
+            return [];
+
         }
 
         $newFields = array_merge($newFields, $columns);
