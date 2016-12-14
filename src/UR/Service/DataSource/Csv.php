@@ -9,7 +9,7 @@ class Csv implements DataSourceInterface
     protected $csv;
     protected $headers;
     protected $headerRow = 0;
-    protected $dataRow = 1;
+    protected $dataRow = 0;
 
     public function __construct($filePath, $delimiter = ',')
     {
