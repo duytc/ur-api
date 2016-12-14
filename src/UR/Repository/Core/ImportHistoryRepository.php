@@ -251,7 +251,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         }
 
         $parser = new Parser();
-        $collection = $parser->parse($collection, $parserConfig, $connDataSource->getDataSet());
+        $collection = $parser->parse($collection, $parserConfig, $connDataSource);
 
         return $collection->getRows();
     }
