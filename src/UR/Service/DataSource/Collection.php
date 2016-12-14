@@ -33,4 +33,9 @@ class Collection implements DataSourceInterface
     {
         return new static($collection->getRows());
     }
+
+    public function getDataRow()
+    {
+        // TODO: Implement getDataRow() method.
+    }
 }

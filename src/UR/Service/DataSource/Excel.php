@@ -13,7 +13,7 @@ class Excel implements DataSourceInterface
     protected $sheet;
     protected $headers;
     protected $ogiHeaders;
-    protected $rows;
+    protected $rows = [];
     protected $headerRow = 0;
     protected $dataRow = 0;
     protected $inputFileType;

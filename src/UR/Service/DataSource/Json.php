@@ -19,4 +19,9 @@ class Json implements DataSourceInterface
         // todo
         return [];
     }
+
+    public function getDataRow()
+    {
+        // TODO: Implement getDataRow() method.
+    }
 }
