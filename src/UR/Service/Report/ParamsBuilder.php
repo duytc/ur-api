@@ -259,7 +259,7 @@ class ParamsBuilder implements ParamsBuilderInterface
                 ->setTransforms($this->createTransforms($reportView->getTransforms()))
                 ->setJoinByFields($reportView->getJoinBy())
                 ->setMultiView($reportView->isMultiView())
-                ->setShowInTotal($reportView->getShowInTotal())
+//                ->setShowInTotal($reportView->getShowInTotal())
                 ->setFieldTypes($reportView->getFieldTypes())
             ;
         }
