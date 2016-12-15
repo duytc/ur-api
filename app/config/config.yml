@@ -167,7 +167,7 @@ fos_rest:
 
     format_listener:
         rules:
-            - { path: '^/api/', fallback_format: json, prefer_extension: false, priorities: ['json', 'xml'] }
+            - { path: '^/api/', fallback_format: json, prefer_extension: false, priorities: ['json'] }
             - { path: '^/', priorities: [ 'html', '*/*'], fallback_format: json, prefer_extension: false }
 
     access_denied_listener:
