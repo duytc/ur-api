@@ -57,7 +57,6 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
                 $calculatedValue = 0;
             }
 
-            $calculatedValue = $calculatedValue ? $calculatedValue : $this->defaultValue;
             $row[$this->fieldName] = $calculatedValue;
         }
 

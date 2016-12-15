@@ -175,6 +175,19 @@ class ReportBuilder implements ReportBuilderInterface
                 }
             }
 
+            foreach($dimensions as $dimension) {
+                if (!array_key_exists($dimension, $row)) {
+                    $type = array_key_exists($dimension, $types) ? $types[$dimension] : null;
+                    if (in_array($type, [Type::DECIMAL, Type::NUMBER])) {
+                        $row[$dimension] = 0;
+                    } else if (in_array($type, [Type::TEXT, Type::MULTI_LINE_TEXT])) {
+                        $row[$dimension] = '-';
+                    } else {
+                        $row[$dimension] = null;
+                    }
+                }
+            }
+
             foreach($row as $key=>$value) {
                 if (!in_array($key, $metrics) && !in_array($key, $dimensions)) {
                     unset($row[$key]);
