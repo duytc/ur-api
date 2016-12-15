@@ -84,6 +84,7 @@ trait ValidateConnectedDataSourceTrait
             } else if ($filters[FilterType::TYPE] === Type::TEXT) {
                 $textFilter = new TextFilter($filters);
             } else if ($filters[FilterType::TYPE] === Type::DATE) {
+                $filters[FilterType::FORMAT] = '!Y-m-d';
                 $dateFilter = new DateFilter($filters);
             } else {
                 throw new Exception(sprintf("filter Setting error: filter of type [%s] is not supported", $filters[FilterType::TYPE]));
