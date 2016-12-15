@@ -76,7 +76,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
         }
 
         $regex = '/\[(.*?)\]/';
-        if (!preg_match_all($regex, $expression, $matches) || preg_match_all($regex, $expression, $matches) < 2) {
+        if (!preg_match_all($regex, $expression, $matches) || preg_match_all($regex, $expression, $matches) < 1) {
             throw new \Exception('System does not support this expression type');
         };
 
