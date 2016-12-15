@@ -44,14 +44,15 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
      * @param $joinBy
      * @return mixed|void
      */
-    public function transform(Collection $collection,  array &$metrics, array &$dimensions, $joinBy = null)
+    public function transform(Collection $collection, array &$metrics, array &$dimensions, $joinBy = null)
     {
         parent::transform($collection, $metrics, $dimensions, $joinBy);
+        $expressionForm = $this->convertExpressionForm($this->expression);
 
         $rows = $collection->getRows();
-        foreach($rows as &$row) {
+        foreach ($rows as &$row) {
             try {
-                $calculatedValue = $this->language->evaluate($this->expression, ['row' => $row]);
+                $calculatedValue = $this->language->evaluate($expressionForm, ['row' => $row]);
             } catch (\Exception $ex) {
                 $calculatedValue = 0;
             }
@@ -60,6 +61,35 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
         }
 
         $collection->setRows($rows);
+    }
+
+    /**
+     * Convert expression from: [fie1d_id]-[field2_id]  to row['field_id'] - row['field2_id']
+     * @param $expression
+     * @throws \Exception
+     * @return mixed
+     */
+    protected function convertExpressionForm($expression)
+    {
+        if (is_null($expression)) {
+            throw new \Exception(sprintf('Expression for calculated field can not be null'));
+        }
+
+        $regex = '/\[(.*?)\]/';
+        if (!preg_match_all($regex, $expression, $matches) || preg_match_all($regex, $expression, $matches) < 2) {
+            throw new \Exception('System does not support this expression type');
+        };
+
+        $fieldsInBracket = $matches[0];
+        $fields = $matches[1];
+        $newExpressionForm = null;
+
+        foreach ($fields as $index => $field) {
+            $replaceString = sprintf('row[\'%s\']', $field);
+            $expression = str_replace($fieldsInBracket[$index], $replaceString, $expression);
+        }
+
+        return $expression;
     }
 
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)

@@ -140,6 +140,8 @@ class ImportUtils
         foreach ($filters as $filter) {
             // filter Date
             if (strcmp($filter[FilterType::TYPE], Type::DATE) === 0) {
+                $format = $this->getFormatDateFromTransform($connectedDataSource, $filter[FilterType::FIELD]);
+                $filter[FilterType::FORMAT] = $format;
                 $parserConfig->filtersColumn($filter[FilterType::FIELD], new DateFilter($filter));
             }
 
@@ -151,6 +153,17 @@ class ImportUtils
                 $parserConfig->filtersColumn($filter[FilterType::FIELD], new NumberFilter($filter));
             }
         }
+    }
+
+    function getFormatDateFromTransform(ConnectedDataSourceInterface $connectedDataSource, $field)
+    {
+        $transforms = $connectedDataSource->getTransforms();
+        foreach ($transforms as $transform) {
+            if (strcmp($transform[TransformType::FIELD], $field) === 0) {
+                return $transform[TransformType::FROM];
+            }
+        }
+        return null;
     }
 
     function transformDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
