@@ -114,11 +114,10 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $file = $files->get($key);
 
             $error = $this->validateFileUpload($file, $dataSource);
-            if ($error > 0) {
-                return $error;
-            }
-
             $origin_name = $file->getClientOriginalName();
+            if ($error > 0) {
+                throw new \Exception(sprintf("File %s is not valid - wrong format", $origin_name));
+            }
 
             $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
 
@@ -171,7 +170,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                     $this->workerManager->processAlert($code, $publisherId, $params);
                 }
 
-                throw new \Exception(sprintf("File %s is not valid", $origin_name));
+                throw new \Exception(sprintf("File %s is not valid - wrong format", $origin_name));
             }
 
             // save file to upload dir
@@ -180,7 +179,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $convertResult = $this->convertToUtf8($path . '/' . $name);
             if (!$convertResult) {
-                throw new \Exception(sprintf("File %s is not valid", $origin_name));
+                throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $origin_name));
             }
 
             // create new data source entry
