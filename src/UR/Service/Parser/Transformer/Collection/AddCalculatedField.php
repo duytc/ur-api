@@ -42,10 +42,11 @@ class AddCalculatedField extends AbstractAddField
             $expressionForm = $this->convertExpressionForm($this->expression);
             $result = $this->language->evaluate($expressionForm, ['row' => $row]);
         } catch (\Exception $exception) {
-            $message = $exception->getMessage();
-            $result = array(ProcessAlert::ERROR => ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL,
-                ProcessAlert::MESSAGE => $message
-            );
+            $result = null;
+        }
+
+        if ($result === false) {
+            return null;
         }
 
         return $result;
