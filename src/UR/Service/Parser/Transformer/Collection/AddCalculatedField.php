@@ -39,14 +39,38 @@ class AddCalculatedField extends AbstractAddField
                 return abs($number);
             });
 
-            $result = $this->language->evaluate($this->expression, ['row' => $row]);
+            $expressionForm = $this->convertExpressionForm($this->expression);
+            $result = $this->language->evaluate($expressionForm, ['row' => $row]);
         } catch (\Exception $exception) {
             $message = $exception->getMessage();
             $result = array(ProcessAlert::ERROR => ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL,
                 ProcessAlert::MESSAGE => $message
             );
         }
-        
+
         return $result;
+    }
+
+    protected function convertExpressionForm($expression)
+    {
+        if (is_null($expression)) {
+            throw new \Exception(sprintf('Expression for calculated field can not be null'));
+        }
+
+        $regex = '/\[(.*?)\]/';
+        if (!preg_match_all($regex, $expression, $matches)) {
+            return $expression;
+        };
+
+        $fieldsInBracket = $matches[0];
+        $fields = $matches[1];
+        $newExpressionForm = null;
+
+        foreach ($fields as $index => $field) {
+            $replaceString = sprintf('row[\'%s\']', $field);
+            $expression = str_replace($fieldsInBracket[$index], $replaceString, $expression);
+        }
+
+        return $expression;
     }
 }

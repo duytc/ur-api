@@ -36,19 +36,20 @@ class Importer
                 throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
             }
         }
-        array_push($columns, "__data_source_id", "__import_id");
+
         $rows = $collection->getRows();
+        if (!is_array($rows) || count($rows) < 1) {
+            return true;
+        }
+
+        $columns = array_keys($rows[0]);
+        array_push($columns, "__data_source_id", "__import_id");
 
         $duplicateFields = $connectedDataSource->getDuplicates();
 
         $preparedCounts = 0;
-//        $preparedUpdateCounts = 0;
 
         $insert_values = array();
-//        $createTable='create table ' . $tableName . '_temp'. ' like '. $tableName;
-//        $this->conn->beginTransaction();
-//        $this->conn->prepare($createTable);
-//        $this->conn->executeQuery($createTable);
         foreach ($rows as $row) {
 
             //check duplicate
@@ -87,7 +88,6 @@ class Importer
                     $question_marks = [];
                 }
             } else { //update
-//                $updateSql = 'UPDATE ' . $tableName . ' SET ';
                 $updateSql = 'UPDATE ' . $tableName;
                 $value = ' SET ';
                 $where = ' WHERE __id= ' . $isDup[0]['__id'];
