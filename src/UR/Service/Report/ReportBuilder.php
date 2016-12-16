@@ -25,6 +25,7 @@ class ReportBuilder implements ReportBuilderInterface
 
     const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';
+    const SUB_VIEW_FIELD_KEY = 'report_view';
 
     /**
      * @var ReportSelectorInterface
@@ -114,17 +115,18 @@ class ReportBuilder implements ReportBuilderInterface
 
     protected function getMultipleReport(ParamsInterface $params)
     {
+        $rows = [];
+        $dimensions = [self::SUB_VIEW_FIELD_KEY];
+        $metrics = [];
+        $types = [];
+        $dateRanges = [];
+
         $reportViews = $params->getReportViews();
         $subReport = $params->isSubReportIncluded();
         if (empty($reportViews)) {
             throw new NotFoundHttpException('can not find the report');
         }
 
-        $rows = [];
-        $dimensions = [];
-        $metrics = [];
-        $types = [];
-        $dateRanges = [];
         /* get all reports data */
 
         /**
@@ -143,12 +145,16 @@ class ReportBuilder implements ReportBuilderInterface
                 continue;
             }
 
-            $types = array_merge($types, $result->getTypes());
 
+            $types = array_merge($types, $result->getTypes());
             if ($subReport === true){
-                $rows = array_merge($rows, $result->getReports());
+                $reports = $result->getReports();
+                $reports = $this->addNewField(self::SUB_VIEW_FIELD_KEY, $view->getName(), $reports);
+                $rows = array_merge($rows, $reports);
             } else {
-                $rows[] = $result->getTotal();
+                $total = $result->getTotal();
+                $total = $this->addNewField(self::SUB_VIEW_FIELD_KEY, $view->getName(), [$total]);
+                $rows = array_merge($rows, $total);
             }
 
             $metrics = array_unique(array_merge($metrics, $reportView->getMetrics()));
@@ -160,6 +166,8 @@ class ReportBuilder implements ReportBuilderInterface
             }
             $dateRanges[] = $dateRange;
         }
+
+        $types[self::SUB_VIEW_FIELD_KEY] = Type::TEXT;
 
         foreach($rows as &$row) {
             foreach($metrics as $metric) {
@@ -298,18 +306,16 @@ class ReportBuilder implements ReportBuilderInterface
     }
 
     /**
-     * get columns will be showed in total
-     *
-     * @param $showInTotal
-     * @param array $metrics
-     * @return array
+     * @param $key
+     * @param $value
+     * @param array $arrays
+     * @return mixed
      */
-    private function getShowInTotal($showInTotal, array $metrics)
+    private function addNewField($key, $value, array $arrays)
     {
-        if (empty($showInTotal)) {
-            $showInTotal = $metrics;
-        }
-
-        return $showInTotal;
+        return array_map(function(array $array) use ($key, $value) {
+            $array[$key] = $value;
+            return $array;
+        }, $arrays);
     }
 }
