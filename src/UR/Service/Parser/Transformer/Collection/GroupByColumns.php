@@ -46,7 +46,7 @@ class GroupByColumns implements CollectionTransformerInterface
         if (0 === count($array) || 0 === count($groupFields)) {
             return $result;
         }
-
+        $arr = [];
         foreach ($array as $element) {
             //calc key
             $key = '';
@@ -62,14 +62,17 @@ class GroupByColumns implements CollectionTransformerInterface
             //add fields
             if (!array_key_exists($key, $result)) {
                 $result[$key] = $newElement;
+                $arr[$key] = $newElement;
             }
 
             //add sum
+
             foreach ($sumFields as $sumFieldKey => $sumField) {
                 if (array_key_exists($sumField, $element)) {
 
                     $isFirst = false;
                     if (!array_key_exists($sumField, $result[$key])) {
+                        $arr[$key][$sumField][] = $element[$sumField];
                         $result[$key][$sumField] = $element[$sumField];
                         $isFirst = true;
                     }
@@ -78,7 +81,9 @@ class GroupByColumns implements CollectionTransformerInterface
                         if (is_numeric($element[$sumField]) && false === strpos($sumFieldKey, 'as_string')) {
                             $result[$key][$sumField] += $element[$sumField];
                         } else {
-                            $result[$key][$sumField] .= $separator . $element[$sumField];
+                            $arr[$key][$sumField][] = $element[$sumField];
+                            $x = implode(",", array_unique($arr[$key][$sumField]));
+                            $result[$key][$sumField] = $x;
                         }
                     }
                 }
