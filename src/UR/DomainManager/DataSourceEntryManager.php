@@ -229,7 +229,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
         if (strcmp($dataSource->getFormat(), 'csv') === 0) {
             /**@var Csv $file */
-            $file = (new Csv($inputFile))->setDelimiter(',');
+            $file = (new Csv($inputFile))->setDelimiter(",");
         } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
             /**@var Excel $file */
             $file = new Excel($inputFile, $this->phpExcel);

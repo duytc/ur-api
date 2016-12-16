@@ -48,7 +48,7 @@ class SortByColumns implements CollectionTransformerInterface
 
     public function getPriority()
     {
-        return 0;
+        return 2;
     }
 
     public function array_sort_by_column(&$arr, $cols)

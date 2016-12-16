@@ -57,6 +57,6 @@ class ComparisonPercent implements CollectionTransformerInterface
 
     public function getPriority()
     {
-        return 0;
+        return 1;
     }
 }

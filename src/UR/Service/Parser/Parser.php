@@ -109,7 +109,21 @@ class Parser implements ParserInterface
 
         $collection = new Collection(array_values($columns), $rows);
 
-        foreach ($config->getCollectionTransforms() as $transform) {
+        $allFieldsTransform = $config->getCollectionTransforms();
+
+        for ($i = 0; $i < count($allFieldsTransform); $i++) {
+            for ($j = $i + 1; $j < count($allFieldsTransform); $j++) {
+                $transform1 = $allFieldsTransform[$i];
+                $transform2 = $allFieldsTransform[$j];
+                if ($transform2->getPriority() < $transform1->getPriority()) {
+                    $transform3 = $allFieldsTransform[$i];
+                    $allFieldsTransform[$i] = $allFieldsTransform[$j];
+                    $allFieldsTransform[$j] = $transform3;
+                }
+            }
+        }
+
+        foreach ($allFieldsTransform as $transform) {
             /** @var CollectionTransformerInterface $transform */
             try {
                 $collection = $transform->transform($collection);
