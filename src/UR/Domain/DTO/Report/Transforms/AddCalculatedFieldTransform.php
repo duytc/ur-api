@@ -54,7 +54,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
             try {
                 $calculatedValue = $this->language->evaluate($expressionForm, ['row' => $row]);
             } catch (\Exception $ex) {
-                $calculatedValue = 0;
+                $calculatedValue = null;
             }
 
             $row[$this->fieldName] = $calculatedValue;
