@@ -175,8 +175,6 @@ class ImportUtils
 
             if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE]) && $parserConfig->hasColumnMapping($transform[TransformType::FIELD])) {
 
-                //
-                //TODO WILL BE CHANGE IN FUTURE
                 if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
                     $parserConfig->transformColumn($transform[TransformType::FIELD], new DateFormat($transform[TransformType::FROM], 'Y-m-d'));
                 }

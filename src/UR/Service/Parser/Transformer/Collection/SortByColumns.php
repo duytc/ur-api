@@ -26,9 +26,7 @@ class SortByColumns implements CollectionTransformerInterface
 
                 if (count($sortByColumns) != count($this->sortByColumns[$i][$j][TransformType::NAMES])) {
                     return new Collection($columns, $rows);
-//            throw new \InvalidArgumentException('Cannot sort the collection, some of the columns do not exist');
                 }
-                // todo implement sorting
 
                 switch ($this->sortByColumns[$i][$j][TransformType::DIRECTION]) {
                     case 'asc':

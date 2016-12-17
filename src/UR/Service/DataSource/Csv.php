@@ -106,7 +106,7 @@ class Csv implements DataSourceInterface
         $match = 0;
         $max = 0;
         $pre_columns = [];
-        $all_columns = [];
+        $all_rows = [];
         $i = 0;
 
         // try fetchAll csv with current delimiters
@@ -114,11 +114,11 @@ class Csv implements DataSourceInterface
         foreach ($this->delimiters as $delimiter) {
             try {
                 $this->csv->setDelimiter($delimiter);
-                $all_columns = $this->csv->fetchAll();
+                $all_rows = $this->csv->fetchAll();
 
-                if (is_array($all_columns) && count($all_columns) > 0) {
+                if (is_array($all_rows) && count($all_rows) > 0) {
                     // check the first row is array and has at least 2 columns
-                    $firstRow = $all_columns[0];
+                    $firstRow = $all_rows[0];
                     if (is_array($firstRow) && count($firstRow) > 1) {
                         // found, so quit the loop
                         $validDelimiter = $delimiter;
@@ -135,9 +135,8 @@ class Csv implements DataSourceInterface
             return $this->headers; // TODO: why?
         }
 
-        for ($row = 0; $row <= count($all_columns); $row++) {
-            // TODO: why not use fetched $all_columns instead of fetch each row
-            $cur_row = $this->validValue($this->csv->fetchOne($row));
+        for ($row = 0; $row <= count($all_rows); $row++) {
+            $cur_row = $this->validValue($all_rows[$row]);
 
             if (count($cur_row) < 1) {
                 continue;
@@ -173,7 +172,6 @@ class Csv implements DataSourceInterface
                 break;
             }
         }
-        // todo make sure there is no file encoding issues for UTF-8, UTF-16, remove special characters
 
         return $this->headers;
     }
@@ -182,7 +180,6 @@ class Csv implements DataSourceInterface
     {
         $this->csv->setOffset($this->dataRow);
 
-        // todo make sure there is no file encoding issues for UTF-8, UTF-16, remove special characters
         return $this->csv->fetchAll();
     }
 

@@ -150,7 +150,9 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
         /** @var $files */
         $keys = $files->keys();
+        $i = 0;
         foreach ($keys as $key) {
+            $i++;
             /**@var UploadedFile $file */
             $file = $files->get($key);
             $error = $this->validateFileUpload($file, $dataSource);
@@ -174,7 +176,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             }
 
             // save file to upload dir
-            $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
+            $name = $file_name . '_' . round(microtime(true) + $i) . '.' . $file->getClientOriginalExtension();
             $file->move($path, $name);
 
             $convertResult = $this->convertToUtf8($path . '/' . $name);
@@ -247,9 +249,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $newFields = array_merge($newFields, $columns);
         $newFields = array_unique($newFields);
         $newFields = array_filter($newFields, function ($value) {
-            if ($value !== '' && $value !== null) {
-                return $value; // TODO: correct the return value. This function is currently used wrong way
-            }
+            return ($value !== '' && $value !== null);
         });
 
         return $newFields;

@@ -124,7 +124,7 @@ class Excel implements DataSourceInterface
         if (is_array($this->headers)) {
             return $this->headers;
         }
-        // todo
+
         return [];
     }
 
