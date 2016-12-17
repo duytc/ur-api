@@ -21,7 +21,9 @@ class DateFormat implements ColumnTransformerInterface
             return $value->format($this->toDateFormat);
         }
 
-        if (strcmp($value, "0000-00-00") === 0 || $value === null) {
+        $value = trim($value);
+
+        if (strcmp($value, "0000-00-00") === 0 || $value === null || $value === "") {
             return null;
         }
 
