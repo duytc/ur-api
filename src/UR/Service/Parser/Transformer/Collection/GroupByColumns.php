@@ -82,7 +82,7 @@ class GroupByColumns implements CollectionTransformerInterface
                             $result[$key][$sumField] += $element[$sumField];
                         } else {
                             $arr[$key][$sumField][] = $element[$sumField];
-                            $x = implode(", ", array_unique($arr[$key][$sumField]));
+                            $x = $arr[$key][$sumField][0];
                             $result[$key][$sumField] = $x;
                         }
                     }
