@@ -229,7 +229,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
         if (strcmp($dataSource->getFormat(), 'csv') === 0) {
             /**@var Csv $file */
-            $file = (new Csv($inputFile))->setDelimiter(",");
+            $file = new Csv($inputFile);
         } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
             /**@var Excel $file */
             $file = new Excel($inputFile, $this->phpExcel);
@@ -248,7 +248,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $newFields = array_unique($newFields);
         $newFields = array_filter($newFields, function ($value) {
             if ($value !== '' && $value !== null) {
-                return $value;
+                return $value; // TODO: correct the return value. This function is currently used wrong way
             }
         });
 
