@@ -91,7 +91,7 @@ class AutoImportData implements AutoImportDataInterface
 
             if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'csv') === 0) {
                 /**@var Csv $file */
-                $file = (new Csv($this->uploadFileDir . $dataSourceEntry->getPath()))->setDelimiter(',');
+                $file = new Csv($this->uploadFileDir . $dataSourceEntry->getPath());
             } else if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'excel') === 0) {
                 /**@var Excel $file */
                 $file = new \UR\Service\DataSource\Excel($this->uploadFileDir . $dataSourceEntry->getPath(), $this->phpExcel);

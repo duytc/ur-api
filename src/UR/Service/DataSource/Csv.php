@@ -2,26 +2,75 @@
 
 namespace UR\Service\DataSource;
 
+use League\Csv\AbstractCsv;
 use League\Csv\Reader;
+use UR\Exception\InvalidArgumentException;
 
 class Csv implements DataSourceInterface
 {
+    const DELIMITER_COMMA = ",";
+    const DELIMITER_TAB = "\t"; // important: using double quote instead of single quote for special characters!!!
+
+    public static $SUPPORTED_DELIMITERS = [self::DELIMITER_COMMA, self::DELIMITER_TAB];
+
+    /**
+     * @var AbstractCsv
+     */
     protected $csv;
+
+    /**
+     * @var array
+     */
+    protected $delimiters;
+
+    /**
+     * @var array
+     */
     protected $headers;
     protected $headerRow = 0;
     protected $dataRow = 0;
 
-    public function __construct($filePath, $delimiter = ',')
+    /**
+     * Csv constructor.
+     * @param string $filePath
+     * @param string|array if null, $delimiters default is self::$SUPPORTED_DELIMITERS
+     */
+    public function __construct($filePath, $delimiters = null)
     {
         // todo validate $filePath
         $this->csv = Reader::createFromPath($filePath);
 
-        $this->csv->setDelimiter($delimiter);
+        $delimiters = null === $delimiters ? self::$SUPPORTED_DELIMITERS : $delimiters;
+        $this->setDelimiters($delimiters);
     }
 
-    public function setDelimiter($delimiter)
+    /**
+     * @param array $delimiters
+     * @return bool
+     */
+    public static function isSupportedDelimiters(array $delimiters)
     {
-        $this->csv->setDelimiter($delimiter);
+        foreach ($delimiters as $delimiter) {
+            if (!in_array($delimiter, self::$SUPPORTED_DELIMITERS)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param string|array $delimiters
+     * @return $this
+     */
+    public function setDelimiters($delimiters)
+    {
+        $delimiters = is_array($delimiters) ? $delimiters : [$delimiters];
+        if (!self::isSupportedDelimiters($delimiters)) {
+            throw new InvalidArgumentException(sprintf('Not supported delimiters %s for this csv file', implode(',', $delimiters)));
+        }
+
+        $this->delimiters = $delimiters;
 
         return $this;
     }
@@ -57,10 +106,37 @@ class Csv implements DataSourceInterface
         $match = 0;
         $max = 0;
         $pre_columns = [];
-        $all_columns = $this->csv->fetchAll();
+        $all_columns = [];
         $i = 0;
 
+        // try fetchAll csv with current delimiters
+        $validDelimiter = false;
+        foreach ($this->delimiters as $delimiter) {
+            try {
+                $this->csv->setDelimiter($delimiter);
+                $all_columns = $this->csv->fetchAll();
+
+                if (is_array($all_columns) && count($all_columns) > 0) {
+                    // check the first row is array and has at least 2 columns
+                    $firstRow = $all_columns[0];
+                    if (is_array($firstRow) && count($firstRow) > 1) {
+                        // found, so quit the loop
+                        $validDelimiter = $delimiter;
+                        break;
+                    }
+                }
+            } catch (\Exception $e) {
+                // not support delimiter or other reason, then we try with other delimiters
+            }
+        }
+
+        // could not parse due to not supported delimiters or other exception
+        if (false === $validDelimiter) {
+            return $this->headers; // TODO: why?
+        }
+
         for ($row = 0; $row <= count($all_columns); $row++) {
+            // TODO: why not use fetched $all_columns instead of fetch each row
             $cur_row = $this->validValue($this->csv->fetchOne($row));
 
             if (count($cur_row) < 1) {
@@ -93,8 +169,9 @@ class Csv implements DataSourceInterface
                 break;
             }
 
-            if ($i >= DataSourceInterface::DETECT_HEADER_ROWS)
+            if ($i >= DataSourceInterface::DETECT_HEADER_ROWS) {
                 break;
+            }
         }
         // todo make sure there is no file encoding issues for UTF-8, UTF-16, remove special characters
 
