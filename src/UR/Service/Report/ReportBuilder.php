@@ -116,7 +116,7 @@ class ReportBuilder implements ReportBuilderInterface
     protected function getMultipleReport(ParamsInterface $params)
     {
         $rows = [];
-        $dimensions = [self::SUB_VIEW_FIELD_KEY];
+        $dimensions = [];
         $metrics = [];
         $types = [];
         $dateRanges = [];
@@ -148,13 +148,11 @@ class ReportBuilder implements ReportBuilderInterface
 
             $types = array_merge($types, $result->getTypes());
             if ($subReport === true){
-                $reports = $result->getReports();
-                $reports = $this->addNewField(self::SUB_VIEW_FIELD_KEY, $view->getName(), $reports);
-                $rows = array_merge($rows, $reports);
+                $rows = array_merge($rows, $result->getReports());
             } else {
                 $total = $result->getTotal();
-                $total = $this->addNewField(self::SUB_VIEW_FIELD_KEY, $view->getName(), [$total]);
-                $rows = array_merge($rows, $total);
+                $total = array_merge($total, $result->getAddedFields());
+                $rows[] = $total;
             }
 
             $metrics = array_unique(array_merge($metrics, $reportView->getMetrics()));
@@ -166,8 +164,6 @@ class ReportBuilder implements ReportBuilderInterface
             }
             $dateRanges[] = $dateRange;
         }
-
-        $types[self::SUB_VIEW_FIELD_KEY] = Type::TEXT;
 
         foreach($rows as &$row) {
             foreach($metrics as $metric) {
