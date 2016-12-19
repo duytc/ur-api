@@ -113,7 +113,7 @@ class ReportGrouper implements ReportGrouperInterface
             $headers[$column] = $this->convertColumn($column, $singleDataSet);
         }
 
-        return new ReportResult($rows, $total, $average, $this->dateUtil->mergeDateRange($dateRanges), $headers, $collection->getTypes());
+        return new ReportResult($rows, $total, $average, $this->dateUtil->mergeDateRange($dateRanges), $headers, $collection->getTypes(), $collection->getAddedFields());
     }
 
     protected function getDataSetManager()

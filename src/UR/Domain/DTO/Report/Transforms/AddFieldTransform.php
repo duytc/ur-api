@@ -53,6 +53,7 @@ class AddFieldTransform extends NewFieldTransform implements TransformInterface
             return $row;
         }, $rows);
 
+        $collection->addField($this->fieldName, $this->value);
         $collection->setRows($newRows);
     }
 
