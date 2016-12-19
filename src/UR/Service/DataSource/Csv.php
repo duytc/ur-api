@@ -157,14 +157,14 @@ class Csv implements DataSourceInterface
             }
 
             $match++;
-            if ($match === 1) {
-                if ($row === 2)
+            if ($match === self::FIRST_MATCH) {
+                if ($row === self::SECOND_ROW)
                     $this->dataRow = $row - 1;
                 else
                     $this->dataRow = $row;
             }
 
-            if ($match > 10 && count($this->headers) > 0) {
+            if ($match > self::ROW_MATCH && count($this->headers) > 0) {
                 break;
             }
 

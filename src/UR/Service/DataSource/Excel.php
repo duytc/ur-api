@@ -60,14 +60,14 @@ class Excel implements DataSourceInterface
                 }
 
                 $match++;
-                if ($match === 1) {
-                    if ($row === 2)
+                if ($match === self::FIRST_MATCH) {
+                    if ($row === self::SECOND_ROW)
                         $this->dataRow = $row;
                     else
                         $this->dataRow = $row - 1;
                 }
 
-                if ($match > 10 && count($this->headers) > 0) {
+                if ($match > self::ROW_MATCH && count($this->headers) > 0) {
                     break;
                 }
 
@@ -101,13 +101,13 @@ class Excel implements DataSourceInterface
                     }
 
                     $match++;
-                    if ($match === 1) {
-                        if ($i === 2)
+                    if ($match === self::FIRST_MATCH) {
+                        if ($i === self::SECOND_ROW)
                             $this->dataRow = $i;
                         else
                             $this->dataRow = $i - 1;
                     }
-                    if ($match > 10) {
+                    if ($match > self::ROW_MATCH) {
                         break;
                     }
 
