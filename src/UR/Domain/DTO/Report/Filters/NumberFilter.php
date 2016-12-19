@@ -20,6 +20,8 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
     const COMPARISON_TYPE_FILTER_KEY = 'comparison';
     const COMPARISON_VALUE_FILTER_KEY = 'compareValue';
 
+    const EPSILON = 10e-12;
+
     public static $SUPPORTED_COMPARISON_TYPES = [
         self::COMPARISON_TYPE_EQUAL,
         self::COMPARISON_TYPE_SMALLER,

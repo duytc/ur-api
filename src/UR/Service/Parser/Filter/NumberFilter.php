@@ -56,7 +56,7 @@ class NumberFilter extends \UR\Domain\DTO\Report\Filters\NumberFilter implements
         }
 
         if (self::COMPARISON_TYPE_EQUAL === $this->comparisonType) {
-            return $this->comparisonValue === $filter ? true : false;
+            return abs(floatval($this->comparisonValue) - floatval($filter)) < self::EPSILON ? true : false;
         }
 
         if (self::COMPARISON_TYPE_NOT_EQUAL === $this->comparisonType) {

@@ -37,7 +37,7 @@ class Importer
             }
         }
 
-        $rows = $collection->getRows();
+        $rows = array_values($collection->getRows());
         if (!is_array($rows) || count($rows) < 1) {
             return true;
         }
