@@ -135,7 +135,7 @@ class Csv implements DataSourceInterface
             return $this->headers; // TODO: why?
         }
 
-        for ($row = 0; $row <= count($all_rows); $row++) {
+        for ($row = 0; $row < count($all_rows); $row++) {
             $cur_row = $this->validValue($all_rows[$row]);
 
             if (count($cur_row) < 1) {
