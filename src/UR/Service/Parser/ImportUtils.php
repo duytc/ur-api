@@ -63,8 +63,7 @@ class ImportUtils
             $truncateSql = $conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
             $conn->exec($truncateSql);
         } catch (\Exception $e) {
-            echo "could not sync schema";
-            exit(1);
+            //todo logger
         }
     }
 
@@ -108,8 +107,7 @@ class ImportUtils
                 $conn->exec($truncateSql);
             }
         } catch (\Exception $e) {
-            echo "could not sync schema";
-            exit(1);
+            //todo logger
         }
     }
 

@@ -62,7 +62,12 @@ class ProcessAlert implements ProcessAlertInterface
         $alert->setCode($alertCode);
         $alert->setPublisher($publisher);
         $alert->setMessage([self::MESSAGE => $message]);
-        $alert->setDetail([self::DETAILS => $details]);
+        $alert->setDetail([
+            self::DETAILS => $details,
+            'dataSourceName' => $params[self::DATA_SOURCE_NAME],
+            'dataSetName' => $params[self::DATA_SET_NAME],
+            'fileName' => $params[self::FILE_NAME]
+        ]);
         $this->alertManager->save($alert);
     }
 
@@ -73,49 +78,49 @@ class ProcessAlert implements ProcessAlertInterface
         $fileName = $params[self::FILE_NAME];
         switch ($alertCode) {
             case self::NEW_DATA_IS_RECEIVED_FROM_UPLOAD:
-                $message = "File " . $fileName . " has been successfuly uploaded to " . $dataSourceName;
+                $message = sprintf("File %s has been successfuly uploaded to %s", $fileName, $dataSourceName);
                 $details = $message;
                 break;
             case self::NEW_DATA_IS_RECEIVED_FROM_EMAIL:
             case self::NEW_DATA_IS_RECEIVED_FROM_API:
-                $message = "File " . $fileName . " has been successfuly received to " . $dataSourceName;
+                $message = sprintf("File %s has been successfuly received to %s", $fileName, $dataSourceName);
                 $details = $message;
                 break;
             case self::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT:
-                $message = "Failed to Upload " . $fileName . " to " . $dataSourceName . " Wrong format error";
+                $message = sprintf("Failed to Upload %s to %s - Wrong format error", $fileName, $dataSourceName);
                 $details = $message;
                 break;
             case self::NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT:
             case self::NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT:
-                $message = "Filed to Receive " . $fileName . " to " . $dataSourceName . " Wrong format error";
+                $message = sprintf("Filed to Receive %s to %s - Wrong format error", $fileName, $dataSourceName);
                 $details = $message;
                 break;
             case self::DATA_IMPORTED_SUCCESSFULLY:
-                $message = "Data of File " . $fileName . " has been successfuly Imported to " . $dataSetName;
+                $message = sprintf("Data of File %s in Data Source %s has been successfuly imported to %s", $fileName, $dataSourceName, $dataSetName);
                 $details = $message;
                 break;
             case self::DATA_IMPORT_MAPPING_FAIL:
-                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " - Mapping error";
-                $details = "no Field in File " . $fileName . " is mapped to dataSet";
+                $message = sprintf("Failed to import File %s of %s to %s - Mapping error", $fileName, $dataSourceName, $dataSetName);
+                $details = sprintf("no Field in File %s is mapped to dataSet", $fileName);
                 break;
             case self::DATA_IMPORT_REQUIRED_FAIL:
-                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  Require error";
-                $details = "Error at column [" . $params[self::COLUMN] . "] - Require Fields not exist in File";
+                $message = sprintf("Failed to import File %s of %s to %s - Require error", $fileName, $dataSourceName, $dataSetName);
+                $details = sprintf("Error at column [%s] - Require Fields not exist in File", $params[self::COLUMN]);
                 break;
             case self::FILTER_ERROR_INVALID_NUMBER:
-                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  Filter error";
-                $details = "Wrong number format at row " . $params[self::ROW] . " column [" . $params[self::COLUMN] . "]";
+                $message = sprintf("Failed to import File %s of %s to %s - Filter error", $fileName, $dataSourceName, $dataSetName);
+                $details = sprintf("Wrong number format at row [%s] - column [%s]", $params[self::ROW], $params[self::COLUMN]);
                 break;
             case self::TRANSFORM_ERROR_INVALID_DATE:
-                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  Transform error";
-                $details = "Wrong date format at row " . $params[self::ROW] . " column [" . $params[self::COLUMN] . "]";
+                $message = sprintf("Failed to import File %s of %s to %s - Transform error", $fileName, $dataSourceName, $dataSetName);
+                $details = sprintf("Wrong date format at row [%s] - column [%s]", $params[self::ROW], $params[self::COLUMN]);
                 break;
             case self::DATA_IMPORT_NO_HEADER_FOUND:
-                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  no Header Found Error";
+                $message = sprintf("Failed to import File %s of %s to %s - no Header Found Error", $fileName, $dataSourceName, $dataSetName);
                 $details = $message;
                 break;
             case self::DATA_IMPORT_NO_DATA_ROW_FOUND:
-                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  Can't find Data Error";
+                $message = sprintf("Failed to import File %s of %s to %s - Can't find Data Error", $fileName, $dataSourceName, $dataSetName);
                 $details = $message;
                 break;
             default:
