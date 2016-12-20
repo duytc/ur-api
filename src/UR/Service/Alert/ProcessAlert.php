@@ -33,7 +33,7 @@ class ProcessAlert implements ProcessAlertInterface
     const ROW = 'row';
     const COLUMN = 'column';
     const MESSAGE = 'message';
-    const DETAILS = 'details';
+    const DETAILS = 'detail';
     const ERROR = 'error';
 
     protected $alertManager;
@@ -74,20 +74,25 @@ class ProcessAlert implements ProcessAlertInterface
         switch ($alertCode) {
             case self::NEW_DATA_IS_RECEIVED_FROM_UPLOAD:
                 $message = "File " . $fileName . " has been successfuly uploaded to " . $dataSourceName;
+                $details = $message;
                 break;
             case self::NEW_DATA_IS_RECEIVED_FROM_EMAIL:
             case self::NEW_DATA_IS_RECEIVED_FROM_API:
                 $message = "File " . $fileName . " has been successfuly received to " . $dataSourceName;
+                $details = $message;
                 break;
             case self::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT:
                 $message = "Failed to Upload " . $fileName . " to " . $dataSourceName . " Wrong format error";
+                $details = $message;
                 break;
             case self::NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT:
             case self::NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT:
                 $message = "Filed to Receive " . $fileName . " to " . $dataSourceName . " Wrong format error";
+                $details = $message;
                 break;
             case self::DATA_IMPORTED_SUCCESSFULLY:
                 $message = "Data of File " . $fileName . " has been successfuly Imported to " . $dataSetName;
+                $details = $message;
                 break;
             case self::DATA_IMPORT_MAPPING_FAIL:
                 $message = "Failed to import File " . $fileName . " to " . $dataSetName . " - Mapping error";
@@ -107,9 +112,11 @@ class ProcessAlert implements ProcessAlertInterface
                 break;
             case self::DATA_IMPORT_NO_HEADER_FOUND:
                 $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  no Header Found Error";
+                $details = $message;
                 break;
             case self::DATA_IMPORT_NO_DATA_ROW_FOUND:
                 $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  Can't find Data Error";
+                $details = $message;
                 break;
             default:
                 break;
