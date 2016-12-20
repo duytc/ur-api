@@ -117,9 +117,9 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
         foreach ($rows as $report) {
             $key = '';
             foreach ($groupingFields as $groupField) {
-                if (!in_array($groupField, $dimensions)) {
-                    throw new InvalidArgumentException(sprintf('%s is not a dimensions', $groupField));
-                }
+//                if (!in_array($groupField, $dimensions)) {
+//                    throw new InvalidArgumentException(sprintf('%s is not a dimensions', $groupField));
+//                }
 
                 if (array_key_exists($groupField, $report)) {
                     $key .= is_array($report[$groupField]) ? json_encode($report[$groupField], JSON_UNESCAPED_UNICODE) : $report[$groupField];
