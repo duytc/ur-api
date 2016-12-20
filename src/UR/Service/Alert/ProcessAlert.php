@@ -58,15 +58,15 @@ class ProcessAlert implements ProcessAlertInterface
         $alert = new Alert();
         $message = "";
         $details = "";
-        $detailsMessage = $this->getAlertDetails($alertCode, $params, $message, $details);
+        $this->getAlertDetails($alertCode, $params, $message, $details);
         $alert->setCode($alertCode);
         $alert->setPublisher($publisher);
-        $alert->setMessage([self::MESSAGE => $detailsMessage[self::MESSAGE]]);
-        $alert->setDetail([self::DETAILS => $detailsMessage[self::DETAILS]]);
+        $alert->setMessage([self::MESSAGE => $message]);
+        $alert->setDetail([self::DETAILS => $details]);
         $this->alertManager->save($alert);
     }
 
-    public function getAlertDetails($alertCode, array $params, $message, $details)
+    public function getAlertDetails($alertCode, array $params, &$message, &$details)
     {
         $dataSourceName = $params[self::DATA_SOURCE_NAME];
         $dataSetName = $params[self::DATA_SET_NAME];
@@ -96,7 +96,7 @@ class ProcessAlert implements ProcessAlertInterface
                 break;
             case self::DATA_IMPORT_MAPPING_FAIL:
                 $message = "Failed to import File " . $fileName . " to " . $dataSetName . " - Mapping error";
-                $details = "no Field in File is mapped to dataSet";
+                $details = "no Field in File " . $fileName . " is mapped to dataSet";
                 break;
             case self::DATA_IMPORT_REQUIRED_FAIL:
                 $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  Require error";
@@ -121,6 +121,5 @@ class ProcessAlert implements ProcessAlertInterface
             default:
                 break;
         }
-        return [self::MESSAGE => $message, self::DETAILS => $details];
     }
 }
