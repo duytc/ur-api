@@ -16,18 +16,16 @@ class ProcessAlert implements ProcessAlertInterface
     const NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT = 103;
     const NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT = 104;
     const NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT = 105;
-    const NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE = 200;
+    const DATA_IMPORTED_SUCCESSFULLY = 200;
     const DATA_IMPORT_MAPPING_FAIL = 201;
     const DATA_IMPORT_REQUIRED_FAIL = 202;
-    const DATA_IMPORT_FILTER_FAIL = 203;
-    const DATA_IMPORT_TRANSFORM_FAIL = 204;
+    const FILTER_ERROR_INVALID_NUMBER = 203;
+    const TRANSFORM_ERROR_INVALID_DATE = 204;
     const DATA_IMPORT_NO_HEADER_FOUND = 205;
     const DATA_IMPORT_NO_DATA_ROW_FOUND = 206;
-
     const DATA_SOURCE_MODULE = 1;
     const DATA_SET_MODULE = 2;
     const UNSUPPORTED_MODULE = 0;
-
     const FILE_NAME = 'fileName';
     const DATA_SOURCE_NAME = 'dataSourceName';
     const FORMAT_FILE = 'formatFile';
@@ -35,41 +33,8 @@ class ProcessAlert implements ProcessAlertInterface
     const ROW = 'row';
     const COLUMN = 'column';
     const MESSAGE = 'message';
+    const DETAILS = 'details';
     const ERROR = 'error';
-
-    /**
-     * Status codes translation table.
-     *
-     * @var array
-     */
-    public static $alertCodes = array(
-        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD => 'New data is received from Upload',      // error codes for dataSource
-        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_EMAIL => 'New data is received from Email',
-        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_API => 'New data is received from API',
-        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT => 'New data is received from Upload in wrong format',
-        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT => 'New data is received from Email in wrong format',
-        ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT => 'New data is received API in wrong format',
-        ProcessAlert::NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE => 'New data is add to the connected data source',              // error codes for dataSet
-        ProcessAlert::DATA_IMPORT_MAPPING_FAIL => 'Data import required fail',
-        ProcessAlert::DATA_IMPORT_REQUIRED_FAIL => 'Data import required fail',
-        ProcessAlert::DATA_IMPORT_FILTER_FAIL => 'Data import filter fail',
-        ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL => 'Data import transform fail',
-        ProcessAlert::DATA_IMPORT_NO_HEADER_FOUND => 'Data import fail - No header found',
-        ProcessAlert::DATA_IMPORT_NO_DATA_ROW_FOUND => 'Data import fail - No data row found'
-    );
-
-    public static $datSourceErrorParams = array(
-        ProcessAlert::FILE_NAME => 'require',
-        ProcessAlert::DATA_SOURCE_NAME => 'option'
-    );
-
-    public static $datSetErrorParams = array(
-        ProcessAlert::DATA_SET_NAME => 'require',
-        ProcessAlert::DATA_SOURCE_NAME => 'require',
-        ProcessAlert::FILE_NAME => 'require',
-        ProcessAlert::ROW => 'option',
-        ProcessAlert::COLUMN => 'option'
-    );
 
     protected $alertManager;
     protected $publisherManager;
@@ -85,76 +50,70 @@ class ProcessAlert implements ProcessAlertInterface
      */
     public function createAlert($alertCode, $publisherId, array $params)
     {
-        if (!array_key_exists($alertCode, self::$alertCodes)) {
-            throw new \Exception(sprintf('Alert code %d is not valid', $alertCode));
-        }
-
         $publisher = $this->publisherManager->findPublisher($publisherId);
         if (!$publisher instanceof PublisherInterface) {
             throw new \Exception(sprintf('Not found that publisher %s', $publisherId));
         }
 
-        $this->validateParams($alertCode, $params);
-
         $alert = new Alert();
+        $message = "";
+        $details = "";
+        $detailsMessage = $this->getAlertDetails($alertCode, $params, $message, $details);
         $alert->setCode($alertCode);
         $alert->setPublisher($publisher);
-        $alert->setMessage($params);
+        $alert->setMessage([self::MESSAGE => $detailsMessage[self::MESSAGE]]);
+        $alert->setDetail([self::DETAILS => $detailsMessage[self::DETAILS]]);
         $this->alertManager->save($alert);
     }
 
-    /**
-     * @param $alertCode
-     * @param $params
-     * @throws \Exception
-     */
-    protected function validateParams($alertCode, $params)
+    public function getAlertDetails($alertCode, array $params, $message, $details)
     {
-        $caller = $this->getCallerFromAlertCode($alertCode);
-
-        switch ($caller) {
-            case self::DATA_SOURCE_MODULE:
-                foreach (self::$datSourceErrorParams as $dataSourceErrorParam => $value) {
-                    if ($value == 'require') {
-                        if (!array_key_exists($dataSourceErrorParam, $params)) {
-                            throw new \Exception (sprintf('Alert code %d need %d param', $alertCode, $dataSourceErrorParam));
-                        }
-                    }
-                }
+        $dataSourceName = $params[self::DATA_SOURCE_NAME];
+        $dataSetName = $params[self::DATA_SET_NAME];
+        $fileName = $params[self::FILE_NAME];
+        switch ($alertCode) {
+            case self::NEW_DATA_IS_RECEIVED_FROM_UPLOAD:
+                $message = "File " . $fileName . " has been successfuly uploaded to " . $dataSourceName;
                 break;
-            case self::DATA_SET_MODULE:
-                foreach (self::$datSetErrorParams as $dataSetErrorParam => $value) {
-                    if ($value == 'require') {
-                        if (!array_key_exists($dataSetErrorParam, $params)) {
-                            throw new \Exception (sprintf('Alert code %d need %d param', $alertCode, $dataSetErrorParam));
-                        }
-                    }
-                }
+            case self::NEW_DATA_IS_RECEIVED_FROM_EMAIL:
+            case self::NEW_DATA_IS_RECEIVED_FROM_API:
+                $message = "File " . $fileName . " has been successfuly received to " . $dataSourceName;
+                break;
+            case self::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT:
+                $message = "Failed to Upload " . $fileName . " to " . $dataSourceName . " Wrong format error";
+                break;
+            case self::NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT:
+            case self::NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT:
+                $message = "Filed to Receive " . $fileName . " to " . $dataSourceName . " Wrong format error";
+                break;
+            case self::DATA_IMPORTED_SUCCESSFULLY:
+                $message = "Data of File " . $fileName . " has been successfuly Imported to " . $dataSetName;
+                break;
+            case self::DATA_IMPORT_MAPPING_FAIL:
+                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " - Mapping error";
+                $details = "no Field in File is mapped to dataSet";
+                break;
+            case self::DATA_IMPORT_REQUIRED_FAIL:
+                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  Require error";
+                $details = "Error at column [" . $params[self::COLUMN] . "] - Require Fields not exist in File";
+                break;
+            case self::FILTER_ERROR_INVALID_NUMBER:
+                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  Filter error";
+                $details = "Wrong number format at row " . $params[self::ROW] . " column [" . $params[self::COLUMN] . "]";
+                break;
+            case self::TRANSFORM_ERROR_INVALID_DATE:
+                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  Transform error";
+                $details = "Wrong date format at row " . $params[self::ROW] . " column [" . $params[self::COLUMN] . "]";
+                break;
+            case self::DATA_IMPORT_NO_HEADER_FOUND:
+                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  no Header Found Error";
+                break;
+            case self::DATA_IMPORT_NO_DATA_ROW_FOUND:
+                $message = "Failed to import File " . $fileName . " to " . $dataSetName . " -  Can't find Data Error";
                 break;
             default:
-                throw new \Exception (sprintf('System not support error code %d', $alertCode));
                 break;
         }
-    }
-
-    /**
-     * @param $alertCode
-     * @return int
-     */
-    protected function getCallerFromAlertCode($alertCode)
-    {
-        $startWithNumber = substr($alertCode, 0, 1);
-
-        switch ($startWithNumber) {
-            case 1:
-                return self::DATA_SOURCE_MODULE;
-                break;
-            case 2:
-                return self::DATA_SET_MODULE;
-                break;
-            default:
-                return self::UNSUPPORTED_MODULE;
-                break;
-        }
+        return [self::MESSAGE => $message, self::DETAILS => $details];
     }
 }

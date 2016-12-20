@@ -16,6 +16,7 @@ class Parser implements ParserInterface
 {
     public function parse(DataSourceInterface $dataSource, ParserConfig $config, ConnectedDataSourceInterface $connectedDataSource)
     {
+        $columnsMapping = $config->getAllColumnMappings();
         $columnFromMap = array_flip($config->getAllColumnMappings());
 
         $fileCols = array_map("strtolower", $dataSource->getColumns());
@@ -58,9 +59,9 @@ class Parser implements ParserInterface
                         }
 
                         if (strcmp(trim($row[$metric]), "") !== 0 && !is_numeric($row[$metric])) {
-                            return array('error' => ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL,
-                                'row' => $cur_row + 2,
-                                'column' => $metric);
+                            return array(ProcessAlert::ERROR => ProcessAlert::FILTER_ERROR_INVALID_NUMBER,
+                                ProcessAlert::ROW => $cur_row + 2,
+                                ProcessAlert::COLUMN => $columnsMapping[$metric]);
                         }
                     }
                 }
@@ -76,9 +77,9 @@ class Parser implements ParserInterface
                 foreach ($filters as $filter) {
                     $filterResult = $filter->filter($row[$column]);
                     if ($filterResult > 1) {
-                        return array('error' => ProcessAlert::DATA_IMPORT_FILTER_FAIL,
-                            'row' => $cur_row + 2,
-                            'column' => $column);
+                        return array(ProcessAlert::ERROR => $filterResult,
+                            ProcessAlert::ROW => $cur_row + 2,
+                            ProcessAlert::COLUMN => $columnsMapping[$column]);
                     } else {
                         $isValidFilter = $isValidFilter & $filterResult;
                     }
@@ -99,9 +100,9 @@ class Parser implements ParserInterface
                 foreach ($transforms as $transform) {
                     $row[$column] = $transform->transform($row[$column]);
                     if ($row[$column] === 2) {
-                        return array('error' => ProcessAlert::DATA_IMPORT_TRANSFORM_FAIL,
-                            'row' => $cur_row + 2,
-                            'column' => $column);
+                        return array(ProcessAlert::ERROR => ProcessAlert::TRANSFORM_ERROR_INVALID_DATE,
+                            ProcessAlert::ROW => $cur_row + 2,
+                            ProcessAlert::COLUMN => $columnsMapping[$column]);
                     }
                 }
             }

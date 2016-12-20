@@ -17,6 +17,9 @@ UR\Entity\Core\Alert:
         message:
             type: json_array
             nullable: true
+        detail:
+            type: json_array
+            nullable: true
         createdDate:
             type: datetime
             gedmo:

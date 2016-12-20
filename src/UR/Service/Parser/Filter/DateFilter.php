@@ -5,6 +5,7 @@ namespace UR\Service\Parser\Filter;
 
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Domain\DTO\Report\Filters\DateFilterInterface;
+use UR\Service\Alert\ProcessAlert;
 
 class DateFilter extends AbstractFilter implements DateFilterInterface, ColumnFilterInterface
 {
@@ -50,7 +51,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface, ColumnFi
         $filter = \DateTime::createFromFormat($this->format, $filter);
 
         if (!$filter) {
-            return 2;
+            return ProcessAlert::TRANSFORM_ERROR_INVALID_DATE;
         }
 
         if ($filter <= $this->endDate && $filter >= $this->startDate) {

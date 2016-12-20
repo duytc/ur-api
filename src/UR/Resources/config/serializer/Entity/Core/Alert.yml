@@ -13,6 +13,9 @@ UR\Entity\Core\Alert:
         message:
             expose: true
             groups: [alert.detail, alert.summary]
+        detail:
+            expose: true
+            groups: [alert.detail, alert.summary]
         createdDate:
             expose: true
             groups: [alert.detail, alert.summary]

@@ -11,6 +11,7 @@ class Alert implements AlertInterface
     protected $code;
     protected $isRead;
     protected $message;
+    protected $detail;
     protected $createdDate;
 
     /**
@@ -119,5 +120,21 @@ class Alert implements AlertInterface
     public function setPublisher($publisher)
     {
         $this->publisher = $publisher;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDetail()
+    {
+        return $this->detail;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setDetail($detail)
+    {
+        $this->detail = $detail;
     }
 }

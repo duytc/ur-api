@@ -3,6 +3,8 @@
 namespace UR\Service\Parser\Filter;
 
 
+use UR\Service\Alert\ProcessAlert;
+
 class NumberFilter extends \UR\Domain\DTO\Report\Filters\NumberFilter implements ColumnFilterInterface
 {
     public function __construct(array $numberFilter)
@@ -20,7 +22,7 @@ class NumberFilter extends \UR\Domain\DTO\Report\Filters\NumberFilter implements
         }
 
         if (!is_numeric($filter)) {
-            return 2;
+            return ProcessAlert::FILTER_ERROR_INVALID_NUMBER;
         }
 
         if (self::COMPARISON_TYPE_IN === $this->comparisonType) {

@@ -66,4 +66,14 @@ interface AlertInterface extends ModelInterface
      * @param PublisherInterface $publisher
      */
     public function setPublisher($publisher);
+
+    /**
+     * @return mixed
+     */
+    public function getDetail();
+
+    /**
+     * @param mixed $detail
+     */
+    public function setDetail($detail);
 }

@@ -99,7 +99,7 @@ class AutoImportData implements AutoImportDataInterface
                 $file = new Json($dataSourceEntry->getPath());
             }
 
-            $code = ProcessAlert::NEW_DATA_IS_ADD_TO_CONNECTED_DATA_SOURCE;
+            $code = ProcessAlert::DATA_IMPORTED_SUCCESSFULLY;
             $publisherId = $dataSourceEntry->getDataSource()->getPublisherId();
 
             // prepare alert params: default is success

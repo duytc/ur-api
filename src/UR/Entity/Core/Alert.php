@@ -12,6 +12,7 @@ class Alert extends AlertModel
     protected $code;
     protected $isRead;
     protected $message;
+    protected $detail;
     protected $createdDate;
 
     /**
