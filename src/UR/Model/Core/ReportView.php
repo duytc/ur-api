@@ -19,6 +19,11 @@ class ReportView implements ReportViewInterface
     protected $name;
 
     /**
+     * @var string
+     */
+    protected $alias;
+
+    /**
      * @var array
      */
     protected $dataSets;
@@ -124,6 +129,24 @@ class ReportView implements ReportViewInterface
     public function setName($name)
     {
         $this->name = $name;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAlias()
+    {
+        return $this->alias;
+    }
+
+    /**
+     * @param string $alias
+     * @return self
+     */
+    public function setAlias($alias)
+    {
+        $this->alias = $alias;
         return $this;
     }
 

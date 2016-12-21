@@ -32,6 +32,9 @@ UR\Entity\Core\ReportView:
         name:
             type: string
             nullable: false
+        alias:
+            type: string
+            nullable: false
         multiView:
             type: boolean
             options:

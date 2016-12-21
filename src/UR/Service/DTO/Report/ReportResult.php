@@ -38,8 +38,6 @@ class ReportResult implements ReportResultInterface
      */
     protected $dateRange;
 
-    protected $addedFields;
-
     /**
      * ReportResult constructor.
      * @param array $reports
@@ -49,7 +47,7 @@ class ReportResult implements ReportResultInterface
      * @param array $columns
      * @param array $types
      */
-    public function __construct(array $reports, array $total, array $average, $dateRange, $columns = [], $types = [], $addedFields = [])
+    public function __construct(array $reports, array $total, array $average, $dateRange, $columns = [], $types = [])
     {
         $this->reports = $reports;
         $this->total = $total;
@@ -57,7 +55,6 @@ class ReportResult implements ReportResultInterface
         $this->columns = $columns;
         $this->types = $types;
         $this->dateRange = $dateRange;
-        $this->addedFields = $addedFields;
     }
 
     /**
@@ -107,15 +104,6 @@ class ReportResult implements ReportResultInterface
     {
         return $this->dateRange;
     }
-
-    /**
-     * @return array
-     */
-    public function getAddedFields()
-    {
-        return $this->addedFields;
-    }
-
 
     /**
      * @inheritdoc
