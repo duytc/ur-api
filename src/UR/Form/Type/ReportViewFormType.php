@@ -19,6 +19,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
         $builder
             ->add('dataSets')
             ->add('name')
+            ->add('alias')
             ->add('transforms')
             ->add('joinBy')
             ->add('weightedCalculations')
@@ -46,6 +47,12 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
 
                 if (!is_array($reportView->getFieldTypes())) {
                     $reportView->setFieldTypes([]);
+                }
+
+                $alias = $reportView->getAlias();
+
+                if (!is_string($alias)) {
+                    $reportView->setAlias($reportView->getName());
                 }
             }
         );

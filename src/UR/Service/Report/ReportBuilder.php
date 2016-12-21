@@ -26,7 +26,7 @@ class ReportBuilder implements ReportBuilderInterface
     const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';
     const SUB_VIEW_FIELD_KEY = 'report_view';
-
+    const REPORT_VIEW_ALIAS = 'report_view_alias';
     /**
      * @var ReportSelectorInterface
      */
@@ -145,13 +145,14 @@ class ReportBuilder implements ReportBuilderInterface
                 continue;
             }
 
-
             $types = array_merge($types, $result->getTypes());
-            if ($subReport === true){
-                $rows = array_merge($rows, $result->getReports());
+            if ($subReport === true) {
+                $reports = $result->getReports();
+                $this->addNewField(self::REPORT_VIEW_ALIAS, $view->getAlias(), $reports);
+                $rows = array_merge($rows, $reports);
             } else {
                 $total = $result->getTotal();
-                $total = array_merge($total, $result->getAddedFields());
+                $total = array_merge($total, array(self::REPORT_VIEW_ALIAS => $view->getAlias()));
                 $rows[] = $total;
             }
 
@@ -164,6 +165,9 @@ class ReportBuilder implements ReportBuilderInterface
             }
             $dateRanges[] = $dateRange;
         }
+
+        $dimensions[] = self::REPORT_VIEW_ALIAS;
+        $types[self::REPORT_VIEW_ALIAS] = Type::TEXT;
 
         foreach($rows as &$row) {
             foreach($metrics as $metric) {

@@ -21,8 +21,6 @@ class Collection
      */
     protected $types;
 
-    protected $addedFields;
-
     public function __construct(array $columns, array $rows, $types = [], $addedFields = [])
     {
         $this->columns = $columns;
@@ -32,8 +30,6 @@ class Collection
             throw new InvalidArgumentException(sprintf('expect array, got %s', $types));
         }
         $this->types = $types;
-
-        $this->addedFields = $addedFields;
     }
 
     /**
@@ -50,29 +46,6 @@ class Collection
     public function getRows()
     {
         return $this->rows;
-    }
-
-    /**
-     * @return array
-     */
-    public function getAddedFields()
-    {
-        return $this->addedFields;
-    }
-
-    /**
-     * @param $field
-     * @param $value
-     * @return $this
-     */
-    public function addField($field, $value)
-    {
-        if (!is_array($this->addedFields)) {
-            $this->addedFields = [];
-        }
-
-        $this->addedFields[$field] = $value;
-        return $this;
     }
 
     public function addColumn($column)

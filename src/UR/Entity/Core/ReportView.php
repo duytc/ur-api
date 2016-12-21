@@ -11,6 +11,7 @@ class ReportView extends ReportViewModel
     protected $dataSets;
     protected $joinBy;
     protected $name;
+    protected $alias;
     protected $transforms;
     protected $createdDate;
     protected $weightedCalculations;

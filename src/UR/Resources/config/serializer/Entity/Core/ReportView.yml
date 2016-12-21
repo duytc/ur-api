@@ -7,6 +7,9 @@ UR\Entity\Core\ReportView:
         name:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        alias:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
         joinBy:
             expose: true
             groups: [report_view.detail, report_view.summary]

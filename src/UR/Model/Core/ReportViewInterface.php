@@ -21,6 +21,17 @@ interface ReportViewInterface extends ModelInterface
     public function setName($name);
 
     /**
+     * @return string
+     */
+    public function getAlias();
+
+    /**
+     * @param string $alias
+     * @return self
+     */
+    public function setAlias($alias);
+
+    /**
      * @return array
      */
     public function getDataSets();

@@ -27,11 +27,6 @@ interface ReportResultInterface
     public function getColumns();
 
     /**
-     * @return array
-     */
-    public function getAddedFields();
-
-    /**
      * generate for format
      * @param array $reports
      */
