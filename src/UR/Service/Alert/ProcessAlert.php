@@ -111,12 +111,12 @@ class ProcessAlert implements ProcessAlertInterface
                 $message = sprintf("Failed to import File %s of %s to %s - Filter error", $fileName, $dataSourceName, $dataSetName);
                 $details = sprintf("Wrong number format at row [%s] - column [%s]", $params[self::ROW], $params[self::COLUMN]);
                 break;
-            case self::TRANSFORM_ERROR_INVALID_DATE:
+            case self::TRANSFORM_ERROR_INVALID_DATE:    
                 $message = sprintf("Failed to import File %s of %s to %s - Transform error", $fileName, $dataSourceName, $dataSetName);
                 $details = sprintf("Wrong date format at row [%s] - column [%s]", $params[self::ROW], $params[self::COLUMN]);
                 break;
             case self::DATA_IMPORT_NO_HEADER_FOUND:
-                $message = sprintf("Failed to import File %s of %s to %s - no Header Found Error", $fileName, $dataSourceName, $dataSetName);
+                $message = sprintf("Failed to import File %s of %s to %s - No Header found Error", $fileName, $dataSourceName, $dataSetName);
                 $details = $message;
                 break;
             case self::DATA_IMPORT_NO_DATA_ROW_FOUND:
