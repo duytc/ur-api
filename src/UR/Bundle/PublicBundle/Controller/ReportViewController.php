@@ -82,7 +82,7 @@ class ReportViewController extends FOSRestController
      */
     protected function getParams($reportView)
     {
-        return $this->get('ur.services.report.params_builder')->buildFromReportView($reportView);
+        return $this->get('ur.services.report.params_builder')->buildFromReportViewForSharedReport($reportView);
     }
 
     protected function getReportBuilder()

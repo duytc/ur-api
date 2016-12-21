@@ -21,4 +21,9 @@ interface ParamsBuilderInterface
      */
     public function buildFromReportView(ReportViewInterface $reportView);
 
+    /**
+     * @param ReportViewInterface $reportView
+     * @return ParamsInterface
+     */
+    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView);
 }

@@ -266,22 +266,6 @@ class ParamsBuilder implements ParamsBuilderInterface
     {
         $param = new Params();
 
-        /*
-         * VERY IMPORTANT:
-         * report param:
-         *      dataSets => required for multiView=false
-         *      fieldTypes
-         *      joinBy => required for multiView=false
-         *      transforms
-         *      weightedCalculations
-         *      filters
-         *      multiView
-         *      reportViews => required for multiView=true
-         *      showInTotal
-         *      formats
-         *      subReportsIncluded => required for multiView=true
-         */
-
         if ($reportView->isMultiView()) {
             $param
                 ->setReportViews($this->createReportViews($reportView->getReportViews()))
@@ -300,6 +284,57 @@ class ParamsBuilder implements ParamsBuilderInterface
             ->setTransforms($this->createTransforms($reportView->getTransforms()))
             ->setFieldTypes($reportView->getFieldTypes())
             ->setFilters($reportView->getFilters());
+
+        if (is_array($reportView->getWeightedCalculations())) {
+            $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
+        }
+
+        if (is_array($reportView->getFormats())) {
+            $param->setFormats($this->createFormats($reportView->getFormats()));
+        }
+
+        return $param;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView)
+    {
+        $param = new Params();
+
+        /*
+         * VERY IMPORTANT: build report param same as above buildFromArray() function
+         * report param:
+         *      dataSets => required for multiView=false
+         *      fieldTypes
+         *      joinBy => required for multiView=false
+         *      transforms
+         *      weightedCalculations
+         *      filters
+         *      multiView
+         *      reportViews => required for multiView=true
+         *      showInTotal
+         *      formats
+         *      subReportsIncluded => required for multiView=true
+         */
+
+        if ($reportView->isMultiView()) {
+            $param
+                ->setReportViews($this->createReportViews($reportView->getReportViews()))
+                ->setSubReportIncluded($reportView->isSubReportsIncluded());
+        } else {
+            $param
+                ->setDataSets($this->createDataSets($reportView->getDataSets()))
+                ->setJoinByFields($reportView->getJoinBy());
+        }
+
+        $param
+            ->setMultiView($reportView->isMultiView())
+            ->setTransforms($this->createTransforms($reportView->getTransforms()))
+            ->setFieldTypes($reportView->getFieldTypes())
+            ->setFilters($reportView->getFilters())
+            ->setShowInTotal($reportView->getShowInTotal());
 
         if (is_array($reportView->getWeightedCalculations())) {
             $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
