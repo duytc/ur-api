@@ -285,19 +285,21 @@ class ParamsBuilder implements ParamsBuilderInterface
         if ($reportView->isMultiView()) {
             $param
                 ->setReportViews($this->createReportViews($reportView->getReportViews()))
-                ->setSubReportIncluded($reportView->isSubReportsIncluded());
+                ->setSubReportIncluded($reportView->isSubReportsIncluded())
+                ->setShowInTotal($reportView->getShowInTotal());
         } else {
             $param
                 ->setDataSets($this->createDataSets($reportView->getDataSets()))
                 ->setJoinByFields($reportView->getJoinBy());
+            // set showInTotal to NULL to get all total values
+            // DO NOT change
         }
 
         $param
             ->setMultiView($reportView->isMultiView())
             ->setTransforms($this->createTransforms($reportView->getTransforms()))
             ->setFieldTypes($reportView->getFieldTypes())
-            ->setFilters($reportView->getFilters())
-            ->setShowInTotal($reportView->getShowInTotal());
+            ->setFilters($reportView->getFilters());
 
         if (is_array($reportView->getWeightedCalculations())) {
             $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
