@@ -85,7 +85,7 @@ class ProcessAlert implements ProcessAlertInterface
                 $details = $message;
                 break;
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT:
-                $message = sprintf("Failed to Upload %s to %s - Wrong format error", $fileName, $dataSourceName);
+                $message = sprintf("Failed to Upload %s to %s - wrong format error", $fileName, $dataSourceName);
                 $details = $message;
                 break;
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT:
@@ -103,7 +103,7 @@ class ProcessAlert implements ProcessAlertInterface
                 break;
             case self::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
                 $message = sprintf("Failed to import file %s of %s to %s - require error", $fileName, $dataSourceName, $dataSetName);
-                $details = sprintf("Error at column [%s] - Require Fields not exist in file", $params[self::COLUMN]);
+                $details = sprintf("Error at column [%s] - require fields not exist in file", $params[self::COLUMN]);
                 break;
             case self::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
                 $message = sprintf("Failed to import file %s of %s to %s - filter error", $fileName, $dataSourceName, $dataSetName);
