@@ -125,9 +125,9 @@ services:
             - @doctrine.orm.entity_manager
             - @ur.worker.manager
             - @ur.domain_manager.import_history
-            - @ur.domain_manager.alert
             - @phpexcel
             - %upload_file_dir%
+            - @monolog.logger
 
     ur.worker.workers.re_import_new_entry_received:
         class: UR\Worker\Workers\ReImportWhenNewEntryReceived
