@@ -3,6 +3,7 @@
 namespace UR\Service\Alert;
 
 
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\DomainManager\AlertManagerInterface;
 use UR\Entity\Core\Alert;
@@ -23,9 +24,7 @@ class ProcessAlert implements ProcessAlertInterface
     const TRANSFORM_ERROR_INVALID_DATE = 204;
     const DATA_IMPORT_NO_HEADER_FOUND = 205;
     const DATA_IMPORT_NO_DATA_ROW_FOUND = 206;
-    const DATA_SOURCE_MODULE = 1;
-    const DATA_SET_MODULE = 2;
-    const UNSUPPORTED_MODULE = 0;
+    const UN_EXPECTED_ERROR = 1000;
     const FILE_NAME = 'fileName';
     const DATA_SOURCE_NAME = 'dataSourceName';
     const FORMAT_FILE = 'formatFile';
@@ -111,7 +110,7 @@ class ProcessAlert implements ProcessAlertInterface
                 $message = sprintf("Failed to import File %s of %s to %s - Filter error", $fileName, $dataSourceName, $dataSetName);
                 $details = sprintf("Wrong number format at row [%s] - column [%s]", $params[self::ROW], $params[self::COLUMN]);
                 break;
-            case self::TRANSFORM_ERROR_INVALID_DATE:    
+            case self::TRANSFORM_ERROR_INVALID_DATE:
                 $message = sprintf("Failed to import File %s of %s to %s - Transform error", $fileName, $dataSourceName, $dataSetName);
                 $details = sprintf("Wrong date format at row [%s] - column [%s]", $params[self::ROW], $params[self::COLUMN]);
                 break;
@@ -121,6 +120,10 @@ class ProcessAlert implements ProcessAlertInterface
                 break;
             case self::DATA_IMPORT_NO_DATA_ROW_FOUND:
                 $message = sprintf("Failed to import File %s of %s to %s - Can't find Data Error", $fileName, $dataSourceName, $dataSetName);
+                $details = $message;
+                break;
+            case self::UN_EXPECTED_ERROR:
+                $message = sprintf("Failed to import File %s of %s to %s - Error: %s", $fileName, $dataSourceName, $dataSetName, $params[self::MESSAGE]);
                 $details = $message;
                 break;
             default:

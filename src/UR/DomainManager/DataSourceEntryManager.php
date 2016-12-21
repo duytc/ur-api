@@ -4,6 +4,7 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use Liuggio\ExcelBundle\Factory;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use UR\Behaviors\ConvertFileEncoding;
@@ -73,7 +74,11 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSourceEntry->getDataSource()->getDetectedFields(), DataSourceEntryManager::DELETE);
         $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
         $this->om->flush();
-        unlink($this->uploadFileDir . $dataSourceEntry->getPath());
+        try {
+            unlink($this->uploadFileDir . $dataSourceEntry->getPath());
+        } catch (Exception $e) {
+            
+        }
     }
 
     /**

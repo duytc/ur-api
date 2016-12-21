@@ -7,6 +7,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\TableDiff;
+use Psr\Log\LoggerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\FilterType;
@@ -27,7 +28,7 @@ use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 class ImportUtils
 {
-    function createEmptyDataSetTable(DataSetInterface $dataSet, Locator $dataSetLocator, Synchronizer $dataSetSynchronizer, Connection $conn)
+    function createEmptyDataSetTable(DataSetInterface $dataSet, Locator $dataSetLocator, Synchronizer $dataSetSynchronizer, Connection $conn, LoggerInterface $logger)
     {
         $schema = new Schema();
         $dataSetTable = $schema->createTable($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
@@ -63,7 +64,7 @@ class ImportUtils
             $truncateSql = $conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
             $conn->exec($truncateSql);
         } catch (\Exception $e) {
-            //todo logger
+            $logger->error("Cannot Sync Schema");
         }
     }
 
@@ -107,7 +108,7 @@ class ImportUtils
                 $conn->exec($truncateSql);
             }
         } catch (\Exception $e) {
-            //todo logger
+            Throw new \mysqli_sql_exception("Cannot Sync Schema");
         }
     }
 
