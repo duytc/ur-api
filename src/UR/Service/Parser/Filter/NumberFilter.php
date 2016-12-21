@@ -22,7 +22,7 @@ class NumberFilter extends \UR\Domain\DTO\Report\Filters\NumberFilter implements
         }
 
         if (!is_numeric($filter)) {
-            return ProcessAlert::FILTER_ERROR_INVALID_NUMBER;
+            return ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER;
         }
 
         if (self::COMPARISON_TYPE_IN === $this->comparisonType) {

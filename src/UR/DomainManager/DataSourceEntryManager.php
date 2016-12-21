@@ -77,7 +77,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         try {
             unlink($this->uploadFileDir . $dataSourceEntry->getPath());
         } catch (Exception $e) {
-            
+
         }
     }
 
@@ -166,7 +166,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             if ($error > 0) {
                 if (in_array(DataSourceRepository::WRONG_FORMAT, $dataSource->getAlertSetting())) {
-                    $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT;
+                    $code = ProcessAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT;
                     $publisherId = $dataSource->getPublisher()->getId();
 
                     $params = array(
@@ -205,7 +205,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $this->save($dataSourceEntry);
 
             if (in_array(DataSourceRepository::DATA_RECEIVED, $dataSource->getAlertSetting())) {
-                $code = ProcessAlert::NEW_DATA_IS_RECEIVED_FROM_UPLOAD;
+                $code = ProcessAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD;
                 $publisherId = $dataSource->getPublisher()->getId();
 
                 $params = array(

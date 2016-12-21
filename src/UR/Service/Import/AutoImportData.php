@@ -110,24 +110,24 @@ class AutoImportData implements AutoImportDataInterface
                     $file = new Json($dataSourceEntry->getPath());
                 }
 
-                $code = ProcessAlert::DATA_IMPORTED_SUCCESSFULLY;
+                $code = ProcessAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY;
                 $columns = $file->getColumns();
                 $dataRow = $file->getDataRow();
                 if (count($columns) < 1) {
-                    $code = ProcessAlert::DATA_IMPORT_NO_HEADER_FOUND;
+                    $code = ProcessAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND;
                     $this->workerManager->processAlert($code, $publisherId, $params);
                     continue;
                 }
 
                 if ($dataRow < 1) {
-                    $code = ProcessAlert::DATA_IMPORT_NO_DATA_ROW_FOUND;
+                    $code = ProcessAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND;
                     $this->workerManager->processAlert($code, $publisherId, $params);
                     continue;
                 }
 
                 $importUtils->mappingFile($connectedDataSource, $parserConfig, $columns);
                 if (count($parserConfig->getAllColumnMappings()) === 0) {
-                    $code = ProcessAlert::DATA_IMPORT_MAPPING_FAIL;
+                    $code = ProcessAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL;
                     $this->workerManager->processAlert($code, $publisherId, $params);
                     continue;
                 }
@@ -145,7 +145,7 @@ class AutoImportData implements AutoImportDataInterface
                 if (!$validRequires) {
                     // to do alert
                     if (in_array(ConnectedDataSourceRepository::IMPORT_FAILURE, $connectedDataSource->getAlertSetting())) {
-                        $code = ProcessAlert::DATA_IMPORT_REQUIRED_FAIL;
+                        $code = ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL;
                         $params[ProcessAlert::COLUMN] = $columnRequire;
                         $this->workerManager->processAlert($code, $publisherId, $params);
                     }
@@ -191,7 +191,7 @@ class AutoImportData implements AutoImportDataInterface
 
             } catch (\Exception $e) {
                 $params[ProcessAlert::MESSAGE] = "Unexpected Error";
-                $this->workerManager->processAlert(ProcessAlert::UN_EXPECTED_ERROR, $publisherId, $params);
+                $this->workerManager->processAlert(ProcessAlert::ALERT_CODE_UN_EXPECTED_ERROR, $publisherId, $params);
                 $this->logger->error($e->getMessage());
             }
         }
