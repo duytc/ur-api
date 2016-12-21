@@ -62,28 +62,31 @@ class ProcessAlert implements ProcessAlertInterface
         $alert->setMessage([self::MESSAGE => $message]);
         $alert->setDetail([
             self::DETAILS => $details,
-            'dataSourceName' => $params[self::DATA_SOURCE_NAME],
-            'dataSetName' => $params[self::DATA_SET_NAME],
-            'fileName' => $params[self::FILE_NAME]
+            'dataSourceName' => array_key_exists(self::DATA_SOURCE_NAME, $params) ? $params[self::DATA_SOURCE_NAME] : null,
+            'dataSetName' => array_key_exists(self::DATA_SET_NAME, $params) ? $params[self::DATA_SET_NAME] : null,
+            'fileName' => array_key_exists(self::FILE_NAME, $params) ? $params[self::FILE_NAME] : null
         ]);
         $this->alertManager->save($alert);
     }
 
     public function getAlertDetails($alertCode, array $params, &$message, &$details)
     {
-        $dataSourceName = $params[self::DATA_SOURCE_NAME];
-        $dataSetName = $params[self::DATA_SET_NAME];
-        $fileName = $params[self::FILE_NAME];
+        $dataSourceName = array_key_exists(self::DATA_SOURCE_NAME, $params) ? $params[self::DATA_SOURCE_NAME] : null;
+        $dataSetName = array_key_exists(self::DATA_SET_NAME, $params) ? $params[self::DATA_SET_NAME] : null;
+        $fileName = array_key_exists(self::FILE_NAME, $params) ? $params[self::FILE_NAME] : null;
+
         switch ($alertCode) {
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD:
                 $message = sprintf("File %s has been successfully uploaded to %s", $fileName, $dataSourceName);
                 $details = $message;
                 break;
+
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_EMAIL:
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_API:
                 $message = sprintf("File %s has been successfully received to %s", $fileName, $dataSourceName);
                 $details = $message;
                 break;
+
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT:
                 $message = sprintf("Failed to Upload %s to %s - wrong format error", $fileName, $dataSourceName);
                 $details = $message;
@@ -93,6 +96,7 @@ class ProcessAlert implements ProcessAlertInterface
                 $message = sprintf("Filed to Receive %s to %s - wrong format error", $fileName, $dataSourceName);
                 $details = $message;
                 break;
+
             case self::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY:
                 $message = sprintf("Data of file %s in data source %s has been successfully imported to %s", $fileName, $dataSourceName, $dataSetName);
                 $details = $message;
@@ -101,10 +105,12 @@ class ProcessAlert implements ProcessAlertInterface
                 $message = sprintf("Failed to import file %s of %s to %s - mapping error", $fileName, $dataSourceName, $dataSetName);
                 $details = sprintf("no Field in file %s is mapped to dataSet", $fileName);
                 break;
+
             case self::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
                 $message = sprintf("Failed to import file %s of %s to %s - require error", $fileName, $dataSourceName, $dataSetName);
                 $details = sprintf("Error at column [%s] - require fields not exist in file", $params[self::COLUMN]);
                 break;
+
             case self::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
                 $message = sprintf("Failed to import file %s of %s to %s - filter error", $fileName, $dataSourceName, $dataSetName);
                 $details = sprintf("Wrong number format at row [%s] - column [%s]", $params[self::ROW], $params[self::COLUMN]);
@@ -113,18 +119,22 @@ class ProcessAlert implements ProcessAlertInterface
                 $message = sprintf("Failed to import file %s of %s to %s - transform error", $fileName, $dataSourceName, $dataSetName);
                 $details = sprintf("Wrong date format at row [%s] - column [%s]", $params[self::ROW], $params[self::COLUMN]);
                 break;
+
             case self::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND:
                 $message = sprintf("Failed to import file %s of %s to %s - no header found error", $fileName, $dataSourceName, $dataSetName);
                 $details = $message;
                 break;
+
             case self::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND:
                 $message = sprintf("Failed to import file %s of %s to %s - can't find data error", $fileName, $dataSourceName, $dataSetName);
                 $details = $message;
                 break;
+
             case self::ALERT_CODE_UN_EXPECTED_ERROR:
                 $message = sprintf("Failed to import file %s of %s to %s - error: %s", $fileName, $dataSourceName, $dataSetName, $params[self::MESSAGE]);
                 $details = $message;
                 break;
+
             default:
                 break;
         }
