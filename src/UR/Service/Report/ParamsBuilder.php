@@ -53,6 +53,22 @@ class ParamsBuilder implements ParamsBuilderInterface
         $param->setMultiView($multiView);
         $param->setSubReportIncluded(false);
 
+        /*
+         * VERY IMPORTANT:
+         * report param:
+         *      dataSets => required for multiView=false
+         *      fieldTypes,
+         *      joinBy => required for multiView=false
+         *      transforms,
+         *      weightedCalculations,
+         *      filters,
+         *      multiView,
+         *      reportViews => required for multiView=true
+         *      showInTotal,
+         *      formats,
+         *      subReportsIncluded => required for multiView=true
+         */
+
         if ($param->isMultiView()) {
             if (!array_key_exists(self::REPORT_VIEWS_KEY, $data) || empty($data[self::MULTI_VIEW_KEY])) {
                 throw new InvalidArgumentException('multi view require at least one report view is selected');
@@ -83,7 +99,6 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setTransforms($transforms);
         }
 
-
         if (array_key_exists(self::WEIGHTED_CALCULATION_KEY, $data)) {
             $calculations = json_decode($data[self::WEIGHTED_CALCULATION_KEY], true);
             if (!empty($calculations)) {
@@ -108,6 +123,10 @@ class ParamsBuilder implements ParamsBuilderInterface
         return $param;
     }
 
+    /**
+     * @param array $dataSets
+     * @return array
+     */
     protected function createDataSets(array $dataSets)
     {
         $dataSetObjects = [];
@@ -122,6 +141,10 @@ class ParamsBuilder implements ParamsBuilderInterface
         return $dataSetObjects;
     }
 
+    /**
+     * @param array $reportViews
+     * @return array
+     */
     public static function createReportViews(array $reportViews)
     {
         $reportViewObjects = [];
@@ -157,26 +180,26 @@ class ParamsBuilder implements ParamsBuilderInterface
                         $transformObjects[] = new AddFieldTransform($addField);
                     }
                     break;
-                
+
                 case TransformInterface::ADD_CALCULATED_FIELD_TRANSFORM:
                     $expressionLanguage = new ExpressionLanguage();
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField) {
                         $transformObjects[] = new AddCalculatedFieldTransform($expressionLanguage, $addField);
                     }
                     break;
-                
+
                 case TransformInterface::GROUP_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $groupField) {
                         $groupByInputObjects [] = $groupField;
                     }
                     break;
-                
+
                 case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $comparisonField) {
                         $transformObjects[] = new ComparisonPercentTransform($comparisonField);
                     }
                     break;
-                
+
                 case TransformInterface::SORT_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
                         $sortByInputObjects[] = $sortField;
@@ -220,7 +243,7 @@ class ParamsBuilder implements ParamsBuilderInterface
                     $formatObjects[] = new NumberFormat($format);
 
                     break;
-                
+
                 case FormatInterface::FORMAT_TYPE_CURRENCY:
                     $formatObjects[] = new CurrencyFormat($format);
 
@@ -243,26 +266,38 @@ class ParamsBuilder implements ParamsBuilderInterface
     {
         $param = new Params();
 
+        /*
+         * VERY IMPORTANT:
+         * report param:
+         *      dataSets => required for multiView=false
+         *      fieldTypes
+         *      joinBy => required for multiView=false
+         *      transforms
+         *      weightedCalculations
+         *      filters
+         *      multiView
+         *      reportViews => required for multiView=true
+         *      showInTotal
+         *      formats
+         *      subReportsIncluded => required for multiView=true
+         */
+
         if ($reportView->isMultiView()) {
             $param
                 ->setReportViews($this->createReportViews($reportView->getReportViews()))
-                ->setFilters($reportView->getFilters())
-                ->setShowInTotal($reportView->getShowInTotal())
-                ->setSubReportIncluded($reportView->isSubReportsIncluded())
-            ;
+                ->setSubReportIncluded($reportView->isSubReportsIncluded());
         } else {
-            // set showInTotal to NULL to get all total fields
             $param
                 ->setDataSets($this->createDataSets($reportView->getDataSets()))
-                ->setJoinByFields($reportView->getJoinBy())
-            ;
+                ->setJoinByFields($reportView->getJoinBy());
         }
 
         $param
             ->setMultiView($reportView->isMultiView())
             ->setTransforms($this->createTransforms($reportView->getTransforms()))
             ->setFieldTypes($reportView->getFieldTypes())
-        ;
+            ->setFilters($reportView->getFilters())
+            ->setShowInTotal($reportView->getShowInTotal());
 
         if (is_array($reportView->getWeightedCalculations())) {
             $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
