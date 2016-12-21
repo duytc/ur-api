@@ -148,7 +148,7 @@ class ReportBuilder implements ReportBuilderInterface
             $types = array_merge($types, $result->getTypes());
             if ($subReport === true) {
                 $reports = $result->getReports();
-                $this->addNewField(self::REPORT_VIEW_ALIAS, $view->getAlias(), $reports);
+                $reports = $this->addNewField(self::REPORT_VIEW_ALIAS, $view->getAlias(), $reports);
                 $rows = array_merge($rows, $reports);
             } else {
                 $total = $result->getTotal();
