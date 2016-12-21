@@ -6,9 +6,12 @@ use Box\Spout\Common\Type;
 use Box\Spout\Reader\ReaderFactory;
 use Box\Spout\Reader\XLSX\Sheet;
 use Liuggio\ExcelBundle\Factory;
+use UR\Behaviors\ParserUtilTrait;
 
 class Excel implements DataSourceInterface
 {
+    use ParserUtilTrait;
+
     protected $excel;
     protected $sheet;
     protected $headers;
@@ -122,7 +125,7 @@ class Excel implements DataSourceInterface
     public function getColumns()
     {
         if (is_array($this->headers)) {
-            return $this->headers;
+            return $this->convertEncodingToASCII($this->headers);
         }
 
         return [];

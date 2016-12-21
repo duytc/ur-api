@@ -4,10 +4,13 @@ namespace UR\Service\DataSource;
 
 use League\Csv\AbstractCsv;
 use League\Csv\Reader;
+use UR\Behaviors\ParserUtilTrait;
 use UR\Exception\InvalidArgumentException;
 
 class Csv implements DataSourceInterface
 {
+    use ParserUtilTrait;
+
     const DELIMITER_COMMA = ",";
     const DELIMITER_TAB = "\t"; // important: using double quote instead of single quote for special characters!!!
 
@@ -100,7 +103,7 @@ class Csv implements DataSourceInterface
     public function getColumns()
     {
         if (is_array($this->headers)) {
-            return $this->headers;
+            return $this->convertEncodingToASCII($this->headers);
         }
 
         $match = 0;
@@ -132,7 +135,7 @@ class Csv implements DataSourceInterface
 
         // could not parse due to not supported delimiters or other exception
         if (false === $validDelimiter) {
-            return $this->headers; // TODO: why?
+            return $this->convertEncodingToASCII($this->headers); // TODO: why?
         }
 
         for ($row = 0; $row < count($all_rows); $row++) {
@@ -173,7 +176,7 @@ class Csv implements DataSourceInterface
             }
         }
 
-        return $this->headers;
+        return $this->convertEncodingToASCII($this->headers);
     }
 
     public function getRows($fromDateFormat)
