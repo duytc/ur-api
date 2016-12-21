@@ -46,12 +46,10 @@ class Importer
         array_push($columns, "__data_source_id", "__import_id");
 
         $duplicateFields = $connectedDataSource->getDuplicates();
-
         $preparedCounts = 0;
 
         $insert_values = array();
         foreach ($rows as $row) {
-
             //check duplicate
             $isDup = [];
             if (count($duplicateFields) > 0) {
@@ -63,7 +61,6 @@ class Importer
 
                 $duplicateSql = substr($duplicateSql, 0, -4);
                 $dupQb = $this->conn->prepare($duplicateSql);
-
                 foreach ($duplicateFields as $duplicateField) {
                     $dupQb->bindValue($duplicateField, $row[$duplicateField]);
                 }
@@ -74,7 +71,6 @@ class Importer
 
             $row['__data_source_id'] = $connectedDataSource->getDataSource()->getId();
             $row['__import_id'] = $importId;
-
             //insert
             if (count($duplicateFields) < 1 || count($isDup) < 1) {
                 $question_marks[] = '(' . $this->placeholders('?', sizeof($row)) . ')';
@@ -106,8 +102,8 @@ class Importer
                     $rowValue = strcmp($row[$column], "") === 0 ? null : $row[$column];
                     $qb->bindValue($column, $rowValue);
                 }
-                $this->preparedUpdateCount++;
 
+                $this->preparedUpdateCount++;
                 try {
                     $qb->execute($updateSql);
                 } catch (\Exception $e) {
@@ -120,7 +116,6 @@ class Importer
                     $this->conn->commit();
                 }
             }
-
         }
 
         if ($preparedCounts > 0) {

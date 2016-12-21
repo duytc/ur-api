@@ -59,7 +59,7 @@ class Parser implements ParserInterface
                         }
 
                         if (strcmp(trim($row[$metric]), "") !== 0 && !is_numeric($row[$metric])) {
-                            return array(ProcessAlert::ERROR => ProcessAlert::FILTER_ERROR_INVALID_NUMBER,
+                            return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER,
                                 ProcessAlert::ROW => $cur_row + 2,
                                 ProcessAlert::COLUMN => $columnsMapping[$metric]);
                         }
@@ -100,7 +100,7 @@ class Parser implements ParserInterface
                 foreach ($transforms as $transform) {
                     $row[$column] = $transform->transform($row[$column]);
                     if ($row[$column] === 2) {
-                        return array(ProcessAlert::ERROR => ProcessAlert::TRANSFORM_ERROR_INVALID_DATE,
+                        return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE,
                             ProcessAlert::ROW => $cur_row + 2,
                             ProcessAlert::COLUMN => $columnsMapping[$column]);
                     }
