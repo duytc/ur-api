@@ -21,7 +21,6 @@ class SortByColumns implements CollectionTransformerInterface
 
         for ($i = 0; $i < count($this->sortByColumns); $i++) {
             for ($j = 0; $j < count($this->sortByColumns[$i]); $j++) {
-
                 $sortByColumns = array_intersect($columns, $this->sortByColumns[$i][$j][TransformType::NAMES]);
 
                 if (count($sortByColumns) != count($this->sortByColumns[$i][$j][TransformType::NAMES])) {

@@ -23,7 +23,6 @@ abstract class AbstractAddField implements CollectionTransformerInterface
         $columns[] = $this->column;
 
         foreach ($rows as $idx => &$row) {
-
             $value = $this->getValue($row);
             if (is_array($value)) {
                 return $value;

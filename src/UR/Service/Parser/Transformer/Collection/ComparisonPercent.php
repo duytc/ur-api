@@ -32,8 +32,6 @@ class ComparisonPercent implements CollectionTransformerInterface
             }
 
             return new Collection($columns, $rows);
-
-//            throw new \InvalidArgumentException('Some of the expected columns do not exist');
         }
 
         if (in_array($this->newColumn, $columns, true)) {

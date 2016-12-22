@@ -109,7 +109,7 @@ class AutoImportData implements AutoImportDataInterface
                     $file = new Csv($this->uploadFileDir . $dataSourceEntry->getPath());
                 } else if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'excel') === 0) {
                     /**@var Excel $file */
-                    $file = new \UR\Service\DataSource\Excel($this->uploadFileDir . $dataSourceEntry->getPath(), $this->phpExcel);
+                    $file = new Excel($this->uploadFileDir . $dataSourceEntry->getPath(), $this->phpExcel);
                 } else {
                     $file = new Json($dataSourceEntry->getPath());
                 }
@@ -117,7 +117,7 @@ class AutoImportData implements AutoImportDataInterface
                 $code = ProcessAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY;
                 $columns = $file->getColumns();
                 $dataRow = $file->getDataRow();
-                if (count($columns) < 1) {
+                if (!is_array($columns) || count($columns) < 1) {
                     $code = ProcessAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND;
                     $this->workerManager->processAlert($code, $publisherId, $params);
                     continue;

@@ -46,6 +46,7 @@ class GroupByColumns implements CollectionTransformerInterface
         if (0 === count($array) || 0 === count($groupFields)) {
             return $result;
         }
+
         $arr = [];
         foreach ($array as $element) {
             //calc key
@@ -66,10 +67,8 @@ class GroupByColumns implements CollectionTransformerInterface
             }
 
             //add sum
-
             foreach ($sumFields as $sumFieldKey => $sumField) {
                 if (array_key_exists($sumField, $element)) {
-
                     $isFirst = false;
                     if (!array_key_exists($sumField, $result[$key])) {
                         $arr[$key][$sumField][] = $element[$sumField];
