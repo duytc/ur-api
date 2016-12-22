@@ -31,20 +31,21 @@ class ImportUtils
     function createEmptyDataSetTable(DataSetInterface $dataSet, Locator $dataSetLocator, Synchronizer $dataSetSynchronizer, Connection $conn, LoggerInterface $logger)
     {
         $schema = new Schema();
+
         $dataSetTable = $schema->createTable($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
         $dataSetTable->addColumn("__id", "integer", array("autoincrement" => true, "unsigned" => true));
         $dataSetTable->setPrimaryKey(array("__id"));
         $dataSetTable->addColumn("__data_source_id", "integer", array("unsigned" => true, "notnull" => true));
         $dataSetTable->addColumn("__import_id", "integer", array("unsigned" => true, "notnull" => true));
+
         // create import table
-        // add dimensions
+        //// add dimensions
         foreach ($dataSet->getDimensions() as $key => $value) {
             $dataSetTable->addColumn($key, $value, ["notnull" => false, "default" => null]);
         }
 
-        // add metrics
+        //// add metrics
         foreach ($dataSet->getMetrics() as $key => $value) {
-
             if (strcmp($value, Type::NUMBER) === 0) {
                 $dataSetTable->addColumn($key, "decimal", ["precision" => 20, "scale" => 0, "notnull" => false, "default" => null]);
             } else if (strcmp($value, Type::DECIMAL) === 0) {
@@ -58,13 +59,15 @@ class ImportUtils
             }
         }
 
-        // create table
+        //// create table
         try {
             $dataSetSynchronizer->syncSchema($schema);
+
             $truncateSql = $conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
+
             $conn->exec($truncateSql);
         } catch (\Exception $e) {
-            $logger->error("Cannot Sync Schema");
+            $logger->error("Cannot Sync Schema " . $schema->getName());
         }
     }
 
@@ -74,10 +77,12 @@ class ImportUtils
         $dataSetLocator = new Locator($conn);
         $dataSetSynchronizer = new Synchronizer($conn, new Comparator());
         $dataTable = $dataSetLocator->getDataSetImportTable($dataSet->getId());
+
         // check if table not existed
         if (!$dataTable) {
             return;
         }
+
         $dataTable->getName();
         $delCols = [];
         $addCols = [];
@@ -86,7 +91,6 @@ class ImportUtils
         }
 
         foreach ($newColumns as $newColumn => $type) {
-
             if (strcmp($type, Type::NUMBER) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, "decimal", ["precision" => 20, "scale" => 0, "notnull" => false, "default" => null]);
             } else if (strcmp($type, Type::DECIMAL) === 0) {
@@ -103,34 +107,28 @@ class ImportUtils
         $updateTable = new TableDiff($dataTable->getName(), $addCols, array(), $delCols);
         try {
             $dataSetSynchronizer->syncSchema($schema);
+
             $truncateSqls = $conn->getDatabasePlatform()->getAlterTableSQL($updateTable);
+
             foreach ($truncateSqls as $truncateSql) {
                 $conn->exec($truncateSql);
             }
         } catch (\Exception $e) {
-            Throw new \mysqli_sql_exception("Cannot Sync Schema");
+            throw new \mysqli_sql_exception("Cannot Sync Schema " . $schema->getName());
         }
     }
 
-    function mappingFile(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, $columns)
+    function mappingFile(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, array $columns)
     {
         foreach ($columns as $column) {
-            {
-                $column = strtolower(trim($column));
-                foreach ($connectedDataSource->getMapFields() as $k => $v) {
-                    if (strcmp($column, $k) === 0) {
-                        $parserConfig->addColumn($k, $v);
-                        break;
-                    }
+            $column = strtolower(trim($column));
+            foreach ($connectedDataSource->getMapFields() as $k => $v) {
+                if (strcmp($column, $k) === 0) {
+                    $parserConfig->addColumn($k, $v);
+                    break;
                 }
             }
         }
-    }
-
-    function symbolFields(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
-    {
-        $metrics = $connectedDataSource->getDataSet()->getMetrics();
-
     }
 
     function filterDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
@@ -162,6 +160,7 @@ class ImportUtils
                 return $transform[TransformType::FROM];
             }
         }
+
         return null;
     }
 
@@ -171,18 +170,11 @@ class ImportUtils
 
         $sortByColumns = array();
         foreach ($transforms as $transform) {
-
             if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE]) && $parserConfig->hasColumnMapping($transform[TransformType::FIELD])) {
-
                 if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
                     $parserConfig->transformColumn($transform[TransformType::FIELD], new DateFormat($transform[TransformType::FROM], 'Y-m-d'));
                 }
-
-                if (strcmp($transform[TransformType::TYPE], TransformType::NUMBER) === 0) {
-
-                }
             } else {
-
                 if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
                     $parserConfig->transformCollection(new GroupByColumns($transform[TransformType::FIELDS]));
                     continue;
@@ -194,7 +186,6 @@ class ImportUtils
                 }
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
-
                     foreach ($transform[TransformType::FIELDS] as $addfields) {
                         $parserConfig->transformCollection(new AddField($addfields[TransformType::FIELD], $addfields[TransformType::VALUE]));
                     }
