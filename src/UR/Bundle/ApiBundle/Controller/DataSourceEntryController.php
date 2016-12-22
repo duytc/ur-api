@@ -5,6 +5,7 @@ namespace UR\Bundle\ApiBundle\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -141,13 +142,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         /**@var DataSourceEntryInterface $dataSourceEntry */
         $dataSourceEntry = $dataSourceEntryManager->find($id);
 
-        $uploadRootDir = $this->container->getParameter('upload_file_dir');
-        $filePath = $uploadRootDir . $dataSourceEntry->getPath();
-
-        if (!file_exists($filePath)) {
-            throw new NotFoundHttpException('The file was not found or you do not have access');
-        }
-
+        $filePath = $this->checkFileExist($dataSourceEntry);
         $response = new Response();
         $response->headers->set('Cache-Control', 'private');
         $response->headers->set('Content-type', 'application/download');
@@ -172,14 +167,14 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      * )
      *
      * @param int $id the resource id
-     *
      * @return mixed
-     * @throws NotFoundHttpException when the resource does not exist
+     * @throws \Exception
      */
     public function replayDataAction($id)
     {
         /** @var DataSourceEntryInterface $dataSourceEntry */
         $dataSourceEntry = $this->one($id);
+        $filePath = $this->checkFileExist($dataSourceEntry);
         $importHistoryManager = $this->get('ur.domain_manager.import_history');
         $importHistoryManager->replayDataSourceEntryData($dataSourceEntry);
     }
@@ -340,5 +335,16 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.data_source_entry');
+    }
+
+    protected function checkFileExist(DataSourceEntryInterface $dataSourceEntry)
+    {
+        $uploadRootDir = $this->container->getParameter('upload_file_dir');
+        $filePath = $uploadRootDir . $dataSourceEntry->getPath();
+        if (!file_exists($filePath)) {
+            throw new Exception('The file was not found or you do not have access');
+        }
+
+        return $filePath;
     }
 }

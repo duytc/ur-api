@@ -29,7 +29,7 @@ class Csv implements DataSourceInterface
     /**
      * @var array
      */
-    protected $headers;
+    protected $headers = [];
     protected $headerRow = 0;
     protected $dataRow = 0;
 

@@ -98,7 +98,7 @@ class AutoImportData implements AutoImportDataInterface
             );
 
             try {
-                if (!file_exists($dataSourceEntry->getPath())) {
+                if (!file_exists($this->uploadFileDir . $dataSourceEntry->getPath())) {
                     $params[ProcessAlert::MESSAGE] = ' file dose not exist ';
                     $this->workerManager->processAlert(ProcessAlert::ALERT_CODE_UN_EXPECTED_ERROR, $publisherId, $params);
                     continue;

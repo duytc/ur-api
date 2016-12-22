@@ -74,8 +74,9 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSourceEntry->getDataSource()->getDetectedFields(), DataSourceEntryManager::DELETE);
         $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
         $this->om->flush();
-        if (file_exists($dataSourceEntry->getPath()))
+        if (file_exists($this->uploadFileDir . $dataSourceEntry->getPath())) {
             unlink($this->uploadFileDir . $dataSourceEntry->getPath());
+        }
     }
 
     /**
