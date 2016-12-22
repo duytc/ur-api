@@ -21,8 +21,6 @@ class SortByColumns implements CollectionTransformerInterface
             return $collection;
         }
 
-        $columns = array_keys($rows[0]);
-
         for ($i = 0; $i < count($this->sortByColumns); $i++) {
             for ($j = 0; $j < count($this->sortByColumns[$i]); $j++) {
 
@@ -39,7 +37,7 @@ class SortByColumns implements CollectionTransformerInterface
 
         $rows = $this->array_sort_by_column($rows, $this->sortByColumns);
 
-        return new Collection($columns, $rows);
+        return new Collection($collection->getColumns(), $rows);
     }
 
     public function getPriority()
