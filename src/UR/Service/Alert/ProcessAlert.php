@@ -23,6 +23,7 @@ class ProcessAlert implements ProcessAlertInterface
     const ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE = 204;
     const ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND = 205;
     const ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND = 206;
+    const ALERT_CODE_WRONG_TYPE_MAPPING = 207;
     const ALERT_CODE_UN_EXPECTED_ERROR = 1000;
     const FILE_NAME = 'fileName';
     const DATA_SOURCE_NAME = 'dataSourceName';
@@ -104,6 +105,11 @@ class ProcessAlert implements ProcessAlertInterface
             case self::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL:
                 $message = sprintf("Failed to import file %s of %s to %s - mapping error", $fileName, $dataSourceName, $dataSetName);
                 $details = sprintf("no Field in file %s is mapped to dataSet", $fileName);
+                break;
+
+            case self::ALERT_CODE_WRONG_TYPE_MAPPING:
+                $message = sprintf("Failed to import file %s of %s to %s - mapping error", $fileName, $dataSourceName, $dataSetName);
+                $details = sprintf("Field [%s] in file %s - wrong type mapping error", $params[self::COLUMN], $fileName);
                 break;
 
             case self::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:

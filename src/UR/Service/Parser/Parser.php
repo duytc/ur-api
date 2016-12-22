@@ -52,7 +52,7 @@ class Parser implements ParserInterface
                         }
 
                         if (strcmp(trim($row[$columnsMapping[$metric]]), "") !== 0 && !is_numeric($row[$columnsMapping[$metric]])) {
-                            return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER,
+                            return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_WRONG_TYPE_MAPPING,
                                 ProcessAlert::ROW => $cur_row + 2,
                                 ProcessAlert::COLUMN => $columnsMapping[$metric]);
                         }
