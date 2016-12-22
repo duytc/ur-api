@@ -65,7 +65,6 @@ class AutoImportData implements AutoImportDataInterface
 
     public function autoCreateDataImport($connectedDataSources, DataSourceEntryInterface $dataSourceEntry)
     {
-        $this->logger->warning(sprintf('start importing data - file: %s', $dataSourceEntry->getFileName()));
         $conn = $this->em->getConnection();
         $dataSetLocator = new Locator($conn);
         $dataSetSynchronizer = new Synchronizer($conn, new Comparator());
@@ -98,8 +97,13 @@ class AutoImportData implements AutoImportDataInterface
                 ProcessAlert::FILE_NAME => $dataSourceEntry->getFileName()
             );
 
-            $this->logger->info("================== Reading file...===========================");
             try {
+                if (!file_exists($dataSourceEntry->getPath())) {
+                    $params[ProcessAlert::MESSAGE] = ' file dose not exist ';
+                    $this->workerManager->processAlert(ProcessAlert::ALERT_CODE_UN_EXPECTED_ERROR, $publisherId, $params);
+                    continue;
+                }
+
                 if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'csv') === 0) {
                     /**@var Csv $file */
                     $file = new Csv($this->uploadFileDir . $dataSourceEntry->getPath());

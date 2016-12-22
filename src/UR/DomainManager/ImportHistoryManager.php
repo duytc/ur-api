@@ -110,8 +110,12 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
      */
     public function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry)
     {
+        if (!file_exists($dataSourceEntry->getPath())) {
+            throw new \Exception(sprintf("Could not replay data - file dose not exist"));
+        }
+
         if (!$dataSourceEntry->getDataSource()->getEnable()) {
-            throw new \Exception(sprintf("can't replay entry in the Disable DataSource"));
+            throw new \Exception(sprintf("Could not replay data - entry in disabled Data Source "));
         }
 
         $entryIds[] = $dataSourceEntry->getId();

@@ -3,7 +3,6 @@
 namespace UR\Service\Parser\Transformer\Collection;
 
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
-use UR\Service\Alert\ProcessAlert;
 
 class AddCalculatedField extends AbstractAddField
 {
