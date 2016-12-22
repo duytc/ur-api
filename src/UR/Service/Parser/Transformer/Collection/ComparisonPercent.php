@@ -24,9 +24,9 @@ class ComparisonPercent implements CollectionTransformerInterface
             return $collection;
         }
 
-        $columns = array_keys($rows[0]);
+        $columns = $collection->getColumns();
 
-        $columnCheck = array_diff([$this->columnA, $this->columnB], $columns);
+        $columnCheck = array_diff([$this->columnA, $this->columnB], array_keys($rows[0]));
 
         if (count($columnCheck) > 0) {
             $columns[] = $this->newColumn;
@@ -38,7 +38,7 @@ class ComparisonPercent implements CollectionTransformerInterface
             return new Collection($columns, $rows);
         }
 
-        if (in_array($this->newColumn, $columns, true)) {
+        if (in_array($this->newColumn, $collection->getColumns(), true)) {
             throw new \InvalidArgumentException('Cannot add calculated column, it already exists');
         }
 
