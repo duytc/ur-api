@@ -16,13 +16,13 @@ class NumberFilter extends BaseNumberFilter implements ColumnFilterInterface
     /**
      * @inheritdoc
      */
-    public function filter($filter)
+    public function filter($value)
     {
-        if ($filter === null || $filter === "") {
+        if ($value === null || $value === "") {
             return false;
         }
 
-        if (!is_numeric($filter)) {
+        if (!is_numeric($value)) {
             return ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER;
         }
 
@@ -31,7 +31,7 @@ class NumberFilter extends BaseNumberFilter implements ColumnFilterInterface
                 return false;
             }
 
-            if (!in_array($filter, $this->comparisonValue)) {
+            if (!in_array($value, $this->comparisonValue)) {
                 return false;
             }
 
@@ -43,7 +43,7 @@ class NumberFilter extends BaseNumberFilter implements ColumnFilterInterface
                 return false;
             }
 
-            if (in_array($filter, $this->comparisonValue)) {
+            if (in_array($value, $this->comparisonValue)) {
                 return false;
             }
 
@@ -51,27 +51,27 @@ class NumberFilter extends BaseNumberFilter implements ColumnFilterInterface
         }
 
         if (self::COMPARISON_TYPE_SMALLER === $this->comparisonType) {
-            return $filter < $this->comparisonValue ? true : false;
+            return $value < $this->comparisonValue ? true : false;
         }
 
         if (self::COMPARISON_TYPE_SMALLER_OR_EQUAL === $this->comparisonType) {
-            return $filter <= $this->comparisonValue ? true : false;
+            return $value <= $this->comparisonValue ? true : false;
         }
 
         if (self::COMPARISON_TYPE_EQUAL === $this->comparisonType) {
-            return abs(floatval($this->comparisonValue) - floatval($filter)) < self::EPSILON ? true : false;
+            return abs(floatval($this->comparisonValue) - floatval($value)) < self::EPSILON ? true : false;
         }
 
         if (self::COMPARISON_TYPE_NOT_EQUAL === $this->comparisonType) {
-            return $this->comparisonValue !== $filter ? true : false;
+            return $this->comparisonValue !== $value ? true : false;
         }
 
         if (self::COMPARISON_TYPE_GREATER === $this->comparisonType) {
-            return $filter > $this->comparisonValue ? true : false;
+            return $value > $this->comparisonValue ? true : false;
         }
 
         if (self::COMPARISON_TYPE_GREATER_OR_EQUAL === $this->comparisonType) {
-            return $filter >= $this->comparisonValue ? true : false;
+            return $value >= $this->comparisonValue ? true : false;
         }
 
         return true;

@@ -80,6 +80,7 @@ class Excel implements DataSourceInterface
         } else if ($this->inputFileType === 'Excel2007') {
             $this->excel = ReaderFactory::create(Type::XLSX);
             $this->excel->open($filePath);
+            // TODO: check setShouldFormatDates() is what???
             $this->excel->setShouldFormatDates(false);
             foreach ($this->excel->getSheetIterator() as $sheet) {
                 $max = 0;
