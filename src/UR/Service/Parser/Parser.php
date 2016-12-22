@@ -2,6 +2,7 @@
 
 namespace UR\Service\Parser;
 
+use Psr\Log\LoggerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\Alert\ProcessAlert;
 use UR\Service\DataSet\Type;
@@ -61,10 +62,10 @@ class Parser implements ParserInterface
                         $row[$metric] = str_replace(" ", "", $row[$metric]);
 
                         if (!is_numeric($row[$metric])) {
-                            // TODO: not alert, only log
-                            //return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER,
-                            //    ProcessAlert::ROW => $cur_row + 2,
-                            //    ProcessAlert::COLUMN => $columnsMapping[$metric]);
+                            // TODO: correct code to show which field is wrong number format
+                            return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL,
+                                ProcessAlert::ROW => $cur_row + 2,
+                                ProcessAlert::COLUMN => $columnsMapping[$metric]);
                         }
                     }
                 }
