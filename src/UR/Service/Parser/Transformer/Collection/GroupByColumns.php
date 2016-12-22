@@ -15,8 +15,8 @@ class GroupByColumns implements CollectionTransformerInterface
 
     public function transform(Collection $collection)
     {
-        $columns = $collection->getColumns();
-        $rows = $collection->getRows();
+        $rows = array_values($collection->getRows());
+        $columns = array_keys($rows[0]);
 
         // separate this so it's easy to debug
         $groupColumnKeys = array_intersect($columns, $this->groupByColumns);
@@ -26,7 +26,7 @@ class GroupByColumns implements CollectionTransformerInterface
             $rows = self::group($rows, $groupColumnKeys, $sumFieldKeys);
         }
 
-        return new Collection($columns, $rows);
+        return new Collection($collection->getColumns(), $rows);
     }
 
     /**

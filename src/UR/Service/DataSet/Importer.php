@@ -26,9 +26,8 @@ class Importer
     {
         $tableName = $table->getName();
         $tableColumns = array_keys($table->getColumns());
-        $columns = array_intersect($collection->getColumns(), $tableColumns);
-        $columns = array_values($columns);
-        foreach ($columns as $column) {
+        $tableColumns = array_intersect($collection->getColumns(), $tableColumns);
+        foreach ($tableColumns as $column) {
             if (in_array($column, self::$restrictedColumns, true)) {
                 throw new \InvalidArgumentException(sprintf('%s cannot be used as a column name. It is reserved for internal use.', $column));
             }
@@ -38,18 +37,32 @@ class Importer
         }
 
         $rows = array_values($collection->getRows());
+
         if (!is_array($rows) || count($rows) < 1) {
             return true;
         }
-
-        $columns = array_keys($rows[0]);
-        array_push($columns, "__data_source_id", "__import_id");
 
         $duplicateFields = $connectedDataSource->getDuplicates();
         $preparedCounts = 0;
 
         $insert_values = array();
+
+        $mapFields = $connectedDataSource->getMapFields();
+        $columns = [];
+        foreach ($rows[0] as $field => $value) {
+            if (in_array($mapFields[$field], $tableColumns)) {
+                $columns[$field] = $mapFields[$field];
+            }
+
+            if (in_array($field, $tableColumns)) {
+                $columns[$field] = $field;
+            }
+        }
+
+        array_push($columns, "__data_source_id", "__import_id");
+
         foreach ($rows as $row) {
+            $row = array_intersect_key($row, $columns   );
             //check duplicate
             $isDup = [];
             if (count($duplicateFields) > 0) {

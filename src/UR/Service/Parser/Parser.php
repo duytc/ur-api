@@ -40,24 +40,18 @@ class Parser implements ParserInterface
         $cur_row = -1;
         foreach ($rows as &$row) {
             $cur_row++;
-            $row = array_intersect_key($row, $columns);
-
-            $keys = array_map(function ($key) use ($columns) {
-                return $columns[$key];
-            }, array_keys($row));
-
-            $row = array_combine($keys, $row);
+            $row = array_combine($fileCols, $row);
 
             foreach ($connectedDataSource->getDataSet()->getMetrics() as $metric => $type) {
-                if (array_key_exists($metric, $row)) {
+                if (array_key_exists($metric, $columnsMapping)) {
                     if (strcmp($type, Type::NUMBER) === 0 || strcmp($type, Type::DECIMAL) === 0) {
-                        $row[$metric] = str_replace("$", "", $row[$metric]);
-                        $row[$metric] = str_replace(",", "", $row[$metric]);
+                        $row[$columnsMapping[$metric]] = str_replace("$", "", $row[$columnsMapping[$metric]]);
+                        $row[$columnsMapping[$metric]] = str_replace(",", "", $row[$columnsMapping[$metric]]);
                         if (strcmp($type, Type::DECIMAL) === 0) {
-                            $row[$metric] = str_replace(" ", "", $row[$metric]);
+                            $row[$columnsMapping[$metric]] = str_replace(" ", "", $row[$columnsMapping[$metric]]);
                         }
 
-                        if (strcmp(trim($row[$metric]), "") !== 0 && !is_numeric($row[$metric])) {
+                        if (strcmp(trim($row[$columnsMapping[$metric]]), "") !== 0 && !is_numeric($row[$columnsMapping[$metric]])) {
                             return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER,
                                 ProcessAlert::ROW => $cur_row + 2,
                                 ProcessAlert::COLUMN => $columnsMapping[$metric]);
@@ -69,7 +63,7 @@ class Parser implements ParserInterface
             $isValidFilter = 1;
             foreach ($parserConfig->getColumnFilters() as $column => $filters) {
                 /**@var ColumnFilterInterface[] $filters */
-                if (!array_key_exists($column, $row)) {
+                if (!in_array($column, $fileCols)) {
                     continue;
                 }
 
@@ -78,7 +72,7 @@ class Parser implements ParserInterface
                     if ($filterResult > 1) {
                         return array(ProcessAlert::ERROR => $filterResult,
                             ProcessAlert::ROW => $cur_row + 2,
-                            ProcessAlert::COLUMN => $columnsMapping[$column]);
+                            ProcessAlert::COLUMN => $column);
                     } else {
                         $isValidFilter = $isValidFilter & $filterResult;
                     }
@@ -92,13 +86,13 @@ class Parser implements ParserInterface
 
             foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
                 /** @var ColumnTransformerInterface[] $transforms */
-                if (!array_key_exists($column, $row)) {
+                if (!array_key_exists($columnsMapping[$column], $row)) {
                     continue;
                 }
 
                 foreach ($transforms as $transform) {
-                    $row[$column] = $transform->transform($row[$column]);
-                    if ($row[$column] === 2) {
+                    $row[$columnsMapping[$column]] = $transform->transform($row[$columnsMapping[$column]]);
+                    if ($row[$columnsMapping[$column]] === 2) {
                         return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE,
                             ProcessAlert::ROW => $cur_row + 2,
                             ProcessAlert::COLUMN => $columnsMapping[$column]);
@@ -107,7 +101,11 @@ class Parser implements ParserInterface
             }
         }
 
-        $collection = new Collection(array_values($columns), $rows);
+        $collection = new Collection($columns, $rows);
+
+        if (count($rows) < 1) {
+            return $collection;
+        }
 
         $allFieldsTransforms = $parserConfig->getCollectionTransforms();
 

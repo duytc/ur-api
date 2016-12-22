@@ -58,7 +58,8 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                             $form->get('duplicates')->addError(new FormError('one or more fields of your duplicates fields dose not exist in your Mapping'));
                         }
                     }
-
+                    //todo add validation later
+                    /*
                     $isValidFilter = $this->validateFilters($dataSet, $connDataSource);
                     if ($isValidFilter !== 0) {
                         $form->get('filters')->addError(new FormError($isValidFilter));
@@ -73,6 +74,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                     if (!$this->validateAlertSetting($connDataSource)) {
                         $form->get('transforms')->addError(new FormError('Alerts Setting error'));
                     }
+                     */
                 }
             }
         );
