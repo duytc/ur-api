@@ -119,6 +119,7 @@ class Importer
         }
 
         if ($preparedCounts > 0) {
+            // TODO: check var $question_marks is what???
             $insertSql = "INSERT INTO " . $tableName . "(" . implode(",", $columns) . ") VALUES " . implode(',', $question_marks);
             $this->executeInsert($insertSql, $insert_values);
         }
