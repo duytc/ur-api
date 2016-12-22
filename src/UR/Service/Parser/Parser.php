@@ -50,17 +50,21 @@ class Parser implements ParserInterface
 
             foreach ($connectedDataSource->getDataSet()->getMetrics() as $metric => $type) {
                 if (array_key_exists($metric, $row)) {
-                    if (strcmp($type, Type::NUMBER) === 0 || strcmp($type, Type::DECIMAL) === 0) {
+                    if ($type === Type::NUMBER || $type === Type::DECIMAL) {
+                        // remove dollar sign if has
                         $row[$metric] = str_replace("$", "", $row[$metric]);
-                        $row[$metric] = str_replace(",", "", $row[$metric]);
-                        if (strcmp($type, Type::DECIMAL) === 0) {
-                            $row[$metric] = str_replace(" ", "", $row[$metric]);
-                        }
 
-                        if (strcmp(trim($row[$metric]), "") !== 0 && !is_numeric($row[$metric])) {
-                            return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER,
-                                ProcessAlert::ROW => $cur_row + 2,
-                                ProcessAlert::COLUMN => $columnsMapping[$metric]);
+                        // remove thousand separator if has
+                        $row[$metric] = str_replace(",", "", $row[$metric]);
+
+                        // remove spaces for decimal if has
+                        $row[$metric] = str_replace(" ", "", $row[$metric]);
+
+                        if (!is_numeric($row[$metric])) {
+                            // TODO: not alert, only log
+                            //return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER,
+                            //    ProcessAlert::ROW => $cur_row + 2,
+                            //    ProcessAlert::COLUMN => $columnsMapping[$metric]);
                         }
                     }
                 }

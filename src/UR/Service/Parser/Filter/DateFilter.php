@@ -46,15 +46,15 @@ class DateFilter extends AbstractFilter implements DateFilterInterface, ColumnFi
         $this->validate();
     }
 
-    public function filter($filter)
+    public function filter($value)
     {
-        $filter = \DateTime::createFromFormat($this->format, $filter);
+        $value = \DateTime::createFromFormat($this->format, $value);
 
-        if (!$filter) {
+        if (!$value) {
             return ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE;
         }
 
-        if ($filter <= $this->endDate && $filter >= $this->startDate) {
+        if ($value <= $this->endDate && $value >= $this->startDate) {
             return true;
         }
 
