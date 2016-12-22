@@ -34,7 +34,7 @@ class Importer
                 $columns[$field] = $mapFields[$field];
             }
 
-            if (in_array($field, $tableColumns)) {
+            if (in_array($field, $collection->getColumns())) {
                 $columns[$field] = $field;
             }
         }
@@ -59,7 +59,7 @@ class Importer
         array_push($columns, "__data_source_id", "__import_id");
 
         foreach ($rows as $row) {
-            $row = array_intersect_key($row, $columns   );
+            $row = array_intersect_key($row, $columns);
             //check duplicate
             $isDup = [];
             if (count($duplicateFields) > 0) {
