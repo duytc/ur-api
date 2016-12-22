@@ -29,7 +29,7 @@ class Csv implements DataSourceInterface
     /**
      * @var array
      */
-    protected $headers = [];
+    protected $headers;
     protected $headerRow = 0;
     protected $dataRow = 0;
 
@@ -135,6 +135,10 @@ class Csv implements DataSourceInterface
 
         // could not parse due to not supported delimiters or other exception
         if (false === $validDelimiter) {
+            if (!is_array($this->headers)) {
+                return [];
+            }
+
             return $this->convertEncodingToASCII($this->headers); // TODO: why?
         }
 
