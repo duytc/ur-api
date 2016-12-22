@@ -26,27 +26,7 @@ class Importer
     {
         $tableName = $table->getName();
         $tableColumns = array_keys($table->getColumns());
-        $tableColumns = array_intersect($collection->getColumns(), $tableColumns);
-        foreach ($tableColumns as $column) {
-            if (in_array($column, self::$restrictedColumns, true)) {
-                throw new \InvalidArgumentException(sprintf('%s cannot be used as a column name. It is reserved for internal use.', $column));
-            }
-            if (!preg_match('#[_a-z]+#i', $column)) {
-                throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
-            }
-        }
-
         $rows = array_values($collection->getRows());
-
-        if (!is_array($rows) || count($rows) < 1) {
-            return true;
-        }
-
-        $duplicateFields = $connectedDataSource->getDuplicates();
-        $preparedCounts = 0;
-
-        $insert_values = array();
-
         $mapFields = $connectedDataSource->getMapFields();
         $columns = [];
         foreach ($rows[0] as $field => $value) {
@@ -59,6 +39,23 @@ class Importer
             }
         }
 
+        foreach ($columns as $column) {
+            if (in_array($column, self::$restrictedColumns, true)) {
+                throw new \InvalidArgumentException(sprintf('%s cannot be used as a column name. It is reserved for internal use.', $column));
+            }
+            if (!preg_match('#[_a-z]+#i', $column)) {
+                throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
+            }
+        }
+
+        if (!is_array($rows) || count($rows) < 1) {
+            return true;
+        }
+
+        $duplicateFields = $connectedDataSource->getDuplicates();
+        $preparedCounts = 0;
+
+        $insert_values = array();
         array_push($columns, "__data_source_id", "__import_id");
 
         foreach ($rows as $row) {
