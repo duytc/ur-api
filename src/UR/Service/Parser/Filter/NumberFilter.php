@@ -23,7 +23,9 @@ class NumberFilter extends BaseNumberFilter implements ColumnFilterInterface
         }
 
         if (!is_numeric($value)) {
-            return ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER;
+            // TODO: not alert, only log
+            return false;
+            //return ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER;
         }
 
         if (self::COMPARISON_TYPE_IN === $this->comparisonType) {
