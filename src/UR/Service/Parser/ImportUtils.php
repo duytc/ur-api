@@ -118,7 +118,7 @@ class ImportUtils
         }
     }
 
-    function mappingFile(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, array $columns)
+    function createMapFieldsConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, array $columns)
     {
         foreach ($columns as $column) {
             $column = strtolower(trim($column));
@@ -131,7 +131,7 @@ class ImportUtils
         }
     }
 
-    function filterDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
+    function createFilterConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
     {
         $filters = $connectedDataSource->getFilters();
         foreach ($filters as $filter) {
@@ -139,15 +139,15 @@ class ImportUtils
             if (strcmp($filter[FilterType::TYPE], Type::DATE) === 0) {
                 $format = $this->getFormatDateFromTransform($connectedDataSource, $filter[FilterType::FIELD]);
                 $filter[FilterType::FORMAT] = $format;
-                $parserConfig->filtersColumn($filter[FilterType::FIELD], new DateFilter($filter));
+                $parserConfig->addFiltersColumn($filter[FilterType::FIELD], new DateFilter($filter));
             }
 
             if (strcmp($filter[FilterType::TYPE], Type::TEXT) === 0) {
-                $parserConfig->filtersColumn($filter[FilterType::FIELD], new TextFilter($filter));
+                $parserConfig->addFiltersColumn($filter[FilterType::FIELD], new TextFilter($filter));
             }
 
             if (strcmp($filter[FilterType::TYPE], Type::NUMBER) === 0) {
-                $parserConfig->filtersColumn($filter[FilterType::FIELD], new NumberFilter($filter));
+                $parserConfig->addFiltersColumn($filter[FilterType::FIELD], new NumberFilter($filter));
             }
         }
     }
@@ -164,7 +164,7 @@ class ImportUtils
         return null;
     }
 
-    function transformDataSetTable(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
+    function createTransformConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
     {
         $transforms = $connectedDataSource->getTransforms();
 
@@ -172,11 +172,11 @@ class ImportUtils
         foreach ($transforms as $transform) {
             if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE]) && $parserConfig->hasColumnMapping($transform[TransformType::FIELD])) {
                 if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
-                    $parserConfig->transformColumn($transform[TransformType::FIELD], new DateFormat($transform[TransformType::FROM], 'Y-m-d'));
+                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new DateFormat($transform[TransformType::FROM], 'Y-m-d'));
                 }
             } else {
                 if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
-                    $parserConfig->transformCollection(new GroupByColumns($transform[TransformType::FIELDS]));
+                    $parserConfig->addTransformCollection(new GroupByColumns($transform[TransformType::FIELDS]));
                     continue;
                 }
 
@@ -187,7 +187,7 @@ class ImportUtils
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
                     foreach ($transform[TransformType::FIELDS] as $addfields) {
-                        $parserConfig->transformCollection(new AddField($addfields[TransformType::FIELD], $addfields[TransformType::VALUE]));
+                        $parserConfig->addTransformCollection(new AddField($addfields[TransformType::FIELD], $addfields[TransformType::VALUE]));
                     }
                     continue;
                 }
@@ -195,14 +195,14 @@ class ImportUtils
                 if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CALCULATED_FIELD) === 0) {
                     $expressionLanguage = new ExpressionLanguage;
                     foreach ($transform[TransformType::FIELDS] as $f => $addCalculatedFields) {
-                        $parserConfig->transformCollection(new AddCalculatedField($expressionLanguage, $addCalculatedFields[TransformType::FIELD], $addCalculatedFields[TransformType::EXPRESSION]));
+                        $parserConfig->addTransformCollection(new AddCalculatedField($expressionLanguage, $addCalculatedFields[TransformType::FIELD], $addCalculatedFields[TransformType::EXPRESSION]));
                     }
                     continue;
                 }
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
                     foreach ($transform[TransformType::FIELDS] as $comparisonPercents) {
-                        $parserConfig->transformCollection(new ComparisonPercent($comparisonPercents[TransformType::FIELD], $comparisonPercents[TransformType::NUMERATOR], $comparisonPercents[TransformType::DENOMINATOR]));
+                        $parserConfig->addTransformCollection(new ComparisonPercent($comparisonPercents[TransformType::FIELD], $comparisonPercents[TransformType::NUMERATOR], $comparisonPercents[TransformType::DENOMINATOR]));
                     }
                     continue;
                 }
@@ -210,7 +210,7 @@ class ImportUtils
         }
 
         if ($sortByColumns) {
-            $parserConfig->transformCollection(new SortByColumns($sortByColumns));
+            $parserConfig->addTransformCollection(new SortByColumns($sortByColumns));
         }
     }
 }

@@ -7,5 +7,5 @@ use UR\Service\DataSource\DataSourceInterface;
 
 interface ParserInterface
 {
-    public function parse(DataSourceInterface $dataSource, ParserConfig $config, ConnectedDataSourceInterface $dataSet);
+    public function parse(DataSourceInterface $dataSource, ParserConfig $parserConfig, ConnectedDataSourceInterface $dataSet);
 }

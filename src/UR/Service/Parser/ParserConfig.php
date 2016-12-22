@@ -49,12 +49,12 @@ class ParserConfig
         return $this;
     }
 
-    public function filtersColumn($column, ColumnFilterInterface $filter)
+    public function addFiltersColumn($column, ColumnFilterInterface $filter)
     {
         $this->columnFilters[$column][] = $filter;
     }
 
-    public function transformColumn($column, ColumnTransformerInterface $transform)
+    public function addTransformColumn($column, ColumnTransformerInterface $transform)
     {
         if (!$this->hasColumnMapping($column)) {
             throw new \InvalidArgumentException('Cannot add the column transform because the column does not exist');
@@ -69,7 +69,7 @@ class ParserConfig
         return $this;
     }
 
-    public function transformCollection(CollectionTransformerInterface $transform)
+    public function addTransformCollection(CollectionTransformerInterface $transform)
     {
         $this->collectionTransforms[] = $transform;
 

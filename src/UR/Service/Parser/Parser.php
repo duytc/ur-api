@@ -14,20 +14,20 @@ use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class Parser implements ParserInterface
 {
-    public function parse(DataSourceInterface $dataSource, ParserConfig $config, ConnectedDataSourceInterface $connectedDataSource)
+    public function parse(DataSourceInterface $dataSource, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource)
     {
-        $columnsMapping = $config->getAllColumnMappings();
-        $columnFromMap = array_flip($config->getAllColumnMappings());
+        $columnsMapping = $parserConfig->getAllColumnMappings();
+        $columnFromMap = array_flip($parserConfig->getAllColumnMappings());
 
         $fileCols = array_map("strtolower", $dataSource->getColumns());
         $fileCols = array_map("trim", $fileCols);
-        $columns = array_intersect($fileCols, $config->getAllColumnMappings());
+        $columns = array_intersect($fileCols, $parserConfig->getAllColumnMappings());
         $columns = array_map(function ($fromColumn) use ($columnFromMap) {
             return $columnFromMap[$fromColumn];
         }, $columns);
 
         $format = [];//format date
-        foreach ($config->getColumnTransforms() as $field => $columnTransform) {
+        foreach ($parserConfig->getColumnTransforms() as $field => $columnTransform) {
             foreach ($columnTransform as $item) {
                 if ($item instanceof DateFormat) {
                     $format[$field] = $item->getFromDateForMat();
@@ -51,7 +51,6 @@ class Parser implements ParserInterface
             foreach ($connectedDataSource->getDataSet()->getMetrics() as $metric => $type) {
                 if (array_key_exists($metric, $row)) {
                     if (strcmp($type, Type::NUMBER) === 0 || strcmp($type, Type::DECIMAL) === 0) {
-
                         $row[$metric] = str_replace("$", "", $row[$metric]);
                         $row[$metric] = str_replace(",", "", $row[$metric]);
                         if (strcmp($type, Type::DECIMAL) === 0) {
@@ -68,7 +67,7 @@ class Parser implements ParserInterface
             }
 
             $isValidFilter = 1;
-            foreach ($config->getColumnFilters() as $column => $filters) {
+            foreach ($parserConfig->getColumnFilters() as $column => $filters) {
                 /**@var ColumnFilterInterface[] $filters */
                 if (!array_key_exists($column, $row)) {
                     continue;
@@ -91,7 +90,7 @@ class Parser implements ParserInterface
                 continue;
             }
 
-            foreach ($config->getColumnTransforms() as $column => $transforms) {
+            foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
                 /** @var ColumnTransformerInterface[] $transforms */
                 if (!array_key_exists($column, $row)) {
                     continue;
@@ -110,7 +109,7 @@ class Parser implements ParserInterface
 
         $collection = new Collection(array_values($columns), $rows);
 
-        $allFieldsTransforms = $config->getCollectionTransforms();
+        $allFieldsTransforms = $parserConfig->getCollectionTransforms();
 
         usort($allFieldsTransforms, function (CollectionTransformerInterface $a, CollectionTransformerInterface $b) {
             if ($a->getPriority() == $b->getPriority()) {

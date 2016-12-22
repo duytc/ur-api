@@ -80,6 +80,7 @@ class AutoImportData implements AutoImportDataInterface
                 $this->logger->error('not found Dataset with this ID');
                 throw new InvalidArgumentException('not found Dataset with this ID');
             }
+
             //create or update empty dataSet table
             if (!$dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId())) {
                 $importUtils->createEmptyDataSetTable($connectedDataSource->getDataSet(), $dataSetLocator, $dataSetSynchronizer, $conn, $this->logger);
@@ -99,7 +100,7 @@ class AutoImportData implements AutoImportDataInterface
 
             try {
                 if (!file_exists($this->uploadFileDir . $dataSourceEntry->getPath())) {
-                    $params[ProcessAlert::MESSAGE] = ' file dose not exist ';
+                    $params[ProcessAlert::MESSAGE] = ' file does not exist ';
                     $this->workerManager->processAlert(ProcessAlert::ALERT_CODE_UN_EXPECTED_ERROR, $publisherId, $params);
                     continue;
                 }
@@ -129,7 +130,7 @@ class AutoImportData implements AutoImportDataInterface
                     continue;
                 }
 
-                $importUtils->mappingFile($connectedDataSource, $parserConfig, $columns);
+                $importUtils->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $parserConfig, $columns);
                 if (count($parserConfig->getAllColumnMappings()) === 0) {
                     $code = ProcessAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL;
                     $this->workerManager->processAlert($code, $publisherId, $params);
@@ -157,10 +158,10 @@ class AutoImportData implements AutoImportDataInterface
                 }
 
                 //filter
-                $importUtils->filterDataSetTable($connectedDataSource, $parserConfig);
+                $importUtils->createFilterConfigForConnectedDataSource($connectedDataSource, $parserConfig);
 
                 //transform
-                $importUtils->transformDataSetTable($connectedDataSource, $parserConfig);
+                $importUtils->createTransformConfigForConnectedDataSource($connectedDataSource, $parserConfig);
 
                 // import
                 $collectionParser = $parser->parse($file, $parserConfig, $connectedDataSource);

@@ -234,19 +234,19 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         foreach ($transforms as $transform) {
             if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE])) {
                 if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
-                    $parserConfig->transformColumn($transform[TransformType::FIELD], new DateFormat('Y-m-d', $transform[TransformType::TO]));
+                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new DateFormat('Y-m-d', $transform[TransformType::TO]));
                     unset($fields[$transform[TransformType::FIELD]]);
                 }
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::NUMBER) === 0) {
-                    $parserConfig->transformColumn($transform[TransformType::FIELD], new NumberFormat($transform[TransformType::DECIMALS], $transform[TransformType::THOUSANDS_SEPARATOR]));
+                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new NumberFormat($transform[TransformType::DECIMALS], $transform[TransformType::THOUSANDS_SEPARATOR]));
                 }
             }
         }
 
         foreach ($fields as $field) {
             if (strcmp($field, TransformType::DATE) === 0) {
-                $parserConfig->transformColumn($field, new DateFormat('Y-m-d', 'Y-m-d'));
+                $parserConfig->addTransformColumn($field, new DateFormat('Y-m-d', 'Y-m-d'));
             }
         }
 
