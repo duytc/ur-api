@@ -244,8 +244,8 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
             }
         }
 
-        foreach ($fields as $field) {
-            if (strcmp($field, TransformType::DATE) === 0) {
+        foreach ($fields as $field => $type) {
+            if (strcmp($type, TransformType::DATE) === 0) {
                 $parserConfig->addTransformColumn($field, new DateFormat('Y-m-d', 'Y-m-d'));
             }
         }
