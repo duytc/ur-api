@@ -17,6 +17,10 @@ class SortByColumns implements CollectionTransformerInterface
     public function transform(Collection $collection)
     {
         $rows = $collection->getRows();
+        if (count($rows) < 1) {
+            return $collection;
+        }
+
         $columns = array_keys($rows[0]);
 
         for ($i = 0; $i < count($this->sortByColumns); $i++) {

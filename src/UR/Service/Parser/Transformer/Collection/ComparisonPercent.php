@@ -19,13 +19,17 @@ class ComparisonPercent implements CollectionTransformerInterface
 
     public function transform(Collection $collection)
     {
-        $columns = $collection->getColumns();
         $rows = $collection->getRows();
+        if (count($rows) < 1) {
+            return $collection;
+        }
+
+        $columns = array_keys($rows[0]);
 
         $columnCheck = array_diff([$this->columnA, $this->columnB], $columns);
 
         if (count($columnCheck) > 0) {
-            $columns[]=$this->newColumn;
+            $columns[] = $this->newColumn;
             foreach ($rows as $idx => &$row) {
                 $value = "";
                 $row[$this->newColumn] = $value;

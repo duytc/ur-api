@@ -16,6 +16,10 @@ class GroupByColumns implements CollectionTransformerInterface
     public function transform(Collection $collection)
     {
         $rows = array_values($collection->getRows());
+        if (count($rows) < 1) {
+            return $collection;
+        }
+
         $columns = array_keys($rows[0]);
 
         // separate this so it's easy to debug

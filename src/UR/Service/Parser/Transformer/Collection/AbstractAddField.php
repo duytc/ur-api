@@ -13,8 +13,11 @@ abstract class AbstractAddField implements CollectionTransformerInterface
 
     public function transform(Collection $collection)
     {
-        $columns = $collection->getColumns();
         $rows = $collection->getRows();
+        if (count($rows) < 1) {
+            return $collection;
+        }
+        $columns = $collection->getColumns();
 
         if (in_array($this->column, $columns, true)) {
             throw new \RuntimeException(sprintf('column "%s" already exists so it cannot be added', $this->column));
