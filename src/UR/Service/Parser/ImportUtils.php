@@ -137,8 +137,10 @@ class ImportUtils
         foreach ($filters as $filter) {
             // filter Date
             if (strcmp($filter[FilterType::TYPE], Type::DATE) === 0) {
-                $format = $this->getFormatDateFromTransform($connectedDataSource, $filter[FilterType::FIELD]);
-                $filter[FilterType::FORMAT] = $format;
+                if ($filter[FilterType::FORMAT] === null) {
+                    $format = $this->getFormatDateFromTransform($connectedDataSource, $filter[FilterType::FIELD]);
+                    $filter[FilterType::FORMAT] = $format;
+                }
                 $parserConfig->addFiltersColumn($filter[FilterType::FIELD], new DateFilter($filter));
             }
 
