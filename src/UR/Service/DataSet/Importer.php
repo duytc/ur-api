@@ -30,8 +30,10 @@ class Importer
         $mapFields = $connectedDataSource->getMapFields();
         $columns = [];
         foreach ($rows[0] as $field => $value) {
-            if (in_array($mapFields[$field], $tableColumns)) {
-                $columns[$field] = $mapFields[$field];
+            if (array_key_exists($field, $mapFields)) {
+                if (in_array($mapFields[$field], $tableColumns)) {
+                    $columns[$field] = $mapFields[$field];
+                }
             }
 
             if (in_array($field, $collection->getColumns())) {

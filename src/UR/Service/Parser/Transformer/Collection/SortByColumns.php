@@ -86,12 +86,21 @@ class SortByColumns implements CollectionTransformerInterface
         $args = array();
         $i = 0;
         foreach ($sortCriteria as $sortColumn => $sortAttributes) {
-            $colList = array();
+            $colLists = array();
+
             foreach ($data as $key => $row) {
+                if (!array_key_exists($sortColumn, $row)) {
+                    continue;
+                }
+
                 $convertToLower = $caseInSensitive && (in_array(SORT_STRING, $sortAttributes) || in_array(SORT_REGULAR, $sortAttributes));
                 $rowData = $convertToLower ? strtolower($row[$sortColumn]) : $row[$sortColumn];
                 $colLists[$sortColumn][$key] = $rowData;
             }
+            if (count($colLists) < 1) {
+                continue;
+            }
+
             $args[] = &$colLists[$sortColumn];
 
             foreach ($sortAttributes as $sortAttribute) {
@@ -100,6 +109,11 @@ class SortByColumns implements CollectionTransformerInterface
                 $i++;
             }
         }
+
+        if (count($args) < 1) {
+            return $data;
+        }
+
         $args[] = &$data;
         call_user_func_array('array_multisort', $args);
         return end($args);

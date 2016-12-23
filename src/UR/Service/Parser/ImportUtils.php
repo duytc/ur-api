@@ -137,7 +137,7 @@ class ImportUtils
         foreach ($filters as $filter) {
             // filter Date
             if (strcmp($filter[FilterType::TYPE], Type::DATE) === 0) {
-                if ($filter[FilterType::FORMAT] === null) {
+                if ($filter[FilterType::FORMAT] === null || array_key_exists(FilterType::FORMAT, $filter)) {
                     $format = $this->getFormatDateFromTransform($connectedDataSource, $filter[FilterType::FIELD]);
                     $filter[FilterType::FORMAT] = $format;
                 }

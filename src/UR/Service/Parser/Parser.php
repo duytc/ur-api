@@ -43,19 +43,25 @@ class Parser implements ParserInterface
             $row = array_combine($fileCols, $row);
 
             foreach ($connectedDataSource->getDataSet()->getMetrics() as $metric => $type) {
-                if (array_key_exists($metric, $columnsMapping)) {
-                    if (strcmp($type, Type::NUMBER) === 0 || strcmp($type, Type::DECIMAL) === 0) {
-                        $row[$columnsMapping[$metric]] = str_replace("$", "", $row[$columnsMapping[$metric]]);
-                        $row[$columnsMapping[$metric]] = str_replace(",", "", $row[$columnsMapping[$metric]]);
-                        if (strcmp($type, Type::DECIMAL) === 0) {
-                            $row[$columnsMapping[$metric]] = str_replace(" ", "", $row[$columnsMapping[$metric]]);
-                        }
+                if (!array_key_exists($metric, $columnsMapping)) {
+                    continue;
+                }
 
-                        if (strcmp(trim($row[$columnsMapping[$metric]]), "") !== 0 && !is_numeric($row[$columnsMapping[$metric]])) {
-                            return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_WRONG_TYPE_MAPPING,
-                                ProcessAlert::ROW => $cur_row + 2,
-                                ProcessAlert::COLUMN => $columnsMapping[$metric]);
-                        }
+                if (!array_key_exists($columnsMapping[$metric], $row)) {
+                    continue;
+                }
+
+                if (strcmp($type, Type::NUMBER) === 0 || strcmp($type, Type::DECIMAL) === 0) {
+                    $row[$columnsMapping[$metric]] = str_replace("$", "", $row[$columnsMapping[$metric]]);
+                    $row[$columnsMapping[$metric]] = str_replace(",", "", $row[$columnsMapping[$metric]]);
+                    if (strcmp($type, Type::DECIMAL) === 0) {
+                        $row[$columnsMapping[$metric]] = str_replace(" ", "", $row[$columnsMapping[$metric]]);
+                    }
+
+                    if (strcmp(trim($row[$columnsMapping[$metric]]), "") !== 0 && !is_numeric($row[$columnsMapping[$metric]])) {
+                        return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_WRONG_TYPE_MAPPING,
+                            ProcessAlert::ROW => $cur_row + 2,
+                            ProcessAlert::COLUMN => $columnsMapping[$metric]);
                     }
                 }
             }
