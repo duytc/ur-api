@@ -91,7 +91,7 @@ trait ValidateConnectedDataSourceTrait
             }
 
             if (!array_key_exists($filters[FilterType::FIELD], $dataSet->getDimensions()) && !array_key_exists($filters[FilterType::FIELD], $dataSet->getMetrics())) {
-                throw new Exception(sprintf("filter Setting error: field [%s] dose not exist in Dimensions or Metrics", $filters[FilterType::FIELD]));
+                throw new Exception(sprintf("filter Setting error: field [%s] does not exist in Dimensions or Metrics", $filters[FilterType::FIELD]));
             }
         }
 
@@ -191,7 +191,7 @@ trait ValidateConnectedDataSourceTrait
                 }
 
                 if (!$this->isDataSetFields($field[TransformType::FIELD], $connectedDataSource->getDataSet())) {
-                    return "Transform ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] dose not exist in dimensions or metrics ";
+                    return "Transform ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] does not exist in dimensions or metrics ";
                 }
 
                 if (!in_array($field[TransformType::NUMERATOR], $connectedDataSource->getMapFields())) {
@@ -212,7 +212,7 @@ trait ValidateConnectedDataSourceTrait
                 }
 
                 if (!$this->isDataSetFields($field[TransformType::FIELD], $connectedDataSource->getDataSet())) {
-                    return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] dose not exist in dimensions or metrics ";
+                    return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] does not exist in dimensions or metrics ";
                 }
             }
         }
@@ -225,7 +225,20 @@ trait ValidateConnectedDataSourceTrait
                 }
 
                 if (!$this->isDataSetFields($field[TransformType::FIELD], $connectedDataSource->getDataSet())) {
-                    return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] dose not exist in dimensions or metrics ";
+                    return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] does not exist in dimensions or metrics ";
+                }
+            }
+        }
+
+        //ADD CONCATENATION FIELDS
+        if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATION_FIELD) === 0) {
+            foreach ($transform[TransformType::FIELDS] as $field) {
+                if (in_array($field[TransformType::FIELD], $connectedDataSource->getMapFields())) {
+                    return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] should not be mapped ";
+                }
+
+                if (!$this->isDataSetFields($field[TransformType::FIELD], $connectedDataSource->getDataSet())) {
+                    return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] does not exist in dimensions or metrics ";
                 }
             }
         }

@@ -4,7 +4,6 @@ namespace UR\Service\DataSet;
 
 final class TransformType
 {
-
     const TYPE = 'type';
     const FROM = 'from';
     const TO = 'to';
@@ -19,6 +18,7 @@ final class TransformType
     const SORT_BY = 'sortBy';
     const ADD_FIELD = 'addField';
     const ADD_CALCULATED_FIELD = 'addCalculatedField';
+    const ADD_CONCATENATION_FIELD = 'addConcatenationField';
     const COMPARISON = 'comparison';
     const COMPARISON_PERCENT = 'comparisonPercent';
     const EXPRESSION = 'expression';
@@ -34,6 +34,7 @@ final class TransformType
         self::SORT_BY,
         self::ADD_FIELD,
         self::ADD_CALCULATED_FIELD,
+        self::ADD_CONCATENATION_FIELD,
         self::COMPARISON_PERCENT
     ];
 
