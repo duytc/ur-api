@@ -38,7 +38,7 @@ class AddCalculatedField extends AbstractAddField
                 return abs($number);
             });
 
-            $expressionForm = $this->convertExpressionForm($this->expression);
+            $expressionForm = $this->convertExpressionForm($this->expression, $row);
             $result = $this->language->evaluate($expressionForm, ['row' => $row]);
         } catch (\Exception $exception) {
             $result = null;
@@ -51,7 +51,7 @@ class AddCalculatedField extends AbstractAddField
         return $result;
     }
 
-    protected function convertExpressionForm($expression)
+    protected function convertExpressionForm($expression, array $row)
     {
         if (is_null($expression)) {
             throw new \Exception(sprintf('Expression for calculated field can not be null'));
@@ -67,7 +67,12 @@ class AddCalculatedField extends AbstractAddField
         $newExpressionForm = null;
 
         foreach ($fields as $index => $field) {
-            $replaceString = sprintf('row[\'%s\']', $field);
+            if (!array_key_exists($field, $row)) {
+                $replaceString = "0";
+            } else {
+                $replaceString = sprintf('row[\'%s\']', $field);
+            }
+
             $expression = str_replace($fieldsInBracket[$index], $replaceString, $expression);
         }
 

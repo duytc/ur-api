@@ -69,11 +69,11 @@ class Importer
                 $duplicateSql .= " WHERE ";
                 $isDuplicatedFieldsExist = 0;
                 foreach ($duplicateFields as $duplicateField) {
-                    if (!array_key_exists($duplicateField, $mapFields)) {
+                    if (!in_array($duplicateField, $columns)) {
                         continue;
                     }
 
-                    $duplicateSql .= $mapFields[$duplicateField] . "= :" . $duplicateField . ' AND ';
+                    $duplicateSql .= $duplicateField . "= :" . $duplicateField . ' AND ';
                     $isDuplicatedFieldsExist++;
                 }
 
@@ -81,7 +81,8 @@ class Importer
                     $duplicateSql = substr($duplicateSql, 0, -4);
                     $dupQb = $this->conn->prepare($duplicateSql);
                     foreach ($duplicateFields as $duplicateField) {
-                        $dupQb->bindValue($duplicateField, $row[$duplicateField]);
+                        $fieldName = array_search($duplicateField, $columns);
+                        $dupQb->bindValue($duplicateField, $row[$fieldName]);
                     }
 
                     $dupQb->execute();
