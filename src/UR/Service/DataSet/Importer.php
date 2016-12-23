@@ -67,18 +67,26 @@ class Importer
             if (count($duplicateFields) > 0) {
                 $duplicateSql = 'SELECT * FROM ' . $tableName;
                 $duplicateSql .= " WHERE ";
+                $isDuplicatedFieldsExist = 0;
                 foreach ($duplicateFields as $duplicateField) {
-                    $duplicateSql .= $duplicateField . "= :" . $duplicateField . ' AND ';
+                    if (!array_key_exists($duplicateField, $mapFields)) {
+                        continue;
+                    }
+
+                    $duplicateSql .= $mapFields[$duplicateField] . "= :" . $duplicateField . ' AND ';
+                    $isDuplicatedFieldsExist++;
                 }
 
-                $duplicateSql = substr($duplicateSql, 0, -4);
-                $dupQb = $this->conn->prepare($duplicateSql);
-                foreach ($duplicateFields as $duplicateField) {
-                    $dupQb->bindValue($duplicateField, $row[$duplicateField]);
-                }
+                if ($isDuplicatedFieldsExist > 0) {
+                    $duplicateSql = substr($duplicateSql, 0, -4);
+                    $dupQb = $this->conn->prepare($duplicateSql);
+                    foreach ($duplicateFields as $duplicateField) {
+                        $dupQb->bindValue($duplicateField, $row[$duplicateField]);
+                    }
 
-                $dupQb->execute();
-                $isDup = $dupQb->fetchAll();
+                    $dupQb->execute();
+                    $isDup = $dupQb->fetchAll();
+                }
             }
 
             $row['__data_source_id'] = $connectedDataSource->getDataSource()->getId();
