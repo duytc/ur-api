@@ -209,6 +209,22 @@ class ReConfigConnectedDataSourceListener
                     $transforms[$key][TransformType::FIELDS] = array_values($transforms[$key][TransformType::FIELDS]);
                 }
 
+                //ADD CONCATENATION FIELD
+                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATION_FIELD) === 0) {
+                    foreach ($transform[TransformType::FIELDS] as $k => $field) {
+                        foreach ($delFields as $deletedField) {
+                            if (strcmp($field[TransformType::FIELD], $deletedField) === 0) {
+                                unset($transforms[$key][TransformType::FIELDS][$k]);
+                            }
+
+                            if (strpos($field[TransformType::EXPRESSION], "row['" . $deletedField . "']") !== false) {
+                                unset($transforms[$key][TransformType::FIELDS][$k]);
+                            }
+                        }
+                    }
+                    $transforms[$key][TransformType::FIELDS] = array_values($transforms[$key][TransformType::FIELDS]);
+                }
+
                 //COMPARISON PERCENT
                 if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
                     foreach ($transform[TransformType::FIELDS] as $k => $field) {

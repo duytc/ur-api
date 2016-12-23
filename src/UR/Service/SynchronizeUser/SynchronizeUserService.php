@@ -27,48 +27,48 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
         }
 
         if ($publisher instanceof UserEntityInterface) {
-            $publisher->setBillingRate($entity['billingRate']);
-            $publisher->setFirstName($entity['firstName']);
-            $publisher->setLastName($entity['lastName']);
-            $publisher->setCompany($entity['company']);
-            $publisher->setPhone($entity['phone']);
-            $publisher->setCity($entity['city']);
-            $publisher->setState($entity['state']);
-            $publisher->setAddress($entity['address']);
-            $publisher->setPostalCode($entity['postalCode']);
-            $publisher->setCountry($entity['country']);
-            $publisher->setSettings($entity['settings']);
-            $publisher->setTagDomain($entity['tagDomain']);
-            $publisher->setExchanges($entity['exchanges']);
-            $publisher->setBidders($entity['bidders']);
-            $publisher->setEnabledModules($entity['enabledModules']);
-            $publisher->setUsername($entity['username']);
-            $publisher->setPassword($entity['password']);
-            $publisher->setEmail($entity['email']);
-            $publisher->setEnabled($entity['enabled']);
+            $publisher->setBillingRate($this->getUserParams($entity,'billingRate', null));
+            $publisher->setFirstName($this->getUserParams($entity,'firstName', null));
+            $publisher->setLastName($this->getUserParams($entity,'lastName', null));
+            $publisher->setCompany($this->getUserParams($entity,'company', null));
+            $publisher->setPhone($this->getUserParams($entity,'phone', null));
+            $publisher->setCity($this->getUserParams($entity,'city', null));
+            $publisher->setState($this->getUserParams($entity,'state', null));
+            $publisher->setAddress($this->getUserParams($entity,'address', null));
+            $publisher->setPostalCode($this->getUserParams($entity,'postalCode', null));
+            $publisher->setCountry($this->getUserParams($entity,'country', null));
+            $publisher->setSettings($this->getUserParams($entity,'settings', null));
+            $publisher->setTagDomain($this->getUserParams($entity,'tagDomain', null));
+            $publisher->setExchanges($this->getUserParams($entity,'exchanges', null));
+            $publisher->setBidders($this->getUserParams($entity,'bidders', null));
+            $publisher->setEnabledModules($this->getUserParams($entity,'enabledModules', null));
+            $publisher->setUsername($this->getUserParams($entity,'username', null));
+            $publisher->setPassword($this->getUserParams($entity,'password', null));
+            $publisher->setEmail($this->getUserParams($entity,'email', null));
+            $publisher->setEnabled($this->getUserParams($entity,'enabled', null));
 
             $this->publisherManager->save($publisher);
         } else {
             $user = new User();
-            $user->setBillingRate($entity['billingRate']);
-            $user->setFirstName($entity['firstName']);
-            $user->setLastName($entity['lastName']);
-            $user->setCompany($entity['company']);
-            $user->setPhone($entity['phone']);
-            $user->setCity($entity['city']);
-            $user->setState($entity['state']);
-            $user->setAddress($entity['address']);
-            $user->setPostalCode($entity['postalCode']);
-            $user->setCountry($entity['country']);
-            $user->setSettings($entity['settings']);
-            $user->setTagDomain($entity['tagDomain']);
-            $user->setExchanges($entity['exchanges']);
-            $user->setBidders($entity['bidders']);
-            $user->setEnabledModules($entity['enabledModules']);
-            $user->setUsername($entity['username']);
-            $user->setPassword($entity['password']);
-            $user->setEmail($entity['email']);
-            $user->setEnabled($entity['enabled']);
+            $user->setBillingRate($this->getUserParams($entity,'billingRate', null));
+            $user->setFirstName($this->getUserParams($entity,'firstName', null));
+            $user->setLastName($this->getUserParams($entity,'lastName', null));
+            $user->setCompany($this->getUserParams($entity,'company', null));
+            $user->setPhone($this->getUserParams($entity,'phone', null));
+            $user->setCity($this->getUserParams($entity,'city', null));
+            $user->setState($this->getUserParams($entity,'state', null));
+            $user->setAddress($this->getUserParams($entity,'address', null));
+            $user->setPostalCode($this->getUserParams($entity,'postalCode', null));
+            $user->setCountry($this->getUserParams($entity,'country', null));
+            $user->setSettings($this->getUserParams($entity,'settings', null));
+            $user->setTagDomain($this->getUserParams($entity,'tagDomain', null));
+            $user->setExchanges($this->getUserParams($entity,'exchanges', null));
+            $user->setBidders($this->getUserParams($entity,'bidders', null));
+            $user->setEnabledModules($this->getUserParams($entity,'enabledModules', null));
+            $user->setUsername($this->getUserParams($entity,'username', null));
+            $user->setPassword($this->getUserParams($entity,'password', null));
+            $user->setEmail($this->getUserParams($entity,'email', null));
+            $user->setEnabled($this->getUserParams($entity,'enabled', null));
 
             $this->publisherManager->save($user);
 
@@ -80,5 +80,9 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
                 . ";SET FOREIGN_KEY_CHECKS = 1" );
             $statement->execute();
         }
+    }
+
+    private function getUserParams($userEntity, $key, $default){
+        return array_key_exists($key, $userEntity) ? $userEntity[$key] : $default;
     }
 }
