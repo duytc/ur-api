@@ -204,9 +204,8 @@ class ImportUtils
                 }
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATION_FIELD) === 0) {
-                    $expressionLanguage = new ExpressionLanguage;
                     foreach ($transform[TransformType::FIELDS] as $f => $addConcatenationFields) {
-                        $parserConfig->addTransformCollection(new AddConcatenationField($expressionLanguage, $addConcatenationFields[TransformType::FIELD], $addConcatenationFields[TransformType::EXPRESSION]));
+                        $parserConfig->addTransformCollection(new AddConcatenationField($addConcatenationFields[TransformType::FIELD], $addConcatenationFields[TransformType::EXPRESSION]));
                     }
                     continue;
                 }

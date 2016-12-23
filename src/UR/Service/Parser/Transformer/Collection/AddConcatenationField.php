@@ -2,7 +2,6 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
-use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 class AddConcatenationField extends AbstractAddField
 {
@@ -17,12 +16,11 @@ class AddConcatenationField extends AbstractAddField
     protected $defaultValue;
     protected $language;
 
-    public function __construct(ExpressionLanguage $language, $column, $expression, $defaultValue = 0)
+    public function __construct($column, $expression, $defaultValue = 0)
     {
         $this->column = $column;
         $this->expression = $expression;
         $this->defaultValue = $defaultValue;
-        $this->language = $language;
     }
 
     protected function getValue(array $row)
