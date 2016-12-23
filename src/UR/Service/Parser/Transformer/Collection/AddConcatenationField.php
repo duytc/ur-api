@@ -28,8 +28,22 @@ class AddConcatenationField extends AbstractAddField
     protected function getValue(array $row)
     {
         try {
-            $expressionForm = $this->convertExpressionForm($this->expression);
-            $result = $this->language->evaluate($expressionForm, ['row' => $row]);
+            if (is_null($this->expression)) {
+                throw new \Exception(sprintf('Expression for calculated field can not be null'));
+            }
+
+            $regex = '/\[(.*?)\]/'; // $fieldsWithBracket = $matches[0];
+            if (!preg_match_all($regex, $this->expression, $matches)) {
+                return $this->expression;
+            };
+
+            $fields = $matches[1];
+            $result = $this->expression;
+
+            foreach ($fields as $field) {
+                $replaceValue = array_key_exists($field, $row) ? $row[$field] : '';
+                $result = str_replace(sprintf('[%s]', $field), $replaceValue, $result);
+            }
         } catch (\Exception $exception) {
             $result = null;
         }
@@ -39,31 +53,5 @@ class AddConcatenationField extends AbstractAddField
         }
 
         return $result;
-    }
-
-    protected function convertExpressionForm($expression)
-    {
-        if (is_null($expression)) {
-            throw new \Exception(sprintf('Expression for calculated field can not be null'));
-        }
-
-        $regex = '/\[(.*?)\]/';
-        if (!preg_match_all($regex, $expression, $matches)) {
-            return $expression;
-        };
-
-        $fields = $matches[1]; // $fieldsWithBracket = $matches[0];
-        $newExpression = '';
-
-        $convertedFields = array_map(function ($field) {
-            // TODO: check if fieldsInBracket existed in detected fields of connected data source
-            return sprintf('row[\'%s\']', $field);
-        }, $fields);
-
-        if (is_array($convertedFields) && count($convertedFields) > 0) {
-            $newExpression = implode('~', $convertedFields);
-        }
-
-        return $newExpression;
     }
 }
