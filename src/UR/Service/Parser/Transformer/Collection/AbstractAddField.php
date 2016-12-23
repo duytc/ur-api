@@ -37,9 +37,4 @@ abstract class AbstractAddField implements CollectionTransformerInterface
     }
 
     abstract protected function getValue(array $row);
-
-    public function getPriority()
-    {
-        return 1;
-    }
 }

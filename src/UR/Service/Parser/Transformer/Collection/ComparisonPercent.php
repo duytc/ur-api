@@ -57,8 +57,11 @@ class ComparisonPercent implements CollectionTransformerInterface
         return new Collection($columns, $rows);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getPriority()
     {
-        return 1;
+        return self::TRANSFORM_PRIORITY_COMPARISON_PERCENT;
     }
 }

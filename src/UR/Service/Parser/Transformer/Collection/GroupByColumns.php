@@ -96,8 +96,11 @@ class GroupByColumns implements CollectionTransformerInterface
         return array_values($result);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getPriority()
     {
-        return 0;
+        return self::TRANSFORM_PRIORITY_GROUP;
     }
 }

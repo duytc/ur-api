@@ -6,6 +6,14 @@ use UR\Service\DTO\Collection;
 
 interface CollectionTransformerInterface
 {
+    /* priority for formats, the smaller will be execute first */
+    const TRANSFORM_PRIORITY_ADD_CONCATENATION_FIELD = 10;
+    const TRANSFORM_PRIORITY_GROUP = 20;
+    const TRANSFORM_PRIORITY_ADD_FIELD = 30;
+    const TRANSFORM_PRIORITY_ADD_CALCULATED_FIELD = 30;
+    const TRANSFORM_PRIORITY_COMPARISON_PERCENT = 30;
+    const TRANSFORM_PRIORITY_SORT = 40;
+
     public function transform(Collection $collection);
 
     /**

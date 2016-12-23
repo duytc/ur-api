@@ -21,4 +21,12 @@ class AddField extends AbstractAddField
     {
         return $this->value;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getPriority()
+    {
+        return self::TRANSFORM_PRIORITY_ADD_FIELD;
+    }
 }

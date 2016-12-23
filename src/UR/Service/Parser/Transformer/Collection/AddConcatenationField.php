@@ -52,4 +52,12 @@ class AddConcatenationField extends AbstractAddField
 
         return $result;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getPriority()
+    {
+        return self::TRANSFORM_PRIORITY_ADD_CONCATENATION_FIELD;
+    }
 }

@@ -78,4 +78,12 @@ class AddCalculatedField extends AbstractAddField
 
         return $expression;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getPriority()
+    {
+        return self::TRANSFORM_PRIORITY_ADD_CALCULATED_FIELD;
+    }
 }
