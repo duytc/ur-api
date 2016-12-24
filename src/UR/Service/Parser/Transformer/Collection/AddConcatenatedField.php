@@ -3,7 +3,7 @@
 namespace UR\Service\Parser\Transformer\Collection;
 
 
-class AddConcatenationField extends AbstractAddField
+class AddConcatenatedField extends AbstractAddField
 {
     /**
      * @var string

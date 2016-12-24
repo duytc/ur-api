@@ -210,7 +210,7 @@ class ReConfigConnectedDataSourceListener
                 }
 
                 //ADD CONCATENATION FIELD
-                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATION_FIELD) === 0) {
+                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATED_FIELD) === 0) {
                     foreach ($transform[TransformType::FIELDS] as $k => $field) {
                         foreach ($delFields as $deletedField) {
                             if (strcmp($field[TransformType::FIELD], $deletedField) === 0) {

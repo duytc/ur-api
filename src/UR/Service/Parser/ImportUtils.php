@@ -19,7 +19,7 @@ use UR\Service\Parser\Filter\DateFilter;
 use UR\Service\Parser\Filter\NumberFilter;
 use UR\Service\Parser\Filter\TextFilter;
 use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
-use UR\Service\Parser\Transformer\Collection\AddConcatenationField;
+use UR\Service\Parser\Transformer\Collection\AddConcatenatedField;
 use UR\Service\Parser\Transformer\Collection\AddField;
 use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
@@ -203,9 +203,9 @@ class ImportUtils
                     continue;
                 }
 
-                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATION_FIELD) === 0) {
-                    foreach ($transform[TransformType::FIELDS] as $f => $addConcatenationFields) {
-                        $parserConfig->addTransformCollection(new AddConcatenationField($addConcatenationFields[TransformType::FIELD], $addConcatenationFields[TransformType::EXPRESSION]));
+                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATED_FIELD) === 0) {
+                    foreach ($transform[TransformType::FIELDS] as $f => $addConcatenatedFields) {
+                        $parserConfig->addTransformCollection(new AddConcatenatedField($addConcatenatedFields[TransformType::FIELD], $addConcatenatedFields[TransformType::EXPRESSION]));
                     }
                     continue;
                 }

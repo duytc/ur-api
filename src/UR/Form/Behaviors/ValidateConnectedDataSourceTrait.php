@@ -231,7 +231,7 @@ trait ValidateConnectedDataSourceTrait
         }
 
         //ADD CONCATENATION FIELDS
-        if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATION_FIELD) === 0) {
+        if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATED_FIELD) === 0) {
             foreach ($transform[TransformType::FIELDS] as $field) {
                 if (in_array($field[TransformType::FIELD], $connectedDataSource->getMapFields())) {
                     return "Transform all fields ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] should not be mapped ";

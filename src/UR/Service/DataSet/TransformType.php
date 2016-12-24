@@ -18,7 +18,7 @@ final class TransformType
     const SORT_BY = 'sortBy';
     const ADD_FIELD = 'addField';
     const ADD_CALCULATED_FIELD = 'addCalculatedField';
-    const ADD_CONCATENATION_FIELD = 'addConcatenationField';
+    const ADD_CONCATENATED_FIELD = 'addConcatenatedField';
     const COMPARISON = 'comparison';
     const COMPARISON_PERCENT = 'comparisonPercent';
     const EXPRESSION = 'expression';
@@ -34,7 +34,7 @@ final class TransformType
         self::SORT_BY,
         self::ADD_FIELD,
         self::ADD_CALCULATED_FIELD,
-        self::ADD_CONCATENATION_FIELD,
+        self::ADD_CONCATENATED_FIELD,
         self::COMPARISON_PERCENT
     ];
 
