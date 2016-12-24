@@ -59,12 +59,11 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                         }
                     }
                     //todo add validation later
-                    /*
+
                     $isValidFilter = $this->validateFilters($dataSet, $connDataSource);
                     if ($isValidFilter !== 0) {
                         $form->get('filters')->addError(new FormError($isValidFilter));
                     }
-
                     $isValidTransform = $this->validateTransforms($dataSet, $connDataSource);
 
                     if ($isValidTransform !== 0) {
@@ -74,7 +73,6 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                     if (!$this->validateAlertSetting($connDataSource)) {
                         $form->get('transforms')->addError(new FormError('Alerts Setting error'));
                     }
-                     */
                 }
             }
         );

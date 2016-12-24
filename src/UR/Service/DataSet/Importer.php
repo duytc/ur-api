@@ -40,6 +40,7 @@ class Importer
                 $columns[$field] = $field;
             }
         }
+        $columns = array_unique($columns);
 
         foreach ($columns as $column) {
             if (in_array($column, self::$restrictedColumns, true)) {

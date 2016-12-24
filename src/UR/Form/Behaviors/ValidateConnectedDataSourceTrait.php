@@ -89,10 +89,6 @@ trait ValidateConnectedDataSourceTrait
             } else {
                 throw new Exception(sprintf("filter Setting error: filter of type [%s] is not supported", $filters[FilterType::TYPE]));
             }
-
-            if (!array_key_exists($filters[FilterType::FIELD], $dataSet->getDimensions()) && !array_key_exists($filters[FilterType::FIELD], $dataSet->getMetrics())) {
-                throw new Exception(sprintf("filter Setting error: field [%s] does not exist in Dimensions or Metrics", $filters[FilterType::FIELD]));
-            }
         }
 
         return 0;
@@ -105,7 +101,7 @@ trait ValidateConnectedDataSourceTrait
             foreach ($connDataSource->getTransforms() as $transform) {
 
                 if (!TransformType::isValidTransformType($transform[TransformType::TYPE])) {
-                    return "Transform all fields setting error: field [" . $transform[TransformType::FIELD] . "] transform type should be one of " . implode(", ", TransformType::$transformTypes);
+                    return sprintf("Transform all fields setting error: transform type should be one of %s", implode(", ", TransformType::$transformTypes));
                 }
 
                 if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE])) {
@@ -161,13 +157,6 @@ trait ValidateConnectedDataSourceTrait
             return "Transform setting error: Transform [" . $transform[TransformType::TYPE] . "] missing config information";
         }
 
-        if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
-            foreach ($transform[TransformType::FIELDS] as $field) {
-                if (!in_array($field, $connectedDataSource->getMapFields())) {
-                    return "Transform ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field . "] hasn't been mapped ";
-                }
-            }
-        }
         //SORT BY
         if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
             foreach ($transform[TransformType::FIELDS] as $field) {
@@ -193,14 +182,6 @@ trait ValidateConnectedDataSourceTrait
                 if (!$this->isDataSetFields($field[TransformType::FIELD], $connectedDataSource->getDataSet())) {
                     return "Transform ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] does not exist in dimensions or metrics ";
                 }
-
-                if (!in_array($field[TransformType::NUMERATOR], $connectedDataSource->getMapFields())) {
-                    return "Transform ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::NUMERATOR] . "] hasn't been mapped ";
-                }
-
-                if (!in_array($field[TransformType::DENOMINATOR], $connectedDataSource->getMapFields())) {
-                    return "Transform ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::DENOMINATOR] . "] hasn't been mapped ";
-                }
             }
         }
 
@@ -208,7 +189,7 @@ trait ValidateConnectedDataSourceTrait
         if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
             foreach ($transform[TransformType::FIELDS] as $field) {
                 if (in_array($field[TransformType::FIELD], $connectedDataSource->getMapFields())) {
-                    return "Transform ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] should not be mapped been mapped ";
+                    return "Transform ( " . $transform[TransformType::TYPE] . ") setting error: field [" . $field[TransformType::FIELD] . "] should not be mapped ";
                 }
 
                 if (!$this->isDataSetFields($field[TransformType::FIELD], $connectedDataSource->getDataSet())) {
