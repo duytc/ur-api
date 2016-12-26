@@ -72,6 +72,66 @@ class ReportBuilder implements ReportBuilderInterface
         return $this->getSingleReport($params);
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getShareableReport(ParamsInterface $params, array $fieldsToBeShared)
+    {
+        /**
+         * @var ReportResultInterface $reportResult
+         * [
+         *      average => [],
+         *      columns => [],
+         *      dateRange => '',
+         *      reports => [],
+         *      total => [],
+         *      types => []
+         * ]
+         */
+        $reportResult = $this->getReport($params);
+
+        // check if $fieldsToBeShared not yet configured (empty array) => default share all
+        if (count($fieldsToBeShared) < 1) {
+            return $reportResult;
+        }
+
+        // unset fields not to be shared
+        $average = $reportResult->getAverage();
+        $columns = $reportResult->getColumns();
+        $reports = $reportResult->getReports();
+        $total = $reportResult->getTotal();
+        $types = $reportResult->getTypes();
+
+        if (is_array($average)) {
+            $average = $this->filterFieldsInArray($fieldsToBeShared, $average);
+            $reportResult->setAverage($average);
+        }
+
+        if (is_array($columns)) {
+            $columns = $this->filterFieldsInArray($fieldsToBeShared, $columns);
+            $reportResult->setColumns($columns);
+        }
+
+        if (is_array($reports)) {
+            foreach ($reports as &$report) {
+                $report = $this->filterFieldsInArray($fieldsToBeShared, $report);
+            }
+            $reportResult->setReports($reports);
+        }
+
+        if (is_array($total)) {
+            $total = $this->filterFieldsInArray($fieldsToBeShared, $total);
+            $reportResult->setTotal($total);
+        }
+
+        if (is_array($types)) {
+            $types = $this->filterFieldsInArray($fieldsToBeShared, $types);
+            $reportResult->setTypes($types);
+        }
+
+        return $reportResult;
+    }
+
     protected function getSingleReport(ParamsInterface $params, $overridingFilters = null, $isNeedFormatReport = true)
     {
         $metrics = [];
@@ -169,34 +229,20 @@ class ReportBuilder implements ReportBuilderInterface
         $dimensions[] = self::REPORT_VIEW_ALIAS;
         $types[self::REPORT_VIEW_ALIAS] = Type::TEXT;
 
-        foreach($rows as &$row) {
-            foreach($metrics as $metric) {
+        foreach ($rows as &$row) {
+            foreach ($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
-                    $type = array_key_exists($metric, $types) ? $types[$metric] : null;
-                    if (in_array($type, [Type::DECIMAL, Type::NUMBER])) {
-                        $row[$metric] = 0;
-                    } else if (in_array($type, [Type::TEXT, Type::MULTI_LINE_TEXT])) {
-                        $row[$metric] = '-';
-                    } else {
-                        $row[$metric] = null;
-                    }
+                    $row[$metric] = null;
                 }
             }
 
-            foreach($dimensions as $dimension) {
+            foreach ($dimensions as $dimension) {
                 if (!array_key_exists($dimension, $row)) {
-                    $type = array_key_exists($dimension, $types) ? $types[$dimension] : null;
-                    if (in_array($type, [Type::DECIMAL, Type::NUMBER])) {
-                        $row[$dimension] = 0;
-                    } else if (in_array($type, [Type::TEXT, Type::MULTI_LINE_TEXT])) {
-                        $row[$dimension] = '-';
-                    } else {
-                        $row[$dimension] = null;
-                    }
+                    $row[$dimension] = null;
                 }
             }
 
-            foreach($row as $key=>$value) {
+            foreach ($row as $key => $value) {
                 if (!in_array($key, $metrics) && !in_array($key, $dimensions)) {
                     unset($row[$key]);
                 }
@@ -313,9 +359,28 @@ class ReportBuilder implements ReportBuilderInterface
      */
     private function addNewField($key, $value, array $arrays)
     {
-        return array_map(function(array $array) use ($key, $value) {
+        return array_map(function (array $array) use ($key, $value) {
             $array[$key] = $value;
             return $array;
         }, $arrays);
+    }
+
+    /**
+     * filter keep fields in array
+     * @param array $fields
+     * @param array $array
+     * @return array
+     */
+    private function filterFieldsInArray(array $fields, array $array)
+    {
+        $result = array_filter(
+            $array,
+            function ($key) use ($fields) {
+                return in_array($key, $fields);
+            },
+            ARRAY_FILTER_USE_KEY
+        );
+
+        return $result;
     }
 }

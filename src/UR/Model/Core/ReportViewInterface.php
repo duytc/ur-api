@@ -153,15 +153,15 @@ interface ReportViewInterface extends ModelInterface
     public function setWeightedCalculations($weightedCalculations);
 
     /**
-     * @return string
+     * @return array
      */
-    public function getSharedKey();
+    public function getSharedKeysConfig();
 
     /**
-     * @param string $sharedKey
+     * @param array $sharedKeysConfig
      * @return self
      */
-    public function setSharedKey($sharedKey);
+    public function setSharedKeysConfig($sharedKeysConfig);
 
     /**
      * @return array

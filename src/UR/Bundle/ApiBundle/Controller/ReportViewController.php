@@ -7,7 +7,9 @@ use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\RuntimeException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
@@ -93,25 +95,35 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      *
      * @Rest\Get("/reportviews/{id}/shareablelink" )
      *
+     * @Rest\QueryParam(name="fields", nullable=false, description="fields to be showed in sharedReport, must match dimensions, metrics fields in ReportView")
+     *
      * @ApiDoc(
      *  section = "Report View",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful"
+     *  },
+     *  parameters={
+     *      {"name"="fields", "dataType"="string", "required"=false, "description"="fields to be showed in sharedReport, must match dimensions, metrics fields in ReportView"}
      *  }
      * )
      *
+     * @param Request $request
      * @param int $id the resource id
-     *
      * @return string
-     * @throws NotFoundHttpException when the resource does not exist
      */
-    public function getShareableLinkAction($id)
+    public function getShareableLinkAction(Request $request, $id)
     {
         /** @var ReportViewInterface $reportView */
         $reportView = $this->one($id);
 
-        return $this->getShareableLink($reportView);
+        $fieldsToBeShared = $request->query->get('fields', '[]');
+        $fieldsToBeShared = json_decode($fieldsToBeShared);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($fieldsToBeShared)) {
+            throw new BadRequestHttpException('expected "fields" param is array that match fields in ReportView');
+        }
+
+        return $this->getShareableLink($reportView, $fieldsToBeShared);
     }
 
     /**
@@ -233,18 +245,27 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         return $this->container->get('ur_api.handler.report_view');
     }
 
-    private function getShareableLink(ReportViewInterface $reportView)
+    /**
+     * get shareableLink for reportView, support selecting $fields To Be Shared
+     *
+     * @param ReportViewInterface $reportView
+     * @param array $fieldsToBeShared
+     * @return mixed
+     */
+    private function getShareableLink(ReportViewInterface $reportView, array $fieldsToBeShared)
     {
+        /** @var ReportViewManagerInterface $reportViewManager */
+        $reportViewManager = $this->get('ur.domain_manager.report_view');
+        $token = $reportViewManager->createTokenForReportView($reportView, $fieldsToBeShared);
+
         $sharedReportViewLinkTemplate = $this->container->getParameter('shared_report_view_link');
         if (strpos($sharedReportViewLinkTemplate, '$$REPORT_VIEW_ID$$') < 0 || strpos($sharedReportViewLinkTemplate, '$$SHARED_KEY$$') < 0) {
             throw new RuntimeException('Missing server parameter key $$REPORT_VIEW_ID$$ or $$SHARED_KEY$$');
         }
 
-        $sharedKey = $reportView->getSharedKey();
-
         $sharedLink = $sharedReportViewLinkTemplate;
         $sharedLink = str_replace('$$REPORT_VIEW_ID$$', $reportView->getId(), $sharedLink);
-        $sharedLink = str_replace('$$SHARED_KEY$$', $sharedKey, $sharedLink);
+        $sharedLink = str_replace('$$SHARED_KEY$$', $token, $sharedLink);
 
         return $sharedLink;
     }
