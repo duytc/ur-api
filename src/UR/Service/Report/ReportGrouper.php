@@ -82,14 +82,7 @@ class ReportGrouper implements ReportGrouperInterface
         foreach($rows as $row) {
             foreach($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
-                    $type = $collection->getTypeOf($metric);
-                    if (in_array($type, [Type::NUMBER, Type::DECIMAL])) {
-                        $row[$metric] = 0;
-                    } else if (in_array($type, [Type::TEXT, Type::MULTI_LINE_TEXT])) {
-                        $row[$metric] = '';
-                    } else {
-                        $row[$metric] = null;
-                    }
+                    $row[$metric] = null;
                 }
 
                 if (in_array($collection->getTypeOf($metric), [Type::NUMBER, Type::DECIMAL])) {

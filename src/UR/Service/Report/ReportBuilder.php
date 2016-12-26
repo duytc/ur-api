@@ -232,27 +232,13 @@ class ReportBuilder implements ReportBuilderInterface
         foreach ($rows as &$row) {
             foreach ($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
-                    $type = array_key_exists($metric, $types) ? $types[$metric] : null;
-                    if (in_array($type, [Type::DECIMAL, Type::NUMBER])) {
-                        $row[$metric] = 0;
-                    } else if (in_array($type, [Type::TEXT, Type::MULTI_LINE_TEXT])) {
-                        $row[$metric] = '-';
-                    } else {
-                        $row[$metric] = null;
-                    }
+                    $row[$metric] = null;
                 }
             }
 
             foreach ($dimensions as $dimension) {
                 if (!array_key_exists($dimension, $row)) {
-                    $type = array_key_exists($dimension, $types) ? $types[$dimension] : null;
-                    if (in_array($type, [Type::DECIMAL, Type::NUMBER])) {
-                        $row[$dimension] = 0;
-                    } else if (in_array($type, [Type::TEXT, Type::MULTI_LINE_TEXT])) {
-                        $row[$dimension] = '-';
-                    } else {
-                        $row[$dimension] = null;
-                    }
+                    $row[$dimension] = null;
                 }
             }
 
