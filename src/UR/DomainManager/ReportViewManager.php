@@ -123,36 +123,36 @@ class ReportViewManager implements ReportViewManagerInterface
             $sharedKeysConfig = [];
         }
 
-        $newToken = ReportView::generateToken();
+        // check if fieldsToBeShared already existed
+        $concatenatedFieldsToBeShared = implode(':', $fieldsToBeShared);
+        $tokenExisted = false;
+        $newToken = '';
 
-        // update fields if newToken existed (very very seldom occurred)
-        if (array_key_exists($newToken, $sharedKeysConfig)) {
-            $sharedKeysConfig[$newToken] = $fieldsToBeShared;
-        } else {
-            $concatenatedFieldsToBeShared = implode(':', $fieldsToBeShared);
+        foreach ($sharedKeysConfig as $token => $fields) {
+            $concatenatedOldFieldsToBeShared = implode(':', $fields);
 
-            // unset old token before adding new token when request same $fieldsToBeShared
-            foreach ($sharedKeysConfig as $token => $fields) {
-                $concatenatedFields = implode(':', $fields);
-
-                if ($concatenatedFields === $concatenatedFieldsToBeShared) {
-                    unset($sharedKeysConfig[$token]);
-                }
+            if ($concatenatedOldFieldsToBeShared === $concatenatedFieldsToBeShared) {
+                $tokenExisted = true;
+                $newToken = $token; // return old token
+                break;
             }
-
-            // add new token
-            $sharedKeysConfig[$newToken] = $fieldsToBeShared;
         }
 
-        // update sharedKeysConfig
-        $reportView->setSharedKeysConfig($sharedKeysConfig);
+        // add new token if token not existed
+        if (!$tokenExisted) {
+            $newToken = ReportView::generateToken();
+            $sharedKeysConfig[$newToken] = $fieldsToBeShared;
 
-        // try to save and refresh
-        try {
-            $this->om->persist($reportView);
-            $this->om->flush();
-        } catch (\Exception $e) {
-            throw new RuntimeException('Could not create new token');
+            // update sharedKeysConfig
+            $reportView->setSharedKeysConfig($sharedKeysConfig);
+
+            // try to save and refresh
+            try {
+                $this->om->persist($reportView);
+                $this->om->flush();
+            } catch (\Exception $e) {
+                throw new RuntimeException('Could not create new token');
+            }
         }
 
         return $newToken;
