@@ -11,6 +11,8 @@ use UR\Behaviors\ParserUtilTrait;
 class Excel implements DataSourceInterface
 {
     use ParserUtilTrait;
+    private $excel_2003_formats = ['Excel5', 'OOCalc', 'Excel2003XML'];
+    private $excel_2007_formats = ['Excel2007'];
 
     protected $excel;
     protected $sheet;
@@ -24,7 +26,7 @@ class Excel implements DataSourceInterface
     public function __construct($filePath, Factory $phpExcel)
     {
         $this->inputFileType = \PHPExcel_IOFactory::identify($filePath);
-        if (in_array($this->inputFileType, ['Excel5', 'OOCalc', 'Excel2003XML'])) {
+        if (in_array($this->inputFileType, $this->excel_2003_formats)) {
             $this->excel = $phpExcel->createPHPExcelObject($filePath);
             $this->excel->setActiveSheetIndex();
             $this->sheet = $this->excel->getActiveSheet();
@@ -77,7 +79,7 @@ class Excel implements DataSourceInterface
                 if ($i >= DataSourceInterface::DETECT_HEADER_ROWS)
                     break;
             }
-        } else if ($this->inputFileType === 'Excel2007') {
+        } else if (in_array($this->inputFileType, $this->excel_2007_formats)) {
             $this->excel = ReaderFactory::create(Type::XLSX);
             $this->excel->open($filePath);
             // TODO: check setShouldFormatDates() is what???
@@ -134,7 +136,7 @@ class Excel implements DataSourceInterface
 
     public function getRows($fromDateFormats)
     {
-        if (in_array($this->inputFileType, ['Excel5', 'OOCalc', 'Excel2003XML'])) {
+        if (in_array($this->inputFileType, $this->excel_2003_formats)) {
             $highestColumn = $this->sheet->getHighestDataColumn();
             $columns = range('A', $highestColumn);
             $highestRow = $this->sheet->getHighestDataRow();
@@ -165,7 +167,7 @@ class Excel implements DataSourceInterface
             }
 
         } else
-            if (strcmp($this->inputFileType, 'Excel2007') === 0) {
+            if (in_array($this->inputFileType, $this->excel_2007_formats)) {
                 $curRow = 1;
                 foreach ($this->excel->getSheetIterator() as $sheet) {
                     foreach ($sheet->getRowIterator() as $row) {

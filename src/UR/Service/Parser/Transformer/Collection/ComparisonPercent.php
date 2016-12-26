@@ -34,7 +34,7 @@ class ComparisonPercent implements CollectionTransformerInterface
         if (count($columnCheck) > 0) {
             $columns[] = $this->newColumn;
             foreach ($rows as $idx => &$row) {
-                $value = "";
+                $value = null;
                 $row[$this->newColumn] = $value;
             }
 

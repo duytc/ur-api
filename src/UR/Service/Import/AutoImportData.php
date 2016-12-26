@@ -195,7 +195,7 @@ class AutoImportData implements AutoImportDataInterface
                 }
 
             } catch (\Exception $e) {
-                $params[ProcessAlert::MESSAGE] = "Unexpected Error - " . $e->getMessage();
+                $params[ProcessAlert::MESSAGE] = "Unexpected Error";
                 $this->workerManager->processAlert(ProcessAlert::ALERT_CODE_UN_EXPECTED_ERROR, $publisherId, $params);
                 $this->logger->error($e->getMessage());
             }
