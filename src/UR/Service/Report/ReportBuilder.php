@@ -72,6 +72,68 @@ class ReportBuilder implements ReportBuilderInterface
         return $this->getSingleReport($params);
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getShareableReport(ParamsInterface $params, array $fieldsToBeShared)
+    {
+        /**
+         * @var ReportResultInterface $reportResult
+         * [
+         *      average => [],
+         *      columns => [],
+         *      dateRange => '',
+         *      reports => [],
+         *      total => [],
+         *      types => []
+         * ]
+         */
+        $reportResult = $this->getReport($params);
+
+        // check if $fieldsToBeShared not yet configured (empty array) => default share all
+        if (count($fieldsToBeShared) < 1) {
+            return $reportResult;
+        }
+
+        // unset fields not to be shared
+        $average = $reportResult->getAverage();
+        $columns = $reportResult->getColumns();
+        $reports = $reportResult->getReports();
+        $total = $reportResult->getTotal();
+        $types = $reportResult->getTypes();
+
+        foreach ($fieldsToBeShared as $field) {
+            if (is_array($average)) {
+                $this->unsetFieldInArray($field, $average);
+                $reportResult->setAverage($average);
+            }
+
+            if (is_array($columns)) {
+                $this->unsetFieldInArray($field, $columns);
+                $reportResult->setColumns($columns);
+            }
+
+            if (is_array($reports)) {
+                foreach ($reports as $report) {
+                    $this->unsetFieldInArray($field, $report);
+                }
+                $reportResult->setReports($reports);
+            }
+
+            if (is_array($total)) {
+                $this->unsetFieldInArray($field, $total);
+                $reportResult->setTotal($total);
+            }
+
+            if (is_array($types)) {
+                $this->unsetFieldInArray($field, $types);
+                $reportResult->setTypes($types);
+            }
+        }
+
+        return $reportResult;
+    }
+
     protected function getSingleReport(ParamsInterface $params, $overridingFilters = null, $isNeedFormatReport = true)
     {
         $metrics = [];
@@ -317,5 +379,18 @@ class ReportBuilder implements ReportBuilderInterface
             $array[$key] = $value;
             return $array;
         }, $arrays);
+    }
+
+    /**
+     * @param $field
+     * @param array $array
+     */
+    private function unsetFieldInArray($field, array &$array)
+    {
+        if (!array_key_exists($field, $array)) {
+            return;
+        }
+
+        unset($array[$field]);
     }
 }

@@ -22,4 +22,13 @@ interface ReportViewManagerInterface extends ManagerInterface
      * @return mixed
      */
     public function checkIfReportViewBelongsToMultiView(ReportViewInterface $reportView);
+
+    /**
+     * create token for reportView with fields to be shared
+     *
+     * @param ReportViewInterface $reportView
+     * @param array $fieldsToBeShared
+     * @return mixed
+     */
+    public function createTokenForReportView(ReportViewInterface $reportView, array $fieldsToBeShared);
 }

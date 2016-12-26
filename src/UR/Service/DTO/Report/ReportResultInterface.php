@@ -27,29 +27,39 @@ interface ReportResultInterface
     public function getColumns();
 
     /**
-     * generate for format
+     * @return array
+     */
+    public function getTypes();
+
+    /**
      * @param array $reports
+     * @return self
      */
     public function setReports($reports);
 
     /**
-     * generate for format
      * @param array $total
+     * @return self
      */
     public function setTotal($total);
 
     /**
-     * generate for format
      * @param array $average
+     * @return self
      */
     public function setAverage($average);
 
     /**
-     * generate for format
      * @param $columns
-     * @return mixed
+     * @return self
      */
     public function setColumns($columns);
+
+    /**
+     * @param array $types
+     * @return self
+     */
+    public function setTypes($types);
 
     /**
      * get array of all elements

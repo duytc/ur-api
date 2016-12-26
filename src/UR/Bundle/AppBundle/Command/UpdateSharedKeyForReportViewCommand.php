@@ -36,11 +36,11 @@ class UpdateSharedKeyForReportViewCommand extends ContainerAwareCommand
 
         $updatedReportViews = 0;
         foreach ($reportViews as $reportView) {
-            $sharedKey = $reportView->getSharedKey();
+            $sharedKeysConfig = $reportView->getSharedKeysConfig();
 
-            if (null == $sharedKey || !is_string($sharedKey) || empty($sharedKey)) {
-                $sharedKey = ReportView::generateSharedKey();
-                $reportView->setSharedKey($sharedKey);
+            if (null == $sharedKeysConfig || !is_string($sharedKeysConfig) || empty($sharedKeysConfig)) {
+                $sharedKeysConfig = ReportView::generateSharedKey();
+                $reportView->setSharedKeysConfig($sharedKeysConfig);
                 $reportViewManager->save($reportView);
                 $updatedReportViews++;
             }

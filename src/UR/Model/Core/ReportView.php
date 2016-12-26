@@ -74,9 +74,14 @@ class ReportView implements ReportViewInterface
     protected $dimensions;
 
     /**
-     * @var string
+     * @var array format as
+     * [
+     *      token1 => [field1, field2, ...],
+     *      token2 => [field1, field3, ...],
+     *      ...
+     * ]
      */
-    protected $sharedKey;
+    protected $sharedKeysConfig;
 
     /**
      * @var array
@@ -104,6 +109,7 @@ class ReportView implements ReportViewInterface
     public function __construct()
     {
         $this->multiView = false;
+        $this->sharedKeysConfig = [];
     }
 
     /**
@@ -350,17 +356,17 @@ class ReportView implements ReportViewInterface
     /**
      * @inheritdoc
      */
-    public function getSharedKey()
+    public function getSharedKeysConfig()
     {
-        return $this->sharedKey;
+        return $this->sharedKeysConfig;
     }
 
     /**
      * @inheritdoc
      */
-    public function setSharedKey($sharedKey)
+    public function setSharedKeysConfig($sharedKeysConfig)
     {
-        $this->sharedKey = $sharedKey;
+        $this->sharedKeysConfig = $sharedKeysConfig;
         return $this;
     }
 

@@ -1,9 +1,4 @@
 services:
-    ur_api.event_listener.update_shareable_key_for_report_view_listener:
-        class: UR\Bundle\ApiBundle\EventListener\UpdateSharedKeyForReportViewListener
-        tags:
-            - { name: doctrine.event_listener, event: prePersist }
-
     ur_api.event_listener.update_metrics_and_dimensions_for_report_view_listener:
         class: UR\Bundle\ApiBundle\EventListener\UpdateMetricsAndDimensionsForReportViewListener
         arguments:

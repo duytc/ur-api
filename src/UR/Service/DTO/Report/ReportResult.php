@@ -58,7 +58,7 @@ class ReportResult implements ReportResultInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getReports()
     {
@@ -66,7 +66,7 @@ class ReportResult implements ReportResultInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getTotal()
     {
@@ -74,7 +74,7 @@ class ReportResult implements ReportResultInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getAverage()
     {
@@ -82,7 +82,7 @@ class ReportResult implements ReportResultInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getColumns()
     {
@@ -90,7 +90,7 @@ class ReportResult implements ReportResultInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getTypes()
     {
@@ -98,7 +98,7 @@ class ReportResult implements ReportResultInterface
     }
 
     /**
-     * @return DateRange
+     * @inheritdoc
      */
     public function getDateRange()
     {
@@ -119,6 +119,7 @@ class ReportResult implements ReportResultInterface
     public function setTotal($total)
     {
         $this->total = $total;
+        return $this;
     }
 
     /**
@@ -127,6 +128,7 @@ class ReportResult implements ReportResultInterface
     public function setAverage($average)
     {
         $this->average = $average;
+        return $this;
     }
 
     /**
@@ -135,6 +137,16 @@ class ReportResult implements ReportResultInterface
     public function setColumns($columns)
     {
         $this->columns = $columns;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setTypes($types)
+    {
+        $this->types = $types;
+        return $this;
     }
 
     /**

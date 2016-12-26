@@ -51,10 +51,9 @@ UR\Entity\Core\ReportView:
             gedmo:
                 timestampable:
                     on: create
-        sharedKey:
-            type: string
-            length: 100
-            nullable: false
+        sharedKeysConfig:
+            type: json_array
+            nullable: true
         showInTotal:
             type: json_array
             nullable: true

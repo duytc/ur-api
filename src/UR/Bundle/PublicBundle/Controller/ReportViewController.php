@@ -46,13 +46,19 @@ class ReportViewController extends FOSRestController
             throw new BadRequestHttpException('Invalid ReportView');
         }
 
-        $sharedKey = $request->query->get('token', null);
-        if (null == $sharedKey || $sharedKey != $reportView->getSharedKey()) {
+        $token = $request->query->get('token', null);
+        if (null == $token) {
             throw new BadRequestHttpException('Invalid token');
         }
 
+        $sharedKeysConfig = $reportView->getSharedKeysConfig();
+        if (!array_key_exists($token, $sharedKeysConfig)) {
+            throw new BadRequestHttpException('Invalid token');
+        }
+
+        $fieldsToBeShared = $sharedKeysConfig[$token];
         $params = $this->getParams($reportView);
-        $reportResult = $this->getReportBuilder()->getReport($params);
+        $reportResult = $this->getReportBuilder()->getShareableReport($params, $fieldsToBeShared);
         $report = $reportResult->toArray();
 
         // important: append element "reportView" to reportResult, only for sharedReport
