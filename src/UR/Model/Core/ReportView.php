@@ -389,10 +389,10 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * Use this if need generate shared key automatically
-     * @return self
+     * Use this if need generate token automatically for shareable report
+     * @return string
      */
-    public static function generateSharedKey()
+    public static function generateToken()
     {
         return str_replace(".", "", uniqid(rand(1, 10000), true));
     }

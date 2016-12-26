@@ -6,6 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
+use UR\Model\Core\ReportView;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
@@ -122,7 +123,7 @@ class ReportViewManager implements ReportViewManagerInterface
             $sharedKeysConfig = [];
         }
 
-        $newToken = str_replace('.', '', uniqid('', true));
+        $newToken = ReportView::generateToken();
 
         // update fields if newToken existed (very very seldom occurred)
         if (array_key_exists($newToken, $sharedKeysConfig)) {
