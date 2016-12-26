@@ -102,33 +102,31 @@ class ReportBuilder implements ReportBuilderInterface
         $total = $reportResult->getTotal();
         $types = $reportResult->getTypes();
 
-        foreach ($fieldsToBeShared as $field) {
-            if (is_array($average)) {
-                $this->unsetFieldInArray($field, $average);
-                $reportResult->setAverage($average);
-            }
+        if (is_array($average)) {
+            $average = $this->filterFieldsInArray($fieldsToBeShared, $average);
+            $reportResult->setAverage($average);
+        }
 
-            if (is_array($columns)) {
-                $this->unsetFieldInArray($field, $columns);
-                $reportResult->setColumns($columns);
-            }
+        if (is_array($columns)) {
+            $columns = $this->filterFieldsInArray($fieldsToBeShared, $columns);
+            $reportResult->setColumns($columns);
+        }
 
-            if (is_array($reports)) {
-                foreach ($reports as $report) {
-                    $this->unsetFieldInArray($field, $report);
-                }
-                $reportResult->setReports($reports);
+        if (is_array($reports)) {
+            foreach ($reports as &$report) {
+                $report = $this->filterFieldsInArray($fieldsToBeShared, $report);
             }
+            $reportResult->setReports($reports);
+        }
 
-            if (is_array($total)) {
-                $this->unsetFieldInArray($field, $total);
-                $reportResult->setTotal($total);
-            }
+        if (is_array($total)) {
+            $total = $this->filterFieldsInArray($fieldsToBeShared, $total);
+            $reportResult->setTotal($total);
+        }
 
-            if (is_array($types)) {
-                $this->unsetFieldInArray($field, $types);
-                $reportResult->setTypes($types);
-            }
+        if (is_array($types)) {
+            $types = $this->filterFieldsInArray($fieldsToBeShared, $types);
+            $reportResult->setTypes($types);
         }
 
         return $reportResult;
@@ -231,8 +229,8 @@ class ReportBuilder implements ReportBuilderInterface
         $dimensions[] = self::REPORT_VIEW_ALIAS;
         $types[self::REPORT_VIEW_ALIAS] = Type::TEXT;
 
-        foreach($rows as &$row) {
-            foreach($metrics as $metric) {
+        foreach ($rows as &$row) {
+            foreach ($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
                     $type = array_key_exists($metric, $types) ? $types[$metric] : null;
                     if (in_array($type, [Type::DECIMAL, Type::NUMBER])) {
@@ -245,7 +243,7 @@ class ReportBuilder implements ReportBuilderInterface
                 }
             }
 
-            foreach($dimensions as $dimension) {
+            foreach ($dimensions as $dimension) {
                 if (!array_key_exists($dimension, $row)) {
                     $type = array_key_exists($dimension, $types) ? $types[$dimension] : null;
                     if (in_array($type, [Type::DECIMAL, Type::NUMBER])) {
@@ -258,7 +256,7 @@ class ReportBuilder implements ReportBuilderInterface
                 }
             }
 
-            foreach($row as $key=>$value) {
+            foreach ($row as $key => $value) {
                 if (!in_array($key, $metrics) && !in_array($key, $dimensions)) {
                     unset($row[$key]);
                 }
@@ -375,22 +373,28 @@ class ReportBuilder implements ReportBuilderInterface
      */
     private function addNewField($key, $value, array $arrays)
     {
-        return array_map(function(array $array) use ($key, $value) {
+        return array_map(function (array $array) use ($key, $value) {
             $array[$key] = $value;
             return $array;
         }, $arrays);
     }
 
     /**
-     * @param $field
+     * filter keep fields in array
+     * @param array $fields
      * @param array $array
+     * @return array
      */
-    private function unsetFieldInArray($field, array &$array)
+    private function filterFieldsInArray(array $fields, array $array)
     {
-        if (!array_key_exists($field, $array)) {
-            return;
-        }
+        $result = array_filter(
+            $array,
+            function ($key) use ($fields) {
+                return in_array($key, $fields);
+            },
+            ARRAY_FILTER_USE_KEY
+        );
 
-        unset($array[$field]);
+        return $result;
     }
 }
