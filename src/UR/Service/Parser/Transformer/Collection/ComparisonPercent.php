@@ -25,8 +25,11 @@ class ComparisonPercent implements CollectionTransformerInterface
         }
 
         $columns = $collection->getColumns();
-
-        $columnCheck = array_diff([$this->columnA, $this->columnB], array_keys($rows[0]));
+        $columnCheck = [];
+        foreach ($rows as $row) {
+            $columnCheck = array_diff([$this->columnA, $this->columnB], array_keys($row));
+            break;
+        }
 
         if (count($columnCheck) > 0) {
             $columns[] = $this->newColumn;
@@ -46,6 +49,10 @@ class ComparisonPercent implements CollectionTransformerInterface
 
         foreach ($rows as &$row) {
             $value = null;
+            if (!is_numeric($row[$this->columnA]) || !is_numeric($row[$this->columnB])) {
+                $row[$this->newColumn] = $value;
+                continue;
+            }
 
             if ($row[$this->columnB] > 0) {
                 $value = abs(($row[$this->columnA] - $row[$this->columnB]) / $row[$this->columnB]);

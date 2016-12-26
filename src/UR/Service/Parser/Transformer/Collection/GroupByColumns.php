@@ -19,8 +19,12 @@ class GroupByColumns implements CollectionTransformerInterface
         if (count($rows) < 1) {
             return $collection;
         }
+        $columns = [];
 
-        $columns = array_keys($rows[0]);
+        foreach ($rows as $row) {
+            $columns = array_keys($row);
+            break;
+        }
 
         // separate this so it's easy to debug
         $groupColumnKeys = array_intersect($columns, $this->groupByColumns);

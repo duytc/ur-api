@@ -29,6 +29,10 @@ class Importer
         $rows = array_values($collection->getRows());
         $mapFields = $connectedDataSource->getMapFields();
         $columns = [];
+        if (count($rows) < 1) {
+            return true;
+        }
+        
         foreach ($rows[0] as $field => $value) {
             if (array_key_exists($field, $mapFields)) {
                 if (in_array($mapFields[$field], $tableColumns)) {
