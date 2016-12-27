@@ -42,7 +42,10 @@ class Excel implements DataSourceInterface
                     FALSE);
 
                 $cur_row = array_filter($cur_rows[0], function ($value) {
-                    return (!is_null($value) && !empty($value)) || $value === '0';
+                    if (is_numeric($value)) {
+                        return true;
+                    }
+                    return (!is_null($value) && !empty($value));
                 });
 
                 if (count($cur_row) < 1) {

@@ -252,6 +252,10 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $newFields = array_merge($newFields, $columns);
         $newFields = array_unique($newFields);
         $newFields = array_filter($newFields, function ($value) {
+            if (is_numeric($value)) {
+                return true;
+            }
+            
             return ($value !== '' && $value !== null);
         });
 
