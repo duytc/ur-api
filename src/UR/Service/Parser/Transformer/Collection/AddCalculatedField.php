@@ -39,6 +39,10 @@ class AddCalculatedField extends AbstractAddField
             });
 
             $expressionForm = $this->convertExpressionForm($this->expression, $row);
+            if ($expressionForm === null) {
+                return null;
+            }
+
             $result = $this->language->evaluate($expressionForm, ['row' => $row]);
         } catch (\Exception $exception) {
             $result = null;
@@ -68,11 +72,10 @@ class AddCalculatedField extends AbstractAddField
 
         foreach ($fields as $index => $field) {
             if (!array_key_exists($field, $row)) {
-                $replaceString = "0";
-            } else {
-                $replaceString = sprintf('row[\'%s\']', $field);
+                return null;
             }
 
+            $replaceString = sprintf('row[\'%s\']', $field);
             $expression = str_replace($fieldsInBracket[$index], $replaceString, $expression);
         }
 
