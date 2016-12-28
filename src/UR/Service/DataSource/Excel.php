@@ -22,14 +22,19 @@ class Excel implements DataSourceInterface
     protected $headerRow = 0;
     protected $dataRow = 0;
     protected $inputFileType;
+    protected $filePath;
+    protected $chunkFile;
+    protected $numOfColumns;
+    const CHUNK_SIZE = 5000;
 
     public function __construct($filePath, Factory $phpExcel)
     {
+        $this->filePath = $filePath;
         $this->inputFileType = \PHPExcel_IOFactory::identify($filePath);
         if (in_array($this->inputFileType, $this->excel_2003_formats)) {
-            $this->excel = $phpExcel->createPHPExcelObject($filePath);
-            $this->excel->setActiveSheetIndex();
-            $this->sheet = $this->excel->getActiveSheet();
+            $objPHPExcel = $this->getPhpExcelObj($filePath, 100, 1);
+            $this->sheet = $objPHPExcel->getActiveSheet();
+            $this->numOfColumns = $this->sheet->getHighestColumn();
             $max = 0;
             $pre_columns = [];
             $match = 0;
@@ -81,7 +86,11 @@ class Excel implements DataSourceInterface
 
                 if ($i >= DataSourceInterface::DETECT_HEADER_ROWS)
                     break;
+
             }
+            $objPHPExcel->disconnectWorksheets();
+            unset($objPHPExcel, $this->sheet);
+
         } else if (in_array($this->inputFileType, $this->excel_2007_formats)) {
             $this->excel = ReaderFactory::create(Type::XLSX);
             $this->excel->open($filePath);
@@ -140,33 +149,45 @@ class Excel implements DataSourceInterface
     public function getRows($fromDateFormats)
     {
         if (in_array($this->inputFileType, $this->excel_2003_formats)) {
-            $highestColumn = $this->sheet->getHighestDataColumn();
-            $columns = range('A', $highestColumn);
-            $highestRow = $this->sheet->getHighestDataRow();
             $this->rows = [];
-            $columnsHeaders = array_combine($columns, $this->ogiHeaders);
-            $columnsHeaders = array_filter($columnsHeaders, function ($value) {
-                return (!is_null($value) && !empty($value)) || $value === '0';
-            });
+            $beginRowsReadRange = $this->dataRow;
+            for ($startRow = $this->dataRow; $startRow <= 500000; $startRow += self::CHUNK_SIZE) {
+                $objPHPExcel = $this->getPhpExcelObj($this->filePath, self::CHUNK_SIZE, $beginRowsReadRange);
+                $this->sheet = $objPHPExcel->getActiveSheet();
 
-            for ($row = $this->dataRow; $row <= $highestRow; $row++) {
-                $rowData = [];
-                foreach ($columnsHeaders as $column => $header) {
-                    $cell = $this->sheet->getCell($column . $row);
+                $columns = range('A', $this->numOfColumns);
+                $highestRow = $this->sheet->getHighestDataRow();
+                $columnsHeaders = array_combine($columns, $this->ogiHeaders);
+                $columnsHeaders = array_filter($columnsHeaders, function ($value) {
+                    return (!is_null($value) && !empty($value)) || $value === '0';
+                });
 
-                    if (\PHPExcel_Shared_Date::isDateTime($cell)) {
-                        foreach ($fromDateFormats as $field => $format) {
-                            if (strcmp($header, $field) === 0) {
-                                $rowData[] = date($format, \PHPExcel_Shared_Date::ExcelToPHP($cell->getValue()));
+                for ($row = $beginRowsReadRange; $row <= $highestRow; $row++) {
+                    $rowData = [];
+                    foreach ($columnsHeaders as $column => $header) {
+                        $cell = $this->sheet->getCell($column . $row);
+
+                        if (\PHPExcel_Shared_Date::isDateTime($cell)) {
+                            foreach ($fromDateFormats as $field => $format) {
+                                if (strcmp($header, $field) === 0) {
+                                    $rowData[] = date($format, \PHPExcel_Shared_Date::ExcelToPHP($cell->getValue()));
+                                }
                             }
-                        }
 
-                    } else {
-                        $rowData[] = $cell->getFormattedValue();
+                        } else {
+                            $rowData[] = $cell->getFormattedValue();
+                        }
                     }
+
+                    $this->rows[$row] = $rowData;
                 }
 
-                $this->rows[$row - 2] = $rowData;
+                $beginRowsReadRange += self::CHUNK_SIZE;
+                $objPHPExcel->disconnectWorksheets();
+                unset($objPHPExcel, $this->sheet);
+                if ($highestRow < self::CHUNK_SIZE) {
+                    break;
+                }
             }
 
         } else
@@ -197,5 +218,17 @@ class Excel implements DataSourceInterface
     public function getDataRow()
     {
         return $this->dataRow;
+    }
+
+    public function getPhpExcelObj($filePath, $chunkSize, $startRow)
+    {
+        $objReader = \PHPExcel_IOFactory::createReaderForFile($filePath);
+        $this->chunkFile = new ChunkReadFilter();
+        $objReader->setReadFilter($this->chunkFile);
+        $objReader->setReadDataOnly(true);
+        //READ 100 FIRST ROWS TO DETECT HEADER
+        $this->chunkFile->setRows($startRow, $chunkSize);
+        $objPHPExcel = $objReader->load($filePath);
+        return $objPHPExcel;
     }
 }

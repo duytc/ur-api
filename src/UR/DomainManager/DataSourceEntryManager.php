@@ -255,7 +255,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             if (is_numeric($value)) {
                 return true;
             }
-            
+
             return ($value !== '' && $value !== null);
         });
 
