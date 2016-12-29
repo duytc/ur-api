@@ -5,41 +5,96 @@ parameters:
     # of the property in the php class
     jms_serializer.cache_naming_strategy.class: JMS\Serializer\Naming\IdenticalPropertyNamingStrategy
 
-    tagcade.security.auth.voter.ad_network.class: Tagcade\Security\Authorization\Voter\AdNetworkVoter
-    tagcade.security.auth.voter.user.class: Tagcade\Security\Authorization\Voter\PublisherVoter
+    ur.security.auth.voter.data_source.class: UR\Security\Authorization\Voter\DataSourceVoter
+    ur.security.auth.voter.data_source_entry.class: UR\Security\Authorization\Voter\DataSourceEntryVoter
+    ur.security.auth.voter.data_source_integration.class: UR\Security\Authorization\Voter\DataSourceIntegrationVoter
+    ur.security.auth.voter.alert.class: UR\Security\Authorization\Voter\AlertVoter
+    ur.security.auth.voter.user.class: UR\Security\Authorization\Voter\PublisherVoter
+    ur.security.auth.voter.data_set.class: UR\Security\Authorization\Voter\DataSetVoter
+    ur.security.auth.voter.connected_data_source.class: UR\Security\Authorization\Voter\ConnectedDataSourceVoter
+    ur.security.auth.voter.import_history.class: UR\Security\Authorization\Voter\ImportHistoryVoter
+    ur.security.auth.voter.report_view.class: UR\Security\Authorization\Voter\ReportViewVoter
 
     # event dispatched on user action such as add, remove, delete
-    tagcade.events.handler_event: 'tagcade.events.handler_event'
+    ur.events.handler_event: 'ur.events.handler_event'
 
 services:
-    tagcade.security.auth.voter.ad_network:
-        class:  %tagcade.security.auth.voter.ad_network.class%
+    ur.security.auth.voter.data_source:
+        class:  %ur.security.auth.voter.data_source.class%
+        public: false
+        tags:
+            - { name: security.voter}
+
+    ur.security.auth.voter.data_source_entry:
+        class:  %ur.security.auth.voter.data_source_entry.class%
+        public: false
+        tags:
+            - { name: security.voter}
+
+    ur.security.auth.voter.data_source_integration:
+        class:  %ur.security.auth.voter.data_source_integration.class%
+        public: false
+        tags:
+            - { name: security.voter}
+
+    ur.security.auth.voter.alert:
+        class:  %ur.security.auth.voter.alert.class%
+        public: false
+        tags:
+            - { name: security.voter}
+
+    ur.security.auth.voter.user:
+        class:  %ur.security.auth.voter.user.class%
         public: false
         tags:
             - { name: security.voter }
 
-    tagcade.security.auth.voter.user:
-        class:  %tagcade.security.auth.voter.user.class%
+    ur.security.auth.voter.data_set:
+        class:  %ur.security.auth.voter.data_set.class%
         public: false
         tags:
             - { name: security.voter }
 
-    tagcade.service.console_output:
+    ur.security.auth.voter.connected_data_source:
+        class:  %ur.security.auth.voter.connected_data_source.class%
+        public: false
+        tags:
+            - { name: security.voter }
+
+    ur.security.auth.voter.import_history:
+        class:  %ur.security.auth.voter.import_history.class%
+        public: false
+        tags:
+            - { name: security.voter }
+
+    ur.security.auth.voter.report_view:
+        class:  %ur.security.auth.voter.report_view.class%
+        public: false
+        tags:
+            - { name: security.voter }
+
+    ur.service.console_output:
         class: Symfony\Component\Console\Output\ConsoleOutput
 
-    tagcade.handler.handler_abstract:
-        class: Tagcade\Handler\HandlerAbstract
+    ur.handler.handler_abstract:
+        class: UR\Handler\HandlerAbstract
         abstract: true
         public: false
         calls:
             - [setEventDispatcher, ["@event_dispatcher"]]
-            - [setEvent, [%tagcade.events.handler_event%]]
+            - [setEvent, [%ur.events.handler_event%]]
 
-    tagcade.service.date_util:
-        class: Tagcade\Service\DateUtil
+    ur.service.date_util:
+        class: UR\Service\DateUtil
 
-    tagcade.service.array_util:
-        class: Tagcade\Service\ArrayUtil
+    ur.service.array_util:
+        class: UR\Service\ArrayUtil
+
+    ur.service.synchronize_user_service:
+        class: UR\Service\SynchronizeUser\SynchronizeUserService
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur_user.domain_manager.publisher
 
     monolog.formatter.session_request:
         class: Monolog\Formatter\LineFormatter
@@ -52,8 +107,54 @@ services:
             - { name: monolog.processor }
 
     monolog.processor.session_request:
-        class: Tagcade\Bundle\ApiBundle\Service\SessionRequestProcessor
+        class: UR\Bundle\ApiBundle\Service\SessionRequestProcessor
         arguments:
             - @security.token_storage
         tags:
             - { name: monolog.processor, method: processRecord }
+
+    ur.worker.manager:
+        class: UR\Worker\Manager
+        arguments:
+            - @ur.service.date_util
+            - @leezy.pheanstalk
+
+    ur.worker.workers.auto_import_data:
+        class: UR\Service\Import\AutoImportData
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.worker.manager
+            - @ur.domain_manager.import_history
+            - @phpexcel
+            - %upload_file_dir%
+            - @monolog.logger
+
+    ur.worker.workers.re_import_new_entry_received:
+        class: UR\Worker\Workers\ReImportWhenNewEntryReceived
+        arguments:
+            - @ur.domain_manager.data_set
+            - @ur.worker.workers.auto_import_data
+            - @ur.domain_manager.data_source_entry
+
+    ur.worker.workers.auto_import_when_connected_datasource_change_worker:
+        class: UR\Worker\Workers\AutoImportConnectedDataSourceChangedWorker
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.worker.workers.auto_import_data
+            - @ur.domain_manager.connected_data_source
+
+    ur.service.alert.process_alert:
+        class: UR\Service\Alert\ProcessAlert
+        arguments:
+            - @ur.domain_manager.alert
+            - @ur_user.domain_manager.publisher
+
+    ur.worker.workers.alert_worker:
+        class: UR\Worker\Workers\AlertWorker
+        arguments:
+            - @ur.service.alert.process_alert
+
+    ur.worker.workers.synchronize_user_worker:
+        class: UR\Worker\Workers\SynchronizeUserWorker
+        arguments:
+            - @ur.service.synchronize_user_service

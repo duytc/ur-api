@@ -1,0 +1,45 @@
+parameters:
+    ur.bundle.user.entity.user.class: UR\Bundle\UserBundle\Entity\User
+    # define user systems
+    ur.user_system.publisher: ur_user_system_publisher
+    ur.user_system.admin: ur_user_system_admin
+    # event dispatched on login success
+    ur_user.events.login_success: ur_user.events.login_success
+    # used in \UR\Bundle\UserBundle\DependencyInjection\Compiler\OverrideServiceCompilerPass
+    ur_user.request.user_system.authentication_listener.class: UR\Bundle\UserBundle\Request\UserSystem\AuthenticationListener
+
+services:
+    # returns our role model class for the current authenticated user entity
+    ur.token:
+        class: Symfony\Component\Security\Core\Authentication\Token\TokenInterface
+        factory_service: security.context
+        factory_method: getToken
+
+    ur.user_role:
+        class: UR\Model\User\Role\UserRoleInterface
+        factory_service: ur.token
+        factory_method: getUser
+
+    ur_user.domain_manager.publisher:
+        class: UR\Bundle\UserBundle\DomainManager\PublisherManager
+        arguments:
+            - @ur_user_system_publisher.user_manager
+
+    ur_user.handler.authentication_success:
+        class: UR\Bundle\UserBundle\Handler\AuthenticationSuccessHandler
+        arguments:
+            - @lexik_jwt_authentication.handler.authentication_success
+        calls:
+            - [setEventDispatcher, ["@event_dispatcher"]]
+            - [setSuccessEventName, ["%ur_user.events.login_success%"]]
+
+    ur_user.request.user_system.request_matcher:
+        class: UR\Bundle\UserBundle\Request\UserSystem\RequestMatcher
+
+    ur_app.event_listener.user_type_security_listener:
+        class: UR\Bundle\UserBundle\EventListener\UserTypeSecurityListener
+        arguments:
+            - @security.context
+            - @annotation_reader
+        tags:
+            - { name: kernel.event_listener, event: kernel.controller, method: onKernelController }

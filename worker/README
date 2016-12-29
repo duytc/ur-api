@@ -1,0 +1,5 @@
+Run this script to enable the worker. In production environment it should be managed with supervisord.
+
+For testing purposes, you can start the worker on the command line, i.e
+
+$ php worker.php

@@ -1,0 +1,40 @@
+UR\Entity\Core\DataSourceEntry:
+    type: entity
+    table: core_data_source_entry
+    repositoryClass: UR\Repository\Core\DataSourceEntryRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        isValid:
+            type: boolean
+            options:
+                default: true
+        isActive:
+            type: boolean
+            options:
+                default: true
+        path:
+            type: string
+        fileName:
+            type: string
+        metaData:
+            type: json_array
+            nullable: true
+        receivedDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+        receivedVia:
+            type: string
+    manyToOne:
+        dataSource:
+            targetEntity: UR\Entity\Core\DataSource
+            inversedBy: dataSourceEntries
+            joinColumn:
+                name: data_source_id
+                referencedColumnName: id
+                onDelete: CASCADE

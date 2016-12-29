@@ -1,0 +1,30 @@
+UR\Entity\Core\Alert:
+    type: entity
+    table: core_alert
+    repositoryClass: UR\Repository\Core\AlertRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        isRead:
+            type: boolean
+            option:
+                default: false
+        code:
+            type: integer
+        message:
+            type: json_array
+            nullable: true
+        detail:
+            type: json_array
+            nullable: true
+        createdDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+    manyToOne:
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

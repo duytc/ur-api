@@ -39,7 +39,7 @@ monolog:
 #    delivery_address: me@example.com
 
 nelmio_api_doc:
-    name: Tagcade API
+    name: UR API
     request_listener:
         enabled: false
     sandbox:

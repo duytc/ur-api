@@ -1,0 +1,12 @@
+UR\Entity\Core\DataSource:
+    properties:
+        name:
+            - NotBlank: ~
+            - NotNull: ~
+#            - Type: string
+        format:
+            - NotBlank: ~
+            - NotNull: ~
+#            - Choice:
+#                choices: ["csv", "xls", "xlsx", "json", "php"]
+#                message: "not valid type"

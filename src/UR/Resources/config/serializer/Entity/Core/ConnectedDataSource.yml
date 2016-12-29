@@ -1,0 +1,27 @@
+UR\Entity\Core\ConnectedDataSource:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
+        dataSource:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
+        mapFields:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
+        requires:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
+        filters:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
+        transforms:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
+        alertSetting:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
+        dataSet:
+            expose: true
+            groups: [connectedDataSource.detail]

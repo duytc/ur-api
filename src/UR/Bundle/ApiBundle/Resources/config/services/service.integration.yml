@@ -1,0 +1,60 @@
+parameters:
+    # entity class
+    ur.entity.core.integration.class: UR\Entity\Core\Integration
+    # form class
+    ur.form.type.core.integration.class: UR\Form\Type\IntegrationFormType
+
+services:
+    ur_api.handler.integration:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.integration
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.integration:
+        class: UR\Repository\Core\IntegrationRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.integration.class%
+
+    ur.domain_manager.integration:
+        class: UR\DomainManager\IntegrationManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.integration
+
+    ur.form.type.integration:
+        class: %ur.form.type.core.integration.class%
+        tags:
+            - { name: form.type, alias: ur_form_integration }
+
+    ur.handler.handlers.integration.abstract:
+        class: UR\Handler\Handlers\Core\IntegrationHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.integration
+            - @ur.domain_manager.integration
+
+    ur.handler.handlers.integration.admin:
+        class: UR\Handler\Handlers\Core\Admin\IntegrationHandler
+        parent: ur.handler.handlers.integration.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.integration.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\IntegrationHandler
+        parent: ur.handler.handlers.integration.abstract
+        public: false
+
+    ur.handler.handler_manager.integration:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.integration.class%
+            -
+                - @ur.handler.handlers.integration.admin
+                - @ur.handler.handlers.integration.publisher

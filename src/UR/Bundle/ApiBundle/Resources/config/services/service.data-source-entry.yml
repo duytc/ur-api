@@ -1,0 +1,63 @@
+parameters:
+    # entity class
+    ur.entity.core.data_source_entry.class: UR\Entity\Core\DataSourceEntry
+    # form class
+    ur.form.type.data_source_entry.class: UR\Form\Type\DataSourceEntryFormType
+
+services:
+    ur_api.handler.data_source_entry:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.data_source_entry
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.data_source_entry:
+        class: UR\Repository\Core\DataSourceEntryRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.data_source_entry.class%
+
+    ur.domain_manager.data_source_entry:
+        class: UR\DomainManager\DataSourceEntryManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.data_source_entry
+            - @ur.worker.manager
+            - %upload_file_dir%
+            - @phpexcel
+
+    ur.form.type.data_source_entry:
+        class: %ur.form.type.data_source_entry.class%
+        tags:
+            - { name: form.type, alias: ur_form_data_source_entry }
+
+    ur.handler.handlers.data_source_entry.abstract:
+        class: UR\Handler\Handlers\Core\DataSourceEntryHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.data_source_entry
+            - @ur.domain_manager.data_source_entry
+
+    ur.handler.handlers.data_source_entry.admin:
+        class: UR\Handler\Handlers\Core\Admin\DataSourceEntryHandler
+        parent: ur.handler.handlers.data_source_entry.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.data_source_entry.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\DataSourceEntryHandler
+        parent: ur.handler.handlers.data_source_entry.abstract
+        public: false
+
+    ur.handler.handler_manager.data_source_entry:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.data_source_entry.class%
+            -
+                - @ur.handler.handlers.data_source_entry.admin
+                - @ur.handler.handlers.data_source_entry.publisher

@@ -1,0 +1,5 @@
+services:
+    ur_user_system_publisher.set_publisher_role_listener:
+        class: UR\Bundle\UserSystem\PublisherBundle\EventListener\SetPublisherRoleListener
+        tags:
+            - { name: doctrine.event_listener, event: prePersist }

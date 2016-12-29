@@ -1,7 +1,8 @@
 <?php
 
-$getTokenUrl = 'http://api.tagcade.dev/app_dev.php/api/v1/getToken';
-$getAccountReportUrl = 'http://api.tagcade.dev/app_dev.php/api/reports/v1/performancereports/accounts';
+$getTokenUrl = 'http://api.unified-reports.dev/app_dev.php/api/v1/getToken';
+$getAccountReportUrl = 'http://api.unified-reports.dev/app_dev.php/api/reports/v1/performancereports/accounts';
+
 $username = 'pub';
 $password = '123456';
 

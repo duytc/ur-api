@@ -1,0 +1,23 @@
+imports:
+    #- { resource: services/.yml }
+
+parameters:
+    # params
+
+services:
+    tagcade_app.event_listener.data_set_change_listener:
+        class: UR\Bundle\AppBundle\EventListener\ReConfigConnectedDataSourceListener
+        arguments:
+            - @ur.worker.manager
+        tags:
+            - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
+
+    ur_app.event_listener.data_source_entry_inserted_listener:
+        class: UR\Bundle\AppBundle\EventListener\ReImportWhenDataSourceEntryInsertedListener
+        arguments:
+            - @ur.worker.manager
+        tags:
+            - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postFlush }

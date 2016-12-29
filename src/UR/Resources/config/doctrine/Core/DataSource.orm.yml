@@ -1,0 +1,54 @@
+UR\Entity\Core\DataSource:
+    type: entity
+    table: core_data_source
+    repositoryClass: UR\Repository\Core\DataSourceRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: 100
+        format:
+            type: string
+            length: 100
+        alertSetting:
+            type: json_array
+            nullable: true
+        apiKey:
+            type: string
+            length: 300
+            nullable: true
+        urEmail:
+            type: string
+            length: 300
+            nullable: true
+        enable:
+            type: boolean
+            options:
+                default: true
+        detectedFields:
+            type: json_array
+            nullable: true
+    manyToOne:
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
+
+    oneToMany:
+        dataSourceIntegrations:
+            targetEntity: UR\Entity\Core\DataSourceIntegration
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: dataSource
+            orphanRemoval: true
+
+        dataSourceEntries:
+            targetEntity: UR\Entity\Core\DataSourceEntry
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: dataSource
+
+        connectedDataSources:
+            targetEntity: UR\Entity\Core\ConnectedDataSource
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: dataSource

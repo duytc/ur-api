@@ -1,0 +1,15 @@
+UR\Entity\Core\ImportHistory:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [importHistory.detail, importHistory.summary]
+        dataSet:
+            expose: true
+            groups: [importHistory.detail, importHistory.summary]
+        dataSourceEntry:
+            expose: true
+            groups: [importHistory.detail, importHistory.summary]
+        createdDate:
+            expose: true
+            groups: [importHistory.detail, importHistory.summary]

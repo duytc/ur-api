@@ -1,9 +1,0 @@
-
-tagcade_user_system_publisher_profile_show:
-    path: /
-    defaults: { _controller: "FOSUserBundle:Profile:show" }
-    methods: "GET"
-
-tagcade_user_system_publisher_profile_edit:
-    path: /edit
-    defaults: { _controller: "FOSUserBundle:Profile:edit" }

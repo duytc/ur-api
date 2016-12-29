@@ -1,0 +1,60 @@
+parameters:
+    # entity class
+    ur.entity.core.alert.class: UR\Entity\Core\Alert
+    # form class
+    ur.form.type.core.alert.class: UR\Form\Type\AlertFormType
+
+services:
+    ur_api.handler.alert:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.alert
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.alert:
+        class: UR\Repository\Core\AlertRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.alert.class%
+
+    ur.domain_manager.alert:
+        class: UR\DomainManager\AlertManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.alert
+
+    ur.form.type.alert:
+        class: %ur.form.type.core.alert.class%
+        tags:
+            - { name: form.type, alias: ur_form_alert }
+
+    ur.handler.handlers.alert.abstract:
+        class: UR\Handler\Handlers\Core\AlertHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.alert
+            - @ur.domain_manager.alert
+
+    ur.handler.handlers.alert.admin:
+        class: UR\Handler\Handlers\Core\Admin\AlertHandler
+        parent: ur.handler.handlers.alert.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.alert.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\AlertHandler
+        parent: ur.handler.handlers.alert.abstract
+        public: false
+
+    ur.handler.handler_manager.alert:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.alert.class%
+            -
+                - @ur.handler.handlers.alert.admin
+                - @ur.handler.handlers.alert.publisher

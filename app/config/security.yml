@@ -3,20 +3,20 @@ security:
         strategy: unanimous
 
     encoders:
-        Tagcade\Bundle\UserBundle\Entity\User: sha512
+        UR\Bundle\UserBundle\Entity\User: sha512
 
     role_hierarchy:
         ROLE_PUBLISHER: ROLE_USER
         ROLE_ADMIN:     ROLE_USER
 
     providers:
-        tagcade_user_publisher:
-            id: tagcade_user_system_publisher.user_provider.username
-        tagcade_user_admin:
-            id: tagcade_user_system_admin.user_provider.username
-        tagcade_user:
+        ur_user_publisher:
+            id: ur_user_system_publisher.user_provider.username
+        ur_user_admin:
+            id: ur_user_system_admin.user_provider.username
+        ur_user:
             chain:
-                providers: [tagcade_user_publisher, tagcade_user_admin]
+                providers: [ur_user_publisher, ur_user_admin]
         # fos userbundle user provider
         fos_userbundle:
             id: fos_user.user_manager
@@ -37,16 +37,28 @@ security:
                 username_parameter: username
                 password_parameter: password
                 post_only:          true
-                success_handler:    tagcade_user.handler.authentication_success
+                success_handler:    ur_user.handler.authentication_success
                 failure_handler:    lexik_jwt_authentication.handler.authentication_failure
-            provider: tagcade_user
+            provider: ur_user
+
+        public:
+            pattern: ^/api/public/v1/
+            stateless: true
+            security: false
+            anonymous: ~
 
         resetting:
             pattern: ^/api/v1/resetting/
             stateless: true
             security: false
             anonymous: ~
-            provider:  tagcade_user_publisher
+            provider:  ur_user_publisher
+
+        download:
+            pattern: ^/api/v1/datasourceentries/.*/download
+            stateless: true
+            security: false
+            anonymous: ~
 
         api:
             pattern:    ^/api/
@@ -54,7 +66,7 @@ security:
             lexik_jwt:
                 throw_exceptions:   true
                 create_entry_point: false
-            provider:  tagcade_user
+            provider:  ur_user
 
     access_control:
         - { path: ^/api/admin/, roles: ROLE_ADMIN }

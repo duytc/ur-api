@@ -1,0 +1,24 @@
+UR\Entity\Core\DataSourceIntegration:
+    exclusion_policy: ALL
+    properties:
+#        id:
+#            expose: true
+#            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
+        dataSource:
+            expose: true
+            groups: [dataSourceIntegration.detail]
+        integration:
+            expose: true
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
+        username:
+            expose: true
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
+        password:
+            expose: true
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
+        schedule:
+            expose: true
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
+        active:
+            expose: true
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]

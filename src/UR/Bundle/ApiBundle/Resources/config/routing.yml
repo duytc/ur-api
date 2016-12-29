@@ -1,0 +1,64 @@
+api_get_token:
+    path:      /getToken
+    defaults:  { _controller: URApiBundle:Token:getToken }
+    methods:  [POST]
+
+api_check_token:
+    path:      /checkToken
+    defaults:  { _controller: URApiBundle:Token:checkToken }
+    methods:  [POST]
+
+api_data_source:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\DataSourceController
+    name_prefix:  api_1_
+
+api_data_source_entry:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\DataSourceEntryController
+    name_prefix:  api_1_
+
+api_data_source_integration:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\DataSourceIntegrationController
+    name_prefix:  api_1_
+
+api_integration_group:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\IntegrationGroupController
+    name_prefix:  api_1_
+
+api_integration:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\IntegrationController
+    name_prefix:  api_1_
+
+api_alert:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\AlertController
+    name_prefix:  api_1_
+
+api_data_set:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\DataSetController
+    name_prefix:  api_1_
+
+api_connected_data_source:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ConnectedDataSourceController
+    name_prefix:  api_1_
+
+api_import_history:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ImportHistoryController
+    name_prefix:  api_1_
+
+api_report_schedule:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ReportScheduleController
+    name_prefix:  api_1_
+
+api_report_view:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ReportViewController
+    name_prefix:  api_1_

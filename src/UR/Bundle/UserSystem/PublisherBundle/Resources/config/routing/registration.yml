@@ -1,0 +1,19 @@
+
+ur_user_system_publisher_registration_register:
+    path: /
+    defaults: { _controller: "FOSUserBundle:Registration:register" }
+
+ur_user_system_publisher_registration_check_email:
+    path: /check-email
+    defaults: { _controller: "FOSUserBundle:Registration:checkEmail" }
+    methods: "GET"
+
+ur_user_system_publisher_registration_confirm:
+    path: /confirm/{token}
+    defaults: { _controller: "FOSUserBundle:Registration:confirm" }
+    methods: "GET"
+
+ur_user_system_publisher_registration_confirmed:
+    path: /confirmed
+    defaults: { _controller: "FOSUserBundle:Registration:confirmed" }
+    methods: "GET"

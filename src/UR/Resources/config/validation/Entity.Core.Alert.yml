@@ -1,0 +1,12 @@
+UR\Entity\Core\Alert:
+    properties:
+        code:
+            - NotBlank: ~
+            - NotNull: ~
+#            - Choice:
+#                choices:  ["100", "101", "102", "103", "104", "105", "200", "201", "202", "203"]
+#                message:  "not valid type"
+#        message:
+#            -
+#        createdDate:
+#            -
