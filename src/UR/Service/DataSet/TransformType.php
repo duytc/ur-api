@@ -73,7 +73,32 @@ final class TransformType
         return in_array($name, self::$transformTypes, true);
     }
 
+    /**
+     * validate date or number transform
+     *
+     * @param $arr
+     * @return int|string
+     */
     public static function isValidDateOrNumberTransform($arr)
+    {
+        if ($arr[self::TYPE] === self::DATE) {
+            return self::isValidDateTransform($arr);
+        }
+
+        if ($arr[self::TYPE] === self::NUMBER) {
+            return self::isValidNumberTransform($arr);
+        }
+
+        return 0;
+    }
+
+    /**
+     * validate date transform
+     *
+     * @param $arr
+     * @return int|string
+     */
+    public static function isValidDateTransform($arr)
     {
         if ($arr[self::TYPE] === self::DATE) {
             if (count($arr) !== 4 || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr)) {
@@ -85,6 +110,17 @@ final class TransformType
             }
         }
 
+        return 0;
+    }
+
+    /**
+     * validate number transform
+     *
+     * @param $arr
+     * @return int|string
+     */
+    public static function isValidNumberTransform($arr)
+    {
         if ($arr[self::TYPE] === self::NUMBER) {
             if (count($arr) !== 4 || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::DECIMALS, $arr) || !array_key_exists(self::THOUSANDS_SEPARATOR, $arr)) {
                 return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] missing config information";
@@ -93,6 +129,7 @@ final class TransformType
                 return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] number config error";
             }
         }
+
         return 0;
     }
 }
