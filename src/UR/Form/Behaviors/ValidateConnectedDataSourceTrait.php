@@ -105,8 +105,9 @@ trait ValidateConnectedDataSourceTrait
                 }
 
                 if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE])) {
-                    if ($this->validateDateOrNumberTransform($connDataSource, $transform) !== 0) {
-                        return $this->validateDateOrNumberTransform($connDataSource, $transform);
+                    $validDateOrNumberTransformResult = $this->validateDateOrNumberTransform($connDataSource, $transform);
+                    if ($validDateOrNumberTransformResult !== 0) {
+                        return $validDateOrNumberTransformResult;
                     }
                 } else {
                     if ($this->validateAllFieldsTransform($connDataSource, $transform) !== 0) {
