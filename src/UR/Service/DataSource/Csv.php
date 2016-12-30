@@ -41,7 +41,7 @@ class Csv implements DataSourceInterface
     public function __construct($filePath, $delimiters = null)
     {
         // todo validate $filePath
-        $this->csv = Reader::createFromPath($filePath);
+        $this->csv = Reader::createFromPath($filePath, 'r');
 
         $delimiters = null === $delimiters ? self::$SUPPORTED_DELIMITERS : $delimiters;
         $this->setDelimiters($delimiters);
