@@ -45,7 +45,7 @@ final class TransformType
     ];
 
     private static $supportedThousandsSeparator = [
-        ",", "."
+        ",", "none"
     ];
 
     private static $supportedDateFormats = [
