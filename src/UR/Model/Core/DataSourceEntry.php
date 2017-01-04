@@ -46,6 +46,8 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setReceivedDate($receivedDate)
     {
         $this->receivedDate = $receivedDate;
+
+        return $this;
     }
 
     /**
@@ -134,6 +136,23 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setReceivedVia($receivedVia)
     {
         $this->receivedVia = $receivedVia;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public static function isSupportedReceivedViaType($receivedVia)
+    {
+        return (in_array($receivedVia,
+            [
+                self::RECEIVED_VIA_UPLOAD,
+                self::RECEIVED_VIA_SELENIUM,
+                self::RECEIVED_VIA_API,
+                self::RECEIVED_VIA_EMAIL
+            ]
+        ));
     }
 
     /**
@@ -150,6 +169,8 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setFileName($fileName)
     {
         $this->fileName = $fileName;
+
+        return $this;
     }
 
     /**
@@ -166,5 +187,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setIsActive($active)
     {
         $this->isActive = $active;
+
+        return $this;
     }
 }

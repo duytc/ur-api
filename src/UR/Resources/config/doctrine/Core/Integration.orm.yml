@@ -11,6 +11,9 @@ UR\Entity\Core\Integration:
         name:
             type: string
             length: 100
+        canonicalName:
+            type: string
+            length: 100
         url:
             type: string
         type:

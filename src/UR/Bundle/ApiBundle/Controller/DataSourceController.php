@@ -6,18 +6,23 @@ use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
+use UR\Model\Core\DataSourceEntry;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\IntegrationInterface;
 use UR\Model\User\Role\AdminInterface;
+use UR\Model\User\Role\PublisherInterface;
 
 /**
  * @Rest\RouteResource("DataSource")
@@ -300,6 +305,64 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         return $em->getDataSourceByEmailKey($emailKey);
     }
 
+
+    /**
+     * Get data sources for a integration and a publisher.
+     * This is used for integrating all integration modules (fetcher, email) into this ur system
+     *
+     * @Rest\Get("/datasources/byintegration")
+     *
+     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.summary", "integration.summary","user.summary"})
+     *
+     * @Rest\QueryParam(name="integration", nullable=false, description="The integration cname")
+     * @Rest\QueryParam(name="publisher", nullable=false, description="The publisher id")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return DataSourceInterface
+     */
+    public function getDataSourcesByIntegrationAndPublisherAction(Request $request)
+    {
+        /* get params */
+        $integrationCName = $request->query->get('integration', null);
+        $publisherId = $request->query->get('publisher', null);
+        if (null === $integrationCName || null === $publisherId) {
+            throw new BadRequestHttpException('missing integration id or publisher id');
+        }
+
+        /* find and check permission for integration */
+        $integrationManager = $this->get('ur.domain_manager.integration');
+        $integration = $integrationManager->findByCanonicalName($integrationCName);
+        if (!($integration instanceof IntegrationInterface)) {
+            throw new NotFoundHttpException(
+                sprintf("The %s resource '%s' was not found or you do not have access", 'integration', $integrationCName)
+            );
+        }
+        $this->checkUserPermission($integration);
+
+        /* find and check permission for publisher */
+        $publisherManager = $this->get('ur_user.domain_manager.publisher');
+        $publisher = $publisherManager->find($publisherId);
+        if (!($publisher instanceof PublisherInterface)) {
+            throw new NotFoundHttpException(
+                sprintf("The %s resource '%s' was not found or you do not have access", 'publisher', $publisherId)
+            );
+        }
+        $this->checkUserPermission($publisher);
+
+        /* find and return result */
+        $dataSourceRepository = $this->get('ur.repository.data_source');
+        $dataSources = $dataSourceRepository->getDataSourcesByIntegrationAndPublisher($integration, $publisher);
+        return $dataSources;
+    }
+
     /**
      * Create a data source from the submitted data
      *
@@ -378,16 +441,71 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     {
         /** @var DataSourceInterface $dataSource */
         $dataSource = $this->one($id);
-        $uploadRootDir = $this->container->getParameter('upload_file_dir');
-        $dirItem = '/' . $dataSource->getPublisherId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
-        $uploadPath = $uploadRootDir . $dirItem;
 
-        /** @var FileBag $files */
-        $files = $request->files;
-        $em = $this->get('ur.domain_manager.data_source_entry');
-        $result = $em->uploadDataSourceEntryFiles($files, $uploadPath, $dirItem, $dataSource);
+        /** @var FileBag $fileBag */
+        $fileBag = $request->files;
 
-        return $result;
+        return $this->processUploadedFiles($dataSource, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD);
+    }
+
+    /**
+     * Upload
+     *
+     * @Rest\Post("/datasources/{id}/viafetcher")
+     *
+     * @ApiDoc(
+     *  section = "Data Sources",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request the request object
+     *
+     * @param $id
+     * @return mixed
+     */
+    public function postViaFetcherAction(Request $request, $id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+
+        /** @var FileBag $fileBag */
+        $fileBag = $request->files;
+
+        return $this->processUploadedFiles($dataSource, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_SELENIUM);
+    }
+
+    /**
+     * Upload
+     *
+     * @Rest\Post("/datasources/{id}/viaemailhook")
+     *
+     * @ApiDoc(
+     *  section = "Data Sources",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request the request object
+     *
+     * @param $id
+     * @return mixed
+     */
+    public function postViaEmailHookAction(Request $request, $id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+
+        /** @var FileBag $fileBag */
+        $fileBag = $request->files;
+
+        return $this->processUploadedFiles($dataSource, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_EMAIL);
     }
 
     /**
@@ -496,5 +614,59 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.data_source');
+    }
+
+    /**
+     * @param FileBag $fileBag
+     * @return array
+     */
+    private function getUploadedFiles(FileBag $fileBag)
+    {
+        $keys = $fileBag->keys();
+
+        $files = array_map(
+            function ($key) use ($fileBag) {
+                /**@var UploadedFile $file */
+                $file = $fileBag->get($key);
+                return $file;
+            }, $keys
+        );
+
+        if (!is_array($files)) {
+            return [];
+        }
+
+        return array_values(
+            array_filter(
+                $files,
+                function ($file) {
+                    return ($file instanceof UploadedFile);
+                }
+            )
+        );
+    }
+
+    /**
+     * process uploaded files. The files may come from upload, fetcher module or email-hook module
+     *
+     * @param DataSourceInterface $dataSource
+     * @param FileBag $fileBag
+     * @param string $via is "upload" or "email" or "api" or "selenium". Default is "upload"
+     * @return array
+     */
+    private function processUploadedFiles(DataSourceInterface $dataSource, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD)
+    {
+        /** @var UploadedFile[] $files */
+        $files = $this->getUploadedFiles($fileBag);
+
+        $uploadRootDir = $this->container->getParameter('upload_file_dir');
+        $dirItem = '/' . $dataSource->getPublisherId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
+        $uploadPath = $uploadRootDir . $dirItem;
+
+        /** @var DataSourceEntryManagerInterface $dataSourceEntryManager */
+        $dataSourceEntryManager = $this->get('ur.domain_manager.data_source_entry');
+        $result = $dataSourceEntryManager->uploadDataSourceEntryFiles($files, $uploadPath, $dirItem, $dataSource, $via);
+
+        return $result;
     }
 }

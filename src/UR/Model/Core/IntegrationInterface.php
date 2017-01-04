@@ -20,6 +20,11 @@ interface IntegrationInterface extends ModelInterface
     /**
      * @return string
      */
+    public function getCanonicalName();
+
+    /**
+     * @return string
+     */
     public function getType();
 
     /**

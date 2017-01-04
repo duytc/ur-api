@@ -6,6 +6,7 @@ use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\IntegrationInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -58,4 +59,13 @@ interface DataSourceRepositoryInterface extends ObjectRepository
      * @return DataSourceInterface[]
      */
     public function getDataSourceNotInByDataSet(DataSetInterface $dataSet);
+
+    /**
+     * get DataSources By Integration And Publisher. This is used for integration integration modules into ur system...
+     *
+     * @param IntegrationInterface $integration
+     * @param PublisherInterface $publisher
+     * @return DataSourceInterface[]
+     */
+    public function getDataSourcesByIntegrationAndPublisher(IntegrationInterface $integration, PublisherInterface $publisher);
 }

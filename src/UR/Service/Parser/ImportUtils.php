@@ -72,7 +72,7 @@ class ImportUtils
         }
     }
 
-    function alterDataSetTable(DataSetInterface $dataSet, Connection $conn, $deletedColumns, $newColumns)
+    function alterDataSetTable(DataSetInterface $dataSet, Connection $conn, $newColumns, $updateColumns, $deletedColumns)
     {
         $schema = new Schema();
         $dataSetLocator = new Locator($conn);
@@ -84,11 +84,12 @@ class ImportUtils
             return;
         }
 
-        $dataTable->getName();
         $delCols = [];
         $addCols = [];
+        $editCols = [];
         foreach ($deletedColumns as $deletedColumn => $type) {
             $delCols[] = $dataTable->getColumn($deletedColumn);
+            $dataTable->dropColumn($deletedColumn);
         }
 
         foreach ($newColumns as $newColumn => $type) {
@@ -105,15 +106,25 @@ class ImportUtils
             }
         }
 
-        $updateTable = new TableDiff($dataTable->getName(), $addCols, array(), $delCols);
+        $updateTable = new TableDiff($dataTable->getName(), $addCols, $editCols, $delCols);
         try {
             $dataSetSynchronizer->syncSchema($schema);
-
-            $truncateSqls = $conn->getDatabasePlatform()->getAlterTableSQL($updateTable);
-
-            foreach ($truncateSqls as $truncateSql) {
-                $conn->exec($truncateSql);
+            $alterSqls = $conn->getDatabasePlatform()->getAlterTableSQL($updateTable);
+            foreach ($updateColumns as $updateColumn) {
+                foreach ($updateColumn as $oldName => $newName) {
+                    $curCol = $dataTable->getColumn($oldName);
+                    $sql = sprintf("ALTER TABLE %s CHANGE %s  %s %s", $dataTable->getName(), $oldName, $newName, $curCol->getType()->getName());
+                    if (strtolower($curCol->getType()->getName()) === strtolower(Type::NUMBER) || strtolower($curCol->getType()->getName()) === strtolower(Type::DECIMAL)) {
+                        $sql .= sprintf("(%s,%s)", $curCol->getPrecision(), $curCol->getScale());
+                    }
+                    $alterSqls[] = $sql;
+                }
             }
+
+            foreach ($alterSqls as $alterSql) {
+                $conn->exec($alterSql);
+            }
+
         } catch (\Exception $e) {
             throw new \mysqli_sql_exception("Cannot Sync Schema " . $schema->getName());
         }

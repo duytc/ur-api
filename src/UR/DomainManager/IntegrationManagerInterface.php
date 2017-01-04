@@ -2,6 +2,8 @@
 
 namespace UR\DomainManager;
 
+use UR\Model\Core\IntegrationInterface;
+
 interface IntegrationManagerInterface extends ManagerInterface
 {
     /**
@@ -9,4 +11,11 @@ interface IntegrationManagerInterface extends ManagerInterface
      * @param string $name
      */
     public function findByName($name);
+
+    /**
+     * return resource by canonicalName
+     * @param string $canonicalName
+     * @return IntegrationInterface
+     */
+    public function findByCanonicalName($canonicalName);
 }

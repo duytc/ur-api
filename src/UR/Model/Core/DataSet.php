@@ -12,6 +12,7 @@ class DataSet implements DataSetInterface
     protected $dimensions;
     protected $metrics;
     protected $createdDate;
+    protected $_actions;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -148,5 +149,21 @@ class DataSet implements DataSetInterface
     public function setConnectedDataSources($connectedDataSources)
     {
         $this->connectedDataSources = $connectedDataSources;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getActions()
+    {
+        return $this->_actions;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setActions($actions)
+    {
+        $this->_actions = $actions;
     }
 }

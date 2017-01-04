@@ -2,20 +2,23 @@
 
 namespace UR\DomainManager;
 
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
+use UR\Model\Core\DataSourceEntry;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\PublisherInterface;
 
 interface DataSourceEntryManagerInterface extends ManagerInterface
 {
     /**
-     * @param FileBag $files
+     * @param array|UploadedFile $files
      * @param string $path
      * @param string $dirItem
      * @param DataSourceInterface $dataSource
+     * @param string $receivedVia one of values "upload", "api", "email" or "selenium". Default is "upload"
      * @return array
      */
-    public function uploadDataSourceEntryFiles(FileBag $files, $path, $dirItem, DataSourceInterface $dataSource);
+    public function uploadDataSourceEntryFiles(array $files, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD);
 
     /**
      * @param FileBag $files

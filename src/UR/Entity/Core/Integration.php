@@ -11,6 +11,7 @@ class Integration extends IntegrationModel
     protected $name;
     protected $type;
     protected $url;
+    protected $canonicalName;
 
     /**
      * @var IntegrationGroupInterface

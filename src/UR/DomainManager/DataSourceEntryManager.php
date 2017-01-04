@@ -147,17 +147,24 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     /**
      * @inheritdoc
      */
-    public function uploadDataSourceEntryFiles(FileBag $files, $path, $dirItem, DataSourceInterface $dataSource)
+    public function uploadDataSourceEntryFiles(array $files, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD)
     {
+        /* validate via type */
+        if (!DataSourceEntry::isSupportedReceivedViaType($receivedVia)) {
+            throw new \Exception(sprintf("receivedVia %s is not supported", $receivedVia));
+        }
+
         $result = [];
 
-        /** @var $files */
-        $keys = $files->keys();
         $i = 0;
-        foreach ($keys as $key) {
+        /**@var UploadedFile $file */
+        foreach ($files as $file) {
+            // sure correct file type
+            if (!($file instanceof UploadedFile)) {
+                continue;
+            }
+
             $i++;
-            /**@var UploadedFile $file */
-            $file = $files->get($key);
             $error = $this->validateFileUpload($file, $dataSource);
             $origin_name = $file->getClientOriginalName();
             $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
@@ -191,10 +198,9 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $dataSourceEntry = (new DataSourceEntry())
                 ->setDataSource($dataSource)
                 ->setPath($dirItem . '/' . $name)
-                ->setIsValid(true);
-
-            $dataSourceEntry->setReceivedVia(DataSourceEntryInterface::RECEIVED_VIA_UPLOAD);
-            $dataSourceEntry->setFileName($origin_name);
+                ->setIsValid(true)
+                ->setReceivedVia($receivedVia)
+                ->setFileName($origin_name);
 
             $newFields = $this->getNewFieldsFromFiles($path . '/' . $name, $dataSource);
             $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), DataSourceEntryManager::UPLOAD);

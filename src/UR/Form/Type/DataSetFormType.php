@@ -32,6 +32,8 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         'decimal'
     ];
 
+    protected $actions = [];
+
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
@@ -44,7 +46,8 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                 'allow_add' => true,
 //                'by_reference' => false,
                 'allow_delete' => true,
-            ));
+            ))
+            ->add('actions', null, array('mapped' => false));
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(
@@ -53,6 +56,17 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                     )
             );
         };
+
+        $builder->addEventListener(
+            FormEvents::PRE_SUBMIT,
+            function (FormEvent $event) {
+                $dataSet = $event->getData();
+
+                if (array_key_exists('actions', $dataSet)) {
+                    $this->actions = $dataSet['actions'];
+                }
+            }
+        );
 
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,
@@ -94,6 +108,17 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                     $metric = $this->getStandardName($metric);
                     $standardMetrics[$metric] = $type;
                 }
+
+                foreach ($this->actions as &$action) {
+                    foreach ($action as &$item) {
+                        if (!array_key_exists('to', $item)){
+                            continue;
+                        }
+                        $item['to']=$this->getStandardName($item['to']);
+                    }
+                }
+
+                $dataSet->setActions($this->actions);
 
                 $dataSet->setDimensions($standardDimensions);
                 $dataSet->setMetrics($standardMetrics);

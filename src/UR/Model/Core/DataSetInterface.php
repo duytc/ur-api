@@ -77,4 +77,14 @@ interface DataSetInterface extends ModelInterface
      * @param mixed $connectedDataSources
      */
     public function setConnectedDataSources($connectedDataSources);
+
+    /**
+     * @return mixed
+     */
+    public function getActions();
+
+    /**
+     * @param mixed $actions
+     */
+    public function setActions($actions);
 }

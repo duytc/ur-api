@@ -5,6 +5,7 @@ namespace UR\Repository\Core;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\IntegrationInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -14,6 +15,7 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
     protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name'];
     const WRONG_FORMAT = 'wrongFormat';
     const DATA_RECEIVED = 'dataReceived';
+
     /**
      * @inheritdoc
      */
@@ -39,6 +41,7 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
         if (is_int($limit)) {
             $qb->setMaxResults($limit);
         }
+
         if (is_int($offset)) {
             $qb->setFirstResult($offset);
         }
@@ -113,6 +116,7 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
 
         return $qb;
     }
+
     public function getDataSourceNotInByDataSet(DataSetInterface $dataSet)
     {
         $qb = $this->getDataSourceNotInByDataSetQuery($dataSet);
@@ -155,9 +159,24 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
         return $qb;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourcesByIntegrationAndPublisher(IntegrationInterface $integration, PublisherInterface $publisher)
+    {
+        $qb = $this->getDataSourcesForPublisherQuery($publisher);
+
+        /* join integration */
+        $qb
+            ->join('ds.dataSourceIntegrations', 'dsi')
+            ->andWhere('dsi.integration = :integrationId')
+            ->setParameter('integrationId', $integration->getId());
+
+        return $qb->getQuery()->getResult();
+    }
+
     private function createQueryBuilderForUser(UserRoleInterface $user)
     {
         return $user instanceof PublisherInterface ? $this->getDataSourcesForPublisherQuery($user) : $this->createQueryBuilder('ds');
     }
-
 }

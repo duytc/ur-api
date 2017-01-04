@@ -84,8 +84,15 @@ interface DataSourceEntryInterface extends ModelInterface
 
     /**
      * @param mixed $receivedVia
+     * @return self
      */
     public function setReceivedVia($receivedVia);
+
+    /**
+     * @param $receivedVia
+     * @return bool
+     */
+    public static function isSupportedReceivedViaType($receivedVia);
 
     /**
      * @return mixed
@@ -94,6 +101,7 @@ interface DataSourceEntryInterface extends ModelInterface
 
     /**
      * @param mixed $fileName
+     * @return self
      */
     public function setFileName($fileName);
 }

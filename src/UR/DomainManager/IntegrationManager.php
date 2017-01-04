@@ -84,4 +84,15 @@ class IntegrationManager implements IntegrationManagerInterface
             array('name' => $name)
         );
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByCanonicalName($canonicalName)
+    {
+        // make sure canonical name is unique to return correct result!
+        return $this->repository->findOneBy(
+            array('canonicalName' => $canonicalName)
+        );
+    }
 }

@@ -4,6 +4,9 @@ namespace UR\Service\Parser\Transformer\Column;
 
 class NumberFormat implements ColumnTransformerInterface
 {
+    const SEPARATOR_COMMA = ',';
+    const SEPARATOR_NONE = 'none';
+
     /**
      * @var int
      */
@@ -13,7 +16,7 @@ class NumberFormat implements ColumnTransformerInterface
      */
     protected $thousandsSeparator;
 
-    public function __construct($decimals = 2, $thousandsSeparator = ',')
+    public function __construct($decimals = 2, $thousandsSeparator = self::SEPARATOR_COMMA)
     {
         $this->decimals = $decimals;
         $this->thousandsSeparator = $thousandsSeparator;
@@ -25,6 +28,8 @@ class NumberFormat implements ColumnTransformerInterface
             return $value;
         }
 
-        return number_format($value, $this->decimals, '.', $this->thousandsSeparator);
+        $thousandsSeparator = $this->thousandsSeparator === self::SEPARATOR_NONE ? '' : $this->thousandsSeparator;
+
+        return number_format($value, $this->decimals, '.', $thousandsSeparator);
     }
 }

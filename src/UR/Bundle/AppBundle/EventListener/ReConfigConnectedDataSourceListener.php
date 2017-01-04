@@ -32,7 +32,8 @@ class ReConfigConnectedDataSourceListener
      */
     protected $updatedEntity = [];
 
-    protected $deletedFields;
+    protected $deletedFields = [];
+    protected $updateFields = [];
 
     /** @var Manager */
     private $workerManager;
@@ -66,33 +67,41 @@ class ReConfigConnectedDataSourceListener
         }
 
         // detect changed metrics, dimensions
+        $renameFields = [];
+        $actions = $entity->getActions();
+
+        if (array_key_exists('rename', $entity->getActions())) {
+            $renameFields = $actions['rename'];
+        }
+
         $changedFields = $uow->getEntityChangeSet($entity);
-        $deletedMetrics = [];
-        $deletedDimensions = [];
         $newDimensions = [];
         $newMetrics = [];
+        $updateDimensions = [];
+        $updateMetrics = [];
+        $deletedMetrics = [];
+        $deletedDimensions = [];
+
 
         foreach ($changedFields as $field => $values) {
             if (strcmp($field, 'dimensions') === 0) {
-                array_diff($values[0], $values[1]);
-                $deletedDimensions = array_diff_key($values[0], $values[1]);
-                $newDimensions = array_diff_key($values[1], $values[0]);
+                $this->getChangedFields($values, $renameFields, $newDimensions, $updateDimensions, $deletedDimensions);
             }
 
             if (strcmp($field, 'metrics') === 0) {
-                array_diff($values[0], $values[1]);
-                $deletedMetrics = array_diff_key($values[0], $values[1]);
-                $newMetrics = array_diff_key($values[1], $values[0]);
+                $this->getChangedFields($values, $renameFields, $newMetrics, $updateMetrics, $deletedMetrics);
             }
         }
 
-        $deletedFields = array_merge($deletedDimensions, $deletedMetrics);
         $newFields = array_merge($newDimensions, $newMetrics);
+        $updateFields = array_merge($updateDimensions, $updateMetrics);
+        $deletedFields = array_merge($deletedDimensions, $deletedMetrics);
 
         // alter data_import table
         $conn = $em->getConnection();
         $importUtils = new ImportUtils();
-        $importUtils->alterDataSetTable($entity, $conn, $deletedFields, $newFields);
+        $importUtils->alterDataSetTable($entity, $conn, $newFields, $updateFields, $deletedFields);
+        $this->updateFields = $updateFields;
         $this->deletedFields = $deletedFields;
     }
 
@@ -109,7 +118,7 @@ class ReConfigConnectedDataSourceListener
             $connectedDataSources = $entity->getConnectedDataSources();
 
             foreach ($connectedDataSources as &$connectedDataSource) {
-                $this->deleteConfigForConnectedDataSource($connectedDataSource, $this->deletedFields);
+                $this->deleteConfigForConnectedDataSource($connectedDataSource, $this->updateFields, $this->deletedFields);
             }
 
             $entity->setConnectedDataSources($connectedDataSources);
@@ -125,9 +134,10 @@ class ReConfigConnectedDataSourceListener
      * delete Config For Connected DataSource
      *
      * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param array $updatedFields
      * @param array $deletedFields
      */
-    private function deleteConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, array $deletedFields)
+    private function deleteConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, array $updatedFields, array $deletedFields)
     {
         $mapFields = $connectedDataSource->getMapFields();
         $requires = $connectedDataSource->getRequires();
@@ -140,101 +150,76 @@ class ReConfigConnectedDataSourceListener
             $delFields[] = $deletedField;
         }
         $mapFields = array_diff($mapFields, $delFields);
-        $requires = array_values(array_diff($requires, $delFields));
-        $duplicates = array_values(array_diff($duplicates, $delFields));
 
-        foreach ($delFields as $deletedField) {
-
-            foreach ($filters as $key => $filter) {
-                if (strcmp($deletedField, $filter[FilterType::FIELD]) === 0) {
-                    unset($filters[$key]);
+        foreach ($mapFields as &$mapField) {
+            foreach ($updatedFields as $updatedField) {
+                if (array_key_exists($mapField, $updatedField)) {
+                    $mapField = $updatedField[$mapField];
                 }
             }
         }
 
-        foreach ($transforms as $key => $transform) {
+
+        $requires = array_values(array_diff($requires, $delFields));
+        $duplicates = array_values(array_diff($duplicates, $delFields));
+
+        foreach ($transforms as $key => &$transform) {
             if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE])) {
                 foreach ($delFields as $deletedField) {
                     if (strcmp($deletedField, $transform[TransformType::FIELD]) === 0) {
                         unset($transforms[$key]);
                     }
                 }
-            } else {
-                //GROUP BY
-                if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
-                    $transforms[$key][TransformType::FIELDS] = array_values(array_diff($transforms[$key][TransformType::FIELDS], $delFields));
-                }
 
+                foreach ($updatedFields as $updatedField) {
+                    if (array_key_exists($transform[TransformType::FIELD], $updatedField)) {
+                        $transform[TransformType::FIELD] = $updatedField[$transform[TransformType::FIELD]];
+                    }
+                }
+            } else {
                 //SORT BY
                 if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
                     $count = 0;
-                    foreach ($transform[TransformType::FIELDS] as $sortKey => $fields) {
-
-                        $transforms[$key][TransformType::FIELDS][$sortKey]['names'] = array_values(array_diff($transforms[$key][TransformType::FIELDS][$sortKey]['names'], $delFields));
-                        if (count($transforms[$key][TransformType::FIELDS][$sortKey]['names']) < 1) {
+                    foreach ($transform[TransformType::FIELDS] as $sortKey => &$fields) {
+                        $fields['names'] = array_values(array_diff($fields['names'], $delFields));
+                        if (count($fields['names']) < 1) {
                             $count++;
                         }
+
+                        foreach ($fields['names'] as &$field) {
+                            foreach ($updatedFields as $updatedField) {
+                                if (array_key_exists($field, $updatedField)) {
+                                    $field = $updatedField[$field];
+                                }
+                            }
+                        }
                     }
+
                     if ($count == 2) {
                         unset($transforms[$key]);
                     }
+
                     continue;
                 }
 
                 //ADD FIELD
                 if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
-                    foreach ($transform[TransformType::FIELDS] as $k => $field) {
-                        foreach ($delFields as $deletedField) {
-                            if (strcmp($field[TransformType::FIELD], $deletedField) === 0) {
-                                unset($transforms[$key][TransformType::FIELDS][$k]);
-                            }
-                        }
-                    }
-                    $transforms[$key][TransformType::FIELDS] = array_values($transforms[$key][TransformType::FIELDS]);
+                    $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);
                 }
 
                 //ADD CALCULATED FIELD
                 if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CALCULATED_FIELD) === 0) {
-                    foreach ($transform[TransformType::FIELDS] as $k => $field) {
-                        foreach ($delFields as $deletedField) {
-                            if (strcmp($field[TransformType::FIELD], $deletedField) === 0) {
-                                unset($transforms[$key][TransformType::FIELDS][$k]);
-                            }
-
-                            if (strpos($field[TransformType::EXPRESSION], "row['" . $deletedField . "']") !== false) {
-                                unset($transforms[$key][TransformType::FIELDS][$k]);
-                            }
-                        }
-                    }
-                    $transforms[$key][TransformType::FIELDS] = array_values($transforms[$key][TransformType::FIELDS]);
+                    $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);
                 }
 
                 //ADD CONCATENATION FIELD
                 if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATED_FIELD) === 0) {
-                    foreach ($transform[TransformType::FIELDS] as $k => $field) {
-                        foreach ($delFields as $deletedField) {
-                            if (strcmp($field[TransformType::FIELD], $deletedField) === 0) {
-                                unset($transforms[$key][TransformType::FIELDS][$k]);
-                            }
-
-                            if (strpos($field[TransformType::EXPRESSION], "row['" . $deletedField . "']") !== false) {
-                                unset($transforms[$key][TransformType::FIELDS][$k]);
-                            }
-                        }
-                    }
-                    $transforms[$key][TransformType::FIELDS] = array_values($transforms[$key][TransformType::FIELDS]);
+                    $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);
                 }
 
                 //COMPARISON PERCENT
                 if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
-                    foreach ($transform[TransformType::FIELDS] as $k => $field) {
-                        foreach ($delFields as $deletedField) {
-                            if (strcmp($field[TransformType::FIELD], $deletedField) === 0 || strcmp($field[TransformType::NUMERATOR], $deletedField) === 0 || strcmp($field[TransformType::DENOMINATOR], $deletedField) === 0) {
-                                unset($transforms[$key][TransformType::FIELDS][$k]);
-                            }
-                        }
-                    }
-                    $transforms[$key][TransformType::FIELDS] = array_values($transforms[$key][TransformType::FIELDS]);
+                    $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);
                 }
 
                 if (count($transforms[$key][TransformType::FIELDS]) === 0) {
@@ -248,5 +233,51 @@ class ReConfigConnectedDataSourceListener
         $connectedDataSource->setDuplicates(array_values($duplicates));
         $connectedDataSource->setFilters(array_values($filters));
         $connectedDataSource->setTransforms(array_values($transforms));
+    }
+
+    public function getChangedFields(array $values, array $renameFields, array &$newDimensions, array &$updateDimensions, array &$deletedFields)
+    {
+        $deletedFields = array_diff_key($values[0], $values[1]);
+        foreach ($renameFields as $renameField) {
+            if (!array_key_exists('from', $renameField) || !array_key_exists('to', $renameField)) {
+                continue;
+            }
+
+            $oldFieldName = $renameField['from'];
+            $newFieldName = $renameField['to'];
+
+            if (array_key_exists($oldFieldName, $deletedFields)) {
+                $updateDimensions[] = [$oldFieldName => $newFieldName];
+                unset($deletedFields[$oldFieldName]);
+            }
+        }
+
+        $newDimensions = array_diff_key($values[1], $values[0]);
+        foreach ($updateDimensions as $updateDimension) {
+            foreach ($updateDimension as $item) {
+                if (array_key_exists($item, $newDimensions)) {
+                    unset($newDimensions[$item]);
+                }
+            }
+        }
+    }
+
+    public function updateAddTypeTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key)
+    {
+        foreach ($transform[TransformType::FIELDS] as $k => &$field) {
+            foreach ($delFields as $deletedField) {
+                if (strcmp($field[TransformType::FIELD], $deletedField) === 0) {
+                    unset($transforms[$key][TransformType::FIELDS][$k]);
+                }
+            }
+
+            foreach ($updatedFields as $updatedField) {
+                if (array_key_exists($field[TransformType::FIELD], $updatedField)) {
+                    $field[TransformType::FIELD] = $updatedField[$field[TransformType::FIELD]];
+                }
+            }
+        }
+
+        $transforms[$key][TransformType::FIELDS] = array_values($transforms[$key][TransformType::FIELDS]);
     }
 }

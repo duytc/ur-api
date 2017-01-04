@@ -2,12 +2,17 @@
 
 namespace UR\Model\Core;
 
+use UR\Service\StringUtilTrait;
+
 class Integration implements IntegrationInterface
 {
+    use StringUtilTrait;
+
     protected $id;
     protected $name;
     protected $type;
     protected $url;
+    protected $canonicalName;
 
     /**
      * @var IntegrationGroupInterface
@@ -40,8 +45,17 @@ class Integration implements IntegrationInterface
     public function setName($name)
     {
         $this->name = $name;
+        $this->canonicalName = $this->normalizeName($name);
 
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCanonicalName()
+    {
+        return $this->canonicalName;
     }
 
     /**
