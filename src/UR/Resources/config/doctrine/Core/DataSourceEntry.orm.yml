@@ -30,6 +30,8 @@ UR\Entity\Core\DataSourceEntry:
                     on: create
         receivedVia:
             type: string
+        hashFile:
+            type: string
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

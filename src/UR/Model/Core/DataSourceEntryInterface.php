@@ -104,4 +104,14 @@ interface DataSourceEntryInterface extends ModelInterface
      * @return self
      */
     public function setFileName($fileName);
+
+    /**
+     * @return mixed
+     */
+    public function getHashFile();
+
+    /**
+     * @param mixed $hashFile
+     */
+    public function setHashFile($hashFile);
 }

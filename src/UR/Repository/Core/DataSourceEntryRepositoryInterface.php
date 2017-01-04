@@ -40,4 +40,11 @@ interface DataSourceEntryRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getDataSourceEntriesForPublisher(PublisherInterface $publisher, $limit = null, $offset = null);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param string $hash
+     * @return mixed
+     */
+    public function getImportedFileByHash(DataSourceInterface $dataSource, $hash);
 }
