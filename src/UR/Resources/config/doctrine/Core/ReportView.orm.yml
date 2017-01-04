@@ -44,7 +44,7 @@ UR\Entity\Core\ReportView:
             type: json_array
             nullable: false
         joinBy:
-            type: string
+            type: json_array
             nullable: true
         createdDate:
             type: datetime

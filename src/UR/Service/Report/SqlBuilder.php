@@ -78,8 +78,8 @@ class SqlBuilder implements SqlBuilderInterface
 
         $qb->from($table->getName());
 
-        if (empty($filters) &&  empty($overridingFilters)) {
-            return array (
+        if (empty($filters) && empty($overridingFilters)) {
+            return array(
                 self::DATE_RANGE_KEY => [],
                 self::STATEMENT_KEY => $qb->execute()
             );
@@ -100,7 +100,7 @@ class SqlBuilder implements SqlBuilderInterface
         if (count($conditions) == 1) {
             $qb->where($conditions[self::FIRST_ELEMENT]);
 
-            return array (
+            return array(
                 self::DATE_RANGE_KEY => $dateRange,
                 self::STATEMENT_KEY => $qb->execute()
             );
@@ -108,14 +108,16 @@ class SqlBuilder implements SqlBuilderInterface
 
         $qb->where(implode(' AND ', $conditions));
 
-        return array (
+        return array(
             self::STATEMENT_KEY => $qb->execute(),
             self::DATE_RANGE_KEY => $dateRange
         );
     }
 
-
-    public function buildQuery(array $dataSets, $joinedField, $overridingFilters = null)
+    /**
+     * @inheritdoc
+     */
+    public function buildQuery(array $dataSets, array $joinByConfig, $overridingFilters = null)
     {
         if (empty($dataSets)) {
             throw new InvalidArgumentException('no dataSet');
@@ -130,8 +132,8 @@ class SqlBuilder implements SqlBuilderInterface
             return $this->buildQueryForSingleDataSet($dataSet);
         }
 
-        if ($joinedField === null) {
-            throw new InvalidArgumentException('joined field is required when multiple data sets is selected');
+        if (count($joinByConfig) < 1) {
+            throw new InvalidArgumentException('expect joined field is not empty array when multiple data sets is selected');
         }
 
         $qb = $this->connection->createQueryBuilder();
@@ -139,9 +141,11 @@ class SqlBuilder implements SqlBuilderInterface
         $dateRange = [];
 
         // add select clause
+        $firstJoinBy = null;
+
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
-            $qb = $this->buildSelectQuery($qb, $dataSet, $dataSetIndex, $joinedField);
+            $qb = $this->buildSelectQuery($qb, $dataSet, $dataSetIndex, $joinByConfig, $firstJoinBy);
             $buildResult = $this->buildFilters($dataSet->getFilters(), sprintf('t%d', $dataSetIndex));
 
             $conditions = array_merge($conditions, $buildResult[self::CONDITION_KEY]);
@@ -184,37 +188,88 @@ class SqlBuilder implements SqlBuilderInterface
         );
     }
 
-    protected function buildSelectQuery(QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, $joinBy)
+    /**
+     * @param QueryBuilder $qb
+     * @param DataSetInterface $dataSet
+     * @param $dataSetIndex
+     * @param array $joinByConfig
+     * @param null|string $firstJoinBy first join by that is used for join table, details: t0 join tI on t0.firstJoinBy = tI.joinField.
+     * firstJoinBy by default = null and will be changed to a valid value after first element selecting (FIRST_ELEMENT)
+     * @return QueryBuilder
+     */
+    protected function buildSelectQuery(QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, array $joinByConfig, &$firstJoinBy)
     {
         $metrics = $dataSet->getMetrics();
         $dimensions = $dataSet->getDimensions();
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $fields = array_merge($metrics, $dimensions);
         $tableColumns = array_keys($table->getColumns());
-        foreach ($fields as $index => $field) {
 
+        // current support only one join field. TODO: support more join fields
+        if (count($joinByConfig) < 1 || !array_key_exists('joinFields', $joinByConfig[0]) || !array_key_exists('outputField', $joinByConfig[0])) {
+            throw new InvalidArgumentException('at least one join field must be selected');
+        }
+
+        $joinFields = $joinByConfig[0]['joinFields'];
+        $flattenJoinFields = [];
+        $outputJoinField = $joinByConfig[0]['outputField'];
+        $joinBy = false;
+
+        foreach ($joinFields as $joinField) {
+            if (!array_key_exists('dataSet', $joinField) || !array_key_exists('field', $joinField)) {
+                throw new InvalidArgumentException('joinBy is an invalid json');
+            }
+
+            if ($joinField['dataSet'] === $dataSet->getDataSetId()) {
+                $joinBy = $joinField['field'];
+                break;
+            }
+        }
+
+        $flattenJoinFields = array_map(function ($joinField) {
+            return (!array_key_exists('field', $joinField) || !array_key_exists('field', $joinField))
+                ? ''
+                : sprintf('%s_%d', $joinField['field'], $joinField['dataSet']);
+        }, $joinFields);
+
+        if ($joinBy === false) {
+            throw new InvalidArgumentException(sprintf('could find valid join field to match dataSet %d and joinByConfig', $dataSet->getDataSetId()));
+        }
+
+        // filter all fields that are not in table's columns
+        foreach ($fields as $index => $field) {
             if (!in_array($field, $tableColumns)) {
                 unset($fields[$index]);
             }
         }
 
+        // if no field is valid
         if (empty($fields)) {
             throw new InvalidArgumentException('at least one field must be selected');
         }
 
+        // build select query for each data set
         foreach ($fields as $field) {
-            if ($joinBy === $field) {
+            $fieldWithDataSetId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
+            if (in_array($fieldWithDataSetId, $flattenJoinFields)) {
                 continue;
             }
+
             $qb->addSelect(sprintf('t%d.%s as %s_%d', $dataSetIndex, $field, $field, $dataSet->getDataSetId()));
         }
 
-        $qb->addSelect(sprintf('t%d.%s as %s', $dataSetIndex, $joinBy, $joinBy));
+        // build select query for joinFields
+        //$qb->addSelect(sprintf('t%d.%s as %s', $dataSetIndex, $joinBy, $outputJoinField));
 
         if ($dataSetIndex === self::FIRST_ELEMENT) {
+            // build select query for joinFields
+            $qb->addSelect(sprintf('t%d.%s as \'%s\'', $dataSetIndex, $joinBy, $outputJoinField));
             $qb->from($table->getName(), sprintf('t%d', $dataSetIndex));
+
+            // update firstJoinBy
+            $firstJoinBy = $joinBy;
         } else {
-            $qb->join('t0', $table->getName(), sprintf('t%d', $dataSetIndex), sprintf('t0.%s = t%d.%s', $joinBy, $dataSetIndex, $joinBy));
+            $qb->join('t0', $table->getName(), sprintf('t%d', $dataSetIndex), sprintf('t0.%s = t%d.%s', $firstJoinBy, $dataSetIndex, $joinBy));
         }
 
         return $qb;
@@ -242,7 +297,7 @@ class SqlBuilder implements SqlBuilderInterface
             $sqlConditions[] = $this->buildSingleFilter($filter, $tableAlias, $dataSetId);
         }
 
-        return array (
+        return array(
             self::CONDITION_KEY => $sqlConditions,
             self::DATE_RANGE_KEY => $dateRanges
         );

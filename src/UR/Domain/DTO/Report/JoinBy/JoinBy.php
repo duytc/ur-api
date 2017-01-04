@@ -2,9 +2,8 @@
 
 namespace UR\Domain\DTO\Report\JoinBy;
 
-class JoinBy implements  JoinByInterface {
-
-
+class JoinBy implements JoinByInterface
+{
     protected $joinByValue;
 
     function __construct($joinByValue)
@@ -12,7 +11,7 @@ class JoinBy implements  JoinByInterface {
         $this->joinByValue = $joinByValue;
     }
 
-    public function  getJoinByValue()
+    public function getJoinByValue()
     {
         return $this->joinByValue;
     }
