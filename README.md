@@ -82,6 +82,21 @@ If there is something wrong with the token, you will see a response code of 401 
 
 In the Tagcade user interface, this complexity will be handled by AngularJS, however our customers will be able to use a provided PHP Library to also query our API.
 
-2) Running API Tests (codeception tests)
+2) Configuring logstash to parse log
+------------------------------------
+
+```
+sudo logstash -f <logstash config file>
+```
+
+The sample logstash config file is app/ur-import-id-parser.conf.
+
+The logstash will parse application log (dev.log in dev and prod.log in prod) then write to separated files due to data_set_id and import_id as structure:
+
+```
+<custom log dir>/<data_set_id>/<import_id>yyyyMMdd_HH.log
+```
+
+3) Running API Tests (codeception tests)
 ---------------------------------
 This function will be added later.
