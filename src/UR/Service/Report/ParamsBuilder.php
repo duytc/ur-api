@@ -89,8 +89,11 @@ class ParamsBuilder implements ParamsBuilderInterface
                 $param->setDataSets($dataSets);
             }
 
-            if (array_key_exists(self::JOIN_BY_KEY, $data) && !empty($data[self::JOIN_BY_KEY])) {
-                $param->setJoinByFields($data[self::JOIN_BY_KEY]);
+            if (array_key_exists(self::JOIN_BY_KEY, $data)) {
+                $joinBy = json_decode($data[self::JOIN_BY_KEY], true);
+                if (is_array($joinBy)) {
+                    $param->setJoinByFields($joinBy);
+                }
             }
         }
 

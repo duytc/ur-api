@@ -38,7 +38,7 @@ class ReportController extends FOSRestController
      *  parameters={
      *      {"name"="dataSets", "dataType"="array", "required"=false, "description"="list of data set id to build report"},
      *      {"name"="fieldTypes", "dataType"="array", "required"=false, "description"="list of fields accompanied with their corresponding type"},
-     *      {"name"="joinBy", "dataType"="string", "required"=false, "description"="filter descriptor"},
+     *      {"name"="joinBy", "dataType"="array", "required"=false, "description"="filter descriptor"},
      *      {"name"="transforms", "dataType"="string", "required"=false, "description"="transform descriptor"},
      *      {"name"="weightedCalculations", "dataType"="string", "required"=false, "description"="weighted value calculations descriptor"},
      *      {"name"="filters", "dataType"="string", "required"=false, "description"="filters descriptor for multi view report"},

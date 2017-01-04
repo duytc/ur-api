@@ -137,8 +137,24 @@ class ReportBuilder implements ReportBuilderInterface
         $metrics = [];
         $dimensions = [];
         $dataSets = $params->getDataSets();
-        $joinBy = $params->getJoinByFields();
+        $joinByConfig = $params->getJoinByFields();
         $types = $params->getFieldTypes();
+
+        /* parse joinBy config */
+        $flattenJoinFields = [];
+        $outputJoinField = null;
+        if (is_array($joinByConfig) && count($joinByConfig) > 0 && array_key_exists('joinFields', $joinByConfig[0]) && array_key_exists('outputField', $joinByConfig[0])) {
+            $joinFields = $joinByConfig[0]['joinFields'];
+            $outputJoinField = $joinByConfig[0]['outputField'];
+
+            if (is_array($joinFields)) {
+                $flattenJoinFields = array_map(function ($joinField) {
+                    return (!array_key_exists('field', $joinField) || !array_key_exists('field', $joinField))
+                        ? ''
+                        : sprintf('%s_%d', $joinField['field'], $joinField['dataSet']);
+                }, $joinFields);
+            }
+        }
 
         /* get all metrics and dimensions from dataSets */
         foreach ($dataSets as $dataSet) {
@@ -147,15 +163,17 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             foreach ($dataSet->getDimensions() as $item) {
-                if ($joinBy === $item) {
+                $itemWithDataSetId = sprintf('%s_%d', $item, $dataSet->getDataSetId());
+                if (in_array($itemWithDataSetId, $flattenJoinFields)) {
                     continue;
                 }
-                $dimensions[] = sprintf('%s_%d', $item, $dataSet->getDataSetId());
+
+                $dimensions[] = $itemWithDataSetId;
             }
         }
 
-        if (is_string($joinBy)) {
-            $dimensions[] = $joinBy;
+        if (is_string($outputJoinField)) {
+            $dimensions[] = $outputJoinField;
         }
 
         /* get all reports data */
@@ -170,7 +188,7 @@ class ReportBuilder implements ReportBuilderInterface
         /* get final reports */
         $isSingleDataSet = count($dataSets) < 2;
 
-        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $data[SqlBuilder::DATE_RANGE_KEY], $isSingleDataSet, $joinBy, $isNeedFormatReport);
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $data[SqlBuilder::DATE_RANGE_KEY], $isSingleDataSet, $outputJoinField, $isNeedFormatReport);
     }
 
     protected function getMultipleReport(ParamsInterface $params)

@@ -29,7 +29,23 @@ class ReportView implements ReportViewInterface
     protected $dataSets;
 
     /**
-     * @var string
+     * formatted as
+     * [
+     *      {
+     *          "joinFields":[
+     *              {
+     *                  "dataSet":1,
+     *                  "field":"a"
+     *              },
+     *              {
+     *                  "dataSet":2,
+     *                  "field":"b"
+     *              }
+     *          ],
+     *          "outputField":"ab"
+     *      }
+     * ]
+     * @var array
      */
     protected $joinBy;
 
@@ -110,10 +126,11 @@ class ReportView implements ReportViewInterface
     {
         $this->multiView = false;
         $this->sharedKeysConfig = [];
+        $this->joinBy = [];
     }
 
     /**
-     * @return int
+     * @inheritdoc
      */
     public function getId()
     {
@@ -121,7 +138,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return string
+     * @inheritdoc
      */
     public function getName()
     {
@@ -129,8 +146,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param string $name
-     * @return self
+     * @inheritdoc
      */
     public function setName($name)
     {
@@ -139,7 +155,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return string
+     * @inheritdoc
      */
     public function getAlias()
     {
@@ -147,8 +163,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param string $alias
-     * @return self
+     * @inheritdoc
      */
     public function setAlias($alias)
     {
@@ -157,7 +172,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getDataSets()
     {
@@ -165,8 +180,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param array $dataSets
-     * @return self
+     * @inheritdoc
      */
     public function setDataSets($dataSets)
     {
@@ -175,7 +189,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return string
+     * @inheritdoc
      */
     public function getJoinBy()
     {
@@ -183,17 +197,16 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param string $joinBy
-     * @return self
+     * @inheritdoc
      */
-    public function setJoinBy($joinBy)
+    public function setJoinBy(array $joinBy)
     {
         $this->joinBy = $joinBy;
         return $this;
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getTransforms()
     {
@@ -201,8 +214,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param array $transforms
-     * @return self
+     * @inheritdoc
      */
     public function setTransforms($transforms)
     {
@@ -211,7 +223,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getMetrics()
     {
@@ -219,8 +231,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param array $metrics
-     * @return self
+     * @inheritdoc
      */
     public function setMetrics($metrics)
     {
@@ -229,7 +240,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getFieldTypes()
     {
@@ -237,8 +248,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param array $fieldTypes
-     * @return self
+     * @inheritdoc
      */
     public function setFieldTypes($fieldTypes)
     {
@@ -247,7 +257,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getDimensions()
     {
@@ -255,8 +265,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param array $dimensions
-     * @return self
+     * @inheritdoc
      */
     public function setDimensions($dimensions)
     {
@@ -265,7 +274,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getFilters()
     {
@@ -273,8 +282,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param array $filters
-     * @return self
+     * @inheritdoc
      */
     public function setFilters($filters)
     {
@@ -283,7 +291,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return boolean
+     * @inheritdoc
      */
     public function isMultiView()
     {
@@ -291,8 +299,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param boolean $multiView
-     * @return self
+     * @inheritdoc
      */
     public function setMultiView($multiView)
     {
@@ -301,7 +308,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getReportViews()
     {
@@ -309,8 +316,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param array $reportViews
-     * @return self
+     * @inheritdoc
      */
     public function setReportViews($reportViews)
     {
@@ -319,7 +325,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return PublisherInterface
+     * @inheritdoc
      */
     public function getPublisher()
     {
@@ -327,8 +333,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param PublisherInterface $publisher
-     * @return self
+     * @inheritdoc
      */
     public function setPublisher($publisher)
     {
@@ -371,7 +376,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
     public function getShowInTotal()
     {
@@ -379,8 +384,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @param array $showInTotal
-     * @return self
+     * @inheritdoc
      */
     public function setShowInTotal($showInTotal)
     {
@@ -389,8 +393,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * Use this if need generate token automatically for shareable report
-     * @return string
+     * @inheritdoc
      */
     public static function generateToken()
     {

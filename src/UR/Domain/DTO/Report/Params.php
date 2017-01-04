@@ -6,7 +6,7 @@ namespace UR\Domain\DTO\Report;
 
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
-use UR\Domain\DTO\Report\Transforms\SortByTransformInterface;
+use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Service\DTO\Report\WeightedCalculationInterface;
 
@@ -34,7 +34,8 @@ class Params implements ParamsInterface
     protected $weightedCalculations;
 
     /**
-     * @var null|string
+     * @var array
+     * TODO: use UR\Domain\DTO\Report\JoinBy\JoinByInterface instead
      */
     protected $joinByFields;
 
@@ -71,8 +72,8 @@ class Params implements ParamsInterface
     function __construct()
     {
         $this->dataSets = [];
-        $this->dataSetTypes = [];
-        $this->joinByFields = null;
+        $this->fieldTypes = [];
+        $this->joinByFields = [];
         $this->transforms = [];
     }
 
@@ -108,10 +109,10 @@ class Params implements ParamsInterface
     }
 
     /**
-     * @param null $joinByFields
+     * @param array $joinByFields
      * @return self
      */
-    public function setJoinByFields($joinByFields)
+    public function setJoinByFields(array $joinByFields)
     {
         $this->joinByFields = $joinByFields;
 
@@ -225,7 +226,7 @@ class Params implements ParamsInterface
 
         $sortByTransforms = [];
         foreach ($transforms as $transform) {
-            if ($transform instanceof SortByTransformInterface) {
+            if ($transform instanceof SortByTransform) {
                 $sortByTransforms [] = $transform ;
             }
         }
