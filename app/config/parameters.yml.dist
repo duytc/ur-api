@@ -19,10 +19,8 @@ parameters:
     locale:            en
     secret:            ThisTokenIsNotSoSecretChangeIt
 
-    tc.default_tag_url:
-        domain: 'tags.tagcade.dev'
-        secure: true
-
+    pheanstalk_primary_host: 127.0.0.1
+    
     jwt_private_key_path: %kernel.root_dir%/var/jwt/private.pem   # ssh private key path
     jwt_public_key_path:  %kernel.root_dir%/var/jwt/public.pem    # ssh public key path
     jwt_key_pass_phrase:  'tagcade'                               # ssh key pass phrase

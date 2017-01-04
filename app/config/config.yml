@@ -221,5 +221,5 @@ leezy_pheanstalk:
     enabled: true
     pheanstalks:
         primary:
-            server: 127.0.0.1
+            server: "%pheanstalk_primary_host%"
             default: true

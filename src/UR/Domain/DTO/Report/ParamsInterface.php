@@ -23,7 +23,7 @@ interface ParamsInterface
     public function getDataSets();
 
     /**
-     * @return JoinByInterface
+     * @return array
      */
     public function getJoinByFields();
 
