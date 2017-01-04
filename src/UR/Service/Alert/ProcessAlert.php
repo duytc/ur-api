@@ -27,8 +27,12 @@ class ProcessAlert implements ProcessAlertInterface
     const ALERT_CODE_UN_EXPECTED_ERROR = 1000;
     const FILE_NAME = 'fileName';
     const DATA_SOURCE_NAME = 'dataSourceName';
+    const DATA_SOURCE_ID = 'dataSourceId';
     const FORMAT_FILE = 'formatFile';
     const DATA_SET_NAME = 'dataSetName';
+    const DATA_SET_ID = 'dataSetId';
+    const IMPORT_ID = 'importId';
+    const ENTRY_ID = 'entryId';
     const ROW = 'row';
     const COLUMN = 'column';
     const MESSAGE = 'message';
@@ -61,12 +65,14 @@ class ProcessAlert implements ProcessAlertInterface
         $alert->setCode($alertCode);
         $alert->setPublisher($publisher);
         $alert->setMessage([self::MESSAGE => $message]);
+        $this->checkParams($params);
         $alert->setDetail([
             self::DETAILS => $details,
-            'dataSourceName' => array_key_exists(self::DATA_SOURCE_NAME, $params) ? $params[self::DATA_SOURCE_NAME] : null,
-            'dataSetName' => array_key_exists(self::DATA_SET_NAME, $params) ? $params[self::DATA_SET_NAME] : null,
-            'fileName' => array_key_exists(self::FILE_NAME, $params) ? $params[self::FILE_NAME] : null
+            self::DATA_SOURCE_NAME => $params[self::DATA_SOURCE_NAME],
+            self::DATA_SET_NAME => $params[self::DATA_SET_NAME],
+            self::FILE_NAME => $params[self::FILE_NAME]
         ]);
+
         $this->alertManager->save($alert);
     }
 
@@ -144,5 +150,18 @@ class ProcessAlert implements ProcessAlertInterface
             default:
                 break;
         }
+    }
+
+    public function checkParams(array &$params)
+    {
+        $params[self::IMPORT_ID] = array_key_exists(self::IMPORT_ID, $params) ? $params[self::IMPORT_ID] : null;
+        $params[self::DATA_SET_ID] = array_key_exists(self::DATA_SET_ID, $params) ? $params[self::DATA_SET_ID] : null;
+        $params[self::DATA_SET_NAME] = array_key_exists(self::DATA_SET_NAME, $params) ? $params[self::DATA_SET_NAME] : null;
+        $params[self::DATA_SOURCE_ID] = array_key_exists(self::DATA_SOURCE_ID, $params) ? $params[self::DATA_SOURCE_ID] : null;
+        $params[self::DATA_SOURCE_NAME] = array_key_exists(self::DATA_SOURCE_NAME, $params) ? $params[self::DATA_SOURCE_NAME] : null;
+        $params[self::ENTRY_ID] = array_key_exists(self::ENTRY_ID, $params) ? $params[self::ENTRY_ID] : null;
+        $params[self::FILE_NAME] = array_key_exists(self::FILE_NAME, $params) ? $params[self::FILE_NAME] : null;
+        $params[self::COLUMN] = array_key_exists(self::COLUMN, $params) ? $params[self::COLUMN] : null;
+        $params[self::ROW] = array_key_exists(self::ROW, $params) ? $params[self::ROW] : null;
     }
 }

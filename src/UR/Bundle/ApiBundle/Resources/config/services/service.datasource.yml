@@ -62,6 +62,7 @@ services:
                 - @ur.handler.handlers.data_source.publisher
     ur.bundle.event.data_source_listener:
         class: %ur.listener.data_source.class%
+        arguments: [%ur_email_template%]
         tags:
             -
                 name: doctrine.event_listener

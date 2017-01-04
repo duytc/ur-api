@@ -15,7 +15,6 @@ class DataSource implements DataSourceInterface
     protected $urEmail;
     protected $enable;
     protected $detectedFields;
-    const UR_EMAIL = "@unifiedreportemail";
 
     /** @var UserEntityInterface */
     protected $publisher;

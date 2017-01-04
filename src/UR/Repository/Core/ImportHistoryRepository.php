@@ -133,15 +133,6 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
     /**
      * @inheritdoc
      */
-    public function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry, DataSetInterface $dataSet)
-    {
-        $importHistories = $this->getImportHistoryByDataSourceEntry($dataSourceEntry, $dataSet);
-        $this->deleteImportedData($importHistories);
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function deleteImportedData($importHistories)
     {
         $conn = $this->_em->getConnection();
