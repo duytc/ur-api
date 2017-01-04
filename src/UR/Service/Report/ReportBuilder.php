@@ -377,8 +377,7 @@ class ReportBuilder implements ReportBuilderInterface
             $array,
             function ($key) use ($fields) {
                 return in_array($key, $fields);
-            },
-            ARRAY_FILTER_USE_KEY
+            }
         );
 
         return $result;
