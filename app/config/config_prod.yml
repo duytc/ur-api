@@ -32,6 +32,7 @@ monolog:
     handlers:
         main:
             type: fingers_crossed
+            action_level: info
             handler: nested
             excluded_404s:
                 - ^/
