@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "bc7121f424324d6b7e26e9ae63e4aadf",
-    "content-hash": "d722c271ca72158951d1ca61f2043172",
+    "hash": "4c56993b31b8132cfdc1f3d40a7d4ca9",
+    "content-hash": "46623673936b9cf5207ace1ce66ec687",
     "packages": [
         {
             "name": "behat/transliterator",
@@ -115,6 +115,75 @@
                 "xlsx"
             ],
             "time": "2016-11-03 20:45:18"
+        },
+        {
+            "name": "data-dog/pager-bundle",
+            "version": "v0.2.7",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/DATA-DOG/DataDogPagerBundle.git",
+                "reference": "47a24717a287ae2f6251f7643fd075715d02abd6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/DATA-DOG/DataDogPagerBundle/zipball/47a24717a287ae2f6251f7643fd075715d02abd6",
+                "reference": "47a24717a287ae2f6251f7643fd075715d02abd6",
+                "shasum": ""
+            },
+            "require": {
+                "doctrine/orm": "~2.3",
+                "php": ">=5.4.0",
+                "symfony/framework-bundle": "~2.3|~3.0",
+                "twig/twig": "~1.5"
+            },
+            "require-dev": {
+                "doctrine/doctrine-bundle": "^1.6",
+                "doctrine/doctrine-fixtures-bundle": "^2.3",
+                "doctrine/orm": "~2.5.0",
+                "ext-pdo": "*",
+                "ext-pdo_sqlite": "*",
+                "fzaninotto/faker": "~1.5",
+                "phpunit/phpunit": "~4.7.0",
+                "sensio/framework-extra-bundle": "^3.0.9",
+                "symfony/symfony": "~3.0.0"
+            },
+            "type": "symfony-bundle",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "0.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "DataDog\\PagerBundle\\": "src/DataDog/PagerBundle"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "DataDog Team",
+                    "homepage": "http://datadog.lt"
+                },
+                {
+                    "name": "Symfony2 Community",
+                    "homepage": "http://github.com/DATA-DOG/DataDogPagerBundle/contributors"
+                }
+            ],
+            "description": "Paginator bundle for symfony2 and doctrine orm, allows customization with filters and sorters",
+            "homepage": "http://github.com/DATA-DOG/DataDogPagerBundle",
+            "keywords": [
+                "Symfony2",
+                "bundle",
+                "doctrine",
+                "orm",
+                "pager",
+                "pagination",
+                "paginator"
+            ],
+            "time": "2016-09-14 12:13:32"
         },
         {
             "name": "doctrine/annotations",
@@ -972,7 +1041,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSUserBundle/zipball/7abb0ff366c404f2c2b34fd264693071148351a2",
+                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSUserBundle/zipball/1f97ccf3c41cc811176d0e5c142e5636842a9124",
                 "reference": "7abb0ff366c404f2c2b34fd264693071148351a2",
                 "shasum": ""
             },
@@ -1127,7 +1196,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gfreeau/GfreeauCustomValidationPathBundle/zipball/cb248e3fbfd0b8edf19a7fce5111924089217ca7",
+                "url": "https://api.github.com/repos/gfreeau/GfreeauCustomValidationPathBundle/zipball/48b899fda29ee2492d42fb8d3f405fc911fdb334",
                 "reference": "cb248e3fbfd0b8edf19a7fce5111924089217ca7",
                 "shasum": ""
             },
@@ -4164,75 +4233,6 @@
     ],
     "packages-dev": [
         {
-            "name": "data-dog/pager-bundle",
-            "version": "v0.2.7",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/DATA-DOG/DataDogPagerBundle.git",
-                "reference": "47a24717a287ae2f6251f7643fd075715d02abd6"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/DATA-DOG/DataDogPagerBundle/zipball/47a24717a287ae2f6251f7643fd075715d02abd6",
-                "reference": "47a24717a287ae2f6251f7643fd075715d02abd6",
-                "shasum": ""
-            },
-            "require": {
-                "doctrine/orm": "~2.3",
-                "php": ">=5.4.0",
-                "symfony/framework-bundle": "~2.3|~3.0",
-                "twig/twig": "~1.5"
-            },
-            "require-dev": {
-                "doctrine/doctrine-bundle": "^1.6",
-                "doctrine/doctrine-fixtures-bundle": "^2.3",
-                "doctrine/orm": "~2.5.0",
-                "ext-pdo": "*",
-                "ext-pdo_sqlite": "*",
-                "fzaninotto/faker": "~1.5",
-                "phpunit/phpunit": "~4.7.0",
-                "sensio/framework-extra-bundle": "^3.0.9",
-                "symfony/symfony": "~3.0.0"
-            },
-            "type": "symfony-bundle",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.1.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "DataDog\\PagerBundle\\": "src/DataDog/PagerBundle"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "DataDog Team",
-                    "homepage": "http://datadog.lt"
-                },
-                {
-                    "name": "Symfony2 Community",
-                    "homepage": "http://github.com/DATA-DOG/DataDogPagerBundle/contributors"
-                }
-            ],
-            "description": "Paginator bundle for symfony2 and doctrine orm, allows customization with filters and sorters",
-            "homepage": "http://github.com/DATA-DOG/DataDogPagerBundle",
-            "keywords": [
-                "Symfony2",
-                "bundle",
-                "doctrine",
-                "orm",
-                "pager",
-                "pagination",
-                "paginator"
-            ],
-            "time": "2016-09-14 12:13:32"
-        },
-        {
             "name": "doctrine/data-fixtures",
             "version": "v1.1.1",
             "source": {
@@ -4299,7 +4299,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/DoctrineFixturesBundle/zipball/0f1a2f91b349e10f5c343f75ab71d23aace5b029",
+                "url": "https://api.github.com/repos/doctrine/DoctrineFixturesBundle/zipball/fb060e289a2996e21869c261a983c0f8450132f6",
                 "reference": "0f1a2f91b349e10f5c343f75ab71d23aace5b029",
                 "shasum": ""
             },
@@ -4356,7 +4356,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/liip/LiipFunctionalTestBundle/zipball/9ce4e7f1948e559d986141b57f913bb83fcc9734",
+                "url": "https://api.github.com/repos/liip/LiipFunctionalTestBundle/zipball/2ac5c981fbf8a0b2bd045602aa602cb24bf57ab0",
                 "reference": "9ce4e7f1948e559d986141b57f913bb83fcc9734",
                 "shasum": ""
             },
