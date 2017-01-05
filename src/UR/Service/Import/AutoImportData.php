@@ -253,6 +253,10 @@ class AutoImportData implements AutoImportDataInterface
                 break;
         }
 
-        $this->logger->error(sprintf("ur-import#%s data-set#%s data-source#%s data-source-entry#%s (message: %s)", $importId, $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
+        if ($errorCode == ProcessAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY) {
+            $this->logger->info(sprintf("ur-import#%s data-set#%s data-source#%s data-source-entry#%s (message: %s)", $importId, $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
+        } else {
+            $this->logger->error(sprintf("ur-import#%s data-set#%s data-source#%s data-source-entry#%s (message: %s)", $importId, $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
+        }
     }
 }
