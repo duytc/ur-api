@@ -12,6 +12,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $fileName;
     protected $metaData;
     protected $receivedVia;
+    protected $hashFile;
 
     /**
      * @var DataSourceInterface
@@ -182,12 +183,28 @@ class DataSourceEntry implements DataSourceEntryInterface
     }
 
     /**
-     * @@inheritdoc
+     * @inheritdoc
      */
     public function setIsActive($active)
     {
         $this->isActive = $active;
 
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getHashFile()
+    {
+        return $this->hashFile;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setHashFile($hashFile)
+    {
+        $this->hashFile = $hashFile;
     }
 }

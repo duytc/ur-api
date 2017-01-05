@@ -188,24 +188,31 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             // save file to upload dir
             $name = $file_name . '_' . round(microtime(true) + $i) . '.' . $file->getClientOriginalExtension();
             $file->move($path, $name);
+            $filePath = $path . '/' . $name;
 
-            $convertResult = $this->convertToUtf8($path . '/' . $name);
+            $convertResult = $this->convertToUtf8($filePath);
             if (!$convertResult) {
                 throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $origin_name));
             }
 
+            $hash = sha1_file($filePath);
+            if ($this->fileAlreadyImported($dataSource, $hash)) {
+                throw new Exception(sprintf('The file "%s" is already imported', $origin_name));
+            }
+
             // create new data source entry
-            $dataSourceEntry = (new DataSourceEntry())
-                ->setDataSource($dataSource)
-                ->setPath($dirItem . '/' . $name)
+            $dataSourceEntry = new DataSourceEntry();
+            $dataSourceEntry->setPath($dirItem . '/' . $name)
                 ->setIsValid(true)
                 ->setReceivedVia($receivedVia)
-                ->setFileName($origin_name);
+                ->setFileName($origin_name)
+                ->setHashFile($hash);
 
-            $newFields = $this->getNewFieldsFromFiles($path . '/' . $name, $dataSource);
+            $newFields = $this->getNewFieldsFromFiles($filePath, $dataSource);
             $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), DataSourceEntryManager::UPLOAD);
+            $dataSource->setDetectedFields($detectedFields);
 
-            $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
+            $dataSourceEntry->setDataSource($dataSource);
             $this->save($dataSourceEntry);
 
             if (in_array(DataSourceRepository::DATA_RECEIVED, $dataSource->getAlertSetting())) {
@@ -322,5 +329,11 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         }
 
         return 0;
+    }
+
+    private function fileAlreadyImported(DataSourceInterface $dataSource, $hash)
+    {
+        $importedFiles = $this->repository->getImportedFileByHash($dataSource, $hash);
+        return is_array($importedFiles) && count($importedFiles) > 0;
     }
 }

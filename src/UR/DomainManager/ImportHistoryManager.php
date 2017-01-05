@@ -121,8 +121,8 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     /**
      * @inheritdoc
      */
-    public function reImportDataSourceEntry(DataSourceEntryInterface $dataSourceEntry, DataSetInterface $dataSet)
+    public function deletePreviousImports($importHistories)
     {
-        $this->repository->replayDataSourceEntryData($dataSourceEntry, $dataSet);
+        $this->repository->deleteImportedData($importHistories);
     }
 }

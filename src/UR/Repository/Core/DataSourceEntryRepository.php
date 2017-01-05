@@ -139,4 +139,14 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
 
         return $qb->getQuery()->getResult();
     }
+
+    public function getImportedFileByHash(DataSourceInterface $dataSource, $hash)
+    {
+        $qb = $this->createQueryBuilder('dse');
+        $qb->andWhere('dse.dataSource= :dataSource')
+            ->andWhere('dse.hashFile = :hash')
+            ->setParameter('dataSource', $dataSource)
+            ->setParameter('hash', $hash);
+        return $qb->getQuery()->getResult();
+    }
 }

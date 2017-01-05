@@ -78,6 +78,16 @@ class DataSourceManager implements DataSourceManagerInterface
     /**
      * @inheritdoc
      */
+    public function findByEmail($email)
+    {
+        return $this->repository->findOneBy([
+            'urEmail' => $email
+        ]);
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function all($limit = null, $offset = null)
     {
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);

@@ -4,6 +4,7 @@ namespace UR\Bundle\ApiBundle\Controller;
 
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
+use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -13,6 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceEntryManagerInterface;
+use UR\DomainManager\DataSourceManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntry;
@@ -479,9 +481,11 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
-     * Upload
+     * Upload file to multiple data sources by fetcher module
      *
-     * @Rest\Post("/datasources/{id}/viaemailhook")
+     * @Rest\Post("/datasources/viafetcher")
+     *
+     * @Rest\QueryParam(name="ids", nullable=false, description="The data source ids")
      *
      * @ApiDoc(
      *  section = "Data Sources",
@@ -494,18 +498,78 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @param Request $request the request object
      *
-     * @param $id
      * @return mixed
      */
-    public function postViaEmailHookAction(Request $request, $id)
+    public function postMultipleDataSourcesViaFetcherAction(Request $request)
     {
+        $dataSourceIds = $request->query->get('ids', null);
+        if (!is_array($dataSourceIds)) {
+            throw new BadRequestHttpException('expect ids is array of data source ids');
+        }
+
         /** @var DataSourceInterface $dataSource */
-        $dataSource = $this->one($id);
+        $dataSources = array_map(function ($id) {
+            return $this->one($id);
+        }, $dataSourceIds);
 
         /** @var FileBag $fileBag */
         $fileBag = $request->files;
 
-        return $this->processUploadedFiles($dataSource, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_EMAIL);
+        return $this->processUploadedFilesForMultipleDataSources($dataSources, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_SELENIUM);
+    }
+
+    /**
+     * Upload file to data source by email-hook module
+     *
+     * @Rest\Post("/datasources/viaemailhook")
+     *
+     * @Rest\QueryParam(name="email", nullable=false, description="The email related to data source")
+     *
+     * @ApiDoc(
+     *  section = "Data Sources",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request the request object
+     *
+     * @return mixed
+     */
+    public function postViaEmailHookAction(Request $request)
+    {
+        /* find data source by email */
+        $email = $request->query->get('email', null);
+        if (null === $email) {
+            throw new BadRequestHttpException('expect email is string and not null');
+        }
+
+        /** @var DataSourceManagerInterface $dataSourceManager */
+        $dataSourceManager = $this->get('ur.domain_manager.data_source');
+
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $dataSourceManager->findByEmail($email);
+        if (!($dataSource instanceof DataSourceInterface)) {
+            throw new NotFoundHttpException(
+                sprintf("The %s resource '%s' was not found or you do not have access", $email)
+            );
+        }
+
+        /* check permission to view data source */
+        $this->checkUserPermission($dataSource);
+
+        /* process upload files */
+        /** @var FileBag $fileBag */
+        $fileBag = $request->files;
+
+        $result = $this->processUploadedFiles($dataSource, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_EMAIL);
+
+        return [
+            'code' => Codes::HTTP_CREATED,
+            'message' => $result
+        ];
     }
 
     /**
@@ -652,7 +716,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      * @param DataSourceInterface $dataSource
      * @param FileBag $fileBag
      * @param string $via is "upload" or "email" or "api" or "selenium". Default is "upload"
-     * @return array
+     * @return array formatted as [ fileName => status, ... ]
      */
     private function processUploadedFiles(DataSourceInterface $dataSource, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD)
     {
@@ -666,6 +730,26 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         /** @var DataSourceEntryManagerInterface $dataSourceEntryManager */
         $dataSourceEntryManager = $this->get('ur.domain_manager.data_source_entry');
         $result = $dataSourceEntryManager->uploadDataSourceEntryFiles($files, $uploadPath, $dirItem, $dataSource, $via);
+
+        return $result;
+    }
+
+    /**
+     * process uploaded files for multiple data sources. The files may come from upload, fetcher module or email-hook module
+     *
+     * @param array|DataSourceInterface[] $dataSources
+     * @param FileBag $fileBag
+     * @param string $via is "upload" or "email" or "api" or "selenium". Default is "upload"
+     * @return array formatted as [ dataSourceId => [ fileName => status, ... ], ... ]
+     */
+    private function processUploadedFilesForMultipleDataSources(array $dataSources, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD)
+    {
+        $result = [];
+
+        foreach ($dataSources as $dataSource) {
+            $oneResult = $this->processUploadedFiles($dataSource, $fileBag, $via);
+            $result[$dataSource->getId()] = $oneResult;
+        }
 
         return $result;
     }
