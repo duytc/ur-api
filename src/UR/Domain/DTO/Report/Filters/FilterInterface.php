@@ -12,6 +12,12 @@ interface FilterInterface
     public function getFieldName();
 
     /**
+     * @param $fieldName
+     * @return mixed
+     */
+    public function setFieldName($fieldName);
+
+    /**
      * @return int
      */
     public function getFieldType();
