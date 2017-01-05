@@ -33,4 +33,10 @@ interface DataSourceManagerInterface extends ManagerInterface
      * @return DataSourceInterface[]
      */
     public function getDataSourceNotInByDataSet(DataSetInterface $dataSet);
+
+    /**
+     * @param string $email
+     * @return DataSourceInterface|null
+     */
+    public function findByEmail($email);
 }
