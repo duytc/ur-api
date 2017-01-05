@@ -29,6 +29,17 @@ abstract class AbstractFilter
     }
 
     /**
+     * @param $fieldName
+     * @return $this
+     */
+    public function setFieldName($fieldName)
+    {
+        $this->fieldName = $fieldName;
+
+        return $this;
+    }
+
+    /**
      * @return int
      */
     public function getFieldType()

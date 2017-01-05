@@ -162,13 +162,20 @@ class SqlBuilder implements SqlBuilderInterface
                     $dateRange = new DateRange($filter->getStartDate(), $filter->getEndDate());
                 }
 
+                $dataSetId = $this->getDataSetIdInFilter($filter->getFieldName());
+                $fieldName = $this->getFieldNameInFilter($filter->getFieldName());
+                $filter->setFieldName($fieldName);
+
                 /** @var DataSetInterface $dataSet */
                 foreach ($dataSets as $dataSetIndex => $dataSet) {
-                    if (in_array($filter->getFieldName(), $dataSet->getDimensions()) ||
-                        in_array($filter->getFieldName(), $dataSet->getMetrics())
+                    if ((in_array($fieldName, $dataSet->getDimensions()) ||
+                        in_array($fieldName, $dataSet->getMetrics())) && $dataSetId == $dataSet->getDataSetId()
                     ) {
-                        $conditions[] = $this->buildSingleFilter($filter, sprintf('t%d', $dataSetIndex))[self::CONDITION_KEY];
+                        $conditions[] = $this->buildSingleFilter($filter, sprintf('t%d', $dataSetIndex)); //[self::CONDITION_KEY];
                     }
+
+                    $dataSetDimensionNamesInFilter = null;
+                    $dataSetMetricsNameInFilter = null;
                 }
             }
         }
@@ -186,6 +193,22 @@ class SqlBuilder implements SqlBuilderInterface
             self::STATEMENT_KEY => $qb->execute(),
             self::DATE_RANGE_KEY => $dateRange
         );
+    }
+
+    protected function getFieldNameInFilter($filterFieldName)
+    {
+        $underScoreCharacter = strpos($filterFieldName,'_');
+        $fieldName = substr($filterFieldName, 0, $underScoreCharacter);
+
+        return $fieldName;
+    }
+
+    protected function getDataSetIdInFilter($filterFieldName)
+    {
+        $underScoreCharacter = strpos($filterFieldName,'_');
+        $dataSetId = substr($filterFieldName, $underScoreCharacter +1, strlen($filterFieldName));
+
+        return $dataSetId;
     }
 
     /**
