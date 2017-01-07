@@ -58,9 +58,9 @@ class ColumnPositionFormat extends AbstractFormat implements ColumnPositionForma
         $output = [];
         $columnsOfReport = array_keys($report);
 
-        foreach ($elementOrders as $column) {
+        foreach ($elementOrders as $key=>$column) {
             if (!in_array($column, $columnsOfReport)) {
-                throw new \Exception(sprintf('Column %s not exit in report', $column));
+                unset($elementOrders[$key]);
             }
         }
 

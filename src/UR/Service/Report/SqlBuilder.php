@@ -171,11 +171,8 @@ class SqlBuilder implements SqlBuilderInterface
                     if ((in_array($fieldName, $dataSet->getDimensions()) ||
                         in_array($fieldName, $dataSet->getMetrics())) && $dataSetId == $dataSet->getDataSetId()
                     ) {
-                        $conditions[] = $this->buildSingleFilter($filter, sprintf('t%d', $dataSetIndex)); //[self::CONDITION_KEY];
+                        $conditions[] = $this->buildSingleFilter($filter, sprintf('t%d', $dataSetIndex));//[self::CONDITION_KEY];
                     }
-
-                    $dataSetDimensionNamesInFilter = null;
-                    $dataSetMetricsNameInFilter = null;
                 }
             }
         }

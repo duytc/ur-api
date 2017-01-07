@@ -6,6 +6,7 @@ namespace UR\Service\Report;
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Domain\DTO\Report\DateRange;
+use UR\Domain\DTO\Report\Filters\FilterInterface;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
@@ -217,10 +218,17 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             $reportParam = $this->paramsBuilder->buildFromReportView($view);
-            $filters = $reportView->getFilters();
-            $result = $this->getSingleReport($reportParam, $filters, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
+            $viewFilters = $reportView->getFilters();
+            $result = $this->getSingleReport($reportParam, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
             if (count($result->getReports()) < 1) {
                 continue;
+            }
+
+            /**
+             * @var FilterInterface $viewFilter
+             */
+            foreach ($viewFilters as $viewFilter) {
+                $result = $viewFilter->filter($result);
             }
 
             $types = array_merge($types, $result->getTypes());
@@ -250,13 +258,15 @@ class ReportBuilder implements ReportBuilderInterface
         foreach ($rows as &$row) {
             foreach ($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
-                    $row[$metric] = null;
+                    //$row[$metric] = null;
+                    continue;
                 }
             }
 
             foreach ($dimensions as $dimension) {
                 if (!array_key_exists($dimension, $row)) {
-                    $row[$dimension] = null;
+                    //$row[$dimension] = null;
+                    continue;
                 }
             }
 
@@ -298,11 +308,23 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* build columns that will be showed in total */
         $showInTotal = is_array($params->getShowInTotal()) ? $params->getShowInTotal() : $metrics;
-//        $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
+//      $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
 
         /* group reports */
         /** @var ReportResultInterface $reportResult */
         $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $isSingleDataSet);
+
+	    /*update column after group */
+	   /* $firstReport = ($reportResult->getReports())[0];
+	    $columnNameInReport = array_keys($firstReport);
+	    $mappedColumns = $reportResult->getColumns();
+
+	    foreach ($mappedColumns as $columnName=>$value) {
+		    if (!in_array($columnName, $columnNameInReport)) {
+			    unset($mappedColumns[$columnName]);
+		    }
+	    }
+	    $reportResult->setColumns($mappedColumns);*/
 
         /* format data if need */
         if ($isNeedFormatReport) {
