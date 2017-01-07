@@ -19,8 +19,8 @@ class Importer
     protected $conn;
     protected $batchSize = 500;
     private static $restrictedColumns = [self::ID_COLUMN, self::DATA_SOURCE_ID_COLUMN, self::IMPORT_ID_COLUMN, DataSetInterface::UNIQUE_ID_COLUMN];
-    protected $preparedUpdateCount = 0;
-    protected $preparedInsertCount = 0;
+    protected $preparedUpdateCount;
+    protected $preparedInsertCount;
 
     public function __construct(Connection $conn)
     {
@@ -84,6 +84,8 @@ class Importer
         $columns[self::IMPORT_ID_COLUMN] = self::IMPORT_ID_COLUMN;
         $columns[DataSetInterface::UNIQUE_ID_COLUMN] = DataSetInterface::UNIQUE_ID_COLUMN;
         $question_marks = [];
+        $this->preparedUpdateCount = 0;
+        $this->preparedInsertCount = 0;
         foreach ($rows as $row) {
             $uniqueKeys = array_intersect_key($row, $dimensionMapping);
             $uniqueId = md5(implode(":", $uniqueKeys));
