@@ -12,6 +12,7 @@ class DataSet implements DataSetInterface
     protected $dimensions;
     protected $metrics;
     protected $createdDate;
+    protected $allowOverwriteExistingData;
     protected $_actions;
 
     /** @var UserEntityInterface */
@@ -165,5 +166,21 @@ class DataSet implements DataSetInterface
     public function setActions($actions)
     {
         $this->_actions = $actions;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAllowOverwriteExistingData()
+    {
+        return $this->allowOverwriteExistingData;
+    }
+
+    /**
+     * @param mixed $allowOverwriteExistingData
+     */
+    public function setAllowOverwriteExistingData($allowOverwriteExistingData)
+    {
+        $this->allowOverwriteExistingData = $allowOverwriteExistingData;
     }
 }

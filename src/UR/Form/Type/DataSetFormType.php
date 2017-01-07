@@ -40,6 +40,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
             ->add('name')
             ->add('dimensions')
             ->add('metrics')
+            ->add('allowOverwriteExistingData')
             ->add('connectedDataSources', CollectionType::class, array(
 //                'mapped' => true,
                 'type' => new ConnectedDataSourceFormType(),

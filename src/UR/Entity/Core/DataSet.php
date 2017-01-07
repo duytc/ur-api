@@ -13,6 +13,7 @@ class DataSet extends DataSetModel
     protected $dimensions;
     protected $metrics;
     protected $createdDate;
+    protected $allowOverwriteExistingData;
 
     /** @var UserEntityInterface */
     protected $publisher;

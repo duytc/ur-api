@@ -36,32 +36,39 @@ class Parser implements ParserInterface
         }
 
         $rows = array_values($dataSource->getRows($format));
+        $dataSetColumns = array_merge($connectedDataSource->getDataSet()->getDimensions(), $connectedDataSource->getDataSet()->getMetrics());
 
         $cur_row = -1;
         foreach ($rows as &$row) {
             $cur_row++;
             $row = array_combine($fileCols, $row);
 
-            foreach ($connectedDataSource->getDataSet()->getMetrics() as $metric => $type) {
-                if (!array_key_exists($metric, $columnsMapping)) {
+            foreach ($dataSetColumns as $dsColumn => $type) {
+                if (!array_key_exists($dsColumn, $columnsMapping)) {
                     continue;
                 }
 
-                if (!array_key_exists($columnsMapping[$metric], $row)) {
+                if (!array_key_exists($columnsMapping[$dsColumn], $row)) {
                     continue;
                 }
 
-                if (strcmp($type, Type::NUMBER) === 0 || strcmp($type, Type::DECIMAL) === 0) {
-                    $row[$columnsMapping[$metric]] = str_replace("$", "", $row[$columnsMapping[$metric]]);
-                    $row[$columnsMapping[$metric]] = str_replace(",", "", $row[$columnsMapping[$metric]]);
-                    if (strcmp($type, Type::DECIMAL) === 0) {
-                        $row[$columnsMapping[$metric]] = str_replace(" ", "", $row[$columnsMapping[$metric]]);
-                    }
+                if (strcmp($row[$columnsMapping[$dsColumn]], "") === 0) {
+                    $row[$columnsMapping[$dsColumn]] = null;
+                }
 
-                    if (strcmp(trim($row[$columnsMapping[$metric]]), "") !== 0 && !is_numeric($row[$columnsMapping[$metric]])) {
-                        return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_WRONG_TYPE_MAPPING,
-                            ProcessAlert::ROW => $cur_row + 2,
-                            ProcessAlert::COLUMN => $columnsMapping[$metric]);
+                if ($row[$columnsMapping[$dsColumn]] !== null) {
+                    if (strcmp($type, Type::NUMBER) === 0 || strcmp($type, Type::DECIMAL) === 0) {
+                        $row[$columnsMapping[$dsColumn]] = str_replace("$", "", $row[$columnsMapping[$dsColumn]]);
+                        $row[$columnsMapping[$dsColumn]] = str_replace(",", "", $row[$columnsMapping[$dsColumn]]);
+                        if (strcmp($type, Type::DECIMAL) === 0) {
+                            $row[$columnsMapping[$dsColumn]] = str_replace(" ", "", $row[$columnsMapping[$dsColumn]]);
+                        }
+
+                        if (!is_numeric($row[$columnsMapping[$dsColumn]])) {
+                            return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_WRONG_TYPE_MAPPING,
+                                ProcessAlert::ROW => $cur_row + 2,
+                                ProcessAlert::COLUMN => $columnsMapping[$dsColumn]);
+                        }
                     }
                 }
             }
