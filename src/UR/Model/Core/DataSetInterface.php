@@ -7,6 +7,9 @@ use UR\Model\User\Role\PublisherInterface;
 
 interface DataSetInterface extends ModelInterface
 {
+    const UNIQUE_ID_COLUMN = '__unique_id';
+    const UNIQUE_HASH_INX = 'unique_hash_idx';
+
     /**
      * @param mixed $id
      */
@@ -87,4 +90,14 @@ interface DataSetInterface extends ModelInterface
      * @param mixed $actions
      */
     public function setActions($actions);
+
+    /**
+     * @return mixed
+     */
+    public function getAllowOverwriteExistingData();
+
+    /**
+     * @param mixed $allowOverwriteExistingData
+     */
+    public function setAllowOverwriteExistingData($allowOverwriteExistingData);
 }

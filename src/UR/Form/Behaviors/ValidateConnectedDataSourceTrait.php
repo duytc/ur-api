@@ -41,19 +41,6 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
-    public function validateDuplicateFields($connDataSource)
-    {
-
-        /**@var ConnectedDataSourceInterface $connDataSource */
-        foreach ($connDataSource->getDuplicates() as $duplicate) {
-            if (!in_array($duplicate, $connDataSource->getMapFields())) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     /**
      * validate Filters of a connectDataSource
      *

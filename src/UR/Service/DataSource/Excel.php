@@ -175,7 +175,7 @@ class Excel implements DataSourceInterface
                             }
 
                         } else {
-                            $rowData[] = $cell->getFormattedValue();
+                            $rowData[] = $cell->getValue();
                         }
                     }
 

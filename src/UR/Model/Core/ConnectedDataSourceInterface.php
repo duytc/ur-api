@@ -80,14 +80,4 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @param mixed $alertSetting
      */
     public function setAlertSetting($alertSetting);
-
-    /**
-     * @return mixed
-     */
-    public function getDuplicates();
-
-    /**
-     * @param mixed $duplicates
-     */
-    public function setDuplicates($duplicates);
 }

@@ -6,6 +6,7 @@ namespace UR\Bundle\AppBundle\EventListener;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\FilterType;
@@ -82,7 +83,7 @@ class ReConfigConnectedDataSourceListener
         $deletedMetrics = [];
         $deletedDimensions = [];
 
-
+        $uniqueKeyChanges = [];
         foreach ($changedFields as $field => $values) {
             if (strcmp($field, 'dimensions') === 0) {
                 $this->getChangedFields($values, $renameFields, $newDimensions, $updateDimensions, $deletedDimensions);
@@ -91,6 +92,14 @@ class ReConfigConnectedDataSourceListener
             if (strcmp($field, 'metrics') === 0) {
                 $this->getChangedFields($values, $renameFields, $newMetrics, $updateMetrics, $deletedMetrics);
             }
+
+            if (strcmp($field, 'allowOverwriteExistingData') === 0) {
+                $uniqueKeyChanges = $values;
+            }
+        }
+
+        if (count($deletedDimensions) > 0) {
+            throw new Exception('cannot delete dimensions');
         }
 
         $newFields = array_merge($newDimensions, $newMetrics);
@@ -100,7 +109,7 @@ class ReConfigConnectedDataSourceListener
         // alter data_import table
         $conn = $em->getConnection();
         $importUtils = new ImportUtils();
-        $importUtils->alterDataSetTable($entity, $conn, $newFields, $updateFields, $deletedFields);
+        $importUtils->alterDataSetTable($entity, $conn, $newFields, $updateFields, $deletedFields, $uniqueKeyChanges);
         $this->updateFields = $updateFields;
         $this->deletedFields = $deletedFields;
     }
@@ -141,7 +150,7 @@ class ReConfigConnectedDataSourceListener
     {
         $mapFields = $connectedDataSource->getMapFields();
         $requires = $connectedDataSource->getRequires();
-        $duplicates = $connectedDataSource->getDuplicates();
+//        $duplicates = $connectedDataSource->getDuplicates();
         $filters = $connectedDataSource->getFilters();
         $transforms = $connectedDataSource->getTransforms();
 
@@ -161,7 +170,7 @@ class ReConfigConnectedDataSourceListener
 
 
         $requires = array_values(array_diff($requires, $delFields));
-        $duplicates = array_values(array_diff($duplicates, $delFields));
+//        $duplicates = array_values(array_diff($duplicates, $delFields));
 
         foreach ($transforms as $key => &$transform) {
             if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE])) {
@@ -230,7 +239,7 @@ class ReConfigConnectedDataSourceListener
 
         $connectedDataSource->setMapFields($mapFields);
         $connectedDataSource->setRequires(array_values($requires));
-        $connectedDataSource->setDuplicates(array_values($duplicates));
+//        $connectedDataSource->setDuplicates(array_values($duplicates));
         $connectedDataSource->setFilters(array_values($filters));
         $connectedDataSource->setTransforms(array_values($transforms));
     }

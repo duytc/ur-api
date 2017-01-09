@@ -20,9 +20,6 @@ UR\Entity\Core\ConnectedDataSource:
         requires:
             type: json_array
             nullable: true
-        duplicates:
-            type: json_array
-            nullable: true
         alertSetting:
             type: json_array
             nullable: true

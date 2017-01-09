@@ -8,6 +8,7 @@ use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\TableDiff;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\VarDumper\Cloner\Data;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\FilterType;
@@ -38,6 +39,7 @@ class ImportUtils
         $dataSetTable->setPrimaryKey(array("__id"));
         $dataSetTable->addColumn("__data_source_id", "integer", array("unsigned" => true, "notnull" => true));
         $dataSetTable->addColumn("__import_id", "integer", array("unsigned" => true, "notnull" => true));
+        $dataSetTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, Type::TEXT, array("notnull" => true));
 
         // create import table
         //// add dimensions
@@ -67,12 +69,16 @@ class ImportUtils
             $truncateSql = $conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
 
             $conn->exec($truncateSql);
+            if ($dataSet->getAllowOverwriteExistingData()) {
+                $sql = sprintf("ALTER IGNORE TABLE %s ADD UNIQUE INDEX %s (%s(255))", $dataSetTable->getName(), DataSetInterface::UNIQUE_HASH_INX, DataSetInterface::UNIQUE_ID_COLUMN);
+                $conn->exec($sql);
+            }
         } catch (\Exception $e) {
             $logger->error("Cannot Sync Schema " . $schema->getName());
         }
     }
 
-    function alterDataSetTable(DataSetInterface $dataSet, Connection $conn, $newColumns, $updateColumns, $deletedColumns)
+    function alterDataSetTable(DataSetInterface $dataSet, Connection $conn, $newColumns, $updateColumns, $deletedColumns, $uniqueKeyChanges)
     {
         $schema = new Schema();
         $dataSetLocator = new Locator($conn);
@@ -106,18 +112,34 @@ class ImportUtils
             }
         }
 
-        $updateTable = new TableDiff($dataTable->getName(), $addCols, $editCols, $delCols);
+        $updateTable = new TableDiff($dataTable->getName(), $addCols, $editCols, $delCols, [], [], []);
         try {
             $dataSetSynchronizer->syncSchema($schema);
             $alterSqls = $conn->getDatabasePlatform()->getAlterTableSQL($updateTable);
             foreach ($updateColumns as $updateColumn) {
                 foreach ($updateColumn as $oldName => $newName) {
                     $curCol = $dataTable->getColumn($oldName);
-                    $sql = sprintf("ALTER TABLE %s CHANGE %s  %s %s", $dataTable->getName(), $oldName, $newName, $curCol->getType()->getName());
+                    $sql = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldName, $newName, $curCol->getType()->getName());
                     if (strtolower($curCol->getType()->getName()) === strtolower(Type::NUMBER) || strtolower($curCol->getType()->getName()) === strtolower(Type::DECIMAL)) {
                         $sql .= sprintf("(%s,%s)", $curCol->getPrecision(), $curCol->getScale());
                     }
                     $alterSqls[] = $sql;
+                }
+            }
+
+            if (count($uniqueKeyChanges) > 0) {
+                if ($uniqueKeyChanges[0] === false && $uniqueKeyChanges[1] === true) {
+                    if (!$dataTable->hasIndex(DataSetInterface::UNIQUE_HASH_INX)) {
+                        $sql = sprintf("ALTER IGNORE TABLE %s ADD UNIQUE INDEX %s (%s(255))", $dataTable->getName(), DataSetInterface::UNIQUE_HASH_INX, DataSetInterface::UNIQUE_ID_COLUMN);
+                        $alterSqls[] = $sql;
+                    }
+                }
+
+                if ($uniqueKeyChanges[0] === true && $uniqueKeyChanges[1] === false) {
+                    if ($dataTable->hasIndex(DataSetInterface::UNIQUE_HASH_INX)) {
+                        $sql = sprintf("ALTER TABLE %s DROP INDEX %s", $dataTable->getName(), DataSetInterface::UNIQUE_HASH_INX);
+                        $alterSqls[] = $sql;
+                    }
                 }
             }
 

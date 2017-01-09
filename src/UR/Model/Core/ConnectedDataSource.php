@@ -9,7 +9,6 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $filters;
     protected $transforms;
     protected $requires;
-    protected $duplicates;
     protected $alertSetting;
 
     /**
@@ -144,21 +143,5 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setDataSet($dataSet)
     {
         $this->dataSet = $dataSet;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getDuplicates()
-    {
-        return $this->duplicates;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setDuplicates($duplicates)
-    {
-        $this->duplicates = $duplicates;
     }
 }
