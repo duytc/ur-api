@@ -11,14 +11,15 @@ use UR\Model\User\Role\PublisherInterface;
 interface DataSourceEntryManagerInterface extends ManagerInterface
 {
     /**
-     * @param array|UploadedFile $files
+     * @param UploadedFile $file
      * @param string $path
      * @param string $dirItem
      * @param DataSourceInterface $dataSource
      * @param string $receivedVia one of values "upload", "api", "email" or "selenium". Default is "upload"
-     * @return array
+     * @param bool $alsoMoveFile true if move file from tmp, else if need keep file
+     * @return array [ <original_name> => message ]
      */
-    public function uploadDataSourceEntryFiles(array $files, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD);
+    public function uploadDataSourceEntryFile(UploadedFile $file, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile);
 
     /**
      * @param FileBag $files

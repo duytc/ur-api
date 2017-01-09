@@ -23,10 +23,13 @@ class DataSourceCreatedListener
     {
         $entity = $args->getEntity();
         if ($entity instanceof DataSource) {
+            $urEmail = str_replace('$PUBLISHER_ID$', $entity->getPublisherId(), $this->urEmailTemplate);
+
             $tokenString = str_replace(".", "", uniqid(rand(1, 10000), true));
-            $entity->setUrEmail(str_replace('$TOKEN$', $tokenString, $this->urEmailTemplate));
+            $urEmail = str_replace('$TOKEN$', $tokenString, $urEmail);
+
+            $entity->setUrEmail($urEmail);
             $entity->setApiKey($entity->getPublisher()->getUsername() . $tokenString);
         }
     }
-
 }

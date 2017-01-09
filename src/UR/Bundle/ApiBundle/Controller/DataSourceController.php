@@ -14,7 +14,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceEntryManagerInterface;
-use UR\DomainManager\DataSourceManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntry;
@@ -211,6 +210,37 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
+     * validate ur email
+     *
+     * @Rest\Get("/datasources/emailvalidations")
+     *
+     * @Rest\QueryParam(name="email", nullable=false, description="The UR email that need be validated")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return bool
+     */
+    public function validateEmailAction(Request $request)
+    {
+        $email = $request->query->get('email', null);
+        if (null === $email) {
+            throw new BadRequestHttpException('missing "email"');
+        }
+
+        $dataSourceManager = $this->get('ur.domain_manager.data_source');
+        $dataSource = $dataSourceManager->getDataSourceByEmailKey($email);
+
+        return empty($dataSource) ? false : true;
+    }
+
+    /**
      * Get data sources by API Key
      *
      * @Rest\Get("/datasources/byapikey")
@@ -278,11 +308,11 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     /**
      * Get data sources by API Key
      *
-     * @Rest\Get("/datasources/byemailkey")
+     * @Rest\Get("/datasources/byemail")
      *
      * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.summary", "integration.summary","user.summary"})
      *
-     * @Rest\QueryParam(name="apiKey", nullable=true, description="The API Key")
+     * @Rest\QueryParam(name="email", nullable=false, description="The email")
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -297,9 +327,9 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      */
     public function getDataSourceByUrEmailAction(Request $request)
     {
-        $emailKey = $request->query->get('emailkey', null);
+        $emailKey = $request->query->get('email', null);
         if (null === $emailKey) {
-            throw new BadRequestHttpException('missing UR Email Key');
+            throw new BadRequestHttpException('missing "email" key');
         }
 
         $em = $this->get('ur.domain_manager.data_source');
@@ -451,41 +481,9 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
-     * Upload
-     *
-     * @Rest\Post("/datasources/{id}/viafetcher")
-     *
-     * @ApiDoc(
-     *  section = "Data Sources",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful",
-     *      400 = "Returned when the submitted data has errors"
-     *  }
-     * )
-     *
-     * @param Request $request the request object
-     *
-     * @param $id
-     * @return mixed
-     */
-    public function postViaFetcherAction(Request $request, $id)
-    {
-        /** @var DataSourceInterface $dataSource */
-        $dataSource = $this->one($id);
-
-        /** @var FileBag $fileBag */
-        $fileBag = $request->files;
-
-        return $this->processUploadedFiles($dataSource, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_SELENIUM);
-    }
-
-    /**
      * Upload file to multiple data sources by fetcher module
      *
      * @Rest\Post("/datasources/viafetcher")
-     *
-     * @Rest\QueryParam(name="ids", nullable=false, description="The data source ids")
      *
      * @ApiDoc(
      *  section = "Data Sources",
@@ -502,28 +500,13 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      */
     public function postMultipleDataSourcesViaFetcherAction(Request $request)
     {
-        $dataSourceIds = $request->query->get('ids', null);
-        if (!is_array($dataSourceIds)) {
-            throw new BadRequestHttpException('expect ids is array of data source ids');
-        }
-
-        /** @var DataSourceInterface $dataSource */
-        $dataSources = array_map(function ($id) {
-            return $this->one($id);
-        }, $dataSourceIds);
-
-        /** @var FileBag $fileBag */
-        $fileBag = $request->files;
-
-        return $this->processUploadedFilesForMultipleDataSources($dataSources, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_SELENIUM);
+        return $this->processPostFileForMultipleDataSources($request, $via = DataSourceEntry::RECEIVED_VIA_SELENIUM);
     }
 
     /**
-     * Upload file to data source by email-hook module
+     * Upload file to multiple data sources by email-hook module
      *
      * @Rest\Post("/datasources/viaemailhook")
-     *
-     * @Rest\QueryParam(name="email", nullable=false, description="The email related to data source")
      *
      * @ApiDoc(
      *  section = "Data Sources",
@@ -538,38 +521,9 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @return mixed
      */
-    public function postViaEmailHookAction(Request $request)
+    public function postUploadFileForMultipleDataSourcesViaEmailHookAction(Request $request)
     {
-        /* find data source by email */
-        $email = $request->query->get('email', null);
-        if (null === $email) {
-            throw new BadRequestHttpException('expect email is string and not null');
-        }
-
-        /** @var DataSourceManagerInterface $dataSourceManager */
-        $dataSourceManager = $this->get('ur.domain_manager.data_source');
-
-        /** @var DataSourceInterface $dataSource */
-        $dataSource = $dataSourceManager->findByEmail($email);
-        if (!($dataSource instanceof DataSourceInterface)) {
-            throw new NotFoundHttpException(
-                sprintf("The %s resource '%s' was not found or you do not have access", $email)
-            );
-        }
-
-        /* check permission to view data source */
-        $this->checkUserPermission($dataSource);
-
-        /* process upload files */
-        /** @var FileBag $fileBag */
-        $fileBag = $request->files;
-
-        $result = $this->processUploadedFiles($dataSource, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_EMAIL);
-
-        return [
-            'code' => Codes::HTTP_CREATED,
-            'message' => $result
-        ];
+        return $this->processPostFileForMultipleDataSources($request, $via = DataSourceEntry::RECEIVED_VIA_EMAIL);
     }
 
     /**
@@ -716,9 +670,10 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      * @param DataSourceInterface $dataSource
      * @param FileBag $fileBag
      * @param string $via is "upload" or "email" or "api" or "selenium". Default is "upload"
+     * @param bool $alsoMoveFile
      * @return array formatted as [ fileName => status, ... ]
      */
-    private function processUploadedFiles(DataSourceInterface $dataSource, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD)
+    private function processUploadedFiles(DataSourceInterface $dataSource, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile = true)
     {
         /** @var UploadedFile[] $files */
         $files = $this->getUploadedFiles($fileBag);
@@ -729,9 +684,62 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
 
         /** @var DataSourceEntryManagerInterface $dataSourceEntryManager */
         $dataSourceEntryManager = $this->get('ur.domain_manager.data_source_entry');
-        $result = $dataSourceEntryManager->uploadDataSourceEntryFiles($files, $uploadPath, $dirItem, $dataSource, $via);
+
+        $result = [];
+
+        /**@var UploadedFile $file */
+        foreach ($files as $file) {
+            // sure correct file type
+            if (!($file instanceof UploadedFile)) {
+                continue;
+            }
+
+            try {
+                $oneResult = $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via, $alsoMoveFile);
+                $result = array_merge($result, $oneResult);
+            } catch (\Exception $e) {
+                $originName = $file->getClientOriginalName();
+                $oneResult = [$originName => 'error'];
+                $result = array_merge($result, $oneResult);
+            }
+        }
 
         return $result;
+    }
+
+    /**
+     * process Post file for Multiple DataSources
+     *
+     * @param Request $request
+     * @param string $via
+     * @return array
+     */
+    private function processPostFileForMultipleDataSources(Request $request, $via = DataSourceEntry::RECEIVED_VIA_SELENIUM)
+    {
+        $dataSourceIds = $request->request->get('ids', null);
+        if (null === $dataSourceIds) {
+            throw new BadRequestHttpException('expect ids is array of data source ids');
+        }
+
+        $dataSourceIds = json_decode($dataSourceIds, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($dataSourceIds)) {
+            throw new BadRequestHttpException('expect ids is array of data source ids');
+        }
+
+        /** @var DataSourceInterface $dataSource */
+        $dataSources = array_map(function ($id) {
+            return $this->one($id);
+        }, $dataSourceIds);
+
+        /** @var FileBag $fileBag */
+        $fileBag = $request->files;
+
+        $result = $this->processUploadedFilesForMultipleDataSources($dataSources, $fileBag, $via);
+
+        return [
+            'code' => Codes::HTTP_CREATED,
+            'message' => $result
+        ];
     }
 
     /**
@@ -746,8 +754,13 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     {
         $result = [];
 
-        foreach ($dataSources as $dataSource) {
-            $oneResult = $this->processUploadedFiles($dataSource, $fileBag, $via);
+        for ($i = 0, $len = count($dataSources); $i < $len; $i++) {
+            $dataSource = $dataSources[$i];
+
+            // IMPORTANT: copy original file for not last data source, and move original file for last data source
+            $alsoMoveFile = ($i >= $len - 1);
+
+            $oneResult = $this->processUploadedFiles($dataSource, $fileBag, $via, $alsoMoveFile);
             $result[$dataSource->getId()] = $oneResult;
         }
 
