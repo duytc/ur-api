@@ -219,7 +219,7 @@ class ReportBuilder implements ReportBuilderInterface
 
             $reportParam = $this->paramsBuilder->buildFromReportView($view);
             $viewFilters = $reportView->getFilters();
-            $result = $this->getSingleReport($reportParam, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
+            $result = $this->getSingleReport($reportParam, null ,$isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
             if (count($result->getReports()) < 1) {
                 continue;
             }
