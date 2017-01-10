@@ -179,6 +179,9 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         if ($alsoMoveFile) {
             $file->move($path, $name);
         } else {
+            if (!file_exists($path)) {
+                mkdir($path, 0755, true);
+            }
             copy($file->getRealPath(), $path . '/' . $name);
         }
         $filePath = $path . '/' . $name;

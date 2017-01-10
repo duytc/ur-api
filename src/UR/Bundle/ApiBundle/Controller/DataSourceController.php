@@ -742,10 +742,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
 
         $result = $this->processUploadedFilesForMultipleDataSources($dataSources, $fileBag, $via);
 
-        return [
-            'code' => Codes::HTTP_CREATED,
-            'message' => $result
-        ];
+        return $result;
     }
 
     /**
