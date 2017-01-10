@@ -154,8 +154,6 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             throw new \Exception(sprintf("receivedVia %s is not supported", $receivedVia));
         }
 
-        $result = [];
-
         $error = $this->validateFileUpload($file, $dataSource);
         $origin_name = $file->getClientOriginalName();
         $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
@@ -192,7 +190,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
         $hash = sha1_file($filePath);
         if ($this->fileAlreadyImported($dataSource, $hash)) {
-            throw new Exception(sprintf('The file "%s" is already imported', $origin_name));
+            throw new Exception(sprintf('File "%s" is already imported', $origin_name));
         }
 
         // create new data source entry
@@ -222,7 +220,11 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $this->workerManager->processAlert($code, $publisherId, $params);
         }
 
-        $result[$origin_name] = 'success';
+        $result = [
+            'file' => $origin_name,
+            'status' => true,
+            'message' => sprintf('File %s is uploaded successfully', $origin_name)
+        ];
 
         return $result;
     }

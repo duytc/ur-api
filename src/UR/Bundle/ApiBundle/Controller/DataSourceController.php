@@ -696,11 +696,17 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
 
             try {
                 $oneResult = $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via, $alsoMoveFile);
-                $result = array_merge($result, $oneResult);
+
+                $result[] = $oneResult;
             } catch (\Exception $e) {
                 $originName = $file->getClientOriginalName();
-                $oneResult = [$originName => 'error'];
-                $result = array_merge($result, $oneResult);
+                $oneResult = [
+                    'file' => $originName,
+                    'status' => false,
+                    'message' => $e->getMessage()
+                ];
+
+                $result[] = $oneResult;
             }
         }
 
