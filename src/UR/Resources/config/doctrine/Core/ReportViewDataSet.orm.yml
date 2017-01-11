@@ -1,0 +1,29 @@
+UR\Entity\Core\ReportViewDataSet:
+    type: entity
+    table: core_report_view_data_set
+    repositoryClass: UR\Repository\Core\ReportViewDataSetRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    uniqueConstraints:
+        compound_primary_key:
+            columns:
+                - report_view_id
+                - data_set_id
+    fields:
+        filters:
+            type: json_array
+            nullable: false
+        dimensions:
+            type: json_array
+            nullable: true
+        metrics:
+            type: json_array
+            nullable: true
+    manyToOne:
+        reportView:
+            targetEntity: UR\Entity\Core\ReportView
+        dataSet:
+            targetEntity: UR\Entity\Core\DataSet

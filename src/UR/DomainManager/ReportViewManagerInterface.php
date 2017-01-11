@@ -18,12 +18,6 @@ interface ReportViewManagerInterface extends ManagerInterface
     public function getReportViewsForUserPaginationQuery(UserRoleInterface $reportView, PagerParam $param, $multiView);
 
     /**
-     * @param ReportViewInterface $reportView
-     * @return mixed
-     */
-    public function checkIfReportViewBelongsToMultiView(ReportViewInterface $reportView);
-
-    /**
      * create token for reportView with fields to be shared
      *
      * @param ReportViewInterface $reportView

@@ -9,7 +9,7 @@ use UR\Exception\InvalidArgumentException;
 
 class ReportView implements ReportViewInterface
 {
-    const REPORT_VIEW_ID_KEY = 'reportViewId';
+    const REPORT_VIEW_ID_KEY = 'subView';
     const FILTERS_KEY = 'filters';
     const TRANSFORMS_KEY = 'transform';
     const METRICS_KEY = 'metrics';

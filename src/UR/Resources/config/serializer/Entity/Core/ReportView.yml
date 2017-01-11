@@ -53,6 +53,12 @@ UR\Entity\Core\ReportView:
         fieldTypes:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        reportViewDataSets:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+        reportViewMultiViews:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
         subReportsIncluded:
             expose: true
             groups: [report_view.detail, report_view.summary]

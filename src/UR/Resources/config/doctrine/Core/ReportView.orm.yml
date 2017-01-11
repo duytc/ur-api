@@ -8,21 +8,21 @@ UR\Entity\Core\ReportView:
             generator:
                 strategy: AUTO
     fields:
-        dataSets:
-            type: json_array
-            nullable: true
+#        dataSets:
+#            type: json_array
+#            nullable: true
         transforms:
             type: json_array
             nullable: true
         weightedCalculations:
             type: json_array
             nullable: true
-        filters:
-            type: json_array
-            nullable: true
-        reportViews:
-            type: json_array
-            nullable: true
+#        filters:
+#            type: json_array
+#            nullable: true
+#        reportViews:
+#            type: json_array
+#            nullable: true
         metrics:
             type: json_array
             nullable: true
@@ -69,3 +69,14 @@ UR\Entity\Core\ReportView:
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
+    oneToMany:
+        reportViewMultiViews:
+            targetEntity: UR\Entity\Core\ReportViewMultiView
+            mappedBy: reportView
+            fetch: EXTRA_LAZY
+            cascade: ['persist', 'remove', 'detach']
+        reportViewDataSets:
+            targetEntity: UR\Entity\Core\ReportViewDataSet
+            mappedBy: reportView
+            fetch: EXTRA_LAZY
+            cascade: ['persist', 'remove', 'detach']

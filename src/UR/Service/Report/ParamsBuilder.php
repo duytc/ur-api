@@ -4,6 +4,7 @@
 namespace UR\Service\Report;
 
 
+use Doctrine\ORM\PersistentCollection;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Domain\DTO\Report\DataSets\DataSet;
@@ -21,18 +22,20 @@ use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Exception\InvalidArgumentException;
+use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
+use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Service\DTO\Report\WeightedCalculation;
 
 class ParamsBuilder implements ParamsBuilderInterface
 {
-    const DATA_SET_KEY = 'dataSets';
+    const DATA_SET_KEY = 'reportViewDataSets';
     const FIELD_TYPES_KEY = 'fieldTypes';
     const TRANSFORM_KEY = 'transforms';
     const JOIN_BY_KEY = 'joinBy';
     const WEIGHTED_CALCULATION_KEY = 'weightedCalculations';
     const MULTI_VIEW_KEY = 'multiView';
-    const REPORT_VIEWS_KEY = 'reportViews';
+    const REPORT_VIEWS_KEY = 'reportViewMultiViews';
     const FILTERS_KEY = 'filters';
     const FORMAT_KEY = 'formats';
     const SHOW_IN_TOTAL_KEY = 'showInTotal';
@@ -91,7 +94,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 
             if (array_key_exists(self::JOIN_BY_KEY, $data)) {
                 $joinBy = json_decode($data[self::JOIN_BY_KEY], true);
-                if (is_array($joinBy)) {
+                if (is_array($joinBy) && !empty($joinBy)) {
                     $param->setJoinByFields($joinBy);
                 }
             }
@@ -160,6 +163,58 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         return $reportViewObjects;
+    }
+
+    public static function reportViewMultiViewObjectsToArray($reportViewMultiViews)
+    {
+        if ($reportViewMultiViews instanceof PersistentCollection) {
+            $reportViewMultiViews = $reportViewMultiViews->toArray();
+        }
+
+        $reportViewData = [];
+        /**
+         * @var ReportViewMultiViewInterface $reportViewMultiView
+         */
+        foreach ($reportViewMultiViews as $reportViewMultiView) {
+            if (!$reportViewMultiView instanceof ReportViewMultiViewInterface) {
+                throw new InvalidArgumentException(sprintf('expect ReportViewMultiViewInterface, got %s', get_class($reportViewMultiView)));
+            }
+
+            $reportViewData[] = array (
+                ReportView::REPORT_VIEW_ID_KEY => $reportViewMultiView->getSubView()->getId(),
+                ReportView::DIMENSIONS_KEY => $reportViewMultiView->getDimensions(),
+                ReportView::METRICS_KEY => $reportViewMultiView->getMetrics(),
+                ReportView::FILTERS_KEY => $reportViewMultiView->getFilters(),
+            );
+        }
+
+        return $reportViewData;
+    }
+
+    public function reportViewDataSetObjectsToArray($reportViewDataSets)
+    {
+        if ($reportViewDataSets instanceof PersistentCollection) {
+            $reportViewDataSets = $reportViewDataSets->toArray();
+        }
+
+        $reportViewData = [];
+        /**
+         * @var ReportViewDataSetInterface $reportViewDataSet
+         */
+        foreach ($reportViewDataSets as $reportViewDataSet) {
+            if (!$reportViewDataSet instanceof ReportViewDataSetInterface) {
+                throw new InvalidArgumentException(sprintf('expect ReportViewDataSetInterface, got %s', get_class($reportViewDataSet)));
+            }
+
+            $reportViewData[] = array (
+                DataSet::DATA_SET_ID_KEY => $reportViewDataSet->getDataSet()->getId(),
+                DataSet::DIMENSIONS_KEY => $reportViewDataSet->getDimensions(),
+                DataSet::METRICS_KEY => $reportViewDataSet->getMetrics(),
+                DataSet::FILTERS_KEY => $reportViewDataSet->getFilters(),
+            );
+        }
+
+        return $reportViewData;
     }
 
     /**
@@ -271,12 +326,16 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if ($reportView->isMultiView()) {
             $param
-                ->setReportViews($this->createReportViews($reportView->getReportViews()))
+                ->setReportViews($this->createReportViews(
+                    $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews()))
+                )
                 ->setSubReportIncluded($reportView->isSubReportsIncluded())
                 ->setShowInTotal($reportView->getShowInTotal());
         } else {
             $param
-                ->setDataSets($this->createDataSets($reportView->getDataSets()))
+                ->setDataSets($this->createDataSets(
+                    $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
+                )
                 ->setJoinByFields($reportView->getJoinBy());
             // set showInTotal to NULL to get all total values
             // DO NOT change
@@ -286,7 +345,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             ->setMultiView($reportView->isMultiView())
             ->setTransforms($this->createTransforms($reportView->getTransforms()))
             ->setFieldTypes($reportView->getFieldTypes())
-            ->setFilters($reportView->getFilters());
+        ;
 
         if (is_array($reportView->getWeightedCalculations())) {
             $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
@@ -324,11 +383,15 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if ($reportView->isMultiView()) {
             $param
-                ->setReportViews($this->createReportViews($reportView->getReportViews()))
+                ->setReportViews($this->createReportViews(
+                    $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews()))
+                )
                 ->setSubReportIncluded($reportView->isSubReportsIncluded());
         } else {
             $param
-                ->setDataSets($this->createDataSets($reportView->getDataSets()))
+                ->setDataSets($this->createDataSets(
+                    $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
+                )
                 ->setJoinByFields($reportView->getJoinBy());
         }
 
@@ -336,7 +399,6 @@ class ParamsBuilder implements ParamsBuilderInterface
             ->setMultiView($reportView->isMultiView())
             ->setTransforms($this->createTransforms($reportView->getTransforms()))
             ->setFieldTypes($reportView->getFieldTypes())
-            ->setFilters($reportView->getFilters())
             ->setShowInTotal($reportView->getShowInTotal());
 
         if (is_array($reportView->getWeightedCalculations())) {

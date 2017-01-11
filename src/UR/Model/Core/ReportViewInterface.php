@@ -34,13 +34,13 @@ interface ReportViewInterface extends ModelInterface
     /**
      * @return array
      */
-    public function getDataSets();
+//    public function getDataSets();
 
     /**
      * @param array $dataSets
      * @return self
      */
-    public function setDataSets($dataSets);
+//    public function setDataSets($dataSets);
 
     /**
      * @return array
@@ -100,13 +100,13 @@ interface ReportViewInterface extends ModelInterface
     /**
      * @return array
      */
-    public function getFilters();
+//    public function getFilters();
 
     /**
      * @param array $filters
      * @return self
      */
-    public function setFilters($filters);
+//    public function setFilters($filters);
 
     /**
      * @return boolean
@@ -122,13 +122,13 @@ interface ReportViewInterface extends ModelInterface
     /**
      * @return array
      */
-    public function getReportViews();
+//    public function getReportViews();
 
     /**
      * @param array $reportViews
      * @return self
      */
-    public function setReportViews($reportViews);
+//    public function setReportViews($reportViews);
 
     /**
      * @return PublisherInterface
@@ -195,4 +195,26 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setSubReportsIncluded($subReportsIncluded);
+
+    /**
+     * @return mixed
+     */
+    public function getReportViewMultiViews();
+
+    /**
+     * @param mixed $reportViewMultiViews
+     * @return self
+     */
+    public function setReportViewMultiViews($reportViewMultiViews);
+
+    /**
+     * @return mixed
+     */
+    public function getReportViewDataSets();
+
+    /**
+     * @param mixed $reportViewDataSets
+     * @return self
+     */
+    public function setReportViewDataSets($reportViewDataSets);
 }

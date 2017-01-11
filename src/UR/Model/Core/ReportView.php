@@ -26,7 +26,7 @@ class ReportView implements ReportViewInterface
     /**
      * @var array
      */
-    protected $dataSets;
+//    protected $dataSets;
 
     /**
      * formatted as
@@ -62,7 +62,7 @@ class ReportView implements ReportViewInterface
     /**
      * @var array
      */
-    protected $filters;
+//    protected $filters;
 
     /**
      * @var boolean
@@ -72,7 +72,7 @@ class ReportView implements ReportViewInterface
     /**
      * @var array
      */
-    protected $reportViews;
+//    protected $reportViews;
 
     /**
      * @var array
@@ -118,6 +118,9 @@ class ReportView implements ReportViewInterface
      * @var PublisherInterface
      */
     protected $publisher;
+
+    protected $reportViewMultiViews;
+    protected $reportViewDataSets;
 
     /**
      * ReportView constructor.
@@ -174,19 +177,19 @@ class ReportView implements ReportViewInterface
     /**
      * @inheritdoc
      */
-    public function getDataSets()
-    {
-        return $this->dataSets;
-    }
+//    public function getDataSets()
+//    {
+//        return $this->dataSets;
+//    }
 
     /**
      * @inheritdoc
      */
-    public function setDataSets($dataSets)
-    {
-        $this->dataSets = $dataSets;
-        return $this;
-    }
+//    public function setDataSets($dataSets)
+//    {
+//        $this->dataSets = $dataSets;
+//        return $this;
+//    }
 
     /**
      * @inheritdoc
@@ -276,19 +279,19 @@ class ReportView implements ReportViewInterface
     /**
      * @inheritdoc
      */
-    public function getFilters()
-    {
-        return $this->filters;
-    }
+//    public function getFilters()
+//    {
+//        return $this->filters;
+//    }
 
     /**
      * @inheritdoc
      */
-    public function setFilters($filters)
-    {
-        $this->filters = $filters;
-        return $this;
-    }
+//    public function setFilters($filters)
+//    {
+//        $this->filters = $filters;
+//        return $this;
+//    }
 
     /**
      * @inheritdoc
@@ -310,19 +313,19 @@ class ReportView implements ReportViewInterface
     /**
      * @inheritdoc
      */
-    public function getReportViews()
-    {
-        return $this->reportViews;
-    }
+//    public function getReportViews()
+//    {
+//        return $this->reportViews;
+//    }
 
     /**
      * @inheritdoc
      */
-    public function setReportViews($reportViews)
-    {
-        $this->reportViews = $reportViews;
-        return $this;
-    }
+//    public function setReportViews($reportViews)
+//    {
+//        $this->reportViews = $reportViews;
+//        return $this;
+//    }
 
     /**
      * @inheritdoc
@@ -431,6 +434,42 @@ class ReportView implements ReportViewInterface
     public function setSubReportsIncluded($subReportsIncluded)
     {
         $this->subReportsIncluded = $subReportsIncluded;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getReportViewMultiViews()
+    {
+        return $this->reportViewMultiViews;
+    }
+
+    /**
+     * @param mixed $reportViewMultiViews
+     * @return self
+     */
+    public function setReportViewMultiViews($reportViewMultiViews)
+    {
+        $this->reportViewMultiViews = $reportViewMultiViews;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getReportViewDataSets()
+    {
+        return $this->reportViewDataSets;
+    }
+
+    /**
+     * @param mixed $reportViewDataSets
+     * @return self
+     */
+    public function setReportViewDataSets($reportViewDataSets)
+    {
+        $this->reportViewDataSets = $reportViewDataSets;
         return $this;
     }
 }

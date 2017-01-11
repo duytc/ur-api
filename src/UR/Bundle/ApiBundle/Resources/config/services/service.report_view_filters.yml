@@ -1,0 +1,36 @@
+parameters:
+    # entity class
+    ur.entity.core.report_view_data_set.class: UR\Entity\Core\ReportViewDataSet
+    ur.entity.core.report_view_multi_view.class: UR\Entity\Core\ReportViewMultiView
+
+    # form class
+    ur.form.type.core.report_view_data_set.class: UR\Form\Type\ReportViewDataSetFormType
+    ur.form.type.core.report_view_multi_view.class: UR\Form\Type\ReportViewMultiViewFormType
+
+services:
+
+    # report view dataset
+    ur.repository.report_view_data_set:
+        class: UR\Repository\Core\ReportViewDataSetRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.report_view_data_set.class%
+
+    ur.form.type.report_view_data_set:
+        class: %ur.form.type.core.report_view_data_set.class%
+        tags:
+            - { name: form.type, alias: ur_form_report_view_data_set }
+
+    # report view multiview
+    ur.repository.report_view_multi_view:
+        class: UR\Repository\Core\ReportViewMultiViewRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.report_view_multi_view.class%
+
+    ur.form.type.report_view_multi_view:
+        class: %ur.form.type.core.report_view_multi_view.class%
+        tags:
+            - { name: form.type, alias: ur_form_report_view_multi_view }

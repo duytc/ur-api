@@ -1,0 +1,21 @@
+UR\Entity\Core\ReportViewDataSet:
+    exclusion_policy: ALL
+    properties:
+#        id:
+#            expose: true
+#            groups: [report_view_data_set.detail, report_view_data_set.summary]
+        filters:
+            expose: true
+            groups: [report_view_data_set.detail, report_view_data_set.summary]
+        dimensions:
+            expose: true
+            groups: [report_view_data_set.detail, report_view_data_set.summary]
+        metrics:
+            expose: true
+            groups: [report_view_data_set.detail, report_view_data_set.summary]
+#        reportView:
+#            expose: true
+#            groups: [report_view_data_set.detail, report_view_data_set.summary]
+        dataSet:
+            expose: true
+            groups: [report_view_data_set.detail, report_view_data_set.summary]

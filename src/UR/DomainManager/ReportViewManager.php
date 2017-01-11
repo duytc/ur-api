@@ -4,6 +4,7 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
+use UR\Entity\Core\ReportViewMultiView;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\ReportView;
@@ -55,9 +56,11 @@ class ReportViewManager implements ReportViewManagerInterface
     {
         if (!$reportView instanceof ReportViewInterface) throw new InvalidArgumentException('expect ReportViewInterface object');
 
-        if ($this->checkIfReportViewBelongsToMultiView($reportView)) {
+        $reportViewMultiViewRepository = $this->om->getRepository(ReportViewMultiView::class);
+        if ($reportViewMultiViewRepository->checkIfReportViewBelongsToMultiView($reportView)) {
             throw new InvalidArgumentException('This report view belongs to another report view');
         }
+
         $this->om->remove($reportView);
         $this->om->flush();
     }
@@ -90,27 +93,6 @@ class ReportViewManager implements ReportViewManagerInterface
     public function getReportViewsForUserPaginationQuery(UserRoleInterface $publisher, PagerParam $param, $multiView)
     {
         return $this->repository->getReportViewsForUserPaginationQuery($publisher, $param, $multiView);
-    }
-
-    public function checkIfReportViewBelongsToMultiView(ReportViewInterface $reportView)
-    {
-        $reports = $this->repository->getMultiViewReportForPublisher($reportView->getPublisher());
-        /**
-         * @var ReportViewInterface $report
-         */
-        foreach($reports as $report) {
-            $views = ParamsBuilder::createReportViews($report->getReportViews());
-            /**
-             * @var \UR\Domain\DTO\Report\ReportViews\ReportViewInterface $view
-             */
-            foreach($views as $view) {
-                if ($view->getReportViewId() === $reportView->getId()) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     /**

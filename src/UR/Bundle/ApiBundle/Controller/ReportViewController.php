@@ -24,7 +24,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     /**
      * Get all report views
      *
-     * @Rest\View(serializerGroups={"report_view.summary", "user.summary"})
+     * @Rest\View(serializerGroups={"report_view.summary", "user.summary", "report_view_data_set.summary", "report_view_multi_view.summary", "dataset.summary"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
@@ -70,7 +70,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     /**
      * Get a single report view group for the given id
      *
-     * @Rest\View(serializerGroups={"report_view.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"report_view.detail", "user.summary", "report_view_data_set.summary", "report_view_multi_view.summary", "dataset.summary"})
      *
      * @ApiDoc(
      *  section = "ReportView",

@@ -1,0 +1,21 @@
+UR\Entity\Core\ReportViewMultiView:
+    exclusion_policy: ALL
+    properties:
+#        id:
+#            expose: true
+#            groups: [report_view_multi_view.detail, report_view_multi_view.summary]
+        filters:
+            expose: true
+            groups: [report_view_multi_view.detail, report_view_multi_view.summary]
+        dimensions:
+            expose: true
+            groups: [report_view_multi_view.detail, report_view_multi_view.summary]
+        metrics:
+            expose: true
+            groups: [report_view_multi_view.detail, report_view_multi_view.summary]
+#        reportView:
+#            expose: true
+#            groups: [report_view_multi_view.detail, report_view_multi_view.summary]
+        subView:
+            expose: true
+            groups: [report_view_multi_view.detail, report_view_multi_view.summary]

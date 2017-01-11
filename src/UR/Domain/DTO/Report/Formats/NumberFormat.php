@@ -142,6 +142,10 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
     {
         $thousandSeparator = $this->thousandSeparator === self::SEPARATOR_NONE ? '' : $this->thousandSeparator;
 
+	    if ($fieldValue ==  null) {
+		    return $fieldValue;
+	    }
+
         return number_format($fieldValue, $this->precision, $decimalSeparator, $thousandSeparator);
     }
 }

@@ -56,7 +56,7 @@ class ReportBuilder implements ReportBuilderInterface
      * @param ParamsBuilderInterface $paramsBuilder
      */
     public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper,
-                                ReportViewManagerInterface $reportViewManager, ParamsBuilderInterface $paramsBuilder)
+        ReportViewManagerInterface $reportViewManager, ParamsBuilderInterface $paramsBuilder)
     {
         $this->reportSelector = $reportSelector;
         $this->reportGrouper = $reportGrouper;
@@ -230,7 +230,6 @@ class ReportBuilder implements ReportBuilderInterface
             foreach ($viewFilters as $viewFilter) {
                 $result = $viewFilter->filter($result);
             }
-
             $types = array_merge($types, $result->getTypes());
             if ($subReport === true) {
                 $reports = $result->getReports();
@@ -275,6 +274,10 @@ class ReportBuilder implements ReportBuilderInterface
                     unset($row[$key]);
                 }
             }
+        }
+
+        if (count($rows) == 0) {
+	        return false;
         }
 
         $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
@@ -399,6 +402,11 @@ class ReportBuilder implements ReportBuilderInterface
      */
     private function addNewField($key, $value, array $arrays)
     {
+	    if (count($arrays) == 0) {
+		    $newElement[][$key] = $value;
+		    return $newElement;
+	    }
+
         return array_map(function (array $array) use ($key, $value) {
             $array[$key] = $value;
             return $array;
