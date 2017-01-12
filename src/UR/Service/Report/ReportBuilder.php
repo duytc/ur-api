@@ -257,15 +257,15 @@ class ReportBuilder implements ReportBuilderInterface
         foreach ($rows as &$row) {
             foreach ($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
-                    //$row[$metric] = null;
-                    continue;
+                    $row[$metric] = null;
+                   // continue;
                 }
             }
 
             foreach ($dimensions as $dimension) {
                 if (!array_key_exists($dimension, $row)) {
-                    //$row[$dimension] = null;
-                    continue;
+                    $row[$dimension] = null;
+                    //continue;
                 }
             }
 
