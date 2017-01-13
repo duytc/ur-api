@@ -3,9 +3,7 @@
 namespace UR\Service\Parser\Filter;
 
 
-use UR\Domain\DTO\Report\Filters\TextFilter as BaseTextFilter;
-
-class TextFilter extends BaseTextFilter implements ColumnFilterInterface
+class TextFilter extends CommonTextFilter implements ColumnFilterInterface
 {
     public function __construct(array $textFilter)
     {

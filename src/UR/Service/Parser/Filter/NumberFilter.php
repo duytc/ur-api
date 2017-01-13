@@ -3,10 +3,9 @@
 namespace UR\Service\Parser\Filter;
 
 
-use UR\Domain\DTO\Report\Filters\NumberFilter as BaseNumberFilter;
 use UR\Service\Alert\ProcessAlert;
 
-class NumberFilter extends BaseNumberFilter implements ColumnFilterInterface
+class NumberFilter extends CommonNumberFilter implements ColumnFilterInterface
 {
     public function __construct(array $numberFilter)
     {
