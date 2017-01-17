@@ -4,19 +4,27 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Entity\Core\ReportViewMultiView;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\ReportView;
+use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;
 use UR\Repository\Core\ReportViewRepositoryInterface;
-use UR\Service\Report\ParamsBuilder;
 
 class ReportViewManager implements ReportViewManagerInterface
 {
+    const CLONE_REPORT_VIEW_NAME = 'name';
+    const CLONE_REPORT_VIEW_ALIAS = 'alias';
+    const CLONE_REPORT_VIEW_TRANSFORM = 'transforms';
+    const CLONE_REPORT_VIEW_FORMAT = 'formats';
+    const CLONE_REPORT_VIEW_FILTER = 'filters';
+    const CLONE_REPORT_VIEW_DATA_SET = 'dataSet';
+
     protected $om;
     protected $repository;
 
@@ -138,5 +146,50 @@ class ReportViewManager implements ReportViewManagerInterface
         }
 
         return $newToken;
+    }
+
+    public function cloneReportView(ReportViewInterface $reportView, array $cloneSettings)
+    {
+        foreach ($cloneSettings as $cloneSetting) {
+            $newReportView = clone $reportView;
+            $newName = array_key_exists(self::CLONE_REPORT_VIEW_NAME, $cloneSetting) ? $cloneSetting[self::CLONE_REPORT_VIEW_NAME] : $reportView->getName();
+            $newAlias = array_key_exists(self::CLONE_REPORT_VIEW_ALIAS, $cloneSetting) ? $cloneSetting[self::CLONE_REPORT_VIEW_ALIAS] : $cloneSetting[self::CLONE_REPORT_VIEW_NAME];
+            $newReportView->setName($newName === null ? $reportView->getName() : $newName);
+            $newReportView->setAlias($newAlias === null ? $newName : $newAlias);
+            $newReportViewDataSetJson = [];
+            if (array_key_exists('reportViewDataSets', $cloneSettings)) {
+                $newReportViewDataSetJson = $cloneSetting['reportViewDataSets'];
+                $newTransforms = array_key_exists(self::CLONE_REPORT_VIEW_TRANSFORM, $cloneSettings) ? $cloneSetting[self::CLONE_REPORT_VIEW_TRANSFORM] : [];
+                $newFormats = array_key_exists(self::CLONE_REPORT_VIEW_FORMAT, $cloneSettings) ? $cloneSetting[self::CLONE_REPORT_VIEW_FORMAT] : [];
+                $newReportView->setTransforms($newTransforms);
+                $newReportView->setFormats($newFormats);
+            }
+
+            // clone filters
+            /** @var ReportViewDataSetInterface[] $reportViewDataSets */
+            $reportViewDataSets = $reportView->getReportViewDataSets();
+            $newReportViewDataSets = [];
+            foreach ($reportViewDataSets as $reportViewDataSet) {
+                $newReportViewDataSet = clone $reportViewDataSet;
+                $newReportViewDataSet->setReportView($newReportView);
+                // process with $newReportViewDataSetJson
+                foreach ($newReportViewDataSetJson as $item) {
+                    if (!array_key_exists(self::CLONE_REPORT_VIEW_DATA_SET, $item)) {
+                        throw new Exception('message should contains % key', self::CLONE_REPORT_VIEW_DATA_SET);
+                    }
+
+                    if ($newReportViewDataSet->getDataSet()->getId() === $item[self::CLONE_REPORT_VIEW_DATA_SET]) {
+                        $newReportViewDataSet->setFilters($item['filters']);
+                    }
+
+                    continue;
+                }
+
+                $newReportViewDataSets[] = $newReportViewDataSet;
+            }
+
+            $newReportView->setReportViewDataSets($newReportViewDataSets);
+            $this->save($newReportView);
+        }
     }
 }

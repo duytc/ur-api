@@ -5,6 +5,7 @@ namespace UR\Bundle\ApiBundle\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -14,6 +15,7 @@ use UR\Exception\RuntimeException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 
 /**
@@ -145,6 +147,39 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     public function postAction(Request $request)
     {
         return $this->postAndReturnEntityData($request);
+    }
+
+    /**
+     * Clone
+     *
+     * @Rest\Post("/reportviews/{id}/clone")
+     * @ApiDoc(
+     *  section = "Report View",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request the request object
+     *
+     * @param $id
+     * @return mixed
+     */
+    public function postCloneAction(Request $request, $id)
+    {
+        /** @var ReportViewInterface $reportView */
+        $reportView = $this->one($id);
+        $cloneSettings = $request->get('cloneSettings');
+
+        $reportViewManager = $this->get('ur.domain_manager.report_view');
+        if (!is_array($cloneSettings)) {
+            throw new Exception('cloneSettings must be array');
+        }
+
+        $reportViewManager->cloneReportView($reportView, $cloneSettings);
+        return '';
     }
 
     /**
