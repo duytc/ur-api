@@ -11,6 +11,7 @@ use UR\Exception\RuntimeException;
 use UR\Model\Core\ReportView;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
+use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;
@@ -24,6 +25,7 @@ class ReportViewManager implements ReportViewManagerInterface
     const CLONE_REPORT_VIEW_FORMAT = 'formats';
     const CLONE_REPORT_VIEW_FILTER = 'filters';
     const CLONE_REPORT_VIEW_DATA_SET = 'dataSet';
+    const CLONE_REPORT_VIEW_SUB_VIEW = 'subView';
 
     protected $om;
     protected $repository;
@@ -167,28 +169,54 @@ class ReportViewManager implements ReportViewManagerInterface
 
             // clone filters
             /** @var ReportViewDataSetInterface[] $reportViewDataSets */
+            /** @var ReportViewMultiViewInterface[] $reportViewMultiViews */
             $reportViewDataSets = $reportView->getReportViewDataSets();
+            $reportViewMultiViews = $reportView->getReportViewMultiViews();
             $newReportViewDataSets = [];
-            foreach ($reportViewDataSets as $reportViewDataSet) {
-                $newReportViewDataSet = clone $reportViewDataSet;
-                $newReportViewDataSet->setReportView($newReportView);
-                // process with $newReportViewDataSetJson
-                foreach ($newReportViewDataSetJson as $item) {
-                    if (!array_key_exists(self::CLONE_REPORT_VIEW_DATA_SET, $item)) {
-                        throw new Exception('message should contains % key', self::CLONE_REPORT_VIEW_DATA_SET);
+            $newReportViewMultiViews = [];
+            if (!$reportView->isMultiView()) {
+                foreach ($reportViewDataSets as $reportViewDataSet) {
+                    $newReportViewDataSet = clone $reportViewDataSet;
+                    $newReportViewDataSet->setReportView($newReportView);
+                    // process with $newReportViewDataSetJson
+                    foreach ($newReportViewDataSetJson as $item) {
+                        if (!array_key_exists(self::CLONE_REPORT_VIEW_DATA_SET, $item)) {
+                            throw new Exception('message should contains % key', self::CLONE_REPORT_VIEW_DATA_SET);
+                        }
+
+                        if ($newReportViewDataSet->getDataSet()->getId() === $item[self::CLONE_REPORT_VIEW_DATA_SET]) {
+                            $newReportViewDataSet->setFilters($item['filters']);
+                        }
+
+                        continue;
                     }
 
-                    if ($newReportViewDataSet->getDataSet()->getId() === $item[self::CLONE_REPORT_VIEW_DATA_SET]) {
-                        $newReportViewDataSet->setFilters($item['filters']);
-                    }
-
-                    continue;
+                    $newReportViewDataSets[] = $newReportViewDataSet;
                 }
+            } else {
 
-                $newReportViewDataSets[] = $newReportViewDataSet;
+                foreach ($reportViewMultiViews as $reportViewMultiView) {
+                    $newReportViewMultiView = clone $reportViewMultiView;
+                    $newReportViewMultiView->setReportView($newReportView);
+                    // process with $newReportViewDataSetJson
+                    foreach ($newReportViewDataSetJson as $item) {
+                        if (!array_key_exists(self::CLONE_REPORT_VIEW_SUB_VIEW, $item)) {
+                            throw new Exception('message should contains % key', self::CLONE_REPORT_VIEW_SUB_VIEW);
+                        }
+
+                        if ($newReportViewMultiView->getSubView()->getId() === $item[self::CLONE_REPORT_VIEW_SUB_VIEW]) {
+                            $newReportViewMultiView->setFilters($item['filters']);
+                        }
+
+                        continue;
+                    }
+
+                    $newReportViewMultiViews[] = $newReportViewMultiView;
+                }
             }
 
             $newReportView->setReportViewDataSets($newReportViewDataSets);
+            $newReportView->setReportViewMultiViews($newReportViewMultiViews);
             $this->save($newReportView);
         }
     }
