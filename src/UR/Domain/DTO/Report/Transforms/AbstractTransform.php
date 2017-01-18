@@ -7,6 +7,7 @@ namespace UR\Domain\DTO\Report\Transforms;
 abstract class AbstractTransform
 {
     const PRIORITY = null;
+	const TRANSFORMS_TYPE = 'abstractTransform';
 
     protected $priority;
 
@@ -24,5 +25,10 @@ abstract class AbstractTransform
     public function getPriority()
     {
         return $this->priority;
+    }
+
+    public function getTransformsType()
+    {
+	    return self::TRANSFORMS_TYPE;
     }
 }

@@ -19,4 +19,10 @@ interface ReportViewMultiViewRepositoryInterface extends ObjectRepository
      * @return boolean
      */
     public function checkIfReportViewBelongsToMultiView(ReportViewInterface $reportView);
+
+	/**
+	 * @param ReportViewInterface $subView
+	 * @return mixed
+	 */
+	public function getBySubView(ReportViewInterface $subView);
 }

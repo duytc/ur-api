@@ -17,6 +17,15 @@ class ReportViewMultiViewRepository extends EntityRepository implements ReportVi
             ->getResult();
     }
 
+	public function getBySubView(ReportViewInterface $subView)
+	{
+		return $this->createQueryBuilder('rv')
+			->where('rv.subView = :subView')
+			->setParameter('subView', $subView)
+			->getQuery()
+			->getResult();
+	}
+
     public function checkIfReportViewBelongsToMultiView(ReportViewInterface $reportView)
     {
         return $this->createQueryBuilder('rv')

@@ -23,6 +23,12 @@ interface FormatInterface
      */
     public function getFields();
 
+	/**
+	 * @param $fields
+	 * @return mixed
+	 */
+	public function setFields($fields);
+
     /**
      * @return int
      */

@@ -438,7 +438,7 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @return mixed
+     * @return ReportViewMultiViewInterface[]
      */
     public function getReportViewMultiViews()
     {

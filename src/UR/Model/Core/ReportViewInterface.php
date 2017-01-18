@@ -197,7 +197,7 @@ interface ReportViewInterface extends ModelInterface
     public function setSubReportsIncluded($subReportsIncluded);
 
     /**
-     * @return mixed
+     * @return ReportViewMultiViewInterface[]
      */
     public function getReportViewMultiViews();
 

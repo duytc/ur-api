@@ -61,5 +61,5 @@ interface ReportViewMultiViewInterface extends ModelInterface
      * @param array $metrics
      * @return self
      */
-    public function setMetrics($metrics);
+	public function setMetrics(array $metrics);
 }

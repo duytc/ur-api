@@ -12,7 +12,8 @@ imports:
     - { resource: services/service.report_view.yml }
     - { resource: services/service.report.yml }
     - { resource: services/service.report_schedule.yml }
-    - { resource: services/service.report_view_filters.yml }
+    - { resource: services/service.report_view_data_set.yml }
+    - { resource: services/service.report_view_multi_view.yml }
 
 
 parameters:

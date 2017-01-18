@@ -33,4 +33,11 @@ abstract class AbstractFormat
     {
         return $this->fields;
     }
+
+	public function setFields($fields)
+	{
+		$this->fields = $fields;
+
+		return $this;
+	}
 }

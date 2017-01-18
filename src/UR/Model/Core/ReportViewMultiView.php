@@ -128,7 +128,7 @@ class ReportViewMultiView implements ReportViewMultiViewInterface
      * @param array $metrics
      * @return self
      */
-    public function setMetrics($metrics)
+    public function setMetrics(array  $metrics)
     {
         $this->metrics = $metrics;
         return $this;
