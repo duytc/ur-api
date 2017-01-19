@@ -25,10 +25,11 @@ class Excel implements DataSourceInterface
     protected $filePath;
     protected $chunkFile;
     protected $numOfColumns;
-    const CHUNK_SIZE = 5000;
+    protected $chunkSize;
 
-    public function __construct($filePath, Factory $phpExcel)
+    public function __construct($filePath, Factory $phpExcel, $chunkSize)
     {
+        $this->chunkSize = $chunkSize;
         $this->filePath = $filePath;
         $this->inputFileType = \PHPExcel_IOFactory::identify($filePath);
         if (in_array($this->inputFileType, $this->excel_2003_formats)) {
@@ -94,8 +95,6 @@ class Excel implements DataSourceInterface
         } else if (in_array($this->inputFileType, $this->excel_2007_formats)) {
             $this->excel = ReaderFactory::create(Type::XLSX);
             $this->excel->open($filePath);
-            // TODO: check setShouldFormatDates() is what???
-            $this->excel->setShouldFormatDates(false);
             foreach ($this->excel->getSheetIterator() as $sheet) {
                 $max = 0;
                 $i = 0;
@@ -151,8 +150,8 @@ class Excel implements DataSourceInterface
         if (in_array($this->inputFileType, $this->excel_2003_formats)) {
             $this->rows = [];
             $beginRowsReadRange = $this->dataRow;
-            for ($startRow = $this->dataRow; $startRow <= 500000; $startRow += self::CHUNK_SIZE) {
-                $objPHPExcel = $this->getPhpExcelObj($this->filePath, self::CHUNK_SIZE, $beginRowsReadRange);
+            for ($startRow = $this->dataRow; $startRow <= self::MAX_ROW_XLS; $startRow += $this->chunkSize) {
+                $objPHPExcel = $this->getPhpExcelObj($this->filePath, $this->chunkSize, $beginRowsReadRange);
                 $this->sheet = $objPHPExcel->getActiveSheet();
 
                 $columns = range('A', $this->numOfColumns);
@@ -182,10 +181,10 @@ class Excel implements DataSourceInterface
                     $this->rows[$row] = $rowData;
                 }
 
-                $beginRowsReadRange += self::CHUNK_SIZE;
+                $beginRowsReadRange += $this->chunkSize;
                 $objPHPExcel->disconnectWorksheets();
                 unset($objPHPExcel, $this->sheet);
-                if ($highestRow < self::CHUNK_SIZE) {
+                if ($highestRow < $this->chunkSize) {
                     break;
                 }
             }

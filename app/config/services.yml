@@ -128,6 +128,8 @@ services:
             - @phpexcel
             - %upload_file_dir%
             - @monolog.logger
+            - %ur_batch_size%
+            - %ur_reading_xls_chunk_size%
 
     ur.worker.workers.re_import_new_entry_received:
         class: UR\Worker\Workers\ReImportWhenNewEntryReceived

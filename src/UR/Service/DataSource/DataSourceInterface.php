@@ -12,6 +12,8 @@ interface DataSourceInterface
 
     const SECOND_ROW = 2;
 
+    const MAX_ROW_XLS = 65535;
+
     public function getColumns();
 
     public function getRows($fromDateFormat);

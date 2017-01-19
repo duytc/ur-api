@@ -53,7 +53,11 @@ class AutoImportData implements AutoImportDataInterface
      */
     private $logger;
 
-    function __construct(EntityManagerInterface $em, Manager $workerManager, ImportHistoryManagerInterface $importHistoryManager, Factory $phpExcel, $uploadFileDir, LoggerInterface $logger)
+    private $batchSize;
+
+    private $chunkSize;
+
+    function __construct(EntityManagerInterface $em, Manager $workerManager, ImportHistoryManagerInterface $importHistoryManager, Factory $phpExcel, $uploadFileDir, LoggerInterface $logger, $batchSize, $chunkSize)
     {
         $this->em = $em;
         $this->workerManager = $workerManager;
@@ -61,6 +65,8 @@ class AutoImportData implements AutoImportDataInterface
         $this->phpExcel = $phpExcel;
         $this->uploadFileDir = $uploadFileDir;
         $this->logger = $logger;
+        $this->batchSize = $batchSize;
+        $this->chunkSize = $chunkSize;
     }
 
     public function autoCreateDataImport($connectedDataSources, DataSourceEntryInterface $dataSourceEntry)
@@ -68,7 +74,7 @@ class AutoImportData implements AutoImportDataInterface
         $conn = $this->em->getConnection();
         $dataSetLocator = new Locator($conn);
         $dataSetSynchronizer = new Synchronizer($conn, new Comparator());
-        $dataSetImporter = new Importer($conn);
+        $dataSetImporter = new Importer($conn, $this->batchSize);
 
         $importUtils = new ImportUtils();
 
@@ -119,7 +125,7 @@ class AutoImportData implements AutoImportDataInterface
                     $file = new Csv($this->uploadFileDir . $dataSourceEntry->getPath());
                 } else if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'excel') === 0) {
                     /**@var Excel $file */
-                    $file = new Excel($this->uploadFileDir . $dataSourceEntry->getPath(), $this->phpExcel);
+                    $file = new Excel($this->uploadFileDir . $dataSourceEntry->getPath(), $this->phpExcel, $this->chunkSize);
                 } else {
                     $file = new Json($dataSourceEntry->getPath());
                 }

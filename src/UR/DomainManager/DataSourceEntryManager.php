@@ -249,7 +249,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $file = new Csv($inputFile);
         } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
             /**@var Excel $file */
-            $file = new Excel($inputFile, $this->phpExcel);
+            $file = new Excel($inputFile, $this->phpExcel, 5000);
         } else {
             $file = new Json($inputFile);
         }

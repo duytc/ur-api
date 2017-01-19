@@ -17,14 +17,15 @@ class Importer
     const IMPORT_ID_COLUMN = '__import_id';
 
     protected $conn;
-    protected $batchSize = 500;
+    protected $batchSize;
     private static $restrictedColumns = [self::ID_COLUMN, self::DATA_SOURCE_ID_COLUMN, self::IMPORT_ID_COLUMN, DataSetInterface::UNIQUE_ID_COLUMN];
     protected $preparedUpdateCount;
     protected $preparedInsertCount;
 
-    public function __construct(Connection $conn)
+    public function __construct(Connection $conn, $batchSize)
     {
         $this->conn = $conn;
+        $this->batchSize = $batchSize;
     }
 
     public function importCollection(Collection $collection, Table $table, $importId, ConnectedDataSourceInterface $connectedDataSource)
