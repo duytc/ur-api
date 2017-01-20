@@ -173,7 +173,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         $reportView = $this->one($id);
         $cloneSettings = $request->get('cloneSettings');
 
-        $reportViewService = $this->get('ur.service.report.clone.report');
+        $reportViewService = $this->get('ur.service.report.clone_report_view');
         if (!is_array($cloneSettings)) {
             throw new Exception('cloneSettings must be array');
         }

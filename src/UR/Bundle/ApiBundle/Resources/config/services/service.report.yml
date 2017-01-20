@@ -27,7 +27,7 @@ services:
             - '@doctrine.orm.entity_manager'
             - '@ur.services.report.sql_builder'
 
-    ur.service.report.clone.report:
+    ur.service.report.clone_report_view:
         class: UR\Service\Report\CloneReportView
         arguments:
             - '@ur.domain_manager.report_view'
