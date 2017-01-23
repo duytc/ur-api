@@ -120,13 +120,19 @@ class Csv implements DataSourceInterface
                 $all_rows = $this->csv->fetchAll();
 
                 if (is_array($all_rows) && count($all_rows) > 0) {
-                    // check the first row is array and has at least 2 columns
-                    $firstRow = $all_rows[0];
-                    if (is_array($firstRow) && count($firstRow) > 1) {
-                        // found, so quit the loop
-                        $validDelimiter = $delimiter;
-                        break;
+                    for ($x = 0; $x < self::DETECT_HEADER_ROWS; $x++) {
+                        // check the 20 first rows is array and has at least 2 columns
+                        $firstRow = $all_rows[$x];
+                        if (is_array($firstRow) && count($firstRow) > 1) {
+                            // found, so quit the loop
+                            $validDelimiter = $delimiter;
+                            break;
+                        }
                     }
+                }
+
+                if ($validDelimiter) {
+                    break;
                 }
             } catch (\Exception $e) {
                 // not support delimiter or other reason, then we try with other delimiters
@@ -136,10 +142,8 @@ class Csv implements DataSourceInterface
         // could not parse due to not supported delimiters or other exception
         if (false === $validDelimiter) {
             if (!is_array($this->headers)) {
-                return [];
+                $this->csv->setDelimiter(self::DELIMITER_COMMA);
             }
-
-            return $this->convertEncodingToASCII($this->headers); // TODO: why?
         }
 
         for ($row = 0; $row < count($all_rows); $row++) {
@@ -178,6 +182,10 @@ class Csv implements DataSourceInterface
             if ($i >= DataSourceInterface::DETECT_HEADER_ROWS) {
                 break;
             }
+        }
+
+        if ($this->headers === null) {
+            return [];
         }
 
         return $this->convertEncodingToASCII($this->headers);

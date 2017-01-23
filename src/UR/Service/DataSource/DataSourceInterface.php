@@ -6,7 +6,7 @@ interface DataSourceInterface
 {
     const DETECT_HEADER_ROWS = 20;
 
-    const ROW_MATCH = 10;
+    const ROW_MATCH = 15;
 
     const FIRST_MATCH = 1;
 
