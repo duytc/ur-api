@@ -141,6 +141,9 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
 			return (in_array($report[$this->getFieldName()], $this->getComparisonValue()));
 		}, ARRAY_FILTER_USE_BOTH);
 
@@ -153,6 +156,9 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
 			return (!in_array($report[$this->getFieldName()], $this->getComparisonValue()));
 		}, ARRAY_FILTER_USE_BOTH);
 
@@ -165,6 +171,9 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
 			$containsValues = $this->getComparisonValue();
 			foreach ($containsValues as $containsValue) {
 				if (false !== strpos($report[$this->getFieldName()], $containsValue)) {
@@ -184,6 +193,9 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
 			$containsValues = $this->getComparisonValue();
 			foreach ($containsValues as $containsValue) {
 				if (false === strpos($report[$this->getFieldName()], $containsValue)) {
@@ -203,6 +215,9 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
 			$containsValues = $this->getComparisonValue();
 			foreach ($containsValues as $containsValue) {
 				if (substr($report[$this->getFieldName()], 0, strlen($containsValue)) === $containsValue) {
@@ -222,6 +237,9 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
 			$containsValues = $this->getComparisonValue();
 			foreach ($containsValues as $containsValue) {
 				$startPosition = strlen($report[$this->getFieldName()]) - strlen($containsValue);
@@ -242,6 +260,9 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
 			return (in_array($report[$this->getFieldName()], $this->getComparisonValue()));
 		}, ARRAY_FILTER_USE_BOTH);
 
@@ -254,6 +275,10 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+
 			return (!in_array($report[$this->getFieldName()], $this->getComparisonValue()));
 		}, ARRAY_FILTER_USE_BOTH);
 

@@ -228,6 +228,10 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) use ($startDate, $endDate) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+
 			$stringDate = $report[$this->getFieldName()];
 			$dateValue = new DateTime($stringDate);
 			$dateValue->format('Y-m-d');

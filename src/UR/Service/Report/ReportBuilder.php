@@ -173,7 +173,7 @@ class ReportBuilder implements ReportBuilderInterface
 
 		if (!empty($startDate) && !empty($endDate)) {
 			foreach ($dataSets as $dataSet) {
-				$this->overrideDateTypeFilterForDataSet($dataSet, $startDate, $endDate);
+				$this->overrideDateTypeFilterForDataSet($dataSet, $startDate, $endDate, $outputJoinField);
 			}
 		}
 
@@ -363,9 +363,10 @@ class ReportBuilder implements ReportBuilderInterface
 	 * @param DataSetDTO $dataSet
 	 * @param $startDate
 	 * @param $endDate
+	 * @param $joinField
 	 * @return DataSetDTO
 	 */
-    protected function overrideDateTypeFilterForDataSet(DataSetDTO &$dataSet, $startDate, $endDate)
+    protected function overrideDateTypeFilterForDataSet(DataSetDTO &$dataSet, $startDate, $endDate, $joinField = null)
     {
         $noDateFilter = 0;
         $filters = $dataSet->getFilters();

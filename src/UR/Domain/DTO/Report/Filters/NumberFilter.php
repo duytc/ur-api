@@ -153,6 +153,10 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+
 			$valueInReport = round($report[$this->getFieldName()], 10); //Not use: $report[$this->getFieldName()] == $this->getComparisonValue()
 			$compareValue = round($this->getComparisonValue(), 10);
 
@@ -168,6 +172,10 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+
 			$valueInReport = round($report[$this->getFieldName()], 10);
 			$compareValue = round($this->getComparisonValue(), 10);
 
@@ -183,6 +191,10 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+
 			$valueInReport = round($report[$this->getFieldName()], 10); //Not use: $report[$this->getFieldName()] == $this->getComparisonValue()
 			$compareValue = round($this->getComparisonValue(), 10);
 
@@ -198,6 +210,10 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+
 			$valueInReport = round($report[$this->getFieldName()], 10);
 			$compareValue = round($this->getComparisonValue(), 10);
 
@@ -213,6 +229,10 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+
 			$valueInReport = round($report[$this->getFieldName()], 10);
 			$compareValue = round($this->getComparisonValue(), 10);
 
@@ -228,6 +248,10 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+
 			$valueInReport = round($report[$this->getFieldName()], 10);
 			$compareValue = round($this->getComparisonValue(), 10);
 
@@ -243,6 +267,10 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+
 			$valueInReport = round($report[$this->getFieldName()], 10);
 			$compareValues = array_map(function($value){
 				return round($value, 10);
@@ -260,6 +288,10 @@ class NumberFilter extends AbstractFilter implements NumberFilterInterface
 	{
 		$reports = $reportsCollections->getReports();
 		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+
 			$valueInReport = round($report[$this->getFieldName()], 10);
 			$compareValues = array_map(function($value){
 				return round($value, 10);
