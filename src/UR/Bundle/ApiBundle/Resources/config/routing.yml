@@ -23,11 +23,6 @@ api_data_source_integration:
     resource: UR\Bundle\ApiBundle\Controller\DataSourceIntegrationController
     name_prefix:  api_1_
 
-api_integration_group:
-    type: rest
-    resource: UR\Bundle\ApiBundle\Controller\IntegrationGroupController
-    name_prefix:  api_1_
-
 api_integration:
     type: rest
     resource: UR\Bundle\ApiBundle\Controller\IntegrationController

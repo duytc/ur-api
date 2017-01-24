@@ -13,8 +13,7 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
         $builder
             ->add('dataSource')
             ->add('integration')
-            ->add('username')
-            ->add('password')
+            ->add('params')
             ->add('schedule')
             ->add('active')
         ;

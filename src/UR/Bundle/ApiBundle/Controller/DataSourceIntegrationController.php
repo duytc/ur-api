@@ -4,16 +4,20 @@ namespace UR\Bundle\ApiBundle\Controller;
 
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
+use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\DomainManager\DataSourceIntegrationManagerInterface;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
+use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSourceIntegrationInterface;
 
 /**
- * @Rest\RouteResource("DataSourceIntegration")
+ * @Rest\RouteResource("datasourceintegration")
  */
 class DataSourceIntegrationController extends RestControllerAbstract implements ClassResourceInterface
 {
@@ -40,6 +44,8 @@ class DataSourceIntegrationController extends RestControllerAbstract implements 
     /**
      * Get a single data source integration for the given id
      *
+     * @Rest\Get("/datasourceintegrations/{id}", requirements={"id" = "\d+"})
+     *
      * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.detail", "integration.detail", "user.summary"})
      *
      * @ApiDoc(
@@ -52,12 +58,79 @@ class DataSourceIntegrationController extends RestControllerAbstract implements 
      *
      * @param int $id the resource id
      *
-     * @return \UR\Model\Core\DataSourceInterface
+     * @return mixed
      * @throws NotFoundHttpException when the resource does not exist
      */
     public function getAction($id)
     {
         return $this->one($id);
+    }
+
+    /**
+     * Get integration to be executed due to schedule
+     *
+     * @Rest\Get("/datasourceintegrations/byschedule")
+     *
+     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.bySchedule", "integration.detail", "user.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return DataSourceIntegrationInterface[]
+     */
+    public function getIntegrationByScheduleAction(Request $request)
+    {
+        /** @var DataSourceIntegrationManagerInterface $dsiManager */
+        $dsiManager = $this->get('ur.domain_manager.data_source_integration');
+
+        return $dsiManager->getIntegrationBySchedule();
+    }
+
+    /**
+     * update last execute time
+     *
+     * @Rest\Post("/datasourceintegrations/updatelastexecutetime")
+     *
+     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.detail", "integration.detail", "user.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return \UR\Model\Core\DataSourceIntegrationInterface[]
+     */
+    public function postUpdateLastExecuteTimeAction(Request $request)
+    {
+        $id = $request->request->get('id', null);
+        $dataSourceIntegration = $this->one($id);
+        if (!($dataSourceIntegration instanceof DataSourceIntegrationInterface)) {
+            throw new NotFoundHttpException('Not found that data source integration');
+        }
+
+        $lastExecuteTime = $request->request->get('lastexecutetime', null);
+        try {
+            $lastExecuteTime = date_create($lastExecuteTime);
+        } catch (\Exception $e) {
+            throw new BadRequestHttpException('Invalid lastexecutetime');
+        }
+
+        /** @var DataSourceIntegrationManagerInterface $dsiManager */
+        $dsiManager = $this->get('ur.domain_manager.data_source_integration');
+
+        $dsiManager->updateLastExecuteTime($dataSourceIntegration, $lastExecuteTime);
+
+        return $this->view(true, Codes::HTTP_OK);
     }
 
     /**

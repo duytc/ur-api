@@ -8,18 +8,20 @@ UR\Entity\Core\DataSourceIntegration:
             generator:
                 strategy: AUTO
     fields:
-        username:
-            type: string
-            length: 100
-        password:
-            type: string
-            length: 100
+        params:
+            type: json_array
+            nullable: true
         schedule:
             type: integer
         active:
             type: boolean
             option:
                 default: true
+        lastExecutedAt:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

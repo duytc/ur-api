@@ -10,14 +10,10 @@ class Integration implements IntegrationInterface
 
     protected $id;
     protected $name;
-    protected $type;
-    protected $url;
     protected $canonicalName;
-
-    /**
-     * @var IntegrationGroupInterface
-     */
-    protected $integrationGroup;
+    protected $type;
+    protected $method;
+    protected $url;
 
     public function __construct()
     {
@@ -53,6 +49,14 @@ class Integration implements IntegrationInterface
     /**
      * @inheritdoc
      */
+    public function setCanonicalName($canonicalName)
+    {
+        $this->canonicalName = $canonicalName;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getCanonicalName()
     {
         return $this->canonicalName;
@@ -79,6 +83,46 @@ class Integration implements IntegrationInterface
     /**
      * @inheritdoc
      */
+    public static function supportedTypes()
+    {
+        return [
+            self::TYPE_UI,
+            self::TYPE_API
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMethod()
+    {
+        return $this->method;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setMethod($method)
+    {
+        $this->method = $method;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public static function supportedMethods()
+    {
+        return [
+            self::METHOD_GET,
+            self::METHOD_POST
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getUrl()
     {
         return $this->url;
@@ -90,24 +134,6 @@ class Integration implements IntegrationInterface
     public function setUrl($url)
     {
         $this->url = $url;
-
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getIntegrationGroup()
-    {
-        return $this->integrationGroup;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setIntegrationGroup(IntegrationGroupInterface $integrationGroup)
-    {
-        $this->integrationGroup = $integrationGroup;
 
         return $this;
     }

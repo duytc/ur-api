@@ -10,20 +10,16 @@ class DataSourceIntegration extends DataSourceIntegrationModel
 {
     protected $id;
 
-    /**
-     * @var DataSourceInterface
-     */
-    protected $dataSource;
-
-    /**
-     * @var IntegrationInterface
-     */
-    protected $integration;
-
-    protected $username;
-    protected $password;
+    protected $params;
     protected $schedule;
     protected $active;
+    protected $lastExecutedAt;
+
+    /** @var DataSourceInterface */
+    protected $dataSource;
+
+    /** @var IntegrationInterface */
+    protected $integration;
 
     /**
      * @inheritdoc

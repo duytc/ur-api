@@ -6,20 +6,17 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
 {
     protected $id;
 
-    /**
-     * @var DataSourceInterface
-     */
-    protected $dataSource;
-
-    /**
-     * @var IntegrationInterface
-     */
-    protected $integration;
-
-    protected $username;
-    protected $password;
+    /** @var array */
+    protected $params;
     protected $schedule;
     protected $active;
+    protected $lastExecutedAt;
+
+    /** @var DataSourceInterface */
+    protected $dataSource;
+
+    /** @var IntegrationInterface */
+    protected $integration;
 
     public function __construct()
     {
@@ -73,35 +70,17 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     /**
      * @inheritdoc
      */
-    public function getUsername()
+    public function getParams()
     {
-        return $this->username;
+        return $this->params;
     }
 
     /**
      * @inheritdoc
      */
-    public function setUsername($username)
+    public function setParams(array $params)
     {
-        $this->username = $username;
-
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getPassword()
-    {
-        return $this->password;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setPassword($password)
-    {
-        $this->password = $password;
+        $this->params = $params;
 
         return $this;
     }
@@ -142,4 +121,19 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
         return $this;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getLastExecutedAt()
+    {
+        return $this->lastExecutedAt;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLastExecutedAt($lastExecutedAt)
+    {
+        $this->lastExecutedAt = $lastExecutedAt;
+    }
 }

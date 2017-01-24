@@ -19,8 +19,11 @@ $container = $kernel->getContainer();
 /*
  * CODE BEGIN FROM HERE...
  */
+$xxx= strtotime('02/12/1989');
 
-$date = \DateTime::createFromFormat('j-M-Y', '31-Mar-2009');
+$today = date("F d, Y", $xxx);
+
+$date = \DateTime::createFromFormat('Y ,M d', '2016 ,Apr 26');
 echo $date->format('d/m/Y');
 
 

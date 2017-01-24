@@ -61,6 +61,8 @@ final class TransformType
         'M/d/Y',  // Mar/01/2016
         'd-M-Y',  // 01-Mar-2016
         'd/M/Y',  // 01/Mar/2016
+        'M d, Y',  // Mar 01,2016
+        'Y, M d',  // 2016, Mar 01
     ];
 
     public static function isDateOrNumberTransform($type)

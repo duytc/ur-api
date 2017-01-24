@@ -68,8 +68,34 @@ class DataSourceIntegrationManager implements DataSourceIntegrationManagerInterf
     /**
      * @inheritdoc
      */
+    public function findByIntegrationCanonicalName($canonicalName)
+    {
+        return $this->repository->findByIntegrationCanonicalName($canonicalName);
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function all($limit = null, $offset = null)
     {
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getIntegrationBySchedule()
+    {
+        return $this->repository->getIntegrationBySchedule();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function updateLastExecuteTime(DataSourceIntegrationInterface $dataSourceIntegration, \DateTime $lastExecuteTime)
+    {
+        /**@var DataSourceIntegrationInterface $dataSourceIntegration */
+        $dataSourceIntegration->setLastExecutedAt($lastExecuteTime);
+        $this->save($dataSourceIntegration);
     }
 }

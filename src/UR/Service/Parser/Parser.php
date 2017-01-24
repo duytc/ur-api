@@ -59,7 +59,10 @@ class Parser implements ParserInterface
                 if ($row[$columnsMapping[$dsColumn]] !== null) {
                     if (strcmp($type, Type::NUMBER) === 0 || strcmp($type, Type::DECIMAL) === 0) {
                         $row[$columnsMapping[$dsColumn]] = str_replace("$", "", $row[$columnsMapping[$dsColumn]]);
+                        $row[$columnsMapping[$dsColumn]] = str_replace("%", "", $row[$columnsMapping[$dsColumn]]);
                         $row[$columnsMapping[$dsColumn]] = str_replace(",", "", $row[$columnsMapping[$dsColumn]]);
+                        $row[$columnsMapping[$dsColumn]] === 'n/a' ? null : $row[$columnsMapping[$dsColumn]];
+                        $row[$columnsMapping[$dsColumn]] === "-" ? null : $row[$columnsMapping[$dsColumn]];
                         if (strcmp($type, Type::DECIMAL) === 0) {
                             $row[$columnsMapping[$dsColumn]] = str_replace(" ", "", $row[$columnsMapping[$dsColumn]]);
                         }

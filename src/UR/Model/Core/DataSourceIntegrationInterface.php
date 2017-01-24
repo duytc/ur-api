@@ -3,7 +3,6 @@
 namespace UR\Model\Core;
 
 use UR\Model\ModelInterface;
-use UR\Model\User\Role\PublisherInterface;
 
 interface DataSourceIntegrationInterface extends ModelInterface
 {
@@ -18,6 +17,7 @@ interface DataSourceIntegrationInterface extends ModelInterface
      */
 
     public function setDataSource(DataSourceInterface $dataSource);
+
     /**
      * @return IntegrationInterface
      */
@@ -33,25 +33,13 @@ interface DataSourceIntegrationInterface extends ModelInterface
     /**
      * @return string
      */
-    public function getUsername();
+    public function getParams();
 
     /**
-     * @param string $username
+     * @param array $params
      * @return self
      */
-    public function setUsername($username);
-
-    /**
-     * @return string
-     */
-
-    public function getPassword();
-    /**
-     * @param string $password
-     * @return self
-     */
-
-    public function setPassword($password);
+    public function setParams(array $params);
 
     /**
      * @return int
@@ -74,4 +62,14 @@ interface DataSourceIntegrationInterface extends ModelInterface
      * @return self
      */
     public function setActive($active);
+
+    /**
+     * @return mixed
+     */
+    public function getLastExecutedAt();
+
+    /**
+     * @param mixed $lastExecutedAt
+     */
+    public function setLastExecutedAt($lastExecutedAt);
 }

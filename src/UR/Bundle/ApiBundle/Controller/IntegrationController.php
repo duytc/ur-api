@@ -23,7 +23,7 @@ class IntegrationController extends RestControllerAbstract implements ClassResou
     /**
      * Get all integration
      *
-     * @Rest\View(serializerGroups={"integration.detail", "integrationgroup.detail"})
+     * @Rest\View(serializerGroups={"integration.detail"})
      *
      * @ApiDoc(
      *  section = "Integration",
@@ -45,7 +45,7 @@ class IntegrationController extends RestControllerAbstract implements ClassResou
     /**
      * Get a single integration group for the given id
      *
-     * @Rest\View(serializerGroups={"integration.detail", "integrationgroup.detail"})
+     * @Rest\View(serializerGroups={"integration.detail"})
      *
      * @ApiDoc(
      *  section = "Integration",

@@ -71,6 +71,9 @@ doctrine:
 
         entity_managers:
             default:
+                dql:
+                    datetime_functions:
+                        dateadd: UR\Bundle\ApiBundle\Service\DateAdd
                 connection:         default
                 naming_strategy:    doctrine.orm.naming_strategy.underscore
                 #metadata_cache_driver: redis

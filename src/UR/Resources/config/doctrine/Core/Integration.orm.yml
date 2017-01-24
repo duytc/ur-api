@@ -14,12 +14,9 @@ UR\Entity\Core\Integration:
         canonicalName:
             type: string
             length: 100
-        url:
-            type: string
         type:
             type: string
-
-    manyToOne:
-        integrationGroup:
-            targetEntity: UR\Entity\Core\IntegrationGroup
-            inversedBy: integrations
+        method:
+            type: string
+        url:
+            type: string

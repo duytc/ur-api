@@ -2,148 +2,107 @@
 
 namespace UR\Bundle\AppBundle\Command;
 
-
 use Symfony\Bridge\Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use UR\DomainManager\IntegrationGroupManagerInterface;
 use UR\DomainManager\IntegrationManagerInterface;
 use UR\Entity\Core\Integration;
-use UR\Entity\Core\IntegrationGroup;
-use UR\Model\Core\IntegrationGroupInterface;
-use UR\Model\Core\IntegrationInterface;
 use UR\Service\StringUtilTrait;
 
 class CreateIntegrationCommand extends ContainerAwareCommand
 {
-    use StringUtilTrait;
+	use StringUtilTrait;
 
-    protected function configure()
-    {
-        $this
-            ->setName('ur:integration:create')
-            ->setDescription('Create Integration Group and Integrations belong to its');
-    }
+	/** @var Logger */
+	private $logger;
 
-    protected function execute(InputInterface $input, OutputInterface $output)
-    {
-        /** @var ContainerInterface $container */
-        $container = $this->getContainer();
-        /** @var Logger $logger */
-        $logger = $container->get('logger');
+	protected function configure()
+	{
+		$this
+			->setName('ur:integration:create')
+			->addOption('name', 'i', InputOption::VALUE_REQUIRED, 'Integration name')
+			->addOption('type', 't', InputOption::VALUE_REQUIRED, 'Integration type: ui or api')
+			->addOption('method', 'm', InputOption::VALUE_REQUIRED, 'Integration method: GET or POST')
+			->addOption('url', 'u', InputOption::VALUE_REQUIRED, 'Integration url')
+			->setDescription('Create Integration');
+	}
 
-        $logger->info("starting command...");
-        $logger->info("reading builtin_integrations config...");
+	protected function execute(InputInterface $input, OutputInterface $output)
+	{
+		/** @var ContainerInterface $container */
+		$container = $this->getContainer();
+		/** @var Logger $logger */
+		$this->logger = $container->get('logger');
 
-        /* get builtin integration config
-         * sample config:
-         * integration_groups:
-         *     -
-         *         name: 'Demand Partner'
-         *         integrations:
-         *             -
-         *                 name: 'Spotx  api'
-         *                 url: 'http://spotx.com/api'
-         *                 type: csv
-         *             -
-         *                 name: 'Spotx selenium 1'
-         *                 url: 'http://spotx.com/selenium'
-         *                 type: excel
-         *     -
-         *         ...
-         */
-        $builtinIntegrations = $container->getParameter('builtin_integrations');
-        if (!is_array($builtinIntegrations) || !array_key_exists('integration_groups', $builtinIntegrations)) {
-            $logger->error('invalid config, config is not an array or missing "integration_groups"');
-            return;
-        }
+		$this->logger->info('starting command...');
 
-        /** @var array $integrationGroups */
-        $integrationGroups = $builtinIntegrations['integration_groups'];
-        if (!is_array($integrationGroups)) {
-            $logger->error('invalid config, "integration_groups" is not an array');
-            return;
-        }
+		/* get inputs */
+		$name = $input->getOption('name');
+		$type = $input->getOption('type');
+		$method = $input->getOption('method');
+		$url = $input->getOption('url');
 
-        /** @var IntegrationGroupManagerInterface $integrationGroupManager */
-        $integrationGroupManager = $container->get('ur.domain_manager.integration_group');
-        /** @var IntegrationManagerInterface $integrationManager */
-        $integrationManager = $container->get('ur.domain_manager.integration');
+		if (!$this->validateInput($name, $type, $method, $url)) {
+			return;
+		}
 
-        // parse and sync config to database
-        $logger->info("parsing and sync config...");
-        $insertedIntegrations = 0;
-        $updatedIntegrations = 0;
+		if (!$this->validateInput($name, $type, $method, $url)) {
+			return;
+		}
 
-        foreach ($integrationGroups as $integrationGroup) {
-            // validate
-            if (!is_array($integrationGroup) || !array_key_exists('name', $integrationGroup) || !array_key_exists('integrations', $integrationGroup)) {
-                $logger->error('invalid config, missing "name" or "integrations" under "integration_groups"');
-                return;
-            }
+		/** @var IntegrationManagerInterface $integrationManager */
+		$integrationManager = $container->get('ur.domain_manager.integration');
 
-            // process integrationGroup
-            /** @var IntegrationGroupInterface $integrationGroupEntity */
-            $integrationGroupEntity = null;
-            $dbIntegrationGroup = $integrationGroupManager->findByName($integrationGroup['name']);
+		$cName = $this->normalizeName($name);
+		$integration = $integrationManager->findByCanonicalName($cName);
 
-            if (count($dbIntegrationGroup) < 1) { //doesn't exist in DB - create new entity integrationGroup
-                $integrationGroupEntity = (new IntegrationGroup())
-                    ->setName($integrationGroup['name']);
-            } else {
-                $integrationGroupEntity = $dbIntegrationGroup[0];
-            }
+		if (empty($integration)) {
+			$integration = new Integration();
+		}
 
-            // build all entity integrations for integrationGroup
-            $integrations = $integrationGroup['integrations'];
-            if (!is_array($integrations)) {
-                $logger->error('invalid config, "integrations" must be array');
-                return;
-            }
+		$integration->setName($name)
+			->setType($type)
+			->setUrl($url)
+			->setMethod($method);
 
-            /** @var IntegrationInterface[] $integrationEntities */
-            $integrationEntities = [];
-            $integrationGroupManager->save($integrationGroupEntity);
-            foreach ($integrations as $integration) {
-                // validate
-                if (!is_array($integration) || !array_key_exists('name', $integration) || !array_key_exists('url', $integration) || !array_key_exists('type', $integration)) {
-                    $logger->error('invalid config, missing "name" or "url" or "type"');
-                    return;
-                }
+		$integrationManager->save($integration);
 
-                $canonicalName = $this->normalizeName($integration['name']);
-                /** @var IntegrationInterface $dbIntegration */
-                $dbIntegration = $integrationManager->findByCanonicalName($canonicalName);
-                /** @var IntegrationInterface $integrationEntity */
-                $integrationEntity = null;
+		$this->logger->info(sprintf('command run successfully: %d created.', 1));
+	}
 
-                if (!($dbIntegration instanceof IntegrationInterface)) { //doesn't exist in DB - create new entity integration
-                    $integrationEntity = (new Integration())
-                        ->setName($integration['name'])
-                        ->setType($integration['type'])
-                        ->setUrl($integration['url']);
+	/**
+	 * @param string $name
+	 * @param string $type
+	 * @param string $method
+	 * @param string $url
+	 * @return bool
+	 */
+	private function validateInput($name, $type, $method, $url)
+	{
+		if ($name == null || $type == null || $method == null || $url == null) {
+			$this->logger->info(sprintf('command run failed: input must not be null or empty'));
+			return false;
+		}
 
-                    // count inserted integrations
-                    $insertedIntegrations++;
-                } else { // update integration if exist
-                    $integrationEntity = $dbIntegration
-                        ->setType($integration['type'])
-                        ->setUrl($integration['url']);
+		if (!in_array($type, Integration::supportedTypes())) {
+			$this->logger->info(sprintf('command run failed: type %s not supported', $type));
+			return false;
+		}
 
-                    // count updated integrations
-                    $updatedIntegrations++;
-                }
+		if (!in_array($method, Integration::supportedMethods())) {
+			$this->logger->info(sprintf('command run failed: method %s not supported', $method));
+			return false;
+		}
 
-                $integrationEntity->setIntegrationGroup(($integrationGroupEntity));
-                $integrationEntities[] = $integrationEntity;
-            }
+		// validate url format
+		if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+			$this->logger->info(sprintf('command run failed: url %s malformed', $url));
+			return false;
+		}
 
-            $integrationGroupEntity->setIntegrations($integrationEntities);
-            $integrationGroupManager->save($integrationGroupEntity);
-        }
-
-        $logger->info(sprintf("command run successfully: %d created and %d updated integrations.", $insertedIntegrations, $updatedIntegrations));
-    }
+		return true;
+	}
 }

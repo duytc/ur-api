@@ -1,24 +1,21 @@
 UR\Entity\Core\DataSourceIntegration:
     exclusion_policy: ALL
     properties:
-#        id:
-#            expose: true
-#            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
+        id:
+            expose: true
+            groups: [dataSourceIntegration.bySchedule]
         dataSource:
             expose: true
-            groups: [dataSourceIntegration.detail]
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.bySchedule]
         integration:
             expose: true
-            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
-        username:
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
+        params:
             expose: true
-            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
-        password:
-            expose: true
-            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
         schedule:
             expose: true
-            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
         active:
             expose: true
-            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]

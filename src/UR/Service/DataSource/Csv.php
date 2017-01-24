@@ -159,25 +159,26 @@ class Csv implements DataSourceInterface
                 $this->headers = $cur_row;
                 $max = count($this->headers);
                 $this->headerRow = $row;
+                $this->dataRow = $row + 1;
             }
 
-            if ((count($cur_row) !== count($pre_columns))) {
-                $match = 0;
-                $pre_columns = $cur_row;
-                continue;
-            }
-
-            $match++;
-            if ($match === self::FIRST_MATCH) {
-                if ($row === self::SECOND_ROW)
-                    $this->dataRow = $row - 1;
-                else
-                    $this->dataRow = $row;
-            }
-
-            if ($match > self::ROW_MATCH && count($this->headers) > 0) {
-                break;
-            }
+//            if ((count($cur_row) !== count($pre_columns))) {
+//                $match = 0;
+//                $pre_columns = $cur_row;
+//                continue;
+//            }
+//
+//            $match++;
+//            if ($match === self::FIRST_MATCH) {
+//                if ($row === self::SECOND_ROW)
+//                    $this->dataRow = $row - 1;
+//                else
+//                    $this->dataRow = $row;
+//            }
+//
+//            if ($match > self::ROW_MATCH && count($this->headers) > 0) {
+//                break;
+//            }
 
             if ($i >= DataSourceInterface::DETECT_HEADER_ROWS) {
                 break;
@@ -194,8 +195,15 @@ class Csv implements DataSourceInterface
     public function getRows($fromDateFormat)
     {
         $this->csv->setOffset($this->dataRow);
+        $allData = $this->csv->fetchAll();
+        $rows = [];
+        foreach ($allData as $item) {
+            if (count($this->validValue($item)) === count($this->headers)) {
+                $rows[] = $this->validValue($item);
+            }
+        }
 
-        return $this->csv->fetchAll();
+        return $rows;
     }
 
     public function validValue(array $arr)

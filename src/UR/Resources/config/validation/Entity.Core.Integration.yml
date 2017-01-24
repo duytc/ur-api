@@ -8,18 +8,20 @@ UR\Entity\Core\Integration:
                 max: 30
                 minMessage: 'Integration name must be at least {{ limit }} characters long'
                 maxMessage: 'Integration name cannot be longer than {{ limit }} characters'
-        integrationGroup:
-            - NotBlank:
-                message: "Integration Group cannot be blank"
-            - Valid: ~
-            - NotNull: ~
         type:
             - NotBlank:
                 message: "Type of Integration cannot be blank"
             - NotNull: ~
             - Choice:
                 choices:  ["Selenium", "API"]
-                message:  "not valid type"
+                message:  "invalid type"
+        method:
+            - NotBlank:
+                message: "Method of Integration cannot be blank"
+            - NotNull: ~
+            - Choice:
+                choices:  ["GET", "POST"]
+                message:  "invalid method"
         url:
             - NotBlank:
                 message: "url of Integration cannot be blank"

@@ -7,12 +7,15 @@ UR\Entity\Core\Integration:
         name:
             expose: true
             groups: [integration.detail, integration.summary]
-        url:
+        canonicalName:
             expose: true
             groups: [integration.detail]
         type:
             expose: true
             groups: [integration.detail]
-        integrationGroup:
+        method:
             expose: true
-            groups: [integration.detail, integration.summary]
+            groups: [integration.detail]
+        url:
+            expose: true
+            groups: [integration.detail]

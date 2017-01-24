@@ -25,33 +25,6 @@ parameters:
     jwt_public_key_path:  %kernel.root_dir%/var/jwt/public.pem    # ssh public key path
     jwt_key_pass_phrase:  'tagcade'                               # ssh key pass phrase
     jwt_token_ttl:        86400
-    builtin_integrations:
-        integration_groups:
-            -
-                name: 'Demand Partner'
-                integrations:
-                    -
-                        name: Spotx api
-                        url: http://spotx.com/api
-                        type: csv
-                    -
-                        name: Spotx selenium
-                        url: http://spotx.com/selenium
-                        type: excel
-            -
-                name: 'Pubvantage'
-                integrations:
-                    -
-                        name: Pubvantage account report
-                        url: http://pubvantage.com/report/account
-                        type: csv
-            -
-                name: 'JW Player'
-                integrations:
-                    -
-                        name: JW Player Daily Stat
-                        url: http://jwplayer.com/report/daily_stat
-                        type: json
     upload_file_dir: %kernel.root_dir%/../data/file_upload
     shared_report_view_link: http://localhost:9010/#/public/unifiedReport/report/detail?reportView=$$REPORT_VIEW_ID$$&token=$$SHARED_KEY$$
     ur_email_template: 'pub$PUBLISHER_ID$.$TOKEN$@unified-reports.dev'
