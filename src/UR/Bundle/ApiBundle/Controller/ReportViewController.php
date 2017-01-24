@@ -98,6 +98,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      * @Rest\Get("/reportviews/{id}/shareablelink" )
      *
      * @Rest\QueryParam(name="fields", nullable=false, description="fields to be showed in sharedReport, must match dimensions, metrics fields in ReportView")
+     * @Rest\QueryParam(name="dateRange", nullable=true, description="custom date range")
      *
      * @ApiDoc(
      *  section = "Report View",
@@ -120,12 +121,14 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         $reportView = $this->one($id);
 
         $fieldsToBeShared = $request->query->get('fields', '[]');
+        $dateRange = $request->query->get('dateRange', null);
         $fieldsToBeShared = json_decode($fieldsToBeShared);
+        $dateRange = json_decode($dateRange, true);
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($fieldsToBeShared)) {
             throw new BadRequestHttpException('expected "fields" param is array that match fields in ReportView');
         }
 
-        return $this->getShareableLink($reportView, $fieldsToBeShared);
+        return $this->getShareableLink($reportView, $fieldsToBeShared, $dateRange);
     }
 
     /**
@@ -285,13 +288,14 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      *
      * @param ReportViewInterface $reportView
      * @param array $fieldsToBeShared
+     * @param array|null $dateRange
      * @return mixed
      */
-    private function getShareableLink(ReportViewInterface $reportView, array $fieldsToBeShared)
+    private function getShareableLink(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null)
     {
         /** @var ReportViewManagerInterface $reportViewManager */
         $reportViewManager = $this->get('ur.domain_manager.report_view');
-        $token = $reportViewManager->createTokenForReportView($reportView, $fieldsToBeShared);
+        $token = $reportViewManager->createTokenForReportView($reportView, $fieldsToBeShared, $dateRange);
 
         $sharedReportViewLinkTemplate = $this->container->getParameter('shared_report_view_link');
         if (strpos($sharedReportViewLinkTemplate, '$$REPORT_VIEW_ID$$') < 0 || strpos($sharedReportViewLinkTemplate, '$$SHARED_KEY$$') < 0) {

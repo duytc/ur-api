@@ -134,4 +134,11 @@ class DataSet implements DataSetInterface
     {
         return $this->dataSetId;
     }
+
+	public function setFilters($filters)
+	{
+		$this->filters = $filters;
+
+		return $this;
+	}
 }

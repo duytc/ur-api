@@ -1,11 +1,8 @@
 <?php
 
-
 namespace UR\Service\Report;
 
-
 use Doctrine\ORM\PersistentCollection;
-use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Formats\ColumnPositionFormat;
@@ -29,386 +26,396 @@ use UR\Service\DTO\Report\WeightedCalculation;
 
 class ParamsBuilder implements ParamsBuilderInterface
 {
-    const DATA_SET_KEY = 'reportViewDataSets';
-    const FIELD_TYPES_KEY = 'fieldTypes';
-    const TRANSFORM_KEY = 'transforms';
-    const JOIN_BY_KEY = 'joinBy';
-    const WEIGHTED_CALCULATION_KEY = 'weightedCalculations';
-    const MULTI_VIEW_KEY = 'multiView';
-    const REPORT_VIEWS_KEY = 'reportViewMultiViews';
-    const FILTERS_KEY = 'filters';
-    const FORMAT_KEY = 'formats';
-    const SHOW_IN_TOTAL_KEY = 'showInTotal';
-    const SUB_REPORT_INCLUDED_KEY = 'subReportsIncluded';
+	const DATA_SET_KEY = 'reportViewDataSets';
+	const FIELD_TYPES_KEY = 'fieldTypes';
+	const TRANSFORM_KEY = 'transforms';
+	const JOIN_BY_KEY = 'joinBy';
+	const WEIGHTED_CALCULATION_KEY = 'weightedCalculations';
+	const MULTI_VIEW_KEY = 'multiView';
+	const REPORT_VIEWS_KEY = 'reportViewMultiViews';
+	const FILTERS_KEY = 'filters';
+	const FORMAT_KEY = 'formats';
+	const SHOW_IN_TOTAL_KEY = 'showInTotal';
+	const SUB_REPORT_INCLUDED_KEY = 'subReportsIncluded';
+	const START_DATE = 'startDate';
+	const END_DATE = 'endDate';
+	const USER_DEFINED_DATE_RANGE = 'userDefineDateRange';
 
-    /**
-     * @inheritdoc
-     */
-    public function buildFromArray(array $data)
-    {
-        $param = new Params();
+	/**
+	 * @inheritdoc
+	 */
+	public function buildFromArray(array $data)
+	{
+		$param = new Params();
 
-        $multiView = false;
-        if (array_key_exists(self::MULTI_VIEW_KEY, $data)) {
-            $multiView = filter_var($data[self::MULTI_VIEW_KEY], FILTER_VALIDATE_BOOLEAN);
-        }
+		$multiView = false;
+		if (array_key_exists(self::MULTI_VIEW_KEY, $data)) {
+			$multiView = filter_var($data[self::MULTI_VIEW_KEY], FILTER_VALIDATE_BOOLEAN);
+		}
 
-        $param->setMultiView($multiView);
-        $param->setSubReportIncluded(false);
+		$param->setMultiView($multiView);
+		$param->setSubReportIncluded(false);
 
-        /*
-         * VERY IMPORTANT:
-         * report param:
-         *      dataSets => required for multiView=false
-         *      fieldTypes,
-         *      joinBy => required for multiView=false
-         *      transforms,
-         *      weightedCalculations,
-         *      filters,
-         *      multiView,
-         *      reportViews => required for multiView=true
-         *      showInTotal,
-         *      formats,
-         *      subReportsIncluded => required for multiView=true
-         */
+		/*
+		 * VERY IMPORTANT:
+		 * report param:
+		 *      dataSets => required for multiView=false
+		 *      fieldTypes,
+		 *      joinBy => required for multiView=false
+		 *      transforms,
+		 *      weightedCalculations,
+		 *      filters,
+		 *      multiView,
+		 *      reportViews => required for multiView=true
+		 *      showInTotal,
+		 *      formats,
+		 *      subReportsIncluded => required for multiView=true
+		 */
 
-        if ($param->isMultiView()) {
-            if (!array_key_exists(self::REPORT_VIEWS_KEY, $data) || empty($data[self::MULTI_VIEW_KEY])) {
-                throw new InvalidArgumentException('multi view require at least one report view is selected');
-            }
+		if ($param->isMultiView()) {
+			if (!array_key_exists(self::REPORT_VIEWS_KEY, $data) || empty($data[self::MULTI_VIEW_KEY])) {
+				throw new InvalidArgumentException('multi view require at least one report view is selected');
+			}
 
-            if (!empty($data[self::REPORT_VIEWS_KEY])) {
-                $reportViews = $this->createReportViews(json_decode($data[self::REPORT_VIEWS_KEY], true));
-                $param->setReportViews($reportViews);
-            }
+			if (!empty($data[self::REPORT_VIEWS_KEY])) {
+				$reportViews = $this->createReportViews(json_decode($data[self::REPORT_VIEWS_KEY], true));
+				$param->setReportViews($reportViews);
+			}
 
-            if (array_key_exists(self::SUB_REPORT_INCLUDED_KEY, $data)) {
-                $param->setSubReportIncluded(filter_var($data[self::SUB_REPORT_INCLUDED_KEY], FILTER_VALIDATE_BOOLEAN));
-            }
+			if (array_key_exists(self::SUB_REPORT_INCLUDED_KEY, $data)) {
+				$param->setSubReportIncluded(filter_var($data[self::SUB_REPORT_INCLUDED_KEY], FILTER_VALIDATE_BOOLEAN));
+			}
 
-        } else {
-            if (array_key_exists(self::DATA_SET_KEY, $data) && !empty($data[self::DATA_SET_KEY])) {
-                $dataSets = $this->createDataSets(json_decode($data[self::DATA_SET_KEY], true));
-                $param->setDataSets($dataSets);
-            }
+		} else {
+			if (array_key_exists(self::DATA_SET_KEY, $data) && !empty($data[self::DATA_SET_KEY])) {
+				$dataSets = $this->createDataSets(json_decode($data[self::DATA_SET_KEY], true));
+				$param->setDataSets($dataSets);
+			}
 
-            if (array_key_exists(self::JOIN_BY_KEY, $data)) {
-                $joinBy = json_decode($data[self::JOIN_BY_KEY], true);
-                if (is_array($joinBy) && !empty($joinBy)) {
-                    $param->setJoinByFields($joinBy);
-                }
-            }
-        }
+			if (array_key_exists(self::JOIN_BY_KEY, $data)) {
+				$joinBy = json_decode($data[self::JOIN_BY_KEY], true);
+				if (is_array($joinBy) && !empty($joinBy)) {
+					$param->setJoinByFields($joinBy);
+				}
+			}
+		}
 
-        if (array_key_exists(self::TRANSFORM_KEY, $data) && !empty($data[self::TRANSFORM_KEY])) {
-            $transforms = $this->createTransforms(json_decode($data[self::TRANSFORM_KEY], true));
-            $param->setTransforms($transforms);
-        }
+		if (array_key_exists(self::TRANSFORM_KEY, $data) && !empty($data[self::TRANSFORM_KEY])) {
+			$transforms = $this->createTransforms(json_decode($data[self::TRANSFORM_KEY], true));
+			$param->setTransforms($transforms);
+		}
 
-        if (array_key_exists(self::WEIGHTED_CALCULATION_KEY, $data)) {
-            $calculations = json_decode($data[self::WEIGHTED_CALCULATION_KEY], true);
-            if (!empty($calculations)) {
-                $param->setWeightedCalculations(new WeightedCalculation($calculations));
-            }
-        }
+		if (array_key_exists(self::WEIGHTED_CALCULATION_KEY, $data)) {
+			$calculations = json_decode($data[self::WEIGHTED_CALCULATION_KEY], true);
+			if (!empty($calculations)) {
+				$param->setWeightedCalculations(new WeightedCalculation($calculations));
+			}
+		}
 
-        if (array_key_exists(self::SHOW_IN_TOTAL_KEY, $data)) {
-            $param->setShowInTotal(json_decode($data[self::SHOW_IN_TOTAL_KEY], true));
-        }
+		if (array_key_exists(self::SHOW_IN_TOTAL_KEY, $data)) {
+			$param->setShowInTotal(json_decode($data[self::SHOW_IN_TOTAL_KEY], true));
+		}
 
-        if (array_key_exists(self::FIELD_TYPES_KEY, $data)) {
-            $param->setFieldTypes(json_decode($data[self::FIELD_TYPES_KEY], true));
-        }
+		if (array_key_exists(self::FIELD_TYPES_KEY, $data)) {
+			$param->setFieldTypes(json_decode($data[self::FIELD_TYPES_KEY], true));
+		}
 
-        /* set output formatting */
-        if (array_key_exists(self::FORMAT_KEY, $data) && !empty($data[self::FORMAT_KEY])) {
-            $formats = $this->createFormats(json_decode($data[self::FORMAT_KEY], true));
-            $param->setFormats($formats);
-        }
+		/* set output formatting */
+		if (array_key_exists(self::FORMAT_KEY, $data) && !empty($data[self::FORMAT_KEY])) {
+			$formats = $this->createFormats(json_decode($data[self::FORMAT_KEY], true));
+			$param->setFormats($formats);
+		}
 
-        return $param;
-    }
+		if (array_key_exists(self::START_DATE, $data) && !empty($data[self::START_DATE])) {
+			$param->setStartDate($data[self::START_DATE]);
+		}
 
-    /**
-     * @param array $dataSets
-     * @return array
-     */
-    protected function createDataSets(array $dataSets)
-    {
-        $dataSetObjects = [];
-        foreach ($dataSets as $dataSet) {
-            if (!is_array($dataSet)) {
-                throw new InvalidArgumentException(sprintf('expect array, got %s', gettype($dataSet)));
-            }
+		if (array_key_exists(self::END_DATE, $data) && !empty($data[self::END_DATE])) {
+			$param->setEndDate($data[self::END_DATE]);
+		}
 
-            $dataSetObjects[] = new DataSet($dataSet);
-        }
+		return $param;
+	}
 
-        return $dataSetObjects;
-    }
+	/**
+	 * @param array $dataSets
+	 * @return array
+	 */
+	protected function createDataSets(array $dataSets)
+	{
+		$dataSetObjects = [];
+		foreach ($dataSets as $dataSet) {
+			if (!is_array($dataSet)) {
+				throw new InvalidArgumentException(sprintf('expect array, got %s', gettype($dataSet)));
+			}
 
-    /**
-     * @param array $reportViews
-     * @return array
-     */
-    public static function createReportViews(array $reportViews)
-    {
-        $reportViewObjects = [];
-        foreach ($reportViews as $reportView) {
-            if (!is_array($reportView)) {
-                throw new InvalidArgumentException(sprintf('expect array, got %s', gettype($reportView)));
-            }
+			$dataSetObjects[] = new DataSet($dataSet);
+		}
 
-            $reportViewObjects[] = new ReportView($reportView);
-        }
+		return $dataSetObjects;
+	}
 
-        return $reportViewObjects;
-    }
+	/**
+	 * @param array $reportViews
+	 * @return array
+	 */
+	public static function createReportViews(array $reportViews)
+	{
+		$reportViewObjects = [];
+		foreach ($reportViews as $reportView) {
+			if (!is_array($reportView)) {
+				throw new InvalidArgumentException(sprintf('expect array, got %s', gettype($reportView)));
+			}
 
-    public static function reportViewMultiViewObjectsToArray($reportViewMultiViews)
-    {
-        if ($reportViewMultiViews instanceof PersistentCollection) {
-            $reportViewMultiViews = $reportViewMultiViews->toArray();
-        }
+			$reportViewObjects[] = new ReportView($reportView);
+		}
 
-        $reportViewData = [];
-        /**
-         * @var ReportViewMultiViewInterface $reportViewMultiView
-         */
-        foreach ($reportViewMultiViews as $reportViewMultiView) {
-            if (!$reportViewMultiView instanceof ReportViewMultiViewInterface) {
-                throw new InvalidArgumentException(sprintf('expect ReportViewMultiViewInterface, got %s', get_class($reportViewMultiView)));
-            }
+		return $reportViewObjects;
+	}
 
-            $reportViewData[] = array (
-                ReportView::REPORT_VIEW_ID_KEY => $reportViewMultiView->getSubView()->getId(),
-                ReportView::DIMENSIONS_KEY => $reportViewMultiView->getDimensions(),
-                ReportView::METRICS_KEY => $reportViewMultiView->getMetrics(),
-                ReportView::FILTERS_KEY => $reportViewMultiView->getFilters(),
-            );
-        }
+	public static function reportViewMultiViewObjectsToArray($reportViewMultiViews)
+	{
+		if ($reportViewMultiViews instanceof PersistentCollection) {
+			$reportViewMultiViews = $reportViewMultiViews->toArray();
+		}
 
-        return $reportViewData;
-    }
+		$reportViewData = [];
+		/**
+		 * @var ReportViewMultiViewInterface $reportViewMultiView
+		 */
+		foreach ($reportViewMultiViews as $reportViewMultiView) {
+			if (!$reportViewMultiView instanceof ReportViewMultiViewInterface) {
+				throw new InvalidArgumentException(sprintf('expect ReportViewMultiViewInterface, got %s', get_class($reportViewMultiView)));
+			}
 
-    public function reportViewDataSetObjectsToArray($reportViewDataSets)
-    {
-        if ($reportViewDataSets instanceof PersistentCollection) {
-            $reportViewDataSets = $reportViewDataSets->toArray();
-        }
+			$reportViewData[] = array(
+				ReportView::REPORT_VIEW_ID_KEY => $reportViewMultiView->getSubView()->getId(),
+				ReportView::DIMENSIONS_KEY => $reportViewMultiView->getDimensions(),
+				ReportView::METRICS_KEY => $reportViewMultiView->getMetrics(),
+				ReportView::FILTERS_KEY => $reportViewMultiView->getFilters(),
+			);
+		}
 
-        $reportViewData = [];
-        /**
-         * @var ReportViewDataSetInterface $reportViewDataSet
-         */
-        foreach ($reportViewDataSets as $reportViewDataSet) {
-            if (!$reportViewDataSet instanceof ReportViewDataSetInterface) {
-                throw new InvalidArgumentException(sprintf('expect ReportViewDataSetInterface, got %s', get_class($reportViewDataSet)));
-            }
+		return $reportViewData;
+	}
 
-            $reportViewData[] = array (
-                DataSet::DATA_SET_ID_KEY => $reportViewDataSet->getDataSet()->getId(),
-                DataSet::DIMENSIONS_KEY => $reportViewDataSet->getDimensions(),
-                DataSet::METRICS_KEY => $reportViewDataSet->getMetrics(),
-                DataSet::FILTERS_KEY => $reportViewDataSet->getFilters(),
-            );
-        }
+	public function reportViewDataSetObjectsToArray($reportViewDataSets)
+	{
+		if ($reportViewDataSets instanceof PersistentCollection) {
+			$reportViewDataSets = $reportViewDataSets->toArray();
+		}
 
-        return $reportViewData;
-    }
+		$reportViewData = [];
+		/**
+		 * @var ReportViewDataSetInterface $reportViewDataSet
+		 */
+		foreach ($reportViewDataSets as $reportViewDataSet) {
+			if (!$reportViewDataSet instanceof ReportViewDataSetInterface) {
+				throw new InvalidArgumentException(sprintf('expect ReportViewDataSetInterface, got %s', get_class($reportViewDataSet)));
+			}
 
-    /**
-     * @param array $transforms
-     * @throws \Exception
-     * @return array
-     */
-    protected function createTransforms(array $transforms)
-    {
-        $sortByInputObjects = [];
-        $groupByInputObjects = [];
-        $transformObjects = [];
-        foreach ($transforms as $transform) {
-            if (!array_key_exists(TransformInterface::TRANSFORM_TYPE_KEY, $transform)) {
-                throw new InvalidArgumentException('"transformType" is missing');
-            }
+			$reportViewData[] = array(
+				DataSet::DATA_SET_ID_KEY => $reportViewDataSet->getDataSet()->getId(),
+				DataSet::DIMENSIONS_KEY => $reportViewDataSet->getDimensions(),
+				DataSet::METRICS_KEY => $reportViewDataSet->getMetrics(),
+				DataSet::FILTERS_KEY => $reportViewDataSet->getFilters(),
+			);
+		}
 
-            switch ($transform[TransformInterface::TRANSFORM_TYPE_KEY]) {
-                case TransformInterface::ADD_FIELD_TRANSFORM:
-                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField) {
-                        $transformObjects[] = new AddFieldTransform($addField);
-                    }
-                    break;
+		return $reportViewData;
+	}
 
-                case TransformInterface::ADD_CALCULATED_FIELD_TRANSFORM:
-                    $expressionLanguage = new ExpressionLanguage();
-                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField) {
-                        $transformObjects[] = new AddCalculatedFieldTransform($expressionLanguage, $addField);
-                    }
-                    break;
+	/**
+	 * @param array $transforms
+	 * @throws \Exception
+	 * @return array
+	 */
+	protected function createTransforms(array $transforms)
+	{
+		$sortByInputObjects = [];
+		$groupByInputObjects = [];
+		$transformObjects = [];
+		foreach ($transforms as $transform) {
+			if (!array_key_exists(TransformInterface::TRANSFORM_TYPE_KEY, $transform)) {
+				throw new InvalidArgumentException('"transformType" is missing');
+			}
 
-                case TransformInterface::GROUP_TRANSFORM:
-                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $groupField) {
-                        $groupByInputObjects [] = $groupField;
-                    }
-                    break;
+			switch ($transform[TransformInterface::TRANSFORM_TYPE_KEY]) {
+				case TransformInterface::ADD_FIELD_TRANSFORM:
+					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField) {
+						$transformObjects[] = new AddFieldTransform($addField);
+					}
+					break;
 
-                case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
-                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $comparisonField) {
-                        $transformObjects[] = new ComparisonPercentTransform($comparisonField);
-                    }
-                    break;
+				case TransformInterface::ADD_CALCULATED_FIELD_TRANSFORM:
+					$expressionLanguage = new ExpressionLanguage();
+					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField) {
+						$transformObjects[] = new AddCalculatedFieldTransform($expressionLanguage, $addField);
+					}
+					break;
 
-                case TransformInterface::SORT_TRANSFORM:
-                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
-                        $sortByInputObjects[] = $sortField;
-                    }
-                    break;
-            }
-        }
+				case TransformInterface::GROUP_TRANSFORM:
+					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $groupField) {
+						$groupByInputObjects [] = $groupField;
+					}
+					break;
 
-        if (!empty ($sortByInputObjects)) {
-            $transformObjects[] = new SortByTransform($sortByInputObjects);
-        }
+				case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
+					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $comparisonField) {
+						$transformObjects[] = new ComparisonPercentTransform($comparisonField);
+					}
+					break;
 
-        if (!empty ($groupByInputObjects)) {
-            $transformObjects[] = new GroupByTransform($groupByInputObjects);
-        }
+				case TransformInterface::SORT_TRANSFORM:
+					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
+						$sortByInputObjects[] = $sortField;
+					}
+					break;
+			}
+		}
 
-        return $transformObjects;
-    }
+		if (!empty ($sortByInputObjects)) {
+			$transformObjects[] = new SortByTransform($sortByInputObjects);
+		}
 
-    /**
-     * @param array $formats
-     * @throws \Exception
-     * @return array
-     */
-    protected function createFormats(array $formats)
-    {
-        $formatObjects = [];
+		if (!empty ($groupByInputObjects)) {
+			$transformObjects[] = new GroupByTransform($groupByInputObjects);
+		}
 
-        foreach ($formats as $format) {
-            if (!array_key_exists(FormatInterface::FORMAT_TYPE_KEY, $format)) {
-                throw new InvalidArgumentException('format "type" is missing');
-            }
+		return $transformObjects;
+	}
 
-            switch ($format[FormatInterface::FORMAT_TYPE_KEY]) {
-                case FormatInterface::FORMAT_TYPE_DATE:
-                    $formatObjects[] = new DateFormat($format);
+	/**
+	 * @param array $formats
+	 * @throws \Exception
+	 * @return array
+	 */
+	protected function createFormats(array $formats)
+	{
+		$formatObjects = [];
 
-                    break;
+		foreach ($formats as $format) {
+			if (!array_key_exists(FormatInterface::FORMAT_TYPE_KEY, $format)) {
+				throw new InvalidArgumentException('format "type" is missing');
+			}
 
-                case FormatInterface::FORMAT_TYPE_NUMBER:
-                    $formatObjects[] = new NumberFormat($format);
+			switch ($format[FormatInterface::FORMAT_TYPE_KEY]) {
+				case FormatInterface::FORMAT_TYPE_DATE:
+					$formatObjects[] = new DateFormat($format);
 
-                    break;
+					break;
 
-                case FormatInterface::FORMAT_TYPE_CURRENCY:
-                    $formatObjects[] = new CurrencyFormat($format);
+				case FormatInterface::FORMAT_TYPE_NUMBER:
+					$formatObjects[] = new NumberFormat($format);
 
-                    break;
+					break;
 
-                case FormatInterface::FORMAT_TYPE_COLUMN_POSITION:
-                    $formatObjects[] = new ColumnPositionFormat($format);
+				case FormatInterface::FORMAT_TYPE_CURRENCY:
+					$formatObjects[] = new CurrencyFormat($format);
 
-                    break;
-            }
-        }
+					break;
 
-        return $formatObjects;
-    }
+				case FormatInterface::FORMAT_TYPE_COLUMN_POSITION:
+					$formatObjects[] = new ColumnPositionFormat($format);
 
-    /**
-     * @inheritdoc
-     */
-    public function buildFromReportView(ReportViewInterface $reportView)
-    {
-        $param = new Params();
+					break;
+			}
+		}
 
-        if ($reportView->isMultiView()) {
-            $param
-                ->setReportViews($this->createReportViews(
-                    $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews()))
-                )
-                ->setSubReportIncluded($reportView->isSubReportsIncluded())
-                ->setShowInTotal($reportView->getShowInTotal());
-        } else {
-            $param
-                ->setDataSets($this->createDataSets(
-                    $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
-                )
-                ->setJoinByFields($reportView->getJoinBy());
-            // set showInTotal to NULL to get all total values
-            // DO NOT change
-        }
+		return $formatObjects;
+	}
 
-        $param
-            ->setMultiView($reportView->isMultiView())
-            ->setTransforms($this->createTransforms($reportView->getTransforms()))
-            ->setFieldTypes($reportView->getFieldTypes())
-        ;
+	/**
+	 * @inheritdoc
+	 */
+	public function buildFromReportView(ReportViewInterface $reportView)
+	{
+		$param = new Params();
 
-        if (is_array($reportView->getWeightedCalculations())) {
-            $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
-        }
+		if ($reportView->isMultiView()) {
+			$param
+				->setReportViews($this->createReportViews(
+					$this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews()))
+				)
+				->setSubReportIncluded($reportView->isSubReportsIncluded())
+				->setShowInTotal($reportView->getShowInTotal());
+		} else {
+			$param
+				->setDataSets($this->createDataSets(
+					$this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
+				)
+				->setJoinByFields($reportView->getJoinBy());
+			// set showInTotal to NULL to get all total values
+			// DO NOT change
+		}
 
-        if (is_array($reportView->getFormats())) {
-            $param->setFormats($this->createFormats($reportView->getFormats()));
-        }
+		$param
+			->setMultiView($reportView->isMultiView())
+			->setTransforms($this->createTransforms($reportView->getTransforms()))
+			->setFieldTypes($reportView->getFieldTypes());
 
-        return $param;
-    }
+		if (is_array($reportView->getWeightedCalculations())) {
+			$param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
+		}
 
-    /**
-     * @inheritdoc
-     */
-    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView)
-    {
-        $param = new Params();
+		if (is_array($reportView->getFormats())) {
+			$param->setFormats($this->createFormats($reportView->getFormats()));
+		}
 
-        /*
-         * VERY IMPORTANT: build report param same as above buildFromArray() function
-         * report param:
-         *      dataSets => required for multiView=false
-         *      fieldTypes
-         *      joinBy => required for multiView=false
-         *      transforms
-         *      weightedCalculations
-         *      filters
-         *      multiView
-         *      reportViews => required for multiView=true
-         *      showInTotal
-         *      formats
-         *      subReportsIncluded => required for multiView=true
-         */
+		return $param;
+	}
 
-        if ($reportView->isMultiView()) {
-            $param
-                ->setReportViews($this->createReportViews(
-                    $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews()))
-                )
-                ->setSubReportIncluded($reportView->isSubReportsIncluded());
-        } else {
-            $param
-                ->setDataSets($this->createDataSets(
-                    $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
-                )
-                ->setJoinByFields($reportView->getJoinBy());
-        }
+	/**
+	 * @inheritdoc
+	 */
+	public function buildFromReportViewForSharedReport(ReportViewInterface $reportView)
+	{
+		$param = new Params();
 
-        $param
-            ->setMultiView($reportView->isMultiView())
-            ->setTransforms($this->createTransforms($reportView->getTransforms()))
-            ->setFieldTypes($reportView->getFieldTypes())
-            ->setShowInTotal($reportView->getShowInTotal());
+		/*
+		 * VERY IMPORTANT: build report param same as above buildFromArray() function
+		 * report param:
+		 *      dataSets => required for multiView=false
+		 *      fieldTypes
+		 *      joinBy => required for multiView=false
+		 *      transforms
+		 *      weightedCalculations
+		 *      filters
+		 *      multiView
+		 *      reportViews => required for multiView=true
+		 *      showInTotal
+		 *      formats
+		 *      subReportsIncluded => required for multiView=true
+		 */
 
-        if (is_array($reportView->getWeightedCalculations())) {
-            $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
-        }
+		if ($reportView->isMultiView()) {
+			$param
+				->setReportViews($this->createReportViews(
+					$this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews()))
+				)
+				->setSubReportIncluded($reportView->isSubReportsIncluded());
+		} else {
+			$param
+				->setDataSets($this->createDataSets(
+					$this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
+				)
+				->setJoinByFields($reportView->getJoinBy());
+		}
 
-        if (is_array($reportView->getFormats())) {
-            $param->setFormats($this->createFormats($reportView->getFormats()));
-        }
+		$param
+			->setMultiView($reportView->isMultiView())
+			->setTransforms($this->createTransforms($reportView->getTransforms()))
+			->setFieldTypes($reportView->getFieldTypes())
+			->setShowInTotal($reportView->getShowInTotal());
 
-        return $param;
-    }
+		if (is_array($reportView->getWeightedCalculations())) {
+			$param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
+		}
+
+		if (is_array($reportView->getFormats())) {
+			$param->setFormats($this->createFormats($reportView->getFormats()));
+		}
+
+		return $param;
+	}
 }

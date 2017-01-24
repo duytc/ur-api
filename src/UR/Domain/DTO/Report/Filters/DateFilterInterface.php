@@ -20,4 +20,22 @@ interface DateFilterInterface extends FilterInterface
      * @return DateTime
      */
     public function getStartDate();
+
+	/**
+	 * @param string $dateFormat
+	 */
+	public function setDateFormat(string $dateFormat);
+
+
+	/**
+	 * @param string $dateType
+	 */
+	public function setDateType(string $dateType);
+
+
+	/**
+	 * @param array|string $dateValue
+	 */
+	public function setDateValue($dateValue);
+
 }

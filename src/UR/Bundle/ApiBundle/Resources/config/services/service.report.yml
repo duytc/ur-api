@@ -15,6 +15,7 @@ services:
             - '@ur.services.report.report_grouper'
             - '@ur.domain_manager.report_view'
             - '@ur.services.report.params_builder'
+            - '@ur.domain_manager.data_set'
 
     ur.services.report.sql_builder:
         class: UR\Service\Report\SqlBuilder

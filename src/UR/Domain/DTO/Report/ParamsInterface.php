@@ -108,4 +108,24 @@ interface ParamsInterface
      * @return self
      */
     public function setSubReportIncluded($subReportIncluded);
+
+	/**
+	 * @return mixed
+	 */
+	public function getStartDate();
+
+	/**
+	 * @param mixed $startDate
+	 */
+	public function setStartDate($startDate);
+
+	/**
+	 * @return mixed
+	 */
+	public function getEndDate();
+
+	/**
+	 * @param mixed $endDate
+	 */
+	public function setEndDate($endDate);
 }

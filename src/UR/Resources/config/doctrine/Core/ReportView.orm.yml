@@ -65,7 +65,6 @@ UR\Entity\Core\ReportView:
             nullable: false
             options:
                 default: false
-
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

@@ -45,23 +45,25 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 		self::DATE_DYNAMIC_VALUE_LAST_MONTH
 	];
 
-	/**
-	 * @var string
-	 */
-	protected $dateFormat;
-
 	/** @var string */
 	protected $dateType;
 
 	/** @var string|array */
 	protected $dateValue;
-
+	/**
+	 * @var string
+	 */
+	protected $dateFormat;
 	/**
 	 * @param array $dateFilter
 	 * @throws \Exception
 	 */
-	public function __construct(array $dateFilter)
+	public function __construct(array $dateFilter = null)
 	{
+		if (empty($dateFilter)) {
+			return;
+		}
+
 		if (!array_key_exists(self::FIELD_TYPE_FILTER_KEY, $dateFilter)
 			|| !array_key_exists(self::FILED_NAME_FILTER_KEY, $dateFilter)
 			// || !array_key_exists(self::DATE_FORMAT_FILTER_KEY, $dateFilter)
@@ -242,4 +244,33 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 		return $reportsCollections;
 	}
 
+	/**
+	 * @param string $dateFormat
+	 * @return $this
+	 */
+	public function setDateFormat(string $dateFormat)
+	{
+		$this->dateFormat = $dateFormat;
+		return $this;
+	}
+
+	/**
+	 * @param string $dateType
+	 * @return $this
+	 */
+	public function setDateType(string $dateType)
+	{
+		$this->dateType = $dateType;
+		return $this;
+	}
+
+	/**
+	 * @param array|string $dateValue
+	 * @return $this
+	 */
+	public function setDateValue($dateValue)
+	{
+		$this->dateValue = $dateValue;
+		return $this;
+	}
 }

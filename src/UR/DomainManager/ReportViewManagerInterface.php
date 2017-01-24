@@ -22,7 +22,8 @@ interface ReportViewManagerInterface extends ManagerInterface
      *
      * @param ReportViewInterface $reportView
      * @param array $fieldsToBeShared
+     * @param array|null $dateRange
      * @return mixed
      */
-    public function createTokenForReportView(ReportViewInterface $reportView, array $fieldsToBeShared);
+    public function createTokenForReportView(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null);
 }

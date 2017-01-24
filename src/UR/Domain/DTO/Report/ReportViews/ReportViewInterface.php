@@ -16,6 +16,9 @@ interface ReportViewInterface
      */
     public function getFilters();
 
+
+	public function setFilters($filters);
+
     /**
      * @return array
      */

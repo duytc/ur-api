@@ -62,3 +62,7 @@ UR\Entity\Core\ReportView:
         subReportsIncluded:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        userDefineDateRange:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+

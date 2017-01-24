@@ -100,7 +100,7 @@ class ReportViewManager implements ReportViewManagerInterface
     /**
      * @inheritdoc
      */
-    public function createTokenForReportView(ReportViewInterface $reportView, array $fieldsToBeShared)
+    public function createTokenForReportView(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null)
     {
         $sharedKeysConfig = $reportView->getSharedKeysConfig();
         if (!is_array($sharedKeysConfig)) {
@@ -113,9 +113,15 @@ class ReportViewManager implements ReportViewManagerInterface
         $newToken = '';
 
         foreach ($sharedKeysConfig as $token => $fields) {
-            $concatenatedOldFieldsToBeShared = implode(':', $fields);
+            $concatenatedOldFieldsToBeShared = implode(':', $fields['fields']);
 
-            if ($concatenatedOldFieldsToBeShared === $concatenatedFieldsToBeShared) {
+            if (
+                $concatenatedOldFieldsToBeShared === $concatenatedFieldsToBeShared &&
+                (
+                    (array_key_exists('dateRange', $fields) && $this->compareDateRange($fields['dateRange'],$dateRange)) ||
+                    (array_key_exists('dateRange', $fields) && $dateRange === null)
+                )
+            ) {
                 $tokenExisted = true;
                 $newToken = $token; // return old token
                 break;
@@ -125,7 +131,11 @@ class ReportViewManager implements ReportViewManagerInterface
         // add new token if token not existed
         if (!$tokenExisted) {
             $newToken = ReportView::generateToken();
-            $sharedKeysConfig[$newToken] = $fieldsToBeShared;
+            $sharedKeysConfig = [];
+            $sharedKeysConfig[$newToken] = array(
+                'fields' => $fieldsToBeShared,
+                'dateRange' => $dateRange
+            );
 
             // update sharedKeysConfig
             $reportView->setSharedKeysConfig($sharedKeysConfig);
@@ -140,5 +150,10 @@ class ReportViewManager implements ReportViewManagerInterface
         }
 
         return $newToken;
+    }
+
+    protected function compareDateRange($source, $destination)
+    {
+        return md5(serialize($source)) === md5(serialize($destination));
     }
 }

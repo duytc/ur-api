@@ -21,6 +21,12 @@ interface DataSetInterface
      */
     public function getFilters();
 
+	/**
+	 * @param $filters
+	 * @return mixed
+	 */
+	public function setFilters($filters);
+
     /**
      * @return mixed
      */

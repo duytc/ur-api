@@ -69,6 +69,9 @@ class Params implements ParamsInterface
      */
     protected $subReportIncluded;
 
+	protected $startDate;
+	protected $endDate;
+
     function __construct()
     {
         $this->dataSets = [];
@@ -304,4 +307,36 @@ class Params implements ParamsInterface
         $this->subReportIncluded = $subReportIncluded;
         return $this;
     }
+
+	/**
+	 * @return mixed
+	 */
+	public function getStartDate()
+	{
+		return $this->startDate;
+	}
+
+	/**
+	 * @param mixed $startDate
+	 */
+	public function setStartDate($startDate)
+	{
+		$this->startDate = $startDate;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getEndDate()
+	{
+		return $this->endDate;
+	}
+
+	/**
+	 * @param mixed $endDate
+	 */
+	public function setEndDate($endDate)
+	{
+		$this->endDate = $endDate;
+	}
 }
