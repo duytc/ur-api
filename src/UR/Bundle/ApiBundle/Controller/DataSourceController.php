@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Bundle\ApiBundle\Service\DataSource\RegenerateEmail;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
@@ -478,6 +479,54 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $fileBag = $request->files;
 
         return $this->processUploadedFiles($dataSource, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD);
+    }
+
+    /**
+     * Regenerate Email
+     * @Rest\Post("/datasources/{id}/regenerateuremails")
+     * @ApiDoc(
+     *  section = "Data Sources",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param $id
+     * @return mixed
+     */
+    public function postRegenerateUrEmailAction($id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+
+        $regenEmailService = $this->container->get('ur.service.datasource.regenerate_email');
+        $regenEmailService->regenerateUrEmail($dataSource->getId());
+    }
+
+    /**
+     * Regenerate Api Key
+     * @Rest\Post("/datasources/{id}/regenerateurapikeys")
+     * @ApiDoc(
+     *  section = "Data Sources",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param $id
+     * @return mixed
+     */
+    public function postRegenerateUrApiKeyAction($id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+
+        $regenEmailService = $this->container->get('ur.service.datasource.regenerate_api_key');
+        $regenEmailService->regenerateUrApiKey($dataSource->getId());
     }
 
     /**

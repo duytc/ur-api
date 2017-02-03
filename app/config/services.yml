@@ -160,3 +160,14 @@ services:
         class: UR\Worker\Workers\SynchronizeUserWorker
         arguments:
             - @ur.service.synchronize_user_service
+
+    ur.service.datasource.regenerate_email:
+        class: UR\Bundle\ApiBundle\Service\DataSource\RegenerateUrEmail
+        arguments:
+            - @ur.domain_manager.data_source
+            - %ur_email_template%
+
+    ur.service.datasource.regenerate_api_key:
+        class: UR\Bundle\ApiBundle\Service\DataSource\RegenerateUrApiKey
+        arguments:
+            - @ur.domain_manager.data_source
