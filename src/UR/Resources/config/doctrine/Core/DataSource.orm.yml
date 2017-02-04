@@ -19,12 +19,14 @@ UR\Entity\Core\DataSource:
             nullable: true
         apiKey:
             type: string
-            length: 300
+            length: 150
             nullable: true
+            unique: true
         urEmail:
             type: string
-            length: 300
+            length: 150
             nullable: true
+            unique: true
         enable:
             type: boolean
             options:
