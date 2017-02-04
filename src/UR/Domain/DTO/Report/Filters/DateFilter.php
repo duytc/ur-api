@@ -16,6 +16,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	/* for date type */
 	const DATE_TYPE_CUSTOM_RANGE = 'customRange';
 	const DATE_TYPE_DYNAMIC = 'dynamic';
+    const DATE_TYPE_USER_PROVIDED= 'userProvided';
 
 	/* for date value in case "dateType" is customRange value */
 	const DATE_VALUE_FILTER_START_DATE_KEY = 'startDate';
@@ -32,7 +33,8 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	/* supported date types */
 	public static $SUPPORTED_DATE_TYPES = [
 		self::DATE_TYPE_CUSTOM_RANGE,
-		self::DATE_TYPE_DYNAMIC
+		self::DATE_TYPE_DYNAMIC,
+        self::DATE_TYPE_USER_PROVIDED
 	];
 
 	/* supported date values in case "dateType" is customRange value */
@@ -54,6 +56,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	 * @var string
 	 */
 	protected $dateFormat;
+
 	/**
 	 * @param array $dateFilter
 	 * @throws \Exception
@@ -117,7 +120,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	 */
 	public function getStartDate()
 	{
-		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType) {
+		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType || self::DATE_TYPE_USER_PROVIDED == $this->dateType) {
 			return $this->dateValue[self::DATE_VALUE_FILTER_START_DATE_KEY];
 		}
 
@@ -130,7 +133,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	 */
 	public function getEndDate()
 	{
-		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType) {
+		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType || self::DATE_TYPE_USER_PROVIDED == $this->dateType) {
 			return $this->dateValue[self::DATE_VALUE_FILTER_END_DATE_KEY];
 		}
 
@@ -154,7 +157,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 			}
 		}
 
-		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType) {
+		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType || self::DATE_TYPE_USER_PROVIDED == $this->dateType) {
 			if (!is_array($this->dateValue)
 				|| !array_key_exists(self::DATE_VALUE_FILTER_START_DATE_KEY, $this->dateValue)
 				|| !array_key_exists(self::DATE_VALUE_FILTER_END_DATE_KEY, $this->dateValue)
