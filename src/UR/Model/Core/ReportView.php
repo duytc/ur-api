@@ -123,6 +123,14 @@ class ReportView implements ReportViewInterface
     protected $reportViewDataSets;
 
     /**
+     * @return mixed
+     */
+    public function getShared()
+    {
+        return count($this->getSharedKeysConfig()) > 0;
+    }
+
+    /**
      * ReportView constructor.
      */
     public function __construct()
@@ -400,7 +408,7 @@ class ReportView implements ReportViewInterface
      */
     public static function generateToken()
     {
-        return str_replace(".", "", uniqid(rand(1, 10000), true));
+        return bin2hex(random_bytes(15));
     }
 
     /**

@@ -23,6 +23,9 @@ use UR\Model\Core\ReportViewInterface;
  */
 class ReportViewController extends RestControllerAbstract implements ClassResourceInterface
 {
+    const TOKEN = 'token';
+    const FIELDS = 'fields';
+
     /**
      * Get all report views
      *
@@ -129,6 +132,61 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         }
 
         return $this->getShareableLink($reportView, $fieldsToBeShared, $dateRange);
+    }
+
+    /**
+     * Get shareable link belong to a ReportView
+     *
+     * @ApiDoc(
+     *  section = "Report View",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  },
+     * )
+     *
+     * @param int $id the resource id
+     * @return string
+     */
+    public function getSharekeyconfigsAction($id)
+    {
+        /** @var ReportViewInterface $reportView */
+        $reportView = $this->one($id);
+        $result = [];
+        foreach ($reportView->getSharedKeysConfig() as $key => $value){
+            $result[] = [self::TOKEN => $key, self::FIELDS => $value];
+        }
+        return $result;
+    }
+    /**
+     * Delete shareable link via token
+     *
+     * @Rest\QueryParam(name="token", nullable=true, description="token of sharable link")
+     * @ApiDoc(
+     *  section = "Report View",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  },
+     * )
+     *
+     * @param int $id the resource id
+     * @param Request $request
+     * @return string
+     */
+    public function cgetRevokesharekeyAction($id, Request $request)
+    {
+        /** @var ReportViewInterface $reportView */
+        $reportView = $this->one($id);
+        $token = $request->query->get('token');
+
+        $sharedKeysConfig = $reportView->getSharedKeysConfig();
+        unset($sharedKeysConfig[$token]);
+        $reportView->setSharedKeysConfig($sharedKeysConfig);
+
+        $entityManager = $this->getDoctrine()->getManager();
+        $entityManager->persist($reportView);
+        $entityManager->flush();
     }
 
     /**

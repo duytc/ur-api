@@ -1,5 +1,8 @@
 UR\Entity\Core\ReportView:
     exclusion_policy: ALL
+    virtual_properties:
+        getShared:
+            groups: [report_view.detail, report_view.summary]
     properties:
         id:
             expose: true

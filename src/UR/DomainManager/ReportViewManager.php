@@ -21,6 +21,7 @@ class ReportViewManager implements ReportViewManagerInterface
 {
     protected $om;
     protected $repository;
+    const DATE_CREATED = 'dateCreated';
 
     public function __construct(ObjectManager $om, ReportViewRepositoryInterface $repository)
     {
@@ -131,10 +132,10 @@ class ReportViewManager implements ReportViewManagerInterface
         // add new token if token not existed
         if (!$tokenExisted) {
             $newToken = ReportView::generateToken();
-            $sharedKeysConfig = [];
             $sharedKeysConfig[$newToken] = array(
                 'fields' => $fieldsToBeShared,
-                'dateRange' => $dateRange
+                'dateRange' => $dateRange,
+                self::DATE_CREATED => date("Y-m-d H:i:s")
             );
 
             // update sharedKeysConfig
