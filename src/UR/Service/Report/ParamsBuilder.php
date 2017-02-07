@@ -16,6 +16,7 @@ use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
+use UR\Domain\DTO\Report\Transforms\ReplaceTextTransform;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Exception\InvalidArgumentException;
@@ -270,8 +271,13 @@ class ParamsBuilder implements ParamsBuilderInterface
 					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
 						$sortByInputObjects[] = $sortField;
 					}
-					break;
-			}
+                    break;
+                case TransformInterface::REPLACE_TEXT_TRANSFORM:
+                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $replaceTextField) {
+                        $transformObjects[] = new ReplaceTextTransform($replaceTextField);
+                    }
+                    break;
+            }
 		}
 
 		if (!empty ($sortByInputObjects)) {

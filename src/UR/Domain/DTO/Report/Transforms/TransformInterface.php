@@ -12,6 +12,7 @@ interface TransformInterface
 	const COMPARISON_PERCENT_TRANSFORM = 'comparisonPercent';
 	const GROUP_TRANSFORM = 'groupBy';
 	const SORT_TRANSFORM = 'sortBy';
+    const REPLACE_TEXT_TRANSFORM = 'replaceText';
 	const FORMAT_NUMBER_TRANSFORM = 'number';
 	const FORMAT_DATE_TRANSFORM = 'date';
 
