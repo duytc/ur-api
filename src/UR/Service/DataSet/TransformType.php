@@ -21,11 +21,15 @@ final class TransformType
     const ADD_CONCATENATED_FIELD = 'addConcatenatedField';
     const COMPARISON = 'comparison';
     const COMPARISON_PERCENT = 'comparisonPercent';
+    const REPLACE_TEXT = 'replaceText';
     const EXPRESSION = 'expression';
     const NAMES = 'names';
     const DIRECTION = 'direction';
     const NUMERATOR = 'numerator';
     const DENOMINATOR = 'denominator';
+    const SEARCH_FOR = 'searchFor';
+    const POSITION = 'position';
+    const REPLACE_WITH = 'replaceWith';
 
     public static $transformTypes = [
         self::DATE,
@@ -36,7 +40,8 @@ final class TransformType
         self::ADD_CALCULATED_FIELD,
         self::ADD_CONCATENATED_FIELD,
         self::COMPARISON_PERCENT,
-        self::ADD_CONCATENATED_FIELD
+        self::ADD_CONCATENATED_FIELD,
+        self::REPLACE_TEXT
     ];
 
     private static $dateOrNumberTransform = [

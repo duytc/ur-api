@@ -26,6 +26,7 @@ use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use UR\Service\Parser\Transformer\Collection\ReplaceText;
 
 class ImportUtils
 {
@@ -246,6 +247,13 @@ class ImportUtils
                 if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
                     foreach ($transform[TransformType::FIELDS] as $comparisonPercents) {
                         $parserConfig->addTransformCollection(new ComparisonPercent($comparisonPercents[TransformType::FIELD], $comparisonPercents[TransformType::NUMERATOR], $comparisonPercents[TransformType::DENOMINATOR]));
+                    }
+                    continue;
+                }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::REPLACE_TEXT) === 0) {
+                    foreach ($transform[TransformType::FIELDS] as $replaceText) {
+                        $parserConfig->addTransformCollection(new ReplaceText($replaceText[TransformType::FIELD], $replaceText[TransformType::SEARCH_FOR], $replaceText[TransformType::POSITION], $replaceText[TransformType::REPLACE_WITH]));
                     }
                     continue;
                 }

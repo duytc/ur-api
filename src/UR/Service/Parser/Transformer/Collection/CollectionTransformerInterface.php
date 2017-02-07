@@ -13,6 +13,7 @@ interface CollectionTransformerInterface
     const TRANSFORM_PRIORITY_ADD_CALCULATED_FIELD = 30;
     const TRANSFORM_PRIORITY_COMPARISON_PERCENT = 30;
     const TRANSFORM_PRIORITY_SORT = 40;
+    const TRANSFORM_REPLACE_TEXT = 50;
 
     public function transform(Collection $collection);
 
