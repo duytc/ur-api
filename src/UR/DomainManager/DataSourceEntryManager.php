@@ -127,18 +127,18 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
 
             $file->move($uploadPath, $name);
+            $filePath = $uploadPath . '/' . $name;
 
-            $convertResult = $this->convertToUtf8($uploadPath . '/' . $name);
+            $convertResult = $this->convertToUtf8($filePath);
             if ($convertResult) {
-                $newFields = $this->getNewFieldsFromFiles($uploadPath . '/' . $name, $dataSource);
+                $newFields = $this->getNewFieldsFromFiles($filePath, $dataSource);
+                unlink($filePath);
                 if (count($newFields) < 1) {
                     throw new \Exception(sprintf("Cannot detect header of File %s", $origin_name));
                 }
 
                 $currentFields = $this->detectedFieldsForDataSource($newFields, $currentFields, self::UPLOAD);
             }
-
-            unlink($uploadPath . '/' . $name);
         }
 
         return $currentFields;
@@ -250,7 +250,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
             /**@var Excel $file */
             $file = new Excel($inputFile, $this->phpExcel, 5000);
-        } else {
+        } else if (strcmp($dataSource->getFormat(), 'json') === 0) {
             $file = new Json($inputFile);
         }
 

@@ -8,7 +8,7 @@ use Box\Spout\Reader\XLSX\Sheet;
 use Liuggio\ExcelBundle\Factory;
 use UR\Behaviors\ParserUtilTrait;
 
-class Excel implements DataSourceInterface
+class Excel extends CommonFile implements DataSourceInterface
 {
     use ParserUtilTrait;
     private $excel_2003_formats = ['Excel5', 'OOCalc', 'Excel2003XML'];
@@ -201,17 +201,6 @@ class Excel implements DataSourceInterface
                 }
             }
         return $this->rows;
-    }
-
-    public function validValue(array $arr)
-    {
-        foreach ($arr as $key => $value) {
-            if ($value === null || $value === '') {
-                unset($arr[$key]);
-            }
-        }
-
-        return $arr;
     }
 
     public function getDataRow()

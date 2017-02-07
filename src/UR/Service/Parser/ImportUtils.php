@@ -7,8 +7,6 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\TableDiff;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\VarDumper\Cloner\Data;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\FilterType;
@@ -16,6 +14,7 @@ use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
 use UR\Service\DataSet\TransformType;
 use UR\Service\DataSet\Type;
+use UR\Service\Import\ImportDataLogger;
 use UR\Service\Parser\Filter\DateFilter;
 use UR\Service\Parser\Filter\NumberFilter;
 use UR\Service\Parser\Filter\TextFilter;
@@ -30,7 +29,7 @@ use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 class ImportUtils
 {
-    function createEmptyDataSetTable(DataSetInterface $dataSet, Locator $dataSetLocator, Synchronizer $dataSetSynchronizer, Connection $conn, LoggerInterface $logger)
+    function createEmptyDataSetTable(DataSetInterface $dataSet, Locator $dataSetLocator, Synchronizer $dataSetSynchronizer, Connection $conn, ImportDataLogger $logger)
     {
         $schema = new Schema();
 
@@ -74,7 +73,7 @@ class ImportUtils
                 $conn->exec($sql);
             }
         } catch (\Exception $e) {
-            $logger->error("Cannot Sync Schema " . $schema->getName());
+            $logger->doExceptionLogging("Cannot Sync Schema " . $schema->getName());
         }
     }
 

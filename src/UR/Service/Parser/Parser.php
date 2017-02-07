@@ -41,7 +41,10 @@ class Parser implements ParserInterface
         $cur_row = -1;
         foreach ($rows as &$row) {
             $cur_row++;
-            $row = array_combine($fileCols, $row);
+            $isMapped = count(array_diff_key(array_flip($fileCols), $row));
+            if ($isMapped > 0) {
+                $row = array_combine($fileCols, $row);
+            }
 
             foreach ($dataSetColumns as $dsColumn => $type) {
                 if (!array_key_exists($dsColumn, $columnsMapping)) {

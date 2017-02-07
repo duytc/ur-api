@@ -127,7 +127,7 @@ services:
             - @ur.domain_manager.import_history
             - @phpexcel
             - %upload_file_dir%
-            - @monolog.logger
+            - @ur.service.import.do_log
             - %ur_batch_size%
             - %ur_reading_xls_chunk_size%
 
@@ -171,3 +171,8 @@ services:
         class: UR\Bundle\ApiBundle\Service\DataSource\RegenerateUrApiKey
         arguments:
             - @ur.domain_manager.data_source
+
+    ur.service.import.do_log:
+        class: UR\Service\Import\ImportDataLogger
+        arguments:
+            - @monolog.logger

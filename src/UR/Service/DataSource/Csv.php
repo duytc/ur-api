@@ -7,7 +7,7 @@ use League\Csv\Reader;
 use UR\Behaviors\ParserUtilTrait;
 use UR\Exception\InvalidArgumentException;
 
-class Csv implements DataSourceInterface
+class Csv extends CommonFile implements DataSourceInterface
 {
     use ParserUtilTrait;
 
@@ -204,16 +204,6 @@ class Csv implements DataSourceInterface
         }
 
         return $rows;
-    }
-
-    public function validValue(array $arr)
-    {
-        foreach ($arr as $key => $value) {
-            if ($value === null || $value === '') {
-                unset($arr[$key]);
-            }
-        }
-        return $arr;
     }
 
     public function getDataRow()
