@@ -66,8 +66,16 @@ final class TransformType
         'M/d/Y',  // Mar/01/2016
         'd-M-Y',  // 01-Mar-2016
         'd/M/Y',  // 01/Mar/2016
-        'M d, Y',  // Mar 01,2016
-        'Y, M d',  // 2016, Mar 01
+        'M d, Y', // Mar 01,2016
+        'Y, M d', // 2016, Mar 01
+
+        /** PHP Excel support 2 digits for year */
+        'd-m-y',  // 15-01-99
+        'd/m/y',  // 15/01/99
+        'm-d-y',  // 01-15-99
+        'm/d/y',  // 01/15/99
+        'y-m-d',  // 99-01-15
+        'y/m/d',  // 99/01/15
     ];
 
     public static function isDateOrNumberTransform($type)

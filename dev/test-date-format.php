@@ -3,27 +3,16 @@
 
 namespace tagcade\dev;
 
-use AppKernel;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use UR\Entity\Core\DataSet;
+$dates = array(
+    'd-m-y' => '22-01-16',
+    'd/m/y' => '23/01/16',
+    'm-d-y' => '01-15-99',
+    'm/d/y' => '01/16/99',
+    'y-m-d'=> '16-01-25',
+    'y/m/d'=> '16/01/26'
+);
 
-$loader = require_once __DIR__ . '/../app/autoload.php';
-require_once __DIR__ . '/../app/AppKernel.php';
-
-$kernel = new AppKernel('dev', true);
-$kernel->boot();
-
-/** @var ContainerInterface $container */
-$container = $kernel->getContainer();
-
-/*
- * CODE BEGIN FROM HERE...
- */
-$xxx= strtotime('02/12/1989');
-
-$today = date("F d, Y", $xxx);
-
-$date = \DateTime::createFromFormat('Y ,M d', '2016 ,Apr 26');
-echo $date->format('d/m/Y');
-
-
+foreach ($dates as $format => $value){
+    $date = \DateTime::createFromFormat($format, $value);
+    echo $date->format('Y-m-d H:i:s') . "\n";
+}
