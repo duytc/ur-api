@@ -7,6 +7,7 @@ use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -576,6 +577,29 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
+     * Upload file to data sources via API key
+     *
+     * @Rest\Post("/datasources/viaapikey")
+     *
+     * @ApiDoc(
+     *  section = "Data Sources",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request the request object
+     *
+     * @return mixed
+     */
+    public function postImportDataViaApiKeyAction(Request $request)
+    {
+        return $this->processImportDataViaApiKey($request, $via = DataSourceEntry::RECEIVED_VIA_API);
+    }
+
+    /**
      * Update an existing data source from the submitted data or create a new ad network
      *
      * @ApiDoc(
@@ -817,5 +841,52 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         }
 
         return $result;
+    }
+
+    /**
+     * process Post file via API key
+     *
+     * @param Request $request
+     * @param string $via
+     * @return array
+     */
+    private function processImportDataViaApiKey(Request $request, $via)
+    {
+        $apiKey = $request->request->get('apiKey', null);
+        $data = $request->request->get('data', null);
+
+        $data = json_encode($data);
+        if ($apiKey === null || $data === null) {
+            throw new BadRequestHttpException('apiKey or data must not be null');
+        }
+
+        $dataSourceManager = $this->get('ur.domain_manager.data_source');
+        $dataSources = $dataSourceManager->getDataSourceByApiKey($apiKey);
+        if (count($dataSources) === 0) {
+            throw new BadRequestHttpException('cannot find any data source with this api key');
+        }
+
+        /**@var DataSourceInterface $dataSource */
+        $dataSource = $dataSources[0];
+        $uploadRootDir = $this->container->getParameter('upload_file_dir');
+        $dirItem = '/' . $dataSource->getPublisher()->getId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
+        $uploadPath = $uploadRootDir . $dirItem;
+        $name = '/json-message-via-api-key_' . round(microtime(true)) . '.json';
+        $this->file_force_contents(substr($uploadPath, 1) . $name, $data);
+
+        $file = new UploadedFile($uploadPath . $name, $name);
+        $dataSourceEntryManager = $this->container->get('ur.domain_manager.data_source_entry');
+        return $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via
+            , false);
+    }
+
+    function file_force_contents($dir, $contents)
+    {
+        $parts = explode('/', $dir);
+        $file = array_pop($parts);
+        $dir = '';
+        foreach ($parts as $part)
+            if (!is_dir($dir .= "/$part")) mkdir($dir);
+        file_put_contents("$dir/$file", $contents);
     }
 }
