@@ -11,9 +11,7 @@ class Integration implements IntegrationInterface
     protected $id;
     protected $name;
     protected $canonicalName;
-    protected $type;
-    protected $method;
-    protected $url;
+    protected $params;
 
     public function __construct()
     {
@@ -65,75 +63,17 @@ class Integration implements IntegrationInterface
     /**
      * @inheritdoc
      */
-    public function getType()
+    public function getParams()
     {
-        return $this->type;
+        return $this->params;
     }
 
     /**
      * @inheritdoc
      */
-    public function setType($type)
+    public function setParams($params)
     {
-        $this->type = $type;
-
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public static function supportedTypes()
-    {
-        return [
-            self::TYPE_UI,
-            self::TYPE_API
-        ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getMethod()
-    {
-        return $this->method;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setMethod($method)
-    {
-        $this->method = $method;
-
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public static function supportedMethods()
-    {
-        return [
-            self::METHOD_GET,
-            self::METHOD_POST
-        ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getUrl()
-    {
-        return $this->url;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setUrl($url)
-    {
-        $this->url = $url;
+        $this->params = $params;
 
         return $this;
     }

@@ -14,9 +14,6 @@ UR\Entity\Core\Integration:
         canonicalName:
             type: string
             length: 100
-        type:
-            type: string
-        method:
-            type: string
-        url:
-            type: string
+        params:
+            type: json_array
+            nullable: true

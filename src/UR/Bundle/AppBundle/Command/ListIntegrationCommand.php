@@ -44,32 +44,34 @@ class ListIntegrationCommand extends ContainerAwareCommand
             ? $integrationManager->all()
             : $integrationManager->findByName($search);
 
-        $this->logger->info(sprintf('%d integrations found.', count($integrations)));
-        $this->prettyPrint($integrations);
+        $output->writeln(sprintf('%d integrations found.', count($integrations)));
+        $this->prettyPrint($output, $integrations);
     }
 
     /**
+     * @param OutputInterface $output
      * @param array|IntegrationInterface[] $integrations
      */
-    private function prettyPrint(array $integrations)
+    private function prettyPrint(OutputInterface $output, array $integrations)
     {
-        $this->logger->info(sprintf('-- # -- name --------- c-name ---------- type ---------- method ---------- url ---------- '));
-        $this->logger->info(sprintf('|      |              |                 |               |                 |'));
+        $output->writeln(sprintf('-- # -- name --------- c-name ---------- params ----------'));
+        $output->writeln(sprintf('|       |              |                 |                |'));
 
         $i = 0;
         foreach ($integrations as $integration) {
             $i++;
 
-            $this->logger->info(sprintf('-- %d -- %s --------- %s ---------- %s ---------- %s ---------- %s ---------- ',
+            $params = $integration->getParams();
+            $params = is_array($params) ? implode(',', $params) : 'NULL';
+
+            $output->writeln(sprintf('-- %d -- %s --------- %s ---------- %s ----------',
                 $i,
                 $integration->getName(),
                 $integration->getCanonicalName(),
-                $integration->getType(),
-                $integration->getMethod(),
-                $integration->getUrl()
+                $params
             ));
 
-            $this->logger->info(sprintf('|      |              |                 |               |                 |'));
+            $output->writeln(sprintf('|      |              |                 |                 |'));
         }
     }
 }
