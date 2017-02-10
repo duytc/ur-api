@@ -4,17 +4,14 @@ namespace UR\Bundle\ApiBundle\Controller;
 
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
-use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
-use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use UR\Bundle\ApiBundle\Service\DataSource\RegenerateEmail;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
