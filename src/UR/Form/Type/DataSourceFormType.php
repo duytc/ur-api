@@ -94,6 +94,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
      *
      * @param $alertSetting
      * @return bool
+     * @throws Exception
      */
     private function validateAlertSetting($alertSetting)
     {
