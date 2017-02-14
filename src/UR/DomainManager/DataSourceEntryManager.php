@@ -147,7 +147,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     /**
      * @inheritdoc
      */
-    public function uploadDataSourceEntryFile(UploadedFile $file, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile)
+    public function uploadDataSourceEntryFile(UploadedFile $file, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile = true, $metadata = null)
     {
         /* validate via type */
         if (!DataSourceEntry::isSupportedReceivedViaType($receivedVia)) {
@@ -208,7 +208,8 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             ->setIsValid(true)
             ->setReceivedVia($receivedVia)
             ->setFileName($origin_name)
-            ->setHashFile($hash);
+            ->setHashFile($hash)
+            ->setMetaData($metadata);
 
         $newFields = $this->getNewFieldsFromFiles($filePath, $dataSource);
         $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), DataSourceEntryManager::UPLOAD);

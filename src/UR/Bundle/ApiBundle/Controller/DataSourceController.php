@@ -741,9 +741,10 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      * @param FileBag $fileBag
      * @param string $via is "upload" or "email" or "api" or "selenium". Default is "upload"
      * @param bool $alsoMoveFile
+     * @param null $metadata
      * @return array formatted as [ fileName => status, ... ]
      */
-    private function processUploadedFiles(DataSourceInterface $dataSource, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile = true)
+    private function processUploadedFiles(DataSourceInterface $dataSource, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile = true, $metadata = null)
     {
         /** @var UploadedFile[] $files */
         $files = $this->getUploadedFiles($fileBag);
@@ -765,7 +766,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             }
 
             try {
-                $oneResult = $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via, $alsoMoveFile);
+                $oneResult = $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via, $alsoMoveFile, $metadata);
 
                 $result[] = $oneResult;
             } catch (\Exception $e) {
@@ -802,6 +803,16 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             throw new BadRequestHttpException('expect ids is array of data source ids');
         }
 
+        /* "metadata": '{'from': 'uremail@mail.com', 'subject':'export data 02-12-1989', 'body':'dear Mr Thomas ...'}' */
+        $metadata = $request->request->get('metadata', null);
+
+        if ($metadata !== null) {
+            $metadata = json_decode($metadata, true);
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($metadata)) {
+                throw new BadRequestHttpException('expect metadata is json format');
+            }
+        }
+
         /** @var DataSourceInterface $dataSource */
         $dataSources = array_map(function ($id) {
             return $this->one($id);
@@ -810,7 +821,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         /** @var FileBag $fileBag */
         $fileBag = $request->files;
 
-        $result = $this->processUploadedFilesForMultipleDataSources($dataSources, $fileBag, $via);
+        $result = $this->processUploadedFilesForMultipleDataSources($dataSources, $fileBag, $via, $metadata);
 
         return $result;
     }
@@ -821,9 +832,10 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      * @param array|DataSourceInterface[] $dataSources
      * @param FileBag $fileBag
      * @param string $via is "upload" or "email" or "api" or "selenium". Default is "upload"
+     * @param null $metadata
      * @return array formatted as [ dataSourceId => [ fileName => status, ... ], ... ]
      */
-    private function processUploadedFilesForMultipleDataSources(array $dataSources, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD)
+    private function processUploadedFilesForMultipleDataSources(array $dataSources, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD, $metadata = null)
     {
         $result = [];
 
@@ -833,7 +845,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             // IMPORTANT: copy original file for not last data source, and move original file for last data source
             $alsoMoveFile = ($i >= $len - 1);
 
-            $oneResult = $this->processUploadedFiles($dataSource, $fileBag, $via, $alsoMoveFile);
+            $oneResult = $this->processUploadedFiles($dataSource, $fileBag, $via, $alsoMoveFile, $metadata);
             $result[$dataSource->getId()] = $oneResult;
         }
 

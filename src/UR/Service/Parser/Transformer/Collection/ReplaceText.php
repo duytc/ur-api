@@ -25,50 +25,88 @@ class ReplaceText implements CollectionTransformerInterface
      */
     protected $replaceWith;
 
+    /**
+     * @var string
+     */
     protected $field;
 
-    public function __construct($field, $searchFor, $position = self::POSITION_AT_BEGINNING, $replaceWith)
+    /**
+     * @var string
+     */
+    protected $targetField;
+
+    /**
+     * @var boolean
+     */
+    protected $isOverride;
+
+    public function __construct($field, $searchFor, $position = self::POSITION_AT_BEGINNING, $replaceWith, $targetField, $isOverride = true)
     {
         $this->field = $field;
         $this->searchFor = $searchFor;
         $this->position = $position;
         $this->replaceWith = $replaceWith;
+        $this->targetField = $targetField;
+        $this->isOverride = $isOverride;
     }
 
     public function transform(Collection $collection)
     {
         $rows = $collection->getRows();
+        $columns = $collection->getColumns();
+
+        $isMultiTrans = false;
+        if (!$this->isOverride) {
+            if (!in_array($this->targetField, $columns)) {
+                $columns[] = $this->targetField;
+            } else {
+                $isMultiTrans = true;
+            }
+        }
+
         if (count($rows) < 1) {
             return $collection;
         }
 
         foreach ($rows as &$row) {
-            $this->replaceText($row);
+            if (!array_key_exists($this->field, $row)) {
+                return $collection;
+            }
+
+            if ($this->isOverride) {
+                $row[$this->field] = $this->replaceText($row, $this->field);
+            } else {
+                if ($isMultiTrans) {
+                    $row[$this->targetField] = $this->replaceText($row, $this->targetField);
+                } else {
+                    $row[$this->targetField] = $this->replaceText($row, $this->field);
+                }
+            }
         }
 
-        $collection->setRows($rows);
-
-        return $collection;
+        return new Collection($columns, $rows);
     }
 
-    public function replaceText(array &$row)
+    public function replaceText(array &$row, $field)
     {
+        $stringReplaced = $row[$field];
         switch ($this->position) {
             case self::POSITION_ANY_WHERE:
-                $row[$this->field] = str_replace($this->searchFor, $this->replaceWith, $row[$this->field]);
+                $stringReplaced = str_replace($this->searchFor, $this->replaceWith, $row[$field]);
                 break;
             case self::POSITION_AT_BEGINNING:
-                if ($this->startsWith($row[$this->field], $this->searchFor)) {
-                    $row[$this->field] = substr_replace($row[$this->field], $this->replaceWith, 0, strlen($this->searchFor));
+                if ($this->startsWith($row[$field], $this->searchFor)) {
+                    $stringReplaced = substr_replace($row[$field], $this->replaceWith, 0, strlen($this->searchFor));
                 }
                 break;
             case self::POSITION_AT_THE_END:
                 if ($this->endsWith($row[$this->field], $this->searchFor)) {
-                    $row[$this->field] = substr_replace($row[$this->field], $this->replaceWith, strlen($row[$this->field]) - strlen($this->searchFor), strlen($this->searchFor));
+                    $stringReplaced = substr_replace($row[$field], $this->replaceWith, strlen($row[$field]) - strlen($this->searchFor), strlen($this->searchFor));
                 }
                 break;
         }
 
+        return $stringReplaced;
     }
 
     /**

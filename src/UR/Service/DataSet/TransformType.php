@@ -22,14 +22,23 @@ final class TransformType
     const COMPARISON = 'comparison';
     const COMPARISON_PERCENT = 'comparisonPercent';
     const REPLACE_TEXT = 'replaceText';
+    const REPLACE_PATTERN = 'replacePattern';
     const EXPRESSION = 'expression';
     const NAMES = 'names';
     const DIRECTION = 'direction';
     const NUMERATOR = 'numerator';
     const DENOMINATOR = 'denominator';
     const SEARCH_FOR = 'searchFor';
+    const REG_EXPRESSION = 'searchPattern';
     const POSITION = 'position';
     const REPLACE_WITH = 'replaceWith';
+    const TARGET_FIELD = 'targetField';
+    const IS_OVERRIDE = 'isOverride';
+    const DATE_FORMAT = 'dateFormat';
+    const FILE_NAME = '[__filename]';
+    const EMAIL_SUBJECT = '[__email_subject]';
+    const EMAIL_BODY = '[__email_body]';
+    const EMAIL_DATE_TIME = '[__email_date_time]';
 
     public static $transformTypes = [
         self::DATE,
@@ -41,7 +50,8 @@ final class TransformType
         self::ADD_CONCATENATED_FIELD,
         self::COMPARISON_PERCENT,
         self::ADD_CONCATENATED_FIELD,
-        self::REPLACE_TEXT
+        self::REPLACE_TEXT,
+        self::REPLACE_PATTERN
     ];
 
     private static $dateOrNumberTransform = [

@@ -102,22 +102,6 @@ class Parser implements ParserInterface
                 unset($rows[$cur_row]);
                 continue;
             }
-
-            foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
-                /** @var ColumnTransformerInterface[] $transforms */
-                if (!array_key_exists($columnsMapping[$column], $row)) {
-                    continue;
-                }
-
-                foreach ($transforms as $transform) {
-                    $row[$columnsMapping[$column]] = $transform->transform($row[$columnsMapping[$column]]);
-                    if ($row[$columnsMapping[$column]] === 2) {
-                        return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE,
-                            ProcessAlert::ROW => $cur_row + 2,
-                            ProcessAlert::COLUMN => $columnsMapping[$column]);
-                    }
-                }
-            }
         }
 
         $collection = new Collection($columns, $rows);
@@ -143,6 +127,29 @@ class Parser implements ParserInterface
                 return $collection;
             }
         }
+
+        $rows = $collection->getRows();
+        $cur_row = -1;
+        foreach ($rows as &$row) {
+            $cur_row++;
+            foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
+                /** @var ColumnTransformerInterface[] $transforms */
+                if (!array_key_exists($columnsMapping[$column], $row)) {
+                    continue;
+                }
+
+                foreach ($transforms as $transform) {
+                    $row[$columnsMapping[$column]] = $transform->transform($row[$columnsMapping[$column]]);
+                    if ($row[$columnsMapping[$column]] === 2) {
+                        return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE,
+                            ProcessAlert::ROW => $cur_row + 2,
+                            ProcessAlert::COLUMN => $columnsMapping[$column]);
+                    }
+                }
+            }
+        }
+
+        $collection->setRows($rows);
 
         return $collection;
     }

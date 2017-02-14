@@ -9,6 +9,7 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\TableDiff;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\DataSet\FilterType;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
@@ -23,6 +24,7 @@ use UR\Service\Parser\Transformer\Collection\AddConcatenatedField;
 use UR\Service\Parser\Transformer\Collection\AddField;
 use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
+use UR\Service\Parser\Transformer\Collection\ReplacePattern;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
@@ -201,9 +203,12 @@ class ImportUtils
         return null;
     }
 
-    function createTransformConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
+    function createTransformConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, DataSourceEntryInterface $dataSourceEntry)
     {
         $transforms = $connectedDataSource->getTransforms();
+        $dimensions = $connectedDataSource->getDataSet()->getDimensions();
+        $metrics = $connectedDataSource->getDataSet()->getMetrics();
+        $allFields = array_merge($dimensions, $metrics);
 
         $sortByColumns = array();
         foreach ($transforms as $transform) {
@@ -223,8 +228,23 @@ class ImportUtils
                 }
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
-                    foreach ($transform[TransformType::FIELDS] as $addfields) {
-                        $parserConfig->addTransformCollection(new AddField($addfields[TransformType::FIELD], $addfields[TransformType::VALUE]));
+                    foreach ($transform[TransformType::FIELDS] as $addFields) {
+                        if (strcmp($addFields[TransformType::VALUE], TransformType::EMAIL_SUBJECT) === 0) {
+                            $addFields[TransformType::VALUE] = null;
+                            if (strcmp($dataSourceEntry->getReceivedVia(), DataSourceEntryInterface::RECEIVED_VIA_EMAIL) === 0) {
+                                $metadata = $dataSourceEntry->getMetaData();
+                                if (array_key_exists(DataSourceEntryInterface::META_DATA_EMAIL_SUBJECT, $metadata)) {
+                                    $addFields[TransformType::VALUE] = $metadata[DataSourceEntryInterface::META_DATA_EMAIL_SUBJECT];
+                                }
+                            }
+                        }
+
+                        if (strcmp($addFields[TransformType::VALUE], TransformType::FILE_NAME) === 0) {
+                            $addFields[TransformType::VALUE] = $dataSourceEntry->getFileName();
+                        }
+
+                        $fileType = $allFields[$addFields[TransformType::FIELD]];
+                        $parserConfig->addTransformCollection(new AddField($addFields[TransformType::FIELD], $addFields[TransformType::VALUE], $fileType));
                     }
                     continue;
                 }
@@ -253,7 +273,19 @@ class ImportUtils
 
                 if (strcmp($transform[TransformType::TYPE], TransformType::REPLACE_TEXT) === 0) {
                     foreach ($transform[TransformType::FIELDS] as $replaceText) {
-                        $parserConfig->addTransformCollection(new ReplaceText($replaceText[TransformType::FIELD], $replaceText[TransformType::SEARCH_FOR], $replaceText[TransformType::POSITION], $replaceText[TransformType::REPLACE_WITH]));
+                        $this->addReplaceTextTransform($replaceText, $parserConfig);
+                    }
+                    continue;
+                }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::REPLACE_PATTERN) === 0) {
+                    foreach ($transform[TransformType::FIELDS] as $replacePattern) {
+                        $parserConfig->addTransformCollection(new ReplacePattern($replacePattern[TransformType::FIELD], $replacePattern[TransformType::REG_EXPRESSION], $replacePattern[TransformType::TARGET_FIELD], $replacePattern[TransformType::IS_OVERRIDE]));
+                        $targetFieldType = $allFields[$replacePattern[TransformType::TARGET_FIELD]];
+                        if (strcmp($targetFieldType, Type::DATE) === 0) {
+                            $parserConfig->addColumn($replacePattern[TransformType::TARGET_FIELD], $replacePattern[TransformType::TARGET_FIELD]);
+                            $parserConfig->addTransformColumn($replacePattern[TransformType::TARGET_FIELD], new DateFormat($replacePattern[TransformType::DATE_FORMAT], 'Y-m-d'));
+                        }
                     }
                     continue;
                 }
@@ -262,6 +294,20 @@ class ImportUtils
 
         if ($sortByColumns) {
             $parserConfig->addTransformCollection(new SortByColumns($sortByColumns));
+        }
+    }
+
+    function addReplaceTextTransform(array $replaceText, ParserConfig $parserConfig)
+    {
+        $field = $replaceText[TransformType::FIELD];
+        $searchFor = $replaceText[TransformType::SEARCH_FOR];
+        $position = $replaceText[TransformType::POSITION];
+        $replaceWith = $replaceText[TransformType::REPLACE_WITH];
+        $targetField = $replaceText[TransformType::TARGET_FIELD];
+        $isOverride = $replaceText[TransformType::IS_OVERRIDE];
+        $parserConfig->addTransformCollection(new ReplaceText($field, $searchFor, $position, $replaceWith, $targetField, $isOverride));
+        if (!$replaceText[TransformType::IS_OVERRIDE] && !$parserConfig->hasColumnMapping($replaceText[TransformType::TARGET_FIELD])) {
+            $parserConfig->addColumn($replaceText[TransformType::TARGET_FIELD], $replaceText[TransformType::TARGET_FIELD]);
         }
     }
 }

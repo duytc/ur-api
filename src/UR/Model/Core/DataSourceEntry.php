@@ -206,5 +206,6 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setHashFile($hashFile)
     {
         $this->hashFile = $hashFile;
+        return $this;
     }
 }

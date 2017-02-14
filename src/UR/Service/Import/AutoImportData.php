@@ -181,7 +181,7 @@ class AutoImportData implements AutoImportDataInterface
                 $importUtils->createFilterConfigForConnectedDataSource($connectedDataSource, $parserConfig);
 
                 //transform
-                $importUtils->createTransformConfigForConnectedDataSource($connectedDataSource, $parserConfig);
+                $importUtils->createTransformConfigForConnectedDataSource($connectedDataSource, $parserConfig, $dataSourceEntry);
 
                 // import
                 $collectionParser = $parser->parse($file, $parserConfig, $connectedDataSource);
