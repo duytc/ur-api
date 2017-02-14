@@ -2,6 +2,7 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
+use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Service\DTO\Collection;
 
 class ReplacePattern implements CollectionTransformerInterface
@@ -66,8 +67,17 @@ class ReplacePattern implements CollectionTransformerInterface
 
     public function getRegexValue($str)
     {
-        preg_match($this->pattern, $str, $matches);
-        if (count($matches) < 1) {
+        try {
+            preg_match($this->pattern, $str, $matches);
+            if ($matches === null) {
+                return null;
+            }
+
+            if (count($matches) < 1) {
+                return null;
+            }
+
+        } catch (Exception $exception) {
             return null;
         }
 
