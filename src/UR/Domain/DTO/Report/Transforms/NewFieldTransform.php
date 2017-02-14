@@ -25,9 +25,9 @@ abstract class NewFieldTransform extends AbstractTransform implements TransformI
      * @param Collection $collection
      * @param array $metrics
      * @param array $dimensions
-     * @param null $joinBy
+     * @param null $outputJoinField
      */
-    public function transform(Collection $collection, array &$metrics, array &$dimensions, $joinBy = null)
+    public function transform(Collection $collection, array &$metrics, array &$dimensions, array $outputJoinField)
     {
         $columns = $collection->getColumns();
         $types = $collection->getTypes();

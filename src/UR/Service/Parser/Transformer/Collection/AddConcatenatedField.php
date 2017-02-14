@@ -13,14 +13,12 @@ class AddConcatenatedField extends AbstractAddField
      * @var string
      */
     protected $expression;
-    protected $defaultValue;
     protected $language;
 
-    public function __construct($column, $expression, $defaultValue = 0)
+    public function __construct($column, $expression)
     {
         $this->column = $column;
         $this->expression = $expression;
-        $this->defaultValue = $defaultValue;
     }
 
     protected function getValue(array $row)

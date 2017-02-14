@@ -146,14 +146,6 @@ trait ValidateConnectedDataSourceTrait
         }
 
         //SORT BY
-        if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
-            foreach ($transform[TransformType::FIELDS] as $field) {
-                $wrong_fields = array_diff($field[TransformType::NAMES], array_values($connectedDataSource->getMapFields()));
-                if (count($wrong_fields) > 0) {
-                    return "Transform ( " . $transform[TransformType::TYPE] . ") setting error: field [" . implode(", ", $wrong_fields) . "] hasn't been mapped ";
-                }
-            }
-        }
 
         //COMPARISON PERCENT
         if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {

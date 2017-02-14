@@ -49,7 +49,8 @@ class Importer
             }
 
             if (in_array($field, $collection->getColumns())) {
-                $columns[$field] = $field;
+                if (in_array($field, $tableColumns))
+                    $columns[$field] = $field;
             }
         }
 

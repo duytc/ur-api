@@ -36,12 +36,12 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 	 * @param Collection $collection
 	 * @param array $metrics
 	 * @param array $dimensions
-	 * @param $joinBy
+	 * @param $outputJoinField
 	 * @return mixed
 	 */
-	public function transform(Collection $collection, array &$metrics, array &$dimensions, $joinBy = null)
+	public function transform(Collection $collection, array &$metrics, array &$dimensions, array $outputJoinField)
 	{
-		$results = $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions, $joinBy);
+		$results = $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions, $outputJoinField);
 		$collection->setRows($results);
 		$collection->setColumns(array_merge($metrics, $dimensions));
 
@@ -58,12 +58,12 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 	 * @param Collection $collection
 	 * @param array $metrics
 	 * @param array $dimensions
-	 * @param $joinBy
+	 * @param $outputJoinField
 	 * @return array
 	 */
-	protected function getGroupedReport($groupingFields, Collection $collection, array $metrics, array &$dimensions, $joinBy = null)
+	protected function getGroupedReport($groupingFields, Collection $collection, array $metrics, array &$dimensions, array $outputJoinField)
 	{
-		$groupedReports = $this->generateGroupedArray($groupingFields, $collection, $dimensions, $joinBy);
+		$groupedReports = $this->generateGroupedArray($groupingFields, $collection, $dimensions, $outputJoinField);
 		foreach ($groupingFields as $index => $groupingField) {
 			$groupingFields[$index] = $this->removeIdSuffix($groupingField);
 		}
@@ -97,18 +97,19 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 	 * @param $groupingFields
 	 * @param Collection $collection
 	 * @param $dimensions
-	 * @param $joinBy
+	 * @param $outputJoinField
 	 * @return array
 	 * @throws \Exception
 	 */
-	protected function generateGroupedArray($groupingFields, Collection $collection, &$dimensions, $joinBy = null)
+	protected function generateGroupedArray($groupingFields, Collection $collection, &$dimensions, array $outputJoinField)
 	{
 		$groupedArray = [];
 		$rows = $collection->getRows();
 
 		foreach ($groupingFields as $index => $groupingField) {
-			if ($joinBy === $this->removeIdSuffix($groupingField)) {
-				$groupingFields[$index] = $joinBy;
+			$fieldWithoutSuffix = $this->removeIdSuffix($groupingField);
+			if (in_array($fieldWithoutSuffix, $outputJoinField)) {
+				$groupingFields[$index] = $fieldWithoutSuffix;
 			}
 		}
 

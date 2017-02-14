@@ -37,12 +37,12 @@ class AddFieldTransform extends NewFieldTransform implements TransformInterface
      * @param Collection $collection
      * @param array $metrics
      * @param array $dimensions
-     * @param $joinBy
+     * @param $outputJoinField
      * @return mixed|void
      */
-    public function transform(Collection $collection,  array &$metrics, array &$dimensions, $joinBy = null)
+    public function transform(Collection $collection,  array &$metrics, array &$dimensions, array $outputJoinField)
     {
-        parent::transform($collection, $metrics, $dimensions, $joinBy);
+        parent::transform($collection, $metrics, $dimensions, $outputJoinField);
 
         $rows = $collection->getRows();
 //        if (is_numeric($this->fieldName)) {
