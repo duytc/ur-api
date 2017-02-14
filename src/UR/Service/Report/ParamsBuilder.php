@@ -10,6 +10,7 @@ use UR\Domain\DTO\Report\Formats\CurrencyFormat;
 use UR\Domain\DTO\Report\Formats\DateFormat;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\Formats\NumberFormat;
+use UR\Domain\DTO\Report\Formats\PercentageFormat;
 use UR\Domain\DTO\Report\Params;
 use UR\Domain\DTO\Report\ReportViews\ReportView;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
@@ -325,6 +326,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 					$formatObjects[] = new ColumnPositionFormat($format);
 
 					break;
+                case FormatInterface::FORMAT_TYPE_PERCENTAGE:
+                    $formatObjects[] = new PercentageFormat($format);
+
+                    break;
 			}
 		}
 
