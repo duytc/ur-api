@@ -7,6 +7,3 @@ UR\Entity\Core\DataSet:
         dimensions:
             - NotBlank: ~
             - NotNull: ~
-        metrics:
-            - NotBlank: ~
-            - NotNull: ~
