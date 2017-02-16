@@ -3,6 +3,7 @@
 namespace UR\Service\Report;
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Behaviors\JoinConfigUtilTrait;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface as DataSetDTO;
 use UR\Domain\DTO\Report\DateRange;
@@ -10,6 +11,8 @@ use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Filters\DateFilterInterface;
 use UR\Domain\DTO\Report\Filters\FilterInterface;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
+use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
+use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\ReportViews\ReportViewInterface as ReportViewDTO;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
@@ -297,10 +300,7 @@ class ReportBuilder implements ReportBuilderInterface
         $metrics = [];
         $dimensions = [];
         $dataSets = $params->getDataSets();
-        $joinConfig = $params->getJoinByFields();
-        if (count($joinConfig) > 0 && $this->validateJoinConfig($joinConfig, $dataSets) === false) {
-            throw new InvalidArgumentException('Join config in invalid');
-        }
+        $joinConfig = $params->getJoinConfigs();
         $types = $params->getFieldTypes();
 
         $startDate = $params->getStartDate();
@@ -309,13 +309,19 @@ class ReportBuilder implements ReportBuilderInterface
         /* parse joinBy config */
         $flattenJoinFields = [];
         $outputJoinFields = [];
+
+        /** @var JoinConfigInterface $config */
         foreach ($joinConfig as $config) {
-            foreach ($config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS] as $joinField) {
-                $flattenJoinFields[] = sprintf('%s_%d', $joinField[SqlBuilder::JOIN_CONFIG_FIELD], $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET]);
+            /** @var JoinFieldInterface $joinField */
+            foreach ($config->getJoinFields() as $joinField) {
+                $fields = explode(',', $joinField->getField());
+                foreach ($fields as $item) {
+                    $flattenJoinFields[] = sprintf('%s_%d', $item, $joinField->getDataSet());
+                }
             }
 
-            if (!in_array($config[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD], $outputJoinFields)) {
-                $outputJoinFields[] = $config[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD];
+            if (!in_array($config->getOutputField(), $outputJoinFields)) {
+                $outputJoinFields = array_merge($outputJoinFields, explode(',', $config->getOutputField()));
             }
         }
 
@@ -356,79 +362,6 @@ class ReportBuilder implements ReportBuilderInterface
         $isSingleDataSet = count($dataSets) < 2;
 
         return $this->getFinalReports($collection, $params, $metrics, $dimensions, $data[SqlBuilder::DATE_RANGE_KEY], $isSingleDataSet, $outputJoinFields, $isNeedFormatReport);
-    }
-
-    /**
-     * @param array $configs
-     * @param array $dataSets
-     * @return bool
-     */
-    protected function validateJoinConfig(array $configs, array $dataSets)
-    {
-        if (!$this->validateJoinConfigFormat($configs)) {
-            return false;
-        }
-
-        if (!$this->validateMissingDataSet($configs, $dataSets)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * @param array $configs
-     * @return bool
-     */
-    protected function validateJoinConfigFormat(array $configs)
-    {
-        if (!is_array($configs)) {
-            return false;
-        }
-
-        foreach ($configs as $config) {
-            if (!array_key_exists(SqlBuilder::JOIN_CONFIG_JOIN_FIELDS, $config) ||
-                !array_key_exists(SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD, $config)
-            ) {
-                return false;
-            }
-
-            foreach ($config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS] as $dataSet) {
-                if (!array_key_exists(SqlBuilder::JOIN_CONFIG_DATA_SET, $dataSet) ||
-                    !array_key_exists(SqlBuilder::JOIN_CONFIG_FIELD, $dataSet)
-                ) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * @param array $configs
-     * @param array $dataSets
-     * @return bool
-     */
-    protected function validateMissingDataSet(array $configs, array $dataSets)
-    {
-        $allDataSetsId = array_map(function(DataSet $dataSet) {
-            return $dataSet->getDataSetId();
-        }, $dataSets);
-
-        $joinDataSetsId = [];
-        foreach ($configs as $config) {
-            $joinFields = $config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
-            foreach ($joinFields as $joinField) {
-                $joinDataSetsId[] = $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
-            }
-        }
-
-        if (count(array_diff($allDataSetsId, $joinDataSetsId)) > 0) {
-            return false;
-        }
-
-        return true;
     }
 
     /**

@@ -6,7 +6,7 @@ namespace UR\Domain\DTO\Report;
 
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
-use UR\Domain\DTO\Report\JoinBy\JoinByInterface;
+use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Service\DTO\Report\WeightedCalculationInterface;
 
@@ -25,7 +25,7 @@ interface ParamsInterface
     /**
      * @return array
      */
-    public function getJoinByFields();
+    public function getJoinConfigs();
 
     /**
      * @return WeightedCalculationInterface

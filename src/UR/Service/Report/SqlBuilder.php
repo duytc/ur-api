@@ -15,6 +15,8 @@ use UR\Domain\DTO\Report\Filters\NumberFilter;
 use UR\Domain\DTO\Report\Filters\NumberFilterInterface;
 use UR\Domain\DTO\Report\Filters\TextFilter;
 use UR\Domain\DTO\Report\Filters\TextFilterInterface;
+use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
+use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Service\StringUtilTrait;
@@ -278,8 +280,9 @@ class SqlBuilder implements SqlBuilderInterface
      */
     private function buildJoinQueryForDataSet(QueryBuilder $qb, $fromDataSetId, $dataSetIndexes, array $joinConfig, array &$endDataSets)
     {
+        /** @var JoinConfigInterface $config */
         foreach ($joinConfig as $config) {
-            $joinParams = $this->extractJoinQueryParameter($config[self::JOIN_CONFIG_JOIN_FIELDS], $fromDataSetId, $dataSetIndexes, $toDatSetId);
+            $joinParams = $this->extractJoinQueryParameter($config->getJoinFields(), $fromDataSetId, $dataSetIndexes, $toDatSetId);
             $endDataSets[] = $toDatSetId;
             if (strpos($joinParams[self::JOIN_PARAM_TO_JOIN_FIELD], ',') !== false) {
                 $qb->join(
@@ -316,9 +319,10 @@ class SqlBuilder implements SqlBuilderInterface
     private function extractJoinQueryParameter($joinConfig, $fromDataSetId, $dataSetIndexes, &$toDataSetId)
     {
         $result = [];
+        /** @var JoinFieldInterface $config */
         foreach ($joinConfig as $config) {
-            $dataSetId = $config[self::JOIN_CONFIG_DATA_SET];
-            $field = $config[self::JOIN_CONFIG_FIELD];
+            $dataSetId = $config->getDataSet();
+            $field = $config->getField();
 
             if ($fromDataSetId == $dataSetId) {
                 $result[self::JOIN_PARAM_FROM_JOIN_FIELD] = $field;
@@ -366,8 +370,6 @@ class SqlBuilder implements SqlBuilderInterface
      */
     protected function buildJoinQuery(QueryBuilder $qb, array $dataSetIds, array $joinConfig)
     {
-        $this->normalizeJoinConfig($joinConfig);
-
         $startDataSets = [];
         $endDataSets = [];
         $dataSetIndexes = array_flip($dataSetIds);

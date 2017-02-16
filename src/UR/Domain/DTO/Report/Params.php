@@ -37,7 +37,7 @@ class Params implements ParamsInterface
      * @var array
      * TODO: use UR\Domain\DTO\Report\JoinBy\JoinByInterface instead
      */
-    protected $joinByFields;
+    protected $joinConfigs;
 
     /**
      * @var array
@@ -76,7 +76,7 @@ class Params implements ParamsInterface
     {
         $this->dataSets = [];
         $this->fieldTypes = [];
-        $this->joinByFields = [];
+        $this->joinConfigs = [];
         $this->transforms = [];
     }
 
@@ -106,18 +106,18 @@ class Params implements ParamsInterface
     /**
      * @inheritdoc
      */
-    public function getJoinByFields()
+    public function getJoinConfigs()
     {
-        return $this->joinByFields;
+        return $this->joinConfigs;
     }
 
     /**
-     * @param array $joinByFields
+     * @param array $joinConfigs
      * @return self
      */
-    public function setJoinByFields(array $joinByFields)
+    public function setJoinConfigs(array $joinConfigs)
     {
-        $this->joinByFields = $joinByFields;
+        $this->joinConfigs = $joinConfigs;
 
         return $this;
     }

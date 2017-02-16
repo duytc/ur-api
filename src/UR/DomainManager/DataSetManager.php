@@ -3,6 +3,7 @@
 namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
+use UR\Entity\Core\ReportViewDataSet;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
@@ -43,7 +44,10 @@ class DataSetManager implements DataSetManagerInterface
      */
     public function save(ModelInterface $dataSet)
     {
-        if (!$dataSet instanceof DataSetInterface) throw new InvalidArgumentException('expect DataSetInterface Object');
+        if (!$dataSet instanceof DataSetInterface) {
+            throw new InvalidArgumentException('expect DataSetInterface Object');
+        }
+
         $this->om->persist($dataSet);
         $this->om->flush();
     }
@@ -53,7 +57,16 @@ class DataSetManager implements DataSetManagerInterface
      */
     public function delete(ModelInterface $dataSet)
     {
-        if (!$dataSet instanceof DataSetInterface) throw new InvalidArgumentException('expect DataSetInterface Object');
+        if (!$dataSet instanceof DataSetInterface) {
+            throw new InvalidArgumentException('expect DataSetInterface Object');
+        }
+
+        $reportViewDataSetRepository = $this->om->getRepository(ReportViewDataSet::class);
+        $reportViewDataSets = $reportViewDataSetRepository->getByDataSet($dataSet);
+        if (count($reportViewDataSets) > 0) {
+            throw new InvalidArgumentException("There're some report view still refer to this data set");
+        }
+
         $this->om->remove($dataSet);
         $this->om->flush();
     }
@@ -94,7 +107,8 @@ class DataSetManager implements DataSetManagerInterface
     /**
      * @inheritdoc
      */
-    public function getDataSetByName($dataSetName) {
+    public function getDataSetByName($dataSetName)
+    {
         return $this->repository->getDataSetByName($dataSetName);
     }
 }

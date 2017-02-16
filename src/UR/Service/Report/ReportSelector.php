@@ -51,6 +51,6 @@ class ReportSelector implements ReportSelectorInterface
             return $this->sqlBuilder->buildQueryForSingleDataSet($dataSets[0], $overridingFilters);
         }
 
-        return $this->sqlBuilder->buildQuery($dataSets, $params->getJoinByFields(), $overridingFilters);
+        return $this->sqlBuilder->buildQuery($dataSets, $params->getJoinConfigs(), $overridingFilters);
     }
 }

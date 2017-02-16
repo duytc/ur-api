@@ -49,7 +49,7 @@ trait CalculateMetricsAndDimensionsTrait
         $metrics = [];
         $dimensions = [];
         $dataSets = $params->getDataSets();
-        $joinBy = $params->getJoinByFields();
+        $joinBy = $params->getJoinConfigs();
         foreach ($dataSets as $dataSet) {
             foreach ($dataSet->getMetrics() as $item) {
                 $alias = $this->getAliasForField($dataSet->getDataSetId(), $item, $joinBy);

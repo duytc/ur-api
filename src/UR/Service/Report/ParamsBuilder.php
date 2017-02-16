@@ -4,6 +4,7 @@ namespace UR\Service\Report;
 
 use Doctrine\ORM\PersistentCollection;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use UR\Behaviors\JoinConfigUtilTrait;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Formats\ColumnPositionFormat;
 use UR\Domain\DTO\Report\Formats\CurrencyFormat;
@@ -11,6 +12,8 @@ use UR\Domain\DTO\Report\Formats\DateFormat;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\Formats\NumberFormat;
 use UR\Domain\DTO\Report\Formats\PercentageFormat;
+use UR\Domain\DTO\Report\JoinBy\JoinConfig;
+use UR\Domain\DTO\Report\JoinBy\JoinField;
 use UR\Domain\DTO\Report\Params;
 use UR\Domain\DTO\Report\ReportViews\ReportView;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
@@ -28,6 +31,8 @@ use UR\Service\DTO\Report\WeightedCalculation;
 
 class ParamsBuilder implements ParamsBuilderInterface
 {
+	use JoinConfigUtilTrait;
+
 	const DATA_SET_KEY = 'reportViewDataSets';
 	const FIELD_TYPES_KEY = 'fieldTypes';
 	const TRANSFORM_KEY = 'transforms';
@@ -96,8 +101,12 @@ class ParamsBuilder implements ParamsBuilderInterface
 
 			if (array_key_exists(self::JOIN_BY_KEY, $data)) {
 				$joinBy = json_decode($data[self::JOIN_BY_KEY], true);
+				if (json_last_error() !== JSON_ERROR_NONE) {
+					throw new InvalidArgumentException('Invalid JSON format in JoinConfigs');
+				}
+
 				if (is_array($joinBy) && !empty($joinBy)) {
-					$param->setJoinByFields($joinBy);
+					$param->setJoinConfigs($this->createJoinConfigs($joinBy, $param->getDataSets()));
 				}
 			}
 		}
@@ -155,6 +164,40 @@ class ParamsBuilder implements ParamsBuilderInterface
 		}
 
 		return $dataSetObjects;
+	}
+
+	/**
+	 * create JoinConfig objects from json data
+	 * @param array $data
+	 * @param array $dataSets
+	 * @return array
+	 */
+	protected function createJoinConfigs(array $data, array $dataSets)
+	{
+		$joinedDataSets = [];
+		$joinConfigs = [];
+		$this->normalizeJoinConfig($data, $dataSets);
+
+		if ($this->isCircularJoinConfig($data)) {
+			throw new InvalidArgumentException('Circular join config');
+		}
+
+		foreach ($data as $config) {
+			$joinConfig = new JoinConfig();
+			$joinConfig->setOutputField($config[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]);
+
+			$joinFields = $config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
+			foreach($joinFields as $joinField) {
+				$joinConfig->addJoinField(new JoinField($joinField[SqlBuilder::JOIN_CONFIG_DATA_SET], $joinField[SqlBuilder::JOIN_CONFIG_FIELD]));
+				$joinedDataSets[] = $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
+			}
+
+			$joinConfig->setDataSets();
+			$joinConfigs[] = $joinConfig;
+			unset($joinConfig);
+		}
+
+		return $joinConfigs;
 	}
 
 	/**
@@ -354,8 +397,9 @@ class ParamsBuilder implements ParamsBuilderInterface
 			$param
 				->setDataSets($this->createDataSets(
 					$this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
-				)
-				->setJoinByFields($reportView->getJoinBy());
+				);
+
+			$param->setJoinConfigs($this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets()));
 			// set showInTotal to NULL to get all total values
 			// DO NOT change
 		}
@@ -410,7 +454,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 				->setDataSets($this->createDataSets(
 					$this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
 				)
-				->setJoinByFields($reportView->getJoinBy());
+				->setJoinConfigs($reportView->getJoinBy());
 		}
 
 		$param

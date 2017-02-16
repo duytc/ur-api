@@ -4,6 +4,9 @@
 namespace UR\Behaviors;
 
 
+use UR\Domain\DTO\Report\DataSets\DataSet;
+use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
+use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\Report\SqlBuilder;
 
@@ -11,10 +14,15 @@ trait JoinConfigUtilTrait
 {
     public function getAliasForField($dataSetId, $field, $joinConfig)
     {
-        foreach($joinConfig as $config) {
-            foreach($config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS] as $join) {
-                if ($join[SqlBuilder::JOIN_CONFIG_DATA_SET] == $dataSetId && $join[SqlBuilder::JOIN_CONFIG_FIELD] == $field) {
-                    return $config[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD];
+        /** @var JoinConfigInterface $config */
+        foreach ($joinConfig as $config) {
+            /** @var JoinFieldInterface $join */
+            foreach($config->getJoinFields() as $join) {
+                $fields = explode(',', $join->getField());
+                $outputFields = explode(',', $config->getOutputField());
+                if ($join->getDataSet() == $dataSetId && in_array($field, $fields)) {
+                    $fieldIndexes = array_flip($fields);
+                    return $outputFields[$fieldIndexes[$field]];
                 }
             }
         }
@@ -22,48 +30,21 @@ trait JoinConfigUtilTrait
         return sprintf('%s_%d', $field, $dataSetId);
     }
 
-    public function findStartDatSet($joinConfig)
-    {
-        $fromDataSet = null;
-        $count = count($joinConfig);
-        if ($count < 2) {
-            return $fromDataSet;
-        }
-
-        $occurrence = [];
-        //calculate frequency of each data set id
-        foreach ($joinConfig as $i=>$config) {
-            $joinFields = $config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
-            foreach ($joinFields as $item) {
-                if (isset($occurrence[$item[SqlBuilder::JOIN_CONFIG_DATA_SET]])) {
-                    $occurrence[$item[SqlBuilder::JOIN_CONFIG_DATA_SET]]++;
-                } else {
-                    $occurrence[$item[SqlBuilder::JOIN_CONFIG_DATA_SET]] = 1;
-                }
-            }
-        }
-
-        $minValue = 1;
-        foreach ($occurrence as $dataSet=>$value) {
-            if ($value > $minValue) {
-                $fromDataSet = $dataSet;
-                $minValue = $value;
-            }
-        }
-
-        return $fromDataSet;
-    }
-
-
+    /**
+     * @param $joinConfig
+     * @param $startDataSet
+     * @param $startDataSets
+     * @return array
+     */
     public function findEndNodesForDataSet($joinConfig, $startDataSet, $startDataSets)
     {
-        return array_filter($joinConfig, function($config) use($startDataSet, $startDataSets) {
-           if (in_array($startDataSet, $config[SqlBuilder::JOIN_CONFIG_DATA_SETS])) {
+        return array_filter($joinConfig, function(JoinConfigInterface $config) use($startDataSet, $startDataSets) {
+           if (in_array($startDataSet, $config->getDataSets())) {
                if (count($startDataSets) < 2) {
                    return true;
                }
 
-               $count = count(array_diff($config[SqlBuilder::JOIN_CONFIG_DATA_SETS], $startDataSets));
+               $count = count(array_diff($config->getDataSets(), $startDataSets));
                return $count > 0;
            }
 
@@ -74,6 +55,7 @@ trait JoinConfigUtilTrait
     /**
      * two arrays are considered to be equal if they are consisted of the same element,
      * regardless of the elements order
+     *
      * @param $a
      * @param $b
      * @return bool
@@ -85,22 +67,53 @@ trait JoinConfigUtilTrait
 
     /**
      * group join configs which is consisted of the same data set pair
-     * @param $joinConfig
+     *
+     * @param array $joinConfig
+     * @param array $dataSets
      */
-    public function normalizeJoinConfig(&$joinConfig)
+    public function normalizeJoinConfig(array &$joinConfig, array $dataSets)
     {
+        foreach ($joinConfig as $config) {
+            if (!array_key_exists(SqlBuilder::JOIN_CONFIG_JOIN_FIELDS, $config) ||
+                !array_key_exists(SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD, $config)
+            ) {
+                throw new InvalidArgumentException('missing either "joinFields" or "outputField in join config"');
+            }
+
+            foreach ($config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS] as $dataSet) {
+                if (!array_key_exists(SqlBuilder::JOIN_CONFIG_DATA_SET, $dataSet) ||
+                    !array_key_exists(SqlBuilder::JOIN_CONFIG_FIELD, $dataSet)
+                ) {
+                    throw new InvalidArgumentException('missing either "field" or "dataSet in join config"');
+                }
+            }
+        }
+
         $count = count($joinConfig);
         if ($count < 2) {
             return;
         }
 
-        foreach ($joinConfig as $i=>&$config) {
+        $allDataSetsId = array_map(function(DataSet $dataSet) {
+            return $dataSet->getDataSetId();
+        }, $dataSets);
+
+        $joinDataSetsId = [];
+        foreach ($joinConfig as &$config) {
             $joinFields = $config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
+            foreach ($joinFields as $joinField) {
+                $joinDataSetsId[] = $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
+            }
+
             $dataSets = array_map(function(array $item) {
                 return $item[SqlBuilder::JOIN_CONFIG_DATA_SET];
             }, $joinFields);
 
             $config[SqlBuilder::JOIN_CONFIG_DATA_SETS] = $dataSets;
+        }
+
+        if (count(array_diff($allDataSetsId, $joinDataSetsId)) > 0) {
+            throw new InvalidArgumentException("There's seem to be some data set is missing from the join config");
         }
 
         //group join config which have the same data sets
@@ -120,7 +133,39 @@ trait JoinConfigUtilTrait
     }
 
     /**
+     * check if the join configs is circular
+     *
+     * @param $joinConfig
+     * @return bool
+     */
+    public function isCircularJoinConfig($joinConfig)
+    {
+        $occurrence = [];
+        foreach ($joinConfig as &$config) {
+            $joinFields = $config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
+            foreach ($joinFields as $joinField) {
+                $joinDataSetsId = $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
+                if (!array_key_exists($joinDataSetsId, $occurrence)) {
+                    $occurrence[$joinDataSetsId] = 1;
+                } else {
+                    $occurrence[$joinDataSetsId]++;
+                }
+            }
+        }
+
+        $isCircular = true;
+        foreach($occurrence as $value) {
+            if ($value != 2) {
+                return false;
+            }
+        }
+
+        return $isCircular;
+    }
+
+    /**
      * group join config pair by concatenated their input field and output field
+     *
      * @param $source
      * @param $toBeGrouped
      */
