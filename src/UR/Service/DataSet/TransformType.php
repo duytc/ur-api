@@ -22,7 +22,7 @@ final class TransformType
     const COMPARISON = 'comparison';
     const COMPARISON_PERCENT = 'comparisonPercent';
     const REPLACE_TEXT = 'replaceText';
-    const REPLACE_PATTERN = 'replacePattern';
+    const EXTRACT_PATTERN = 'extractPattern';
     const EXPRESSION = 'expression';
     const NAMES = 'names';
     const DIRECTION = 'direction';
@@ -60,7 +60,7 @@ final class TransformType
         self::COMPARISON_PERCENT,
         self::ADD_CONCATENATED_FIELD,
         self::REPLACE_TEXT,
-        self::REPLACE_PATTERN
+        self::EXTRACT_PATTERN
     ];
 
     private static $dateOrNumberTransform = [

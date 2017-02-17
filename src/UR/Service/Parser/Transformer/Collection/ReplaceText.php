@@ -140,6 +140,6 @@ class ReplaceText implements CollectionTransformerInterface
      */
     public function getPriority()
     {
-        return self::TRANSFORM_REPLACE_TEXT;
+        return self::TRANSFORM_PRIORITY_REPLACE_TEXT;
     }
 }

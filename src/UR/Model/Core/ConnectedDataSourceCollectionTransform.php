@@ -8,7 +8,7 @@ use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
 use UR\Service\Parser\Transformer\Collection\AddField;
 use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
-use UR\Service\Parser\Transformer\Collection\ReplacePattern;
+use UR\Service\Parser\Transformer\Collection\ExtractPattern;
 use UR\Service\Parser\Transformer\Collection\ReplaceText;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
 
@@ -31,8 +31,8 @@ class ConnectedDataSourceCollectionTransform
     /**@var AddCalculatedField[] $addCalculatedFieldTransforms */
     protected $addCalculatedFieldTransforms = [];
 
-    /**@var ReplacePattern[] $replacePatternTransforms */
-    protected $replacePatternTransforms = [];
+    /**@var ExtractPattern[] $extractPatternTransforms */
+    protected $extractPatternTransforms = [];
 
     /**@var ComparisonPercent[] $comparisonPercentTransforms */
     protected $comparisonPercentTransforms = [];
@@ -89,8 +89,8 @@ class ConnectedDataSourceCollectionTransform
                     $this->setReplaceTextTransforms($fields);
                     break;
 
-                case TransformType::REPLACE_PATTERN:
-                    $this->setReplacePatternTransforms($fields);
+                case TransformType::EXTRACT_PATTERN:
+                    $this->setExtractPatternTransforms($fields);
                     break;
 
                 default:
@@ -137,44 +137,44 @@ class ConnectedDataSourceCollectionTransform
     }
 
     /**
-     * @return ReplacePattern[]
+     * @return ExtractPattern[]
      */
-    public function getReplacePatternTransforms()
+    public function getExtractPatternTransforms()
     {
-        return $this->replacePatternTransforms;
+        return $this->extractPatternTransforms;
     }
 
     /**
-     * @param array $replacePatternTransforms
+     * @param array $extractPatternTransforms
      */
-    public function setReplacePatternTransforms($replacePatternTransforms)
+    public function setExtractPatternTransforms($extractPatternTransforms)
     {
-        foreach ($replacePatternTransforms as $replacePatternTransform) {
-            if (!is_array($replacePatternTransform)
-                || !array_key_exists(TransformType::FIELD, $replacePatternTransform)
-                || !array_key_exists(TransformType::REG_EXPRESSION, $replacePatternTransform)
-                || !array_key_exists(TransformType::TARGET_FIELD, $replacePatternTransform)
-                || !array_key_exists(TransformType::IS_OVERRIDE, $replacePatternTransform)
-                || !array_key_exists(TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE, $replacePatternTransform)
-                || !array_key_exists(TransformType::IS_REG_EXPRESSION_MULTI_LINE, $replacePatternTransform)
+        foreach ($extractPatternTransforms as $extractPatternTransform) {
+            if (!is_array($extractPatternTransform)
+                || !array_key_exists(TransformType::FIELD, $extractPatternTransform)
+                || !array_key_exists(TransformType::REG_EXPRESSION, $extractPatternTransform)
+                || !array_key_exists(TransformType::TARGET_FIELD, $extractPatternTransform)
+                || !array_key_exists(TransformType::IS_OVERRIDE, $extractPatternTransform)
+                || !array_key_exists(TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE, $extractPatternTransform)
+                || !array_key_exists(TransformType::IS_REG_EXPRESSION_MULTI_LINE, $extractPatternTransform)
             ) {
                 return;
             }
 
-            $regexExpression = trim($replacePatternTransform[TransformType::REG_EXPRESSION]);
+            $regexExpression = trim($extractPatternTransform[TransformType::REG_EXPRESSION]);
             if ((strcmp(substr($regexExpression, 0, 1), self::START_REGEX_SPECIAL) === 0)
             ) {
                 return;
             }
 
             $regexExpression = sprintf("/%s/", $regexExpression);
-            $this->replacePatternTransforms[] = new ReplacePattern(
-                $replacePatternTransform[TransformType::FIELD],
+            $this->extractPatternTransforms[] = new ExtractPattern(
+                $extractPatternTransform[TransformType::FIELD],
                 $regexExpression,
-                $replacePatternTransform[TransformType::TARGET_FIELD],
-                $replacePatternTransform[TransformType::IS_OVERRIDE],
-                $replacePatternTransform[TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE],
-                $replacePatternTransform[TransformType::IS_REG_EXPRESSION_MULTI_LINE]
+                $extractPatternTransform[TransformType::TARGET_FIELD],
+                $extractPatternTransform[TransformType::IS_OVERRIDE],
+                $extractPatternTransform[TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE],
+                $extractPatternTransform[TransformType::IS_REG_EXPRESSION_MULTI_LINE]
             );
         }
     }

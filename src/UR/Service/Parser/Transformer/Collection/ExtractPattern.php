@@ -5,7 +5,7 @@ namespace UR\Service\Parser\Transformer\Collection;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Service\DTO\Collection;
 
-class ReplacePattern implements CollectionTransformerInterface
+class ExtractPattern implements CollectionTransformerInterface
 {
     const FILE_NAME_FIELD = '__filename';
     const CASE_INSENSITIVE = 'i';
@@ -110,7 +110,7 @@ class ReplacePattern implements CollectionTransformerInterface
      */
     public function getPriority()
     {
-        return self::TRANSFORM_REPLACE_PATTERN;
+        return self::TRANSFORM_PRIORITY_EXTRACT_PATTERN;
     }
 
     /**

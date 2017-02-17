@@ -238,13 +238,13 @@ class ImportUtils
             $parserConfig->addTransformCollection($replaceTextTransform);
         }
 
-        foreach ($collectionTransforms->getReplacePatternTransforms() as $replacePattern) {
-            $internalField = sprintf("[%s]", $replacePattern->getField());
+        foreach ($collectionTransforms->getExtractPatternTransforms() as $extractPatternTransform) {
+            $internalField = sprintf("[%s]", $extractPatternTransform->getField());
             if (in_array($internalField, TransformType::$internalFields)) {
-                $parserConfig->addTransformCollection(new AddField($replacePattern->getField(), $this->getMetadataInternalValue($internalField, $dataSourceEntry), Type::TEXT));
+                $parserConfig->addTransformCollection(new AddField($extractPatternTransform->getField(), $this->getMetadataInternalValue($internalField, $dataSourceEntry), Type::TEXT));
             }
 
-            $targetField = $replacePattern->getTargetField();
+            $targetField = $extractPatternTransform->getTargetField();
 
             if ($targetField !== null || array_key_exists($targetField, $allFields)) {
                 $targetFieldType = $allFields[$targetField];
@@ -253,7 +253,7 @@ class ImportUtils
                 }
             }
 
-            $parserConfig->addTransformCollection($replacePattern);
+            $parserConfig->addTransformCollection($extractPatternTransform);
         }
 
         foreach ($transforms as $transform) {
