@@ -138,8 +138,12 @@ trait JoinConfigUtilTrait
      * @param $joinConfig
      * @return bool
      */
-    public function isCircularJoinConfig($joinConfig)
+    public function isCircularJoinConfig(array $joinConfig)
     {
+        if (count($joinConfig) < 2) {
+            return false;
+        }
+        
         $occurrence = [];
         foreach ($joinConfig as &$config) {
             $joinFields = $config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];

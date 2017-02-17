@@ -50,7 +50,7 @@ class ReportViewManager implements ReportViewManagerInterface
             $this->om->persist($reportView);
             $this->om->flush();
         } catch (\Exception $e) {
-            $msg = $e->getMessage();
+            throw $e;
         }
     }
 
