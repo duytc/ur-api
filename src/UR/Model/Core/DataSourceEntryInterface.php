@@ -10,11 +10,6 @@ interface DataSourceEntryInterface extends ModelInterface
     const RECEIVED_VIA_SELENIUM = "selenium";
     const RECEIVED_VIA_API = "api";
     const RECEIVED_VIA_EMAIL = "email";
-    const META_DATA_EMAIL_SUBJECT = "subject";
-    const META_DATA_EMAIL_FROM = "from";
-    const META_DATA_EMAIL_BODY = "body";
-    const META_DATA_EMAIL_DATE = "date";
-    const META_DATA_FILE_NAME = "filename";
 
     /**
      * @return mixed
@@ -120,4 +115,9 @@ interface DataSourceEntryInterface extends ModelInterface
      * @return self
      */
     public function setHashFile($hashFile);
+
+    /**
+     * @return DataSourceEntryMetadata|null
+     */
+    public function getDataSourceEntryMetadata();
 }

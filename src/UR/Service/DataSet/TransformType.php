@@ -30,6 +30,8 @@ final class TransformType
     const DENOMINATOR = 'denominator';
     const SEARCH_FOR = 'searchFor';
     const REG_EXPRESSION = 'searchPattern';
+    const IS_REG_EXPRESSION_CASE_INSENSITIVE = 'isCaseInsensitive';
+    const IS_REG_EXPRESSION_MULTI_LINE = 'isMultiLine';
     const POSITION = 'position';
     const REPLACE_WITH = 'replaceWith';
     const TARGET_FIELD = 'targetField';
@@ -39,6 +41,13 @@ final class TransformType
     const EMAIL_SUBJECT = '[__email_subject]';
     const EMAIL_BODY = '[__email_body]';
     const EMAIL_DATE_TIME = '[__email_date_time]';
+
+    public static $internalFields = [
+        self::FILE_NAME,
+        self::EMAIL_SUBJECT,
+        self::EMAIL_BODY,
+        self::EMAIL_DATE_TIME
+    ];
 
     public static $transformTypes = [
         self::DATE,

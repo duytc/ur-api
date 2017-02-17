@@ -21,6 +21,11 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
      */
     protected $dataSet;
 
+    /**
+     * @var ConnectedDataSourceCollectionTransform
+     */
+    protected $collectionTransforms;
+
     public function __construct()
     {
     }
@@ -143,5 +148,14 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setDataSet($dataSet)
     {
         $this->dataSet = $dataSet;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCollectionTransforms()
+    {
+        $this->collectionTransforms = new ConnectedDataSourceCollectionTransform($this->transforms);
+        return $this->collectionTransforms;
     }
 }

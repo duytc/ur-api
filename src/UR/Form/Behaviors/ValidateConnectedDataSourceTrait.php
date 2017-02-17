@@ -131,11 +131,7 @@ trait ValidateConnectedDataSourceTrait
 
     public function validateDateOrNumberTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
-        if (!in_array($transform[TransformType::FIELD], $connectedDataSource->getMapFields())) {
-            return "Transform setting error: field [" . $transform[TransformType::FIELD] . "] should be mapped";
-        }
-
-        return TransformType::isValidDateOrNumberTransform($transform);
+       return TransformType::isValidDateOrNumberTransform($transform);
     }
 
     public function validateAllFieldsTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)

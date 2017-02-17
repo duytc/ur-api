@@ -80,4 +80,9 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @param mixed $alertSetting
      */
     public function setAlertSetting($alertSetting);
+
+    /**
+     * @return ConnectedDataSourceCollectionTransform
+     */
+    public function getCollectionTransforms();
 }

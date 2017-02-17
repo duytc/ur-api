@@ -208,4 +208,16 @@ class DataSourceEntry implements DataSourceEntryInterface
         $this->hashFile = $hashFile;
         return $this;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceEntryMetadata()
+    {
+        if (!is_array($this->metaData) || count($this->metaData) < 1) {
+            return null;
+        }
+
+        return new DataSourceEntryMetadata($this->metaData);
+    }
 }

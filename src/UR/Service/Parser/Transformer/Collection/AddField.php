@@ -45,7 +45,7 @@ class AddField extends AbstractAddField
                 if (!array_key_exists($field, $row)) {
                     return null;
                 }
-                
+
                 $replaceValue = $row[$field];
                 $result = str_replace(sprintf('[%s]', $field), $replaceValue, $result);
             }
@@ -66,5 +66,53 @@ class AddField extends AbstractAddField
     public function getPriority()
     {
         return self::TRANSFORM_PRIORITY_ADD_FIELD;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTransformValue()
+    {
+        return $this->value;
+    }
+
+    /**
+     * @param mixed $value
+     */
+    public function setTransformValue($value)
+    {
+        $this->value = $value;
+    }
+
+    /**
+     * @return string
+     */
+    public function getColumn(): string
+    {
+        return $this->column;
+    }
+
+    /**
+     * @param string $column
+     */
+    public function setColumn(string $column)
+    {
+        $this->column = $column;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * @param mixed $type
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
     }
 }

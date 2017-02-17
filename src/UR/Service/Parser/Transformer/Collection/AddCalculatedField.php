@@ -17,12 +17,12 @@ class AddCalculatedField extends AbstractAddField
     protected $defaultValue;
     protected $language;
 
-    public function __construct(ExpressionLanguage $language, $column, $expression, $defaultValue = 0)
+    public function __construct($column, $expression, $defaultValue = 0)
     {
         $this->column = $column;
         $this->expression = $expression;
         $this->defaultValue = $defaultValue;
-        $this->language = $language;
+        $this->language = new ExpressionLanguage();
     }
 
     protected function getValue(array $row)
