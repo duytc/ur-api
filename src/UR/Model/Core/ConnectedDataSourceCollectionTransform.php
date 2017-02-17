@@ -26,7 +26,7 @@ class ConnectedDataSourceCollectionTransform
     protected $field;
 
     /**@var AddField[] $addFieldTransforms */
-    protected $addFieldTransforms;
+    protected $addFieldTransforms = [];
 
     /**@var AddCalculatedField[] $addCalculatedFieldTransforms */
     protected $addCalculatedFieldTransforms = [];
