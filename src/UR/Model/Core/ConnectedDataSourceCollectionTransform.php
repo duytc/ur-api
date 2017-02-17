@@ -153,10 +153,6 @@ class ConnectedDataSourceCollectionTransform
             if (!is_array($extractPatternTransform)
                 || !array_key_exists(TransformType::FIELD, $extractPatternTransform)
                 || !array_key_exists(TransformType::REG_EXPRESSION, $extractPatternTransform)
-                || !array_key_exists(TransformType::TARGET_FIELD, $extractPatternTransform)
-                || !array_key_exists(TransformType::IS_OVERRIDE, $extractPatternTransform)
-                || !array_key_exists(TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE, $extractPatternTransform)
-                || !array_key_exists(TransformType::IS_REG_EXPRESSION_MULTI_LINE, $extractPatternTransform)
             ) {
                 return;
             }
@@ -171,10 +167,10 @@ class ConnectedDataSourceCollectionTransform
             $this->extractPatternTransforms[] = new ExtractPattern(
                 $extractPatternTransform[TransformType::FIELD],
                 $regexExpression,
-                $extractPatternTransform[TransformType::TARGET_FIELD],
-                $extractPatternTransform[TransformType::IS_OVERRIDE],
-                $extractPatternTransform[TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE],
-                $extractPatternTransform[TransformType::IS_REG_EXPRESSION_MULTI_LINE]
+                !array_key_exists(TransformType::TARGET_FIELD, $extractPatternTransform) ? null : $extractPatternTransform[TransformType::TARGET_FIELD],
+                !array_key_exists(TransformType::IS_OVERRIDE, $extractPatternTransform) ? false : $extractPatternTransform[TransformType::IS_OVERRIDE],
+                !array_key_exists(TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE, $extractPatternTransform) ? false : $extractPatternTransform[TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE],
+                !array_key_exists(TransformType::IS_REG_EXPRESSION_MULTI_LINE, $extractPatternTransform) ? false : $extractPatternTransform[TransformType::IS_REG_EXPRESSION_MULTI_LINE]
             );
         }
     }
@@ -289,8 +285,6 @@ class ConnectedDataSourceCollectionTransform
                 || !array_key_exists(TransformType::SEARCH_FOR, $replaceTextTransform)
                 || !array_key_exists(TransformType::POSITION, $replaceTextTransform)
                 || !array_key_exists(TransformType::REPLACE_WITH, $replaceTextTransform)
-                || !array_key_exists(TransformType::TARGET_FIELD, $replaceTextTransform)
-                || !array_key_exists(TransformType::IS_OVERRIDE, $replaceTextTransform)
             ) {
                 return;
             }
@@ -300,8 +294,8 @@ class ConnectedDataSourceCollectionTransform
                 $replaceTextTransform[TransformType::SEARCH_FOR],
                 $replaceTextTransform[TransformType::POSITION],
                 $replaceTextTransform[TransformType::REPLACE_WITH],
-                $replaceTextTransform[TransformType::TARGET_FIELD],
-                $replaceTextTransform[TransformType::IS_OVERRIDE]
+                !array_key_exists(TransformType::TARGET_FIELD, $replaceTextTransform) ? null : $replaceTextTransform[TransformType::TARGET_FIELD],
+                !array_key_exists(TransformType::IS_OVERRIDE, $replaceTextTransform) ? false : $replaceTextTransform[TransformType::IS_OVERRIDE]
             );
         }
     }

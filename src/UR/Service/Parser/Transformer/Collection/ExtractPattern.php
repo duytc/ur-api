@@ -53,7 +53,7 @@ class ExtractPattern implements CollectionTransformerInterface
             $this->pattern .= self::CASE_INSENSITIVE;
         }
 
-        if ($isCaseInsensitive) {
+        if ($isMultiLine) {
             $this->pattern .= self::MULTI_LINE;
         }
     }
@@ -116,7 +116,7 @@ class ExtractPattern implements CollectionTransformerInterface
     /**
      * @return string
      */
-    public function getPattern(): string
+    public function getPattern()
     {
         return $this->pattern;
     }
@@ -132,7 +132,7 @@ class ExtractPattern implements CollectionTransformerInterface
     /**
      * @return string
      */
-    public function getField(): string
+    public function getField()
     {
         return $this->field;
     }
@@ -148,7 +148,7 @@ class ExtractPattern implements CollectionTransformerInterface
     /**
      * @return string
      */
-    public function getTargetField(): string
+    public function getTargetField()
     {
         return $this->targetField;
     }
@@ -164,7 +164,7 @@ class ExtractPattern implements CollectionTransformerInterface
     /**
      * @return boolean
      */
-    public function isIsOverride(): bool
+    public function isIsOverride()
     {
         return $this->isOverride;
     }

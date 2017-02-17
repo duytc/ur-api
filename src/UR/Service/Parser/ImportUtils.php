@@ -235,24 +235,12 @@ class ImportUtils
         }
 
         foreach ($collectionTransforms->getReplaceTextTransforms() as $replaceTextTransform) {
+            $this->addInternalVariable($replaceTextTransform->getField(), $replaceTextTransform->getTargetField(), $allFields, $parserConfig, $dataSourceEntry);
             $parserConfig->addTransformCollection($replaceTextTransform);
         }
 
         foreach ($collectionTransforms->getExtractPatternTransforms() as $extractPatternTransform) {
-            $internalField = sprintf("[%s]", $extractPatternTransform->getField());
-            if (in_array($internalField, TransformType::$internalFields)) {
-                $parserConfig->addTransformCollection(new AddField($extractPatternTransform->getField(), $this->getMetadataInternalValue($internalField, $dataSourceEntry), Type::TEXT));
-            }
-
-            $targetField = $extractPatternTransform->getTargetField();
-
-            if ($targetField !== null || array_key_exists($targetField, $allFields)) {
-                $targetFieldType = $allFields[$targetField];
-                if (strcmp($targetFieldType, Type::DATE) === 0 && !$parserConfig->hasColumnMapping($targetField)) {
-                    $parserConfig->addColumn($targetField, $targetField);
-                }
-            }
-
+            $this->addInternalVariable($extractPatternTransform->getField(), $extractPatternTransform->getTargetField(), $allFields, $parserConfig, $dataSourceEntry);
             $parserConfig->addTransformCollection($extractPatternTransform);
         }
 
@@ -269,6 +257,9 @@ class ImportUtils
     {
         $metadata = $dataSourceEntry->getDataSourceEntryMetadata();
         $result = null;
+        if ($metadata === null)
+            return $result;
+
         switch ($internalField) {
             case TransformType::FILE_NAME:
                 $result = $dataSourceEntry->getFileName();
@@ -291,5 +282,20 @@ class ImportUtils
         }
 
         return $result;
+    }
+
+    private function addInternalVariable($field, $targetField, $allFields, ParserConfig $parserConfig, DataSourceEntryInterface $dataSourceEntry)
+    {
+        $internalField = sprintf("[%s]", $field);
+        if (in_array($internalField, TransformType::$internalFields)) {
+            $parserConfig->addTransformCollection(new AddField($field, $this->getMetadataInternalValue($internalField, $dataSourceEntry), Type::TEXT));
+        }
+
+        if ($targetField !== null || array_key_exists($targetField, $allFields)) {
+            $targetFieldType = $allFields[$targetField];
+            if (strcmp($targetFieldType, Type::DATE) === 0 && !$parserConfig->hasColumnMapping($targetField)) {
+                $parserConfig->addColumn($targetField, $targetField);
+            }
+        }
     }
 }

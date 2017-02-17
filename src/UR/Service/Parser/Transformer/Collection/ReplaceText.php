@@ -142,4 +142,102 @@ class ReplaceText implements CollectionTransformerInterface
     {
         return self::TRANSFORM_PRIORITY_REPLACE_TEXT;
     }
+
+    /**
+     * @return string
+     */
+    public function getPosition()
+    {
+        return $this->position;
+    }
+
+    /**
+     * @param string $position
+     */
+    public function setPosition(string $position)
+    {
+        $this->position = $position;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSearchFor()
+    {
+        return $this->searchFor;
+    }
+
+    /**
+     * @param string $searchFor
+     */
+    public function setSearchFor(string $searchFor)
+    {
+        $this->searchFor = $searchFor;
+    }
+
+    /**
+     * @return string
+     */
+    public function getReplaceWith()
+    {
+        return $this->replaceWith;
+    }
+
+    /**
+     * @param string $replaceWith
+     */
+    public function setReplaceWith(string $replaceWith)
+    {
+        $this->replaceWith = $replaceWith;
+    }
+
+    /**
+     * @return string
+     */
+    public function getField()
+    {
+        return $this->field;
+    }
+
+    /**
+     * @param string $field
+     */
+    public function setField(string $field)
+    {
+        $this->field = $field;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTargetField()
+    {
+        return $this->targetField;
+    }
+
+    /**
+     * @param string $targetField
+     */
+    public function setTargetField(string $targetField)
+    {
+        $this->targetField = $targetField;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isIsOverride()
+    {
+        return $this->isOverride;
+    }
+
+    /**
+     * @param boolean $isOverride
+     */
+    public function setIsOverride(bool $isOverride)
+    {
+        $this->isOverride = $isOverride;
+    }
+
+
 }

@@ -20,7 +20,7 @@ abstract class AbstractAddField implements CollectionTransformerInterface
         $columns = $collection->getColumns();
 
         if (in_array($this->column, $columns, true)) {
-            throw new \RuntimeException(sprintf('column "%s" already exists so it cannot be added', $this->column));
+            return $collection;
         }
 
         $columns[] = $this->column;
