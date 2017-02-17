@@ -23,6 +23,10 @@ UR\Entity\Core\ConnectedDataSource:
         alertSetting:
             type: json_array
             nullable: true
+        replayData:
+            type: boolean
+            option:
+                default: false
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

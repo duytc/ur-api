@@ -27,7 +27,9 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
             ->add('filters')
             ->add('transforms')
             ->add('requires')
-            ->add('alertSetting');
+            ->add('alertSetting')
+            ->add('replayData')
+        ;
 
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,

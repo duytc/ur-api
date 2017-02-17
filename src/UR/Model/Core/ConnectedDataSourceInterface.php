@@ -85,4 +85,14 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @return ConnectedDataSourceCollectionTransform
      */
     public function getCollectionTransforms();
+
+    /**
+     * @return boolean
+     */
+    public function isReplayData();
+
+    /**
+     * @param boolean $replayData
+     */
+    public function setReplayData($replayData);
 }

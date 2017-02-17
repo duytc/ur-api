@@ -11,6 +11,26 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $requires;
     protected $alertSetting;
 
+    /** @var  bool $replayData */
+    protected $replayData;
+
+    /**
+     * @return boolean
+     */
+    public function isReplayData()
+    {
+        return $this->replayData;
+    }
+
+    /**
+     * @param boolean $replayData
+     */
+    public function setReplayData($replayData)
+    {
+        $this->replayData = $replayData;
+    }
+
+
     /**
      * @var DataSourceInterface
      */

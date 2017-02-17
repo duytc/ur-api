@@ -15,6 +15,9 @@ class ConnectedDataSource extends ConnectedDataSourceModel
     protected $requires;
     protected $alertSetting;
 
+    /** @var  bool $replayData */
+    protected $replayData;
+
     /**
      * @var DataSourceInterface
      */

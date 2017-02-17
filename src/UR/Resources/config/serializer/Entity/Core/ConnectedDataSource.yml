@@ -25,3 +25,6 @@ UR\Entity\Core\ConnectedDataSource:
         dataSet:
             expose: true
             groups: [connectedDataSource.detail]
+        replayData:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
