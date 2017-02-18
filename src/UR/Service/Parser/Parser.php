@@ -2,6 +2,12 @@
 
 namespace UR\Service\Parser;
 
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use UR\Bundle\ApiBundle\Event\CustomCodeParse\PostLoadDataEvent;
+use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformCollectionDataEvent;
+use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformColumnDataEvent;
+use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreFilterDataEvent;
+use UR\Bundle\ApiBundle\Event\UrGenericEvent;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\Alert\ProcessAlert;
 use UR\Service\DataSet\Type;
@@ -14,6 +20,19 @@ use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class Parser implements ParserInterface
 {
+    /**@var EventDispatcherInterface $eventDispatcher
+     */
+    protected $eventDispatcher;
+
+    /**
+     * Parser constructor.
+     * @param EventDispatcherInterface $eventDispatcher
+     */
+    public function __construct(EventDispatcherInterface $eventDispatcher)
+    {
+        $this->eventDispatcher = $eventDispatcher;
+    }
+
     public function parse(DataSourceInterface $dataSource, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource)
     {
         $columnsMapping = $parserConfig->getAllColumnMappings();
@@ -35,8 +54,55 @@ class Parser implements ParserInterface
             }
         }
 
+        /* 1. get all row data */
         $rows = array_values($dataSource->getRows($format));
+
+        // dispatch event after loading data
+        $postLoadDataEvent = new UrGenericEvent(
+            new PostLoadDataEvent(
+                $connectedDataSource->getDataSet()->getPublisherId(),
+                $connectedDataSource->getId(),
+                $connectedDataSource->getDataSource()->getId(),
+                null,
+                null,
+                $rows,
+                null,
+                null
+            )
+        );
+        $this->eventDispatcher->dispatch(
+            self::EVENT_NAME_POST_LOADED_DATA,
+            $postLoadDataEvent
+        );
+        $postLoadDataEventResult = $postLoadDataEvent->getArguments();
+        if (is_array($postLoadDataEventResult) && array_key_exists('row', $postLoadDataEventResult)) {
+            $rows = $postLoadDataEventResult['rows'];
+        }
+
         $dataSetColumns = array_merge($connectedDataSource->getDataSet()->getDimensions(), $connectedDataSource->getDataSet()->getMetrics());
+
+        /* 2. do filtering data */
+        // dispatch event pre filtering data
+        $preFilterEvent = new UrGenericEvent(
+            new PreFilterDataEvent(
+                $connectedDataSource->getDataSet()->getPublisherId(),
+                $connectedDataSource->getId(),
+                $connectedDataSource->getDataSource()->getId(),
+                null,
+                null,
+                $rows,
+                null,
+                null
+            )
+        );
+        $this->eventDispatcher->dispatch(
+            self::EVENT_NAME_PRE_FILTER_DATA,
+            $preFilterEvent
+        );
+        $preFilterEventResult = $preFilterEvent->getArguments();
+        if (is_array($preFilterEventResult) && array_key_exists('row', $preFilterEventResult)) {
+            $rows = $preFilterEventResult['rows'];
+        }
 
         $cur_row = -1;
         foreach ($rows as &$row) {
@@ -104,12 +170,15 @@ class Parser implements ParserInterface
             }
         }
 
+        // TODO: may dispatch event after filtering data
+
         $collection = new Collection($columns, $rows);
 
         if (count($rows) < 1) {
             return $collection;
         }
 
+        /* 3. do transforming data */
         $allFieldsTransforms = $parserConfig->getCollectionTransforms();
 
         usort($allFieldsTransforms, function (CollectionTransformerInterface $a, CollectionTransformerInterface $b) {
@@ -119,6 +188,29 @@ class Parser implements ParserInterface
             return ($a->getPriority() < $b->getPriority()) ? -1 : 1;
         });
 
+        // dispatch event pre transforming collection data
+        $preTransformCollectionEvent = new UrGenericEvent(
+            new PreTransformCollectionDataEvent(
+                $connectedDataSource->getDataSet()->getPublisherId(),
+                $connectedDataSource->getId(),
+                $connectedDataSource->getDataSource()->getId(),
+                null,
+                null,
+                $collection,
+                null,
+                null
+            )
+        );
+        $this->eventDispatcher->dispatch(
+            self::EVENT_NAME_PRE_TRANSFORM_COLLECTION_DATA,
+            $preTransformCollectionEvent
+        );
+        $preTransformCollectionEvent = $preFilterEvent->getArguments();
+        if (is_array($preTransformCollectionEvent) && array_key_exists('collection', $preTransformCollectionEvent)) {
+            $collection = $preTransformCollectionEvent['collection'];
+        }
+
+        // transform collection
         foreach ($allFieldsTransforms as $transform) {
             /** @var CollectionTransformerInterface $transform */
             try {
@@ -128,6 +220,29 @@ class Parser implements ParserInterface
             }
         }
 
+        // dispatch event pre transforming column data
+        $preTransformColumnEvent = new UrGenericEvent(
+            new PreTransformColumnDataEvent(
+                $connectedDataSource->getDataSet()->getPublisherId(),
+                $connectedDataSource->getId(),
+                $connectedDataSource->getDataSource()->getId(),
+                null,
+                null,
+                $collection,
+                null,
+                null
+            )
+        );
+        $this->eventDispatcher->dispatch(
+            self::EVENT_NAME_PRE_TRANSFORM_COLUMN_DATA,
+            $preTransformColumnEvent
+        );
+        $preTransformColumnEvent = $preFilterEvent->getArguments();
+        if (is_array($preTransformColumnEvent) && array_key_exists('collection', $preTransformColumnEvent)) {
+            $collection = $preTransformColumnEvent['collection'];
+        }
+
+        // transform column
         $rows = $collection->getRows();
         $cur_row = -1;
         foreach ($rows as &$row) {

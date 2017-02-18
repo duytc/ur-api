@@ -56,7 +56,9 @@ class AutoImportData implements AutoImportDataInterface
 
     private $chunkSize;
 
-    function __construct(EntityManagerInterface $em, Manager $workerManager, ImportHistoryManagerInterface $importHistoryManager, Factory $phpExcel, $uploadFileDir, ImportDataLogger $logger, $batchSize, $chunkSize)
+    protected $parser;
+
+    function __construct(EntityManagerInterface $em, Manager $workerManager, ImportHistoryManagerInterface $importHistoryManager, Factory $phpExcel, $uploadFileDir, ImportDataLogger $logger, $batchSize, $chunkSize, Parser $parser)
     {
         $this->em = $em;
         $this->workerManager = $workerManager;
@@ -66,6 +68,7 @@ class AutoImportData implements AutoImportDataInterface
         $this->logger = $logger;
         $this->batchSize = $batchSize;
         $this->chunkSize = $chunkSize;
+        $this->parser = $parser;
     }
 
     public function autoCreateDataImport($connectedDataSources, DataSourceEntryInterface $dataSourceEntry)
@@ -90,8 +93,6 @@ class AutoImportData implements AutoImportDataInterface
             if (!$dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId())) {
                 $importUtils->createEmptyDataSetTable($connectedDataSource->getDataSet(), $dataSetLocator, $dataSetSynchronizer, $conn, $this->logger);
             }
-
-            $parser = new Parser();
 
             // mapping
             $parserConfig = new ParserConfig();
@@ -177,14 +178,14 @@ class AutoImportData implements AutoImportDataInterface
                     continue;
                 }
 
-                //filter
+                //filter config
                 $importUtils->createFilterConfigForConnectedDataSource($connectedDataSource, $parserConfig);
 
-                //transform
+                //transform config
                 $importUtils->createTransformConfigForConnectedDataSource($connectedDataSource, $parserConfig, $dataSourceEntry);
 
-                // import
-                $collectionParser = $parser->parse($file, $parserConfig, $connectedDataSource);
+                // parser
+                $collectionParser = $this->parser->parse($file, $parserConfig, $connectedDataSource);
 
                 if (is_array($collectionParser)) {
                     // to do alert
@@ -203,7 +204,7 @@ class AutoImportData implements AutoImportDataInterface
                 }
 
                 $ds1 = $dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId());
-                // to do alert
+                // import
                 $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource);
                 if (in_array(ConnectedDataSourceRepository::DATA_ADDED, $connectedDataSource->getAlertSetting())) {
                     $this->logger->doImportLogging($code, $importHistoryEntity->getId(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), null, null);
