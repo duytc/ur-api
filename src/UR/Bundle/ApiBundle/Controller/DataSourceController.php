@@ -899,4 +899,46 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             if (!is_dir($dir .= "/$part")) mkdir($dir);
         file_put_contents("$dir/$file", $contents);
     }
+
+    /**
+     * Get all import history by datasource
+     *
+     * @Rest\Get("datasources/{id}/importhistories", requirements={"id" = "\d+"})
+     * @Rest\View(serializerGroups={"importHistory.detail", "user.summary", "dataset.importhistory", "dataSourceEntry.summary", "datasource.importhistory"})
+     *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     * @param Request $request
+     * @return array
+     * @throws \Exception
+     */
+    public function getImportHistoriesByDataSourceAction(Request $request, $id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource= $this->one($id);
+        $importHistoryManager = $this->get('ur.domain_manager.import_history');
+        $qb = $importHistoryManager->getImportedHistoryByDataSourceQuery($dataSource, $this->getParams());
+
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
+    }
 }

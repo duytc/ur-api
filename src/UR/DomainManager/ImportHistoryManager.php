@@ -3,10 +3,12 @@
 namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\DBAL\Query\QueryBuilder;
 use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
@@ -95,6 +97,16 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     public function getImportedHistoryByDataSetQuery(DataSetInterface $dataSet, PagerParam $param)
     {
         return $this->repository->getImportedHistoryByDataSetQuery($dataSet, $param);
+    }
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param PagerParam $param
+     * @return QueryBuilder
+     */
+    public function getImportedHistoryByDataSourceQuery(DataSourceInterface $dataSource, PagerParam $param)
+    {
+        return $this->repository->getImportedHistoryByDataSourceQuery($dataSource, $param);
     }
 
     /**
