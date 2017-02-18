@@ -10,12 +10,6 @@ UR\Entity\Core\Integration:
         canonicalName:
             expose: true
             groups: [integration.detail]
-        type:
-            expose: true
-            groups: [integration.detail]
-        method:
-            expose: true
-            groups: [integration.detail]
-        url:
+        params:
             expose: true
             groups: [integration.detail]

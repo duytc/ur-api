@@ -10,99 +10,88 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\IntegrationManagerInterface;
 use UR\Entity\Core\Integration;
+use UR\Model\Core\IntegrationInterface;
 use UR\Service\StringUtilTrait;
 
 class CreateIntegrationCommand extends ContainerAwareCommand
 {
-	use StringUtilTrait;
+    use StringUtilTrait;
 
-	/** @var Logger */
-	private $logger;
+    /** @var Logger */
+    private $logger;
 
-	protected function configure()
-	{
-		$this
-			->setName('ur:integration:create')
-			->addOption('name', 'i', InputOption::VALUE_REQUIRED, 'Integration name')
-			->addOption('type', 't', InputOption::VALUE_REQUIRED, 'Integration type: ui or api')
-			->addOption('method', 'm', InputOption::VALUE_REQUIRED, 'Integration method: GET or POST')
-			->addOption('url', 'u', InputOption::VALUE_REQUIRED, 'Integration url')
-			->setDescription('Create Integration');
-	}
+    protected function configure()
+    {
+        $this
+            ->setName('ur:integration:create')
+            ->addArgument('name', InputOption::VALUE_REQUIRED, 'Integration name')
+            ->addOption('parameters', 'p', InputOption::VALUE_OPTIONAL,
+                'Integration parameters (optional), allow multiple parameters separated by comma, e.g. -p "username,password"')
+            ->setDescription('Create or update Integration with name and parameters');
+    }
 
-	protected function execute(InputInterface $input, OutputInterface $output)
-	{
-		/** @var ContainerInterface $container */
-		$container = $this->getContainer();
-		/** @var Logger $logger */
-		$this->logger = $container->get('logger');
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        /** @var ContainerInterface $container */
+        $container = $this->getContainer();
+        /** @var Logger $logger */
+        $this->logger = $container->get('logger');
 
-		$this->logger->info('starting command...');
+        $this->logger->info('starting command...');
 
-		/* get inputs */
-		$name = $input->getOption('name');
-		$type = $input->getOption('type');
-		$method = $input->getOption('method');
-		$url = $input->getOption('url');
+        /* get inputs */
+        $name = $input->getArgument('name');
+        $paramsString = $input->getOption('parameters');
 
-		if (!$this->validateInput($name, $type, $method, $url)) {
-			return;
-		}
+        if (!$this->validateInput($name, $paramsString)) {
+            return;
+        }
 
-		if (!$this->validateInput($name, $type, $method, $url)) {
-			return;
-		}
+        // parse params from paramsString
+        $params = null;
+        if (!empty($paramsString)) {
+            $params = explode(',', $paramsString);
 
-		/** @var IntegrationManagerInterface $integrationManager */
-		$integrationManager = $container->get('ur.domain_manager.integration');
+            // trim
+            $params = array_map(function ($param) {
+                return trim($param);
+            }, $params);
+        }
 
-		$cName = $this->normalizeName($name);
-		$integration = $integrationManager->findByCanonicalName($cName);
+        /** @var IntegrationManagerInterface $integrationManager */
+        $integrationManager = $container->get('ur.domain_manager.integration');
 
-		if (empty($integration)) {
-			$integration = new Integration();
-		}
+        $cName = $this->normalizeName($name);
+        $integration = $integrationManager->findByCanonicalName($cName);
 
-		$integration->setName($name)
-			->setType($type)
-			->setUrl($url)
-			->setMethod($method);
+        $isFoundIntegration = ($integration instanceof IntegrationInterface);
+        if (!$isFoundIntegration) {
+            $integration = new Integration();
+        }
 
-		$integrationManager->save($integration);
+        $integration
+            ->setName($name)
+            ->setParams($params);
 
-		$this->logger->info(sprintf('command run successfully: %d created.', 1));
-	}
+        $integrationManager->save($integration);
 
-	/**
-	 * @param string $name
-	 * @param string $type
-	 * @param string $method
-	 * @param string $url
-	 * @return bool
-	 */
-	private function validateInput($name, $type, $method, $url)
-	{
-		if ($name == null || $type == null || $method == null || $url == null) {
-			$this->logger->info(sprintf('command run failed: input must not be null or empty'));
-			return false;
-		}
+        $output->writeln(sprintf('command run successfully: %d %s.', 1, ($isFoundIntegration ? 'updated' : 'created')));
+    }
 
-		if (!in_array($type, Integration::supportedTypes())) {
-			$this->logger->info(sprintf('command run failed: type %s not supported', $type));
-			return false;
-		}
+    /**
+     * @param string $name
+     * @param string $paramsString
+     * @return bool
+     */
+    private function validateInput($name, $paramsString)
+    {
+        if ($name == null | empty($name)) {
+            $this->logger->info(sprintf('command run failed: name must not be null or empty'));
+            return false;
+        }
 
-		if (!in_array($method, Integration::supportedMethods())) {
-			$this->logger->info(sprintf('command run failed: method %s not supported', $method));
-			return false;
-		}
+        // TODO: validate allowed characters in params
 
-		// validate url format
-		if (filter_var($url, FILTER_VALIDATE_URL) === false) {
-			$this->logger->info(sprintf('command run failed: url %s malformed', $url));
-			return false;
-		}
-
-		return true;
-	}
+        return true;
+    }
 }

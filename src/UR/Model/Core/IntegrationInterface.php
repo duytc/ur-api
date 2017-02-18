@@ -6,14 +6,6 @@ use UR\Model\ModelInterface;
 
 interface IntegrationInterface extends ModelInterface
 {
-    /* type */
-    const TYPE_UI = 'ui';
-    const TYPE_API = 'api';
-
-    /* method */
-    const METHOD_GET = 'GET';
-    const METHOD_POST = 'POST';
-
     /**
      * @return string|null
      */
@@ -39,42 +31,11 @@ interface IntegrationInterface extends ModelInterface
     /**
      * @return string
      */
-    public function getType();
+    public function getParams();
 
     /**
-     * @param string $type
+     * @param string $params
      * @return self
      */
-    public function setType($type);
-
-    /**
-     * @return array
-     */
-    public static function supportedTypes();
-
-    /**
-     * @return mixed
-     */
-    public function getMethod();
-
-    /**
-     * @param self $method
-     */
-    public function setMethod($method);
-
-    /**
-     * @return array
-     */
-    public static function supportedMethods();
-
-    /**
-     * @return string
-     */
-    public function getUrl();
-
-    /**
-     * @param string $url
-     * @return self
-     */
-    public function setUrl($url);
+    public function setParams($params);
 }

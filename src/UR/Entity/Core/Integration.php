@@ -9,9 +9,7 @@ class Integration extends IntegrationModel
     protected $id;
     protected $name;
     protected $canonicalName;
-    protected $type;
-    protected $method;
-    protected $url;
+    protected $params;
 
     /**
      * @inheritdoc

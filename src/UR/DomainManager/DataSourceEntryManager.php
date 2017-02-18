@@ -175,7 +175,12 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         }
 
         // save file to upload dir
-        $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
+        if (strcmp($receivedVia, DataSourceEntry::RECEIVED_VIA_API) === 0) {
+            $name = $origin_name;
+        } else {
+            $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
+        }
+
         if ($alsoMoveFile) {
             $file->move($path, $name);
         } else {
@@ -184,6 +189,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             }
             copy($file->getRealPath(), $path . '/' . $name);
         }
+
         $filePath = $path . '/' . $name;
 
         $convertResult = $this->convertToUtf8($filePath);

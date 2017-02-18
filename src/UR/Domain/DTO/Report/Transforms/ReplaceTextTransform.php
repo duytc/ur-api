@@ -8,13 +8,15 @@ use UR\Service\DTO\Collection;
 class ReplaceTextTransform extends AbstractTransform implements TransformInterface
 {
 
-    const PRIORITY = 5;
+    const PRIORITY = 3;
     const TRANSFORMS_TYPE = 'replaceText';
 
     const FIELD_KEY = 'field';
     const SEARCH_FOR_KEY = 'searchFor';
     const POSITION_KEY = 'position';
     const REPLACE_WITH_KEY = 'replaceWith';
+    const IS_OVERRIDE_KEY = 'isOverride';
+    const TARGET_FIELD_KEY = 'targetField';
 
     const ANYWHERE_KEY = 'anywhere';
     const AT_THE_BEGINNING_POSITION_KEY = 'at the beginning';
@@ -24,6 +26,8 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
     protected $searchField;
     protected $position;
     protected $replaceWith;
+    protected $isOverride;
+    protected $targetField;
 
     /**
      * ReplaceTextTransform constructor.
@@ -35,14 +39,17 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
 
         if (!array_key_exists(self::FIELD_KEY, $data) || !array_key_exists(self::SEARCH_FOR_KEY, $data)
             || !array_key_exists(self::POSITION_KEY, $data) || !array_key_exists(self::REPLACE_WITH_KEY, $data)
+            || !array_key_exists(self::TARGET_FIELD_KEY, $data) || !array_key_exists(self::IS_OVERRIDE_KEY, $data)
         ) {
-            throw new InvalidArgumentException('either "searchFor" or "position" or "replaceWith" is missing');
+            throw new InvalidArgumentException('either "searchFor" or "position" or "replaceWith" or "isOverride" or "targetField" is missing');
         }
 
         $this->fieldName = $data[self::FIELD_KEY];
         $this->searchField = $data[self::SEARCH_FOR_KEY];
         $this->position = $data[self::POSITION_KEY];
         $this->replaceWith = $data[self::REPLACE_WITH_KEY];
+        $this->isOverride = $data[self::IS_OVERRIDE_KEY];
+        $this->targetField = $data[self::TARGET_FIELD_KEY];
     }
 
 
@@ -56,8 +63,31 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
     public function transform(Collection $collection, array &$metrics, array &$dimensions, $joinBy = null)
     {
         $reports = $collection->getRows();
+        $columns = $collection->getColumns();
+        $types = $collection->getTypes();
+
         if (empty($reports)) {
             return;
+        }
+
+        if (!$this->getIsOverride() && !empty($this->getTargetField())) {
+            $columnNames = array_values($columns);
+            if (in_array($this->getTargetField(), $columnNames)) {
+                $newFieldName = $this->getTargetField() . '(add in transformation)';
+                $this->setTargetField($newFieldName);
+            }
+        }
+
+        if (!$this->getIsOverride() && !empty($this->getTargetField())) {
+            $newFields[$this->getTargetField()] = $this->getTargetField();
+            $allColumns = array_merge($columns, $newFields);
+            $collection->setColumns($allColumns);
+        }
+
+        if (!$this->getIsOverride() && !empty($this->getTargetField())) {
+            $newFieldType[$this->getTargetField()] = 'text';
+            $allTypes = array_merge($types, $newFieldType);
+            $collection->setTypes($allTypes);
         }
 
         foreach ($reports as $key => $report) {
@@ -65,7 +95,14 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
                 continue;
             }
             $value = $report[$this->getFieldName()];
-            $report[$this->getFieldName()] = $this->replaceText($value, $this->getPosition(), $this->getSearchField(), $this->getReplaceWith());
+            $replacedValue = $this->replaceText($value, $this->getPosition(), $this->getSearchField(), $this->getReplaceWith());
+
+            $fieldName = $this->getIsOverride() ? $this->getFieldName() : $this->getTargetField();
+            if (empty($fieldName)) {
+                continue;
+            }
+
+            $report[$fieldName] = $replacedValue;
             $reports[$key] = $report;
         }
 
@@ -142,7 +179,16 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
      */
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
     {
-        // TODO: Implement getMetricsAndDimensions() method.
+
+        if (empty($this->getTargetField())) {
+            return;
+        }
+
+        if (in_array($this->getTargetField(), $metrics) || in_array($this->getTargetField(), $dimensions)) {
+            return;
+        }
+
+        $metrics[] = $this->getTargetField();
     }
 
     /**
@@ -176,4 +222,30 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
     {
         return $this->replaceWith;
     }
+
+    /**
+     * @return mixed
+     */
+    public function getIsOverride()
+    {
+        return $this->isOverride;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTargetField()
+    {
+        return $this->targetField;
+    }
+
+    /**
+     * @param mixed $targetField
+     */
+    public function setTargetField($targetField)
+    {
+        $this->targetField = $targetField;
+    }
+
+
 }
