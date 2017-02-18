@@ -8,7 +8,7 @@ class DataSourceEntryMetadata
     const META_DATA_EMAIL_SUBJECT = "subject";
     const META_DATA_EMAIL_FROM = "from";
     const META_DATA_EMAIL_BODY = "body";
-    const META_DATA_EMAIL_DATE = "date";
+    const META_DATA_EMAIL_DATE = "dateTime";
     const META_DATA_FILE_NAME = "filename";
 
     protected $fileName;

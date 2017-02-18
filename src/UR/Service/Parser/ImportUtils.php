@@ -260,26 +260,10 @@ class ImportUtils
         if ($metadata === null)
             return $result;
 
-        switch ($internalField) {
-            case TransformType::FILE_NAME:
-                $result = $dataSourceEntry->getFileName();
-                break;
-
-            case TransformType::EMAIL_SUBJECT:
-                $result = $metadata->getEmailSubject();
-                break;
-
-            case TransformType::EMAIL_BODY:
-                $result = $metadata->getEmailBody();
-                break;
-
-            case TransformType::EMAIL_DATE_TIME:
-                $result = $metadata->getEmailDatetime();
-                break;
-
-            default:
-                break;
-        }
+        $result = str_replace(TransformType::FILE_NAME, $dataSourceEntry->getFileName(), $internalField);
+        $result = str_replace(TransformType::EMAIL_SUBJECT, $metadata->getEmailSubject(), $result);
+        $result = str_replace(TransformType::EMAIL_BODY, $metadata->getEmailBody(), $result);
+        $result = str_replace(TransformType::EMAIL_DATE_TIME, $metadata->getEmailDatetime(), $result);
 
         return $result;
     }
