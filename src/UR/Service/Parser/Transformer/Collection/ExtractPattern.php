@@ -41,7 +41,12 @@ class ExtractPattern implements CollectionTransformerInterface
      */
     protected $isMultiLine;
 
-    public function __construct($field, $pattern, $targetField, $isOverride = true, $isCaseInsensitive, $isMultiLine)
+    /**
+     * @var integer
+     */
+    protected $matchedPosition;
+
+    public function __construct($field, $pattern, $targetField, $isOverride = true, $isCaseInsensitive, $isMultiLine, $matchedPosition)
     {
         $this->field = $field;
         $this->targetField = $targetField;
@@ -56,6 +61,8 @@ class ExtractPattern implements CollectionTransformerInterface
         if ($isMultiLine) {
             $this->pattern .= self::MULTI_LINE;
         }
+
+        $this->matchedPosition = $matchedPosition < 1 ? 1 : $matchedPosition;
     }
 
     public function transform(Collection $collection)
@@ -94,7 +101,7 @@ class ExtractPattern implements CollectionTransformerInterface
                 return null;
             }
 
-            if (count($matches) < 1) {
+            if (count($matches) < $this->matchedPosition + 1) {
                 return null;
             }
 
@@ -102,7 +109,7 @@ class ExtractPattern implements CollectionTransformerInterface
             return null;
         }
 
-        return $matches[0];
+        return $matches[$this->matchedPosition];
     }
 
     /**
