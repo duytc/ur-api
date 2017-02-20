@@ -247,7 +247,8 @@ class ImportUtils
         foreach ($transforms as $transform) {
             if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE]) && $parserConfig->hasColumnMapping($transform[TransformType::FIELD])) {
                 if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
-                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new DateFormat($transform[TransformType::FROM], 'Y-m-d'));
+                    $isCustomFormatDateFrom = !array_key_exists(TransformType::IS_CUSTOM_FORMAT_DATE_FROM, $transform) ? false : (bool)$transform[TransformType::IS_CUSTOM_FORMAT_DATE_FROM];
+                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new DateFormat($transform[TransformType::FROM], 'Y-m-d', $isCustomFormatDateFrom));
                 }
             }
         }

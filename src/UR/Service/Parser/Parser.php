@@ -49,7 +49,7 @@ class Parser implements ParserInterface
         foreach ($parserConfig->getColumnTransforms() as $field => $columnTransform) {
             foreach ($columnTransform as $item) {
                 if ($item instanceof DateFormat) {
-                    $format[$field] = $item->getFromDateForMat();
+                    $format[$field] = $item->getFromDateFormat();
                 }
             }
         }

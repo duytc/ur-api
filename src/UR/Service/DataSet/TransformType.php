@@ -8,6 +8,7 @@ final class TransformType
     const FROM = 'from';
     const TO = 'to';
     const DATE = 'date';
+    const IS_CUSTOM_FORMAT_DATE_FROM = 'isCustomFormatDateFrom';
     const NUMBER = 'number';
     const FIELD = 'field';
     const FIELDS = 'fields';
@@ -136,12 +137,21 @@ final class TransformType
     public static function isValidDateTransform($arr)
     {
         if ($arr[self::TYPE] === self::DATE) {
-            if (count($arr) !== 4 || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr)) {
+            // TODO: remove this hard coded checking
+            // if (count($arr) !== 5 || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr)) {
+            if (!array_key_exists(self::FIELD, $arr) || !array_key_exists(self::FROM, $arr) || !array_key_exists(self::TO, $arr)) {
                 return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] missing config information";
             }
 
-            if (!in_array($arr[self::TO], self::$supportedDateFormats) || !in_array($arr[self::FROM], self::$supportedDateFormats)) {
-                return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] not support date format";
+            // validate format of date from
+            $isCustomFormatDateFrom = !array_key_exists(self::IS_CUSTOM_FORMAT_DATE_FROM, $arr) ? false : (bool)$arr[self::IS_CUSTOM_FORMAT_DATE_FROM];
+            if (!$isCustomFormatDateFrom && !in_array($arr[self::FROM], self::$supportedDateFormats)) {
+                // validate using builtin data formats (when isCustomFormatDateFrom = false)
+                return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] not support \"from\" date format";
+            }
+
+            if (!in_array($arr[self::TO], self::$supportedDateFormats)) {
+                return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] not support \"to\" date format";
             }
         }
 
