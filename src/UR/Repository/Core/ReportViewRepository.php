@@ -33,7 +33,7 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
         return $qb;
     }
 
-    private function createQueryBuilderForUser(UserRoleInterface $user)
+    private function createQueryBuilderForUser($user)
     {
         return $user instanceof PublisherInterface ? $this->getReportViewsForPublisherQuery($user) : $this->createQueryBuilder('rv');
     }
@@ -116,5 +116,13 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
         $qb->andWhere('rv.multiView = 1');
 
         return $qb->getQuery()->getResult();
+    }
+
+    public function getReportViewHasMaximumId()
+    {
+        $qb =  $this->createQueryBuilderForUser(null);
+        $qb->select('rv, MAX(rv.id) as idMax');
+
+        return $qb->getQuery()->getSingleResult() ;
     }
 }

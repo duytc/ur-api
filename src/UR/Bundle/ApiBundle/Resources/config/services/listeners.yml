@@ -56,3 +56,11 @@ services:
                 tags:
                     - { name: doctrine.event_listener, event: preUpdate }
                     - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.auto_set_default_name_for_view_report_listener:
+                class: UR\Bundle\ApiBundle\EventListener\AutoSetDefaultNameForReportViewListener
+                arguments:
+                    - '@ur.services.report.params_builder'
+                tags:
+                    - { name: doctrine.event_listener, event: prePersist }
+                    - { name: doctrine.event_listener, event: preUpdate }
