@@ -27,6 +27,7 @@ services:
             - @ur.worker.manager
             - %upload_file_dir%
             - @phpexcel
+            - %kernel.root_dir%
 
     ur.form.type.data_source_entry:
         class: %ur.form.type.data_source_entry.class%
