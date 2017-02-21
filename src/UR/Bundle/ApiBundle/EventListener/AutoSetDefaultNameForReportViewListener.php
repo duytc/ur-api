@@ -52,15 +52,12 @@ class AutoSetDefaultNameForReportViewListener
 
     }
 
-
     /**
      * @param PreUpdateEventArgs $args
      */
     public function preUpdate(PreUpdateEventArgs $args)
     {
         $entity = $args->getEntity();
-        $em = $args->getEntityManager();
-
         if (!$entity instanceof ReportView) {
             return;
         }
