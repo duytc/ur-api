@@ -163,7 +163,8 @@ class AutoImportData implements AutoImportDataInterface
                 //filter config
                 $importUtils->createFilterConfigForConnectedDataSource($connectedDataSource, $parserConfig);
 
-                //transform config
+                //transform
+                $parserConfig->setUserReorderTransformsAllowed($connectedDataSource->isUserReorderTransformsAllowed());
                 $importUtils->createTransformConfigForConnectedDataSource($connectedDataSource, $parserConfig, $dataSourceEntry);
 
                 // parser

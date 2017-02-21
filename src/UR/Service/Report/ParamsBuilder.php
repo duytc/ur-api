@@ -284,8 +284,6 @@ class ParamsBuilder implements ParamsBuilderInterface
 	 */
 	protected function createTransforms(array $transforms)
 	{
-		$sortByInputObjects = [];
-		$groupByInputObjects = [];
 		$transformObjects = [];
 		foreach ($transforms as $transform) {
 			if (!array_key_exists(TransformInterface::TRANSFORM_TYPE_KEY, $transform)) {
@@ -308,9 +306,6 @@ class ParamsBuilder implements ParamsBuilderInterface
 
 				case TransformInterface::GROUP_TRANSFORM:
 					$transformObjects[] = new GroupByTransform($transform[TransformInterface::FIELDS_TRANSFORM]);
-//					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $groupField) {
-//						$groupByInputObjects [] = $groupField;
-//					}
 					break;
 
 				case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
@@ -321,9 +316,6 @@ class ParamsBuilder implements ParamsBuilderInterface
 
 				case TransformInterface::SORT_TRANSFORM:
 					$transformObjects[] = new SortByTransform($transform[TransformInterface::FIELDS_TRANSFORM]);
-//					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
-//						$sortByInputObjects[] = $sortField;
-//					}
                     break;
                 case TransformInterface::REPLACE_TEXT_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $replaceTextField) {
@@ -332,14 +324,6 @@ class ParamsBuilder implements ParamsBuilderInterface
                     break;
             }
 		}
-
-//		if (!empty ($sortByInputObjects)) {
-//			$transformObjects[] = new SortByTransform($sortByInputObjects);
-//		}
-//
-//		if (!empty ($groupByInputObjects)) {
-//			$transformObjects[] = new GroupByTransform($groupByInputObjects);
-//		}
 
 		return $transformObjects;
 	}
@@ -459,11 +443,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 				)
 				->setSubReportIncluded($reportView->isSubReportsIncluded());
 		} else {
-			$param
-				->setDataSets($this->createDataSets(
+			$param->setDataSets($this->createDataSets(
 					$this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
-				)
-				->setJoinConfigs($reportView->getJoinBy());
+			);
+			$param->setJoinConfigs($this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets()));
 		}
 
 		$param

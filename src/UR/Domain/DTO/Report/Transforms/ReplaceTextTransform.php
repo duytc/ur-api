@@ -111,6 +111,9 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
 
             $report[$fieldName] = $replacedValue;
             $reports[$key] = $report;
+            if (!in_array($fieldName, $metrics)) {
+                $metrics[] = $fieldName;
+            }
         }
 
         $collection->setRows($reports);
