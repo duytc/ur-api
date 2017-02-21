@@ -35,17 +35,6 @@ interface ReportViewInterface extends ModelInterface
     /**
      * @return array
      */
-//    public function getDataSets();
-
-    /**
-     * @param array $dataSets
-     * @return self
-     */
-//    public function setDataSets($dataSets);
-
-    /**
-     * @return array
-     */
     public function getJoinBy();
 
     /**
@@ -99,17 +88,6 @@ interface ReportViewInterface extends ModelInterface
     public function setDimensions($dimensions);
 
     /**
-     * @return array
-     */
-//    public function getFilters();
-
-    /**
-     * @param array $filters
-     * @return self
-     */
-//    public function setFilters($filters);
-
-    /**
      * @return boolean
      */
     public function isMultiView();
@@ -119,17 +97,6 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setMultiView($multiView);
-
-    /**
-     * @return array
-     */
-//    public function getReportViews();
-
-    /**
-     * @param array $reportViews
-     * @return self
-     */
-//    public function setReportViews($reportViews);
 
     /**
      * @return PublisherInterface
@@ -218,4 +185,15 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setReportViewDataSets($reportViewDataSets);
+
+    /**
+     * @return bool
+     */
+    public function isUserReorderTransformsAllowed();
+
+    /**
+     * @param mixed $userReorderTransformsAllowed
+     * @return self
+     */
+    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed);
 }

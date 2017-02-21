@@ -17,8 +17,9 @@ class AddCalculatedField extends AbstractAddField
     protected $defaultValue;
     protected $language;
 
-    public function __construct($column, $expression, $defaultValue = 0)
+    public function __construct($column, $expression, $defaultValue = 0, $priority)
     {
+        parent::__construct($column, $priority);
         $this->column = $column;
         $this->expression = $expression;
         $this->defaultValue = $defaultValue;
@@ -85,7 +86,7 @@ class AddCalculatedField extends AbstractAddField
     /**
      * @inheritdoc
      */
-    public function getPriority()
+    public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_ADD_CALCULATED_FIELD;
     }

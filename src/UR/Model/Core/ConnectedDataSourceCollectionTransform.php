@@ -48,7 +48,9 @@ class ConnectedDataSourceCollectionTransform
      */
     public function __construct(array $configs)
     {
+        $priority = 0;
         foreach ($configs as $config) {
+            $priority++;
             if (!array_key_exists(TransformType::FIELDS, $config)
                 || !array_key_exists(TransformType::TYPE, $config)
             ) {
@@ -59,31 +61,31 @@ class ConnectedDataSourceCollectionTransform
             $this->type = $config[TransformType::TYPE];
             switch ($this->type) {
                 case TransformType::GROUP_BY:
-                    $this->setGroupByTransforms($fields);
+                    $this->setGroupByTransforms($fields, $priority);
                     break;
 
                 case TransformType::SORT_BY:
-                    $this->setSortByTransforms($fields);
+                    $this->setSortByTransforms($fields, $priority);
                     break;
 
                 case TransformType::ADD_FIELD:
-                    $this->setAddFieldTransform($fields);
+                    $this->setAddFieldTransform($fields, $priority);
                     break;
 
                 case TransformType::ADD_CALCULATED_FIELD:
-                    $this->setAddCalculatedFieldTransforms($fields);
+                    $this->setAddCalculatedFieldTransforms($fields, $priority);
                     break;
 
                 case TransformType::COMPARISON_PERCENT:
-                    $this->setComparisonPercentTransforms($fields);
+                    $this->setComparisonPercentTransforms($fields, $priority);
                     break;
 
                 case TransformType::REPLACE_TEXT:
-                    $this->setReplaceTextTransforms($fields);
+                    $this->setReplaceTextTransforms($fields, $priority);
                     break;
 
                 case TransformType::EXTRACT_PATTERN:
-                    $this->setExtractPatternTransforms($fields);
+                    $this->setExtractPatternTransforms($fields, $priority);
                     break;
 
                 default:
@@ -110,8 +112,9 @@ class ConnectedDataSourceCollectionTransform
 
     /**
      * @param array $addFieldConfigs
+     * @param $priority
      */
-    public function setAddFieldTransform($addFieldConfigs)
+    public function setAddFieldTransform($addFieldConfigs, $priority)
     {
         foreach ($addFieldConfigs as $addFieldConfig) {
             if (!is_array($addFieldConfig)
@@ -124,7 +127,8 @@ class ConnectedDataSourceCollectionTransform
             $this->addFieldTransforms[] = new AddField(
                 $addFieldConfig[TransformType::FIELD],
                 $addFieldConfig[TransformType::VALUE],
-                null
+                null,
+                $priority
             );
         }
     }
@@ -139,8 +143,9 @@ class ConnectedDataSourceCollectionTransform
 
     /**
      * @param array $extractPatternTransforms
+     * @param $priority
      */
-    public function setExtractPatternTransforms($extractPatternTransforms)
+    public function setExtractPatternTransforms($extractPatternTransforms, $priority)
     {
         foreach ($extractPatternTransforms as $extractPatternTransform) {
             if (!is_array($extractPatternTransform)
@@ -164,7 +169,8 @@ class ConnectedDataSourceCollectionTransform
                 !array_key_exists(TransformType::IS_OVERRIDE, $extractPatternTransform) ? false : $extractPatternTransform[TransformType::IS_OVERRIDE],
                 !array_key_exists(TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE, $extractPatternTransform) ? false : $extractPatternTransform[TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE],
                 !array_key_exists(TransformType::IS_REG_EXPRESSION_MULTI_LINE, $extractPatternTransform) ? false : $extractPatternTransform[TransformType::IS_REG_EXPRESSION_MULTI_LINE],
-                !array_key_exists(TransformType::MATCHED_POSITION, $extractPatternTransform) ? 1 : $extractPatternTransform[TransformType::MATCHED_POSITION]
+                !array_key_exists(TransformType::MATCHED_POSITION, $extractPatternTransform) ? 1 : $extractPatternTransform[TransformType::MATCHED_POSITION],
+                $priority
             );
         }
     }
@@ -178,11 +184,12 @@ class ConnectedDataSourceCollectionTransform
     }
 
     /**
-     * @param $groupByTransforms
+     * @param array $groupByTransforms
+     * @param $priority
      */
-    public function setGroupByTransforms(array $groupByTransforms)
+    public function setGroupByTransforms(array $groupByTransforms, $priority)
     {
-        $this->groupByTransforms = new GroupByColumns($groupByTransforms);
+        $this->groupByTransforms = new GroupByColumns($groupByTransforms, $priority);
     }
 
     /**
@@ -195,11 +202,12 @@ class ConnectedDataSourceCollectionTransform
 
     /**
      * @param array $sortByTransforms
+     * @param $priority
      */
-    public function setSortByTransforms(array $sortByTransforms)
+    public function setSortByTransforms(array $sortByTransforms, $priority)
     {
         $xxx[] = $sortByTransforms;
-        $this->sortByTransforms = new SortByColumns($xxx);
+        $this->sortByTransforms = new SortByColumns($xxx, $priority);
     }
 
     /**
@@ -212,8 +220,9 @@ class ConnectedDataSourceCollectionTransform
 
     /**
      * @param array $addCalculatedFieldTransforms
+     * @param $priority
      */
-    public function setAddCalculatedFieldTransforms(array $addCalculatedFieldTransforms)
+    public function setAddCalculatedFieldTransforms(array $addCalculatedFieldTransforms, $priority)
     {
         foreach ($addCalculatedFieldTransforms as $addCalculatedFieldTransform) {
             if (!is_array($addCalculatedFieldTransform)
@@ -225,7 +234,9 @@ class ConnectedDataSourceCollectionTransform
 
             $this->addCalculatedFieldTransforms[] = new AddCalculatedField(
                 $addCalculatedFieldTransform[TransformType::FIELD],
-                $addCalculatedFieldTransform[TransformType::EXPRESSION]
+                $addCalculatedFieldTransform[TransformType::EXPRESSION],
+                0,
+                $priority
             );
         }
     }
@@ -240,8 +251,9 @@ class ConnectedDataSourceCollectionTransform
 
     /**
      * @param array $comparisonPercentTransforms
+     * @param $priority
      */
-    public function setComparisonPercentTransforms(array $comparisonPercentTransforms)
+    public function setComparisonPercentTransforms(array $comparisonPercentTransforms, $priority)
     {
         foreach ($comparisonPercentTransforms as $comparisonPercentTransform) {
             if (!is_array($comparisonPercentTransform)
@@ -255,7 +267,8 @@ class ConnectedDataSourceCollectionTransform
             $this->comparisonPercentTransforms[] = new ComparisonPercent(
                 $comparisonPercentTransform[TransformType::FIELD],
                 $comparisonPercentTransform[TransformType::NUMERATOR],
-                $comparisonPercentTransform[TransformType::DENOMINATOR]
+                $comparisonPercentTransform[TransformType::DENOMINATOR],
+                $priority
             );
         }
     }
@@ -270,8 +283,9 @@ class ConnectedDataSourceCollectionTransform
 
     /**
      * @param array $replaceTextTransforms
+     * @param $priority
      */
-    public function setReplaceTextTransforms(array $replaceTextTransforms)
+    public function setReplaceTextTransforms(array $replaceTextTransforms, $priority)
     {
         foreach ($replaceTextTransforms as $replaceTextTransform) {
             if (!is_array($replaceTextTransform)
@@ -289,7 +303,8 @@ class ConnectedDataSourceCollectionTransform
                 $replaceTextTransform[TransformType::POSITION],
                 $replaceTextTransform[TransformType::REPLACE_WITH],
                 !array_key_exists(TransformType::TARGET_FIELD, $replaceTextTransform) ? null : $replaceTextTransform[TransformType::TARGET_FIELD],
-                !array_key_exists(TransformType::IS_OVERRIDE, $replaceTextTransform) ? false : $replaceTextTransform[TransformType::IS_OVERRIDE]
+                !array_key_exists(TransformType::IS_OVERRIDE, $replaceTextTransform) ? false : $replaceTextTransform[TransformType::IS_OVERRIDE],
+                $priority
             );
         }
     }

@@ -95,4 +95,15 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @param boolean $replayData
      */
     public function setReplayData($replayData);
+
+    /**
+     * @return bool
+     */
+    public function isUserReorderTransformsAllowed();
+
+    /**
+     * @param mixed $userReorderTransformsAllowed
+     * @return self
+     */
+    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed);
 }

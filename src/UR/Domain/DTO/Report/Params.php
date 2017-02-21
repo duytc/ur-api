@@ -29,6 +29,11 @@ class Params implements ParamsInterface
     protected $transforms;
 
     /**
+     * @var bool
+     */
+    protected $userReorderTransformsAllowed;
+
+    /**
      * @var WeightedCalculationInterface[]
      */
     protected $weightedCalculations;
@@ -339,4 +344,22 @@ class Params implements ParamsInterface
 	{
 		$this->endDate = $endDate;
 	}
+
+    /**
+     * @return boolean
+     */
+    public function isUserReorderTransformsAllowed()
+    {
+        return $this->userReorderTransformsAllowed;
+    }
+
+    /**
+     * @param boolean $userReorderTransformsAllowed
+     * @return self
+     */
+    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed)
+    {
+        $this->userReorderTransformsAllowed = $userReorderTransformsAllowed;
+        return $this;
+    }
 }

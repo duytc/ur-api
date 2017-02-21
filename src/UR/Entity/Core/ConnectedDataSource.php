@@ -14,6 +14,7 @@ class ConnectedDataSource extends ConnectedDataSourceModel
     protected $transforms;
     protected $requires;
     protected $alertSetting;
+    protected $userReorderTransformsAllowed;
 
     /** @var  bool $replayData */
     protected $replayData;

@@ -15,8 +15,9 @@ class AddConcatenatedField extends AbstractAddField
     protected $expression;
     protected $language;
 
-    public function __construct($column, $expression)
+    public function __construct($column, $expression, $priority)
     {
+        parent::__construct($column, $priority);
         $this->column = $column;
         $this->expression = $expression;
     }
@@ -54,7 +55,7 @@ class AddConcatenatedField extends AbstractAddField
     /**
      * @inheritdoc
      */
-    public function getPriority()
+    public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_ADD_CONCATENATION_FIELD;
     }

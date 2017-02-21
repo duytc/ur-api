@@ -167,7 +167,7 @@ final class TransformType
     public static function isValidNumberTransform($arr)
     {
         if ($arr[self::TYPE] === self::NUMBER) {
-            if (count($arr) !== 4 || !array_key_exists(self::FIELD, $arr) || !array_key_exists(self::DECIMALS, $arr) || !array_key_exists(self::THOUSANDS_SEPARATOR, $arr)) {
+            if (!array_key_exists(self::FIELD, $arr) || !array_key_exists(self::DECIMALS, $arr) || !array_key_exists(self::THOUSANDS_SEPARATOR, $arr)) {
                 return "Transform setting error: field [" . $arr[TransformType::FIELD] . "] missing config information";
             }
             if (!is_numeric($arr[self::DECIMALS]) || !in_array($arr[self::THOUSANDS_SEPARATOR], self::$supportedThousandsSeparator)) {

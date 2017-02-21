@@ -5,7 +5,7 @@ namespace UR\Service\Parser\Transformer\Collection;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Service\DTO\Collection;
 
-class ExtractPattern implements CollectionTransformerInterface
+class ExtractPattern extends AbstractTransform implements CollectionTransformerInterface
 {
     const FILE_NAME_FIELD = '__filename';
     const CASE_INSENSITIVE = 'i';
@@ -46,8 +46,9 @@ class ExtractPattern implements CollectionTransformerInterface
      */
     protected $matchedPosition;
 
-    public function __construct($field, $pattern, $targetField, $isOverride = true, $isCaseInsensitive, $isMultiLine, $matchedPosition)
+    public function __construct($field, $pattern, $targetField, $isOverride = true, $isCaseInsensitive, $isMultiLine, $matchedPosition, $priority)
     {
+        parent::__construct($priority);
         $this->field = $field;
         $this->targetField = $targetField;
         $this->isOverride = $isOverride;
@@ -115,7 +116,7 @@ class ExtractPattern implements CollectionTransformerInterface
     /**
      * @inheritdoc
      */
-    public function getPriority()
+    public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_EXTRACT_PATTERN;
     }

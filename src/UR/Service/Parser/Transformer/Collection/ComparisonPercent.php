@@ -4,14 +4,15 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use UR\Service\DTO\Collection;
 
-class ComparisonPercent implements CollectionTransformerInterface
+class ComparisonPercent extends AbstractTransform implements CollectionTransformerInterface
 {
     protected $newColumn;
     protected $columnA;
     protected $columnB;
 
-    public function __construct($newColumn, $columnA, $columnB)
+    public function __construct($newColumn, $columnA, $columnB, $priority)
     {
+        parent::__construct($priority);
         $this->newColumn = $newColumn;
         $this->columnA = $columnA;
         $this->columnB = $columnB;
@@ -20,6 +21,7 @@ class ComparisonPercent implements CollectionTransformerInterface
     public function transform(Collection $collection)
     {
         $rows = $collection->getRows();
+
         if (count($rows) < 1) {
             return $collection;
         }
@@ -67,7 +69,7 @@ class ComparisonPercent implements CollectionTransformerInterface
     /**
      * @inheritdoc
      */
-    public function getPriority()
+    public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_COMPARISON_PERCENT;
     }

@@ -4,7 +4,7 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use UR\Service\DTO\Collection;
 
-class ReplaceText implements CollectionTransformerInterface
+class ReplaceText extends AbstractTransform implements CollectionTransformerInterface
 {
     const POSITION_AT_BEGINNING = 'at the beginning';
     const POSITION_AT_THE_END = 'at the end';
@@ -40,8 +40,9 @@ class ReplaceText implements CollectionTransformerInterface
      */
     protected $isOverride;
 
-    public function __construct($field, $searchFor, $position = self::POSITION_AT_BEGINNING, $replaceWith, $targetField, $isOverride = true)
+    public function __construct($field, $searchFor, $position = self::POSITION_AT_BEGINNING, $replaceWith, $targetField, $isOverride = true, $priority)
     {
+        parent::__construct($priority);
         $this->field = $field;
         $this->searchFor = $searchFor;
         $this->position = $position;
@@ -138,7 +139,7 @@ class ReplaceText implements CollectionTransformerInterface
     /**
      * @inheritdoc
      */
-    public function getPriority()
+    public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_REPLACE_TEXT;
     }

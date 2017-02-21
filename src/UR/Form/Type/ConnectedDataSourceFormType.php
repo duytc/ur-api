@@ -29,6 +29,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
             ->add('requires')
             ->add('alertSetting')
             ->add('replayData')
+            ->add('userReorderTransformsAllowed')
         ;
 
         $builder->addEventListener(

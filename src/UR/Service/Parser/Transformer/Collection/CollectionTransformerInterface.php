@@ -27,5 +27,7 @@ interface CollectionTransformerInterface
      *
      * @return int
      */
+    public function getDefaultPriority();
+
     public function getPriority();
 }

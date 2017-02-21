@@ -15,8 +15,9 @@ class AddField extends AbstractAddField
     protected $type;
 
 
-    public function __construct($column, $value = null, $fileType)
+    public function __construct($column, $value = null, $fileType, $priority)
     {
+        parent::__construct($column, $priority);
         $this->column = $column;
         $this->value = $value;
         $this->type = $fileType;
@@ -63,7 +64,7 @@ class AddField extends AbstractAddField
     /**
      * @inheritdoc
      */
-    public function getPriority()
+    public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_ADD_FIELD;
     }

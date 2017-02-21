@@ -128,4 +128,15 @@ interface ParamsInterface
 	 * @param mixed $endDate
 	 */
 	public function setEndDate($endDate);
+
+    /**
+     * @return boolean
+     */
+    public function isUserReorderTransformsAllowed();
+
+    /**
+     * @param boolean $userReorderTransformsAllowed
+     * @return self
+     */
+    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed);
 }

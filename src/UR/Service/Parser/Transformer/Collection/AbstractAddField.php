@@ -4,12 +4,23 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use UR\Service\DTO\Collection;
 
-abstract class AbstractAddField implements CollectionTransformerInterface
+abstract class AbstractAddField extends AbstractTransform implements CollectionTransformerInterface
 {
     /**
      * @var string
      */
     protected $column;
+
+    /**
+     * AbstractAddField constructor.
+     * @param string $column
+     * @param $priority
+     */
+    public function __construct($column, $priority)
+    {
+        parent::__construct($priority);
+        $this->column = $column;
+    }
 
     public function transform(Collection $collection)
     {

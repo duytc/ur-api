@@ -48,6 +48,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             ->add('formats')
             ->add('fieldTypes')
             ->add('subReportsIncluded')
+            ->add('userReorderTransformsAllowed')
         ;
 
         $builder

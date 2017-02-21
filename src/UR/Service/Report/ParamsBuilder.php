@@ -47,6 +47,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 	const START_DATE = 'startDate';
 	const END_DATE = 'endDate';
 	const USER_DEFINED_DATE_RANGE = 'userDefineDateRange';
+	const AUTO_REORDER_TRANSFORMS = 'userReorderTransformsAllowed';
 
 	/**
 	 * @inheritdoc
@@ -143,6 +144,12 @@ class ParamsBuilder implements ParamsBuilderInterface
 
 		if (array_key_exists(self::END_DATE, $data) && !empty($data[self::END_DATE])) {
 			$param->setEndDate($data[self::END_DATE]);
+		}
+
+		if (array_key_exists(self::AUTO_REORDER_TRANSFORMS, $data)) {
+			$param->setUserReorderTransformsAllowed(filter_var($data[self::AUTO_REORDER_TRANSFORMS], FILTER_VALIDATE_BOOLEAN));
+		} else {
+			$param->setUserReorderTransformsAllowed(true);
 		}
 
 		return $param;
@@ -300,9 +307,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 					break;
 
 				case TransformInterface::GROUP_TRANSFORM:
-					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $groupField) {
-						$groupByInputObjects [] = $groupField;
-					}
+					$transformObjects[] = new GroupByTransform($transform[TransformInterface::FIELDS_TRANSFORM]);
+//					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $groupField) {
+//						$groupByInputObjects [] = $groupField;
+//					}
 					break;
 
 				case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
@@ -312,9 +320,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 					break;
 
 				case TransformInterface::SORT_TRANSFORM:
-					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
-						$sortByInputObjects[] = $sortField;
-					}
+					$transformObjects[] = new SortByTransform($transform[TransformInterface::FIELDS_TRANSFORM]);
+//					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
+//						$sortByInputObjects[] = $sortField;
+//					}
                     break;
                 case TransformInterface::REPLACE_TEXT_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $replaceTextField) {
@@ -324,13 +333,13 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
 		}
 
-		if (!empty ($sortByInputObjects)) {
-			$transformObjects[] = new SortByTransform($sortByInputObjects);
-		}
-
-		if (!empty ($groupByInputObjects)) {
-			$transformObjects[] = new GroupByTransform($groupByInputObjects);
-		}
+//		if (!empty ($sortByInputObjects)) {
+//			$transformObjects[] = new SortByTransform($sortByInputObjects);
+//		}
+//
+//		if (!empty ($groupByInputObjects)) {
+//			$transformObjects[] = new GroupByTransform($groupByInputObjects);
+//		}
 
 		return $transformObjects;
 	}

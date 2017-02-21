@@ -10,6 +10,10 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $transforms;
     protected $requires;
     protected $alertSetting;
+    /**
+     * @var bool
+     */
+    protected $userReorderTransformsAllowed;
 
     /** @var  bool $replayData */
     protected $replayData;
@@ -177,5 +181,23 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     {
         $this->collectionTransforms = new ConnectedDataSourceCollectionTransform($this->transforms);
         return $this->collectionTransforms;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUserReorderTransformsAllowed()
+    {
+        return $this->userReorderTransformsAllowed;
+    }
+
+    /**
+     * @param bool $userReorderTransformsAllowed
+     * @return self
+     */
+    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed)
+    {
+        $this->userReorderTransformsAllowed = $userReorderTransformsAllowed;
+        return $this;
     }
 }

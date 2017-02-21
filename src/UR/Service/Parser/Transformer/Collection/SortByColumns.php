@@ -5,12 +5,13 @@ namespace UR\Service\Parser\Transformer\Collection;
 use UR\Service\DataSet\TransformType;
 use UR\Service\DTO\Collection;
 
-class SortByColumns implements CollectionTransformerInterface
+class SortByColumns extends AbstractTransform implements CollectionTransformerInterface
 {
     protected $sortByColumns;
 
-    public function __construct(array $sortByColumns)
+    public function __construct(array $sortByColumns, $priority)
     {
+        parent::__construct($priority);
         $this->sortByColumns = $sortByColumns;
     }
 
@@ -43,7 +44,7 @@ class SortByColumns implements CollectionTransformerInterface
     /**
      * @inheritdoc
      */
-    public function getPriority()
+    public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_SORT;
     }

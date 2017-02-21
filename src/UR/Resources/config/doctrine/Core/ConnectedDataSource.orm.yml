@@ -17,6 +17,10 @@ UR\Entity\Core\ConnectedDataSource:
         transforms:
             type: json_array
             nullable: true
+        userReorderTransformsAllowed:
+            type: boolean
+            options:
+                default: true
         requires:
             type: json_array
             nullable: true

@@ -137,7 +137,7 @@ trait ValidateConnectedDataSourceTrait
     public function validateAllFieldsTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
         //GROUP BY
-        if (count($transform) !== 3 || !array_key_exists(TransformType::FIELDS, $transform)) {
+        if (!array_key_exists(TransformType::FIELDS, $transform)) {
             return "Transform setting error: Transform [" . $transform[TransformType::TYPE] . "] missing config information";
         }
 

@@ -92,6 +92,13 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
 
         foreach ($reports as $key => $report) {
             if (!array_key_exists($this->getFieldName(), $report)) {
+                $fieldName = $this->getIsOverride() ? $this->getFieldName() : $this->getTargetField();
+                $report[$fieldName] = null;
+                $reports[$key] = $report;
+                if (!in_array($fieldName, $metrics)) {
+                    $metrics[] = $fieldName;
+                }
+                
                 continue;
             }
             $value = $report[$this->getFieldName()];

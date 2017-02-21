@@ -178,12 +178,21 @@ class Parser implements ParserInterface
         /* 3. do transforming data */
         $allFieldsTransforms = $parserConfig->getCollectionTransforms();
 
-        usort($allFieldsTransforms, function (CollectionTransformerInterface $a, CollectionTransformerInterface $b) {
-            if ($a->getPriority() == $b->getPriority()) {
-                return 0;
-            }
-            return ($a->getPriority() < $b->getPriority()) ? -1 : 1;
-        });
+        if (!$parserConfig->isUserReorderTransformsAllowed()) {
+            usort($allFieldsTransforms, function (CollectionTransformerInterface $a, CollectionTransformerInterface $b) {
+                if ($a->getDefaultPriority() == $b->getDefaultPriority()) {
+                    return 0;
+                }
+                return ($a->getDefaultPriority() < $b->getDefaultPriority()) ? -1 : 1;
+            });
+        } else {
+            usort($allFieldsTransforms, function (CollectionTransformerInterface $a, CollectionTransformerInterface $b) {
+                if ($a->getPriority() == $b->getPriority()) {
+                    return 0;
+                }
+                return ($a->getPriority() < $b->getPriority()) ? -1 : 1;
+            });
+        }
 
         // dispatch event pre transforming collection data
         $preTransformCollectionEvent = new UrGenericEvent(
