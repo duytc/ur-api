@@ -142,7 +142,7 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
     {
         $thousandSeparator = $this->thousandSeparator === self::SEPARATOR_NONE ? '' : $this->thousandSeparator;
 
-	    if ($fieldValue ==  null) {
+	    if ($fieldValue ===  null) {
 		    return $fieldValue;
 	    }
 
