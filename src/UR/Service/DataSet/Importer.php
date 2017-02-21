@@ -6,6 +6,7 @@ use \Doctrine\DBAL\Schema\Table;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DTO\Collection;
+use UR\Service\Import\ImportDataException;
 
 class Importer
 {
@@ -131,7 +132,7 @@ class Importer
                     $qb->execute();
                 } catch (\Exception $e) {
                     $this->conn->rollBack();
-                    throw $e;
+                    throw new ImportDataException(null, null, null);
                 }
 
                 if ($this->preparedUpdateCount === $this->batchSize) {
@@ -141,8 +142,7 @@ class Importer
             }
         }
 
-        if ($preparedCounts > 0) {
-            // TODO: check var $question_marks is what???
+        if ($preparedCounts > 0 && is_array($columns) && is_array($question_marks)) {
             $insertSql = "INSERT INTO " . $tableName . "(" . implode(",", $columns) . ") VALUES " . implode(',', $question_marks);
             $this->executeInsert($insertSql, $insert_values);
         }
@@ -177,9 +177,9 @@ class Importer
         $stmt = $this->conn->prepare($sql);
         try {
             $stmt->execute($values);
-        } catch (\Exception $e) {
+        } catch (\Exception $ex) {
             $this->conn->rollBack();
-            throw $e;
+            throw new ImportDataException(null, null, null);
         }
         $this->conn->commit();
         $this->conn->close();

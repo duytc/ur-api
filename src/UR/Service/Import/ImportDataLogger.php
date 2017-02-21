@@ -23,7 +23,7 @@ class ImportDataLogger
         $this->logger = $logger;
     }
 
-    public function doImportLogging($errorCode, $importId, $dataSetId, $dataSourceId, $dataSourceEntryId, $row, $column)
+    public function doImportLogging($errorCode, $dataSetId, $dataSourceId, $dataSourceEntryId, $row, $column)
     {
         $message = "";
         switch ($errorCode) {
@@ -57,7 +57,7 @@ class ImportDataLogger
                 $message = sprintf("Failed to import file with id#%s - can't find data error", $dataSourceEntryId);
                 break;
 
-            case ProcessAlert::ALERT_CODE_UN_EXPECTED_ERROR:
+            case ProcessAlert::ALERT_CODE_FILE_NOT_FOUND:
                 $message = sprintf("Failed to import file with id#%s - file dose not exist", $dataSourceEntryId);
                 break;
             default:
@@ -65,9 +65,9 @@ class ImportDataLogger
         }
 
         if ($errorCode == ProcessAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY) {
-            $this->logger->info(sprintf("ur-import#%s data-set#%s data-source#%s data-source-entry#%s (message: %s)", $importId, $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
+            $this->logger->info(sprintf("data-set#%s data-source#%s data-source-entry#%s (message: %s)", $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
         } else {
-            $this->logger->error(sprintf("ur-import#%s data-set#%s data-source#%s data-source-entry#%s (message: %s)", $importId, $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
+            $this->logger->error(sprintf("data-set#%s data-source#%s data-source-entry#%s (message: %s)", $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
         }
     }
 
@@ -76,7 +76,7 @@ class ImportDataLogger
         $this->logger->error($message);
     }
 
-    public function doLoggingForJson($importId, $dataSetId, $dataSourceId, $dataSourceEntryId)
+    public function doLoggingForJson($dataSetId, $dataSourceId, $dataSourceEntryId)
     {
         switch (json_last_error()) {
             case JSON_ERROR_NONE:
@@ -102,6 +102,6 @@ class ImportDataLogger
                 break;
         }
 
-        $this->logger->error(sprintf("Reading json file ur-import#%s data-set#%s data-source#%s data-source-entry#%s (message: %s)", $importId, $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
+        $this->logger->error(sprintf("Reading json file data-set#%s data-source#%s data-source-entry#%s (message: %s)", $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
     }
 }

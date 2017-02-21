@@ -13,16 +13,10 @@ use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
 use UR\Service\DataSet\Locator;
-use UR\Service\DataSet\TransformType;
-use UR\Service\DataSource\Collection;
-use UR\Service\Parser\Parser;
-use UR\Service\Parser\ParserConfig;
-use UR\Service\Parser\Transformer\Column\DateFormat;
-use UR\Service\Parser\Transformer\Column\NumberFormat;
 
 class ImportHistoryRepository extends EntityRepository implements ImportHistoryRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'dataSet' => 'dataSet', 'dataSource' => 'dataSource', 'createDate' => 'createDate'];
+    protected $SORT_FIELDS = ['id' => 'id', 'dataSet' => 'dataSet', 'dataSource' => 'dataSource'];
 
     /**
      * @inheritdoc
@@ -70,7 +64,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
             ->leftJoin('ih.dataSourceEntry', 'dse')
             ->leftJoin('dse.dataSource', 'ds')
             ->where('ih.dataSet=:dataSet')
-            ->setParameter('dataSet', $dataSet);
+            ->setParameter('dataSet', $dataSet)->addOrderBy('ih.createdDate', 'desc');
 
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
@@ -97,9 +91,6 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
                     $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 case $this->SORT_FIELDS['dataSource']:
-                    $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
-                    break;
-                case $this->SORT_FIELDS['createDate']:
                     $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 default:
@@ -190,6 +181,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         $metrics = $importHistory->getDataSet()->getMetrics();
         $fields = array_merge($dimensions, $metrics);
         $selectedFields = [];
+
         foreach ($fields as $field => $type) {
             $selectedFields[] = 'd.' . $field;
         }
@@ -202,51 +194,8 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         $stmt = $query->execute();
         $results = $stmt->fetchAll();
         $conn->close();
-        if (count($results) < 1) {
-            return [0 => array_fill_keys(array_keys($fields), "")];
-        }
 
-        $result = $results[0];
-        $parserConfig = new ParserConfig();
-        $collection = new Collection($results);
-        foreach ($result as $column => $row) {
-            $parserConfig->addColumn($column);
-        }
-
-        $connDataSources = $importHistory->getDataSet()->getConnectedDataSources();
-        $connDataSource = null;
-        foreach ($connDataSources as $item) {
-            if ($item->getDataSource()->getId() === $importHistory->getDataSourceEntry()->getDataSource()->getId()) {
-                $connDataSource = $item;
-                break;
-            }
-        }
-
-
-        $transforms = $connDataSource->getTransforms();
-        foreach ($transforms as $transform) {
-            if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE])) {
-                if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
-                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new DateFormat('Y-m-d', $transform[TransformType::TO]));
-                    unset($fields[$transform[TransformType::FIELD]]);
-                }
-
-                if (strcmp($transform[TransformType::TYPE], TransformType::NUMBER) === 0) {
-                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new NumberFormat($transform[TransformType::DECIMALS], $transform[TransformType::THOUSANDS_SEPARATOR]));
-                }
-            }
-        }
-
-        foreach ($fields as $field => $type) {
-            if (strcmp($type, TransformType::DATE) === 0) {
-                $parserConfig->addTransformColumn($field, new DateFormat('Y-m-d', 'Y-m-d'));
-            }
-        }
-
-        $parser = new Parser();
-        $collection = $parser->parse($collection, $parserConfig, $connDataSource);
-
-        return $collection->getRows();
+        return $results;
     }
 
     /**
@@ -289,7 +238,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
                 case $this->SORT_FIELDS['dataSet']:
                     $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
                     break;
-                case $this->SORT_FIELDS['createDate']:
+                case $this->SORT_FIELDS['createdDate']:
                     $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 default:
