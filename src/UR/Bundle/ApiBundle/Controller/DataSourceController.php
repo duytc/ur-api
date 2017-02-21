@@ -273,39 +273,6 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
-     * Get data sources by publisher id
-     *
-     * @Rest\Get("/datasources/publisher/{id}")
-     *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.summary", "integration.summary", "user.summary"})
-     *
-     * @ApiDoc(
-     *  section = "Data Source",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful"
-     *  }
-     * )
-     *
-     * @param int $id the publisher id
-     * @return mixed
-     * @throws NotFoundHttpException when resource not exist
-     */
-    public function getDataSourceByPublisherAction($id)
-    {
-        if (!$this->getUser() instanceof AdminInterface) {
-            throw new InvalidArgumentException('only Admin has permission to view this resource');
-        }
-
-        $publisherManager = $this->get('ur_user.domain_manager.publisher');
-        $publisher = $publisherManager->findPublisher($id);
-
-        $em = $this->get('ur.domain_manager.data_source');
-
-        return $em->getDataSourceForPublisher($publisher);
-    }
-
-    /**
      * Get data sources by API Key
      *
      * @Rest\Get("/datasources/byemail")
