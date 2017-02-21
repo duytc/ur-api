@@ -99,11 +99,8 @@ class AutoImportData implements AutoImportDataInterface
             $publisherId = $dataSourceEntry->getDataSource()->getPublisherId();
             $importHistories = $this->importHistoryManager->getImportHistoryByDataSourceEntry($dataSourceEntry, $connectedDataSource->getDataSet());
             $importHistoryEntity = new ImportHistory();
-            $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
-            $importHistoryEntity->setDataSet($connectedDataSource->getDataSet());
-            $this->importHistoryManager->save($importHistoryEntity);
+
             $params = array(
-                ProcessAlert::IMPORT_ID => $importHistoryEntity->getId(),
                 ProcessAlert::DATA_SET_ID => $connectedDataSource->getDataSet()->getId(),
                 ProcessAlert::DATA_SET_NAME => $connectedDataSource->getDataSet()->getName(),
                 ProcessAlert::DATA_SOURCE_ID => $dataSourceEntry->getDataSource()->getId(),
@@ -115,10 +112,7 @@ class AutoImportData implements AutoImportDataInterface
             try {
                 $filePath = $this->uploadFileDir . $dataSourceEntry->getPath();
                 if (!file_exists($filePath)) {
-                    $params[ProcessAlert::MESSAGE] = ' file does not exist ';
-                    $this->logger->doImportLogging(ProcessAlert::ALERT_CODE_UN_EXPECTED_ERROR, $importHistoryEntity->getId(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), null, null);
-                    $this->workerManager->processAlert(ProcessAlert::ALERT_CODE_UN_EXPECTED_ERROR, $publisherId, $params);
-                    continue;
+                    throw  new ImportDataException(ProcessAlert::ALERT_CODE_FILE_NOT_FOUND, null, null);
                 }
 
                 if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'csv') === 0) {
@@ -129,32 +123,23 @@ class AutoImportData implements AutoImportDataInterface
                     $file = new Excel($filePath, $this->phpExcel, $this->chunkSize);
                 } else {
                     $file = new Json($filePath);
-                    $this->logger->doLoggingForJson($importHistoryEntity->getId(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId());
+                    $this->logger->doLoggingForJson($connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId());
                 }
 
                 $code = ProcessAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY;
                 $columns = $file->getColumns();
                 $dataRow = $file->getDataRow();
                 if (!is_array($columns) || count($columns) < 1) {
-                    $code = ProcessAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND;
-                    $this->logger->doImportLogging($code, $importHistoryEntity->getId(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), null, null);
-                    $this->workerManager->processAlert($code, $publisherId, $params);
-                    continue;
+                    throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND, null, null);
                 }
 
                 if ($dataRow < 1) {
-                    $code = ProcessAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND;
-                    $this->logger->doImportLogging($code, $importHistoryEntity->getId(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), null, null);
-                    $this->workerManager->processAlert($code, $publisherId, $params);
-                    continue;
+                    throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND, null, null);
                 }
 
                 $importUtils->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $parserConfig, $columns);
                 if (count($parserConfig->getAllColumnMappings()) === 0) {
-                    $code = ProcessAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL;
-                    $this->logger->doImportLogging($code, $importHistoryEntity->getId(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), null, null);
-                    $this->workerManager->processAlert($code, $publisherId, $params);
-                    continue;
+                    throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL, null, null);
                 }
 
                 $validRequires = true;
@@ -170,10 +155,7 @@ class AutoImportData implements AutoImportDataInterface
                 if (!$validRequires) {
                     // to do alert
                     if (in_array(ConnectedDataSourceRepository::IMPORT_FAILURE, $connectedDataSource->getAlertSetting())) {
-                        $code = ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL;
-                        $params[ProcessAlert::COLUMN] = $columnRequire;
-                        $this->logger->doImportLogging($code, $importHistoryEntity->getId(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), null, $columnRequire);
-                        $this->workerManager->processAlert($code, $publisherId, $params);
+                        throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL, null, $columnRequire);
                     }
                     continue;
                 }
@@ -187,36 +169,34 @@ class AutoImportData implements AutoImportDataInterface
                 // parser
                 $collectionParser = $this->parser->parse($file, $parserConfig, $connectedDataSource);
 
-                if (is_array($collectionParser)) {
-                    // to do alert
-                    if (in_array(ConnectedDataSourceRepository::IMPORT_FAILURE, $connectedDataSource->getAlertSetting())) {
-                        $code = $collectionParser[ProcessAlert::ERROR];
-                        if (array_key_exists(ProcessAlert::MESSAGE, $collectionParser)) {
-                            $params[ProcessAlert::MESSAGE] = $collectionParser[ProcessAlert::MESSAGE];
-                        }
-
-                        $params[ProcessAlert::ROW] = array_key_exists(ProcessAlert::ROW, $collectionParser) ? $collectionParser[ProcessAlert::ROW] : null;
-                        $params[ProcessAlert::COLUMN] = array_key_exists(ProcessAlert::COLUMN, $collectionParser) ? $collectionParser[ProcessAlert::COLUMN] : null;
-                        $this->logger->doImportLogging($code, $importHistoryEntity->getId(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $params[ProcessAlert::ROW], $params[ProcessAlert::COLUMN]);
-                        $this->workerManager->processAlert($code, $publisherId, $params);
-                    }
-                    continue;
-                }
-
                 $ds1 = $dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId());
                 // import
+
+                $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
+                $importHistoryEntity->setDataSet($connectedDataSource->getDataSet());
+                $this->importHistoryManager->save($importHistoryEntity);
                 $dataSetImporter->importCollection($collectionParser, $ds1, $importHistoryEntity->getId(), $connectedDataSource);
                 if (in_array(ConnectedDataSourceRepository::DATA_ADDED, $connectedDataSource->getAlertSetting())) {
-                    $this->logger->doImportLogging($code, $importHistoryEntity->getId(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), null, null);
+                    $this->logger->doImportLogging($code, $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), null, null);
                     $this->workerManager->processAlert($code, $publisherId, $params);
                     $this->importHistoryManager->deletePreviousImports($importHistories);
                 }
 
-            } catch (\Exception $e) {
-                $params[ProcessAlert::MESSAGE] = "Unexpected Error";
-                $this->workerManager->processAlert(ProcessAlert::ALERT_CODE_UN_EXPECTED_ERROR, $publisherId, $params);
-                $message = sprintf("ur-import#%s data-set#%s data-source#%s data-source-entry#%s (message: %s)", $importHistoryEntity->getId(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getMessage());
-                $this->logger->doExceptionLogging($message);
+            } catch (ImportDataException $e) {
+                if ($e->getAlertCode() === null) {
+                    $params[ProcessAlert::MESSAGE] = "Unexpected Error";
+                    $this->workerManager->processAlert(ProcessAlert::ALERT_CODE_UN_EXPECTED_ERROR, $publisherId, $params);
+                    $message = sprintf("data-set#%s data-source#%s data-source-entry#%s (message: %s)", $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getMessage());
+                    $this->logger->doExceptionLogging($message);
+                    if ($importHistoryEntity->getId() !== null) {
+                        $this->importHistoryManager->delete($importHistoryEntity);
+                    }
+                } else {
+                    $params[ProcessAlert::ROW] = $e->getRow();
+                    $params[ProcessAlert::COLUMN] = $e->getColumn();
+                    $this->logger->doImportLogging($e->getAlertCode(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getRow(), $e->getColumn());
+                    $this->workerManager->processAlert($e->getAlertCode(), $publisherId, $params);
+                }
             }
         }
     }

@@ -11,15 +11,20 @@ trait ConvertFileEncoding
      * and new file will be overwrited to orginal file name as ${file}
      *
      * @param $filePath
+     * @param $kernelRootDir
      * @return bool return true if success, else return false
      */
-    public function convertToUtf8($filePath)
+    public function convertToUtf8($filePath, $kernelRootDir)
     {
         if (null == $filePath) {
             return false;
         }
 
-        $result = shell_exec(sprintf('%s "%s"', (__DIR__ . '/../../../app/convert_to_utf8.sh'), $filePath)); // important: put filePath into "" allows special character in filePath
+        if (!file_exists($filePath)){
+            return false;
+        }
+
+        $result = shell_exec(sprintf('%s "%s"', ($kernelRootDir.'/convert_to_utf8.sh'), $filePath)); // important: put filePath into "" allows special character in filePath
 
         if (null == $result) {
             return false;

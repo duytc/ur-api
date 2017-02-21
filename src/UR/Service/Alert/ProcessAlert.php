@@ -24,6 +24,7 @@ class ProcessAlert implements ProcessAlertInterface
     const ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND = 205;
     const ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND = 206;
     const ALERT_CODE_WRONG_TYPE_MAPPING = 207;
+    const ALERT_CODE_FILE_NOT_FOUND = 208;
     const ALERT_CODE_UN_EXPECTED_ERROR = 1000;
     const FILE_NAME = 'fileName';
     const DATA_SOURCE_NAME = 'dataSourceName';
@@ -81,69 +82,70 @@ class ProcessAlert implements ProcessAlertInterface
         $dataSourceName = array_key_exists(self::DATA_SOURCE_NAME, $params) ? $params[self::DATA_SOURCE_NAME] : null;
         $dataSetName = array_key_exists(self::DATA_SET_NAME, $params) ? $params[self::DATA_SET_NAME] : null;
         $fileName = array_key_exists(self::FILE_NAME, $params) ? $params[self::FILE_NAME] : null;
+        $importErrorMessage = sprintf('Failed to import file %s from data source  "%s" to data set "%s".', $fileName, $dataSourceName, $dataSetName);
 
         switch ($alertCode) {
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD:
-                $message = sprintf("File %s has been successfully uploaded to %s", $fileName, $dataSourceName);
+                $message = sprintf('File "%s" has been successfully uploaded to data source "%s".', $fileName, $dataSourceName);
                 $details = $message;
                 break;
 
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_EMAIL:
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_API:
-                $message = sprintf("File %s has been successfully received to %s", $fileName, $dataSourceName);
+                $message = sprintf('File "%s" has been successfully received to data source "%s".', $fileName, $dataSourceName);
                 $details = $message;
                 break;
 
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT:
-                $message = sprintf("Failed to Upload %s to %s - wrong format error", $fileName, $dataSourceName);
+                $message = sprintf('Failed to upload file "%s" to data source "%s" - wrong format error.', $fileName, $dataSourceName);
                 $details = $message;
                 break;
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT:
             case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT:
-                $message = sprintf("Filed to Receive %s to %s - wrong format error", $fileName, $dataSourceName);
+                $message = sprintf('Failed to receive file "%s" to data source "%s" - wrong format error.', $fileName, $dataSourceName);
                 $details = $message;
                 break;
 
             case self::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY:
-                $message = sprintf("Data of file %s in data source %s has been successfully imported to %s", $fileName, $dataSourceName, $dataSetName);
+                $message = sprintf('File "%s" from data source %s has been successfully imported to data set "%s".', $fileName, $dataSourceName, $dataSetName);
                 $details = $message;
                 break;
             case self::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL:
-                $message = sprintf("Failed to import file %s of %s to %s - mapping error", $fileName, $dataSourceName, $dataSetName);
-                $details = sprintf("no Field in file %s is mapped to dataSet", $fileName);
+                $message = sprintf('%s - mapping error: no Field in file is mapped to data set.', $importErrorMessage);
+                $details = $message;
                 break;
 
             case self::ALERT_CODE_WRONG_TYPE_MAPPING:
-                $message = sprintf("Failed to import file %s of %s to %s - mapping error", $fileName, $dataSourceName, $dataSetName);
-                $details = sprintf("Field [%s] in file %s - wrong type mapping error", $params[self::COLUMN], $fileName);
+                $message = sprintf('%s - mapping error: invalid type on field "%s".', $importErrorMessage, $params[self::COLUMN]);
+                $details = $message;
                 break;
 
             case self::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
-                $message = sprintf("Failed to import file %s of %s to %s - require error", $fileName, $dataSourceName, $dataSetName);
-                $details = sprintf("Error at column [%s] - require fields not exist in file", $params[self::COLUMN]);
+                $message = sprintf('%s - field "%s" is required but not found in file.', $importErrorMessage, $params[self::COLUMN]);
+                $details = $message;
                 break;
 
             case self::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
-                $message = sprintf("Failed to import file %s of %s to %s - filter error", $fileName, $dataSourceName, $dataSetName);
-                $details = sprintf("Wrong number format at row [%s] - column [%s]", $params[self::ROW], $params[self::COLUMN]);
+                $message = sprintf('%s - invalid number format on field "%s".', $importErrorMessage, $params[self::COLUMN]);
+                $details = $message;
                 break;
             case self::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE:
-                $message = sprintf("Failed to import file %s of %s to %s - transform error", $fileName, $dataSourceName, $dataSetName);
-                $details = sprintf("Wrong date format at row [%s] - column [%s]", $params[self::ROW], $params[self::COLUMN]);
+                $message = sprintf('%s - invalid date format on field "%s".', $importErrorMessage, $params[self::COLUMN]);
+                $details = $message;
                 break;
 
             case self::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND:
-                $message = sprintf("Failed to import file %s of %s to %s - no header found error", $fileName, $dataSourceName, $dataSetName);
+                $message = sprintf('%s - no header found.', $importErrorMessage);
                 $details = $message;
                 break;
 
             case self::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND:
-                $message = sprintf("Failed to import file %s of %s to %s - can't find data error", $fileName, $dataSourceName, $dataSetName);
+                $message = sprintf('%s - no data found.', $importErrorMessage);
                 $details = $message;
                 break;
 
-            case self::ALERT_CODE_UN_EXPECTED_ERROR:
-                $message = sprintf("Failed to import file %s of %s to %s - error: %s", $fileName, $dataSourceName, $dataSetName, $params[self::MESSAGE]);
+            case self::ALERT_CODE_FILE_NOT_FOUND:
+                $message = sprintf('%s - error: %s.', $importErrorMessage, ' file does not exist ');
                 $details = $message;
                 break;
 

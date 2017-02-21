@@ -11,6 +11,11 @@ use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\ImportHistoryInterface;
+use UR\Service\DataSet\TransformType;
+use UR\Service\DataSource\Collection;
+use UR\Service\Parser\ParserConfig;
+use UR\Service\Parser\Transformer\Column\DateFormat;
+use UR\Service\Parser\Transformer\Column\NumberFormat;
 
 /**
  * @Rest\RouteResource("importhistory")
@@ -126,7 +131,9 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
         /**@var ImportHistoryInterface $importHistory */
         $importHistory = $this->one($id);
         $importHistoryRepository = $this->get('ur.repository.import_history');
-        return $importHistoryRepository->getImportedData($importHistory);
+        $results = $importHistoryRepository->getImportedData($importHistory);
+
+        return $this->buildImportedData($results, $importHistory);
     }
 
     /**
@@ -180,5 +187,57 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.import_history');
+    }
+
+    private function buildImportedData(array $results, ImportHistoryInterface $importHistory)
+    {
+        $dimensions = $importHistory->getDataSet()->getDimensions();
+        $metrics = $importHistory->getDataSet()->getMetrics();
+        $fields = array_merge($dimensions, $metrics);
+
+        if (count($results) < 1) {
+            return [array_fill_keys(array_keys($fields), "")];
+        }
+
+        $result = $results[0];
+        $parserConfig = new ParserConfig();
+        $collection = new Collection($results);
+        foreach ($result as $column => $row) {
+            $parserConfig->addColumn($column);
+        }
+
+        $connDataSources = $importHistory->getDataSet()->getConnectedDataSources();
+        $connDataSource = null;
+        foreach ($connDataSources as $item) {
+            if ($item->getDataSource()->getId() === $importHistory->getDataSourceEntry()->getDataSource()->getId()) {
+                $connDataSource = $item;
+                break;
+            }
+        }
+
+        $transforms = $connDataSource->getTransforms();
+        foreach ($transforms as $transform) {
+            if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE])) {
+                if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
+                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new DateFormat('Y-m-d', $transform[TransformType::TO]));
+                    unset($fields[$transform[TransformType::FIELD]]);
+                }
+
+                if (strcmp($transform[TransformType::TYPE], TransformType::NUMBER) === 0) {
+                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new NumberFormat($transform[TransformType::DECIMALS], $transform[TransformType::THOUSANDS_SEPARATOR]));
+                }
+            }
+        }
+
+        foreach ($fields as $field => $type) {
+            if (strcmp($type, TransformType::DATE) === 0) {
+                $parserConfig->addTransformColumn($field, new DateFormat('Y-m-d', 'Y-m-d'));
+            }
+        }
+
+        $parser = $this->get('ur.service.parser');
+        $collection = $parser->parse($collection, $parserConfig, $connDataSource);
+
+        return $collection->getRows();
     }
 }

@@ -13,6 +13,7 @@ use UR\Service\Alert\ProcessAlert;
 use UR\Service\DataSet\Type;
 use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\DTO\Collection;
+use UR\Service\Import\ImportDataException;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
@@ -137,9 +138,7 @@ class Parser implements ParserInterface
                         }
 
                         if (!is_numeric($row[$columnsMapping[$dsColumn]])) {
-                            return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_WRONG_TYPE_MAPPING,
-                                ProcessAlert::ROW => $cur_row + 2,
-                                ProcessAlert::COLUMN => $columnsMapping[$dsColumn]);
+                            throw new ImportDataException(ProcessAlert::ALERT_CODE_WRONG_TYPE_MAPPING, $cur_row + 2, $columnsMapping[$dsColumn]);
                         }
                     }
                 }
@@ -155,9 +154,7 @@ class Parser implements ParserInterface
                 foreach ($filters as $filter) {
                     $filterResult = $filter->filter($row[$column]);
                     if ($filterResult > 1) {
-                        return array(ProcessAlert::ERROR => $filterResult,
-                            ProcessAlert::ROW => $cur_row + 2,
-                            ProcessAlert::COLUMN => $column);
+                        throw new ImportDataException($filterResult, $cur_row + 2, $column);
                     } else {
                         $isValidFilter = $isValidFilter & $filterResult;
                     }
@@ -256,9 +253,7 @@ class Parser implements ParserInterface
                 foreach ($transforms as $transform) {
                     $row[$columnsMapping[$column]] = $transform->transform($row[$columnsMapping[$column]]);
                     if ($row[$columnsMapping[$column]] === 2) {
-                        return array(ProcessAlert::ERROR => ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE,
-                            ProcessAlert::ROW => $cur_row + 2,
-                            ProcessAlert::COLUMN => $columnsMapping[$column]);
+                        throw new ImportDataException(ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, $cur_row + 2, $columnsMapping[$column]);
                     }
                 }
             }

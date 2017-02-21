@@ -35,14 +35,16 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     private $uploadFileDir;
     private $phpExcel;
     protected $workerManager;
+    protected $kernelRootDir;
 
-    public function __construct(ObjectManager $om, DataSourceEntryRepositoryInterface $repository, Manager $workerManager, $uploadFileDir, Factory $phpExcel)
+    public function __construct(ObjectManager $om, DataSourceEntryRepositoryInterface $repository, Manager $workerManager, $uploadFileDir, Factory $phpExcel, $kernelRootDir)
     {
         $this->om = $om;
         $this->repository = $repository;
         $this->workerManager = $workerManager;
         $this->uploadFileDir = $uploadFileDir;
         $this->phpExcel = $phpExcel;
+        $this->kernelRootDir = $kernelRootDir;
     }
 
     /**
@@ -129,7 +131,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $file->move($uploadPath, $name);
             $filePath = $uploadPath . '/' . $name;
 
-            $convertResult = $this->convertToUtf8($filePath);
+            $convertResult = $this->convertToUtf8($filePath, $this->kernelRootDir);
             if ($convertResult) {
                 $newFields = $this->getNewFieldsFromFiles($filePath, $dataSource);
                 unlink($filePath);
@@ -192,7 +194,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
         $filePath = $path . '/' . $name;
 
-        $convertResult = $this->convertToUtf8($filePath);
+        $convertResult = $this->convertToUtf8($filePath, $this->kernelRootDir);
         if (!$convertResult) {
             throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $origin_name));
         }
