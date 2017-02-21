@@ -101,6 +101,7 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
                 
                 continue;
             }
+            
             $value = $report[$this->getFieldName()];
             $replacedValue = $this->replaceText($value, $this->getPosition(), $this->getSearchField(), $this->getReplaceWith());
 
@@ -117,7 +118,6 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
         }
 
         $collection->setRows($reports);
-
     }
 
     /**
