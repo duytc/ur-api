@@ -4,6 +4,7 @@
 namespace UR\Model\Core;
 
 
+use Doctrine\Common\Collections\ArrayCollection;
 use UR\Model\User\Role\PublisherInterface;
 
 class ReportView implements ReportViewInterface
@@ -22,11 +23,6 @@ class ReportView implements ReportViewInterface
      * @var string
      */
     protected $alias;
-
-    /**
-     * @var array
-     */
-//    protected $dataSets;
 
     /**
      * formatted as
@@ -60,19 +56,9 @@ class ReportView implements ReportViewInterface
     protected $weightedCalculations;
 
     /**
-     * @var array
-     */
-//    protected $filters;
-
-    /**
      * @var boolean
      */
     protected $multiView;
-
-    /**
-     * @var array
-     */
-//    protected $reportViews;
 
     /**
      * @var array
@@ -120,6 +106,10 @@ class ReportView implements ReportViewInterface
     protected $publisher;
 
     protected $reportViewMultiViews;
+
+    /**
+     * @var array
+     */
     protected $reportViewDataSets;
 
     /**
@@ -138,6 +128,7 @@ class ReportView implements ReportViewInterface
         $this->multiView = false;
         $this->sharedKeysConfig = [];
         $this->joinBy = [];
+        $this->reportViewDataSets = new ArrayCollection();
     }
 
     /**
@@ -181,23 +172,6 @@ class ReportView implements ReportViewInterface
         $this->alias = $alias;
         return $this;
     }
-
-    /**
-     * @inheritdoc
-     */
-//    public function getDataSets()
-//    {
-//        return $this->dataSets;
-//    }
-
-    /**
-     * @inheritdoc
-     */
-//    public function setDataSets($dataSets)
-//    {
-//        $this->dataSets = $dataSets;
-//        return $this;
-//    }
 
     /**
      * @inheritdoc
@@ -287,23 +261,6 @@ class ReportView implements ReportViewInterface
     /**
      * @inheritdoc
      */
-//    public function getFilters()
-//    {
-//        return $this->filters;
-//    }
-
-    /**
-     * @inheritdoc
-     */
-//    public function setFilters($filters)
-//    {
-//        $this->filters = $filters;
-//        return $this;
-//    }
-
-    /**
-     * @inheritdoc
-     */
     public function isMultiView()
     {
         return $this->multiView;
@@ -317,23 +274,6 @@ class ReportView implements ReportViewInterface
         $this->multiView = $multiView;
         return $this;
     }
-
-    /**
-     * @inheritdoc
-     */
-//    public function getReportViews()
-//    {
-//        return $this->reportViews;
-//    }
-
-    /**
-     * @inheritdoc
-     */
-//    public function setReportViews($reportViews)
-//    {
-//        $this->reportViews = $reportViews;
-//        return $this;
-//    }
 
     /**
      * @inheritdoc

@@ -4,6 +4,7 @@
 namespace UR\Model\Core;
 
 
+use Doctrine\ORM\PersistentCollection;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 
@@ -197,7 +198,7 @@ interface ReportViewInterface extends ModelInterface
     public function setSubReportsIncluded($subReportsIncluded);
 
     /**
-     * @return ReportViewMultiViewInterface[]
+     * @return PersistentCollection
      */
     public function getReportViewMultiViews();
 
@@ -208,7 +209,7 @@ interface ReportViewInterface extends ModelInterface
     public function setReportViewMultiViews($reportViewMultiViews);
 
     /**
-     * @return mixed
+     * @return PersistentCollection
      */
     public function getReportViewDataSets();
 

@@ -8,21 +8,12 @@ UR\Entity\Core\ReportView:
             generator:
                 strategy: AUTO
     fields:
-#        dataSets:
-#            type: json_array
-#            nullable: true
         transforms:
             type: json_array
             nullable: true
         weightedCalculations:
             type: json_array
             nullable: true
-#        filters:
-#            type: json_array
-#            nullable: true
-#        reportViews:
-#            type: json_array
-#            nullable: true
         metrics:
             type: json_array
             nullable: true

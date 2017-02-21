@@ -8,7 +8,6 @@ use UR\Model\Core\ReportView as ReportViewModel;
 class ReportView extends ReportViewModel
 {
     protected $id;
-//    protected $dataSets;
     protected $joinBy;
     protected $name;
     protected $alias;
@@ -19,8 +18,6 @@ class ReportView extends ReportViewModel
     protected $showInTotal;
     protected $dimensions;
     protected $metrics;
-//    protected $reportViews;
-//    protected $filters;
     protected $multiView;
     protected $formats;
     protected $fieldTypes;

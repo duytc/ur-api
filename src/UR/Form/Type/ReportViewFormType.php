@@ -3,6 +3,9 @@
 namespace UR\Form\Type;
 
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -16,17 +19,31 @@ use UR\Model\User\Role\AdminInterface;
 
 class ReportViewFormType extends AbstractRoleSpecificFormType
 {
+    private $originalReportViewDataSets;
+    private $originalReportViewMultiViews;
+    /**
+     * @var EntityManagerInterface
+     */
+    private $em;
+
+    /**
+     * ReportViewFormType constructor.
+     * @param EntityManagerInterface $em
+     */
+    public function __construct(EntityManagerInterface $em)
+    {
+        $this->em = $em;
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-//            ->add('dataSets')
             ->add('name')
             ->add('alias')
             ->add('transforms')
             ->add('joinBy')
             ->add('weightedCalculations')
             ->add('multiView')
-//            ->add('reportViews')
             ->add('showInTotal')
             ->add('formats')
             ->add('fieldTypes')
@@ -56,6 +73,38 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
                     )
             );
         };
+
+        $builder->addEventListener(
+            FormEvents::PRE_SET_DATA,
+            function (FormEvent $event) {
+                /** @var ReportViewInterface $reportView */
+                $reportView = $event->getData();
+                $this->originalReportViewDataSets = $reportView->getReportViewDataSets();
+                $this->originalReportViewMultiViews = $reportView->getReportViewMultiViews();
+                if ($this->originalReportViewDataSets === null) {
+                    $this->originalReportViewDataSets = [];
+                }
+
+                if ($this->originalReportViewMultiViews === null) {
+                    $this->originalReportViewMultiViews = [];
+                }
+            }
+        );
+
+        $builder->addEventListener(
+            FormEvents::PRE_SUBMIT,
+            function (FormEvent $event) {
+                foreach($this->originalReportViewDataSets as $reportViewDataSet) {
+                    $this->em->remove($reportViewDataSet);
+                }
+
+                foreach($this->originalReportViewMultiViews as $reportViewMultiView) {
+                    $this->em->remove($reportViewMultiView);
+                }
+
+                $this->em->flush();
+            }
+        );
 
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,
