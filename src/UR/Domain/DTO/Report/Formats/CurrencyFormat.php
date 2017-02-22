@@ -103,7 +103,7 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
     private function formatOneCurrency($fieldValue)
     {
         // do not format currency if value not set
-        if (null == $fieldValue || '' == $fieldValue) {
+        if (is_null($fieldValue) || $fieldValue ==='') {
             return $fieldValue;
         }
 
