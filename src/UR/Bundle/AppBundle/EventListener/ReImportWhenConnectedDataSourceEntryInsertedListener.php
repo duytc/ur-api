@@ -3,6 +3,7 @@
 namespace UR\Bundle\AppBundle\EventListener;
 
 
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use UR\Model\Core\ConnectedDataSourceInterface;
@@ -52,7 +53,7 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
             return;
         }
 
-        $entryIds = [];
+        $latestDataSourceEntryIds = [];
         foreach ($this->insertedEntities as $entity) {
             if (!$entity instanceof ConnectedDataSourceInterface) {
                 continue;
@@ -62,35 +63,58 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
             }
 
             if ($entity->getDataSource()->getEnable()) {
-                $entries = $entity->getDataSource()->getDataSourceEntries();
-                $latestImportFile = $this->getLatestImportDataSourceEntry($entries);
-                $entryIds[] = $latestImportFile->getId();
+                /** @var Collection|DataSourceEntryInterface[] $dataSourceEntries */
+                $dataSourceEntries = $entity->getDataSource()->getDataSourceEntries();
+                if ($dataSourceEntries instanceof Collection) {
+                    $dataSourceEntries = $dataSourceEntries->toArray();
+                }
+
+                $latestDataSourceEntry = $this->getLatestDataSourceEntry($dataSourceEntries);
+
+                if (!$latestDataSourceEntry instanceof DataSourceEntryInterface) {
+                    continue;
+                }
+
+                $latestDataSourceEntryIds[] = $latestDataSourceEntry->getId();
             }
         }
-        // running import data
-        if (count($entryIds) < 1)
-            return;
 
-        $this->workerManager->reImportWhenNewEntryReceived($entryIds);
+        // running import data
+        if (count($latestDataSourceEntryIds) < 1) {
+            return;
+        }
+
+        $this->workerManager->reImportWhenNewEntryReceived($latestDataSourceEntryIds);
 
         // reset for new onFlush event
         $this->insertedEntities = [];
     }
 
-
     /**
-     * @param DataSourceEntryInterface[] $entries
-     * @return DataSourceEntryInterface
+     * getLatestDataSourceEntry
+     *
+     * @param DataSourceEntryInterface[] $dataSourceEntries
+     * @return DataSourceEntryInterface|false
      */
-    public function getLatestImportDataSourceEntry($entries)
+    private function getLatestDataSourceEntry(array $dataSourceEntries)
     {
-        $latest = $entries[0];
-        for ($index = 1; $index < count($entries); $index++){
-            $entry = $entries[$index];
-            if ($latest->getId() < $entry->getId()){
-                $latest = $entry;
+        $latestDataSourceEntry = reset($dataSourceEntries);
+
+        foreach ($dataSourceEntries as $dataSourceEntry) {
+            if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+                continue;
+            }
+
+            // sure latestDataSourceEntry is DataSourceEntry instant
+            if (!$latestDataSourceEntry instanceof DataSourceEntryInterface) {
+                $latestDataSourceEntry = $dataSourceEntry;
+            }
+
+            if ($latestDataSourceEntry->getId() < $dataSourceEntry->getId()) {
+                $latestDataSourceEntry = $dataSourceEntry;
             }
         }
-        return $latest;
+
+        return $latestDataSourceEntry;
     }
 }
