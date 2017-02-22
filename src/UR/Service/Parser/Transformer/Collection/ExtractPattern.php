@@ -7,6 +7,7 @@ use UR\Service\DTO\Collection;
 
 class ExtractPattern extends AbstractTransform implements CollectionTransformerInterface
 {
+    const FIRST_MATCH = 0;
     const FILE_NAME_FIELD = '__filename';
     const CASE_INSENSITIVE = 'i';
     const MULTI_LINE = 'm';
@@ -42,11 +43,11 @@ class ExtractPattern extends AbstractTransform implements CollectionTransformerI
     protected $isMultiLine;
 
     /**
-     * @var integer
+     * @var string
      */
-    protected $matchedPosition;
+    protected $replacementValue;
 
-    public function __construct($field, $pattern, $targetField, $isOverride = true, $isCaseInsensitive, $isMultiLine, $matchedPosition, $priority)
+    public function __construct($field, $pattern, $targetField, $isOverride = true, $isCaseInsensitive, $isMultiLine, $replacementValue, $priority)
     {
         parent::__construct($priority);
         $this->field = $field;
@@ -63,7 +64,7 @@ class ExtractPattern extends AbstractTransform implements CollectionTransformerI
             $this->pattern .= self::MULTI_LINE;
         }
 
-        $this->matchedPosition = $matchedPosition < 1 ? 1 : $matchedPosition;
+        $this->replacementValue = $replacementValue;
     }
 
     public function transform(Collection $collection)
@@ -96,21 +97,23 @@ class ExtractPattern extends AbstractTransform implements CollectionTransformerI
 
     private function getRegexValue($str)
     {
-        try {
-            preg_match($this->pattern, $str, $matches);
-            if ($matches === null) {
-                return null;
-            }
-
-            if (count($matches) < $this->matchedPosition + 1) {
-                return null;
-            }
-
-        } catch (Exception $exception) {
+        $matched = preg_match($this->pattern, $str, $matches);
+        if ($matched < 1) {
             return null;
         }
 
-        return $matches[$this->matchedPosition];
+        $str = $matches[self::FIRST_MATCH];
+        // convert replacement value if it has back references form
+        $this->replacementValue = preg_replace_callback('(\[[0-9]\])', function ($matches) {
+            return preg_replace('/\[([0-9])\]/', '$$1', $matches[0]);
+        }, $this->replacementValue);
+
+        try {
+            $result = preg_replace($this->pattern, $this->replacementValue, $str);
+            return $result;
+        } catch (Exception $exception) {
+            return null;
+        }
     }
 
     /**

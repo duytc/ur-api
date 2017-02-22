@@ -33,7 +33,7 @@ final class TransformType
     const REG_EXPRESSION = 'searchPattern';
     const IS_REG_EXPRESSION_CASE_INSENSITIVE = 'isCaseInsensitive';
     const IS_REG_EXPRESSION_MULTI_LINE = 'isMultiLine';
-    const MATCHED_POSITION = 'matchedPosition';
+    const REPLACEMENT_VALUE = 'replacementValue';
     const POSITION = 'position';
     const REPLACE_WITH = 'replaceWith';
     const TARGET_FIELD = 'targetField';

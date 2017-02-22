@@ -169,7 +169,7 @@ class ConnectedDataSourceCollectionTransform
                 !array_key_exists(TransformType::IS_OVERRIDE, $extractPatternTransform) ? false : $extractPatternTransform[TransformType::IS_OVERRIDE],
                 !array_key_exists(TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE, $extractPatternTransform) ? false : $extractPatternTransform[TransformType::IS_REG_EXPRESSION_CASE_INSENSITIVE],
                 !array_key_exists(TransformType::IS_REG_EXPRESSION_MULTI_LINE, $extractPatternTransform) ? false : $extractPatternTransform[TransformType::IS_REG_EXPRESSION_MULTI_LINE],
-                !array_key_exists(TransformType::MATCHED_POSITION, $extractPatternTransform) ? 1 : $extractPatternTransform[TransformType::MATCHED_POSITION],
+                !array_key_exists(TransformType::REPLACEMENT_VALUE, $extractPatternTransform) ? 1 : $extractPatternTransform[TransformType::REPLACEMENT_VALUE],
                 $priority
             );
         }
