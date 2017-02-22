@@ -7,6 +7,7 @@ use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
 use InvalidArgumentException;
 use Liuggio\ExcelBundle\Factory;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Entity\Core\ImportHistory;
 use UR\Model\Core\ConnectedDataSourceInterface;
@@ -22,6 +23,8 @@ use UR\Service\DataSource\Json;
 use UR\Service\Parser\ImportUtils;
 use UR\Service\Parser\Parser;
 use UR\Service\Parser\ParserConfig;
+use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Worker\Manager;
 
 class AutoImportData implements AutoImportDataInterface
@@ -71,7 +74,7 @@ class AutoImportData implements AutoImportDataInterface
         $this->parser = $parser;
     }
 
-    public function autoCreateDataImport($connectedDataSources, DataSourceEntryInterface $dataSourceEntry)
+    public function autoCreateDataImport(DataSourceEntryInterface $dataSourceEntry)
     {
         $conn = $this->em->getConnection();
         $dataSetLocator = new Locator($conn);
@@ -83,7 +86,7 @@ class AutoImportData implements AutoImportDataInterface
         /**
          * @var ConnectedDataSourceInterface $connectedDataSource
          */
-        foreach ($connectedDataSources as $connectedDataSource) {
+        foreach ($dataSourceEntry->getDataSource()->getConnectedDataSources() as $connectedDataSource) {
             if ($connectedDataSource->getDataSet() === null) {
                 $this->logger->doExceptionLogging('not found Dataset with this ID');
                 throw new InvalidArgumentException('not found Dataset with this ID');
@@ -96,15 +99,15 @@ class AutoImportData implements AutoImportDataInterface
 
             // mapping
             $parserConfig = new ParserConfig();
-            $publisherId = $dataSourceEntry->getDataSource()->getPublisherId();
+            $publisherId = $connectedDataSource->getDataSource()->getPublisherId();
             $importHistories = $this->importHistoryManager->getImportHistoryByDataSourceEntry($dataSourceEntry, $connectedDataSource->getDataSet());
             $importHistoryEntity = new ImportHistory();
 
             $params = array(
                 ProcessAlert::DATA_SET_ID => $connectedDataSource->getDataSet()->getId(),
                 ProcessAlert::DATA_SET_NAME => $connectedDataSource->getDataSet()->getName(),
-                ProcessAlert::DATA_SOURCE_ID => $dataSourceEntry->getDataSource()->getId(),
-                ProcessAlert::DATA_SOURCE_NAME => $dataSourceEntry->getDataSource()->getName(),
+                ProcessAlert::DATA_SOURCE_ID => $connectedDataSource->getDataSource()->getId(),
+                ProcessAlert::DATA_SOURCE_NAME => $connectedDataSource->getDataSource()->getName(),
                 ProcessAlert::ENTRY_ID => $dataSourceEntry->getId(),
                 ProcessAlert::FILE_NAME => $dataSourceEntry->getFileName()
             );
@@ -115,10 +118,10 @@ class AutoImportData implements AutoImportDataInterface
                     throw  new ImportDataException(ProcessAlert::ALERT_CODE_FILE_NOT_FOUND, null, null);
                 }
 
-                if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'csv') === 0) {
+                if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'csv') === 0) {
                     /**@var Csv $file */
                     $file = new Csv($filePath);
-                } else if (strcmp($dataSourceEntry->getDataSource()->getFormat(), 'excel') === 0) {
+                } else if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'excel') === 0) {
                     /**@var Excel $file */
                     $file = new Excel($filePath, $this->phpExcel, $this->chunkSize);
                 } else {
@@ -199,6 +202,167 @@ class AutoImportData implements AutoImportDataInterface
                     $this->workerManager->processAlert($e->getAlertCode(), $publisherId, $params);
                 }
             }
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry)
+    {
+        $conn = $this->em->getConnection();
+        $dataSetImporter = new Importer($conn, $this->batchSize);
+
+        $importUtils = new ImportUtils();
+
+        /**
+         * @var ConnectedDataSourceInterface $connectedDataSource
+         */
+        if ($connectedDataSource->getDataSet() === null) {
+            $this->logger->doExceptionLogging('not found Dataset with this ID');
+            throw new InvalidArgumentException('not found Dataset with this ID');
+        }
+
+        // mapping
+        $parserConfig = new ParserConfig();
+        $params = array(
+            ProcessAlert::DATA_SET_ID => $connectedDataSource->getDataSet()->getId(),
+            ProcessAlert::DATA_SET_NAME => $connectedDataSource->getDataSet()->getName(),
+            ProcessAlert::DATA_SOURCE_ID => $connectedDataSource->getDataSource()->getId(),
+            ProcessAlert::DATA_SOURCE_NAME => $connectedDataSource->getDataSource()->getName(),
+            ProcessAlert::ENTRY_ID => "",
+            ProcessAlert::FILE_NAME => ""
+        );
+
+        try {
+            $filePath = $this->uploadFileDir . $dataSourceEntry->getPath();
+            if (!file_exists($filePath)) {
+                return "";
+            }
+
+            if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'csv') === 0) {
+                /**@var Csv $file */
+                $file = new Csv($filePath);
+            } else if (strcmp($connectedDataSource->getDataSource()->getFormat(), 'excel') === 0) {
+                /**@var Excel $file */
+                $file = new Excel($filePath, $this->phpExcel, $this->chunkSize);
+            } else {
+                $file = new Json($filePath);
+            }
+
+            $columns = $file->getColumns();
+            $dataRow = $file->getDataRow();
+            if (!is_array($columns) || count($columns) < 1) {
+                throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND, null, null);
+            }
+
+            if ($dataRow < 1) {
+                throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND, null, null);
+            }
+
+            $importUtils->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $parserConfig, $columns);
+            if (count($parserConfig->getAllColumnMappings()) === 0) {
+                throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL, null, null);
+            }
+
+            $validRequires = true;
+            foreach ($connectedDataSource->getRequires() as $require) {
+                if (!array_key_exists($require, $parserConfig->getAllColumnMappings())) {
+                    $validRequires = false;
+                    break;
+                }
+            }
+
+            if (!$validRequires) {
+                // to do alert
+                if (in_array(ConnectedDataSourceRepository::IMPORT_FAILURE, $connectedDataSource->getAlertSetting())) {
+                    throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL, null, null);
+                }
+            }
+
+            //filter config
+            $importUtils->createFilterConfigForConnectedDataSource($connectedDataSource, $parserConfig);
+
+            //transform config
+            $parserConfig->setUserReorderTransformsAllowed($connectedDataSource->isUserReorderTransformsAllowed());
+            $importUtils->createTransformConfigForConnectedDataSource($connectedDataSource, $parserConfig, $dataSourceEntry);
+
+
+            // parser
+            $collectionParser = $this->parser->parse($file, $parserConfig, $connectedDataSource);
+
+            // import
+            $dimensions = $connectedDataSource->getDataSet()->getDimensions();
+            $metrics = $connectedDataSource->getDataSet()->getMetrics();
+            $allFields = array_merge($dimensions, $metrics);
+
+            $collectionParser = $dataSetImporter->getRawData($collectionParser, $allFields, $connectedDataSource);
+            $rows = $collectionParser->getRows();
+            $newColumns = $collectionParser->getColumns();
+
+            foreach ($connectedDataSource->getColumnTransforms()->getNumberFormatTransforms() as $numberFormatTransform) {
+                $parserConfig->addTransformColumn($numberFormatTransform->getField(), $numberFormatTransform);
+            }
+
+            $transColumns = array_flip($newColumns);
+
+            foreach ($rows as &$row) {
+                foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
+                    /** @var ColumnTransformerInterface[] $transforms */
+                    if (!array_key_exists($column, $transColumns)) {
+                        continue;
+                    }
+
+                    foreach ($transforms as $transform) {
+                        if ($transform instanceof DateFormat) {
+                            $transform->setFromDateFormat('Y-m-d');
+                            $transform->setDateFormat($transform->getToDateFormat());
+                        }
+
+                        $row[$transColumns[$column]] = $transform->transform($row[$transColumns[$column]]);
+                        if ($row[$transColumns[$column]] === 2) {
+                            throw new ImportDataException(ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, 0, $column);
+                        }
+                    }
+                }
+            }
+
+            if (count($rows) < 1) {
+                $allFields = array_map(function ($column) {
+                    return null;
+                }, $allFields);
+
+                $returnHeader[] = $allFields;
+
+                return $returnHeader;
+            }
+
+            foreach ($rows as &$row) {
+                $row = array_intersect_key($row, $newColumns);
+
+                $keys = array_map(function ($key) use ($newColumns) {
+                    return $newColumns[$key];
+                }, array_keys($row));
+
+                $row = array_combine($keys, $row);
+                foreach ($allFields as $field => $type) {
+                    if (!array_key_exists($field, $row)) {
+                        $row[$field] = null;
+                    }
+                }
+            }
+
+            return $rows;
+        } catch (ImportDataException $e) {
+            if ($e->getAlertCode() === null) {
+                $message = $e->getMessage();
+            } else {
+                $params[ProcessAlert::ROW] = $e->getRow();
+                $params[ProcessAlert::COLUMN] = $e->getColumn();
+                $message = $this->logger->getDryRunMessage($e->getAlertCode(), $e->getRow(), $e->getColumn());
+            }
+
+            throw new BadRequestHttpException($message);
         }
     }
 }

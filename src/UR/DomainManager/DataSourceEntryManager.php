@@ -3,10 +3,8 @@
 namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
-use Liuggio\ExcelBundle\Factory;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\HttpFoundation\FileBag;
 use UR\Behaviors\ConvertFileEncoding;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
@@ -18,33 +16,25 @@ use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use ReflectionClass;
 use UR\Repository\Core\DataSourceRepository;
 use UR\Service\Alert\ProcessAlert;
-use UR\Service\DataSource\Csv;
-use UR\Service\DataSource\DataSourceType;
-use UR\Service\DataSource\Excel;
-use UR\Service\DataSource\Json;
+use UR\Service\Import\ImportService;
 use UR\Worker\Manager;
 
 class DataSourceEntryManager implements DataSourceEntryManagerInterface
 {
     use ConvertFileEncoding;
-    const UPLOAD = 'upload';
-    const DELETE = 'delete';
-
     protected $om;
     protected $repository;
     private $uploadFileDir;
-    private $phpExcel;
-    protected $workerManager;
-    protected $kernelRootDir;
+    private $workerManager;
+    private $importService;
 
-    public function __construct(ObjectManager $om, DataSourceEntryRepositoryInterface $repository, Manager $workerManager, $uploadFileDir, Factory $phpExcel, $kernelRootDir)
+    public function __construct(ObjectManager $om, DataSourceEntryRepositoryInterface $repository, Manager $workerManager, $uploadFileDir, ImportService $importService)
     {
         $this->om = $om;
         $this->repository = $repository;
         $this->workerManager = $workerManager;
         $this->uploadFileDir = $uploadFileDir;
-        $this->phpExcel = $phpExcel;
-        $this->kernelRootDir = $kernelRootDir;
+        $this->importService = $importService;
     }
 
     /**
@@ -72,8 +62,8 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     {
         if (!$dataSourceEntry instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
         $this->om->remove($dataSourceEntry);
-        $newFields = $this->getNewFieldsFromFiles($this->uploadFileDir . $dataSourceEntry->getPath(), $dataSourceEntry->getDataSource());
-        $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSourceEntry->getDataSource()->getDetectedFields(), DataSourceEntryManager::DELETE);
+        $newFields = $this->importService->getNewFieldsFromFiles($this->uploadFileDir . $dataSourceEntry->getPath(), $dataSourceEntry->getDataSource());
+        $detectedFields = $this->importService->detectedFieldsForDataSource($newFields, $dataSourceEntry->getDataSource()->getDetectedFields(), ImportService::DELETE);
         $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
         $this->om->flush();
         if (file_exists($this->uploadFileDir . $dataSourceEntry->getPath())) {
@@ -109,46 +99,6 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     /**
      * @inheritdoc
      */
-    public function detectedFieldsFromFiles(FileBag $files, $uploadPath, $dirItem, DataSourceInterface $dataSource)
-    {
-        $keys = $files->keys();
-        $currentFields = [];
-
-        foreach ($keys as $key) {
-            /**@var UploadedFile $file */
-            $file = $files->get($key);
-
-            $error = $this->validateFileUpload($file, $dataSource);
-            $origin_name = $file->getClientOriginalName();
-            if ($error > 0) {
-                throw new \Exception(sprintf("File %s is not valid - wrong format", $origin_name));
-            }
-
-            $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
-
-            $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
-
-            $file->move($uploadPath, $name);
-            $filePath = $uploadPath . '/' . $name;
-
-            $convertResult = $this->convertToUtf8($filePath, $this->kernelRootDir);
-            if ($convertResult) {
-                $newFields = $this->getNewFieldsFromFiles($filePath, $dataSource);
-                unlink($filePath);
-                if (count($newFields) < 1) {
-                    throw new \Exception(sprintf("Cannot detect header of File %s", $origin_name));
-                }
-
-                $currentFields = $this->detectedFieldsForDataSource($newFields, $currentFields, self::UPLOAD);
-            }
-        }
-
-        return $currentFields;
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function uploadDataSourceEntryFile(UploadedFile $file, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile = true, $metadata = null)
     {
         /* validate via type */
@@ -156,7 +106,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             throw new \Exception(sprintf("receivedVia %s is not supported", $receivedVia));
         }
 
-        $error = $this->validateFileUpload($file, $dataSource);
+        $error = $this->importService->validateFileUpload($file, $dataSource);
         $origin_name = $file->getClientOriginalName();
         $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
 
@@ -194,7 +144,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
         $filePath = $path . '/' . $name;
 
-        $convertResult = $this->convertToUtf8($filePath, $this->kernelRootDir);
+        $convertResult = $this->convertToUtf8($filePath, $this->importService->getKernelRootDir());
         if (!$convertResult) {
             throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $origin_name));
         }
@@ -213,8 +163,8 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             ->setHashFile($hash)
             ->setMetaData($metadata);
 
-        $newFields = $this->getNewFieldsFromFiles($filePath, $dataSource);
-        $detectedFields = $this->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), DataSourceEntryManager::UPLOAD);
+        $newFields = $this->importService->getNewFieldsFromFiles($filePath, $dataSource);
+        $detectedFields = $this->importService->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), ImportService::UPLOAD);
         $dataSource->setDetectedFields($detectedFields);
 
         $dataSourceEntry->setDataSource($dataSource);
@@ -247,96 +197,6 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     public function getDataSourceEntryForPublisher(PublisherInterface $publisher, $limit = null, $offset = null)
     {
         return $this->repository->getDataSourceEntriesForPublisher($publisher, $limit, $offset);
-    }
-
-    public function getNewFieldsFromFiles($inputFile, DataSourceInterface $dataSource)
-    {
-        /**@var \UR\Service\DataSource\DataSourceInterface $file */
-
-        if (strcmp($dataSource->getFormat(), 'csv') === 0) {
-            /**@var Csv $file */
-            $file = new Csv($inputFile);
-        } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
-            /**@var Excel $file */
-            $file = new Excel($inputFile, $this->phpExcel, 5000);
-        } else if (strcmp($dataSource->getFormat(), 'json') === 0) {
-            $file = new Json($inputFile);
-        }
-
-        $newFields = [];
-        $columns = $file->getColumns();
-        if ($columns === null) {
-            return [];
-
-        }
-
-        $newFields = array_merge($newFields, $columns);
-        $newFields = array_unique($newFields);
-        $newFields = array_filter($newFields, function ($value) {
-            if (is_numeric($value)) {
-                return true;
-            }
-
-            return ($value !== '' && $value !== null);
-        });
-
-        return $newFields;
-    }
-
-    public function detectedFieldsForDataSource(array $newFields, array $currentFields, $option)
-    {
-        foreach ($newFields as $newField) {
-            $currentFields = $this->updateDetectedField($newField, $currentFields, $option);
-        }
-        return $currentFields;
-    }
-
-    private function updateDetectedField($newField, $detectedFields, $option)
-    {
-        $newField = strtolower(trim($newField));
-        switch ($option) {
-            case DataSourceEntryManager::UPLOAD:
-                if (!array_key_exists($newField, $detectedFields)) {
-                    $detectedFields[$newField] = 1;
-                } else {
-                    $detectedFields[$newField] += 1;
-                }
-                break;
-            case DataSourceEntryManager::DELETE:
-                if (isset($detectedFields[$newField])) {
-                    $detectedFields[$newField] -= 1;
-                    if ($detectedFields[$newField] <= 0) {
-                        unset($detectedFields[$newField]);
-                    }
-                }
-                break;
-        }
-
-        return $detectedFields;
-    }
-
-    public function validateFileUpload(UploadedFile $file, DataSourceInterface $dataSource)
-    {
-        if (strcmp(DataSourceType::DS_EXCEL_FORMAT, $dataSource->getFormat()) === 0) {
-            if (!DataSourceType::isExcelType($file->getClientOriginalExtension())) {
-                return 1;
-            }
-
-        } else if (strcmp(DataSourceType::DS_CSV_FORMAT, $dataSource->getFormat()) === 0) {
-            if (!DataSourceType::isCsvType($file->getClientOriginalExtension())) {
-                return 2;
-            }
-
-        } else if (strcmp(DataSourceType::DS_JSON_FORMAT, $dataSource->getFormat()) === 0) {
-            if (!DataSourceType::isJsonType($file->getClientOriginalExtension())) {
-                return 3;
-            }
-
-        } else {
-            return 4;
-        }
-
-        return 0;
     }
 
     private function fileAlreadyImported(DataSourceInterface $dataSource, $hash)

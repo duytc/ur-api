@@ -41,6 +41,7 @@ class Parser implements ParserInterface
 
         $fileCols = array_map("strtolower", $dataSource->getColumns());
         $fileCols = array_map("trim", $fileCols);
+
         $columns = array_intersect($fileCols, $parserConfig->getAllColumnMappings());
         $columns = array_map(function ($fromColumn) use ($columnFromMap) {
             return $columnFromMap[$fromColumn];
@@ -207,10 +208,12 @@ class Parser implements ParserInterface
                 null
             )
         );
+
         $this->eventDispatcher->dispatch(
             self::EVENT_NAME_PRE_TRANSFORM_COLLECTION_DATA,
             $preTransformCollectionEvent
         );
+
         $preTransformCollectionEvent = $preFilterEvent->getArguments();
         if (is_array($preTransformCollectionEvent) && array_key_exists('collection', $preTransformCollectionEvent)) {
             $collection = $preTransformCollectionEvent['collection'];
@@ -239,6 +242,7 @@ class Parser implements ParserInterface
                 null
             )
         );
+
         $this->eventDispatcher->dispatch(
             self::EVENT_NAME_PRE_TRANSFORM_COLUMN_DATA,
             $preTransformColumnEvent

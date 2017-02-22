@@ -4,6 +4,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
@@ -148,5 +149,25 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
             ->setParameter('dataSource', $dataSource)
             ->setParameter('hash', $hash);
         return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLastDataSourceEntryForConnectedDataSource(DataSourceInterface $dataSource)
+    {
+        $qb = $this->createQueryBuilder('dse');
+        $qb
+            ->orderBy('dse.id', 'DESC')
+            ->andWhere('dse.dataSource = :dataSource')
+            ->setParameter('dataSource', $dataSource);
+
+        $dataSourceEntries = $qb->getQuery()->getResult();
+
+        if (count($dataSourceEntries) < 1) {
+            return null;
+        }
+
+        return $dataSourceEntries[0];
     }
 }

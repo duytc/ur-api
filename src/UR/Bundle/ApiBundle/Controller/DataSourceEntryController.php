@@ -143,7 +143,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $dataSourceEntry = $this->one($id);
         $filePath = $this->checkFileExist($dataSourceEntry);
         $importHistoryManager = $this->get('ur.domain_manager.import_history');
-        $importHistoryManager->replayDataSourceEntryData($dataSourceEntry);
+        return $importHistoryManager->replayDataSourceEntryData($dataSourceEntry);
     }
 
     /**
@@ -224,6 +224,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
 
         if ($replay === true) {
             foreach ($ids as $id) {
+                /**@var DataSourceEntryInterface $dataSourceEntry */
                 $dataSourceEntry = $this->one($id);
                 $importHistoryManager = $this->get('ur.domain_manager.import_history');
                 $importHistoryManager->replayDataSourceEntryData($dataSourceEntry);

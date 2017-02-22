@@ -2,7 +2,7 @@
 
 namespace UR\Service\Parser\Transformer\Column;
 
-class NumberFormat implements ColumnTransformerInterface
+class NumberFormat extends AbstractCommonColumnTransform implements ColumnTransformerInterface
 {
     const SEPARATOR_COMMA = ',';
     const SEPARATOR_NONE = 'none';
@@ -16,8 +16,9 @@ class NumberFormat implements ColumnTransformerInterface
      */
     protected $thousandsSeparator;
 
-    public function __construct($decimals = 2, $thousandsSeparator = self::SEPARATOR_COMMA)
+    public function __construct($field, $decimals, $thousandsSeparator)
     {
+        parent::__construct($field);
         $this->decimals = $decimals;
         $this->thousandsSeparator = $thousandsSeparator;
     }

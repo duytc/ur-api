@@ -4,14 +4,16 @@ namespace UR\Service\Parser\Transformer\Column;
 
 use DateTime;
 
-class DateFormat implements ColumnTransformerInterface
+class DateFormat extends AbstractCommonColumnTransform implements ColumnTransformerInterface
 {
     protected $fromDateFormat;
     protected $toDateFormat;
     protected $isCustomFormatDateFrom;
+    private $dateFormat;
 
-    public function __construct($fromDateFormat = 'Y-m-d', $toDateFormat = 'Y-m-d', $isCustomFormatDateFrom = false)
+    public function __construct($field, $fromDateFormat = 'Y-m-d', $toDateFormat = 'Y-m-d', $isCustomFormatDateFrom = false)
     {
+        parent::__construct($field);
         $this->fromDateFormat = $fromDateFormat;
         $this->toDateFormat = $toDateFormat;
         $this->isCustomFormatDateFrom = $isCustomFormatDateFrom;
@@ -36,7 +38,7 @@ class DateFormat implements ColumnTransformerInterface
             return 2;
         }
 
-        return $date->format($this->toDateFormat);
+        return $date->format($this->dateFormat);
     }
 
     public function getFromDateFormat()
@@ -48,6 +50,39 @@ class DateFormat implements ColumnTransformerInterface
     {
         return $this->toDateFormat;
     }
+
+    /**
+     * @param string $fromDateFormat
+     */
+    public function setFromDateFormat(string $fromDateFormat)
+    {
+        $this->fromDateFormat = $fromDateFormat;
+    }
+
+    /**
+     * @param string $toDateFormat
+     */
+    public function setToDateFormat(string $toDateFormat)
+    {
+        $this->toDateFormat = $toDateFormat;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDateFormat()
+    {
+        return $this->dateFormat;
+    }
+
+    /**
+     * @param mixed $dateFormat
+     */
+    public function setDateFormat($dateFormat)
+    {
+        $this->dateFormat = $dateFormat;
+    }
+
 
     /**
      * convert FromDateFormat To PHP format

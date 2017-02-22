@@ -7,11 +7,14 @@ use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Entity\Core\DataSourceEntry;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Service\Import\AutoImportDataInterface;
 
 /**
  * @Rest\RouteResource("ConnectedDataSource")
@@ -80,6 +83,25 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     public function postAction(Request $request)
     {
         return $this->post($request);
+    }
+
+    /**
+     * @Rest\Post("/connecteddatasources/dryrun")
+     *
+     * @param Request $request
+     * @return mixed
+     */
+    public function postDryRunAction(Request $request)
+    {
+        $filePaths = $request->request->get('filePaths', null);
+
+        // temporary create connected data source entity (not save to database)
+        $postResult = $this->postAndReturnEntityData($request);
+        /** @var ConnectedDataSourceInterface $tempConnectedDataSource */
+        $tempConnectedDataSource = $postResult->getData();
+
+
+        return $this->handleDryRun($tempConnectedDataSource, $filePaths);
     }
 
     /**
@@ -178,5 +200,33 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.connected_data_source');
+    }
+
+    /**
+     * @param ConnectedDataSourceInterface $tempConnectedDataSource
+     * @param $filePaths
+     * @return mixed
+     */
+    private function handleDryRun(ConnectedDataSourceInterface $tempConnectedDataSource, $filePaths)
+    {
+        $dataSourceEntryManager = $this->get('ur.repository.data_source_entry');
+        $lastDataSourceEntry = $dataSourceEntryManager->getLastDataSourceEntryForConnectedDataSource($tempConnectedDataSource->getDataSource());
+
+        if (($filePaths === null || count($filePaths) < 1) && $lastDataSourceEntry === null) {
+            throw new BadRequestHttpException('cannot find any file in this data source for dry run');
+        }
+
+        // call auto import for dry run only
+        /** @var AutoImportDataInterface $autoImportService */
+        $autoImportService = $this->get('ur.worker.workers.auto_import_data');
+
+        if (is_array($filePaths) && count($filePaths) > 0) {// check if connected data source is creating new
+            $dataSourceEntry = new DataSourceEntry();
+            $dataSourceEntry->setPath($filePaths[0]);
+        } else {// use last entry
+            $dataSourceEntry = $lastDataSourceEntry;
+        }
+
+        return $autoImportService->createDryRunImportData($tempConnectedDataSource, $dataSourceEntry);
     }
 }

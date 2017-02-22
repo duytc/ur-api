@@ -87,6 +87,11 @@ interface ConnectedDataSourceInterface extends ModelInterface
     public function getCollectionTransforms();
 
     /**
+     * @return ConnectedDataSourceColumnTransform
+     */
+    public function getColumnTransforms();
+
+    /**
      * @return boolean
      */
     public function isReplayData();

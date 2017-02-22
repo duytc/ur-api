@@ -61,9 +61,9 @@ class ParserConfig
 
     public function addTransformColumn($column, ColumnTransformerInterface $transform)
     {
-        if (!$this->hasColumnMapping($column)) {
-            throw new \InvalidArgumentException('Cannot add the column transform because the column does not exist');
-        }
+//        if (!$this->hasColumnMapping($column)) {
+//            throw new \InvalidArgumentException('Cannot add the column transform because the column does not exist');
+//        }
 
         if (!array_key_exists($column, $this->columnTransforms)) {
             $this->columnTransforms[$column] = [];

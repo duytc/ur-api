@@ -50,6 +50,11 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
      */
     protected $collectionTransforms;
 
+    /**
+     * @var ConnectedDataSourceColumnTransform
+     */
+    protected $columnTransforms;
+
     public function __construct()
     {
     }
@@ -181,6 +186,15 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     {
         $this->collectionTransforms = new ConnectedDataSourceCollectionTransform($this->transforms);
         return $this->collectionTransforms;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getColumnTransforms()
+    {
+        $this->columnTransforms = new ConnectedDataSourceColumnTransform($this->transforms);
+        return $this->columnTransforms;
     }
 
     /**

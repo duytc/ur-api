@@ -32,30 +32,13 @@ class Importer
     public function importCollection(Collection $collection, Table $table, $importId, ConnectedDataSourceInterface $connectedDataSource)
     {
         $tableName = $table->getName();
-        $tableColumns = array_keys($table->getColumns());
-        $rows = array_values($collection->getRows());
         $dimensions = $connectedDataSource->getDataSet()->getDimensions();
         $metrics = $connectedDataSource->getDataSet()->getMetrics();
-        $mapFields = $connectedDataSource->getMapFields();
-        $columns = [];
-        if (count($rows) < 1) {
-            return true;
-        }
+        $allFields = array_merge($dimensions, $metrics);
+        $collection = $this->getRawData($collection, $allFields, $connectedDataSource);
+        $rows = $collection->getRows();
+        $columns = $collection->getColumns();
 
-        foreach ($rows[0] as $field => $value) {
-            if (array_key_exists($field, $mapFields)) {
-                if (in_array($mapFields[$field], $tableColumns)) {
-                    $columns[$field] = $mapFields[$field];
-                }
-            }
-
-            if (in_array($field, $collection->getColumns())) {
-                if (in_array($field, $tableColumns))
-                    $columns[$field] = $field;
-            }
-        }
-
-        $columns = array_unique($columns);
         $dimensionMapping = [];
         $metricMappings = [];
 
@@ -154,7 +137,7 @@ class Importer
         return true;
     }
 
-    function placeholders($text, $count = 0, $separator = ",")
+    private function placeholders($text, $count = 0, $separator = ",")
     {
         $result = array();
         if ($count > 0) {
@@ -166,7 +149,7 @@ class Importer
         return implode($separator, $result);
     }
 
-    function executeInsert($sql, array $values)
+    private function executeInsert($sql, array $values)
     {
         if ($this->preparedUpdateCount > 0) {
             $this->conn->commit(); //commit updates fields
@@ -183,5 +166,35 @@ class Importer
         }
         $this->conn->commit();
         $this->conn->close();
+    }
+
+    public function getRawData(Collection $collection, $allFields, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $tableColumns = array_keys($allFields);
+        $rows = array_values($collection->getRows());
+        $mapFields = $connectedDataSource->getMapFields();
+        $columns = [];
+        if (count($rows) < 1) {
+            return $collection;
+        }
+
+        foreach ($rows[0] as $field => $value) {
+            if (array_key_exists($field, $mapFields)) {
+                if (in_array($mapFields[$field], $tableColumns)) {
+                    $columns[$field] = $mapFields[$field];
+                }
+            }
+
+            if (in_array($field, $collection->getColumns())) {
+                if (in_array($field, $tableColumns))
+                    $columns[$field] = $field;
+            }
+        }
+
+        $columns = array_unique($columns);
+        $collection->setRows($rows);
+        $collection->setColumns($columns);
+
+        return $collection;
     }
 }

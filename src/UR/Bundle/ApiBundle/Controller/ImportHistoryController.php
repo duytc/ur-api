@@ -11,11 +11,6 @@ use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\ImportHistoryInterface;
-use UR\Service\DataSet\TransformType;
-use UR\Service\DataSource\Collection;
-use UR\Service\Parser\ParserConfig;
-use UR\Service\Parser\Transformer\Column\DateFormat;
-use UR\Service\Parser\Transformer\Column\NumberFormat;
 
 /**
  * @Rest\RouteResource("importhistory")
@@ -199,13 +194,6 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
             return [array_fill_keys(array_keys($fields), "")];
         }
 
-        $result = $results[0];
-        $parserConfig = new ParserConfig();
-        $collection = new Collection($results);
-        foreach ($result as $column => $row) {
-            $parserConfig->addColumn($column);
-        }
-
         $connDataSources = $importHistory->getDataSet()->getConnectedDataSources();
         $connDataSource = null;
         foreach ($connDataSources as $item) {
@@ -215,29 +203,18 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
             }
         }
 
-        $transforms = $connDataSource->getTransforms();
-        foreach ($transforms as $transform) {
-            if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE])) {
-                if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
-                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new DateFormat('Y-m-d', $transform[TransformType::TO]));
-                    unset($fields[$transform[TransformType::FIELD]]);
-                }
+        foreach ($results as &$row) {
+            foreach ($connDataSource->getColumnTransforms()->getDateFormatTransforms() as $transform) {
+                $transform->setFromDateFormat('Y-m-d');
+                $transform->setDateFormat($transform->getToDateFormat());
+                $row[$transform->getField()] = $transform->transform($row[$transform->getField()]);
+            }
 
-                if (strcmp($transform[TransformType::TYPE], TransformType::NUMBER) === 0) {
-                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new NumberFormat($transform[TransformType::DECIMALS], $transform[TransformType::THOUSANDS_SEPARATOR]));
-                }
+            foreach ($connDataSource->getColumnTransforms()->getNumberFormatTransforms() as $transform) {
+                $row[$transform->getField()] = $transform->transform($row[$transform->getField()]);
             }
         }
 
-        foreach ($fields as $field => $type) {
-            if (strcmp($type, TransformType::DATE) === 0) {
-                $parserConfig->addTransformColumn($field, new DateFormat('Y-m-d', 'Y-m-d'));
-            }
-        }
-
-        $parser = $this->get('ur.service.parser');
-        $collection = $parser->parse($collection, $parserConfig, $connDataSource);
-
-        return $collection->getRows();
+        return $results;
     }
 }
