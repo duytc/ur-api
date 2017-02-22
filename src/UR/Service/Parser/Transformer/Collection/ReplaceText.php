@@ -91,6 +91,11 @@ class ReplaceText extends AbstractTransform implements CollectionTransformerInte
     public function replaceText(array &$row, $field)
     {
         $stringReplaced = $row[$field];
+
+        if ($stringReplaced === null) {
+            return null;
+        }
+        
         switch ($this->position) {
             case self::POSITION_ANY_WHERE:
                 $stringReplaced = str_replace($this->searchFor, $this->replaceWith, $row[$field]);

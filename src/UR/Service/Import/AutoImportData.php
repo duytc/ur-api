@@ -315,7 +315,12 @@ class AutoImportData implements AutoImportDataInterface
 
                     foreach ($transforms as $transform) {
                         if ($transform instanceof DateFormat) {
+                            // very important: after parse, all date already in format Y-m-d
+                            // so that from date format need be updated, and isCustomFormatDateFrom is must be set to false
+                            // TODO: check if we do not convert directly data to Y-m-d before doing transform...
+                            // TODO: the private var dateFormat should be removed
                             $transform->setFromDateFormat('Y-m-d');
+                            $transform->setIsCustomFormatDateFrom(false);
                             $transform->setDateFormat($transform->getToDateFormat());
                         }
 

@@ -64,6 +64,10 @@ abstract class AbstractFilter
 		}
 
 		foreach ($keys as $key) {
+            if (!array_key_exists($key, $reports)) {
+                continue;
+            }
+
 			$totalValues[$key] = 0;
 			foreach ($reports as $report) {
 				$totalValues[$key] += $report[$key];
@@ -86,6 +90,10 @@ abstract class AbstractFilter
 		}
 
 		foreach ($keys as $key) {
+            if (!array_key_exists($key, $reports)) {
+                continue;
+            }
+
 			$total = 0;
 			$averagesValues[$key] = 0;
 			foreach ($reports as $report) {
