@@ -62,7 +62,7 @@ class NumberFilter extends CommonNumberFilter implements ColumnFilterInterface
         }
 
         if (self::COMPARISON_TYPE_NOT_EQUAL === $this->comparisonType) {
-            return $this->comparisonValue !== $value ? true : false;
+            return abs(floatval($this->comparisonValue) - floatval($value)) >= self::EPSILON ? true : false;
         }
 
         if (self::COMPARISON_TYPE_GREATER === $this->comparisonType) {
