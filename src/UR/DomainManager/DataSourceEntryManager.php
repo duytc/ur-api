@@ -14,8 +14,8 @@ use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use ReflectionClass;
-use UR\Repository\Core\DataSourceRepository;
 use UR\Service\Alert\ProcessAlert;
+use UR\Service\Import\ImportDataException;
 use UR\Service\Import\ImportService;
 use UR\Worker\Manager;
 
@@ -109,77 +109,77 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $error = $this->importService->validateFileUpload($file, $dataSource);
         $origin_name = $file->getClientOriginalName();
         $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
+        $dataSourceAlertSettings = $dataSource->getAlertSettingConfig();
+        $publisherId = $dataSource->getPublisher()->getId();
+        $params = array(
+            ProcessAlert::FILE_NAME => $file_name . "." . $file->getClientOriginalExtension(),
+            ProcessAlert::DATA_SOURCE_NAME => $dataSource->getName()
+        );
 
-        if ($error > 0) {
-            if (in_array(DataSourceRepository::WRONG_FORMAT, $dataSource->getAlertSetting())) {
-                $code = ProcessAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT;
-                $publisherId = $dataSource->getPublisher()->getId();
-
-                $params = array(
-                    ProcessAlert::FILE_NAME => $file_name . "." . $file->getClientOriginalExtension(),
-                    ProcessAlert::DATA_SOURCE_NAME => $dataSource->getName()
-                );
-
-                $this->workerManager->processAlert($code, $publisherId, $params);
+        try {
+            if ($error > 0) {
+                throw new ImportDataException(ProcessAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT, null, null);
             }
 
-            throw new \Exception(sprintf("File %s is not valid - wrong format", $origin_name));
-        }
-
-        // save file to upload dir
-        if (strcmp($receivedVia, DataSourceEntry::RECEIVED_VIA_API) === 0) {
-            $name = $origin_name;
-        } else {
-            $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
-        }
-
-        if ($alsoMoveFile) {
-            $file->move($path, $name);
-        } else {
-            if (!file_exists($path)) {
-                mkdir($path, 0755, true);
+            // save file to upload dir
+            if (strcmp($receivedVia, DataSourceEntry::RECEIVED_VIA_API) === 0) {
+                $name = $origin_name;
+            } else {
+                $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
             }
-            copy($file->getRealPath(), $path . '/' . $name);
-        }
 
-        $filePath = $path . '/' . $name;
+            if ($alsoMoveFile) {
+                $file->move($path, $name);
+            } else {
+                if (!file_exists($path)) {
+                    mkdir($path, 0755, true);
+                }
+                copy($file->getRealPath(), $path . '/' . $name);
+            }
 
-        $convertResult = $this->convertToUtf8($filePath, $this->importService->getKernelRootDir());
-        if (!$convertResult) {
-            throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $origin_name));
-        }
+            $filePath = $path . '/' . $name;
 
-        $hash = sha1_file($filePath);
-        if ($this->fileAlreadyImported($dataSource, $hash)) {
-            throw new Exception(sprintf('File "%s" is already imported', $origin_name));
-        }
+            $convertResult = $this->convertToUtf8($filePath, $this->importService->getKernelRootDir());
+            if (!$convertResult) {
+                throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $origin_name));
+            }
 
-        // create new data source entry
-        $dataSourceEntry = new DataSourceEntry();
-        $dataSourceEntry->setPath($dirItem . '/' . $name)
-            ->setIsValid(true)
-            ->setReceivedVia($receivedVia)
-            ->setFileName($origin_name)
-            ->setHashFile($hash)
-            ->setMetaData($metadata);
+            $hash = sha1_file($filePath);
+            if ($this->fileAlreadyImported($dataSource, $hash)) {
+                throw new Exception(sprintf('File "%s" is already imported', $origin_name));
+            }
 
-        $newFields = $this->importService->getNewFieldsFromFiles($filePath, $dataSource);
-        $detectedFields = $this->importService->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), ImportService::UPLOAD);
-        $dataSource->setDetectedFields($detectedFields);
+            // create new data source entry
+            $dataSourceEntry = new DataSourceEntry();
+            $dataSourceEntry->setPath($dirItem . '/' . $name)
+                ->setIsValid(true)
+                ->setReceivedVia($receivedVia)
+                ->setFileName($origin_name)
+                ->setHashFile($hash)
+                ->setMetaData($metadata);
 
-        $dataSourceEntry->setDataSource($dataSource);
-        $this->save($dataSourceEntry);
+            $newFields = $this->importService->getNewFieldsFromFiles($filePath, $dataSource);
+            $detectedFields = $this->importService->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), ImportService::UPLOAD);
+            $dataSource->setDetectedFields($detectedFields);
 
-        if (in_array(DataSourceRepository::DATA_RECEIVED, $dataSource->getAlertSetting())) {
-            $code = ProcessAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD;
-            $publisherId = $dataSource->getPublisher()->getId();
+            $dataSourceEntry->setDataSource($dataSource);
+            $this->save($dataSourceEntry);
 
-            $params = array(
-                ProcessAlert::FILE_NAME => $file_name . "." . $file->getClientOriginalExtension(),
-                ProcessAlert::DATA_SOURCE_NAME => $dataSource->getName()
-            );
+            foreach ($dataSourceAlertSettings as $dataSourceAlertSetting) {
+                if (strcmp($dataSourceAlertSetting->getType(), DataSourceInterface::ALERT_DATA_RECEIVED_KEY) === 0) {
+                    $this->workerManager->processAlert(ProcessAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD, $publisherId, $params);
+                    break;
+                };
+            }
 
-            $this->workerManager->processAlert($code, $publisherId, $params);
+        } catch (ImportDataException $exception) {
+            $code = $exception->getAlertCode();
+            foreach ($dataSourceAlertSettings as $dataSourceAlertSetting) {
+                if (strcmp($dataSourceAlertSetting->getType(), DataSourceInterface::ALERT_WRONG_FORMAT_KEY) === 0) {
+                    $this->workerManager->processAlert($code, $publisherId, $params);
+                    throw new Exception(sprintf('Wrong Type format', $origin_name));
+                };
+            }
         }
 
         $result = [

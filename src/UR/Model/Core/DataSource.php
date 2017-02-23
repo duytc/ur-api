@@ -34,6 +34,11 @@ class DataSource implements DataSourceInterface
      */
     protected $connectedDataSources;
 
+    /**
+     * @var DataSourceAlertSetting[] $alertSettingConfig
+     */
+    protected $alertSettingConfig = [];
+
     public function __construct()
     {
         $this->enable = true;
@@ -244,5 +249,36 @@ class DataSource implements DataSourceInterface
     public function setDetectedFields($detectedFields)
     {
         $this->detectedFields = $detectedFields;
+    }
+
+    /**
+     * @return DataSourceAlertSetting[]|null
+     */
+    public function getAlertSettingConfig()
+    {
+        $this->alertSettingConfig = [];
+        if (!is_array($this->alertSetting))
+            return [];
+
+        foreach ($this->alertSetting as $alertSetting) {
+            if (!array_key_exists(DataSourceInterface::ALERT_TYPE_KEY, $alertSetting)
+                || !array_key_exists(DataSourceInterface::ALERT_TIMEZONE_KEY, $alertSetting)
+                || !array_key_exists(DataSourceInterface::HOUR_KEY, $alertSetting)
+                || !array_key_exists(DataSourceInterface::ALERT_MINUTE_KEY, $alertSetting)
+                || !array_key_exists(DataSourceInterface::ALERT_ACTIVE_KEY, $alertSetting)
+            ) {
+                continue;
+            }
+
+            $this->alertSettingConfig[] = new DataSourceAlertSetting(
+                $alertSetting[DataSourceInterface::ALERT_TYPE_KEY],
+                $alertSetting[DataSourceInterface::ALERT_TIMEZONE_KEY],
+                $alertSetting[DataSourceInterface::HOUR_KEY],
+                $alertSetting[DataSourceInterface::ALERT_MINUTE_KEY],
+                $alertSetting[DataSourceInterface::ALERT_ACTIVE_KEY]
+            );
+        }
+
+        return $this->alertSettingConfig;
     }
 }

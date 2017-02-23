@@ -19,14 +19,10 @@ use UR\Model\User\Role\AdminInterface;
 class DataSourceFormType extends AbstractRoleSpecificFormType
 {
     static $SUPPORTED_ALERT_SETTING_KEYS = [
-        'wrongFormat',
-        'dataReceived',
-        'notReceived'
+        DataSourceInterface::ALERT_WRONG_FORMAT_KEY,
+        DataSourceInterface::ALERT_DATA_RECEIVED_KEY,
+        DataSourceInterface::ALERT_DATA_NO_RECEIVED_KEY,
     ];
-
-    const ALERT_TYPE_KEY = 'type';
-    const ALERT_TIMEZONE_KEY = 'alertTimeZone';
-    const HOUR_KEY = 'alertHour';
 
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -108,18 +104,18 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
 
         $checkedAlertKeys = [];
         foreach ($alertSetting as $alert) {
-            if (!in_array($alert[self::ALERT_TYPE_KEY], self::$SUPPORTED_ALERT_SETTING_KEYS)
+            if (!in_array($alert[DataSourceInterface::ALERT_TYPE_KEY], self::$SUPPORTED_ALERT_SETTING_KEYS)
                 || in_array($alert, $checkedAlertKeys)
             ) {
                 return false;
             }
 
-            if (empty($alert[self::ALERT_TIMEZONE_KEY])) {
+            if (empty($alert[DataSourceInterface::ALERT_TIMEZONE_KEY])) {
                 return true;
             }
 
-            if (!in_array($alert[self::ALERT_TIMEZONE_KEY], timezone_identifiers_list())) {
-                throw new Exception(sprintf('Timezone %s does not exits', $alert[self::ALERT_TIMEZONE_KEY]));
+            if (!in_array($alert[DataSourceInterface::ALERT_TIMEZONE_KEY], timezone_identifiers_list())) {
+                throw new Exception(sprintf('Timezone %s does not exits', $alert[DataSourceInterface::ALERT_TIMEZONE_KEY]));
             }
 
             $checkedAlertKeys[] = $alert;
