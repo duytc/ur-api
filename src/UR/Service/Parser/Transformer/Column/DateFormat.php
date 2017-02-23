@@ -83,6 +83,21 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         $this->dateFormat = $dateFormat;
     }
 
+    /**
+     * @return boolean
+     */
+    public function isIsCustomFormatDateFrom()
+    {
+        return $this->isCustomFormatDateFrom;
+    }
+
+    /**
+     * @param boolean $isCustomFormatDateFrom
+     */
+    public function setIsCustomFormatDateFrom($isCustomFormatDateFrom)
+    {
+        $this->isCustomFormatDateFrom = $isCustomFormatDateFrom;
+    }
 
     /**
      * convert FromDateFormat To PHP format
