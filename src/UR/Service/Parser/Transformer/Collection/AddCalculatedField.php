@@ -49,7 +49,7 @@ class AddCalculatedField extends AbstractAddField
             $result = null;
         }
 
-        if ($result === false) {
+        if ($result === false || is_infinite($result) || is_nan($result)) {
             return null;
         }
 
@@ -73,6 +73,10 @@ class AddCalculatedField extends AbstractAddField
 
         foreach ($fields as $index => $field) {
             if (!array_key_exists($field, $row)) {
+                return null;
+            }
+
+            if (!is_numeric($row[$field])) {
                 return null;
             }
 

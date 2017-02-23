@@ -17,6 +17,7 @@ use UR\Service\Alert\ProcessAlert;
 use UR\Service\DataSet\Importer;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
+use UR\Service\DataSet\Type;
 use UR\Service\DataSource\Csv;
 use UR\Service\DataSource\Excel;
 use UR\Service\DataSource\Json;
@@ -304,12 +305,56 @@ class AutoImportData implements AutoImportDataInterface
                 $parserConfig->addTransformColumn($numberFormatTransform->getField(), $numberFormatTransform);
             }
 
-            $transColumns = array_flip($newColumns);
+            foreach ($rows as &$row) {
+                $row = array_intersect_key($row, $newColumns);
+                $keys = array_map(function ($key) use ($newColumns) {
+                    return $newColumns[$key];
+                }, array_keys($row));
+                $row = array_combine($keys, $row);
+            }
+
+            //overwrite duplicate
+            if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
+                $duplicateRows = [];
+                foreach ($rows as &$row) {
+                    $uniqueKeys = array_intersect_key($row, $connectedDataSource->getDataSet()->getDimensions());
+                    $uniqueId = md5(implode(":", $uniqueKeys));
+
+                    $duplicateRows[$uniqueId] = $row;
+                }
+
+                $rows = array_values($duplicateRows);
+            }
+
+            if (count($rows) < 1) {
+                $allFields = array_map(function ($column) {
+                    return null;
+                }, $allFields);
+
+                $returnHeader[] = $allFields;
+
+                return $returnHeader;
+            }
+
+            foreach ($rows as &$row) {
+                $temp = [];
+                foreach ($allFields as $field => $type) {
+                    if (!array_key_exists($field, $row)) {
+                        $temp[$field] = null;
+                    } else if ($row[$field] === null) {
+                        $temp[$field] = null;
+                    } else {
+                        $temp[$field] = strcmp($type, Type::NUMBER) === 0 ? round($row[$field]) : $row[$field];
+                    }
+                }
+
+                $row = $temp;
+            }
 
             foreach ($rows as &$row) {
                 foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
                     /** @var ColumnTransformerInterface[] $transforms */
-                    if (!array_key_exists($column, $transColumns)) {
+                    if (!array_key_exists($column, $row)) {
                         continue;
                     }
 
@@ -324,35 +369,10 @@ class AutoImportData implements AutoImportDataInterface
                             $transform->setDateFormat($transform->getToDateFormat());
                         }
 
-                        $row[$transColumns[$column]] = $transform->transform($row[$transColumns[$column]]);
-                        if ($row[$transColumns[$column]] === 2) {
+                        $row[$column] = $transform->transform($row[$column]);
+                        if ($row[$column] === 2) {
                             throw new ImportDataException(ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, 0, $column);
                         }
-                    }
-                }
-            }
-
-            if (count($rows) < 1) {
-                $allFields = array_map(function ($column) {
-                    return null;
-                }, $allFields);
-
-                $returnHeader[] = $allFields;
-
-                return $returnHeader;
-            }
-
-            foreach ($rows as &$row) {
-                $row = array_intersect_key($row, $newColumns);
-
-                $keys = array_map(function ($key) use ($newColumns) {
-                    return $newColumns[$key];
-                }, array_keys($row));
-
-                $row = array_combine($keys, $row);
-                foreach ($allFields as $field => $type) {
-                    if (!array_key_exists($field, $row)) {
-                        $row[$field] = null;
                     }
                 }
             }
