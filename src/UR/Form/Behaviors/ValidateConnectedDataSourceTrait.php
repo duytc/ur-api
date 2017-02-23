@@ -16,9 +16,8 @@ use UR\Service\Parser\Filter\TextFilter;
 
 trait ValidateConnectedDataSourceTrait
 {
-    public function validateMappingFields(DataSetInterface $dataSet, $connDataSource)
+    public function validateMappingFields(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
     {
-        /**@var ConnectedDataSourceInterface $connDataSource */
         foreach ($connDataSource->getMapFields() as $mapField) {
             if (!array_key_exists($mapField, $dataSet->getDimensions()) && !array_key_exists($mapField, $dataSet->getMetrics())) {
                 return false;
@@ -28,12 +27,12 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
-    public function validateRequireFields(DataSetInterface $dataSet, $connDataSource)
+    public function validateRequireFields(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
     {
+        $allowedFields = array_merge($connDataSource->getMapFields(), array_flip(TransformType::$internalFields));
 
-        /**@var ConnectedDataSourceInterface $connDataSource */
         foreach ($connDataSource->getRequires() as $require) {
-            if (!in_array($require, $connDataSource->getMapFields())) {
+            if (!in_array($require, $allowedFields)) {
                 return false;
             }
         }

@@ -49,7 +49,7 @@ class ImportDataLogger
                 break;
 
             case ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
-                $message = sprintf("Failed to import file with id#%s - REQUIRE ERROR: require fields not exist in file", $dataSourceEntryId);
+                $message = sprintf("Failed to import file with id#%s - REQUIRE ERROR: require fields%s not exist in file", $dataSourceEntryId, (is_string($column) ? sprintf(' "%s"', $column) : ''));
                 break;
 
             case ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
@@ -91,7 +91,7 @@ class ImportDataLogger
                 break;
 
             case ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
-                $message = sprintf("REQUIRE ERROR: require fields not exist in file");
+                $message = sprintf("REQUIRE ERROR: require fields %s not exist in file", (is_string($column) ? sprintf(' "%s"', $column) : ''));
                 break;
 
             case ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
