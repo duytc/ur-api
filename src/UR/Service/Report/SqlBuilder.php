@@ -387,6 +387,9 @@ class SqlBuilder implements SqlBuilderInterface
             if (empty($endNodes)) {
                 $startDataSet = array_shift($endDataSets);
                 if ($startDataSet === null) {
+                    if (count($startDataSets) < count($dataSetIds) - 1) {
+                        throw new InvalidArgumentException("There's seem to be some data set is missing from the join config");
+                    }
                     break;
                 }
                 continue;
@@ -395,6 +398,9 @@ class SqlBuilder implements SqlBuilderInterface
             $qb = $this->buildJoinQueryForDataSet($qb, $startDataSet, $dataSetIndexes, $endNodes, $endDataSets);
             $startDataSet = array_shift($endDataSets);
             if ($startDataSet === null) {
+                if (count($startDataSets) < count($dataSetIds) - 1) {
+                    throw new InvalidArgumentException("There's seem to be some data set is missing from the join config");
+                }
                 break;
             }
         }
