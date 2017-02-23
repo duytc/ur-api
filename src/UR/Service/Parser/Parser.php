@@ -21,6 +21,8 @@ use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class Parser implements ParserInterface
 {
+    private $numberSpecialCharacters = ["n/a", "-"];
+
     /**@var EventDispatcherInterface $eventDispatcher
      */
     protected $eventDispatcher;
@@ -132,13 +134,15 @@ class Parser implements ParserInterface
                         $row[$columnsMapping[$dsColumn]] = str_replace("$", "", $row[$columnsMapping[$dsColumn]]);
                         $row[$columnsMapping[$dsColumn]] = str_replace("%", "", $row[$columnsMapping[$dsColumn]]);
                         $row[$columnsMapping[$dsColumn]] = str_replace(",", "", $row[$columnsMapping[$dsColumn]]);
-                        $row[$columnsMapping[$dsColumn]] === 'n/a' ? null : $row[$columnsMapping[$dsColumn]];
-                        $row[$columnsMapping[$dsColumn]] === "-" ? null : $row[$columnsMapping[$dsColumn]];
                         if (strcmp($type, Type::DECIMAL) === 0) {
                             $row[$columnsMapping[$dsColumn]] = str_replace(" ", "", $row[$columnsMapping[$dsColumn]]);
                         }
 
-                        if (!is_numeric($row[$columnsMapping[$dsColumn]])) {
+                        if (in_array($row[$columnsMapping[$dsColumn]], $this->numberSpecialCharacters)) {
+                            $row[$columnsMapping[$dsColumn]] = null;
+                        }
+
+                        if (!is_numeric($row[$columnsMapping[$dsColumn]]) && $row[$columnsMapping[$dsColumn]] !== null) {
                             throw new ImportDataException(ProcessAlert::ALERT_CODE_WRONG_TYPE_MAPPING, $cur_row + 2, $columnsMapping[$dsColumn]);
                         }
                     }
