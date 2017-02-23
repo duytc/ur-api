@@ -3,6 +3,8 @@
 namespace UR\Model\Core;
 
 
+use UR\Service\DataSet\TransformType;
+
 class DataSourceEntryMetadata
 {
     const META_DATA_EMAIL_SUBJECT = "subject";
@@ -10,6 +12,14 @@ class DataSourceEntryMetadata
     const META_DATA_EMAIL_BODY = "body";
     const META_DATA_EMAIL_DATE = "dateTime";
     const META_DATA_FILE_NAME = "filename";
+
+    static $MAPPED_META_DATA_EMAIL_HIDDEN_COLUMNS = [
+        self::META_DATA_EMAIL_BODY => TransformType::EMAIL_BODY,
+        self::META_DATA_EMAIL_DATE => TransformType::EMAIL_DATE_TIME,
+        //self::META_DATA_EMAIL_FROM => '', // not yet used
+        self::META_DATA_EMAIL_SUBJECT => TransformType::EMAIL_SUBJECT,
+        self::META_DATA_FILE_NAME => TransformType::FILE_NAME
+    ];
 
     protected $fileName;
     protected $emailBody;
@@ -105,5 +115,28 @@ class DataSourceEntryMetadata
     public function setEmailDatetime($emailDatetime)
     {
         $this->emailDatetime = $emailDatetime;
+    }
+
+    /**
+     * get Mapped Hidden Columns without brackets
+     *
+     * @return array
+     */
+    public function getMappedHiddenColumnsWithoutBrackets()
+    {
+        $mappedHiddenColumns = [];
+
+        foreach ($this->metadata as $key => $value) {
+            if (!array_key_exists($key, self::$MAPPED_META_DATA_EMAIL_HIDDEN_COLUMNS)) {
+                continue;
+            }
+
+            $columnWithoutBrackets = self::$MAPPED_META_DATA_EMAIL_HIDDEN_COLUMNS[$key];
+            $columnWithoutBrackets = str_replace('[', '', $columnWithoutBrackets);
+            $columnWithoutBrackets = str_replace(']', '', $columnWithoutBrackets);
+            $mappedHiddenColumns[$key] = $columnWithoutBrackets;
+        }
+
+        return $mappedHiddenColumns;
     }
 }

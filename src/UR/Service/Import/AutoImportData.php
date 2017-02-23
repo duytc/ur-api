@@ -12,6 +12,7 @@ use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Entity\Core\ImportHistory;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\DataSourceEntryMetadata;
 use UR\Repository\Core\ConnectedDataSourceRepository;
 use UR\Service\Alert\ProcessAlert;
 use UR\Service\DataSet\Importer;
@@ -147,10 +148,14 @@ class AutoImportData implements AutoImportDataInterface
                 }
 
                 $validRequires = true;
-                $columnRequire = '';
+                $allColumnMappings = $parserConfig->getAllColumnMappings();
+                $dataSourceMetadata = $dataSourceEntry->getDataSourceEntryMetadata();
+                $mappedHiddenColumns = (!$dataSourceMetadata instanceof DataSourceEntryMetadata) ? [] : $dataSourceMetadata->getMappedHiddenColumnsWithoutBrackets();
+                $allFieldsForValidatingRequire = array_merge($allColumnMappings, array_flip($mappedHiddenColumns));
+                $failedColumnRequire = '';
                 foreach ($connectedDataSource->getRequires() as $require) {
-                    if (!array_key_exists($require, $parserConfig->getAllColumnMappings())) {
-                        $columnRequire = $require;
+                    if (!array_key_exists($require, $allFieldsForValidatingRequire)) {
+                        $failedColumnRequire = $require;
                         $validRequires = false;
                         break;
                     }
@@ -159,7 +164,7 @@ class AutoImportData implements AutoImportDataInterface
                 if (!$validRequires) {
                     // to do alert
                     if (in_array(ConnectedDataSourceRepository::IMPORT_FAILURE, $connectedDataSource->getAlertSetting())) {
-                        throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL, null, $columnRequire);
+                        throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL, null, $failedColumnRequire);
                     }
                     continue;
                 }
@@ -267,8 +272,14 @@ class AutoImportData implements AutoImportDataInterface
             }
 
             $validRequires = true;
+            $allColumnMappings = $parserConfig->getAllColumnMappings();
+            $dataSourceMetadata = $dataSourceEntry->getDataSourceEntryMetadata();
+            $mappedHiddenColumns = (!$dataSourceMetadata instanceof DataSourceEntryMetadata) ? [] : $dataSourceMetadata->getMappedHiddenColumnsWithoutBrackets();
+            $allFieldsForValidatingRequire = array_merge($allColumnMappings, array_flip($mappedHiddenColumns));
+            $failedColumnRequire = '';
             foreach ($connectedDataSource->getRequires() as $require) {
-                if (!array_key_exists($require, $parserConfig->getAllColumnMappings())) {
+                if (!array_key_exists($require, $allFieldsForValidatingRequire)) {
+                    $failedColumnRequire = $require;
                     $validRequires = false;
                     break;
                 }
@@ -277,7 +288,7 @@ class AutoImportData implements AutoImportDataInterface
             if (!$validRequires) {
                 // to do alert
                 if (in_array(ConnectedDataSourceRepository::IMPORT_FAILURE, $connectedDataSource->getAlertSetting())) {
-                    throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL, null, null);
+                    throw  new ImportDataException(ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL, null, $failedColumnRequire);
                 }
             }
 
