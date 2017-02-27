@@ -90,7 +90,7 @@ trait JoinConfigUtilTrait
         }
 
         $count = count($joinConfig);
-        if ($count < 2) {
+        if ($count < 2 && count($dataSets) < 2) {
             return;
         }
 

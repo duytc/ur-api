@@ -13,7 +13,9 @@ use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\Formats\NumberFormat;
 use UR\Domain\DTO\Report\Formats\PercentageFormat;
 use UR\Domain\DTO\Report\JoinBy\JoinConfig;
+use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinField;
+use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Domain\DTO\Report\Params;
 use UR\Domain\DTO\Report\ReportViews\ReportView;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
@@ -204,7 +206,67 @@ class ParamsBuilder implements ParamsBuilderInterface
 			unset($joinConfig);
 		}
 
+		$startDataSets = [];
+		$endDataSets = [];
+		$dataSetIds = array_map(function(DataSet $dataSet) {
+			return $dataSet->getDataSetId();
+		}, $dataSets);
+		$startDataSet = current($dataSetIds);
+
+		while (count($startDataSets) <= count($dataSetIds)) {
+			if (!in_array($startDataSet, $startDataSets)) {
+				$startDataSets[] = $startDataSet;
+			}
+
+			$endNodes = $this->findEndNodesForDataSet($joinConfigs, $startDataSet, $startDataSets);
+			if (empty($endNodes)) {
+				$startDataSet = array_shift($endDataSets);
+				if ($startDataSet === null) {
+					if (count($startDataSets) < count($dataSetIds) - 1) {
+						throw new InvalidArgumentException("There's seem to be some data set is missing from the join config");
+					}
+					break;
+				}
+				continue;
+			}
+
+			$endDataSets = $this->getListEndDataSets($endNodes, $startDataSet);
+			$startDataSet = array_shift($endDataSets);
+			if ($startDataSet === null) {
+				if (count($startDataSets) < count($dataSetIds) - 1) {
+					throw new InvalidArgumentException("There's seem to be some data set is missing from the join config");
+				}
+				break;
+			}
+		}
+
 		return $joinConfigs;
+	}
+
+	private function getToDataSet($joinConfig, $fromDataSetId)
+	{
+		/** @var JoinFieldInterface $config */
+		foreach ($joinConfig as $config) {
+			$dataSetId = $config->getDataSet();
+			if ($fromDataSetId == $dataSetId) {
+				continue;
+			}
+
+			return $dataSetId;
+		}
+
+		return $fromDataSetId;
+	}
+
+	private function getListEndDataSets($joinConfig, $fromDataSetId)
+	{
+		$endDataSets = [];
+		/** @var JoinConfigInterface $config */
+		foreach ($joinConfig as $config) {
+			$endDataSets[] = $this->getToDataSet($config->getJoinFields(), $fromDataSetId);
+		}
+
+		return $endDataSets;
 	}
 
 	/**
