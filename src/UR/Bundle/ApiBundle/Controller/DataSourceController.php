@@ -6,7 +6,6 @@ use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
-use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -22,7 +21,6 @@ use UR\Model\Core\DataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\IntegrationInterface;
-use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
 
 /**
@@ -307,7 +305,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
 
     /**
      * Get data sources for a integration and a publisher.
-     * This is used for integrating all integration modules (fetcher, email) into this ur system
+     * This is used for integrating all integration modules (integration, email) into this ur system
      *
      * @Rest\Get("/datasources/byintegration")
      *
@@ -360,6 +358,48 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $dataSourceRepository = $this->get('ur.repository.data_source');
         $dataSources = $dataSourceRepository->getDataSourcesByIntegrationAndPublisher($integration, $publisher);
         return $dataSources;
+    }
+
+    /**
+     * Get all import history by datasource
+     *
+     * @Rest\Get("datasources/{id}/importhistories", requirements={"id" = "\d+"})
+     * @Rest\View(serializerGroups={"importHistory.detail", "user.summary", "dataset.importhistory", "dataSourceEntry.summary", "datasource.importhistory"})
+     *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     * @param Request $request
+     * @return array
+     * @throws \Exception
+     */
+    public function getImportHistoriesByDataSourceAction(Request $request, $id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+        $importHistoryManager = $this->get('ur.domain_manager.import_history');
+        $qb = $importHistoryManager->getImportedHistoryByDataSourceQuery($dataSource, $this->getParams());
+
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
     }
 
     /**
@@ -494,9 +534,11 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
-     * Upload file to multiple data sources by fetcher module
+     * Upload file to multiple data sources
      *
-     * @Rest\Post("/datasources/viafetcher")
+     * @Rest\Post("/datasources/entry")
+     *
+     * @Rest\QueryParam(name="source", nullable=true, description="source=integration/email/api")
      *
      * @ApiDoc(
      *  section = "Data Sources",
@@ -511,55 +553,25 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @return mixed
      */
-    public function postMultipleDataSourcesViaFetcherAction(Request $request)
+    public function postUploadFileForMultipleDataSourcesAction(Request $request)
     {
-        return $this->processPostFileForMultipleDataSources($request, $via = DataSourceEntry::RECEIVED_VIA_SELENIUM);
-    }
+        $sourceParam = $request->request->get('source', null);
 
-    /**
-     * Upload file to multiple data sources by email-hook module
-     *
-     * @Rest\Post("/datasources/viaemailhook")
-     *
-     * @ApiDoc(
-     *  section = "Data Sources",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful",
-     *      400 = "Returned when the submitted data has errors"
-     *  }
-     * )
-     *
-     * @param Request $request the request object
-     *
-     * @return mixed
-     */
-    public function postUploadFileForMultipleDataSourcesViaEmailHookAction(Request $request)
-    {
-        return $this->processPostFileForMultipleDataSources($request, $via = DataSourceEntry::RECEIVED_VIA_EMAIL);
-    }
+        if ($sourceParam === null) {
+            throw new BadRequestHttpException('Missing param "source"');
+        }
 
-    /**
-     * Upload file to data sources via API key
-     *
-     * @Rest\Post("/datasources/viaapikey")
-     *
-     * @ApiDoc(
-     *  section = "Data Sources",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful",
-     *      400 = "Returned when the submitted data has errors"
-     *  }
-     * )
-     *
-     * @param Request $request the request object
-     *
-     * @return mixed
-     */
-    public function postImportDataViaApiKeyAction(Request $request)
-    {
-        return $this->processImportDataViaApiKey($request, $via = DataSourceEntry::RECEIVED_VIA_API);
+        switch ($sourceParam) {
+            case 'email':
+            case 'integration':
+                return $this->processPostFileForMultipleDataSources($request, $sourceParam);
+
+            case 'api':
+                return $this->processImportDataViaApiKey($request);
+
+            default:
+                throw new BadRequestHttpException(sprintf('Not supported param "source" as %s', $sourceParam));
+        }
     }
 
     /**
@@ -701,11 +713,11 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
-     * process uploaded files. The files may come from upload, fetcher module or email-hook module
+     * process uploaded files. The files may come from upload, fetcher(integration) module or email-hook module
      *
      * @param DataSourceInterface $dataSource
      * @param FileBag $fileBag
-     * @param string $via is "upload" or "email" or "api" or "selenium". Default is "upload"
+     * @param string $via is "upload" or "email" or "api" or "integration". Default is "upload"
      * @param bool $alsoMoveFile
      * @param null $metadata
      * @return array formatted as [ fileName => status, ... ]
@@ -754,10 +766,10 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      * process Post file for Multiple DataSources
      *
      * @param Request $request
-     * @param string $via
+     * @param string $source
      * @return array
      */
-    private function processPostFileForMultipleDataSources(Request $request, $via = DataSourceEntry::RECEIVED_VIA_SELENIUM)
+    private function processPostFileForMultipleDataSources(Request $request, $source = DataSourceEntry::RECEIVED_VIA_INTEGRATION)
     {
         $dataSourceIds = $request->request->get('ids', null);
         if (null === $dataSourceIds) {
@@ -787,21 +799,21 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         /** @var FileBag $fileBag */
         $fileBag = $request->files;
 
-        $result = $this->processUploadedFilesForMultipleDataSources($dataSources, $fileBag, $via, $metadata);
+        $result = $this->processUploadedFilesForMultipleDataSources($dataSources, $fileBag, $source, $metadata);
 
         return $result;
     }
 
     /**
-     * process uploaded files for multiple data sources. The files may come from upload, fetcher module or email-hook module
+     * process uploaded files for multiple data sources. The files may come from upload, fetcher(integration) module or email-hook module
      *
      * @param array|DataSourceInterface[] $dataSources
      * @param FileBag $fileBag
-     * @param string $via is "upload" or "email" or "api" or "selenium". Default is "upload"
+     * @param string $source is "upload" or "email" or "api" or "integration". Default is "upload"
      * @param null $metadata
      * @return array formatted as [ dataSourceId => [ fileName => status, ... ], ... ]
      */
-    private function processUploadedFilesForMultipleDataSources(array $dataSources, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD, $metadata = null)
+    private function processUploadedFilesForMultipleDataSources(array $dataSources, FileBag $fileBag, $source = DataSourceEntry::RECEIVED_VIA_INTEGRATION, $metadata = null)
     {
         $result = [];
 
@@ -811,7 +823,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             // IMPORTANT: copy original file for not last data source, and move original file for last data source
             $alsoMoveFile = ($i >= $len - 1);
 
-            $oneResult = $this->processUploadedFiles($dataSource, $fileBag, $via, $alsoMoveFile, $metadata);
+            $oneResult = $this->processUploadedFiles($dataSource, $fileBag, $source, $alsoMoveFile, $metadata);
             $result[$dataSource->getId()] = $oneResult;
         }
 
@@ -822,10 +834,9 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      * process Post file via API key
      *
      * @param Request $request
-     * @param string $via
      * @return array
      */
-    private function processImportDataViaApiKey(Request $request, $via)
+    private function processImportDataViaApiKey(Request $request)
     {
         $apiKey = $request->request->get('apiKey', null);
         $data = $request->request->get('data', null);
@@ -836,6 +847,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         }
 
         $dataSourceManager = $this->get('ur.domain_manager.data_source');
+        /** @var DataSourceInterface[] $dataSources */
         $dataSources = $dataSourceManager->getDataSourceByApiKey($apiKey);
         if (count($dataSources) === 0) {
             throw new BadRequestHttpException('cannot find any data source with this api key');
@@ -851,11 +863,14 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
 
         $file = new UploadedFile($uploadPath . $name, $name);
         $dataSourceEntryManager = $this->container->get('ur.domain_manager.data_source_entry');
-        return $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via
-            , false);
+        return $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, DataSourceEntry::RECEIVED_VIA_API, false);
     }
 
-    function file_force_contents($dir, $contents)
+    /**
+     * @param $dir
+     * @param $contents
+     */
+    private function file_force_contents($dir, $contents)
     {
         $parts = explode('/', $dir);
         $file = array_pop($parts);
@@ -863,47 +878,5 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         foreach ($parts as $part)
             if (!is_dir($dir .= "/$part")) mkdir($dir);
         file_put_contents("$dir/$file", $contents);
-    }
-
-    /**
-     * Get all import history by datasource
-     *
-     * @Rest\Get("datasources/{id}/importhistories", requirements={"id" = "\d+"})
-     * @Rest\View(serializerGroups={"importHistory.detail", "user.summary", "dataset.importhistory", "dataSourceEntry.summary", "datasource.importhistory"})
-     *
-     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
-     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
-     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
-     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
-     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
-     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
-     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
-     *
-     * @ApiDoc(
-     *  section = "Data Source",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful"
-     *  }
-     * )
-     *
-     * @param int $id the resource id
-     * @param Request $request
-     * @return array
-     * @throws \Exception
-     */
-    public function getImportHistoriesByDataSourceAction(Request $request, $id)
-    {
-        /** @var DataSourceInterface $dataSource */
-        $dataSource= $this->one($id);
-        $importHistoryManager = $this->get('ur.domain_manager.import_history');
-        $qb = $importHistoryManager->getImportedHistoryByDataSourceQuery($dataSource, $this->getParams());
-
-        $params = array_merge($request->query->all(), $request->attributes->all());
-        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
-            return $qb->getQuery()->getResult();
-        } else {
-            return $this->getPagination($qb, $request);
-        }
     }
 }

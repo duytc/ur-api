@@ -6,10 +6,10 @@ use UR\Model\ModelInterface;
 
 interface DataSourceEntryInterface extends ModelInterface
 {
-    const RECEIVED_VIA_UPLOAD = "upload";
-    const RECEIVED_VIA_SELENIUM = "selenium";
-    const RECEIVED_VIA_API = "api";
-    const RECEIVED_VIA_EMAIL = "email";
+    const RECEIVED_VIA_UPLOAD = 'upload';
+    const RECEIVED_VIA_INTEGRATION = 'integration';
+    const RECEIVED_VIA_API = 'api';
+    const RECEIVED_VIA_EMAIL = 'email';
 
     /**
      * @return mixed
