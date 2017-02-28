@@ -11,7 +11,8 @@
         ]
     },
     "repositories": [
-        { "type": "vcs", "url": "https://github.com/gfreeau/GfreeauCustomValidationPathBundle" }
+        { "type": "vcs", "url": "https://github.com/gfreeau/GfreeauCustomValidationPathBundle" },
+        { "type": "vcs", "url": "https://github.com/tagcade/unified-reports-custom-transform-bundle" }
     ],
     "require": {
         "php": ">=5.5.0",
@@ -41,7 +42,8 @@
         "league/csv": "^8.0",
         "symfony/expression-language": "^3.1",
         "liuggio/excelbundle": "^2.1",
-        "box/spout": "^2.7"
+        "box/spout": "^2.7",
+        "tagcade/unified-reports-custom-transform-bundle": "dev-master"
     },
     "require-dev": {
         "sensio/generator-bundle": "2.5.x-dev",

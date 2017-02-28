@@ -23,9 +23,19 @@ class ImportDataLogger
         $this->logger = $logger;
     }
 
-    public function doImportLogging($errorCode, $importId, $dataSetId, $dataSourceId, $dataSourceEntryId, $row, $column)
+    public function doImportLogging($errorCode, $dataSetId, $dataSourceId, $dataSourceEntryId, $row, $column)
     {
-        $message = "";
+        $message = $this->getMessageDetails($errorCode, $dataSourceEntryId, $row, $column);
+
+        if ($errorCode == ProcessAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY) {
+            $this->logger->info(sprintf("data-set#%s data-source#%s data-source-entry#%s (message: %s)", $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
+        } else {
+            $this->logger->error(sprintf("data-set#%s data-source#%s data-source-entry#%s (message: %s)", $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
+        }
+    }
+
+    public function getMessageDetails($errorCode, $dataSourceEntryId, $row, $column)
+    {
         switch ($errorCode) {
             case ProcessAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY:
                 $message = sprintf("Data imported successfully");
@@ -39,7 +49,7 @@ class ImportDataLogger
                 break;
 
             case ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
-                $message = sprintf("Failed to import file with id#%s - REQUIRE ERROR: require fields not exist in file", $dataSourceEntryId);
+                $message = sprintf("Failed to import file with id#%s - REQUIRE ERROR: require fields%s not exist in file", $dataSourceEntryId, (is_string($column) ? sprintf(' "%s"', $column) : ''));
                 break;
 
             case ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
@@ -57,18 +67,57 @@ class ImportDataLogger
                 $message = sprintf("Failed to import file with id#%s - can't find data error", $dataSourceEntryId);
                 break;
 
-            case ProcessAlert::ALERT_CODE_UN_EXPECTED_ERROR:
+            case ProcessAlert::ALERT_CODE_FILE_NOT_FOUND:
                 $message = sprintf("Failed to import file with id#%s - file dose not exist", $dataSourceEntryId);
                 break;
             default:
+                $message = sprintf("Unexpected Error");
                 break;
         }
 
-        if ($errorCode == ProcessAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY) {
-            $this->logger->info(sprintf("ur-import#%s data-set#%s data-source#%s data-source-entry#%s (message: %s)", $importId, $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
-        } else {
-            $this->logger->error(sprintf("ur-import#%s data-set#%s data-source#%s data-source-entry#%s (message: %s)", $importId, $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
+        return $message;
+    }
+
+
+    public function getDryRunMessage($errorCode, $row, $column)
+    {
+        switch ($errorCode) {
+            case ProcessAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL:
+                $message = sprintf("MAPPING ERROR: no Field is mapped");
+                break;
+
+            case ProcessAlert::ALERT_CODE_WRONG_TYPE_MAPPING:
+                $message = sprintf("MAPPING ERROR: wrong type mapping");
+                break;
+
+            case ProcessAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
+                $message = sprintf("REQUIRE ERROR: require fields %s not exist in file", (is_string($column) ? sprintf(' "%s"', $column) : ''));
+                break;
+
+            case ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
+                $message = sprintf("Wrong number format at row [%s] - column [%s]", $row, $column);
+                break;
+            case ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE:
+                $message = sprintf("TRANSFORM ERROR: Wrong date format at row [%s] - column [%s] ", $row, $column);
+                break;
+
+            case ProcessAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND:
+                $message = sprintf("No header found error");
+                break;
+
+            case ProcessAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND:
+                $message = sprintf("Can't find data error");
+                break;
+
+            case ProcessAlert::ALERT_CODE_FILE_NOT_FOUND:
+                $message = sprintf("File dose not exist");
+                break;
+            default:
+                $message = sprintf("Unexpected Error");
+                break;
         }
+
+        return $message;
     }
 
     public function doExceptionLogging($message)
@@ -76,7 +125,7 @@ class ImportDataLogger
         $this->logger->error($message);
     }
 
-    public function doLoggingForJson($importId, $dataSetId, $dataSourceId, $dataSourceEntryId)
+    public function doLoggingForJson($dataSetId, $dataSourceId, $dataSourceEntryId)
     {
         switch (json_last_error()) {
             case JSON_ERROR_NONE:
@@ -102,6 +151,6 @@ class ImportDataLogger
                 break;
         }
 
-        $this->logger->error(sprintf("Reading json file ur-import#%s data-set#%s data-source#%s data-source-entry#%s (message: %s)", $importId, $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
+        $this->logger->error(sprintf("Reading json file data-set#%s data-source#%s data-source-entry#%s (message: %s)", $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
     }
 }

@@ -68,4 +68,7 @@ UR\Entity\Core\ReportView:
         userDefineDateRange:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        userReorderTransformsAllowed:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
 

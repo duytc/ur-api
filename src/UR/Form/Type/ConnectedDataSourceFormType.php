@@ -9,14 +9,14 @@ use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\ConnectedDataSource;
 use UR\Form\Behaviors\ValidateConnectedDataSourceTrait;
-use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Model\User\Role\AdminInterface;
 
 class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
 {
     use ValidateConnectedDataSourceTrait;
+    const IS_DRY_RUN = 'isDryRun';
+    const FILE_PATHS = 'filePaths';
 
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -27,7 +27,11 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
             ->add('filters')
             ->add('transforms')
             ->add('requires')
-            ->add('alertSetting');
+            ->add('alertSetting')
+            ->add('replayData')
+            ->add('userReorderTransformsAllowed')
+            ->add(self::IS_DRY_RUN, null, ['mapped' => false])
+            ->add('filePaths', null, ['mapped' => false]);
 
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,

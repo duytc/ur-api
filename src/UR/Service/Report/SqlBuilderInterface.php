@@ -18,9 +18,9 @@ interface SqlBuilderInterface
 
     /**
      * @param array $dataSets
-     * @param array $joinByConfig
+     * @param array $joinConfig
      * @param $overridingFilters
      * @return Statement
      */
-    public function buildQuery(array $dataSets, array $joinByConfig, $overridingFilters = null);
+    public function buildQuery(array $dataSets, array $joinConfig, $overridingFilters = null);
 }

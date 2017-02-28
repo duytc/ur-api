@@ -7,6 +7,7 @@ use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;
@@ -25,8 +26,14 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
      * @param PagerParam $param
      * @return QueryBuilder
      */
-
     public function getImportedHistoryByDataSetQuery(DataSetInterface $dataSet, PagerParam $param);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param PagerParam $param
+     * @return QueryBuilder
+     */
+    public function getImportedHistoryByDataSourceQuery(DataSourceInterface $dataSource, PagerParam $param);
 
     /**
      * @param ImportHistoryInterface $importHistory

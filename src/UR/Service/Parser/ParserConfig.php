@@ -22,6 +22,11 @@ class ParserConfig
      */
     protected $collectionTransforms = [];
 
+    /**
+     * @var bool
+     */
+    protected $userReorderTransformsAllowed;
+
     public function addColumn($fromColumn, $toColumn = null)
     {
         if (empty($fromColumn)) {
@@ -56,9 +61,9 @@ class ParserConfig
 
     public function addTransformColumn($column, ColumnTransformerInterface $transform)
     {
-        if (!$this->hasColumnMapping($column)) {
-            throw new \InvalidArgumentException('Cannot add the column transform because the column does not exist');
-        }
+//        if (!$this->hasColumnMapping($column)) {
+//            throw new \InvalidArgumentException('Cannot add the column transform because the column does not exist');
+//        }
 
         if (!array_key_exists($column, $this->columnTransforms)) {
             $this->columnTransforms[$column] = [];
@@ -128,5 +133,23 @@ class ParserConfig
     public function getCollectionTransforms()
     {
         return $this->collectionTransforms;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isUserReorderTransformsAllowed()
+    {
+        return $this->userReorderTransformsAllowed;
+    }
+
+    /**
+     * @param boolean $userReorderTransformsAllowed
+     * @return self
+     */
+    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed)
+    {
+        $this->userReorderTransformsAllowed = $userReorderTransformsAllowed;
+        return $this;
     }
 }

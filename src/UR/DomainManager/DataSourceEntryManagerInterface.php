@@ -17,19 +17,10 @@ interface DataSourceEntryManagerInterface extends ManagerInterface
      * @param DataSourceInterface $dataSource
      * @param string $receivedVia one of values "upload", "api", "email" or "selenium". Default is "upload"
      * @param bool $alsoMoveFile true if move file from tmp, else if need keep file
+     * @param null $metadata
      * @return array [ <original_name> => message ]
      */
-    public function uploadDataSourceEntryFile(UploadedFile $file, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile);
-
-    /**
-     * @param FileBag $files
-     * @param $uploadPath
-     * @param $dirItem
-     * @param DataSourceInterface $dataSource
-     * @return array
-     * @internal param DataSourceInterface $dataSource
-     */
-    public function detectedFieldsFromFiles(FileBag $files, $uploadPath, $dirItem, DataSourceInterface $dataSource);
+    public function uploadDataSourceEntryFile(UploadedFile $file, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile = true, $metadata = null);
 
     /**
      * @param PublisherInterface $publisher

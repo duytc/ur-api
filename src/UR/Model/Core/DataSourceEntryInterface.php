@@ -112,6 +112,12 @@ interface DataSourceEntryInterface extends ModelInterface
 
     /**
      * @param mixed $hashFile
+     * @return self
      */
     public function setHashFile($hashFile);
+
+    /**
+     * @return DataSourceEntryMetadata|null
+     */
+    public function getDataSourceEntryMetadata();
 }

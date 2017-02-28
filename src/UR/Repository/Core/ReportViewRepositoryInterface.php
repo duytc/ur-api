@@ -44,4 +44,9 @@ interface ReportViewRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getMultiViewReportForPublisher(PublisherInterface $publisher);
+
+    /**
+     * @return mixed
+     */
+    public function getReportViewHasMaximumId();
 }

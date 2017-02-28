@@ -5,6 +5,7 @@ namespace UR\DomainManager;
 use Doctrine\DBAL\Query\QueryBuilder;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\PagerParam;
 
@@ -35,6 +36,13 @@ interface ImportHistoryManagerInterface extends ManagerInterface
      * @return QueryBuilder
      */
     public function getImportedHistoryByDataSetQuery(DataSetInterface $dataSet, PagerParam $param);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param PagerParam $param
+     * @return QueryBuilder
+     */
+    public function getImportedHistoryByDataSourceQuery(DataSourceInterface $dataSource, PagerParam $param);
 
     /**
      * @param ImportHistoryInterface[] $importHistories

@@ -2,6 +2,7 @@
 
 namespace UR\Form\Type;
 
+use Exception;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -18,9 +19,9 @@ use UR\Model\User\Role\AdminInterface;
 class DataSourceFormType extends AbstractRoleSpecificFormType
 {
     static $SUPPORTED_ALERT_SETTING_KEYS = [
-        'wrongFormat',
-        'dataReceived',
-        'notReceived'
+        DataSourceInterface::ALERT_WRONG_FORMAT_KEY,
+        DataSourceInterface::ALERT_DATA_RECEIVED_KEY,
+        DataSourceInterface::ALERT_DATA_NO_RECEIVED_KEY,
     ];
 
     public function buildForm(FormBuilderInterface $builder, array $options)
@@ -89,6 +90,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
      *
      * @param $alertSetting
      * @return bool
+     * @throws Exception
      */
     private function validateAlertSetting($alertSetting)
     {
@@ -101,14 +103,22 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
         }
 
         $checkedAlertKeys = [];
-        foreach ($alertSetting as $value) {
-            if (!in_array($value, self::$SUPPORTED_ALERT_SETTING_KEYS)
-                || in_array($value, $checkedAlertKeys)
+        foreach ($alertSetting as $alert) {
+            if (!in_array($alert[DataSourceInterface::ALERT_TYPE_KEY], self::$SUPPORTED_ALERT_SETTING_KEYS)
+                || in_array($alert, $checkedAlertKeys)
             ) {
                 return false;
             }
 
-            $checkedAlertKeys[] = $value;
+            if (empty($alert[DataSourceInterface::ALERT_TIMEZONE_KEY])) {
+                return true;
+            }
+
+            if (!in_array($alert[DataSourceInterface::ALERT_TIMEZONE_KEY], timezone_identifiers_list())) {
+                throw new Exception(sprintf('Timezone %s does not exits', $alert[DataSourceInterface::ALERT_TIMEZONE_KEY]));
+            }
+
+            $checkedAlertKeys[] = $alert;
         }
 
         return true;

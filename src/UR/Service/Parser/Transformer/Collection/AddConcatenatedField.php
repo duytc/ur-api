@@ -13,14 +13,13 @@ class AddConcatenatedField extends AbstractAddField
      * @var string
      */
     protected $expression;
-    protected $defaultValue;
     protected $language;
 
-    public function __construct($column, $expression, $defaultValue = 0)
+    public function __construct($column, $expression, $priority)
     {
+        parent::__construct($column, $priority);
         $this->column = $column;
         $this->expression = $expression;
-        $this->defaultValue = $defaultValue;
     }
 
     protected function getValue(array $row)
@@ -56,7 +55,7 @@ class AddConcatenatedField extends AbstractAddField
     /**
      * @inheritdoc
      */
-    public function getPriority()
+    public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_ADD_CONCATENATION_FIELD;
     }

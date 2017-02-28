@@ -10,6 +10,30 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $transforms;
     protected $requires;
     protected $alertSetting;
+    /**
+     * @var bool
+     */
+    protected $userReorderTransformsAllowed;
+
+    /** @var  bool $replayData */
+    protected $replayData;
+
+    /**
+     * @return boolean
+     */
+    public function isReplayData()
+    {
+        return $this->replayData;
+    }
+
+    /**
+     * @param boolean $replayData
+     */
+    public function setReplayData($replayData)
+    {
+        $this->replayData = $replayData;
+    }
+
 
     /**
      * @var DataSourceInterface
@@ -20,6 +44,16 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
      * @var DataSetInterface
      */
     protected $dataSet;
+
+    /**
+     * @var ConnectedDataSourceCollectionTransform
+     */
+    protected $collectionTransforms;
+
+    /**
+     * @var ConnectedDataSourceColumnTransform
+     */
+    protected $columnTransforms;
 
     public function __construct()
     {
@@ -143,5 +177,41 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setDataSet($dataSet)
     {
         $this->dataSet = $dataSet;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCollectionTransforms()
+    {
+        $this->collectionTransforms = new ConnectedDataSourceCollectionTransform($this->transforms);
+        return $this->collectionTransforms;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getColumnTransforms()
+    {
+        $this->columnTransforms = new ConnectedDataSourceColumnTransform($this->transforms);
+        return $this->columnTransforms;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUserReorderTransformsAllowed()
+    {
+        return $this->userReorderTransformsAllowed;
+    }
+
+    /**
+     * @param bool $userReorderTransformsAllowed
+     * @return self
+     */
+    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed)
+    {
+        $this->userReorderTransformsAllowed = $userReorderTransformsAllowed;
+        return $this;
     }
 }

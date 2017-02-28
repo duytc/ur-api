@@ -221,11 +221,6 @@ class ReConfigConnectedDataSourceListener
                     $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);
                 }
 
-                //ADD CONCATENATION FIELD
-                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATED_FIELD) === 0) {
-                    $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);
-                }
-
                 //COMPARISON PERCENT
                 if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
                     $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);

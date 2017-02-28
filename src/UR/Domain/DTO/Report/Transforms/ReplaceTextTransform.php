@@ -57,10 +57,10 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
      * @param Collection $collection
      * @param array $metrics
      * @param array $dimensions
-     * @param $joinBy
+     * @param $outputJoinField
      * @return mixed
      */
-    public function transform(Collection $collection, array &$metrics, array &$dimensions, $joinBy = null)
+    public function transform(Collection $collection, array &$metrics, array &$dimensions, array $outputJoinField)
     {
         $reports = $collection->getRows();
         $columns = $collection->getColumns();
@@ -92,8 +92,16 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
 
         foreach ($reports as $key => $report) {
             if (!array_key_exists($this->getFieldName(), $report)) {
+                $fieldName = $this->getIsOverride() ? $this->getFieldName() : $this->getTargetField();
+                $report[$fieldName] = null;
+                $reports[$key] = $report;
+                if (!in_array($fieldName, $metrics)) {
+                    $metrics[] = $fieldName;
+                }
+                
                 continue;
             }
+            
             $value = $report[$this->getFieldName()];
             $replacedValue = $this->replaceText($value, $this->getPosition(), $this->getSearchField(), $this->getReplaceWith());
 
@@ -104,10 +112,12 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
 
             $report[$fieldName] = $replacedValue;
             $reports[$key] = $report;
+            if (!in_array($fieldName, $metrics)) {
+                $metrics[] = $fieldName;
+            }
         }
 
         $collection->setRows($reports);
-
     }
 
     /**

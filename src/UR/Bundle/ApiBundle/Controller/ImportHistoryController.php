@@ -126,7 +126,9 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
         /**@var ImportHistoryInterface $importHistory */
         $importHistory = $this->one($id);
         $importHistoryRepository = $this->get('ur.repository.import_history');
-        return $importHistoryRepository->getImportedData($importHistory);
+        $results = $importHistoryRepository->getImportedData($importHistory);
+
+        return $this->buildImportedData($results, $importHistory);
     }
 
     /**
@@ -180,5 +182,39 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.import_history');
+    }
+
+    private function buildImportedData(array $results, ImportHistoryInterface $importHistory)
+    {
+        $dimensions = $importHistory->getDataSet()->getDimensions();
+        $metrics = $importHistory->getDataSet()->getMetrics();
+        $fields = array_merge($dimensions, $metrics);
+
+        if (count($results) < 1) {
+            return [array_fill_keys(array_keys($fields), "")];
+        }
+
+        $connDataSources = $importHistory->getDataSet()->getConnectedDataSources();
+        $connDataSource = null;
+        foreach ($connDataSources as $item) {
+            if ($item->getDataSource()->getId() === $importHistory->getDataSourceEntry()->getDataSource()->getId()) {
+                $connDataSource = $item;
+                break;
+            }
+        }
+
+        foreach ($results as &$row) {
+            foreach ($connDataSource->getColumnTransforms()->getDateFormatTransforms() as $transform) {
+                $transform->setFromDateFormat('Y-m-d');
+                $transform->setDateFormat($transform->getToDateFormat());
+                $row[$transform->getField()] = $transform->transform($row[$transform->getField()]);
+            }
+
+            foreach ($connDataSource->getColumnTransforms()->getNumberFormatTransforms() as $transform) {
+                $row[$transform->getField()] = $transform->transform($row[$transform->getField()]);
+            }
+        }
+
+        return $results;
     }
 }

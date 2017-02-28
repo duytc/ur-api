@@ -16,9 +16,8 @@ use UR\Service\Parser\Filter\TextFilter;
 
 trait ValidateConnectedDataSourceTrait
 {
-    public function validateMappingFields(DataSetInterface $dataSet, $connDataSource)
+    public function validateMappingFields(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
     {
-        /**@var ConnectedDataSourceInterface $connDataSource */
         foreach ($connDataSource->getMapFields() as $mapField) {
             if (!array_key_exists($mapField, $dataSet->getDimensions()) && !array_key_exists($mapField, $dataSet->getMetrics())) {
                 return false;
@@ -28,12 +27,12 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
-    public function validateRequireFields(DataSetInterface $dataSet, $connDataSource)
+    public function validateRequireFields(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
     {
+        $allowedFields = array_merge($connDataSource->getMapFields(), array_flip(TransformType::$internalFields));
 
-        /**@var ConnectedDataSourceInterface $connDataSource */
         foreach ($connDataSource->getRequires() as $require) {
-            if (!in_array($require, $connDataSource->getMapFields())) {
+            if (!in_array($require, $allowedFields)) {
                 return false;
             }
         }
@@ -131,29 +130,17 @@ trait ValidateConnectedDataSourceTrait
 
     public function validateDateOrNumberTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
-        if (!in_array($transform[TransformType::FIELD], $connectedDataSource->getMapFields())) {
-            return "Transform setting error: field [" . $transform[TransformType::FIELD] . "] should be mapped";
-        }
-
-        return TransformType::isValidDateOrNumberTransform($transform);
+       return TransformType::isValidDateOrNumberTransform($transform);
     }
 
     public function validateAllFieldsTransform(ConnectedDataSourceInterface $connectedDataSource, $transform)
     {
         //GROUP BY
-        if (count($transform) !== 3 || !array_key_exists(TransformType::FIELDS, $transform)) {
+        if (!array_key_exists(TransformType::FIELDS, $transform)) {
             return "Transform setting error: Transform [" . $transform[TransformType::TYPE] . "] missing config information";
         }
 
         //SORT BY
-        if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
-            foreach ($transform[TransformType::FIELDS] as $field) {
-                $wrong_fields = array_diff($field[TransformType::NAMES], array_values($connectedDataSource->getMapFields()));
-                if (count($wrong_fields) > 0) {
-                    return "Transform ( " . $transform[TransformType::TYPE] . ") setting error: field [" . implode(", ", $wrong_fields) . "] hasn't been mapped ";
-                }
-            }
-        }
 
         //COMPARISON PERCENT
         if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {

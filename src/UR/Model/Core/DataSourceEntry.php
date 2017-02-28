@@ -13,6 +13,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $metaData;
     protected $receivedVia;
     protected $hashFile;
+    private $isDryRun = false;
 
     /**
      * @var DataSourceInterface
@@ -206,5 +207,34 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setHashFile($hashFile)
     {
         $this->hashFile = $hashFile;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceEntryMetadata()
+    {
+        if (!is_array($this->metaData) || count($this->metaData) < 1) {
+            return null;
+        }
+
+        return new DataSourceEntryMetadata($this->metaData);
+    }
+
+    /**
+     * @return boolean|null
+     */
+    public function isIsDryRun()
+    {
+        return $this->isDryRun;
+    }
+
+    /**
+     * @param boolean $isDryRun
+     */
+    public function setIsDryRun(bool $isDryRun)
+    {
+        $this->isDryRun = $isDryRun;
     }
 }

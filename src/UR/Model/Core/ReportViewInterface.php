@@ -4,6 +4,7 @@
 namespace UR\Model\Core;
 
 
+use Doctrine\ORM\PersistentCollection;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 
@@ -30,17 +31,6 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setAlias($alias);
-
-    /**
-     * @return array
-     */
-//    public function getDataSets();
-
-    /**
-     * @param array $dataSets
-     * @return self
-     */
-//    public function setDataSets($dataSets);
 
     /**
      * @return array
@@ -98,17 +88,6 @@ interface ReportViewInterface extends ModelInterface
     public function setDimensions($dimensions);
 
     /**
-     * @return array
-     */
-//    public function getFilters();
-
-    /**
-     * @param array $filters
-     * @return self
-     */
-//    public function setFilters($filters);
-
-    /**
      * @return boolean
      */
     public function isMultiView();
@@ -118,17 +97,6 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setMultiView($multiView);
-
-    /**
-     * @return array
-     */
-//    public function getReportViews();
-
-    /**
-     * @param array $reportViews
-     * @return self
-     */
-//    public function setReportViews($reportViews);
 
     /**
      * @return PublisherInterface
@@ -197,7 +165,7 @@ interface ReportViewInterface extends ModelInterface
     public function setSubReportsIncluded($subReportsIncluded);
 
     /**
-     * @return ReportViewMultiViewInterface[]
+     * @return PersistentCollection
      */
     public function getReportViewMultiViews();
 
@@ -208,7 +176,7 @@ interface ReportViewInterface extends ModelInterface
     public function setReportViewMultiViews($reportViewMultiViews);
 
     /**
-     * @return mixed
+     * @return PersistentCollection
      */
     public function getReportViewDataSets();
 
@@ -217,4 +185,15 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setReportViewDataSets($reportViewDataSets);
+
+    /**
+     * @return bool
+     */
+    public function isUserReorderTransformsAllowed();
+
+    /**
+     * @param mixed $userReorderTransformsAllowed
+     * @return self
+     */
+    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed);
 }

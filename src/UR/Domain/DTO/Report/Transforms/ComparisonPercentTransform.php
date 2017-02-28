@@ -39,9 +39,9 @@ class ComparisonPercentTransform extends NewFieldTransform implements TransformI
 		$this->type = $data[self::TYPE_KEY];
 	}
 
-	public function transform(Collection $collection, array &$metrics, array &$dimensions, $joinBy = null)
+	public function transform(Collection $collection, array &$metrics, array &$dimensions, array $outputJoinField)
 	{
-		parent::transform($collection, $metrics, $dimensions, $joinBy);
+		parent::transform($collection, $metrics, $dimensions, $outputJoinField);
 
 		$rows = $collection->getRows();
 		foreach ($rows as &$row) {

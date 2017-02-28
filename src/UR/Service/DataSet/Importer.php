@@ -6,6 +6,7 @@ use \Doctrine\DBAL\Schema\Table;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DTO\Collection;
+use UR\Service\Import\ImportDataException;
 
 class Importer
 {
@@ -31,29 +32,13 @@ class Importer
     public function importCollection(Collection $collection, Table $table, $importId, ConnectedDataSourceInterface $connectedDataSource)
     {
         $tableName = $table->getName();
-        $tableColumns = array_keys($table->getColumns());
-        $rows = array_values($collection->getRows());
         $dimensions = $connectedDataSource->getDataSet()->getDimensions();
         $metrics = $connectedDataSource->getDataSet()->getMetrics();
-        $mapFields = $connectedDataSource->getMapFields();
-        $columns = [];
-        if (count($rows) < 1) {
-            return true;
-        }
+        $allFields = array_merge($dimensions, $metrics);
+        $collection = $this->getRawData($collection, $allFields, $connectedDataSource);
+        $rows = $collection->getRows();
+        $columns = $collection->getColumns();
 
-        foreach ($rows[0] as $field => $value) {
-            if (array_key_exists($field, $mapFields)) {
-                if (in_array($mapFields[$field], $tableColumns)) {
-                    $columns[$field] = $mapFields[$field];
-                }
-            }
-
-            if (in_array($field, $collection->getColumns())) {
-                $columns[$field] = $field;
-            }
-        }
-
-        $columns = array_unique($columns);
         $dimensionMapping = [];
         $metricMappings = [];
 
@@ -130,7 +115,7 @@ class Importer
                     $qb->execute();
                 } catch (\Exception $e) {
                     $this->conn->rollBack();
-                    throw $e;
+                    throw new ImportDataException(null, null, null);
                 }
 
                 if ($this->preparedUpdateCount === $this->batchSize) {
@@ -140,8 +125,7 @@ class Importer
             }
         }
 
-        if ($preparedCounts > 0) {
-            // TODO: check var $question_marks is what???
+        if ($preparedCounts > 0 && is_array($columns) && is_array($question_marks)) {
             $insertSql = "INSERT INTO " . $tableName . "(" . implode(",", $columns) . ") VALUES " . implode(',', $question_marks);
             $this->executeInsert($insertSql, $insert_values);
         }
@@ -153,7 +137,7 @@ class Importer
         return true;
     }
 
-    function placeholders($text, $count = 0, $separator = ",")
+    private function placeholders($text, $count = 0, $separator = ",")
     {
         $result = array();
         if ($count > 0) {
@@ -165,7 +149,7 @@ class Importer
         return implode($separator, $result);
     }
 
-    function executeInsert($sql, array $values)
+    private function executeInsert($sql, array $values)
     {
         if ($this->preparedUpdateCount > 0) {
             $this->conn->commit(); //commit updates fields
@@ -176,11 +160,41 @@ class Importer
         $stmt = $this->conn->prepare($sql);
         try {
             $stmt->execute($values);
-        } catch (\Exception $e) {
+        } catch (\Exception $ex) {
             $this->conn->rollBack();
-            throw $e;
+            throw new ImportDataException(null, null, null);
         }
         $this->conn->commit();
         $this->conn->close();
+    }
+
+    public function getRawData(Collection $collection, $allFields, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $tableColumns = array_keys($allFields);
+        $rows = array_values($collection->getRows());
+        $mapFields = $connectedDataSource->getMapFields();
+        $columns = [];
+        if (count($rows) < 1) {
+            return $collection;
+        }
+
+        foreach ($rows[0] as $field => $value) {
+            if (array_key_exists($field, $mapFields)) {
+                if (in_array($mapFields[$field], $tableColumns)) {
+                    $columns[$field] = $mapFields[$field];
+                }
+            }
+
+            if (in_array($field, $collection->getColumns())) {
+                if (in_array($field, $tableColumns))
+                    $columns[$field] = $field;
+            }
+        }
+
+        $columns = array_unique($columns);
+        $collection->setRows($rows);
+        $collection->setColumns($columns);
+
+        return $collection;
     }
 }

@@ -27,6 +27,8 @@ services:
 
     ur.form.type.report_view:
         class: %ur.form.type.core.report_view.class%
+        arguments:
+            - @doctrine.orm.entity_manager
         tags:
             - { name: form.type, alias: ur_form_report_view }
 

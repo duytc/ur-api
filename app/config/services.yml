@@ -130,6 +130,7 @@ services:
             - @ur.service.import.do_log
             - %ur_batch_size%
             - %ur_reading_xls_chunk_size%
+            - @ur.service.parser
 
     ur.worker.workers.re_import_new_entry_received:
         class: UR\Worker\Workers\ReImportWhenNewEntryReceived
@@ -176,3 +177,15 @@ services:
         class: UR\Service\Import\ImportDataLogger
         arguments:
             - @monolog.logger
+
+    ur.service.parser:
+        class: UR\Service\Parser\Parser
+        arguments:
+            - @event_dispatcher
+
+    ur.service.import:
+        class: UR\Service\Import\ImportService
+        arguments:
+            - %upload_file_dir%
+            - %kernel.root_dir%
+            - @phpexcel

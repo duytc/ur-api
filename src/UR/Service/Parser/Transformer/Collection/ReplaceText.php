@@ -4,7 +4,7 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use UR\Service\DTO\Collection;
 
-class ReplaceText implements CollectionTransformerInterface
+class ReplaceText extends AbstractTransform implements CollectionTransformerInterface
 {
     const POSITION_AT_BEGINNING = 'at the beginning';
     const POSITION_AT_THE_END = 'at the end';
@@ -25,50 +25,94 @@ class ReplaceText implements CollectionTransformerInterface
      */
     protected $replaceWith;
 
+    /**
+     * @var string
+     */
     protected $field;
 
-    public function __construct($field, $searchFor, $position = self::POSITION_AT_BEGINNING, $replaceWith)
+    /**
+     * @var string
+     */
+    protected $targetField;
+
+    /**
+     * @var boolean
+     */
+    protected $isOverride;
+
+    public function __construct($field, $searchFor, $position = self::POSITION_AT_BEGINNING, $replaceWith, $targetField, $isOverride = true, $priority)
     {
+        parent::__construct($priority);
         $this->field = $field;
         $this->searchFor = $searchFor;
         $this->position = $position;
         $this->replaceWith = $replaceWith;
+        $this->targetField = $targetField;
+        $this->isOverride = $isOverride;
     }
 
     public function transform(Collection $collection)
     {
         $rows = $collection->getRows();
+        $columns = $collection->getColumns();
+
+        $isMultiTrans = false;
+        if (!$this->isOverride) {
+            if (!in_array($this->targetField, $columns)) {
+                $columns[] = $this->targetField;
+            } else {
+                $isMultiTrans = true;
+            }
+        }
+
         if (count($rows) < 1) {
             return $collection;
         }
 
         foreach ($rows as &$row) {
-            $this->replaceText($row);
+            if (!array_key_exists($this->field, $row)) {
+                return $collection;
+            }
+
+            if ($this->isOverride) {
+                $row[$this->field] = $this->replaceText($row, $this->field);
+            } else {
+                if ($isMultiTrans) {
+                    $row[$this->targetField] = $this->replaceText($row, $this->targetField);
+                } else {
+                    $row[$this->targetField] = $this->replaceText($row, $this->field);
+                }
+            }
         }
 
-        $collection->setRows($rows);
-
-        return $collection;
+        return new Collection($columns, $rows);
     }
 
-    public function replaceText(array &$row)
+    public function replaceText(array &$row, $field)
     {
+        $stringReplaced = $row[$field];
+
+        if ($stringReplaced === null) {
+            return null;
+        }
+        
         switch ($this->position) {
             case self::POSITION_ANY_WHERE:
-                $row[$this->field] = str_replace($this->searchFor, $this->replaceWith, $row[$this->field]);
+                $stringReplaced = str_replace($this->searchFor, $this->replaceWith, $row[$field]);
                 break;
             case self::POSITION_AT_BEGINNING:
-                if ($this->startsWith($row[$this->field], $this->searchFor)) {
-                    $row[$this->field] = substr_replace($row[$this->field], $this->replaceWith, 0, strlen($this->searchFor));
+                if ($this->startsWith($row[$field], $this->searchFor)) {
+                    $stringReplaced = substr_replace($row[$field], $this->replaceWith, 0, strlen($this->searchFor));
                 }
                 break;
             case self::POSITION_AT_THE_END:
                 if ($this->endsWith($row[$this->field], $this->searchFor)) {
-                    $row[$this->field] = substr_replace($row[$this->field], $this->replaceWith, strlen($row[$this->field]) - strlen($this->searchFor), strlen($this->searchFor));
+                    $stringReplaced = substr_replace($row[$field], $this->replaceWith, strlen($row[$field]) - strlen($this->searchFor), strlen($this->searchFor));
                 }
                 break;
         }
 
+        return $stringReplaced;
     }
 
     /**
@@ -100,8 +144,106 @@ class ReplaceText implements CollectionTransformerInterface
     /**
      * @inheritdoc
      */
-    public function getPriority()
+    public function getDefaultPriority()
     {
-        return self::TRANSFORM_REPLACE_TEXT;
+        return self::TRANSFORM_PRIORITY_REPLACE_TEXT;
     }
+
+    /**
+     * @return string
+     */
+    public function getPosition()
+    {
+        return $this->position;
+    }
+
+    /**
+     * @param string $position
+     */
+    public function setPosition(string $position)
+    {
+        $this->position = $position;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSearchFor()
+    {
+        return $this->searchFor;
+    }
+
+    /**
+     * @param string $searchFor
+     */
+    public function setSearchFor(string $searchFor)
+    {
+        $this->searchFor = $searchFor;
+    }
+
+    /**
+     * @return string
+     */
+    public function getReplaceWith()
+    {
+        return $this->replaceWith;
+    }
+
+    /**
+     * @param string $replaceWith
+     */
+    public function setReplaceWith(string $replaceWith)
+    {
+        $this->replaceWith = $replaceWith;
+    }
+
+    /**
+     * @return string
+     */
+    public function getField()
+    {
+        return $this->field;
+    }
+
+    /**
+     * @param string $field
+     */
+    public function setField(string $field)
+    {
+        $this->field = $field;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTargetField()
+    {
+        return $this->targetField;
+    }
+
+    /**
+     * @param string $targetField
+     */
+    public function setTargetField(string $targetField)
+    {
+        $this->targetField = $targetField;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isIsOverride()
+    {
+        return $this->isOverride;
+    }
+
+    /**
+     * @param boolean $isOverride
+     */
+    public function setIsOverride(bool $isOverride)
+    {
+        $this->isOverride = $isOverride;
+    }
+
+
 }

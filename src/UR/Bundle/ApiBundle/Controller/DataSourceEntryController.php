@@ -85,39 +85,6 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     }
 
     /**
-     * Get data sources by publisher id
-     *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceEntry.summary", "user.summary"})
-     *
-     * @Rest\Get("/datasourceentries/publisher/{id}")
-     *
-     * @ApiDoc(
-     *  section = "Data Source Entry",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful"
-     *  }
-     * )
-     *
-     * @param int $id the publisher id
-     * @return array
-     * @throws NotFoundHttpException when resource not exist
-     */
-    public function getDataSourceEntryByPublisherAction($id)
-    {
-        if (!$this->getUser() instanceof AdminInterface) {
-            throw new InvalidArgumentException('only Admin has permission to create this resource');
-        }
-
-        $publisherManager = $this->get('ur_user.domain_manager.publisher');
-        $publisher = $publisherManager->findPublisher($id);
-
-        $em = $this->get('ur.domain_manager.data_source_entry');
-
-        return $em->getDataSourceEntryForPublisher($publisher);
-    }
-
-    /**
      * Download a DataSource Entry
      *
      * @Rest\Get("/datasourceentries/{id}/download" )
@@ -176,7 +143,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $dataSourceEntry = $this->one($id);
         $filePath = $this->checkFileExist($dataSourceEntry);
         $importHistoryManager = $this->get('ur.domain_manager.import_history');
-        $importHistoryManager->replayDataSourceEntryData($dataSourceEntry);
+        return $importHistoryManager->replayDataSourceEntryData($dataSourceEntry);
     }
 
     /**
@@ -257,6 +224,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
 
         if ($replay === true) {
             foreach ($ids as $id) {
+                /**@var DataSourceEntryInterface $dataSourceEntry */
                 $dataSourceEntry = $this->one($id);
                 $importHistoryManager = $this->get('ur.domain_manager.import_history');
                 $importHistoryManager->replayDataSourceEntryData($dataSourceEntry);

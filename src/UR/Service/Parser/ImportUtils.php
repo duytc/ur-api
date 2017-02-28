@@ -9,6 +9,7 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\TableDiff;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\DataSet\FilterType;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
@@ -18,15 +19,8 @@ use UR\Service\Import\ImportDataLogger;
 use UR\Service\Parser\Filter\DateFilter;
 use UR\Service\Parser\Filter\NumberFilter;
 use UR\Service\Parser\Filter\TextFilter;
-use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
-use UR\Service\Parser\Transformer\Collection\AddConcatenatedField;
 use UR\Service\Parser\Transformer\Collection\AddField;
-use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
-use UR\Service\Parser\Transformer\Collection\GroupByColumns;
-use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Parser\Transformer\Column\DateFormat;
-use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
-use UR\Service\Parser\Transformer\Collection\ReplaceText;
 
 class ImportUtils
 {
@@ -201,67 +195,93 @@ class ImportUtils
         return null;
     }
 
-    function createTransformConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
+    function createTransformConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, DataSourceEntryInterface $dataSourceEntry)
     {
         $transforms = $connectedDataSource->getTransforms();
+        $dimensions = $connectedDataSource->getDataSet()->getDimensions();
+        $metrics = $connectedDataSource->getDataSet()->getMetrics();
+        $allFields = array_merge($dimensions, $metrics);
+        $collectionTransforms = $connectedDataSource->getCollectionTransforms();
+        $columnTransforms = $connectedDataSource->getColumnTransforms();
 
-        $sortByColumns = array();
-        foreach ($transforms as $transform) {
-            if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE]) && $parserConfig->hasColumnMapping($transform[TransformType::FIELD])) {
-                if (strcmp($transform[TransformType::TYPE], TransformType::DATE) === 0) {
-                    $parserConfig->addTransformColumn($transform[TransformType::FIELD], new DateFormat($transform[TransformType::FROM], 'Y-m-d'));
-                }
-            } else {
-                if (strcmp($transform[TransformType::TYPE], TransformType::GROUP_BY) === 0) {
-                    $parserConfig->addTransformCollection(new GroupByColumns($transform[TransformType::FIELDS]));
-                    continue;
-                }
-
-                if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
-                    $sortByColumns[] = $transform[TransformType::FIELDS];
-                    continue;
-                }
-
-                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
-                    foreach ($transform[TransformType::FIELDS] as $addfields) {
-                        $parserConfig->addTransformCollection(new AddField($addfields[TransformType::FIELD], $addfields[TransformType::VALUE]));
-                    }
-                    continue;
-                }
-
-                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CALCULATED_FIELD) === 0) {
-                    $expressionLanguage = new ExpressionLanguage;
-                    foreach ($transform[TransformType::FIELDS] as $f => $addCalculatedFields) {
-                        $parserConfig->addTransformCollection(new AddCalculatedField($expressionLanguage, $addCalculatedFields[TransformType::FIELD], $addCalculatedFields[TransformType::EXPRESSION]));
-                    }
-                    continue;
-                }
-
-                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CONCATENATED_FIELD) === 0) {
-                    foreach ($transform[TransformType::FIELDS] as $f => $addConcatenatedFields) {
-                        $parserConfig->addTransformCollection(new AddConcatenatedField($addConcatenatedFields[TransformType::FIELD], $addConcatenatedFields[TransformType::EXPRESSION]));
-                    }
-                    continue;
-                }
-
-                if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
-                    foreach ($transform[TransformType::FIELDS] as $comparisonPercents) {
-                        $parserConfig->addTransformCollection(new ComparisonPercent($comparisonPercents[TransformType::FIELD], $comparisonPercents[TransformType::NUMERATOR], $comparisonPercents[TransformType::DENOMINATOR]));
-                    }
-                    continue;
-                }
-
-                if (strcmp($transform[TransformType::TYPE], TransformType::REPLACE_TEXT) === 0) {
-                    foreach ($transform[TransformType::FIELDS] as $replaceText) {
-                        $parserConfig->addTransformCollection(new ReplaceText($replaceText[TransformType::FIELD], $replaceText[TransformType::SEARCH_FOR], $replaceText[TransformType::POSITION], $replaceText[TransformType::REPLACE_WITH]));
-                    }
-                    continue;
-                }
-            }
+        if ($collectionTransforms->getGroupByTransforms() !== null) {
+            $parserConfig->addTransformCollection($collectionTransforms->getGroupByTransforms());
         }
 
-        if ($sortByColumns) {
-            $parserConfig->addTransformCollection(new SortByColumns($sortByColumns));
+        if ($collectionTransforms->getSortByTransforms() !== null) {
+            $parserConfig->addTransformCollection($collectionTransforms->getSortByTransforms());
+        }
+
+        foreach ($collectionTransforms->getAddFieldTransform() as $addFieldTransform) {
+            $internalFieldValue = $this->getMetadataInternalValue($addFieldTransform->getTransformValue(), $dataSourceEntry);
+
+            if ($internalFieldValue !== null) {
+                $addFieldTransform->setTransformValue($internalFieldValue);
+            }
+
+            if (!array_key_exists($addFieldTransform->getColumn(), $allFields)) {
+                continue;
+            }
+
+            $addFieldTransform->setType($allFields[$addFieldTransform->getColumn()]);
+            $parserConfig->addTransformCollection($addFieldTransform);
+        }
+
+        foreach ($collectionTransforms->getAddCalculatedFieldTransforms() as $addCalculatedFieldTransform) {
+            $parserConfig->addTransformCollection($addCalculatedFieldTransform);
+        }
+
+        foreach ($collectionTransforms->getComparisonPercentTransforms() as $comparisonPercentTransform) {
+            $parserConfig->addTransformCollection($comparisonPercentTransform);
+        }
+
+        foreach ($collectionTransforms->getReplaceTextTransforms() as $replaceTextTransform) {
+            $this->addInternalVariable($replaceTextTransform->getField(), $replaceTextTransform->getTargetField(), $allFields, $parserConfig, $dataSourceEntry, $replaceTextTransform->getPriority());
+            $parserConfig->addTransformCollection($replaceTextTransform);
+        }
+
+        foreach ($collectionTransforms->getExtractPatternTransforms() as $extractPatternTransform) {
+            $this->addInternalVariable($extractPatternTransform->getField(), $extractPatternTransform->getTargetField(), $allFields, $parserConfig, $dataSourceEntry, $extractPatternTransform->getPriority());
+            $parserConfig->addTransformCollection($extractPatternTransform);
+        }
+
+        foreach ($columnTransforms->getDateFormatTransforms() as $dateFormatTransform) {
+            if (!array_key_exists($dateFormatTransform->getField(), $parserConfig->getAllColumnMappings())) {
+                continue;
+            }
+
+            $dateFormatTransform->setDateFormat('Y-m-d');
+            $parserConfig->addTransformColumn($dateFormatTransform->getField(), $dateFormatTransform);
+        }
+    }
+
+    private function getMetadataInternalValue($internalField, DataSourceEntryInterface $dataSourceEntry)
+    {
+        $metadata = $dataSourceEntry->getDataSourceEntryMetadata();
+        $result = null;
+
+        $result = str_replace(TransformType::FILE_NAME, $dataSourceEntry->getFileName(), $internalField);
+        if ($metadata === null)
+            return $result;
+        $result = str_replace(TransformType::EMAIL_SUBJECT, $metadata->getEmailSubject(), $result);
+        $result = str_replace(TransformType::EMAIL_BODY, $metadata->getEmailBody(), $result);
+        $result = str_replace(TransformType::EMAIL_DATE_TIME, $metadata->getEmailDatetime(), $result);
+
+        return $result;
+    }
+
+    private function addInternalVariable($field, $targetField, $allFields, ParserConfig $parserConfig, DataSourceEntryInterface $dataSourceEntry, $priority)
+    {
+        $internalField = sprintf("[%s]", $field);
+        if (in_array($internalField, TransformType::$internalFields)) {
+            $parserConfig->addTransformCollection(new AddField($field, $this->getMetadataInternalValue($internalField, $dataSourceEntry), Type::TEXT, $priority));
+        }
+
+        if ($targetField !== null || array_key_exists($targetField, $allFields)) {
+            $targetFieldType = $allFields[$targetField];
+            if (strcmp($targetFieldType, Type::DATE) === 0 && !$parserConfig->hasColumnMapping($targetField)) {
+                $parserConfig->addColumn($targetField, $targetField);
+            }
         }
     }
 }

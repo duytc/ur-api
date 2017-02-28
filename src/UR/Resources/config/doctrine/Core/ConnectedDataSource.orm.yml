@@ -17,12 +17,20 @@ UR\Entity\Core\ConnectedDataSource:
         transforms:
             type: json_array
             nullable: true
+        userReorderTransformsAllowed:
+            type: boolean
+            options:
+                default: true
         requires:
             type: json_array
             nullable: true
         alertSetting:
             type: json_array
             nullable: true
+        replayData:
+            type: boolean
+            option:
+                default: false
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

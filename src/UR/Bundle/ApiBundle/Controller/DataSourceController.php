@@ -6,6 +6,7 @@ use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -272,39 +273,6 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
-     * Get data sources by publisher id
-     *
-     * @Rest\Get("/datasources/publisher/{id}")
-     *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.summary", "integration.summary", "user.summary"})
-     *
-     * @ApiDoc(
-     *  section = "Data Source",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful"
-     *  }
-     * )
-     *
-     * @param int $id the publisher id
-     * @return mixed
-     * @throws NotFoundHttpException when resource not exist
-     */
-    public function getDataSourceByPublisherAction($id)
-    {
-        if (!$this->getUser() instanceof AdminInterface) {
-            throw new InvalidArgumentException('only Admin has permission to view this resource');
-        }
-
-        $publisherManager = $this->get('ur_user.domain_manager.publisher');
-        $publisher = $publisherManager->findPublisher($id);
-
-        $em = $this->get('ur.domain_manager.data_source');
-
-        return $em->getDataSourceForPublisher($publisher);
-    }
-
-    /**
      * Get data sources by API Key
      *
      * @Rest\Get("/datasources/byemail")
@@ -439,11 +407,9 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $dataSource = $this->one($id);
         /** @var FileBag $files */
         $files = $request->files;
-        $uploadRootDir = $this->container->getParameter('upload_file_dir');
         $dirItem = '/' . $dataSource->getPublisherId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
-        $uploadPath = $uploadRootDir . $dirItem;
-        $em = $this->get('ur.domain_manager.data_source_entry');
-        $result = $em->detectedFieldsFromFiles($files, $uploadPath, $dirItem, $dataSource);
+        $importService = $this->get('ur.service.import');
+        $result = $importService->detectedFieldsFromFiles($files, $dirItem, $dataSource);
         if (!is_array($result)) {
             throw new BadRequestHttpException('Could not detect fields from uploaded file');
         }
@@ -741,9 +707,10 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      * @param FileBag $fileBag
      * @param string $via is "upload" or "email" or "api" or "selenium". Default is "upload"
      * @param bool $alsoMoveFile
+     * @param null $metadata
      * @return array formatted as [ fileName => status, ... ]
      */
-    private function processUploadedFiles(DataSourceInterface $dataSource, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile = true)
+    private function processUploadedFiles(DataSourceInterface $dataSource, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile = true, $metadata = null)
     {
         /** @var UploadedFile[] $files */
         $files = $this->getUploadedFiles($fileBag);
@@ -765,7 +732,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             }
 
             try {
-                $oneResult = $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via, $alsoMoveFile);
+                $oneResult = $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via, $alsoMoveFile, $metadata);
 
                 $result[] = $oneResult;
             } catch (\Exception $e) {
@@ -802,6 +769,16 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             throw new BadRequestHttpException('expect ids is array of data source ids');
         }
 
+        /* "metadata": '{'from': 'uremail@mail.com', 'subject':'export data 02-12-1989', 'body':'dear Mr Thomas ...'}' */
+        $metadata = $request->request->get('metadata', null);
+
+        if ($metadata !== null) {
+            $metadata = json_decode($metadata, true);
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($metadata)) {
+                throw new BadRequestHttpException('expect metadata is json format');
+            }
+        }
+
         /** @var DataSourceInterface $dataSource */
         $dataSources = array_map(function ($id) {
             return $this->one($id);
@@ -810,7 +787,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         /** @var FileBag $fileBag */
         $fileBag = $request->files;
 
-        $result = $this->processUploadedFilesForMultipleDataSources($dataSources, $fileBag, $via);
+        $result = $this->processUploadedFilesForMultipleDataSources($dataSources, $fileBag, $via, $metadata);
 
         return $result;
     }
@@ -821,9 +798,10 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      * @param array|DataSourceInterface[] $dataSources
      * @param FileBag $fileBag
      * @param string $via is "upload" or "email" or "api" or "selenium". Default is "upload"
+     * @param null $metadata
      * @return array formatted as [ dataSourceId => [ fileName => status, ... ], ... ]
      */
-    private function processUploadedFilesForMultipleDataSources(array $dataSources, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD)
+    private function processUploadedFilesForMultipleDataSources(array $dataSources, FileBag $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD, $metadata = null)
     {
         $result = [];
 
@@ -833,7 +811,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             // IMPORTANT: copy original file for not last data source, and move original file for last data source
             $alsoMoveFile = ($i >= $len - 1);
 
-            $oneResult = $this->processUploadedFiles($dataSource, $fileBag, $via, $alsoMoveFile);
+            $oneResult = $this->processUploadedFiles($dataSource, $fileBag, $via, $alsoMoveFile, $metadata);
             $result[$dataSource->getId()] = $oneResult;
         }
 
@@ -885,5 +863,47 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         foreach ($parts as $part)
             if (!is_dir($dir .= "/$part")) mkdir($dir);
         file_put_contents("$dir/$file", $contents);
+    }
+
+    /**
+     * Get all import history by datasource
+     *
+     * @Rest\Get("datasources/{id}/importhistories", requirements={"id" = "\d+"})
+     * @Rest\View(serializerGroups={"importHistory.detail", "user.summary", "dataset.importhistory", "dataSourceEntry.summary", "datasource.importhistory"})
+     *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     * @param Request $request
+     * @return array
+     * @throws \Exception
+     */
+    public function getImportHistoriesByDataSourceAction(Request $request, $id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource= $this->one($id);
+        $importHistoryManager = $this->get('ur.domain_manager.import_history');
+        $qb = $importHistoryManager->getImportedHistoryByDataSourceQuery($dataSource, $this->getParams());
+
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
     }
 }

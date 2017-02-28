@@ -39,9 +39,8 @@ class ReImportWhenNewEntryReceived
             $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
             if ($dataSourceEntry === null)
                 continue;
-            $connectedDataSources = $dataSourceEntry->getDataSource()->getConnectedDataSources();
 
-            $this->autoImport->autoCreateDataImport($connectedDataSources, $dataSourceEntry);
+            $this->autoImport->autoCreateDataImport($dataSourceEntry);
         }
     }
 }

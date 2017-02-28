@@ -42,13 +42,15 @@ class ReportViewManager implements ReportViewManagerInterface
      */
     public function save(ModelInterface $reportView)
     {
-        if (!$reportView instanceof ReportViewInterface) throw new InvalidArgumentException('expect ReportViewInterface object');
+        if (!$reportView instanceof ReportViewInterface) {
+            throw new InvalidArgumentException('expect ReportViewInterface object');
+        }
 
         try {
             $this->om->persist($reportView);
             $this->om->flush();
         } catch (\Exception $e) {
-            $msg = $e->getMessage();
+            throw $e;
         }
     }
 
@@ -57,7 +59,9 @@ class ReportViewManager implements ReportViewManagerInterface
      */
     public function delete(ModelInterface $reportView)
     {
-        if (!$reportView instanceof ReportViewInterface) throw new InvalidArgumentException('expect ReportViewInterface object');
+        if (!$reportView instanceof ReportViewInterface) {
+            throw new InvalidArgumentException('expect ReportViewInterface object');
+        }
 
         $reportViewMultiViewRepository = $this->om->getRepository(ReportViewMultiView::class);
         if ($reportViewMultiViewRepository->checkIfReportViewBelongsToMultiView($reportView)) {

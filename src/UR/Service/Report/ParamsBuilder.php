@@ -4,12 +4,18 @@ namespace UR\Service\Report;
 
 use Doctrine\ORM\PersistentCollection;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use UR\Behaviors\JoinConfigUtilTrait;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Formats\ColumnPositionFormat;
 use UR\Domain\DTO\Report\Formats\CurrencyFormat;
 use UR\Domain\DTO\Report\Formats\DateFormat;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\Formats\NumberFormat;
+use UR\Domain\DTO\Report\Formats\PercentageFormat;
+use UR\Domain\DTO\Report\JoinBy\JoinConfig;
+use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
+use UR\Domain\DTO\Report\JoinBy\JoinField;
+use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Domain\DTO\Report\Params;
 use UR\Domain\DTO\Report\ReportViews\ReportView;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
@@ -27,6 +33,8 @@ use UR\Service\DTO\Report\WeightedCalculation;
 
 class ParamsBuilder implements ParamsBuilderInterface
 {
+	use JoinConfigUtilTrait;
+
 	const DATA_SET_KEY = 'reportViewDataSets';
 	const FIELD_TYPES_KEY = 'fieldTypes';
 	const TRANSFORM_KEY = 'transforms';
@@ -41,6 +49,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 	const START_DATE = 'startDate';
 	const END_DATE = 'endDate';
 	const USER_DEFINED_DATE_RANGE = 'userDefineDateRange';
+	const AUTO_REORDER_TRANSFORMS = 'userReorderTransformsAllowed';
 
 	/**
 	 * @inheritdoc
@@ -95,8 +104,12 @@ class ParamsBuilder implements ParamsBuilderInterface
 
 			if (array_key_exists(self::JOIN_BY_KEY, $data)) {
 				$joinBy = json_decode($data[self::JOIN_BY_KEY], true);
+				if (json_last_error() !== JSON_ERROR_NONE) {
+					throw new InvalidArgumentException('Invalid JSON format in JoinConfigs');
+				}
+
 				if (is_array($joinBy) && !empty($joinBy)) {
-					$param->setJoinByFields($joinBy);
+					$param->setJoinConfigs($this->createJoinConfigs($joinBy, $param->getDataSets()));
 				}
 			}
 		}
@@ -135,6 +148,12 @@ class ParamsBuilder implements ParamsBuilderInterface
 			$param->setEndDate($data[self::END_DATE]);
 		}
 
+		if (array_key_exists(self::AUTO_REORDER_TRANSFORMS, $data)) {
+			$param->setUserReorderTransformsAllowed(filter_var($data[self::AUTO_REORDER_TRANSFORMS], FILTER_VALIDATE_BOOLEAN));
+		} else {
+			$param->setUserReorderTransformsAllowed(true);
+		}
+
 		return $param;
 	}
 
@@ -154,6 +173,100 @@ class ParamsBuilder implements ParamsBuilderInterface
 		}
 
 		return $dataSetObjects;
+	}
+
+	/**
+	 * create JoinConfig objects from json data
+	 * @param array $data
+	 * @param array $dataSets
+	 * @return array
+	 */
+	protected function createJoinConfigs(array $data, array $dataSets)
+	{
+		$joinedDataSets = [];
+		$joinConfigs = [];
+		$this->normalizeJoinConfig($data, $dataSets);
+
+		if ($this->isCircularJoinConfig($data)) {
+			throw new InvalidArgumentException('Circular join config');
+		}
+
+		foreach ($data as $config) {
+			$joinConfig = new JoinConfig();
+			$joinConfig->setOutputField($config[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]);
+
+			$joinFields = $config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
+			foreach($joinFields as $joinField) {
+				$joinConfig->addJoinField(new JoinField($joinField[SqlBuilder::JOIN_CONFIG_DATA_SET], $joinField[SqlBuilder::JOIN_CONFIG_FIELD]));
+				$joinedDataSets[] = $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
+			}
+
+			$joinConfig->setDataSets();
+			$joinConfigs[] = $joinConfig;
+			unset($joinConfig);
+		}
+
+		$startDataSets = [];
+		$endDataSets = [];
+		$dataSetIds = array_map(function(DataSet $dataSet) {
+			return $dataSet->getDataSetId();
+		}, $dataSets);
+		$startDataSet = current($dataSetIds);
+
+		while (count($startDataSets) <= count($dataSetIds)) {
+			if (!in_array($startDataSet, $startDataSets)) {
+				$startDataSets[] = $startDataSet;
+			}
+
+			$endNodes = $this->findEndNodesForDataSet($joinConfigs, $startDataSet, $startDataSets);
+			if (empty($endNodes)) {
+				$startDataSet = array_shift($endDataSets);
+				if ($startDataSet === null) {
+					if (count($startDataSets) < count($dataSetIds) - 1) {
+						throw new InvalidArgumentException("There's seem to be some data set is missing from the join config");
+					}
+					break;
+				}
+				continue;
+			}
+
+			$endDataSets = $this->getListEndDataSets($endNodes, $startDataSet);
+			$startDataSet = array_shift($endDataSets);
+			if ($startDataSet === null) {
+				if (count($startDataSets) < count($dataSetIds) - 1) {
+					throw new InvalidArgumentException("There's seem to be some data set is missing from the join config");
+				}
+				break;
+			}
+		}
+
+		return $joinConfigs;
+	}
+
+	private function getToDataSet($joinConfig, $fromDataSetId)
+	{
+		/** @var JoinFieldInterface $config */
+		foreach ($joinConfig as $config) {
+			$dataSetId = $config->getDataSet();
+			if ($fromDataSetId == $dataSetId) {
+				continue;
+			}
+
+			return $dataSetId;
+		}
+
+		return $fromDataSetId;
+	}
+
+	private function getListEndDataSets($joinConfig, $fromDataSetId)
+	{
+		$endDataSets = [];
+		/** @var JoinConfigInterface $config */
+		foreach ($joinConfig as $config) {
+			$endDataSets[] = $this->getToDataSet($config->getJoinFields(), $fromDataSetId);
+		}
+
+		return $endDataSets;
 	}
 
 	/**
@@ -233,8 +346,6 @@ class ParamsBuilder implements ParamsBuilderInterface
 	 */
 	protected function createTransforms(array $transforms)
 	{
-		$sortByInputObjects = [];
-		$groupByInputObjects = [];
 		$transformObjects = [];
 		foreach ($transforms as $transform) {
 			if (!array_key_exists(TransformInterface::TRANSFORM_TYPE_KEY, $transform)) {
@@ -256,9 +367,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 					break;
 
 				case TransformInterface::GROUP_TRANSFORM:
-					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $groupField) {
-						$groupByInputObjects [] = $groupField;
-					}
+					$transformObjects[] = new GroupByTransform($transform[TransformInterface::FIELDS_TRANSFORM]);
 					break;
 
 				case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
@@ -268,9 +377,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 					break;
 
 				case TransformInterface::SORT_TRANSFORM:
-					foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $sortField) {
-						$sortByInputObjects[] = $sortField;
-					}
+					$transformObjects[] = new SortByTransform($transform[TransformInterface::FIELDS_TRANSFORM]);
                     break;
                 case TransformInterface::REPLACE_TEXT_TRANSFORM:
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $replaceTextField) {
@@ -278,14 +385,6 @@ class ParamsBuilder implements ParamsBuilderInterface
                     }
                     break;
             }
-		}
-
-		if (!empty ($sortByInputObjects)) {
-			$transformObjects[] = new SortByTransform($sortByInputObjects);
-		}
-
-		if (!empty ($groupByInputObjects)) {
-			$transformObjects[] = new GroupByTransform($groupByInputObjects);
 		}
 
 		return $transformObjects;
@@ -325,6 +424,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 					$formatObjects[] = new ColumnPositionFormat($format);
 
 					break;
+                case FormatInterface::FORMAT_TYPE_PERCENTAGE:
+                    $formatObjects[] = new PercentageFormat($format);
+
+                    break;
 			}
 		}
 
@@ -349,8 +452,9 @@ class ParamsBuilder implements ParamsBuilderInterface
 			$param
 				->setDataSets($this->createDataSets(
 					$this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
-				)
-				->setJoinByFields($reportView->getJoinBy());
+				);
+
+			$param->setJoinConfigs($this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets()));
 			// set showInTotal to NULL to get all total values
 			// DO NOT change
 		}
@@ -401,11 +505,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 				)
 				->setSubReportIncluded($reportView->isSubReportsIncluded());
 		} else {
-			$param
-				->setDataSets($this->createDataSets(
+			$param->setDataSets($this->createDataSets(
 					$this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
-				)
-				->setJoinByFields($reportView->getJoinBy());
+			);
+			$param->setJoinConfigs($this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets()));
 		}
 
 		$param

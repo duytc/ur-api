@@ -17,12 +17,13 @@ class AddCalculatedField extends AbstractAddField
     protected $defaultValue;
     protected $language;
 
-    public function __construct(ExpressionLanguage $language, $column, $expression, $defaultValue = 0)
+    public function __construct($column, $expression, $defaultValue = 0, $priority)
     {
+        parent::__construct($column, $priority);
         $this->column = $column;
         $this->expression = $expression;
         $this->defaultValue = $defaultValue;
-        $this->language = $language;
+        $this->language = new ExpressionLanguage();
     }
 
     protected function getValue(array $row)
@@ -48,7 +49,7 @@ class AddCalculatedField extends AbstractAddField
             $result = null;
         }
 
-        if ($result === false) {
+        if ($result === false || is_infinite($result) || is_nan($result)) {
             return null;
         }
 
@@ -75,6 +76,10 @@ class AddCalculatedField extends AbstractAddField
                 return null;
             }
 
+            if (!is_numeric($row[$field])) {
+                return null;
+            }
+
             $replaceString = sprintf('row[\'%s\']', $field);
             $expression = str_replace($fieldsInBracket[$index], $replaceString, $expression);
         }
@@ -85,7 +90,7 @@ class AddCalculatedField extends AbstractAddField
     /**
      * @inheritdoc
      */
-    public function getPriority()
+    public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_ADD_CALCULATED_FIELD;
     }

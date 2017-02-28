@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "4c56993b31b8132cfdc1f3d40a7d4ca9",
-    "content-hash": "46623673936b9cf5207ace1ce66ec687",
+    "hash": "1b16ffca641ffef9e229bbc6f11fa943",
+    "content-hash": "203153dae1127fa5d9d3155d895c1397",
     "packages": [
         {
             "name": "behat/transliterator",
@@ -703,6 +703,65 @@
             "time": "2016-01-26 17:28:51"
         },
         {
+            "name": "doctrine/doctrine-migrations-bundle",
+            "version": "1.0.1",
+            "target-dir": "Doctrine/Bundle/MigrationsBundle",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/doctrine/DoctrineMigrationsBundle.git",
+                "reference": "1e8cd4415bd2f893eb828216b529a75e8b61d579"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/doctrine/DoctrineMigrationsBundle/zipball/1e8cd4415bd2f893eb828216b529a75e8b61d579",
+                "reference": "1e8cd4415bd2f893eb828216b529a75e8b61d579",
+                "shasum": ""
+            },
+            "require": {
+                "doctrine/doctrine-bundle": "~1.0",
+                "doctrine/migrations": "~1.0@dev",
+                "php": ">=5.3.2",
+                "symfony/framework-bundle": "~2.3|~3.0"
+            },
+            "type": "symfony-bundle",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Doctrine\\Bundle\\MigrationsBundle": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Symfony Community",
+                    "homepage": "http://symfony.com/contributors"
+                },
+                {
+                    "name": "Doctrine Project",
+                    "homepage": "http://www.doctrine-project.org"
+                },
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                }
+            ],
+            "description": "Symfony DoctrineMigrationsBundle",
+            "homepage": "http://www.doctrine-project.org",
+            "keywords": [
+                "dbal",
+                "migrations",
+                "schema"
+            ],
+            "time": "2015-05-06 08:32:15"
+        },
+        {
             "name": "doctrine/inflector",
             "version": "v1.0.1",
             "source": {
@@ -878,6 +937,73 @@
             "time": "2014-09-09 13:34:57"
         },
         {
+            "name": "doctrine/migrations",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/doctrine/migrations.git",
+                "reference": "3a787de7c4a64460436dc2eb2e3cde8920d5fadd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/doctrine/migrations/zipball/3a787de7c4a64460436dc2eb2e3cde8920d5fadd",
+                "reference": "3a787de7c4a64460436dc2eb2e3cde8920d5fadd",
+                "shasum": ""
+            },
+            "require": {
+                "doctrine/dbal": "~2.2",
+                "php": ">=5.4.0",
+                "symfony/console": "~2.3",
+                "symfony/yaml": "~2.3"
+            },
+            "require-dev": {
+                "doctrine/coding-standard": "dev-master",
+                "doctrine/orm": "2.*",
+                "johnkary/phpunit-speedtrap": "~1.0@dev",
+                "mockery/mockery": "^0.9.4",
+                "phpunit/phpunit": "~4.7",
+                "satooshi/php-coveralls": "0.6.*"
+            },
+            "suggest": {
+                "symfony/console": "to run the migration from the console"
+            },
+            "bin": [
+                "bin/doctrine-migrations"
+            ],
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Doctrine\\DBAL\\Migrations": "lib"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-2.1"
+            ],
+            "authors": [
+                {
+                    "name": "Benjamin Eberlei",
+                    "email": "kontakt@beberlei.de"
+                },
+                {
+                    "name": "Jonathan Wage",
+                    "email": "jonwage@gmail.com"
+                }
+            ],
+            "description": "Database Schema migrations using Doctrine DBAL",
+            "homepage": "http://www.doctrine-project.org",
+            "keywords": [
+                "database",
+                "migrations"
+            ],
+            "time": "2015-07-29 20:43:19"
+        },
+        {
             "name": "doctrine/orm",
             "version": "v2.5.5",
             "source": {
@@ -1041,7 +1167,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSUserBundle/zipball/1f97ccf3c41cc811176d0e5c142e5636842a9124",
+                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSUserBundle/zipball/624191ae6c519e0bdf11183925b7e11b506f94e2",
                 "reference": "7abb0ff366c404f2c2b34fd264693071148351a2",
                 "shasum": ""
             },
@@ -1192,18 +1318,18 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/gfreeau/GfreeauCustomValidationPathBundle.git",
-                "reference": "cb248e3fbfd0b8edf19a7fce5111924089217ca7"
+                "reference": "48b899fda29ee2492d42fb8d3f405fc911fdb334"
             },
             "dist": {
                 "type": "zip",
                 "url": "https://api.github.com/repos/gfreeau/GfreeauCustomValidationPathBundle/zipball/48b899fda29ee2492d42fb8d3f405fc911fdb334",
-                "reference": "cb248e3fbfd0b8edf19a7fce5111924089217ca7",
+                "reference": "48b899fda29ee2492d42fb8d3f405fc911fdb334",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.3",
-                "symfony/framework-bundle": "~2.3",
-                "symfony/symfony": "~2.3"
+                "symfony/framework-bundle": "~2.3|~3.0",
+                "symfony/symfony": "~2.3|~3.0"
             },
             "type": "symfony-bundle",
             "autoload": {
@@ -1233,7 +1359,7 @@
                 "source": "https://github.com/gfreeau/GfreeauCustomValidationPathBundle/tree/master",
                 "issues": "https://github.com/gfreeau/GfreeauCustomValidationPathBundle/issues"
             },
-            "time": "2014-06-13 17:00:30"
+            "time": "2016-10-04 12:43:00"
         },
         {
             "name": "gfreeau/get-jwt-bundle",
@@ -3054,12 +3180,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/stof/StofDoctrineExtensionsBundle.git",
-                "reference": "4e7499d25dc5d0862da09fa8e336164948a29a25"
+                "reference": "f9e3854f90eb35ed2c28f0fc8a4c1ed6627d0a80"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stof/StofDoctrineExtensionsBundle/zipball/4e7499d25dc5d0862da09fa8e336164948a29a25",
-                "reference": "4e7499d25dc5d0862da09fa8e336164948a29a25",
+                "url": "https://api.github.com/repos/stof/StofDoctrineExtensionsBundle/zipball/f9e3854f90eb35ed2c28f0fc8a4c1ed6627d0a80",
+                "reference": "f9e3854f90eb35ed2c28f0fc8a4c1ed6627d0a80",
                 "shasum": ""
             },
             "require": {
@@ -3107,7 +3233,7 @@
                 "translatable",
                 "tree"
             ],
-            "time": "2016-01-26 23:58:32"
+            "time": "2017-01-13 18:32:32"
         },
         {
             "name": "swiftmailer/swiftmailer",
@@ -3975,6 +4101,57 @@
             "time": "2016-09-07 02:04:25"
         },
         {
+            "name": "tagcade/unified-reports-custom-transform-bundle",
+            "version": "dev-master",
+            "target-dir": "Tagcade/Bundle/URCustomTransformBundle",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:tagcade/unified-reports-custom-transform-bundle.git",
+                "reference": "58016a72910b94e933a6662c464cbd42ea117844"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tagcade/unified-reports-custom-transform-bundle/zipball/58016a72910b94e933a6662c464cbd42ea117844",
+                "reference": "58016a72910b94e933a6662c464cbd42ea117844",
+                "shasum": ""
+            },
+            "require": {
+                "doctrine/doctrine-bundle": "~1.4",
+                "doctrine/doctrine-migrations-bundle": "1.0.*",
+                "doctrine/migrations": "1.0.*@dev",
+                "doctrine/orm": "^2.4.8",
+                "incenteev/composer-parameter-handler": "^2.0",
+                "lexik/jwt-authentication-bundle": "^1.4.3|^2.0.0@dev",
+                "php": ">=5.3.3",
+                "sensio/distribution-bundle": "^5.0",
+                "sensio/framework-extra-bundle": "^3.0.2",
+                "symfony/monolog-bundle": "~2.4",
+                "symfony/polyfill-apcu": "^1.0",
+                "symfony/symfony": "2.8.*"
+            },
+            "require-dev": {
+                "sensio/generator-bundle": "^3.0",
+                "symfony/phpunit-bridge": "^3.0"
+            },
+            "type": "symfony-bundle",
+            "extra": {
+                "branch-alias": null
+            },
+            "autoload": {
+                "psr-0": {
+                    "Tagcade\\Bundle\\URCustomTransformBundle": ""
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "support": {
+                "source": "https://github.com/tagcade/unified-reports-custom-transform-bundle/tree/master",
+                "issues": "https://github.com/tagcade/unified-reports-custom-transform-bundle/issues"
+            },
+            "time": "2017-02-15 11:09:47"
+        },
+        {
             "name": "twig/twig",
             "version": "v1.25.0",
             "source": {
@@ -4295,12 +4472,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/DoctrineFixturesBundle.git",
-                "reference": "0f1a2f91b349e10f5c343f75ab71d23aace5b029"
+                "reference": "fb060e289a2996e21869c261a983c0f8450132f6"
             },
             "dist": {
                 "type": "zip",
                 "url": "https://api.github.com/repos/doctrine/DoctrineFixturesBundle/zipball/fb060e289a2996e21869c261a983c0f8450132f6",
-                "reference": "0f1a2f91b349e10f5c343f75ab71d23aace5b029",
+                "reference": "fb060e289a2996e21869c261a983c0f8450132f6",
                 "shasum": ""
             },
             "require": {
@@ -4344,7 +4521,7 @@
                 "Fixture",
                 "persistence"
             ],
-            "time": "2015-11-04 21:23:23"
+            "time": "2016-10-13 13:56:07"
         },
         {
             "name": "liip/functional-test-bundle",
@@ -4356,7 +4533,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/liip/LiipFunctionalTestBundle/zipball/2ac5c981fbf8a0b2bd045602aa602cb24bf57ab0",
+                "url": "https://api.github.com/repos/liip/LiipFunctionalTestBundle/zipball/8466b71c7a923295c3045b257efb53015f432ff5",
                 "reference": "9ce4e7f1948e559d986141b57f913bb83fcc9734",
                 "shasum": ""
             },
@@ -5219,6 +5396,7 @@
         "jms/serializer-bundle": 20,
         "gfreeau/custom-validation-path-bundle": 20,
         "stof/doctrine-extensions-bundle": 20,
+        "tagcade/unified-reports-custom-transform-bundle": 20,
         "sensio/generator-bundle": 20,
         "doctrine/doctrine-fixtures-bundle": 20,
         "liip/functional-test-bundle": 20,

@@ -80,4 +80,35 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @param mixed $alertSetting
      */
     public function setAlertSetting($alertSetting);
+
+    /**
+     * @return ConnectedDataSourceCollectionTransform
+     */
+    public function getCollectionTransforms();
+
+    /**
+     * @return ConnectedDataSourceColumnTransform
+     */
+    public function getColumnTransforms();
+
+    /**
+     * @return boolean
+     */
+    public function isReplayData();
+
+    /**
+     * @param boolean $replayData
+     */
+    public function setReplayData($replayData);
+
+    /**
+     * @return bool
+     */
+    public function isUserReorderTransformsAllowed();
+
+    /**
+     * @param mixed $userReorderTransformsAllowed
+     * @return self
+     */
+    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed);
 }

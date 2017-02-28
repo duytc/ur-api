@@ -21,3 +21,11 @@ services:
         tags:
             - { name: doctrine.event_listener, event: onFlush }
             - { name: doctrine.event_listener, event: postFlush }
+
+    ur_app.event_listener.connected_data_source_entry_inserted_listener:
+        class: UR\Bundle\AppBundle\EventListener\ReImportWhenConnectedDataSourceEntryInsertedListener
+        arguments:
+            - @ur.worker.manager
+        tags:
+            - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postFlush }
