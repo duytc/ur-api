@@ -196,4 +196,15 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setUserReorderTransformsAllowed($userReorderTransformsAllowed);
+
+    /**
+     * @return bool
+     */
+    public function getIsShowDataSetName();
+
+    /**
+     * @param mixed $isShowDataSetName
+     * @return self
+     */
+    public function setIsShowDataSetName($isShowDataSetName);
 }

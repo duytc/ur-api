@@ -427,7 +427,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* group reports */
         /** @var ReportResultInterface $reportResult */
-        $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $isSingleDataSet);
+        $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $params->getIsShowDataSetName(), $isSingleDataSet);
 
         /*update column after group */
         /* $firstReport = ($reportResult->getReports())[0];

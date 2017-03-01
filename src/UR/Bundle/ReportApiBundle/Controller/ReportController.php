@@ -30,6 +30,7 @@ class ReportController extends FOSRestController
      * @Rest\QueryParam(name="userDefineDateRange", nullable=true)
      * @Rest\QueryParam(name="startDate", nullable=true)
      * @Rest\QueryParam(name="endDate", nullable=true)
+     * @Rest\QueryParam(name="isShowDataSetName", nullable=true)
      *
      * @ApiDoc(
      *  section = "admin",
@@ -50,7 +51,8 @@ class ReportController extends FOSRestController
      *      {"name"="subReportsIncluded", "dataType"="bool", "required"=false, "description"="include sub reports in multi view report"},
      *      {"name"="userDefineDateRange", "dataType"="bool", "required"=false, "description"="user define data range in multi view report"},
      *      {"name"="startDate", "dataType"="string", "required"=false, "description"="start date in multi view report"},
-     *      {"name"="endDate", "dataType"="string", "required"=false, "description"="end date in multi view report"}
+     *      {"name"="endDate", "dataType"="string", "required"=false, "description"="end date in multi view report"},
+     *      {"name"="isShowDataSetName", "dataType"="bool", "required"=false, "description"="show data set name or not"}
      *  }
      * )
      *

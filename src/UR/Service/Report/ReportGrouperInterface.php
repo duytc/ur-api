@@ -13,8 +13,9 @@ interface ReportGrouperInterface
      * @param array $metrics
      * @param $weightedCalculation
      * @param $dateRanges
-     * @param $singleDataSet
+     * @param $isShowDataSetName
+     * @param bool $singleDataSet
      * @return mixed
      */
-    public function group(Collection $collection, array $metrics, $weightedCalculation, $dateRanges, $singleDataSet = false);
+    public function group(Collection $collection, array $metrics, $weightedCalculation, $dateRanges, $isShowDataSetName, $singleDataSet = false);
 }
