@@ -6,6 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use UR\Behaviors\ConvertFileEncoding;
+use UR\Entity\Core\DataSource;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -15,6 +16,7 @@ use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use ReflectionClass;
 use UR\Service\Alert\ProcessAlert;
+use UR\Service\DataSource\DataSourceType;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Import\ImportService;
 use UR\Worker\Manager;
@@ -105,8 +107,6 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         if (!DataSourceEntry::isSupportedReceivedViaType($receivedVia)) {
             throw new \Exception(sprintf("receivedVia %s is not supported", $receivedVia));
         }
-
-        $error = $this->importService->validateFileUpload($file, $dataSource);
         $origin_name = $file->getClientOriginalName();
         $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
         $dataSourceAlertSettings = $dataSource->getAlertSettingConfig();
@@ -117,7 +117,23 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         );
 
         try {
-            if ($error > 0) {
+            // validate file extension before processing upload
+            $isExtensionSupport = $this->importService->validateExtensionSupports($file);
+            if (!$isExtensionSupport) {
+                throw new ImportDataException(ProcessAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT, null, null);
+            }
+
+            // automatically update data source format if has no entry before
+            if (count($dataSource->getDataSourceEntries()) < 1) {
+                $rawFileFormat = $file->getClientOriginalExtension();
+                $format = DataSourceType::getOriginalDataSourceType($rawFileFormat);
+                $dataSource->setFormat($format);
+                $this->om->persist($dataSource);
+                $this->om->flush();
+            }
+
+            $isValidExtension = $this->importService->validateFileUpload($file, $dataSource);
+            if (!$isValidExtension) {
                 throw new ImportDataException(ProcessAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT, null, null);
             }
 
