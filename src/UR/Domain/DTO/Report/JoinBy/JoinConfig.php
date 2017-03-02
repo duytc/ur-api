@@ -19,6 +19,10 @@ class JoinConfig implements JoinConfigInterface
      */
     protected $dataSets;
 
+    /**
+     * @var bool
+     */
+    protected $hiddenJoinColumn;
 
 
     /**
@@ -101,5 +105,21 @@ class JoinConfig implements JoinConfigInterface
 
         $this->joinFields[] = $joinField;
         return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isHiddenJoinColumn()
+    {
+        return $this->hiddenJoinColumn;
+    }
+
+    /**
+     * @param boolean $hiddenJoinColumn
+     */
+    public function setHiddenJoinColumn($hiddenJoinColumn)
+    {
+        $this->hiddenJoinColumn = $hiddenJoinColumn;
     }
 }
