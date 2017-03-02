@@ -118,6 +118,11 @@ class ReportView implements ReportViewInterface
     protected $userReorderTransformsAllowed;
 
     /**
+     * @var bool
+     */
+    protected $isShowDataSetName;
+
+    /**
      * @return mixed
      */
     public function getShared()
@@ -442,5 +447,21 @@ class ReportView implements ReportViewInterface
     {
         $this->userReorderTransformsAllowed = $userReorderTransformsAllowed;
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getIsShowDataSetName()
+    {
+        return $this->isShowDataSetName;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setIsShowDataSetName($isShowDataSetName)
+    {
+        $this->isShowDataSetName = $isShowDataSetName;
     }
 }

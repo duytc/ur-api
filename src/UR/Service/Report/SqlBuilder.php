@@ -37,6 +37,7 @@ class SqlBuilder implements SqlBuilderInterface
 
     const JOIN_CONFIG_JOIN_FIELDS = 'joinFields';
     const JOIN_CONFIG_OUTPUT_FIELD = 'outputField';
+    const JOIN_CONFIG_HIDDEN = 'isHiddenJoinColumn';
     const JOIN_CONFIG_FIELD = 'field';
     const JOIN_CONFIG_DATA_SET = 'dataSet';
     const JOIN_CONFIG_DATA_SETS = 'dataSets';
@@ -276,13 +277,14 @@ class SqlBuilder implements SqlBuilderInterface
      * @param $dataSetIndexes
      * @param array $joinConfig
      * @param array $endDataSets
+     * @param array $joinedDataSets
      * @return QueryBuilder
      */
-    private function buildJoinQueryForDataSet(QueryBuilder $qb, $fromDataSetId, $dataSetIndexes, array $joinConfig, array &$endDataSets)
+    private function buildJoinQueryForDataSet(QueryBuilder $qb, $fromDataSetId, $dataSetIndexes, array $joinConfig, array &$endDataSets, array &$joinedDataSets)
     {
         /** @var JoinConfigInterface $config */
         foreach ($joinConfig as $config) {
-            $joinParams = $this->extractJoinQueryParameter($config->getJoinFields(), $fromDataSetId, $dataSetIndexes, $toDatSetId);
+            $joinParams = $this->extractJoinQueryParameter($config->getJoinFields(), $fromDataSetId, $dataSetIndexes, $joinedDataSets, $toDatSetId);
             $endDataSets[] = $toDatSetId;
             if (strpos($joinParams[self::JOIN_PARAM_TO_JOIN_FIELD], ',') !== false) {
                 $qb->join(
@@ -308,15 +310,16 @@ class SqlBuilder implements SqlBuilderInterface
      * extract fromAlias, toAlias and join fields for a single join query
      * a single join query is something look like
      *
-     * INNER JOIN {table_name} {toAlias} ON {fromAlias}.{fromField} = {toAlias}.{toField
-     * }
-     * @param $joinConfig
+     * INNER JOIN {table_name} {toAlias} ON {fromAlias}.{fromField} = {toAlias}.{toField}
+     *
+     * @param array $joinConfig
      * @param $fromDataSetId
      * @param $dataSetIndexes
+     * @param array $joinedDataSets
      * @param $toDataSetId
      * @return array
      */
-    private function extractJoinQueryParameter($joinConfig, $fromDataSetId, $dataSetIndexes, &$toDataSetId)
+    private function extractJoinQueryParameter(array $joinConfig, $fromDataSetId, $dataSetIndexes, array &$joinedDataSets, &$toDataSetId)
     {
         $result = [];
         /** @var JoinFieldInterface $config */
@@ -326,12 +329,23 @@ class SqlBuilder implements SqlBuilderInterface
 
             if ($fromDataSetId == $dataSetId) {
                 $result[self::JOIN_PARAM_FROM_JOIN_FIELD] = $field;
-                $result[self::JOIN_PARAM_FROM_ALIAS] = sprintf('t%d', $dataSetIndexes[$fromDataSetId]);
+//                if (in_array($dataSetId, $joinedDataSets)) {
+//                    $result[self::JOIN_PARAM_FROM_ALIAS] = sprintf('t%d_%d', $dataSetIndexes[$fromDataSetId], $dataSetIndexes[$fromDataSetId]);
+//                } else {
+                    $result[self::JOIN_PARAM_FROM_ALIAS] = sprintf('t%d', $dataSetIndexes[$fromDataSetId]);
+//                    $joinedDataSets[] = $dataSetId;
+//                }
                 continue;
             }
 
             $table = $this->getDataSetTableSchema($dataSetId);
-            $result[self::JOIN_PARAM_TO_ALIAS] = sprintf('t%d', $dataSetIndexes[$dataSetId]);
+            if (in_array($dataSetId, $joinedDataSets)) {
+                $result[self::JOIN_PARAM_TO_ALIAS] = sprintf('t%d_%d', $dataSetIndexes[$dataSetId], $dataSetIndexes[$dataSetId]);
+            } else {
+                $result[self::JOIN_PARAM_TO_ALIAS] = sprintf('t%d', $dataSetIndexes[$dataSetId]);
+                $joinedDataSets[] = $dataSetId;
+            }
+
             $result[self::JOIN_PARAM_TO_JOIN_FIELD] = $field;
             $result[self::JOIN_PARAM_TO_TABLE_NAME] = $table->getName();
 
@@ -374,6 +388,7 @@ class SqlBuilder implements SqlBuilderInterface
         $endDataSets = [];
         $dataSetIndexes = array_flip($dataSetIds);
         $startDataSet = current($dataSetIds);
+        $joinedDataSets = [];
 
         $table = $this->getDataSetTableSchema($startDataSet);
         $qb->from($table->getName(), sprintf('t%d', $dataSetIndexes[$startDataSet]));
@@ -395,7 +410,8 @@ class SqlBuilder implements SqlBuilderInterface
                 continue;
             }
 
-            $qb = $this->buildJoinQueryForDataSet($qb, $startDataSet, $dataSetIndexes, $endNodes, $endDataSets);
+            $qb = $this->buildJoinQueryForDataSet($qb, $startDataSet, $dataSetIndexes, $endNodes, $endDataSets, $joinedDataSets);
+
             $startDataSet = array_shift($endDataSets);
             if ($startDataSet === null) {
                 if (count($startDataSets) < count($dataSetIds) - 1) {

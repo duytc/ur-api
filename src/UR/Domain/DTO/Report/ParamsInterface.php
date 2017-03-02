@@ -139,4 +139,15 @@ interface ParamsInterface
      * @return self
      */
     public function setUserReorderTransformsAllowed($userReorderTransformsAllowed);
+
+    /**
+     * @return boolean
+     */
+    public function getIsShowDataSetName();
+
+    /**
+     * @param boolean $isShowDataSetName
+     * @return self
+     */
+    public function setIsShowDataSetName($isShowDataSetName);
 }

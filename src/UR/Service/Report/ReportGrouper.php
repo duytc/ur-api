@@ -47,10 +47,11 @@ class ReportGrouper implements ReportGrouperInterface
      * @param array $metrics
      * @param $weightedCalculation
      * @param $dateRanges
-     * @param $singleDataSet
+     * @param $isShowDataSetName
+     * @param bool $singleDataSet
      * @return ReportResult
      */
-    public function group(Collection $collection, array $metrics, $weightedCalculation, $dateRanges, $singleDataSet = false)
+    public function group(Collection $collection, array $metrics, $weightedCalculation, $dateRanges, $isShowDataSetName, $singleDataSet = false)
     {
         if (count($collection->getRows()) < 1) {
             throw new NotFoundHttpException('can not find the report');
@@ -60,7 +61,7 @@ class ReportGrouper implements ReportGrouperInterface
         $rows = $collection->getRows();
 
         $total = [];
-        foreach($metrics as $key) {
+        foreach ($metrics as $key) {
             if (in_array($collection->getTypeOf($key), [Type::NUMBER, Type::DECIMAL])) {
                 $total[$key] = 0;
             }
@@ -68,19 +69,19 @@ class ReportGrouper implements ReportGrouperInterface
 
         // aggregate weighted field
         if ($weightedCalculation instanceof WeightedCalculationInterface && $weightedCalculation->hasCalculation()) {
-            foreach($metrics as $index => $metric) {
+            foreach ($metrics as $index => $metric) {
                 if (!$weightedCalculation->hasCalculatingField($metric)) {
                     continue;
                 }
 
-                $total[$metric ] = $this->calculateWeightedValue($rows, $weightedCalculation->getFrequencyField($metric), $weightedCalculation->getWeightedField($metric));
+                $total[$metric] = $this->calculateWeightedValue($rows, $weightedCalculation->getFrequencyField($metric), $weightedCalculation->getWeightedField($metric));
                 unset($metrics[$index]);
             }
         }
 
         // aggregate normal fields
-        foreach($rows as $row) {
-            foreach($metrics as $metric) {
+        foreach ($rows as $row) {
+            foreach ($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
                     $row[$metric] = null;
                 }
@@ -93,7 +94,7 @@ class ReportGrouper implements ReportGrouperInterface
 
         $count = count($collection->getRows());
         $average = $total;
-        foreach($metrics as $metric) {
+        foreach ($metrics as $metric) {
             if (!in_array($collection->getTypeOf($metric), [Type::NUMBER, Type::DECIMAL])) {
                 continue;
             }
@@ -102,8 +103,8 @@ class ReportGrouper implements ReportGrouperInterface
 
         $columns = $collection->getColumns();
         $headers = [];
-        foreach($columns as $index => $column) {
-            $headers[$column] = $this->convertColumn($column, $singleDataSet);
+        foreach ($columns as $index => $column) {
+            $headers[$column] = $this->convertColumn($column, $isShowDataSetName, $singleDataSet);
         }
 
         return new ReportResult($rows, $total, $average, $this->dateUtil->mergeDateRange($dateRanges), $headers, $collection->getTypes());

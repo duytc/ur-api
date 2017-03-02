@@ -9,7 +9,7 @@ use UR\Model\Core\DataSetInterface;
 
 trait ColumnUtilTrait
 {
-    public function convertColumn($column, $singleDataSet = false)
+    public function convertColumn($column, $isShowDataSetName, $singleDataSet = false)
     {
         $lastOccur = strrchr($column, "_");
         $dataSetId = str_replace("_", "", $lastOccur);
@@ -19,6 +19,11 @@ trait ColumnUtilTrait
         $column = str_replace($lastOccur, "", $column);
         $dataSetId = filter_var($dataSetId, FILTER_VALIDATE_INT);
         $column = ucwords(str_replace("_", " ", $column));
+
+        if (!$isShowDataSetName) {
+            return $column;
+        }
+
         $dataSet = $this->getDataSetManager()->find($dataSetId);
 
         if (!$dataSet instanceof DataSetInterface) {

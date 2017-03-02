@@ -40,7 +40,7 @@ class DataSourceEntryFormType extends AbstractRoleSpecificFormType
                 'choices' => [
                     DataSourceEntryInterface::RECEIVED_VIA_API => DataSourceEntryInterface::RECEIVED_VIA_API,
                     DataSourceEntryInterface::RECEIVED_VIA_EMAIL => DataSourceEntryInterface::RECEIVED_VIA_EMAIL,
-                    DataSourceEntryInterface::RECEIVED_VIA_SELENIUM => DataSourceEntryInterface::RECEIVED_VIA_SELENIUM,
+                    DataSourceEntryInterface::RECEIVED_VIA_INTEGRATION => DataSourceEntryInterface::RECEIVED_VIA_INTEGRATION,
                     DataSourceEntryInterface::RECEIVED_VIA_UPLOAD => DataSourceEntryInterface::RECEIVED_VIA_UPLOAD
                 ],
             ]);

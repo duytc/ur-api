@@ -74,8 +74,13 @@ class Params implements ParamsInterface
      */
     protected $subReportIncluded;
 
-	protected $startDate;
-	protected $endDate;
+    protected $startDate;
+    protected $endDate;
+
+    /**
+     * @var boolean
+     */
+    protected $isShowDataSetName;
 
     function __construct()
     {
@@ -235,7 +240,7 @@ class Params implements ParamsInterface
         $sortByTransforms = [];
         foreach ($transforms as $transform) {
             if ($transform instanceof SortByTransform) {
-                $sortByTransforms [] = $transform ;
+                $sortByTransforms [] = $transform;
             }
         }
 
@@ -313,37 +318,37 @@ class Params implements ParamsInterface
         return $this;
     }
 
-	/**
-	 * @return mixed
-	 */
-	public function getStartDate()
-	{
-		return $this->startDate;
-	}
+    /**
+     * @return mixed
+     */
+    public function getStartDate()
+    {
+        return $this->startDate;
+    }
 
-	/**
-	 * @param mixed $startDate
-	 */
-	public function setStartDate($startDate)
-	{
-		$this->startDate = $startDate;
-	}
+    /**
+     * @param mixed $startDate
+     */
+    public function setStartDate($startDate)
+    {
+        $this->startDate = $startDate;
+    }
 
-	/**
-	 * @return mixed
-	 */
-	public function getEndDate()
-	{
-		return $this->endDate;
-	}
+    /**
+     * @return mixed
+     */
+    public function getEndDate()
+    {
+        return $this->endDate;
+    }
 
-	/**
-	 * @param mixed $endDate
-	 */
-	public function setEndDate($endDate)
-	{
-		$this->endDate = $endDate;
-	}
+    /**
+     * @param mixed $endDate
+     */
+    public function setEndDate($endDate)
+    {
+        $this->endDate = $endDate;
+    }
 
     /**
      * @return boolean
@@ -360,6 +365,24 @@ class Params implements ParamsInterface
     public function setUserReorderTransformsAllowed($userReorderTransformsAllowed)
     {
         $this->userReorderTransformsAllowed = $userReorderTransformsAllowed;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getIsShowDataSetName()
+    {
+        return $this->isShowDataSetName;
+    }
+
+    /**
+     * @param boolean $isShowDataSetName
+     * @return self
+     */
+    public function setIsShowDataSetName($isShowDataSetName)
+    {
+        $this->isShowDataSetName = $isShowDataSetName;
         return $this;
     }
 }

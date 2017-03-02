@@ -50,6 +50,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 	const END_DATE = 'endDate';
 	const USER_DEFINED_DATE_RANGE = 'userDefineDateRange';
 	const AUTO_REORDER_TRANSFORMS = 'userReorderTransformsAllowed';
+	const IS_SHOW_DATA_SET_NAME = 'isShowDataSetName';
 
 	/**
 	 * @inheritdoc
@@ -154,6 +155,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 			$param->setUserReorderTransformsAllowed(true);
 		}
 
+        if (array_key_exists(self::IS_SHOW_DATA_SET_NAME, $data) && !empty($data[self::IS_SHOW_DATA_SET_NAME])) {
+            $param->setIsShowDataSetName(filter_var($data[self::IS_SHOW_DATA_SET_NAME], FILTER_VALIDATE_BOOLEAN));
+        }
+
 		return $param;
 	}
 
@@ -187,14 +192,15 @@ class ParamsBuilder implements ParamsBuilderInterface
 		$joinConfigs = [];
 		$this->normalizeJoinConfig($data, $dataSets);
 
-		if ($this->isCircularJoinConfig($data)) {
-			throw new InvalidArgumentException('Circular join config');
-		}
+//		if ($this->isCircularJoinConfig($data)) {
+//			throw new InvalidArgumentException('Circular join config');
+//		}
 
 		foreach ($data as $config) {
 			$joinConfig = new JoinConfig();
 			$joinConfig->setOutputField($config[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]);
-
+			$joinConfig->setHiddenJoinColumn(array_key_exists(SqlBuilder::JOIN_CONFIG_HIDDEN, $config) ? $config[SqlBuilder::JOIN_CONFIG_HIDDEN] : false);
+			
 			$joinFields = $config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
 			foreach($joinFields as $joinField) {
 				$joinConfig->addJoinField(new JoinField($joinField[SqlBuilder::JOIN_CONFIG_DATA_SET], $joinField[SqlBuilder::JOIN_CONFIG_FIELD]));

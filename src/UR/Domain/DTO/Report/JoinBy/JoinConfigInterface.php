@@ -41,4 +41,14 @@ interface JoinConfigInterface
      * @return $this
      */
     public function addJoinField(JoinFieldInterface $joinField);
+
+    /**
+     * @return boolean
+     */
+    public function isHiddenJoinColumn();
+
+    /**
+     * @param boolean $hidden
+     */
+    public function setHiddenJoinColumn($hidden);
 }

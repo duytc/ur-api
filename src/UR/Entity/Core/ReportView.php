@@ -26,6 +26,7 @@ class ReportView extends ReportViewModel
     protected $reportViewDataSets;
     protected $reportViewMultiViews;
     protected $userReorderTransformsAllowed;
+    protected $isShowDataSetName;
 
     /**
      * @inheritdoc

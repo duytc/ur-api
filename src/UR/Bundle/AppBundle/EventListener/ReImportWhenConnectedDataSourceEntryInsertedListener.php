@@ -53,7 +53,7 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
             return;
         }
 
-        $latestDataSourceEntryIds = [];
+        $dataSourceEntryIds = [];
         foreach ($this->insertedEntities as $entity) {
             if (!$entity instanceof ConnectedDataSourceInterface) {
                 continue;
@@ -69,52 +69,20 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
                     $dataSourceEntries = $dataSourceEntries->toArray();
                 }
 
-                $latestDataSourceEntry = $this->getLatestDataSourceEntry($dataSourceEntries);
-
-                if (!$latestDataSourceEntry instanceof DataSourceEntryInterface) {
-                    continue;
+                foreach ($dataSourceEntries as $dataSourceEntry){
+                    $dataSourceEntryIds[] = $dataSourceEntry->getId();
                 }
-
-                $latestDataSourceEntryIds[] = $latestDataSourceEntry->getId();
             }
         }
 
         // running import data
-        if (count($latestDataSourceEntryIds) < 1) {
+        if (count($dataSourceEntryIds) < 1) {
             return;
         }
 
-        $this->workerManager->reImportWhenNewEntryReceived($latestDataSourceEntryIds);
+        $this->workerManager->reImportWhenNewEntryReceived($dataSourceEntryIds);
 
         // reset for new onFlush event
         $this->insertedEntities = [];
-    }
-
-    /**
-     * getLatestDataSourceEntry
-     *
-     * @param DataSourceEntryInterface[] $dataSourceEntries
-     * @return DataSourceEntryInterface|false
-     */
-    private function getLatestDataSourceEntry(array $dataSourceEntries)
-    {
-        $latestDataSourceEntry = reset($dataSourceEntries);
-
-        foreach ($dataSourceEntries as $dataSourceEntry) {
-            if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
-                continue;
-            }
-
-            // sure latestDataSourceEntry is DataSourceEntry instant
-            if (!$latestDataSourceEntry instanceof DataSourceEntryInterface) {
-                $latestDataSourceEntry = $dataSourceEntry;
-            }
-
-            if ($latestDataSourceEntry->getId() < $dataSourceEntry->getId()) {
-                $latestDataSourceEntry = $dataSourceEntry;
-            }
-        }
-
-        return $latestDataSourceEntry;
     }
 }
