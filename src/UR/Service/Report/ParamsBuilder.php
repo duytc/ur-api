@@ -192,9 +192,9 @@ class ParamsBuilder implements ParamsBuilderInterface
 		$joinConfigs = [];
 		$this->normalizeJoinConfig($data, $dataSets);
 
-		if ($this->isCircularJoinConfig($data)) {
-			throw new InvalidArgumentException('Circular join config');
-		}
+//		if ($this->isCircularJoinConfig($data)) {
+//			throw new InvalidArgumentException('Circular join config');
+//		}
 
 		foreach ($data as $config) {
 			$joinConfig = new JoinConfig();
