@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use Exception;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
@@ -13,6 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceEntryManagerInterface;
+use UR\DomainManager\DataSourceManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntry;
@@ -574,6 +576,30 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         }
     }
 
+
+    /**
+     * Import json data to data source
+     *
+     * @Rest\Post("/datasources/{id}/importJson")
+     *
+     * @ApiDoc(
+     *  section = "Data Sources",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request the request object
+     * @param $id
+     * @return mixed
+     */
+    public function postImportJsonDataAction($id, Request $request)
+    {
+        return $this->processImportJsonData($id, $request);
+    }
+
     /**
      * Update an existing data source from the submitted data or create a new ad network
      *
@@ -747,7 +773,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
                 $oneResult = $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via, $alsoMoveFile, $metadata);
 
                 $result[] = $oneResult;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $originName = $file->getClientOriginalName();
                 $oneResult = [
                     'file' => $originName,
@@ -864,6 +890,46 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $file = new UploadedFile($uploadPath . $name, $name);
         $dataSourceEntryManager = $this->container->get('ur.domain_manager.data_source_entry');
         return $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, DataSourceEntry::RECEIVED_VIA_API, false);
+    }
+
+    /**
+     * @param $id
+     * @param Request $request
+     * @return mixed
+     * @throws Exception
+     */
+    private function processImportJsonData($id, Request $request)
+    {
+        $data = $request->request->all();
+        $data = json_encode($data);
+
+        if (json_last_error() != JSON_ERROR_NONE) {
+            throw new Exception('Json data error');
+        }
+
+        if (is_null($data)) {
+            throw new BadRequestHttpException('data must not be null');
+        }
+
+        $dataSourceManager = $this->get('ur.domain_manager.data_source');
+        $dataSourceEntryManager = $this->container->get('ur.domain_manager.data_source_entry');
+
+        /** @var DataSourceManagerInterface $dataSourceManager * */
+        $dataSource = $dataSourceManager->find($id);
+        if (empty($dataSource)) {
+            throw new BadRequestHttpException(sprintf('cannot find any data source with this id =%d', $id));
+        }
+
+        /**@var DataSourceInterface $dataSource */
+        $uploadRootDir = $this->container->getParameter('upload_file_dir');
+        $dirItem = sprintf('/%s/%s/%s', $dataSource->getPublisher()->getId(), $dataSource->getId(), (date_create('today')->format('Ymd')));
+        $uploadPath = sprintf('%s%s', $uploadRootDir, $dirItem);
+        $name = sprintf('/json-message-via-api-key_%s.json', round(microtime(true)));
+        $this->file_force_contents(substr($uploadPath, 1) . $name, $data);
+        $file = new UploadedFile(sprintf('%s%s', $uploadPath, $name), $name);
+
+        return $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource,
+                        DataSourceEntryInterface::RECEIVED_VIA_API, false);
     }
 
     /**
