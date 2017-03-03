@@ -97,6 +97,8 @@ class SqlBuilder implements SqlBuilderInterface
         $qb->from($table->getName());
 
         if (empty($filters) && empty($overridingFilters)) {
+            $overwriteDateCondition = sprintf('%s IS NULL', \UR\Model\Core\DataSetInterface::OVERWRITE_DATE);
+            $qb->where($overwriteDateCondition);
             return array(
                 self::DATE_RANGE_KEY => [],
                 self::STATEMENT_KEY => $qb->execute()
@@ -446,6 +448,8 @@ class SqlBuilder implements SqlBuilderInterface
             $sqlConditions[] = $this->buildSingleFilter($filter, $tableAlias, $dataSetId);
         }
 
+        $overrideDateField = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, \UR\Model\Core\DataSetInterface::OVERWRITE_DATE) : \UR\Model\Core\DataSetInterface::OVERWRITE_DATE;
+        $sqlConditions[] = sprintf('%s IS NULL', $overrideDateField);
         return array(
             self::CONDITION_KEY => $sqlConditions,
             self::DATE_RANGE_KEY => $dateRanges
