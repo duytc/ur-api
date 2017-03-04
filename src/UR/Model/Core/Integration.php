@@ -12,6 +12,7 @@ class Integration implements IntegrationInterface
     protected $name;
     protected $canonicalName;
     protected $params;
+    protected $integrationPublishers;
 
     public function __construct()
     {
@@ -76,5 +77,21 @@ class Integration implements IntegrationInterface
         $this->params = $params;
 
         return $this;
+    }
+
+    /**
+     * @return IntegrationPublisherModelInterface[]
+     */
+    public function getIntegrationPublishers()
+    {
+        return $this->integrationPublishers;
+    }
+
+    /**
+     * @param mixed $integrationPublishers
+     */
+    public function setIntegrationPublishers($integrationPublishers)
+    {
+        $this->integrationPublishers = $integrationPublishers;
     }
 }

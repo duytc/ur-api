@@ -1,0 +1,15 @@
+UR\Entity\Core\IntegrationPublisher:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [integration_publisher.detail, integration_publisher.summary]
+
+        publisher:
+            expose: true
+            groups: [integration_publisher.detail, integration_publisher.summary]
+
+        integration:
+            expose: true
+            groups: [integration_publisher.detail]
+

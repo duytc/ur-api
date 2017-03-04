@@ -14,6 +14,7 @@ use UR\Model\Core\IntegrationInterface;
 use UR\Model\User\Role\AdminInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Repository\Core\IntegrationRepositoryInterface;
 
 /**
  * @Rest\RouteResource("Integration")
@@ -23,7 +24,13 @@ class IntegrationController extends RestControllerAbstract implements ClassResou
     /**
      * Get all integration
      *
-     * @Rest\View(serializerGroups={"integration.detail"})
+     * @Rest\View(
+     *     serializerGroups={
+     *          "user.summary",
+     *          "integration_publisher.summary",
+     *          "integration.detail",
+     *      }
+     * )
      *
      * @ApiDoc(
      *  section = "Integration",
@@ -37,15 +44,18 @@ class IntegrationController extends RestControllerAbstract implements ClassResou
      */
     public function cgetAction()
     {
-        $all = isset($all)? $all: $this->all();
-
-        return $all;
+        $user = $this->getUser();
+        /** @var IntegrationRepositoryInterface $integrationRepository */
+        $integrationRepository = $this->get('ur.repository.integration');
+        
+        $qb = $integrationRepository->getIntegrationsForUserQuery($user);
+        return $qb->getQuery()->getResult();
     }
 
     /**
      * Get a single integration group for the given id
      *
-     * @Rest\View(serializerGroups={"integration.detail"})
+     * @Rest\View(serializerGroups={"integration.detail", "integration_publisher.detail"})
      *
      * @ApiDoc(
      *  section = "Integration",
