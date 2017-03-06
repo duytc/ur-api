@@ -45,10 +45,10 @@ interface JoinConfigInterface
     /**
      * @return boolean
      */
-    public function isHiddenJoinColumn();
+    public function isVisible();
 
     /**
      * @param boolean $hidden
      */
-    public function setHiddenJoinColumn($hidden);
+    public function setVisible($hidden);
 }

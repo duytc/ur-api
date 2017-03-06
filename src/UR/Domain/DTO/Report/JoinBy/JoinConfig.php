@@ -22,7 +22,7 @@ class JoinConfig implements JoinConfigInterface
     /**
      * @var bool
      */
-    protected $hiddenJoinColumn;
+    protected $visible;
 
 
     /**
@@ -110,16 +110,16 @@ class JoinConfig implements JoinConfigInterface
     /**
      * @return boolean
      */
-    public function isHiddenJoinColumn()
+    public function isVisible()
     {
-        return $this->hiddenJoinColumn;
+        return $this->visible;
     }
 
     /**
-     * @param boolean $hiddenJoinColumn
+     * @param boolean $visible
      */
-    public function setHiddenJoinColumn($hiddenJoinColumn)
+    public function setVisible($visible)
     {
-        $this->hiddenJoinColumn = $hiddenJoinColumn;
+        $this->visible = $visible;
     }
 }

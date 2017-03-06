@@ -320,7 +320,7 @@ class ReportBuilder implements ReportBuilderInterface
                 }
             }
 
-            if (!$config->isHiddenJoinColumn() && !in_array($config->getOutputField(), $outputJoinFields)) {
+            if ($config->isVisible() && !in_array($config->getOutputField(), $outputJoinFields)) {
                 $outputJoinFields = array_merge($outputJoinFields, explode(',', $config->getOutputField()));
             }
         }
@@ -429,7 +429,7 @@ class ReportBuilder implements ReportBuilderInterface
         $joinConfig = $params->getJoinConfigs();
         $hiddenJoinFields = [];
         foreach ($joinConfig as $config){
-            if ($config->isHiddenJoinColumn()){
+            if (!$config->isVisible()){
                 $hiddenJoinFields[] = $config->getOutputField();
             }
         }

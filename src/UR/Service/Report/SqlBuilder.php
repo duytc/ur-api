@@ -37,7 +37,7 @@ class SqlBuilder implements SqlBuilderInterface
 
     const JOIN_CONFIG_JOIN_FIELDS = 'joinFields';
     const JOIN_CONFIG_OUTPUT_FIELD = 'outputField';
-    const JOIN_CONFIG_HIDDEN = 'isHiddenJoinColumn';
+    const JOIN_CONFIG_VISIBLE = 'isVisible';
     const JOIN_CONFIG_FIELD = 'field';
     const JOIN_CONFIG_DATA_SET = 'dataSet';
     const JOIN_CONFIG_DATA_SETS = 'dataSets';
@@ -265,7 +265,7 @@ class SqlBuilder implements SqlBuilderInterface
         // build select query for each data set
         foreach ($fields as $field) {
             $alias = $this->getAliasForField($dataSet->getDataSetId(), $field, $joinConfig);
-            $qb->addSelect(sprintf('t%d.%s as %s', $dataSetIndex, $field, $alias));
+            $qb->addSelect(sprintf('t%d.%s as "%s"', $dataSetIndex, $field, $alias));
         }
 
         return $qb;
