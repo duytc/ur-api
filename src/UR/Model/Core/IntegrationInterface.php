@@ -38,4 +38,14 @@ interface IntegrationInterface extends ModelInterface
      * @return self
      */
     public function setParams($params);
+
+    /**
+     * @return IntegrationPublisherModelInterface[] 
+     */
+    public function getIntegrationPublishers();
+
+    /**
+     * @param mixed $integrationPublishers
+     */
+    public function setIntegrationPublishers($integrationPublishers);
 }

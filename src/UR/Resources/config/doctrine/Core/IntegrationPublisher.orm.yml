@@ -1,0 +1,19 @@
+UR\Entity\Core\IntegrationPublisher:
+    type: entity
+    table: core_integration_publisher
+    repositoryClass: UR\Repository\Core\IntegrationPublisherRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    uniqueConstraints:
+        compound_primary_key:
+            columns:
+                - integration_id
+                - publisher_id
+    manyToOne:
+        integration:
+            targetEntity: UR\Entity\Core\Integration
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

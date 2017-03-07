@@ -150,7 +150,7 @@ class DataSourceEntry implements DataSourceEntryInterface
         return (in_array($receivedVia,
             [
                 self::RECEIVED_VIA_UPLOAD,
-                self::RECEIVED_VIA_SELENIUM,
+                self::RECEIVED_VIA_INTEGRATION,
                 self::RECEIVED_VIA_API,
                 self::RECEIVED_VIA_EMAIL
             ]

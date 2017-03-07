@@ -7,7 +7,11 @@ use UR\Model\User\Role\PublisherInterface;
 
 interface DataSetInterface extends ModelInterface
 {
+    const ID_COLUMN = '__id';
+    const DATA_SOURCE_ID_COLUMN = '__data_source_id';
+    const IMPORT_ID_COLUMN = '__import_id';
     const UNIQUE_ID_COLUMN = '__unique_id';
+    const OVERWRITE_DATE = '__overwrite_date';
     const UNIQUE_HASH_INX = 'unique_hash_idx';
 
     /**

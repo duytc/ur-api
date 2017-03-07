@@ -29,11 +29,12 @@ class ImportUtils
         $schema = new Schema();
 
         $dataSetTable = $schema->createTable($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
-        $dataSetTable->addColumn("__id", "integer", array("autoincrement" => true, "unsigned" => true));
-        $dataSetTable->setPrimaryKey(array("__id"));
-        $dataSetTable->addColumn("__data_source_id", "integer", array("unsigned" => true, "notnull" => true));
-        $dataSetTable->addColumn("__import_id", "integer", array("unsigned" => true, "notnull" => true));
+        $dataSetTable->addColumn(DataSetInterface::ID_COLUMN, "integer", array("autoincrement" => true, "unsigned" => true));
+        $dataSetTable->setPrimaryKey(array(DataSetInterface::ID_COLUMN));
+        $dataSetTable->addColumn(DataSetInterface::DATA_SOURCE_ID_COLUMN, "integer", array("unsigned" => true, "notnull" => true));
+        $dataSetTable->addColumn(DataSetInterface::IMPORT_ID_COLUMN, "integer", array("unsigned" => true, "notnull" => true));
         $dataSetTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, Type::TEXT, array("notnull" => true));
+        $dataSetTable->addColumn(DataSetInterface::OVERWRITE_DATE, Type::DATE, array("notnull" => false, "default" => null));
 
         // create import table
         //// add dimensions
@@ -63,10 +64,10 @@ class ImportUtils
             $truncateSql = $conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
 
             $conn->exec($truncateSql);
-            if ($dataSet->getAllowOverwriteExistingData()) {
-                $sql = sprintf("ALTER IGNORE TABLE %s ADD UNIQUE INDEX %s (%s(255))", $dataSetTable->getName(), DataSetInterface::UNIQUE_HASH_INX, DataSetInterface::UNIQUE_ID_COLUMN);
-                $conn->exec($sql);
-            }
+//            if ($dataSet->getAllowOverwriteExistingData()) {
+//                $sql = sprintf("ALTER IGNORE TABLE %s ADD UNIQUE INDEX %s (%s(255))", $dataSetTable->getName(), DataSetInterface::UNIQUE_HASH_INX, DataSetInterface::UNIQUE_ID_COLUMN);
+//                $conn->exec($sql);
+//            }
         } catch (\Exception $e) {
             $logger->doExceptionLogging("Cannot Sync Schema " . $schema->getName());
         }
@@ -121,21 +122,21 @@ class ImportUtils
                 }
             }
 
-            if (count($uniqueKeyChanges) > 0) {
-                if ($uniqueKeyChanges[0] === false && $uniqueKeyChanges[1] === true) {
-                    if (!$dataTable->hasIndex(DataSetInterface::UNIQUE_HASH_INX)) {
-                        $sql = sprintf("ALTER IGNORE TABLE %s ADD UNIQUE INDEX %s (%s(255))", $dataTable->getName(), DataSetInterface::UNIQUE_HASH_INX, DataSetInterface::UNIQUE_ID_COLUMN);
-                        $alterSqls[] = $sql;
-                    }
-                }
-
-                if ($uniqueKeyChanges[0] === true && $uniqueKeyChanges[1] === false) {
-                    if ($dataTable->hasIndex(DataSetInterface::UNIQUE_HASH_INX)) {
-                        $sql = sprintf("ALTER TABLE %s DROP INDEX %s", $dataTable->getName(), DataSetInterface::UNIQUE_HASH_INX);
-                        $alterSqls[] = $sql;
-                    }
-                }
-            }
+//            if (count($uniqueKeyChanges) > 0) {
+//                if ($uniqueKeyChanges[0] === false && $uniqueKeyChanges[1] === true) {
+//                    if (!$dataTable->hasIndex(DataSetInterface::UNIQUE_HASH_INX)) {
+//                        $sql = sprintf("ALTER IGNORE TABLE %s ADD UNIQUE INDEX %s (%s(255))", $dataTable->getName(), DataSetInterface::UNIQUE_HASH_INX, DataSetInterface::UNIQUE_ID_COLUMN);
+//                        $alterSqls[] = $sql;
+//                    }
+//                }
+//
+//                if ($uniqueKeyChanges[0] === true && $uniqueKeyChanges[1] === false) {
+//                    if ($dataTable->hasIndex(DataSetInterface::UNIQUE_HASH_INX)) {
+//                        $sql = sprintf("ALTER TABLE %s DROP INDEX %s", $dataTable->getName(), DataSetInterface::UNIQUE_HASH_INX);
+//                        $alterSqls[] = $sql;
+//                    }
+//                }
+//            }
 
             foreach ($alterSqls as $alterSql) {
                 $conn->exec($alterSql);

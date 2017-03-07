@@ -47,6 +47,7 @@ services:
         public: false
         arguments:
             - @ur_user.domain_manager.publisher
+            - @ur.repository.integration_publisher
 
     ur.handler.handlers.data_source.publisher:
         class: UR\Handler\Handlers\Core\Publisher\DataSourceHandler

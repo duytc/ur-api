@@ -47,9 +47,9 @@ class ImportService
             /**@var UploadedFile $file */
             $file = $files->get($key);
 
-            $error = $this->validateFileUpload($file, $dataSource);
+            $isValidFile = $this->validateFileUpload($file, $dataSource);
             $origin_name = $file->getClientOriginalName();
-            if ($error > 0) {
+            if (!$isValidFile) {
                 throw new \Exception(sprintf("File %s is not valid - wrong format", $origin_name));
             }
 
@@ -74,29 +74,32 @@ class ImportService
         return ["fields" => $currentFields, "filePath" => $dirItem . '/' . $name];
     }
 
+    /**
+     * validate File Upload
+     *
+     * @param UploadedFile $file
+     * @param DataSourceInterface $dataSource
+     * @return bool
+     */
     public function validateFileUpload(UploadedFile $file, DataSourceInterface $dataSource)
     {
-        if (strcmp(DataSourceType::DS_EXCEL_FORMAT, $dataSource->getFormat()) === 0) {
-            if (!DataSourceType::isExcelType($file->getClientOriginalExtension())) {
-                return 1;
-            }
-
-        } else if (strcmp(DataSourceType::DS_CSV_FORMAT, $dataSource->getFormat()) === 0) {
-            if (!DataSourceType::isCsvType($file->getClientOriginalExtension())) {
-                return 2;
-            }
-
-        } else if (strcmp(DataSourceType::DS_JSON_FORMAT, $dataSource->getFormat()) === 0) {
-            if (!DataSourceType::isJsonType($file->getClientOriginalExtension())) {
-                return 3;
-            }
-
-        } else {
-            return 4;
-        }
-
-        return 0;
+        return $dataSource->getFormat() == DataSourceType::getOriginalDataSourceType($file->getClientOriginalExtension());
     }
+    /**
+     * validate extension support or not
+     *
+     * @param DataSourceInterface $dataSource
+     * @return bool
+     */
+    public function validateExtensionSupports(UploadedFile $file)
+    {
+        // check if in supported formats
+        if (!DataSourceType::isSupportedExtension($file->getClientOriginalExtension())){
+            return false;
+        }
+        return true;
+    }
+    
 
     public function detectedFieldsForDataSource(array $newFields, array $currentFields, $option)
     {

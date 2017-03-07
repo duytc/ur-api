@@ -312,6 +312,20 @@ class AutoImportData implements AutoImportDataInterface
             $rows = $collectionParser->getRows();
             $newColumns = $collectionParser->getColumns();
 
+            //overwrite duplicate
+            if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
+                $dimensionMapped = $dataSetImporter->getDimensionMapped($newColumns, $dimensions);
+                $duplicateRows = [];
+                foreach ($rows as &$row) {
+                    $uniqueKeys = array_intersect_key($row, $dimensionMapped);
+                    $uniqueId = md5(implode(":", $uniqueKeys));
+
+                    $duplicateRows[$uniqueId] = $row;
+                }
+
+                $rows = array_values($duplicateRows);
+            }
+
             foreach ($connectedDataSource->getColumnTransforms()->getNumberFormatTransforms() as $numberFormatTransform) {
                 $parserConfig->addTransformColumn($numberFormatTransform->getField(), $numberFormatTransform);
             }
@@ -322,19 +336,6 @@ class AutoImportData implements AutoImportDataInterface
                     return $newColumns[$key];
                 }, array_keys($row));
                 $row = array_combine($keys, $row);
-            }
-
-            //overwrite duplicate
-            if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
-                $duplicateRows = [];
-                foreach ($rows as &$row) {
-                    $uniqueKeys = array_intersect_key($row, $connectedDataSource->getDataSet()->getDimensions());
-                    $uniqueId = md5(implode(":", $uniqueKeys));
-
-                    $duplicateRows[$uniqueId] = $row;
-                }
-
-                $rows = array_values($duplicateRows);
             }
 
             if (count($rows) < 1) {

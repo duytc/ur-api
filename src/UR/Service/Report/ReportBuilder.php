@@ -320,7 +320,7 @@ class ReportBuilder implements ReportBuilderInterface
                 }
             }
 
-            if (!in_array($config->getOutputField(), $outputJoinFields)) {
+            if ($config->isVisible() && !in_array($config->getOutputField(), $outputJoinFields)) {
                 $outputJoinFields = array_merge($outputJoinFields, explode(',', $config->getOutputField()));
             }
         }
@@ -425,9 +425,25 @@ class ReportBuilder implements ReportBuilderInterface
         $showInTotal = is_array($params->getShowInTotal()) ? $params->getShowInTotal() : $metrics;
 //      $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
 
+        /** @var JoinConfigInterface[] $joinConfig */
+        $joinConfig = $params->getJoinConfigs();
+        $hiddenJoinFields = [];
+        foreach ($joinConfig as $config){
+            if (!$config->isVisible()){
+                $hiddenJoinFields[] = $config->getOutputField();
+            }
+        }
+        $reports = $reportCollection->getRows();
+        foreach ($reports as &$report){
+            foreach ($hiddenJoinFields as $hiddenJoinField){
+                unset($report[$hiddenJoinField]);
+            }
+            unset($report);
+        }
+        $reportCollection->setRows($reports);
         /* group reports */
         /** @var ReportResultInterface $reportResult */
-        $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $isSingleDataSet);
+        $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $params->getIsShowDataSetName(), $isSingleDataSet);
 
         /*update column after group */
         /* $firstReport = ($reportResult->getReports())[0];

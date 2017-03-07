@@ -19,6 +19,10 @@ class JoinConfig implements JoinConfigInterface
      */
     protected $dataSets;
 
+    /**
+     * @var bool
+     */
+    protected $visible;
 
 
     /**
@@ -101,5 +105,21 @@ class JoinConfig implements JoinConfigInterface
 
         $this->joinFields[] = $joinField;
         return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isVisible()
+    {
+        return $this->visible;
+    }
+
+    /**
+     * @param boolean $visible
+     */
+    public function setVisible($visible)
+    {
+        $this->visible = $visible;
     }
 }

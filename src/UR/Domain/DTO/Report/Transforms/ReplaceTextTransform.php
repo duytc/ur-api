@@ -256,6 +256,4 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
     {
         $this->targetField = $targetField;
     }
-
-
 }

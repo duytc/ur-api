@@ -1,0 +1,18 @@
+parameters:
+    # entity class
+    ur.entity.core.integration_publisher.class: UR\Entity\Core\IntegrationPublisher
+
+services:
+    # integration publisher
+    ur.repository.integration_publisher:
+        class: UR\Repository\Core\IntegrationPublisherRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.integration_publisher.class%
+
+    ur.domain_manager.integration_publisher:
+        class: UR\DomainManager\IntegrationPublisherManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.integration_publisher
