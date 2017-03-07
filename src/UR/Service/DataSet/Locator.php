@@ -6,6 +6,7 @@ use \Doctrine\DBAL\Connection;
 
 class Locator
 {
+    const PREFIX_DATA_IMPORT_TABLE = '__data_import_%d';
     /**
      * @var Connection
      */
@@ -35,6 +36,6 @@ class Locator
 
     public function getDataSetImportTableName($id)
     {
-        return sprintf(Type::PREFIX_DATA_IMPORT_TABLE, $id);
+        return sprintf(self::PREFIX_DATA_IMPORT_TABLE, $id);
     }
 }

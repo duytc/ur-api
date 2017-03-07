@@ -9,12 +9,10 @@ use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
-use UR\Model\User\Role\AdminInterface;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -141,9 +139,8 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     {
         /** @var DataSourceEntryInterface $dataSourceEntry */
         $dataSourceEntry = $this->one($id);
-        $filePath = $this->checkFileExist($dataSourceEntry);
-        $importHistoryManager = $this->get('ur.domain_manager.import_history');
-        return $importHistoryManager->replayDataSourceEntryData($dataSourceEntry);
+        $this->checkFileExist($dataSourceEntry);
+        return $this->replayDataSourceEntryData($dataSourceEntry);
     }
 
     /**
@@ -314,5 +311,17 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         }
 
         return $filePath;
+    }
+
+    private function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry)
+    {
+        $workerManager = $this->get('ur.worker.manager');
+        if (!$dataSourceEntry->getDataSource()->getEnable()) {
+            throw new \Exception(sprintf("Could not replay data - entry in disabled Data Source "));
+        }
+
+        foreach ($dataSourceEntry->getDataSource()->getConnectedDataSources() as $connectedDataSource) {
+            $workerManager->loadingDataFromFileToDataImportTable($connectedDataSource->getId(), $dataSourceEntry->getId(), $connectedDataSource->getDataSet()->getId());
+        }
     }
 }

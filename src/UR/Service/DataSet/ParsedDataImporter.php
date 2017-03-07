@@ -1,20 +1,21 @@
 <?php
 namespace UR\Service\DataSet;
 
-use \Doctrine\DBAL\Connection;
-use \Doctrine\DBAL\Schema\Table;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Schema\Comparator;
+use Doctrine\ORM\EntityManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
 
-class Importer
+class ParsedDataImporter
 {
     /**
      * @var Connection
      */
-    protected $conn;
-    protected $batchSize;
+    private $conn;
+    private $batchSize;
     private static $restrictedColumns = [
         DataSetInterface::ID_COLUMN,
         DataSetInterface::DATA_SOURCE_ID_COLUMN,
@@ -22,45 +23,45 @@ class Importer
         DataSetInterface::UNIQUE_ID_COLUMN,
         DataSetInterface::OVERWRITE_DATE
     ];
-    protected $preparedInsertCount;
+    private $preparedInsertCount;
 
-    public function __construct(Connection $conn, $batchSize)
+    public function __construct(EntityManagerInterface $em, $batchSize)
     {
-        $this->conn = $conn;
+        $this->em = $em;
         $this->batchSize = $batchSize;
+        $this->conn = $this->em->getConnection();
     }
 
-    public function importCollection(Collection $collection, Table $table, $importId, ConnectedDataSourceInterface $connectedDataSource)
+    public function importParsedDataFromFileToDatabase(Collection $collection, $importId, ConnectedDataSourceInterface $connectedDataSource)
     {
+        $dataSetLocator = new Locator($this->conn);
+        $dataSetSynchronizer = new Synchronizer($this->conn, new Comparator());;
+        $table = $dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId());
+        //create or update empty dataSet table
+        if (!$table) {
+            $dataSetSynchronizer->createEmptyDataSetTable($connectedDataSource->getDataSet(), $dataSetLocator);
+            $table = $dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId());
+        }
+
         $tableName = $table->getName();
         $dimensions = $connectedDataSource->getDataSet()->getDimensions();
-        $metrics = $connectedDataSource->getDataSet()->getMetrics();
-        $allFields = array_merge($dimensions, $metrics);
-        $collection = $this->getRawData($collection, $allFields, $connectedDataSource);
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
 
-
-        $dimensionMapping = $this->getDimensionMapped($columns, $dimensions);
-
+        foreach ($columns as $k => $column) {
+            if (in_array($column, self::$restrictedColumns, true)) {
+                throw new \InvalidArgumentException(sprintf('%s cannot be used as a column name. It is reserved for internal use.', $column));
+            }
+            if (!preg_match('#[_a-z]+#i', $column)) {
+                throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
+            }
+        }
 
         if (!is_array($rows) || count($rows) < 1) {
             return true;
         }
 
         $isOverwriteData = $connectedDataSource->getDataSet()->getAllowOverwriteExistingData();
-        if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
-            $duplicateRows = [];
-            foreach ($rows as &$row) {
-                $uniqueKeys = array_intersect_key($row, $dimensionMapping);
-                $uniqueId = md5(implode(":", $uniqueKeys));
-
-                $duplicateRows[$uniqueId] = $row;
-            }
-
-            $rows = array_values($duplicateRows);
-        }
-
         $insert_values = array();
         $columns[DataSetInterface::DATA_SOURCE_ID_COLUMN] = DataSetInterface::DATA_SOURCE_ID_COLUMN;
         $columns[DataSetInterface::IMPORT_ID_COLUMN] = DataSetInterface::IMPORT_ID_COLUMN;
@@ -68,9 +69,8 @@ class Importer
         $question_marks = [];
         $this->preparedInsertCount = 0;
         foreach ($rows as $row) {
-            $uniqueKeys = array_intersect_key($row, $dimensionMapping);
+            $uniqueKeys = array_intersect_key($row, $dimensions);
             $uniqueId = md5(implode(":", $uniqueKeys));
-            $row = array_intersect_key($row, $columns);
             $row[DataSetInterface::DATA_SOURCE_ID_COLUMN] = $connectedDataSource->getDataSource()->getId();
             $row[DataSetInterface::IMPORT_ID_COLUMN] = $importId;
             $row[DataSetInterface::UNIQUE_ID_COLUMN] = $uniqueId;
@@ -83,7 +83,6 @@ class Importer
                 $qb = $this->conn->prepare($updateSql);
                 $qb->bindValue(DataSetInterface::OVERWRITE_DATE, date('Y-m-d'));
                 $qb->bindValue(DataSetInterface::UNIQUE_ID_COLUMN, $uniqueId);
-                $qb->execute();
                 $this->preparedInsertCount++;
                 try {
                     $qb->execute();
@@ -139,54 +138,5 @@ class Importer
         }
         $this->conn->commit();
         $this->conn->close();
-    }
-
-    public function getRawData(Collection $collection, $allFields, ConnectedDataSourceInterface $connectedDataSource)
-    {
-        $tableColumns = array_keys($allFields);
-        $rows = array_values($collection->getRows());
-        $mapFields = $connectedDataSource->getMapFields();
-        $columns = [];
-        if (count($rows) < 1) {
-            return $collection;
-        }
-
-        foreach ($rows[0] as $field => $value) {
-            if (array_key_exists($field, $mapFields)) {
-                if (in_array($mapFields[$field], $tableColumns)) {
-                    $columns[$field] = $mapFields[$field];
-                }
-            }
-
-            if (in_array($field, $collection->getColumns())) {
-                if (in_array($field, $tableColumns))
-                    $columns[$field] = $field;
-            }
-        }
-
-        $columns = array_unique($columns);
-        $collection->setRows($rows);
-        $collection->setColumns($columns);
-
-        return $collection;
-    }
-
-    public function getDimensionMapped($columns, $dimensions)
-    {
-        $dimensionMapping = [];
-        foreach ($columns as $k => $column) {
-            if (in_array($column, self::$restrictedColumns, true)) {
-                throw new \InvalidArgumentException(sprintf('%s cannot be used as a column name. It is reserved for internal use.', $column));
-            }
-            if (!preg_match('#[_a-z]+#i', $column)) {
-                throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
-            }
-
-            if (array_key_exists($column, $dimensions)) {
-                $dimensionMapping[$k] = $column;
-            }
-        }
-
-        return $dimensionMapping;
     }
 }

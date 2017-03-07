@@ -9,11 +9,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Entity\Core\DataSet;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\User\Role\PublisherInterface;
-use UR\Service\DataSet\Importer;
+use UR\Service\DataSet\ParsedDataImporter;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
 use UR\Service\DTO\Collection;
-use UR\Service\Parser\ImportUtils;
+use UR\Service\Parser\DDLDataImportTable;
 
 $loader = require_once __DIR__ . '/../app/autoload.php';
 require_once __DIR__ . '/../app/AppKernel.php';
@@ -76,14 +76,14 @@ $sm = $connection->getSchemaManager();
 $dataSetLocator = new Locator($connection);
 $dataSetSynchronizer = new Synchronizer($connection, new Comparator());
 
-$importUtils = new ImportUtils();
+$ddlDataImportTable = new DDLDataImportTable();
 foreach ($dataSets as $dataSet) {
     if (!$sm->tablesExist(sprintf(DATA_SET_TABLE_NAME_TEMPLATE,$dataSet->getId()))){
-        $importUtils->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $connection);
+        $ddlDataImportTable->createEmptyDataSetTable($dataSet, $dataSetLocator, $dataSetSynchronizer, $connection);
     }
 }
 
-$dataImporter = new Importer($connection);
+$dataImporter = new ParsedDataImporter($connection);
 $startDateObject = date_create_from_format('Y-m-d', $startDate);
 $endDateObject = date_create_from_format('Y-m-d', $endDate);
 
@@ -138,7 +138,7 @@ foreach ($dataSets as $dataSet) {
     }
 
     $collection = new Collection($columnOfCollection, $rowsOfCollection);
-    $dataImporter->importCollection($collection, $table, $importId, $dataSourceId);
+    $dataImporter->importParsedDataFromFileToDatabase($collection, $table, $importId, $dataSourceId);
 }
 
 

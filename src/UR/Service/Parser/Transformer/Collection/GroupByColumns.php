@@ -4,13 +4,12 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use UR\Service\DTO\Collection;
 
-class GroupByColumns extends AbstractTransform implements CollectionTransformerInterface
+class GroupByColumns implements CollectionTransformerInterface
 {
     protected $groupByColumns;
 
-    public function __construct(array $groupByColumns, $priority)
+    public function __construct(array $groupByColumns)
     {
-        parent::__construct($priority);
         $this->groupByColumns = $groupByColumns;
     }
 
@@ -108,5 +107,10 @@ class GroupByColumns extends AbstractTransform implements CollectionTransformerI
     public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_GROUP;
+    }
+
+    public function validate()
+    {
+        // TODO: Implement validate() method.
     }
 }

@@ -3,13 +3,40 @@
 namespace UR\Service\Parser\Transformer\Column;
 
 use DateTime;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class DateFormat extends AbstractCommonColumnTransform implements ColumnTransformerInterface
 {
+    const FROM_KEY = 'from';
+    const TO_KEY = 'to';
+    const IS_CUSTOM_FORMAT_DATE_FROM = 'isCustomFormatDateFrom';
     protected $fromDateFormat;
     protected $toDateFormat;
     protected $isCustomFormatDateFrom;
     private $dateFormat;
+
+    private $supportedDateFormats = [
+        'Y-m-d',  // 2016-01-15
+        'Y/m/d',  // 2016/01/15
+        'm-d-Y',  // 01-15-2016
+        'm/d/Y',  // 01/15/2016
+        'd-m-Y',  // 15/01/2016
+        'd/m/Y',  // 15/01/2016
+        'Y-M-d',  // 2016-Mar-01
+        'Y/M/d',  // 2016/Mar/01
+        'M-d-Y',  // Mar-01-2016
+        'M/d/Y',  // Mar/01/2016
+        'd-M-Y',  // 01-Mar-2016
+        'd/M/Y',  // 01/Mar/2016
+        'M d, Y', // Mar 01,2016
+        'Y, M d', // 2016, Mar 01
+        'd-m-y',  // 15-01-99
+        'd/m/y',  // 15/01/99
+        'm-d-y',  // 01-15-99
+        'm/d/y',  // 01/15/99
+        'y-m-d',  // 99-01-15
+        'y/m/d',  // 99/01/15
+    ];
 
     public function __construct($field, $fromDateFormat = 'Y-m-d', $toDateFormat = 'Y-m-d', $isCustomFormatDateFrom = false)
     {
@@ -142,5 +169,17 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         }
 
         return $convertedDateFormat;
+    }
+
+    public function validate()
+    {
+        if (!$this->isCustomFormatDateFrom && !in_array($this->fromDateFormat, $this->supportedDateFormats)) {
+            // validate using builtin data formats (when isCustomFormatDateFrom = false)
+            throw  new BadRequestHttpException(sprintf('Transform setting error: field "%s" not support from date format', $this->getField()));
+        }
+
+        if (!in_array($this->toDateFormat, $this->supportedDateFormats)) {
+            throw  new BadRequestHttpException(sprintf('Transform setting error: field "%s" not support to date format', $this->getField()));
+        }
     }
 }

@@ -8,7 +8,7 @@ use Box\Spout\Reader\XLSX\Sheet;
 use Liuggio\ExcelBundle\Factory;
 use UR\Behaviors\ParserUtilTrait;
 
-class Excel extends CommonFile implements DataSourceInterface
+class Excel extends CommonDataSourceFile implements DataSourceInterface
 {
     use ParserUtilTrait;
     private $excel_2003_formats = ['Excel5', 'OOCalc', 'Excel2003XML'];
@@ -103,7 +103,7 @@ class Excel extends CommonFile implements DataSourceInterface
                 /**@var Sheet $sheet */
                 foreach ($sheet->getRowIterator() as $row) {
                     $i++;
-                    $cur_row = $this->validValue($row);
+                    $cur_row = $this->removeInvalidColumns($row);
 
                     if (count($cur_row) > $max) {
                         $this->headers = $cur_row;

@@ -5,7 +5,6 @@ namespace UR\Repository\Core;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
-use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
@@ -132,7 +131,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         $conn = $this->_em->getConnection();
         /**@var ImportHistoryInterface $importHistory */
         foreach ($importHistories as $importHistory) {
-            $query = "delete from " . sprintf(\UR\Service\DataSet\Type::PREFIX_DATA_IMPORT_TABLE, $importHistory->getDataSet()->getId()) . " where __import_id = ?";
+            $query = "delete from " . sprintf(Locator::PREFIX_DATA_IMPORT_TABLE, $importHistory->getDataSet()->getId()) . " where __import_id = ?";
             $stmt = $conn->prepare($query);
             $stmt->bindValue(1, $importHistory->getId());
             $stmt->execute();

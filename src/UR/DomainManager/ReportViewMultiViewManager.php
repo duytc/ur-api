@@ -5,7 +5,6 @@ namespace UR\DomainManager;
 use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\Common\Proxy\Exception\InvalidArgumentException;
 use ReflectionClass;
-use UR\Model\Core\ReportViewInterface;
 use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\ReportViewMultiViewRepositoryInterface;

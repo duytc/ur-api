@@ -5,7 +5,7 @@ namespace UR\Service\Report;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\Service\ColumnUtilTrait;
-use UR\Service\DataSet\Type;
+use UR\Service\DataSet\FieldType;
 use UR\Service\DateUtil;
 use UR\Service\DateUtilInterface;
 use UR\Service\DTO\Collection;
@@ -62,7 +62,7 @@ class ReportGrouper implements ReportGrouperInterface
 
         $total = [];
         foreach ($metrics as $key) {
-            if (in_array($collection->getTypeOf($key), [Type::NUMBER, Type::DECIMAL])) {
+            if (in_array($collection->getTypeOf($key), [FieldType::NUMBER, FieldType::DECIMAL])) {
                 $total[$key] = 0;
             }
         }
@@ -86,7 +86,7 @@ class ReportGrouper implements ReportGrouperInterface
                     $row[$metric] = null;
                 }
 
-                if (in_array($collection->getTypeOf($metric), [Type::NUMBER, Type::DECIMAL])) {
+                if (in_array($collection->getTypeOf($metric), [FieldType::NUMBER, FieldType::DECIMAL])) {
                     $total[$metric] += $row[$metric];
                 }
             }
@@ -95,7 +95,7 @@ class ReportGrouper implements ReportGrouperInterface
         $count = count($collection->getRows());
         $average = $total;
         foreach ($metrics as $metric) {
-            if (!in_array($collection->getTypeOf($metric), [Type::NUMBER, Type::DECIMAL])) {
+            if (!in_array($collection->getTypeOf($metric), [FieldType::NUMBER, FieldType::DECIMAL])) {
                 continue;
             }
             $average[$metric] = $total[$metric] / $count;

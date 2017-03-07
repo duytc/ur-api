@@ -6,6 +6,19 @@ use UR\Service\DTO\Collection;
 
 interface CollectionTransformerInterface
 {
+    const TYPE_KEY = 'type';
+    const FIELDS_KEY = 'fields';
+    const FIELD_KEY = 'field';
+    const GROUP_BY = 'groupBy';
+    const SORT_BY = 'sortBy';
+    const ADD_FIELD = 'addField';
+    const ADD_CALCULATED_FIELD = 'addCalculatedField';
+    const ADD_CONCATENATED_FIELD = 'addConcatenatedField';
+    const COMPARISON = 'comparison';
+    const COMPARISON_PERCENT = 'comparisonPercent';
+    const REPLACE_TEXT = 'replaceText';
+    const EXTRACT_PATTERN = 'extractPattern';
+
     /* priority for formats, the smaller will be execute first */
     const TRANSFORM_PRIORITY_ADD_CONCATENATION_FIELD = 10;
     const TRANSFORM_PRIORITY_GROUP = 20;
@@ -29,5 +42,5 @@ interface CollectionTransformerInterface
      */
     public function getDefaultPriority();
 
-    public function getPriority();
+    public function validate();
 }

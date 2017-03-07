@@ -11,15 +11,6 @@ interface DataSourceInterface extends ModelInterface
     const CSV_FORMAT = 'csv';
     const EXCEL_FORMAT = 'excel';
 
-    const ALERT_WRONG_FORMAT_KEY = 'wrongFormat';
-    const ALERT_DATA_RECEIVED_KEY = 'dataReceived';
-    const ALERT_DATA_NO_RECEIVED_KEY = 'notReceived';
-    const ALERT_TYPE_KEY = 'type';
-    const ALERT_TIMEZONE_KEY = 'alertTimeZone';
-    const HOUR_KEY = 'alertHour';
-    const ALERT_MINUTE_KEY = 'alertMinutes';
-    const ALERT_ACTIVE_KEY = 'active';
-
     /**
      * @return mixed
      */
@@ -140,9 +131,4 @@ interface DataSourceInterface extends ModelInterface
      * @param mixed $detectedFields
      */
     public function setDetectedFields($detectedFields);
-
-    /**
-     * @return DataSourceAlertSetting[]|null
-     */
-    public function getAlertSettingConfig();
 }

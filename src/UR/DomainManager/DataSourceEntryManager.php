@@ -6,7 +6,6 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use UR\Behaviors\ConvertFileEncoding;
-use UR\Entity\Core\DataSource;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -15,7 +14,10 @@ use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use ReflectionClass;
-use UR\Service\Alert\ProcessAlert;
+use UR\Service\Alert\DataSource\AbstractDataSourceAlert;
+use UR\Service\Alert\DataSource\DataSourceAlertFactory;
+use UR\Service\Alert\DataSource\DataReceivedAlert;
+use UR\Service\Alert\DataSource\WrongFormatAlert;
 use UR\Service\DataSource\DataSourceType;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Import\ImportService;
@@ -29,6 +31,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     private $uploadFileDir;
     private $workerManager;
     private $importService;
+    private $alertFactory;
 
     public function __construct(ObjectManager $om, DataSourceEntryRepositoryInterface $repository, Manager $workerManager, $uploadFileDir, ImportService $importService)
     {
@@ -37,6 +40,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $this->workerManager = $workerManager;
         $this->uploadFileDir = $uploadFileDir;
         $this->importService = $importService;
+        $this->alertFactory = new DataSourceAlertFactory();
     }
 
     /**
@@ -109,18 +113,13 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         }
         $origin_name = $file->getClientOriginalName();
         $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
-        $dataSourceAlertSettings = $dataSource->getAlertSettingConfig();
         $publisherId = $dataSource->getPublisher()->getId();
-        $params = array(
-            ProcessAlert::FILE_NAME => $file_name . "." . $file->getClientOriginalExtension(),
-            ProcessAlert::DATA_SOURCE_NAME => $dataSource->getName()
-        );
 
         try {
             // validate file extension before processing upload
             $isExtensionSupport = $this->importService->validateExtensionSupports($file);
             if (!$isExtensionSupport) {
-                throw new ImportDataException(ProcessAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT, null, null);
+                throw new ImportDataException(WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT, null, null);
             }
 
             // automatically update data source format if has no entry before
@@ -134,7 +133,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $isValidExtension = $this->importService->validateFileUpload($file, $dataSource);
             if (!$isValidExtension) {
-                throw new ImportDataException(ProcessAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT, null, null);
+                throw new ImportDataException(WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT, null, null);
             }
 
             // save file to upload dir
@@ -181,21 +180,28 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $dataSourceEntry->setDataSource($dataSource);
             $this->save($dataSourceEntry);
 
-            foreach ($dataSourceAlertSettings as $dataSourceAlertSetting) {
-                if (strcmp($dataSourceAlertSetting->getType(), DataSourceInterface::ALERT_DATA_RECEIVED_KEY) === 0) {
-                    $this->workerManager->processAlert(ProcessAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD, $publisherId, $params);
-                    break;
-                };
+            $alert = $this->alertFactory->getAlert(
+                $dataSource->getAlertSetting(),
+                DataReceivedAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD,
+                $origin_name,
+                $dataSource->getName());
+
+            if ($alert instanceof DataReceivedAlert) {
+                $this->workerManager->processAlert($alert->getAlertCode(), $publisherId, $alert->getAlertMessage(), $alert->getAlertDetails());
             }
 
         } catch (ImportDataException $exception) {
             $code = $exception->getAlertCode();
-            foreach ($dataSourceAlertSettings as $dataSourceAlertSetting) {
-                if (strcmp($dataSourceAlertSetting->getType(), DataSourceInterface::ALERT_WRONG_FORMAT_KEY) === 0) {
-                    $this->workerManager->processAlert($code, $publisherId, $params);
-                    throw new Exception(sprintf('Wrong Type format', $origin_name));
-                };
+            $alert = $this->alertFactory->getAlert($dataSource->getAlertSetting(),
+                $code,
+                $origin_name,
+                $dataSource->getName());
+
+            if ($alert instanceof AbstractDataSourceAlert) {
+                $this->workerManager->processAlert($alert->getAlertCode(), $publisherId, $alert->getAlertMessage(), $alert->getAlertDetails());
             }
+
+            throw new Exception(sprintf('Wrong Type format', $origin_name));
         }
 
         $result = [

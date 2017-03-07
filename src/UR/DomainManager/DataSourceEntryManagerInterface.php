@@ -3,7 +3,6 @@
 namespace UR\DomainManager;
 
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\HttpFoundation\FileBag;
 use UR\Model\Core\DataSourceEntry;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\PublisherInterface;

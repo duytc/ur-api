@@ -4,14 +4,11 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
-use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Entity\Core\ReportViewMultiView;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\ReportView;
-use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
-use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;

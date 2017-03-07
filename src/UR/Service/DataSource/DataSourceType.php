@@ -13,12 +13,6 @@ final class DataSourceType
     public static $JSON_TYPES = ['json'];
     public static $CSV_TYPES = ['csv'];
 
-    private static $SUPPORTED_DS_FORMAT = [
-        self::DS_EXCEL_FORMAT,
-        self::DS_CSV_FORMAT,
-        self::DS_JSON_FORMAT
-    ];
-
     public static function isExcelType($type)
     {
         return in_array($type, DataSourceType::$EXCEL_TYPES);
@@ -55,11 +49,15 @@ final class DataSourceType
         if (self::isExcelType($extension)){
             return self::DS_EXCEL_FORMAT;
         }
+
         if (self::isCsvType($extension)){
             return self::DS_CSV_FORMAT;
         }
+
         if (self::isJsonType($extension)){
             return self::DS_JSON_FORMAT;
         }
+
+        return "";
     }
 }

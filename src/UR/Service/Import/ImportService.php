@@ -3,15 +3,12 @@
 namespace UR\Service\Import;
 
 
-use Liuggio\ExcelBundle\Factory;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use UR\Behaviors\ConvertFileEncoding;
 use UR\Model\Core\DataSourceInterface;
-use UR\Service\DataSource\Csv;
 use UR\Service\DataSource\DataSourceType;
-use UR\Service\DataSource\Excel;
-use UR\Service\DataSource\Json;
+use UR\Service\DataSource\DataSourceFileFactory;
 
 class ImportService
 {
@@ -20,19 +17,19 @@ class ImportService
     const DELETE = 'delete';
     protected $uploadRootDir;
     protected $kernelRootDir;
-    private $phpExcel;
+    private $fileFactory;
 
     /**
      * ImportService constructor.
      * @param $uploadRootDir
      * @param $kernelRootDir
-     * @param Factory $phpExcel
+     * @param DataSourceFileFactory $fileFactory
      */
-    public function __construct($uploadRootDir, $kernelRootDir, Factory $phpExcel)
+    public function __construct($uploadRootDir, $kernelRootDir, DataSourceFileFactory $fileFactory)
     {
         $this->uploadRootDir = $uploadRootDir;
         $this->kernelRootDir = $kernelRootDir;
-        $this->phpExcel = $phpExcel;
+        $this->fileFactory = $fileFactory;
     }
 
     public function detectedFieldsFromFiles(FileBag $files, $dirItem, DataSourceInterface $dataSource)
@@ -85,21 +82,22 @@ class ImportService
     {
         return $dataSource->getFormat() == DataSourceType::getOriginalDataSourceType($file->getClientOriginalExtension());
     }
+
     /**
      * validate extension support or not
      *
-     * @param DataSourceInterface $dataSource
+     * @param UploadedFile $file
      * @return bool
      */
     public function validateExtensionSupports(UploadedFile $file)
     {
         // check if in supported formats
-        if (!DataSourceType::isSupportedExtension($file->getClientOriginalExtension())){
+        if (!DataSourceType::isSupportedExtension($file->getClientOriginalExtension())) {
             return false;
         }
         return true;
     }
-    
+
 
     public function detectedFieldsForDataSource(array $newFields, array $currentFields, $option)
     {
@@ -112,16 +110,7 @@ class ImportService
     public function getNewFieldsFromFiles($inputFile, DataSourceInterface $dataSource)
     {
         /**@var \UR\Service\DataSource\DataSourceInterface $file */
-
-        if (strcmp($dataSource->getFormat(), 'csv') === 0) {
-            /**@var Csv $file */
-            $file = new Csv($inputFile);
-        } else if (strcmp($dataSource->getFormat(), 'excel') === 0) {
-            /**@var Excel $file */
-            $file = new Excel($inputFile, $this->phpExcel, 5000);
-        } else if (strcmp($dataSource->getFormat(), 'json') === 0) {
-            $file = new Json($inputFile);
-        }
+        $file = $this->fileFactory->getFile($dataSource->getFormat(), $inputFile);
 
         $newFields = [];
         $columns = $file->getColumns();

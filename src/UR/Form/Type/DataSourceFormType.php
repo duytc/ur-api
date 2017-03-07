@@ -15,13 +15,18 @@ use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\AdminInterface;
+use UR\Service\Alert\DataSource\DataSourceAlertInterface;
 
 class DataSourceFormType extends AbstractRoleSpecificFormType
 {
+    const ALERT_WRONG_FORMAT_KEY = 'wrongFormat';
+    const ALERT_DATA_RECEIVED_KEY = 'dataReceived';
+    const ALERT_DATA_NO_RECEIVED_KEY = 'notReceived';
+
     static $SUPPORTED_ALERT_SETTING_KEYS = [
-        DataSourceInterface::ALERT_WRONG_FORMAT_KEY,
-        DataSourceInterface::ALERT_DATA_RECEIVED_KEY,
-        DataSourceInterface::ALERT_DATA_NO_RECEIVED_KEY,
+        self::ALERT_WRONG_FORMAT_KEY,
+        self::ALERT_DATA_RECEIVED_KEY,
+        self::ALERT_DATA_NO_RECEIVED_KEY,
     ];
 
     public function buildForm(FormBuilderInterface $builder, array $options)
@@ -104,18 +109,18 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
 
         $checkedAlertKeys = [];
         foreach ($alertSetting as $alert) {
-            if (!in_array($alert[DataSourceInterface::ALERT_TYPE_KEY], self::$SUPPORTED_ALERT_SETTING_KEYS)
+            if (!in_array($alert[DataSourceAlertInterface::ALERT_TYPE_KEY], self::$SUPPORTED_ALERT_SETTING_KEYS)
                 || in_array($alert, $checkedAlertKeys)
             ) {
                 return false;
             }
 
-            if (empty($alert[DataSourceInterface::ALERT_TIMEZONE_KEY])) {
+            if (empty($alert[DataSourceAlertInterface::ALERT_TIME_ZONE_KEY])) {
                 return true;
             }
 
-            if (!in_array($alert[DataSourceInterface::ALERT_TIMEZONE_KEY], timezone_identifiers_list())) {
-                throw new Exception(sprintf('Timezone %s does not exits', $alert[DataSourceInterface::ALERT_TIMEZONE_KEY]));
+            if (!in_array($alert[DataSourceAlertInterface::ALERT_TIME_ZONE_KEY], timezone_identifiers_list())) {
+                throw new Exception(sprintf('Timezone %s does not exits', $alert[DataSourceAlertInterface::ALERT_TIME_ZONE_KEY]));
             }
 
             $checkedAlertKeys[] = $alert;

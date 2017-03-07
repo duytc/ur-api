@@ -2,16 +2,16 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
-use UR\Service\DataSet\TransformType;
 use UR\Service\DTO\Collection;
 
-class SortByColumns extends AbstractTransform implements CollectionTransformerInterface
+class SortByColumns implements CollectionTransformerInterface
 {
+    const DIRECTION = 'direction';
+    const NAMES = 'names';
     protected $sortByColumns;
 
-    public function __construct(array $sortByColumns, $priority)
+    public function __construct(array $sortByColumns)
     {
-        parent::__construct($priority);
         $this->sortByColumns = $sortByColumns;
     }
 
@@ -25,12 +25,12 @@ class SortByColumns extends AbstractTransform implements CollectionTransformerIn
         for ($i = 0; $i < count($this->sortByColumns); $i++) {
             for ($j = 0; $j < count($this->sortByColumns[$i]); $j++) {
 
-                switch ($this->sortByColumns[$i][$j][TransformType::DIRECTION]) {
+                switch ($this->sortByColumns[$i][$j][self::DIRECTION]) {
                     case 'asc':
-                        $this->sortByColumns[$i][$j][TransformType::DIRECTION] = SORT_ASC;
+                        $this->sortByColumns[$i][$j][self::DIRECTION] = SORT_ASC;
                         break;
                     case 'desc':
-                        $this->sortByColumns[$i][$j][TransformType::DIRECTION] = SORT_DESC;
+                        $this->sortByColumns[$i][$j][self::DIRECTION] = SORT_DESC;
                         break;
                 }
             }
@@ -56,8 +56,8 @@ class SortByColumns extends AbstractTransform implements CollectionTransformerIn
 
         for ($i = 0; $i < count($cols); $i++) {
             for ($j = 0; $j < count($cols[$i]); $j++) {
-                foreach ($cols[$i][$j][TransformType::NAMES] as $name) {
-                    $sort_direction[] = $cols[$i][$j][TransformType::DIRECTION];
+                foreach ($cols[$i][$j][self::NAMES] as $name) {
+                    $sort_direction[] = $cols[$i][$j][self::DIRECTION];
                     $sort_name[] = $name;
                 }
             }
@@ -121,5 +121,10 @@ class SortByColumns extends AbstractTransform implements CollectionTransformerIn
         $args[] = &$data;
         call_user_func_array('array_multisort', $args);
         return end($args);
+    }
+
+    public function validate()
+    {
+        // TODO: Implement validate() method.
     }
 }

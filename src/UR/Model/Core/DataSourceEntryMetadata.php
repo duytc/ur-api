@@ -3,7 +3,7 @@
 namespace UR\Model\Core;
 
 
-use UR\Service\DataSet\TransformType;
+use UR\Service\DataSet\MetadataField;
 
 class DataSourceEntryMetadata
 {
@@ -14,11 +14,11 @@ class DataSourceEntryMetadata
     const META_DATA_FILE_NAME = "filename";
 
     static $MAPPED_META_DATA_EMAIL_HIDDEN_COLUMNS = [
-        self::META_DATA_EMAIL_BODY => TransformType::EMAIL_BODY,
-        self::META_DATA_EMAIL_DATE => TransformType::EMAIL_DATE_TIME,
+        self::META_DATA_EMAIL_BODY => MetadataField::EMAIL_BODY,
+        self::META_DATA_EMAIL_DATE => MetadataField::EMAIL_DATE_TIME,
         //self::META_DATA_EMAIL_FROM => '', // not yet used
-        self::META_DATA_EMAIL_SUBJECT => TransformType::EMAIL_SUBJECT,
-        self::META_DATA_FILE_NAME => TransformType::FILE_NAME
+        self::META_DATA_EMAIL_SUBJECT => MetadataField::EMAIL_SUBJECT,
+        self::META_DATA_FILE_NAME => MetadataField::FILE_NAME
     ];
 
     protected $fileName;

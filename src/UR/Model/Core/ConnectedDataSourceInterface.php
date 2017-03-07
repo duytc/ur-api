@@ -82,16 +82,6 @@ interface ConnectedDataSourceInterface extends ModelInterface
     public function setAlertSetting($alertSetting);
 
     /**
-     * @return ConnectedDataSourceCollectionTransform
-     */
-    public function getCollectionTransforms();
-
-    /**
-     * @return ConnectedDataSourceColumnTransform
-     */
-    public function getColumnTransforms();
-
-    /**
      * @return boolean
      */
     public function isReplayData();

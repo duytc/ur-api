@@ -9,9 +9,10 @@ interface AutoImportDataInterface
 {
     /**
      * @param DataSourceEntryInterface $dataSourceEntry
+     * @param ConnectedDataSourceInterface $connectedDataSource
      * @return mixed
      */
-    public function autoCreateDataImport(DataSourceEntryInterface $dataSourceEntry);
+    public function loadingDataFromFileToDatabase(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry);
 
     /**
      * @param ConnectedDataSourceInterface $connectedDataSources

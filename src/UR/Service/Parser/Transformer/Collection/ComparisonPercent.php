@@ -4,15 +4,17 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use UR\Service\DTO\Collection;
 
-class ComparisonPercent extends AbstractTransform implements CollectionTransformerInterface
+class ComparisonPercent implements CollectionTransformerInterface
 {
+    const NUMERATOR_KEY = 'numerator';
+    const DENOMINATOR_KEY = 'denominator';
+    
     protected $newColumn;
     protected $columnA;
     protected $columnB;
 
-    public function __construct($newColumn, $columnA, $columnB, $priority)
+    public function __construct($newColumn, $columnA, $columnB)
     {
-        parent::__construct($priority);
         $this->newColumn = $newColumn;
         $this->columnA = $columnA;
         $this->columnB = $columnB;
@@ -72,5 +74,10 @@ class ComparisonPercent extends AbstractTransform implements CollectionTransform
     public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_COMPARISON_PERCENT;
+    }
+
+    public function validate()
+    {
+        // TODO: Implement validate() method.
     }
 }

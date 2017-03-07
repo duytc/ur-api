@@ -1,17 +1,11 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: linhvu
- * Date: 03/02/2017
- * Time: 14:50
- */
 
 namespace UR\Service\DataSource;
 
 
-Abstract class CommonFile
+Abstract class CommonDataSourceFile
 {
-    protected function validValue(array $arr)
+    protected function removeInvalidColumns(array $arr)
     {
         foreach ($arr as $key => $value) {
             if ($value === null || $value === '') {

@@ -122,29 +122,24 @@ services:
     ur.worker.workers.auto_import_data:
         class: UR\Service\Import\AutoImportData
         arguments:
-            - @doctrine.orm.entity_manager
             - @ur.worker.manager
             - @ur.domain_manager.import_history
-            - @phpexcel
-            - %upload_file_dir%
             - @ur.service.import.do_log
-            - %ur_batch_size%
-            - %ur_reading_xls_chunk_size%
-            - @ur.service.parser
+            - @ur.service.parsing_file_service
+            - @ur.service.data_set.importer
 
     ur.worker.workers.re_import_new_entry_received:
-        class: UR\Worker\Workers\ReImportWhenNewEntryReceived
+        class: UR\Worker\Workers\LoadingDataFromFileToDataImportTable
         arguments:
-            - @ur.domain_manager.data_set
             - @ur.worker.workers.auto_import_data
             - @ur.domain_manager.data_source_entry
-
-    ur.worker.workers.auto_import_when_connected_datasource_change_worker:
-        class: UR\Worker\Workers\AutoImportConnectedDataSourceChangedWorker
-        arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.worker.workers.auto_import_data
             - @ur.domain_manager.connected_data_source
+
+    ur.worker.workers.alter_import_data_table:
+        class: UR\Worker\Workers\AlterImportDataTable
+        arguments:
+            - @ur.domain_manager.data_set
+            - @doctrine.orm.entity_manager
 
     ur.service.alert.process_alert:
         class: UR\Service\Alert\ProcessAlert
@@ -188,4 +183,23 @@ services:
         arguments:
             - %upload_file_dir%
             - %kernel.root_dir%
+            - @ur.service.file_factory
+
+    ur.service.parsing_file_service:
+        class: UR\Service\Parser\ParsingFileService
+        arguments:
+            - %upload_file_dir%
+            - @ur.service.parser
+            - @ur.service.file_factory
+
+    ur.service.data_set.importer:
+        class: UR\Service\DataSet\ParsedDataImporter
+        arguments:
+            - @doctrine.orm.entity_manager
+            - %ur_batch_size%
+
+    ur.service.file_factory:
+        class: UR\Service\DataSource\DataSourceFileFactory
+        arguments:
             - @phpexcel
+            - %ur_reading_xls_chunk_size%

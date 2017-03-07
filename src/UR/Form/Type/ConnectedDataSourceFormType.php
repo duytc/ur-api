@@ -51,20 +51,17 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                     }
 
                     if ($connDataSource->getRequires() !== null) {
-                        if (!$this->validateRequireFields($dataSet, $connDataSource)) {
+                        if (!$this->validateRequireFields($connDataSource)) {
                             $form->get('requires')->addError(new FormError('one or more fields of your require fields dose not exist in your Mapping'));
                         }
                     }
-                    //todo add validation later
 
-                    $isValidFilter = $this->validateFilters($dataSet, $connDataSource);
-                    if ($isValidFilter !== 0) {
-                        $form->get('filters')->addError(new FormError($isValidFilter));
+                    if($connDataSource->getFilters()!==null) {
+                        $this->validateFilters($connDataSource->getFilters());
                     }
-                    $isValidTransform = $this->validateTransforms($dataSet, $connDataSource);
 
-                    if ($isValidTransform !== 0) {
-                        $form->get('transforms')->addError(new FormError($isValidTransform));
+                    if($connDataSource->getTransforms()!==null){
+                        $this->validateTransforms($dataSet, $connDataSource);
                     }
 
                     if (!$this->validateAlertSetting($connDataSource)) {

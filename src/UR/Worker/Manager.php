@@ -27,28 +27,36 @@ class Manager
         $this->queue = $queue;
     }
 
-    public function reImportWhenNewEntryReceived($entryIds)
+    public function loadingDataFromFileToDataImportTable($connectedDataSourceId, $entryId, $dataSetId)
     {
         $params = new StdClass;
-        $params->entryIds = $entryIds;
-        $this->queueTask('reImportWhenNewEntryReceived', $params);
+        $params->connectedDataSourceId = $connectedDataSourceId;
+        $params->entryId = $entryId;
+        $params->dataSetId = $dataSetId;
+
+        $this->queueTask('loadingDataFromFileToDataImportTable', $params);
     }
 
-    public function importDataWhenConnectedDataSourceChange($entryIds)
-    {
-        $params = new StdClass;
-        $params->entryIds = $entryIds;
-        $this->queueTask('importDataWhenConnectedDataSourceChange', $params);
-    }
-
-    public function processAlert($code, $publisherId, array $parameters)
+    public function processAlert($code, $publisherId, $message, $details)
     {
         $params = new StdClass;
         $params->code = $code;
         $params->publisherId = $publisherId;
-        $params->params = $parameters;
+        $params->message = $message;
+        $params->details = $details;
 
         $this->queueTask('processAlert', $params);
+    }
+
+    public function alterDataSetTable($dataSetId, $newFields, $updateFields, $deletedFields)
+    {
+        $params = new StdClass;
+        $params->dataSetId = $dataSetId;
+        $params->newColumns = $newFields;
+        $params->updateColumns = $updateFields;
+        $params->deletedColumns = $deletedFields;
+
+        $this->queueTask('alterDataSetTable', $params);
     }
 
     /**
@@ -67,7 +75,6 @@ class Manager
             ->put(json_encode($payload),
                 Pheanstalk_PheanstalkInterface::DEFAULT_PRIORITY,
                 Pheanstalk_PheanstalkInterface::DEFAULT_DELAY,
-                self::EXECUTION_TIME_THRESHOLD)
-        ;
+                self::EXECUTION_TIME_THRESHOLD);
     }
 }

@@ -8,9 +8,10 @@ interface ProcessAlertInterface
     /**
      * @param $alertCode
      * @param $publisherId
-     * @param array $params
+     * @param $message
+     * @param $details
      * @return mixed
      */
-    public function createAlert($alertCode, $publisherId, array $params);
+    public function createAlert($alertCode, $publisherId, $message, $details);
 
 }

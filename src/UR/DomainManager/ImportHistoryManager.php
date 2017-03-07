@@ -120,19 +120,6 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     /**
      * @inheritdoc
      */
-    public function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry)
-    {
-        if (!$dataSourceEntry->getDataSource()->getEnable()) {
-            throw new \Exception(sprintf("Could not replay data - entry in disabled Data Source "));
-        }
-
-        $entryIds[] = $dataSourceEntry->getId();
-        $this->workerManager->reImportWhenNewEntryReceived($entryIds);
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function deletePreviousImports($importHistories)
     {
         $this->repository->deleteImportedData($importHistories);

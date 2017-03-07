@@ -4,7 +4,7 @@ namespace UR\Service\DataSource;
 
 use UR\Behaviors\ParserUtilTrait;
 
-class Json extends CommonFile implements DataSourceInterface
+class Json extends CommonDataSourceFile implements DataSourceInterface
 {
     use ParserUtilTrait;
     protected $rows;
@@ -22,7 +22,7 @@ class Json extends CommonFile implements DataSourceInterface
         $i = 0;
         $header = [];
         for ($row = 0; $row < count($this->rows); $row++) {
-            $cur_row = $this->validValue(array_keys($this->rows[$row]));
+            $cur_row = $this->removeInvalidColumns(array_keys($this->rows[$row]));
 
             foreach ($cur_row as $item) {
                 if (!in_array($item, $header)) {

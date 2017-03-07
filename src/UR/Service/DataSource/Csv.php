@@ -7,7 +7,7 @@ use League\Csv\Reader;
 use UR\Behaviors\ParserUtilTrait;
 use UR\Exception\InvalidArgumentException;
 
-class Csv extends CommonFile implements DataSourceInterface
+class Csv extends CommonDataSourceFile implements DataSourceInterface
 {
     use ParserUtilTrait;
 
@@ -106,9 +106,7 @@ class Csv extends CommonFile implements DataSourceInterface
             return $this->convertEncodingToASCII($this->headers);
         }
 
-        $match = 0;
         $max = 0;
-        $pre_columns = [];
         $all_rows = [];
         $i = 0;
 
@@ -147,7 +145,7 @@ class Csv extends CommonFile implements DataSourceInterface
         }
 
         for ($row = 0; $row < count($all_rows); $row++) {
-            $cur_row = $this->validValue($all_rows[$row]);
+            $cur_row = $this->removeInvalidColumns($all_rows[$row]);
 
             if (count($cur_row) < 1) {
                 continue;
@@ -161,24 +159,6 @@ class Csv extends CommonFile implements DataSourceInterface
                 $this->headerRow = $row;
                 $this->dataRow = $row + 1;
             }
-
-//            if ((count($cur_row) !== count($pre_columns))) {
-//                $match = 0;
-//                $pre_columns = $cur_row;
-//                continue;
-//            }
-//
-//            $match++;
-//            if ($match === self::FIRST_MATCH) {
-//                if ($row === self::SECOND_ROW)
-//                    $this->dataRow = $row - 1;
-//                else
-//                    $this->dataRow = $row;
-//            }
-//
-//            if ($match > self::ROW_MATCH && count($this->headers) > 0) {
-//                break;
-//            }
 
             if ($i >= DataSourceInterface::DETECT_HEADER_ROWS) {
                 break;
@@ -198,8 +178,8 @@ class Csv extends CommonFile implements DataSourceInterface
         $allData = $this->csv->fetchAll();
         $rows = [];
         foreach ($allData as $item) {
-            if (count($this->validValue($item)) === count($this->headers)) {
-                $rows[] = $this->validValue($item);
+            if (count($this->removeInvalidColumns($item)) === count($this->headers)) {
+                $rows[] = $this->removeInvalidColumns($item);
             }
         }
 

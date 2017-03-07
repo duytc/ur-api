@@ -9,8 +9,8 @@ use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformColumnDataEvent;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreFilterDataEvent;
 use UR\Bundle\ApiBundle\Event\UrGenericEvent;
 use UR\Model\Core\ConnectedDataSourceInterface;
-use UR\Service\Alert\ProcessAlert;
-use UR\Service\DataSet\Type;
+use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertInterface;
+use UR\Service\DataSet\FieldType;
 use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
@@ -21,7 +21,7 @@ use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class Parser implements ParserInterface
 {
-    private $numberSpecialCharacters = ["n/a", "-"];
+    private $numberSpecialCharacters = ['n/a', '-'];
 
     /**@var EventDispatcherInterface $eventDispatcher
      */
@@ -74,10 +74,12 @@ class Parser implements ParserInterface
                 null
             )
         );
+
         $this->eventDispatcher->dispatch(
             self::EVENT_NAME_POST_LOADED_DATA,
             $postLoadDataEvent
         );
+
         $postLoadDataEventResult = $postLoadDataEvent->getArguments();
         if (is_array($postLoadDataEventResult) && array_key_exists('row', $postLoadDataEventResult)) {
             $rows = $postLoadDataEventResult['rows'];
@@ -99,10 +101,12 @@ class Parser implements ParserInterface
                 null
             )
         );
+
         $this->eventDispatcher->dispatch(
             self::EVENT_NAME_PRE_FILTER_DATA,
             $preFilterEvent
         );
+
         $preFilterEventResult = $preFilterEvent->getArguments();
         if (is_array($preFilterEventResult) && array_key_exists('row', $preFilterEventResult)) {
             $rows = $preFilterEventResult['rows'];
@@ -121,50 +125,16 @@ class Parser implements ParserInterface
                     continue;
                 }
 
-                if (!array_key_exists($columnsMapping[$dsColumn], $row)) {
+                $fileColumn = $columnsMapping[$dsColumn];
+
+                if (!array_key_exists($fileColumn, $row)) {
                     continue;
                 }
 
-                if (strcmp($row[$columnsMapping[$dsColumn]], "") === 0) {
-                    $row[$columnsMapping[$dsColumn]] = null;
-                }
-
-                if ($row[$columnsMapping[$dsColumn]] !== null) {
-                    if (strcmp($type, Type::NUMBER) === 0 || strcmp($type, Type::DECIMAL) === 0) {
-                        $row[$columnsMapping[$dsColumn]] = str_replace("$", "", $row[$columnsMapping[$dsColumn]]);
-                        $row[$columnsMapping[$dsColumn]] = str_replace("%", "", $row[$columnsMapping[$dsColumn]]);
-                        $row[$columnsMapping[$dsColumn]] = str_replace(",", "", $row[$columnsMapping[$dsColumn]]);
-                        if (strcmp($type, Type::DECIMAL) === 0) {
-                            $row[$columnsMapping[$dsColumn]] = str_replace(" ", "", $row[$columnsMapping[$dsColumn]]);
-                        }
-
-                        if (in_array($row[$columnsMapping[$dsColumn]], $this->numberSpecialCharacters)) {
-                            $row[$columnsMapping[$dsColumn]] = null;
-                        }
-
-                        if (!is_numeric($row[$columnsMapping[$dsColumn]]) && $row[$columnsMapping[$dsColumn]] !== null) {
-                            throw new ImportDataException(ProcessAlert::ALERT_CODE_WRONG_TYPE_MAPPING, $cur_row + 2, $columnsMapping[$dsColumn]);
-                        }
-                    }
-                }
+                $row[$fileColumn] = $this->reformatFileData($row, $fileColumn, $type, $cur_row);
             }
 
-            $isValidFilter = 1;
-            foreach ($parserConfig->getColumnFilters() as $column => $filters) {
-                /**@var ColumnFilterInterface[] $filters */
-                if (!in_array($column, $fileCols)) {
-                    continue;
-                }
-
-                foreach ($filters as $filter) {
-                    $filterResult = $filter->filter($row[$column]);
-                    if ($filterResult > 1) {
-                        throw new ImportDataException($filterResult, $cur_row + 2, $column);
-                    } else {
-                        $isValidFilter = $isValidFilter & $filterResult;
-                    }
-                }
-            }
+            $isValidFilter = $this->doFilter($parserConfig, $fileCols, $row, $cur_row);
 
             if (!$isValidFilter) {
                 unset($rows[$cur_row]);
@@ -183,19 +153,12 @@ class Parser implements ParserInterface
         /* 3. do transforming data */
         $allFieldsTransforms = $parserConfig->getCollectionTransforms();
 
-        if (!$parserConfig->isUserReorderTransformsAllowed()) {
+        if (!$connectedDataSource->isUserReorderTransformsAllowed()) {
             usort($allFieldsTransforms, function (CollectionTransformerInterface $a, CollectionTransformerInterface $b) {
                 if ($a->getDefaultPriority() == $b->getDefaultPriority()) {
                     return 0;
                 }
                 return ($a->getDefaultPriority() < $b->getDefaultPriority()) ? -1 : 1;
-            });
-        } else {
-            usort($allFieldsTransforms, function (CollectionTransformerInterface $a, CollectionTransformerInterface $b) {
-                if ($a->getPriority() == $b->getPriority()) {
-                    return 0;
-                }
-                return ($a->getPriority() < $b->getPriority()) ? -1 : 1;
             });
         }
 
@@ -257,27 +220,112 @@ class Parser implements ParserInterface
         }
 
         // transform column
-        $rows = $collection->getRows();
+        $rows = array_values($collection->getRows());
+
+        if (count($rows) < 1) {
+            return $collection;
+        }
+
+        $columns = $this->getColumnsAfterDoCollectionTransforms($rows[0], $columnFromMap, $collection->getColumns());
+
+        return $this->getFinalParserCollection($rows, $columns, $parserConfig);
+    }
+
+    private function reformatFileData($row, $fileColumn, $type, $cur_row)
+    {
+        $cellValue = $row[$fileColumn];
+        if (strcmp($cellValue, "") === 0) {
+            $cellValue = null;
+        }
+
+        if ($cellValue !== null) {
+            if (strcmp($type, FieldType::NUMBER) === 0 || strcmp($type, FieldType::DECIMAL) === 0) {
+                $cellValue = str_replace("$", "", $cellValue);
+                $cellValue = str_replace("%", "", $cellValue);
+                $cellValue = str_replace(",", "", $cellValue);
+                if (strcmp($type, FieldType::DECIMAL) === 0) {
+                    $cellValue = str_replace(" ", "", $cellValue);
+                }
+
+                if (in_array(strtolower(trim($cellValue)), $this->numberSpecialCharacters)) {
+                    return null;
+                }
+
+                if (!is_numeric($cellValue) && $cellValue !== null) {
+                    throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_WRONG_TYPE_MAPPING, $cur_row + 2, $fileColumn);
+                }
+            }
+        }
+
+        return $cellValue;
+    }
+
+    private function doFilter(ParserConfig $parserConfig, $fileCols, $row, $cur_row)
+    {
+        $isValidFilter = 1;
+        foreach ($parserConfig->getColumnFilters() as $column => $filters) {
+            /**@var ColumnFilterInterface[] $filters */
+            if (!in_array($column, $fileCols)) {
+                continue;
+            }
+
+            foreach ($filters as $filter) {
+                $filterResult = $filter->filter($row[$column]);
+                if ($filterResult > 1) {
+                    throw new ImportDataException($filterResult, $cur_row + 2, $column);
+                } else {
+                    $isValidFilter = $isValidFilter & $filterResult;
+                }
+            }
+        }
+
+        return $isValidFilter;
+    }
+
+    private function getColumnsAfterDoCollectionTransforms($row, $columnFromMap, $extraColumns)
+    {
+        $columns = [];
+        foreach ($row as $field => $value) {
+            if (array_key_exists($field, $columnFromMap)) {
+                $columns[$field] = $columnFromMap[$field];
+            }
+
+            if (in_array($field, $extraColumns)) {
+                $columns[$field] = $field;
+            }
+        }
+
+        return $columns;
+    }
+
+    private function getFinalParserCollection($rows, $columns, ParserConfig $parserConfig)
+    {
         $cur_row = -1;
         foreach ($rows as &$row) {
             $cur_row++;
+            $row = array_intersect_key($row, $columns);
+
+            $keys = array_map(function ($key) use ($columns) {
+                return $columns[$key];
+            }, array_keys($row));
+
+            $row = array_combine($keys, $row);
+
             foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
                 /** @var ColumnTransformerInterface[] $transforms */
-                if (!array_key_exists($columnsMapping[$column], $row)) {
+                if (!array_key_exists($column, $row)) {
                     continue;
                 }
 
                 foreach ($transforms as $transform) {
-                    $row[$columnsMapping[$column]] = $transform->transform($row[$columnsMapping[$column]]);
-                    if ($row[$columnsMapping[$column]] === 2) {
-                        throw new ImportDataException(ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, $cur_row + 2, $columnsMapping[$column]);
+                    $row[$column] = $transform->transform($row[$column]);
+                    if ($row[$column] === 2) {
+                        throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, $cur_row + 2, $column);
                     }
                 }
             }
         }
 
-        $collection->setRows($rows);
-
-        return $collection;
+        return new Collection($columns, $rows);
     }
 }

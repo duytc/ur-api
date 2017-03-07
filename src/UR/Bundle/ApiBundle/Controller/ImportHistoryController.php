@@ -7,10 +7,13 @@ use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Domain\DTO\Report\Formats\NumberFormat;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\ImportHistoryInterface;
+use UR\Service\Parser\Transformer\Column\DateFormat;
+use UR\Service\Parser\Transformer\TransformerFactory;
 
 /**
  * @Rest\RouteResource("importhistory")
@@ -203,15 +206,22 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
             }
         }
 
+        $transformFactory = new TransformerFactory();
         foreach ($results as &$row) {
-            foreach ($connDataSource->getColumnTransforms()->getDateFormatTransforms() as $transform) {
-                $transform->setFromDateFormat('Y-m-d');
-                $transform->setDateFormat($transform->getToDateFormat());
-                $row[$transform->getField()] = $transform->transform($row[$transform->getField()]);
-            }
+            foreach ($connDataSource->getTransforms() as $transform) {
+                $transformObject = $transformFactory->getTransform($transform);
 
-            foreach ($connDataSource->getColumnTransforms()->getNumberFormatTransforms() as $transform) {
-                $row[$transform->getField()] = $transform->transform($row[$transform->getField()]);
+                if ($transformObject instanceof DateFormat) {
+                    $transformObject->setFromDateFormat('Y-m-d');
+                    $transformObject->setIsCustomFormatDateFrom(false);
+                    $transformObject->setDateFormat($transformObject->getToDateFormat());
+                    $row[$transformObject->getField()] = $transformObject->transform($row[$transformObject->getField()]);
+                    continue;
+                }
+
+                if ($transformObject instanceof NumberFormat) {
+                    $row[$transformObject->getField()] = $transformObject->transform($row[$transformObject->getField()]);
+                }
             }
         }
 

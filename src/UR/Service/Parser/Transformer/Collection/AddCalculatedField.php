@@ -6,6 +6,7 @@ use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 class AddCalculatedField extends AbstractAddField
 {
+    const EXPRESSION_KEY = 'expression';
     /**
      * @var string
      */
@@ -17,9 +18,9 @@ class AddCalculatedField extends AbstractAddField
     protected $defaultValue;
     protected $language;
 
-    public function __construct($column, $expression, $defaultValue = 0, $priority)
+    public function __construct($column, $expression, $defaultValue = 0)
     {
-        parent::__construct($column, $priority);
+        parent::__construct($column);
         $this->column = $column;
         $this->expression = $expression;
         $this->defaultValue = $defaultValue;
@@ -93,5 +94,10 @@ class AddCalculatedField extends AbstractAddField
     public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_ADD_CALCULATED_FIELD;
+    }
+
+    public function validate()
+    {
+        // TODO: Implement validate() method.
     }
 }

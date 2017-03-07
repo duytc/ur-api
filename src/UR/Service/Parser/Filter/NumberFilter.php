@@ -3,13 +3,52 @@
 namespace UR\Service\Parser\Filter;
 
 
-use UR\Service\Alert\ProcessAlert;
 
-class NumberFilter extends CommonNumberFilter implements ColumnFilterInterface
+use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
+
+class NumberFilter extends AbstractFilter implements ColumnFilterInterface
 {
-    public function __construct(array $numberFilter)
+    const COMPARISON_TYPE_EQUAL = 'equal';
+    const COMPARISON_TYPE_SMALLER = 'smaller';
+    const COMPARISON_TYPE_SMALLER_OR_EQUAL = 'smaller or equal';
+    const COMPARISON_TYPE_GREATER = 'greater';
+    const COMPARISON_TYPE_GREATER_OR_EQUAL = 'greater or equal';
+    const COMPARISON_TYPE_NOT_EQUAL = 'not equal';
+    const COMPARISON_TYPE_IN = 'in';
+    const COMPARISON_TYPE_NOT_IN = 'not in';
+    const COMPARISON_TYPE_FILTER_KEY = 'comparison';
+    const COMPARISON_VALUE_FILTER_KEY = 'compareValue';
+
+    const EPSILON = 10e-12;
+
+    public static $SUPPORTED_COMPARISON_TYPES = [
+        self::COMPARISON_TYPE_EQUAL,
+        self::COMPARISON_TYPE_SMALLER,
+        self::COMPARISON_TYPE_SMALLER_OR_EQUAL,
+        self::COMPARISON_TYPE_GREATER,
+        self::COMPARISON_TYPE_GREATER_OR_EQUAL,
+        self::COMPARISON_TYPE_NOT_EQUAL,
+        self::COMPARISON_TYPE_IN,
+        self::COMPARISON_TYPE_NOT_IN
+    ];
+
+    /** @var string */
+    protected $comparisonType;
+
+    /** @var string|array due to comparisonType */
+    protected $comparisonValue;
+
+    /**
+     * NumberFilter constructor.
+     * @param $field
+     * @param $comparisonType
+     * @param array|string $comparisonValue
+     */
+    public function __construct($field, $comparisonType, $comparisonValue)
     {
-        parent::__construct($numberFilter);
+        parent::__construct($field);
+        $this->comparisonType = $comparisonType;
+        $this->comparisonValue = $comparisonValue;
     }
 
     /**
@@ -22,14 +61,10 @@ class NumberFilter extends CommonNumberFilter implements ColumnFilterInterface
         }
 
         if (!is_numeric($value)) {
-            return ProcessAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER;
+            return ImportFailureAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER;
         }
 
         if (self::COMPARISON_TYPE_IN === $this->comparisonType) {
-            if (!is_array($this->comparisonValue)) {
-                return false;
-            }
-
             if (!in_array($value, $this->comparisonValue)) {
                 return false;
             }
@@ -38,10 +73,6 @@ class NumberFilter extends CommonNumberFilter implements ColumnFilterInterface
         }
 
         if (self::COMPARISON_TYPE_NOT_IN === $this->comparisonType) {
-            if (!is_array($this->comparisonValue)) {
-                return false;
-            }
-
             if (in_array($value, $this->comparisonValue)) {
                 return false;
             }
@@ -74,5 +105,51 @@ class NumberFilter extends CommonNumberFilter implements ColumnFilterInterface
         }
 
         return true;
+    }
+
+    public function validate()
+    {
+        $this->validateComparisonType();
+        $this->validateComparisonValue();
+    }
+
+    /**
+     * validate ComparisonType
+     *
+     * @throws \Exception
+     */
+    private function validateComparisonType()
+    {
+        if (!in_array($this->comparisonType, self::$SUPPORTED_COMPARISON_TYPES)) {
+            throw new \Exception(sprintf('Not supported comparisonType %s', $this->comparisonType));
+        }
+    }
+
+    /**
+     * validate ComparisonValue
+     *
+     * @throws \Exception
+     */
+    private function validateComparisonValue()
+    {
+        // expect array
+        if ($this->comparisonType == self::COMPARISON_TYPE_IN
+            || $this->comparisonType == self::COMPARISON_TYPE_NOT_IN
+        ) {
+            if (!is_array($this->comparisonValue)) {
+                throw new \Exception(sprintf('Expect comparisonValue is array with comparisonType %s', $this->comparisonType));
+            }
+
+            foreach ($this->comparisonValue as $cv) {
+                if (!is_numeric($cv)) {
+                    throw new \Exception(sprintf('Expect comparisonValue is array of numeric with comparisonType %s', $this->comparisonType));
+                }
+            }
+        } else {
+            // expect single value
+            if (!is_numeric($this->comparisonValue)) {
+                throw new \Exception(sprintf('Expect comparisonValue is numeric with comparisonType %s', $this->comparisonType));
+            }
+        }
     }
 }

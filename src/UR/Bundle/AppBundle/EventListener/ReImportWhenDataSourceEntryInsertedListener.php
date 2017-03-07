@@ -6,7 +6,6 @@ namespace UR\Bundle\AppBundle\EventListener;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use UR\Model\Core\DataSourceEntryInterface;
-use UR\Model\Core\DataSourceInterface;
 use UR\Model\ModelInterface;
 use UR\Worker\Manager;
 
@@ -50,21 +49,18 @@ class ReImportWhenDataSourceEntryInsertedListener
             return;
         }
 
-        $entryIds = [];
         foreach ($this->insertedEntities as $entity) {
             if (!$entity instanceof DataSourceEntryInterface) {
                 continue;
             }
 
             if ($entity->getDataSource()->getEnable()) {
-                $entryIds[] = $entity->getId();
+                foreach ($entity->getDataSource()->getConnectedDataSources() as $connectedDataSource) {
+                    $this->workerManager->loadingDataFromFileToDataImportTable($connectedDataSource->getId(), $entity->getId(), $connectedDataSource->getDataSet()->getId());
+                }
+
             }
         }
-        // running import data
-        if (count($entryIds) < 1)
-            return;
-
-        $this->workerManager->reImportWhenNewEntryReceived($entryIds);
 
         // reset for new onFlush event
         $this->insertedEntities = [];

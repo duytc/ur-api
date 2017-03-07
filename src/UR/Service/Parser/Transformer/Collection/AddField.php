@@ -3,10 +3,12 @@
 namespace UR\Service\Parser\Transformer\Collection;
 
 
-use UR\Service\DataSet\Type;
+use UR\Service\DataSet\FieldType;
 
 class AddField extends AbstractAddField
 {
+    const VALUE_KEY = 'value';
+
     /**
      * @var string
      */
@@ -15,10 +17,9 @@ class AddField extends AbstractAddField
     protected $type;
 
 
-    public function __construct($column, $value = null, $fileType, $priority)
+    public function __construct($column, $value = null, $fileType)
     {
-        parent::__construct($column, $priority);
-        $this->column = $column;
+        parent::__construct($column);
         $this->value = $value;
         $this->type = $fileType;
     }
@@ -27,10 +28,10 @@ class AddField extends AbstractAddField
     {
         try {
             if (is_null($this->value)) {
-                throw new \Exception(sprintf('Expression for calculated field can not be null'));
+                throw new \Exception(sprintf('Expression can not be null'));
             }
 
-            if (!in_array($this->type, [Type::TEXT, Type::MULTI_LINE_TEXT])) {
+            if (!in_array($this->type, [FieldType::TEXT, FieldType::MULTI_LINE_TEXT])) {
                 return $this->value;
             }
 
@@ -44,7 +45,7 @@ class AddField extends AbstractAddField
 
             foreach ($fields as $field) {
                 if (!array_key_exists($field, $row)) {
-                    return null;
+                    continue;
                 }
 
                 $replaceValue = $row[$field];
@@ -86,9 +87,9 @@ class AddField extends AbstractAddField
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getColumn(): string
+    public function getColumn()
     {
         return $this->column;
     }
@@ -115,5 +116,10 @@ class AddField extends AbstractAddField
     public function setType($type)
     {
         $this->type = $type;
+    }
+
+    public function validate()
+    {
+        // TODO: Implement validate() method.
     }
 }

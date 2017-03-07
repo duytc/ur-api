@@ -53,7 +53,6 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
             return;
         }
 
-        $dataSourceEntryIds = [];
         foreach ($this->insertedEntities as $entity) {
             if (!$entity instanceof ConnectedDataSourceInterface) {
                 continue;
@@ -69,18 +68,11 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
                     $dataSourceEntries = $dataSourceEntries->toArray();
                 }
 
-                foreach ($dataSourceEntries as $dataSourceEntry){
-                    $dataSourceEntryIds[] = $dataSourceEntry->getId();
+                foreach ($dataSourceEntries as $dataSourceEntry) {
+                    $this->workerManager->loadingDataFromFileToDataImportTable($entity->getId(), $dataSourceEntry->getId(), $entity->getDataSet()->getId());
                 }
             }
         }
-
-        // running import data
-        if (count($dataSourceEntryIds) < 1) {
-            return;
-        }
-
-        $this->workerManager->reImportWhenNewEntryReceived($dataSourceEntryIds);
 
         // reset for new onFlush event
         $this->insertedEntities = [];

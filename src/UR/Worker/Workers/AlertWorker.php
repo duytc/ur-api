@@ -4,7 +4,6 @@ namespace UR\Worker\Workers;
 
 use StdClass;
 use UR\Model\User\UserEntityInterface;
-use UR\Service\Alert\AlertParams;
 use UR\Service\Alert\ProcessAlertInterface;
 
 class AlertWorker implements AlertWorkerInterface
@@ -31,8 +30,9 @@ class AlertWorker implements AlertWorkerInterface
     {
         $code = $inputAlert->code;
         $publisherId = $inputAlert->publisherId;
-        $params = $inputAlert->params;
+        $message = $inputAlert->message;
+        $details = $inputAlert->details;
 
-        $this->alert->createAlert($code, $publisherId, (array)$params);
+        $this->alert->createAlert($code, $publisherId, $message, $details);
     }
 }

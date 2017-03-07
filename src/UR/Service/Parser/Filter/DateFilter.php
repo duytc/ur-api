@@ -3,53 +3,41 @@
 namespace UR\Service\Parser\Filter;
 
 
-use UR\Service\Alert\ProcessAlert;
+use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
 
-class DateFilter implements ColumnFilterInterface
+class DateFilter extends AbstractFilter implements ColumnFilterInterface
 {
-    const TYPE = 'type';
-    const FIELD = 'field';
-    const FORMAT = 'format';
-    const START_DATE = 'startDate';
-    const END_DATE = 'endDate';
+    const FORMAT_FILTER_KEY = 'format';
+    const START_DATE_FILTER_KEY = 'startDate';
+    const END_DATE_FILTER_KEY = 'endDate';
     const DEFAULT_DATE_FORMAT = '!Y-m-d';
 
     protected $startDate;
     protected $endDate;
     protected $format;
 
-    public function __construct(array $dateFilter)
+    /**
+     * DateFilter constructor.
+     * @param $field
+     * @param $startDate
+     * @param $endDate
+     * @param $format
+     */
+    public function __construct($field, $startDate, $endDate, $format)
     {
-        if (count($dateFilter) !== 5) {
-            throw new \Exception (sprintf('wrong date Filter configuration'));
-        }
-
-        if (!array_key_exists(self::TYPE, $dateFilter)
-            || !array_key_exists(self::FIELD, $dateFilter)
-            || !array_key_exists(self::FORMAT, $dateFilter)
-            || !array_key_exists(self::START_DATE, $dateFilter)
-            || !array_key_exists(self::END_DATE, $dateFilter)
-        ) {
-            throw new \Exception (sprintf('Either parameters: %s, %s, %s, %s or %s not exits in date filter',
-                self::TYPE,
-                self::FIELD,
-                self::FORMAT,
-                self::START_DATE,
-                self::END_DATE));
-        }
-
-        $this->format = '!' . $dateFilter[self::FORMAT];
-        $this->startDate = \DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $dateFilter[self::START_DATE]);
-        $this->endDate = \DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $dateFilter[self::END_DATE]);
-        $this->validate();
+        parent::__construct($field);
+        $this->startDate = \DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $startDate);
+        $this->endDate = \DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $endDate);
+        $this->format = '!' . $format;
     }
+
 
     public function filter($value)
     {
         $value = \DateTime::createFromFormat($this->format, $value);
 
         if (!$value) {
-            return ProcessAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE;
+            return ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE;
         }
 
         if ($value <= $this->endDate && $value >= $this->startDate) {

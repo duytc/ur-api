@@ -4,8 +4,13 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use UR\Service\DTO\Collection;
 
-class ReplaceText extends AbstractTransform implements CollectionTransformerInterface
+class ReplaceText implements CollectionTransformerInterface
 {
+    const SEARCH_FOR_KEY = 'searchFor';
+    const POSITION_KEY = 'position';
+    const REPLACE_WITH_KEY = 'replaceWith';
+    const TARGET_FIELD_KEY = 'targetField';
+    const IS_OVERRIDE_KEY = 'isOverride';
     const POSITION_AT_BEGINNING = 'at the beginning';
     const POSITION_AT_THE_END = 'at the end';
     const POSITION_ANY_WHERE = 'anywhere';
@@ -40,9 +45,8 @@ class ReplaceText extends AbstractTransform implements CollectionTransformerInte
      */
     protected $isOverride;
 
-    public function __construct($field, $searchFor, $position = self::POSITION_AT_BEGINNING, $replaceWith, $targetField, $isOverride = true, $priority)
+    public function __construct($field, $searchFor, $position = self::POSITION_AT_BEGINNING, $replaceWith, $targetField, $isOverride = true)
     {
-        parent::__construct($priority);
         $this->field = $field;
         $this->searchFor = $searchFor;
         $this->position = $position;
@@ -95,7 +99,7 @@ class ReplaceText extends AbstractTransform implements CollectionTransformerInte
         if ($stringReplaced === null) {
             return null;
         }
-        
+
         switch ($this->position) {
             case self::POSITION_ANY_WHERE:
                 $stringReplaced = str_replace($this->searchFor, $this->replaceWith, $row[$field]);
@@ -246,4 +250,8 @@ class ReplaceText extends AbstractTransform implements CollectionTransformerInte
     }
 
 
+    public function validate()
+    {
+        // TODO: Implement validate() method.
+    }
 }

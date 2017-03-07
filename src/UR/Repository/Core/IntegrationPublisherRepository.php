@@ -4,7 +4,6 @@ namespace UR\Repository\Core;
 
 use Doctrine\ORM\EntityRepository;
 use UR\Bundle\UserSystem\PublisherBundle\Entity\User;
-use UR\Entity\Core\Integration;
 use UR\Model\Core\IntegrationInterface;
 
 class IntegrationPublisherRepository extends EntityRepository implements IntegrationPublisherRepositoryInterface

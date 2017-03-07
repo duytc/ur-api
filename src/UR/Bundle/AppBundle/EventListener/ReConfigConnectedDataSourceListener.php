@@ -9,9 +9,12 @@ use Doctrine\ORM\Event\PostFlushEventArgs;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Service\DataSet\FilterType;
-use UR\Service\DataSet\TransformType;
-use UR\Service\Parser\ImportUtils;
+use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
+use UR\Service\Parser\Transformer\Collection\ExtractPattern;
+use UR\Service\Parser\Transformer\Collection\GroupByColumns;
+use UR\Service\Parser\Transformer\Collection\SortByColumns;
+use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
+use UR\Service\Parser\Transformer\TransformerFactory;
 use UR\Worker\Manager;
 
 /**
@@ -83,7 +86,6 @@ class ReConfigConnectedDataSourceListener
         $deletedMetrics = [];
         $deletedDimensions = [];
 
-        $uniqueKeyChanges = [];
         foreach ($changedFields as $field => $values) {
             if (strcmp($field, 'dimensions') === 0) {
                 $this->getChangedFields($values, $renameFields, $newDimensions, $updateDimensions, $deletedDimensions);
@@ -91,10 +93,6 @@ class ReConfigConnectedDataSourceListener
 
             if (strcmp($field, 'metrics') === 0) {
                 $this->getChangedFields($values, $renameFields, $newMetrics, $updateMetrics, $deletedMetrics);
-            }
-
-            if (strcmp($field, 'allowOverwriteExistingData') === 0) {
-                $uniqueKeyChanges = $values;
             }
         }
 
@@ -107,9 +105,7 @@ class ReConfigConnectedDataSourceListener
         $deletedFields = array_merge($deletedDimensions, $deletedMetrics);
 
         // alter data_import table
-        $conn = $em->getConnection();
-        $importUtils = new ImportUtils();
-        $importUtils->alterDataSetTable($entity, $conn, $newFields, $updateFields, $deletedFields, $uniqueKeyChanges);
+        $this->workerManager->alterDataSetTable($entity->getId(), $newFields, $updateFields, $deletedFields);
         $this->updateFields = $updateFields;
         $this->deletedFields = $deletedFields;
     }
@@ -150,8 +146,6 @@ class ReConfigConnectedDataSourceListener
     {
         $mapFields = $connectedDataSource->getMapFields();
         $requires = $connectedDataSource->getRequires();
-//        $duplicates = $connectedDataSource->getDuplicates();
-        $filters = $connectedDataSource->getFilters();
         $transforms = $connectedDataSource->getTransforms();
 
         $delFields = [];
@@ -161,72 +155,37 @@ class ReConfigConnectedDataSourceListener
         $mapFields = array_diff($mapFields, $delFields);
 
         foreach ($mapFields as &$mapField) {
-            foreach ($updatedFields as $updatedField) {
-                if (array_key_exists($mapField, $updatedField)) {
-                    $mapField = $updatedField[$mapField];
-                }
+            if (array_key_exists($mapField, $updatedFields)) {
+                $mapField = $updatedFields[$mapField];
             }
         }
 
-
         $requires = array_values(array_diff($requires, $delFields));
-//        $duplicates = array_values(array_diff($duplicates, $delFields));
 
+        $transformerFactory = new TransformerFactory();
         foreach ($transforms as $key => &$transform) {
-            if (TransformType::isDateOrNumberTransform($transform[TransformType::TYPE])) {
-                foreach ($delFields as $deletedField) {
-                    if (strcmp($deletedField, $transform[TransformType::FIELD]) === 0) {
-                        unset($transforms[$key]);
-                    }
+            $transformObjects = $transformerFactory->getTransform($transform);
+
+            if ($transformObjects instanceof ColumnTransformerInterface) {
+                if (in_array($transformObjects->getField(), $deletedFields)) {
+                    unset($transforms[$key]);
                 }
 
-                foreach ($updatedFields as $updatedField) {
-                    if (array_key_exists($transform[TransformType::FIELD], $updatedField)) {
-                        $transform[TransformType::FIELD] = $updatedField[$transform[TransformType::FIELD]];
-                    }
+                if (array_key_exists($transformObjects->getField(), $updatedFields)) {
+                    $transform[ColumnTransformerInterface::FIELD_KEY] = $updatedFields[$transformObjects->getField()];
                 }
+
+                continue;
+
             } else {
-                //SORT BY
-                if (strcmp($transform[TransformType::TYPE], TransformType::SORT_BY) === 0) {
-                    $count = 0;
-                    foreach ($transform[TransformType::FIELDS] as $sortKey => &$fields) {
-                        $fields['names'] = array_values(array_diff($fields['names'], $delFields));
-                        if (count($fields['names']) < 1) {
-                            $count++;
-                        }
 
-                        foreach ($fields['names'] as &$field) {
-                            foreach ($updatedFields as $updatedField) {
-                                if (array_key_exists($field, $updatedField)) {
-                                    $field = $updatedField[$field];
-                                }
-                            }
-                        }
-                    }
-
-                    if ($count == 2) {
-                        unset($transforms[$key]);
-                    }
-
+                if ($transformObjects instanceof GroupByColumns || $transformObjects instanceof SortByColumns) {
                     continue;
                 }
 
-                //ADD FIELD
-                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_FIELD) === 0) {
-                    $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);
-                }
+                $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);
 
-                //ADD CALCULATED FIELD
-                if (strcmp($transform[TransformType::TYPE], TransformType::ADD_CALCULATED_FIELD) === 0) {
-                    $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);
-                }
-
-                //COMPARISON PERCENT
-                if (strcmp($transform[TransformType::TYPE], TransformType::COMPARISON_PERCENT) === 0) {
-                    $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);
-                }
-
-                if (count($transforms[$key][TransformType::FIELDS]) === 0) {
+                if (count($transforms[$key][CollectionTransformerInterface::FIELDS_KEY]) === 0) {
                     unset($transforms[$key]);
                 }
             }
@@ -234,8 +193,6 @@ class ReConfigConnectedDataSourceListener
 
         $connectedDataSource->setMapFields($mapFields);
         $connectedDataSource->setRequires(array_values($requires));
-//        $connectedDataSource->setDuplicates(array_values($duplicates));
-        $connectedDataSource->setFilters(array_values($filters));
         $connectedDataSource->setTransforms(array_values($transforms));
     }
 
@@ -251,37 +208,38 @@ class ReConfigConnectedDataSourceListener
             $newFieldName = $renameField['to'];
 
             if (array_key_exists($oldFieldName, $deletedFields)) {
-                $updateDimensions[] = [$oldFieldName => $newFieldName];
+                $updateDimensions[$oldFieldName] = $newFieldName;
                 unset($deletedFields[$oldFieldName]);
             }
         }
 
         $newDimensions = array_diff_key($values[1], $values[0]);
         foreach ($updateDimensions as $updateDimension) {
-            foreach ($updateDimension as $item) {
-                if (array_key_exists($item, $newDimensions)) {
-                    unset($newDimensions[$item]);
-                }
+            if (array_key_exists($updateDimension, $newDimensions)) {
+                unset($newDimensions[$updateDimension]);
             }
         }
     }
 
     public function updateAddTypeTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key)
     {
-        foreach ($transform[TransformType::FIELDS] as $k => &$field) {
-            foreach ($delFields as $deletedField) {
-                if (strcmp($field[TransformType::FIELD], $deletedField) === 0) {
-                    unset($transforms[$key][TransformType::FIELDS][$k]);
-                }
+        $keyToCompare = CollectionTransformerInterface::FIELD_KEY;
+
+        if (in_array($transform[CollectionTransformerInterface::TYPE_KEY], [CollectionTransformerInterface::EXTRACT_PATTERN, CollectionTransformerInterface::REPLACE_TEXT])) {
+            $keyToCompare = ExtractPattern::TARGET_FIELD_KEY;
+        }
+
+        foreach ($transform[CollectionTransformerInterface::FIELDS_KEY] as $k => &$field) {
+
+            if (in_array($field[$keyToCompare], $delFields)) {
+                unset($transforms[$key][CollectionTransformerInterface::FIELDS_KEY][$k]);
             }
 
-            foreach ($updatedFields as $updatedField) {
-                if (array_key_exists($field[TransformType::FIELD], $updatedField)) {
-                    $field[TransformType::FIELD] = $updatedField[$field[TransformType::FIELD]];
-                }
+            if (array_key_exists($field[$keyToCompare], $updatedFields)) {
+                $field[$keyToCompare] = $updatedFields[$field[$keyToCompare]];
             }
         }
 
-        $transforms[$key][TransformType::FIELDS] = array_values($transforms[$key][TransformType::FIELDS]);
+        $transforms[$key][CollectionTransformerInterface::FIELDS_KEY] = array_values($transforms[$key][CollectionTransformerInterface::FIELDS_KEY]);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace UR\Domain\DTO\Report\Transforms;
 
-use UR\Service\DataSet\Type;
+use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
 use UR\Service\StringUtilTrait;
 
@@ -74,14 +74,14 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 
 			// clear all metrics
 			foreach ($result as $key => $value) {
-				if (in_array($key, $metrics) && in_array($collection->getTypeOf($key), [Type::NUMBER, Type::DECIMAL])) {
+				if (in_array($key, $metrics) && in_array($collection->getTypeOf($key), [FieldType::NUMBER, FieldType::DECIMAL])) {
 					$result[$key] = 0;
 				}
 			}
 
 			foreach ($groupedReport as $report) {
 				foreach ($report as $key => $value) {
-					if (in_array($collection->getTypeOf($key), [Type::NUMBER, Type::DECIMAL])) {
+					if (in_array($collection->getTypeOf($key), [FieldType::NUMBER, FieldType::DECIMAL])) {
 						$result[$key] += $value;
 					}
 				}

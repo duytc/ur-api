@@ -12,10 +12,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\IntegrationManagerInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Service\DataSet\Importer;
+use UR\Service\DataSet\ParsedDataImporter;
 use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
-use UR\Service\DataSet\Type;
+use UR\Service\DataSet\FieldType;
 use UR\Service\StringUtilTrait;
 
 class AddUniqueColumnCommand extends ContainerAwareCommand
@@ -71,7 +71,7 @@ class AddUniqueColumnCommand extends ContainerAwareCommand
         foreach ($dataSetMissingUniques as $dataSetMissingUnique) {
             $dataSetTable = $dataSetLocator->getDataSetImportTable($dataSetMissingUnique->getId());
             $addCols = [];
-            $addCols[] = $dataSetTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, Type::TEXT, array("notnull" => true));
+            $addCols[] = $dataSetTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, FieldType::TEXT, array("notnull" => true));
 
             $updateTable = new TableDiff($dataSetTable->getName(), $addCols, [], [], [], [], []);
 
@@ -90,15 +90,15 @@ class AddUniqueColumnCommand extends ContainerAwareCommand
 
             foreach ($dimensions as $dimension) {
                 $qb->addSelect($dimension);
-                $qb->addSelect(Importer::ID_COLUMN);
+                $qb->addSelect(DataSetInterface::ID_COLUMN);
             }
 
             $qb->from($dataSetTable->getName());
             $rows = $qb->execute()->fetchAll();
 
             foreach ($rows as $row) {
-                $id = $row[Importer::ID_COLUMN];
-                unset($row[Importer::ID_COLUMN]);
+                $id = $row[DataSetInterface::ID_COLUMN];
+                unset($row[DataSetInterface::ID_COLUMN]);
 
                 foreach ($row as $k => $item) {
                     if ($item === null) {

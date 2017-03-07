@@ -21,7 +21,7 @@ use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewInterface;
-use UR\Service\DataSet\Type;
+use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResult;
 use UR\Service\DTO\Report\ReportResultInterface;
@@ -228,7 +228,7 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         $dimensions[] = self::REPORT_VIEW_ALIAS;
-        $types[self::REPORT_VIEW_ALIAS] = Type::TEXT;
+        $types[self::REPORT_VIEW_ALIAS] = FieldType::TEXT;
 
         foreach ($rows as &$row) {
             foreach ($metrics as $metric) {

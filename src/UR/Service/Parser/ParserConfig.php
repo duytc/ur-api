@@ -22,11 +22,6 @@ class ParserConfig
      */
     protected $collectionTransforms = [];
 
-    /**
-     * @var bool
-     */
-    protected $userReorderTransformsAllowed;
-
     public function addColumn($fromColumn, $toColumn = null)
     {
         if (empty($fromColumn)) {
@@ -133,23 +128,5 @@ class ParserConfig
     public function getCollectionTransforms()
     {
         return $this->collectionTransforms;
-    }
-
-    /**
-     * @return boolean
-     */
-    public function isUserReorderTransformsAllowed()
-    {
-        return $this->userReorderTransformsAllowed;
-    }
-
-    /**
-     * @param boolean $userReorderTransformsAllowed
-     * @return self
-     */
-    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed)
-    {
-        $this->userReorderTransformsAllowed = $userReorderTransformsAllowed;
-        return $this;
     }
 }

@@ -15,9 +15,9 @@ class AddConcatenatedField extends AbstractAddField
     protected $expression;
     protected $language;
 
-    public function __construct($column, $expression, $priority)
+    public function __construct($column, $expression)
     {
-        parent::__construct($column, $priority);
+        parent::__construct($column);
         $this->column = $column;
         $this->expression = $expression;
     }
@@ -26,7 +26,7 @@ class AddConcatenatedField extends AbstractAddField
     {
         try {
             if (is_null($this->expression)) {
-                throw new \Exception(sprintf('Expression for calculated field can not be null'));
+                throw new \Exception(sprintf('Expression can not be null'));
             }
 
             $regex = '/\[(.*?)\]/'; // $fieldsWithBracket = $matches[0];
@@ -58,5 +58,10 @@ class AddConcatenatedField extends AbstractAddField
     public function getDefaultPriority()
     {
         return self::TRANSFORM_PRIORITY_ADD_CONCATENATION_FIELD;
+    }
+
+    public function validate()
+    {
+        // TODO: Implement validate() method.
     }
 }

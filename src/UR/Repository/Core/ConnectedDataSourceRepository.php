@@ -9,10 +9,6 @@ use UR\Model\PagerParam;
 
 class ConnectedDataSourceRepository extends EntityRepository implements ConnectedDataSourceRepositoryInterface
 {
-    const DATA_ADDED = 'dataAdded';
-    const IMPORT_FAILURE= 'importFailure';
-    public static $alertSetting = [ConnectedDataSourceRepository::DATA_ADDED, ConnectedDataSourceRepository::IMPORT_FAILURE];
-
     protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name'];
 
     public function getConnectedDataSourceByDataSetQuery(DataSetInterface $dataSet, PagerParam $param)

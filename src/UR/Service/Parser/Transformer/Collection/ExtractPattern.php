@@ -5,12 +5,19 @@ namespace UR\Service\Parser\Transformer\Collection;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Service\DTO\Collection;
 
-class ExtractPattern extends AbstractTransform implements CollectionTransformerInterface
+class ExtractPattern implements CollectionTransformerInterface
 {
     const FIRST_MATCH = 0;
     const FILE_NAME_FIELD = '__filename';
     const CASE_INSENSITIVE = 'i';
     const MULTI_LINE = 'm';
+    const START_REGEX_SPECIAL = '/';
+    const REG_EXPRESSION_KEY = 'searchPattern';
+    const TARGET_FIELD_KEY = 'targetField';
+    const IS_OVERRIDE_KEY = 'isOverride';
+    const IS_REG_EXPRESSION_CASE_INSENSITIVE_KEY = 'isCaseInsensitive';
+    const IS_REG_EXPRESSION_MULTI_LINE_KEY = 'isMultiLine';
+    const REPLACEMENT_VALUE_KEY = 'replacementValue';
 
     /**
      * @var string
@@ -47,9 +54,8 @@ class ExtractPattern extends AbstractTransform implements CollectionTransformerI
      */
     protected $replacementValue;
 
-    public function __construct($field, $pattern, $targetField, $isOverride = true, $isCaseInsensitive, $isMultiLine, $replacementValue, $priority)
+    public function __construct($field, $pattern, $targetField, $isOverride = true, $isCaseInsensitive, $isMultiLine, $replacementValue)
     {
-        parent::__construct($priority);
         $this->field = $field;
         $this->targetField = $targetField;
         $this->isOverride = $isOverride;
@@ -186,5 +192,10 @@ class ExtractPattern extends AbstractTransform implements CollectionTransformerI
     public function setIsOverride(bool $isOverride)
     {
         $this->isOverride = $isOverride;
+    }
+
+    public function validate()
+    {
+        // TODO: Implement validate() method.
     }
 }

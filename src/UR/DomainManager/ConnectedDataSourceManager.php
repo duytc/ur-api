@@ -4,7 +4,6 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
-use UR\Domain\DTO\Report\Params;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
