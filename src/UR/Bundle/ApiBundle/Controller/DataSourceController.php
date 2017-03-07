@@ -14,7 +14,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceEntryManagerInterface;
-use UR\DomainManager\DataSourceManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntry;
@@ -555,7 +554,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @return mixed
      */
-    public function postUploadFileForMultipleDataSourcesAction(Request $request)
+    public function postNewEntriesForMultipleDataSourcesAction(Request $request)
     {
         $sourceParam = $request->request->get('source', null);
 
@@ -566,6 +565,12 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         switch ($sourceParam) {
             case 'email':
             case 'integration':
+                /* check if post new entry with json data */
+                if (null !== $request->request->get('data', null)) {
+                    return $this->processImportDataViaIntegration($request);
+                }
+
+                /* post new entry with file */
                 return $this->processPostFileForMultipleDataSources($request, $sourceParam);
 
             case 'api':
@@ -574,30 +579,6 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             default:
                 throw new BadRequestHttpException(sprintf('Not supported param "source" as %s', $sourceParam));
         }
-    }
-
-
-    /**
-     * Import json data to data source
-     *
-     * @Rest\Post("/datasources/{id}/importJson")
-     *
-     * @ApiDoc(
-     *  section = "Data Sources",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful",
-     *      400 = "Returned when the submitted data has errors"
-     *  }
-     * )
-     *
-     * @param Request $request the request object
-     * @param $id
-     * @return mixed
-     */
-    public function postImportJsonDataAction($id, Request $request)
-    {
-        return $this->processImportJsonData($id, $request);
     }
 
     /**
@@ -856,20 +837,12 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         return $result;
     }
 
-    /**
-     * process Post file via API key
-     *
-     * @param Request $request
-     * @return array
-     */
     private function processImportDataViaApiKey(Request $request)
     {
         $apiKey = $request->request->get('apiKey', null);
-        $data = $request->request->get('data', null);
 
-        $data = json_encode($data);
-        if ($apiKey === null || $data === null) {
-            throw new BadRequestHttpException('apiKey or data must not be null');
+        if ($apiKey === null) {
+            throw new BadRequestHttpException('apiKey must not be null');
         }
 
         $dataSourceManager = $this->get('ur.domain_manager.data_source');
@@ -879,28 +852,37 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             throw new BadRequestHttpException('cannot find any data source with this api key');
         }
 
-        /**@var DataSourceInterface $dataSource */
-        $dataSource = $dataSources[0];
-        $uploadRootDir = $this->container->getParameter('upload_file_dir');
-        $dirItem = '/' . $dataSource->getPublisher()->getId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
-        $uploadPath = $uploadRootDir . $dirItem;
-        $name = '/json-message-via-api-key_' . round(microtime(true)) . '.json';
-        $this->file_force_contents(substr($uploadPath, 1) . $name, $data);
-
-        $file = new UploadedFile($uploadPath . $name, $name);
-        $dataSourceEntryManager = $this->container->get('ur.domain_manager.data_source_entry');
-        return $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, DataSourceEntry::RECEIVED_VIA_API, false);
+        return $this->processUploadData($request, $dataSources[0], DataSourceEntryInterface::RECEIVED_VIA_API);
     }
 
     /**
-     * @param $id
      * @param Request $request
      * @return mixed
      * @throws Exception
      */
-    private function processImportJsonData($id, Request $request)
+    private function processImportDataViaIntegration(Request $request)
     {
-        $data = $request->request->all();
+        $id = $request->request->get('ids', null);
+
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+        if (empty($dataSource)) {
+            throw new BadRequestHttpException(sprintf('cannot find any data source with this id %d', $id));
+        }
+
+        return $this->processUploadData($request, $dataSource, DataSourceEntryInterface::RECEIVED_VIA_INTEGRATION);
+    }
+
+    /**
+     * @param Request $request
+     * @param DataSourceInterface $dataSource
+     * @param string $sourceParam
+     * @return mixed
+     * @throws Exception
+     */
+    private function processUploadData(Request $request, DataSourceInterface $dataSource, $sourceParam = DataSourceEntryInterface::RECEIVED_VIA_API)
+    {
+        $data = $request->request->get('data', null);
         $data = json_encode($data);
 
         if (json_last_error() != JSON_ERROR_NONE) {
@@ -911,25 +893,16 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             throw new BadRequestHttpException('data must not be null');
         }
 
-        $dataSourceManager = $this->get('ur.domain_manager.data_source');
-        $dataSourceEntryManager = $this->container->get('ur.domain_manager.data_source_entry');
-
-        /** @var DataSourceManagerInterface $dataSourceManager * */
-        $dataSource = $dataSourceManager->find($id);
-        if (empty($dataSource)) {
-            throw new BadRequestHttpException(sprintf('cannot find any data source with this id =%d', $id));
-        }
-
         /**@var DataSourceInterface $dataSource */
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
-        $dirItem = sprintf('/%s/%s/%s', $dataSource->getPublisher()->getId(), $dataSource->getId(), (date_create('today')->format('Ymd')));
-        $uploadPath = sprintf('%s%s', $uploadRootDir, $dirItem);
-        $name = sprintf('/json-message-via-api-key_%s.json', round(microtime(true)));
+        $dirItem = '/' . $dataSource->getPublisher()->getId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
+        $uploadPath = $uploadRootDir . $dirItem;
+        $name = '/data-message_' . round(microtime(true)) . '.json';
         $this->file_force_contents(substr($uploadPath, 1) . $name, $data);
-        $file = new UploadedFile(sprintf('%s%s', $uploadPath, $name), $name);
 
-        return $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource,
-                        DataSourceEntryInterface::RECEIVED_VIA_API, false);
+        $file = new UploadedFile($uploadPath . $name, $name);
+        $dataSourceEntryManager = $this->container->get('ur.domain_manager.data_source_entry');
+        return $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $sourceParam, false);
     }
 
     /**
