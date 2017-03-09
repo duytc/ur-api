@@ -7,12 +7,12 @@ use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use UR\Domain\DTO\Report\Formats\NumberFormat;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
+use UR\Service\Parser\Transformer\Column\NumberFormat;
 use UR\Service\Parser\Transformer\TransformerFactory;
 
 /**
