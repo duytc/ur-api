@@ -4,6 +4,7 @@ namespace UR\Service\DataSet;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DTO\Collection;
@@ -23,27 +24,28 @@ class ParsedDataImporter
         DataSetInterface::UNIQUE_ID_COLUMN,
         DataSetInterface::OVERWRITE_DATE
     ];
+
     private $preparedInsertCount;
+
+    private $lockingDatabaseTable;
 
     public function __construct(EntityManagerInterface $em, $batchSize)
     {
-        $this->em = $em;
         $this->batchSize = $batchSize;
-        $this->conn = $this->em->getConnection();
+        $this->conn = $em->getConnection();
+        $this->lockingDatabaseTable = new LockingDatabaseTable($this->conn);
     }
 
     public function importParsedDataFromFileToDatabase(Collection $collection, $importId, ConnectedDataSourceInterface $connectedDataSource)
     {
-        $dataSetLocator = new Locator($this->conn);
-        $dataSetSynchronizer = new Synchronizer($this->conn, new Comparator());;
-        $table = $dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId());
-        //create or update empty dataSet table
-        if (!$table) {
-            $dataSetSynchronizer->createEmptyDataSetTable($connectedDataSource->getDataSet(), $dataSetLocator);
-            $table = $dataSetLocator->getDataSetImportTable($connectedDataSource->getDataSet()->getId());
-        }
+        $dataSetSynchronizer = new Synchronizer($this->conn, new Comparator());
 
+        //create or get dataSet table
+        $table = $dataSetSynchronizer->createEmptyDataSetTable($connectedDataSource->getDataSet());
         $tableName = $table->getName();
+
+        $this->lockingDatabaseTable->lockTable($tableName);
+
         $dimensions = $connectedDataSource->getDataSet()->getDimensions();
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
@@ -86,9 +88,9 @@ class ParsedDataImporter
                 $this->preparedInsertCount++;
                 try {
                     $qb->execute();
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->conn->rollBack();
-                    throw new ImportDataException(null, null, null);
+                    throw new ImportDataException(null, null, null, $e->getMessage());
                 }
             }
 
@@ -107,6 +109,8 @@ class ParsedDataImporter
         if ($this->preparedInsertCount > 0 && is_array($columns) && is_array($question_marks)) {
             $this->executeInsert($insertSql, $insert_values);
         }
+
+        $this->lockingDatabaseTable->unLockTable();
 
         return true;
     }
@@ -132,9 +136,9 @@ class ParsedDataImporter
         $stmt = $this->conn->prepare($sql);
         try {
             $stmt->execute($values);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             $this->conn->rollBack();
-            throw new ImportDataException(null, null, null);
+            throw new ImportDataException(null, null, null, $ex);
         }
         $this->conn->commit();
         $this->conn->close();

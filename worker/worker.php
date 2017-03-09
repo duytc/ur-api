@@ -78,7 +78,12 @@ while (true) {
     }
     stdOut(sprintf('Received job %s (ID: %s) with payload %s', $task, $job->getId(), $rawPayload));
     try {
-        $worker->$task($params); // dynamic method call
+        if ($task == 'loadingDataFromFileToDataImportTable' || $task == 'alterDataSetTable') {
+            $worker->$task($params, $job, TUBE_NAME);
+        } else {
+            $worker->$task($params); // dynamic method call
+        }
+
         stdOut(sprintf('Job %s (ID: %s) with payload %s has been completed', $task, $job->getId(), $rawPayload));
         $queue->delete($job);
 // task finished successfully

@@ -134,12 +134,14 @@ services:
             - @ur.worker.workers.auto_import_data
             - @ur.domain_manager.data_source_entry
             - @ur.domain_manager.connected_data_source
+            - @leezy.pheanstalk
 
     ur.worker.workers.alter_import_data_table:
         class: UR\Worker\Workers\AlterImportDataTable
         arguments:
             - @ur.domain_manager.data_set
             - @doctrine.orm.entity_manager
+            - @leezy.pheanstalk
 
     ur.service.alert.process_alert:
         class: UR\Service\Alert\ProcessAlert

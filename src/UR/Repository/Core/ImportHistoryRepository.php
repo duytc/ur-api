@@ -3,6 +3,7 @@
 namespace UR\Repository\Core;
 
 use Doctrine\DBAL\Query\QueryBuilder;
+use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSetInterface;
@@ -12,7 +13,7 @@ use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
-use UR\Service\DataSet\Locator;
+use UR\Service\DataSet\Synchronizer;
 
 class ImportHistoryRepository extends EntityRepository implements ImportHistoryRepositoryInterface
 {
@@ -131,7 +132,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         $conn = $this->_em->getConnection();
         /**@var ImportHistoryInterface $importHistory */
         foreach ($importHistories as $importHistory) {
-            $query = "delete from " . sprintf(Locator::PREFIX_DATA_IMPORT_TABLE, $importHistory->getDataSet()->getId()) . " where __import_id = ?";
+            $query = "delete from " . sprintf(Synchronizer::PREFIX_DATA_IMPORT_TABLE, $importHistory->getDataSet()->getId()) . " where __import_id = ?";
             $stmt = $conn->prepare($query);
             $stmt->bindValue(1, $importHistory->getId());
             $stmt->execute();
@@ -176,7 +177,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         $dataSetId = $importHistory->getDataSet()->getId();
         $conn = $this->_em->getConnection();
 
-        $dataSetLocator = new Locator($conn);
+        $dataSetSynchronizer = new Synchronizer($conn, new Comparator());
         $dimensions = $importHistory->getDataSet()->getDimensions();
         $metrics = $importHistory->getDataSet()->getMetrics();
         $fields = array_merge($dimensions, $metrics);
@@ -188,7 +189,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
 
         $qb = $conn->createQueryBuilder();
         $query = $qb->select($selectedFields)
-            ->from($dataSetLocator->getDataSetImportTableName($dataSetId), 'd')
+            ->from($dataSetSynchronizer->getDataSetImportTableName($dataSetId), 'd')
             ->where('d.__import_id = ' . $importHistory->getId());
 
         $stmt = $query->execute();

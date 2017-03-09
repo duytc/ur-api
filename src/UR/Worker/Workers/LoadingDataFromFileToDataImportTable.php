@@ -5,6 +5,7 @@ namespace UR\Worker\Workers;
 use StdClass;
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
 use UR\DomainManager\DataSourceEntryManagerInterface;
+use UR\Exception\SqlLockTableException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Import\AutoImportDataInterface;
@@ -24,24 +25,36 @@ class LoadingDataFromFileToDataImportTable
      */
     private $connectedDataSourceManager;
 
+    private $queue;
 
-    function __construct(AutoImportDataInterface $autoImport, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager)
+
+    function __construct(AutoImportDataInterface $autoImport, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager, $queue)
     {
         $this->autoImport = $autoImport;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
         $this->connectedDataSourceManager = $connectedDataSourceManager;
+        $this->queue = $queue;
     }
 
-    function loadingDataFromFileToDataImportTable(StdClass $params)
+    public function loadingDataFromFileToDataImportTable(StdClass $params, $job, $tube)
     {
         $connectedDataSourceId = $params->connectedDataSourceId;
         $entryId = $params->entryId;
         /**@var DataSourceEntryInterface $dataSourceEntry */
         $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
         /**@var ConnectedDataSourceInterface $connectedDataSource */
-        $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
+        try {
+            $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
+        } catch (\Exception $exception) {
+            stdOut('xxxxx');
+        }
 
-        if ($dataSourceEntry !== null)
-            $this->autoImport->loadingDataFromFileToDatabase($connectedDataSource, $dataSourceEntry);
+        if ($dataSourceEntry !== null) {
+            try {
+                $this->autoImport->loadingDataFromFileToDatabase($connectedDataSource, $dataSourceEntry);
+            } catch (SqlLockTableException $exception) {
+                $this->queue->putInTube($tube, $job->getData(), 0, 15);
+            }
+        }
     }
 }

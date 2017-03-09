@@ -5,13 +5,15 @@ namespace UR\Worker\Workers;
 
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\SchemaException;
 use Doctrine\DBAL\Schema\TableDiff;
 use Doctrine\ORM\EntityManagerInterface;
 use stdClass;
 use UR\DomainManager\DataSetManagerInterface;
+use UR\Exception\SqlLockTableException;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\FieldType;
-use UR\Service\DataSet\Locator;
+use UR\Service\DataSet\LockingDatabaseTable;
 use UR\Service\DataSet\Synchronizer;
 
 class AlterImportDataTable
@@ -28,19 +30,26 @@ class AlterImportDataTable
 
     private $conn;
 
+    private $lockingDatabaseTable;
+
+    private $queue;
+
     /**
      * AlterImportDataTable constructor.
      * @param DataSetManagerInterface $dataSetManager
      * @param EntityManagerInterface $entityManager
+     * @param $queue
      */
-    public function __construct(DataSetManagerInterface $dataSetManager, EntityManagerInterface $entityManager)
+    public function __construct(DataSetManagerInterface $dataSetManager, EntityManagerInterface $entityManager, $queue)
     {
         $this->dataSetManager = $dataSetManager;
         $this->entityManager = $entityManager;
         $this->conn = $entityManager->getConnection();
+        $this->lockingDatabaseTable = new LockingDatabaseTable($this->conn);
+        $this->queue = $queue;
     }
 
-    public function alterDataSetTable(StdClass $params)
+    public function alterDataSetTable(StdClass $params, $job, $tube)
     {
         $dataSetId = $params->dataSetId;
         /**
@@ -57,21 +66,30 @@ class AlterImportDataTable
         $newColumns = $params->newColumns === null ? [] : $params->newColumns;
 
         $schema = new Schema();
-        $dataSetLocator = new Locator($this->conn);
         $dataSetSynchronizer = new Synchronizer($this->conn, new Comparator());;
-        $dataTable = $dataSetLocator->getDataSetImportTable($dataSet->getId());
+        $dataTable = $dataSetSynchronizer->getDataSetImportTable($dataSet->getId());
 
         // check if table not existed
         if (!$dataTable) {
             return;
         }
+        try {
+            $this->lockingDatabaseTable->lockTable($dataTable->getName());
+        } catch (SqlLockTableException $exception) {
+            $this->queue->putInTube($tube, $job->getData(), 0, 15);
+            return;
+        }
 
         $delCols = [];
         $addCols = [];
-        $editCols = [];
         foreach ($deletedColumns as $deletedColumn => $type) {
-            $delCols[] = $dataTable->getColumn($deletedColumn);
-            $dataTable->dropColumn($deletedColumn);
+            try {
+                $delCol = $dataTable->getColumn($deletedColumn);
+                $delCols[] = $delCol;
+                $dataTable->dropColumn($deletedColumn);
+            } catch (SchemaException $exception) {
+                stdOut($exception->getMessage());
+            }
         }
 
         foreach ($newColumns as $newColumn => $type) {
@@ -88,7 +106,7 @@ class AlterImportDataTable
             }
         }
 
-        $updateTable = new TableDiff($dataTable->getName(), $addCols, $editCols, $delCols, [], [], []);
+        $updateTable = new TableDiff($dataTable->getName(), $addCols, [], $delCols, [], [], []);
         try {
             $dataSetSynchronizer->syncSchema($schema);
             $alterSqls = $this->conn->getDatabasePlatform()->getAlterTableSQL($updateTable);
@@ -106,7 +124,10 @@ class AlterImportDataTable
             }
 
         } catch (\Exception $e) {
+            $this->lockingDatabaseTable->unLockTable();
             throw new \mysqli_sql_exception("Cannot Sync Schema " . $schema->getName());
         }
+
+        $this->lockingDatabaseTable->unLockTable();
     }
 }

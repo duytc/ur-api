@@ -11,12 +11,14 @@ class ImportDataException extends \Exception
 
     /**
      * ImportDataException constructor.
+     * @param string $message
      * @param string $alertCode
      * @param int $row
      * @param \Exception $column
      */
-    public function __construct($alertCode, $row, $column)
+    public function __construct($alertCode, $row, $column, $message = null)
     {
+        parent::__construct($message);
         $this->alertCode = $alertCode;
         $this->row = $row;
         $this->column = $column;

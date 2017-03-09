@@ -37,7 +37,7 @@ class AutoImportData implements AutoImportDataInterface
      */
     private $logger;
 
-    protected $parsingFileService;
+    private $parsingFileService;
 
     private $connectedDataSourceAlertFactory;
 

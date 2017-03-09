@@ -5,10 +5,13 @@ namespace UR\Service\DataSet;
 use \Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\Table;
 use UR\Model\Core\DataSetInterface;
 
 class Synchronizer
 {
+    const PREFIX_DATA_IMPORT_TABLE = '__data_import_%d';
+
     /**
      * @var Connection
      */
@@ -47,11 +50,17 @@ class Synchronizer
         return $this;
     }
 
-    public function createEmptyDataSetTable(DataSetInterface $dataSet, Locator $dataSetLocator)
+    public function createEmptyDataSetTable(DataSetInterface $dataSet)
     {
+        $table = $this->getDataSetImportTable($dataSet->getId());
+
+        if ($table instanceof Table) {
+            return $table;
+        }
+
         $schema = new Schema();
 
-        $dataSetTable = $schema->createTable($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
+        $dataSetTable = $schema->createTable($this->getDataSetImportTableName($dataSet->getId()));
         $dataSetTable->addColumn(DataSetInterface::ID_COLUMN, "integer", array("autoincrement" => true, "unsigned" => true));
         $dataSetTable->setPrimaryKey(array(DataSetInterface::ID_COLUMN));
         $dataSetTable->addColumn(DataSetInterface::DATA_SOURCE_ID_COLUMN, "integer", array("unsigned" => true, "notnull" => true));
@@ -84,11 +93,43 @@ class Synchronizer
         try {
             $this->syncSchema($schema);
 
-            $truncateSql = $this->conn->getDatabasePlatform()->getTruncateTableSQL($dataSetLocator->getDataSetImportTableName($dataSet->getId()));
+            $truncateSql = $this->conn->getDatabasePlatform()->getTruncateTableSQL($this->getDataSetImportTableName($dataSet->getId()));
 
             $this->conn->exec($truncateSql);
         } catch (\Exception $e) {
             throw new \mysqli_sql_exception("Cannot Sync Schema " . $schema->getName());
         }
+
+        return $dataSetTable;
+    }
+
+    /**
+     * @param int $id
+     * @return \Doctrine\DBAL\Schema\Table|false
+     */
+    public function getDataSetImportTable($id)
+    {
+        $sm = $this->conn->getSchemaManager();
+
+        $tableName = $this->getDataSetImportTableName($id);
+
+        if (!$sm->tablesExist([$tableName])) {
+            return false;
+        }
+
+        return $sm->listTableDetails($tableName);
+    }
+
+    public function getDataSetImportTableName($id)
+    {
+        return sprintf(self::PREFIX_DATA_IMPORT_TABLE, $id);
+    }
+
+    /**
+     * @return Connection
+     */
+    public function getConn(): Connection
+    {
+        return $this->conn;
     }
 }
