@@ -53,6 +53,10 @@ trait CalculateMetricsAndDimensionsTrait
         foreach ($dataSets as $dataSet) {
             foreach ($dataSet->getMetrics() as $item) {
                 $alias = $this->getAliasForField($dataSet->getDataSetId(), $item, $joinBy);
+                if ($alias === null) {
+                    continue;
+                }
+
                 if (!in_array($alias, $metrics)) {
                     $metrics[] = $alias;
                 }
@@ -60,6 +64,9 @@ trait CalculateMetricsAndDimensionsTrait
 
             foreach ($dataSet->getDimensions() as $item) {
                 $alias = $this->getAliasForField($dataSet->getDataSetId(), $item, $joinBy);
+                if ($alias === null) {
+                    continue;
+                }
                 if (!in_array($alias, $dimensions)) {
                     $dimensions[] = $alias;
                 }

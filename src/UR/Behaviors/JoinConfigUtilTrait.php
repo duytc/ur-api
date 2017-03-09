@@ -22,7 +22,11 @@ trait JoinConfigUtilTrait
                 $outputFields = explode(',', $config->getOutputField());
                 if ($join->getDataSet() == $dataSetId && in_array($field, $fields)) {
                     $fieldIndexes = array_flip($fields);
-                    return $outputFields[$fieldIndexes[$field]];
+                    if ($config->isVisible()) {
+                        return $outputFields[$fieldIndexes[$field]];
+                    }
+
+                    return null;
                 }
             }
         }
@@ -145,10 +149,13 @@ trait JoinConfigUtilTrait
         }
         
         $occurrence = [];
-        foreach ($joinConfig as &$config) {
-            $joinFields = $config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
+
+        /** @var JoinConfigInterface $config */
+        foreach ($joinConfig as $config) {
+            $joinFields = $config->getJoinFields();
+            /** @var JoinFieldInterface $joinField */
             foreach ($joinFields as $joinField) {
-                $joinDataSetsId = $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
+                $joinDataSetsId = $joinField->getDataSet();
                 if (!array_key_exists($joinDataSetsId, $occurrence)) {
                     $occurrence[$joinDataSetsId] = 1;
                 } else {
