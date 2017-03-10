@@ -39,6 +39,11 @@ class DataSourceFileFactory
             case DataSourceType::DS_EXCEL_FORMAT:
                 return new Excel($filePath, $this->phpExcel, $this->chunkSize);
             case DataSourceType::DS_JSON_FORMAT:
+                $str = file_get_contents($filePath, true);
+                $json = json_decode($str, true);
+                if ($json != null && array_key_exists('rows', $json) && array_key_exists('columns', $json)) {
+                    return new JsonNewFormat($filePath);
+                }
                 return new Json($filePath);
             default:
                 throw new Exception(sprintf('Dose not support this file type'));
