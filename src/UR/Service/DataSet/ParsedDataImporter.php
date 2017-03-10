@@ -83,7 +83,7 @@ class ParsedDataImporter
                 $set = sprintf("%s = :%s", DataSetInterface::OVERWRITE_DATE, DataSetInterface::OVERWRITE_DATE);
                 $updateSql = sprintf("UPDATE %s SET %s WHERE %s", $tableName, $set, $where);
                 $qb = $this->conn->prepare($updateSql);
-                $qb->bindValue(DataSetInterface::OVERWRITE_DATE, date('Y-m-d'));
+                $qb->bindValue(DataSetInterface::OVERWRITE_DATE, date('Y-m-d H:i:sP'));
                 $qb->bindValue(DataSetInterface::UNIQUE_ID_COLUMN, $uniqueId);
                 $this->preparedInsertCount++;
                 try {

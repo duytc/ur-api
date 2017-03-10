@@ -66,7 +66,7 @@ class Synchronizer
         $dataSetTable->addColumn(DataSetInterface::DATA_SOURCE_ID_COLUMN, "integer", array("unsigned" => true, "notnull" => true));
         $dataSetTable->addColumn(DataSetInterface::IMPORT_ID_COLUMN, "integer", array("unsigned" => true, "notnull" => true));
         $dataSetTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, FieldType::TEXT, array("notnull" => true));
-        $dataSetTable->addColumn(DataSetInterface::OVERWRITE_DATE, FieldType::DATE, array("notnull" => false, "default" => null));
+        $dataSetTable->addColumn(DataSetInterface::OVERWRITE_DATE, FieldType::DATETIME, array("notnull" => false, "default" => null));
 
         // create import table
         // add dimensions
