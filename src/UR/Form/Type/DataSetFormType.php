@@ -7,11 +7,10 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\DataSet;
-use UR\Form\Behaviors\ValidateConnectedDataSourceTrait;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
-use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\User\Role\AdminInterface;
 
@@ -81,15 +80,9 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                 $dimensions = $dataSet->getDimensions();
                 $metrics = $dataSet->getMetrics();
 
-                if (!$this->validateDimensions($dimensions)) {
-                    $form->get('dimensions')->addError(new FormError('dimensions should be array and each type should be one of ' . json_encode(self::$SUPPORTED_DIMENSION_TYPES)));
-                    return;
-                }
+                $this->validateDimensions($dimensions);
 
-                if (!$this->validateMetrics($metrics)) {
-                    $form->get('metrics')->addError(new FormError('metrics should be array and each type should be one of ' . json_encode(self::$SUPPORTED_METRIC_TYPES)));
-                    return;
-                }
+                if (!$this->validateMetrics($metrics));
 
                 if (!$this->validateDimensionsMetricsDuplication($dimensions, $metrics)) {
                     $form->get('metrics')->addError(new FormError('dimensions and metrics should be array and their names should not be the same'));
@@ -112,15 +105,14 @@ class DataSetFormType extends AbstractRoleSpecificFormType
 
                 foreach ($this->actions as &$action) {
                     foreach ($action as &$item) {
-                        if (!array_key_exists('to', $item)){
+                        if (!array_key_exists('to', $item)) {
                             continue;
                         }
-                        $item['to']=$this->getStandardName($item['to']);
+                        $item['to'] = $this->getStandardName($item['to']);
                     }
                 }
 
                 $dataSet->setActions($this->actions);
-
                 $dataSet->setDimensions($standardDimensions);
                 $dataSet->setMetrics($standardMetrics);
             }
@@ -146,16 +138,18 @@ class DataSetFormType extends AbstractRoleSpecificFormType
     public function validateDimensions($dimensions)
     {
         if (!is_array($dimensions)) {
-            return false;
+            Throw New BadRequestHttpException('dimensions should be array');
         }
 
         foreach ($dimensions as $dimensionName => $dimensionType) {
             if (!in_array($dimensionType, self::$SUPPORTED_DIMENSION_TYPES)) {
-                return false;
+                Throw New BadRequestHttpException('dimensions type should be one of ' . json_encode(self::$SUPPORTED_DIMENSION_TYPES));
+            }
+
+            if (strlen($dimensionName) > 64) {
+                Throw New BadRequestHttpException('dimensions must be less than 65 characters');
             }
         }
-
-        return true;
     }
 
     /**
@@ -167,16 +161,18 @@ class DataSetFormType extends AbstractRoleSpecificFormType
     public function validateMetrics($metrics)
     {
         if (!is_array($metrics)) {
-            return false;
+            Throw New BadRequestHttpException('metrics should be array');
         }
 
         foreach ($metrics as $metricName => $metricType) {
             if (!in_array($metricType, self::$SUPPORTED_METRIC_TYPES)) {
-                return false;
+                Throw New BadRequestHttpException('metrics type should be one of ' . json_encode(self::$SUPPORTED_DIMENSION_TYPES));
+            }
+
+            if (strlen($metricName) > 64) {
+                Throw New BadRequestHttpException('metrics must be less than 65 characters');
             }
         }
-
-        return true;
     }
 
     /**
