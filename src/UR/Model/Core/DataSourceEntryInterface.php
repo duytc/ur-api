@@ -2,6 +2,7 @@
 
 namespace UR\Model\Core;
 
+use DateTime;
 use UR\Model\ModelInterface;
 
 interface DataSourceEntryInterface extends ModelInterface
@@ -12,7 +13,7 @@ interface DataSourceEntryInterface extends ModelInterface
     const RECEIVED_VIA_EMAIL = 'email';
 
     /**
-     * @return mixed
+     * @return DateTime
      */
     public function getReceivedDate();
 

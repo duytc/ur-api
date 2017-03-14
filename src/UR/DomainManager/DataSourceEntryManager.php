@@ -2,7 +2,9 @@
 
 namespace UR\DomainManager;
 
+use DateTime;
 use Doctrine\Common\Persistence\ObjectManager;
+use ReflectionClass;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use UR\Behaviors\ConvertFileEncoding;
@@ -13,7 +15,6 @@ use UR\Model\Core\DataSourceInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\DataSourceEntryRepositoryInterface;
-use ReflectionClass;
 use UR\Service\Alert\DataSource\AbstractDataSourceAlert;
 use UR\Service\Alert\DataSource\DataSourceAlertFactory;
 use UR\Service\Alert\DataSource\DataReceivedAlert;
@@ -181,10 +182,9 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $this->save($dataSourceEntry);
 
             $alert = $this->alertFactory->getAlert(
-                $dataSource->getAlertSetting(),
                 DataReceivedAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD,
                 $origin_name,
-                $dataSource->getName());
+                $dataSource);
 
             if ($alert instanceof DataReceivedAlert) {
                 $this->workerManager->processAlert($alert->getAlertCode(), $publisherId, $alert->getAlertMessage(), $alert->getAlertDetails());
@@ -192,10 +192,10 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
         } catch (ImportDataException $exception) {
             $code = $exception->getAlertCode();
-            $alert = $this->alertFactory->getAlert($dataSource->getAlertSetting(),
+            $alert = $this->alertFactory->getAlert(
                 $code,
                 $origin_name,
-                $dataSource->getName());
+                $dataSource);
 
             if ($alert instanceof AbstractDataSourceAlert) {
                 $this->workerManager->processAlert($alert->getAlertCode(), $publisherId, $alert->getAlertMessage(), $alert->getAlertDetails());
@@ -225,5 +225,10 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     {
         $importedFiles = $this->repository->getImportedFileByHash($dataSource, $hash);
         return is_array($importedFiles) && count($importedFiles) > 0;
+    }
+
+    public function getDataSourceEntryToday(DataSourceInterface $dataSource, DateTime $dsNextTime)
+    {
+        return $this->repository->getDataSourceEntryForDataSourceByDate($dataSource, $dsNextTime);
     }
 }

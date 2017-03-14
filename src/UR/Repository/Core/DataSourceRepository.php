@@ -5,6 +5,7 @@ namespace UR\Repository\Core;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\IntegrationInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
@@ -176,5 +177,16 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
     private function createQueryBuilderForUser(UserRoleInterface $user)
     {
         return $user instanceof PublisherInterface ? $this->getDataSourcesForPublisherQuery($user) : $this->createQueryBuilder('ds');
+    }
+
+    /**
+     * @return DataSourceInterface[]
+     */
+    public function getDataSourcesHasDailyAlert()
+    {
+        $qb = $this->createQueryBuilder('ds');
+        $qb->where('ds.nextAlertTime is not null');
+
+        return $qb->getQuery()->getResult();
     }
 }

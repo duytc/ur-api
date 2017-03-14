@@ -131,4 +131,15 @@ interface DataSourceInterface extends ModelInterface
      * @param mixed $detectedFields
      */
     public function setDetectedFields($detectedFields);
+
+    /**
+     * @return \DateTime|null
+     */
+    public function getNextAlertTime();
+
+    /**
+     * @param mixed $nextAlertTime
+     * @return self
+     */
+    public function setNextAlertTime($nextAlertTime);
 }

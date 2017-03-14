@@ -2,6 +2,7 @@
 
 namespace UR\Repository\Core;
 
+use DateInterval;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSourceInterface;
@@ -168,5 +169,24 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
         }
 
         return $dataSourceEntries[0];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceEntryForDataSourceByDate(DataSourceInterface $dataSource, \DateTime $dsNextTime)
+    {
+        $dsCurrentAlertTime = clone $dsNextTime;
+        $dsCurrentAlertTime = $dsCurrentAlertTime->sub(new DateInterval('P1D'));
+
+        $qb = $this->createQueryBuilder('dse');
+        $qb->where('dse.dataSource= :dataSource')
+            ->andWhere('dse.receivedDate>= :fromDate')
+            ->andWhere('dse.receivedDate< :toDate')
+            ->setParameter('dataSource', $dataSource)
+            ->setParameter('fromDate', $dsCurrentAlertTime)
+            ->setParameter('toDate', $dsNextTime);
+
+        return $qb->getQuery()->getResult();
     }
 }

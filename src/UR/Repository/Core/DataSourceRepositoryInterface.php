@@ -68,4 +68,9 @@ interface DataSourceRepositoryInterface extends ObjectRepository
      * @return DataSourceInterface[]
      */
     public function getDataSourcesByIntegrationAndPublisher(IntegrationInterface $integration, PublisherInterface $publisher);
+
+    /**
+     * @return DataSourceInterface[]
+     */
+    public function getDataSourcesHasDailyAlert();
 }

@@ -2,6 +2,7 @@
 
 namespace UR\DomainManager;
 
+use DateTime;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use UR\Model\Core\DataSourceEntry;
 use UR\Model\Core\DataSourceInterface;
@@ -28,4 +29,11 @@ interface DataSourceEntryManagerInterface extends ManagerInterface
      * @return mixed
      */
     public function getDataSourceEntryForPublisher(PublisherInterface $publisher, $limit = null, $offset = null);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param DateTime $dsNextTime
+     * @return mixed
+     */
+    public function getDataSourceEntryToday(DataSourceInterface $dataSource, DateTime $dsNextTime);
 }

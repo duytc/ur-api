@@ -34,6 +34,9 @@ UR\Entity\Core\DataSource:
         detectedFields:
             type: json_array
             nullable: true
+        nextAlertTime:
+            type: datetime
+            nullable: true
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

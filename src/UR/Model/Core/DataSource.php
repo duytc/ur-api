@@ -15,6 +15,7 @@ class DataSource implements DataSourceInterface
     protected $urEmail;
     protected $enable;
     protected $detectedFields;
+    protected $nextAlertTime;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -244,5 +245,22 @@ class DataSource implements DataSourceInterface
     public function setDetectedFields($detectedFields)
     {
         $this->detectedFields = $detectedFields;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getNextAlertTime()
+    {
+        return $this->nextAlertTime;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setNextAlertTime($nextAlertTime)
+    {
+        $this->nextAlertTime = $nextAlertTime;
+        return $this;
     }
 }

@@ -43,6 +43,6 @@ class DataReceivedAlert extends AbstractDataSourceAlert
 
     protected function getDetails()
     {
-        return $this->getMessage();
+        return [self::DETAILS => $this->getMessage()];
     }
 }

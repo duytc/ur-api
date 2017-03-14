@@ -29,3 +29,6 @@ services:
         tags:
             - { name: doctrine.event_listener, event: onFlush }
             - { name: doctrine.event_listener, event: postFlush }
+
+    ur_app.event_listener.data_source_update_next_alert_time_listener:
+        class: UR\B

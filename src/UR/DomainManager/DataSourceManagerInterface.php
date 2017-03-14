@@ -39,4 +39,9 @@ interface DataSourceManagerInterface extends ManagerInterface
      * @return DataSourceInterface|null
      */
     public function findByEmail($email);
+
+    /**
+     * @return DataSourceInterface[]
+     */
+    public function getDataSourcesHasDailyAlert();
 }

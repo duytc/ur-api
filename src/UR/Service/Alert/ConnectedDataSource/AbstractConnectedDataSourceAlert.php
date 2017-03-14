@@ -28,12 +28,12 @@ abstract class AbstractConnectedDataSourceAlert implements ConnectedDataSourceAl
 
     public function getAlertMessage()
     {
-        return $this->getMessage();
+        return [self::MESSAGE => $this->getMessage()];
     }
 
     public function getAlertDetails()
     {
-        return $this->getDetails();
+        return [self::DETAILS => $this->getDetails()];
     }
 
     public abstract function getMessage();

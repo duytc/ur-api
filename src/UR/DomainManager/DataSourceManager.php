@@ -5,6 +5,7 @@ namespace UR\DomainManager;
 use Doctrine\Common\Persistence\ObjectManager;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceAlertSetting;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
@@ -117,5 +118,13 @@ class DataSourceManager implements DataSourceManagerInterface
     public function getDataSourceNotInByDataSet(DataSetInterface $dataSet)
     {
         return $this->repository->getDataSourceNotInByDataSet($dataSet);
+    }
+
+    /**
+     * @return DataSourceInterface[]
+     */
+    public function getDataSourcesHasDailyAlert()
+    {
+        return $this->repository->getDataSourcesHasDailyAlert();
     }
 }

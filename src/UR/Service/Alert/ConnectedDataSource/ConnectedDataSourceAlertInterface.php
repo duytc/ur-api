@@ -15,6 +15,8 @@ interface ConnectedDataSourceAlertInterface
     const ALERT_CODE_WRONG_TYPE_MAPPING = 207;
     const ALERT_CODE_FILE_NOT_FOUND = 208;
     const ALERT_CODE_UN_EXPECTED_ERROR = 1000;
+    const MESSAGE = 'message';
+    const DETAILS = 'detail';
 
     const ROW = 'row';
     const COLUMN = 'column';

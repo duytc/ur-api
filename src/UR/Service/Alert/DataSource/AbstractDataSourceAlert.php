@@ -33,7 +33,7 @@ abstract class AbstractDataSourceAlert implements DataSourceAlertInterface
 
     public function getAlertMessage()
     {
-        return $this->getMessage();
+        return [self::MESSAGE => $this->getMessage()];
     }
 
     public function getAlertDetails()

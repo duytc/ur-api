@@ -2,20 +2,22 @@
 
 namespace UR\Service\Alert\DataSource;
 
+use UR\Model\Core\DataSourceInterface;
 
 class DataSourceAlertFactory
 {
     const ALERT_UPLOADED_SUCCESSFUL = "uploaded_successful";
 
     /**
-     * @param $jsonAlerts
      * @param $alertCode
      * @param $fileName
-     * @param $dataSourceName
+     * @param DataSourceInterface $dataSource
      * @return null|DataReceivedAlert|WrongFormatAlert
      */
-    public function getAlert($jsonAlerts, $alertCode, $fileName, $dataSourceName)
+    public function getAlert($alertCode, $fileName, DataSourceInterface $dataSource)
     {
+        $jsonAlerts = $dataSource->getAlertSetting();
+        $dataSourceName = $dataSource->getName();
         $alertObject = null;
         if (!is_array($jsonAlerts)) {
             return null;
@@ -45,6 +47,9 @@ class DataSourceAlertFactory
                 case WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT:
                 case WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT:
                     $alertObject = $this->getWrongFormatAlert($jsonAlert, $alertCode, $fileName, $dataSourceName);
+                    break;
+                case NoDataReceivedDailyAlert::ALERT_CODE_NO_DATA_RECEIVED_DAILY:
+                    $alertObject = $this->getNoDataReceivedDailyAlert($jsonAlert, $alertCode, $dataSource);
                     break;
             }
         }
@@ -92,6 +97,21 @@ class DataSourceAlertFactory
             $alertCode,
             $fileName,
             $dataSourceName,
+            $jsonAlert[DataSourceAlertInterface::ALERT_TIME_ZONE_KEY],
+            $jsonAlert[DataSourceAlertInterface::ALERT_HOUR_KEY],
+            $jsonAlert[DataSourceAlertInterface::ALERT_MINUTE_KEY]
+        );
+    }
+
+    private function getNoDataReceivedDailyAlert($jsonAlert, $alertCode, DataSourceInterface $dataSource)
+    {
+        if (strcmp($jsonAlert[DataSourceAlertInterface::ALERT_TYPE_KEY], DataSourceAlertInterface::ALERT_DATA_NO_RECEIVED_KEY) !== 0) {
+            return null;
+        }
+
+        return new NoDataReceivedDailyAlert(
+            $alertCode,
+            $dataSource,
             $jsonAlert[DataSourceAlertInterface::ALERT_TIME_ZONE_KEY],
             $jsonAlert[DataSourceAlertInterface::ALERT_HOUR_KEY],
             $jsonAlert[DataSourceAlertInterface::ALERT_MINUTE_KEY]

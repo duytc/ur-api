@@ -53,4 +53,11 @@ interface DataSourceEntryRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getLastDataSourceEntryForConnectedDataSource(DataSourceInterface $dataSource);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param $dsNextTime
+     * @return mixed
+     */
+    public function getDataSourceEntryForDataSourceByDate(DataSourceInterface $dataSource, \DateTime $dsNextTime);
 }

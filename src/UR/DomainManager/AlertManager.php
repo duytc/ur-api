@@ -7,6 +7,7 @@ use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\AlertInterface;
 use UR\Model\ModelInterface;
+use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\AlertRepositoryInterface;
 
 class AlertManager implements AlertManagerInterface
@@ -75,16 +76,25 @@ class AlertManager implements AlertManagerInterface
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function deleteAlertsByIds($ids)
     {
         return $this->repository->deleteAlertsByIds($ids);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function updateMarkAsReadByIds($ids)
     {
         return $this->repository->updateMarkAsReadByIds($ids);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function updateMarkAsUnreadByIds($ids)
     {
         return $this->repository->updateMarkAsUnreadByIds($ids);

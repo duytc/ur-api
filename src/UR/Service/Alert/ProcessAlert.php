@@ -19,9 +19,6 @@ class ProcessAlert implements ProcessAlertInterface
     const DATA_SET_ID = 'dataSetId';
     const IMPORT_ID = 'importId';
     const ENTRY_ID = 'entryId';
-
-    const MESSAGE = 'message';
-    const DETAILS = 'detail';
     const ERROR = 'error';
 
     protected $alertManager;
@@ -46,8 +43,8 @@ class ProcessAlert implements ProcessAlertInterface
         $alert = new Alert();
         $alert->setCode($alertCode);
         $alert->setPublisher($publisher);
-        $alert->setMessage([self::MESSAGE => $message]);
-        $alert->setDetail([self::DETAILS => $message]);
+        $alert->setMessage($message);
+        $alert->setDetail($details);
 
         $this->alertManager->save($alert);
     }
