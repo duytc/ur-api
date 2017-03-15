@@ -35,7 +35,7 @@ class CreateIntegrationCommand extends ContainerAwareCommand
                 'Enable for all users')
             ->addOption('enables-users', 'u', InputOption::VALUE_OPTIONAL,
                 'Enable users (optional), allow multiple userId separated by comma, e.g. -u "5, 10, 3"')
-            ->setDescription('Create or update Integration with name and parameters');
+            ->setDescription('Create Integration with name and parameters');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -48,8 +48,8 @@ class CreateIntegrationCommand extends ContainerAwareCommand
         $this->logger->info('starting command...');
 
         /* get inputs */
-        $name = $input->getArgument('name');
         $cName = $input->getArgument('cname');
+        $name = $input->getArgument('name');
         $paramsString = $input->getOption('parameters');
         $userIdsStringOption = $input->getOption('enables-users');
         $isAllPublisherOption = $input->getOption('all-publishers');
@@ -94,22 +94,13 @@ class CreateIntegrationCommand extends ContainerAwareCommand
         $isFoundIntegration = ($integration instanceof IntegrationInterface);
 
         $currentIntegrationPublishers = null;
-        if (!$isFoundIntegration) {
-            $integration = new Integration();
-            $currentIntegrationPublishers = [];
-        } else {
-            $currentIntegrationPublishers = $integration->getIntegrationPublishers();
-
-            foreach ($currentIntegrationPublishers as $pos => $integrationPublisher){
-                $pubId = $integrationPublisher->getPublisher()->getId();
-                if (!in_array($pubId, $updatePublisherIds)){
-                    unset($currentIntegrationPublishers[$pos]);
-                } else {
-                    $posDelete = array_search($pubId, $updatePublisherIds);
-                    unset($updatePublisherIds[$posDelete]);
-                }
-            }
+        if ($isFoundIntegration) {
+            $output->writeln(sprintf('integration exist %s. Please try other command ur:integration:update', $cName));
+            return 0;
         }
+
+        $integration = new Integration();
+        $currentIntegrationPublishers = [];
 
         foreach ($updatePublisherIds as $publisherId) {
             $publisherFilter = array_filter($allActivePublisher, function ($publisher) use ($publisherId) {
@@ -132,7 +123,7 @@ class CreateIntegrationCommand extends ContainerAwareCommand
         $integration->setIntegrationPublishers($currentIntegrationPublishers);
         $integrationManager->save($integration);
 
-        $output->writeln(sprintf('command run successfully: %d %s.', 1, ($isFoundIntegration ? 'updated' : 'created')));
+        $output->writeln(sprintf('command run successfully: %d %s.', 1, 'created'));
     }
 
     /**
@@ -150,7 +141,7 @@ class CreateIntegrationCommand extends ContainerAwareCommand
             return false;
         }
 
-        if ($cname == null || empty($cname) || !preg_match('/^[a-z-_]/', $cname)) {
+        if ($cname == null || empty($cname) || !preg_match('/^[0-9a-z-_]/', $cname)) {
             $this->logger->info(sprintf('command run failed: cname must not be null or empty, or wrong format (a-z-_)'));
             return false;
         }
