@@ -112,6 +112,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         if (!DataSourceEntry::isSupportedReceivedViaType($receivedVia)) {
             throw new \Exception(sprintf("receivedVia %s is not supported", $receivedVia));
         }
+
         $origin_name = $file->getClientOriginalName();
         $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
         $publisherId = $dataSource->getPublisher()->getId();
@@ -142,6 +143,10 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $name = $origin_name;
             } else {
                 $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
+            }
+
+            if (strlen($name) > 230) {
+                throw new Exception(sprintf('File Name is too long: name of file should not be more than 230 characters'));
             }
 
             if ($alsoMoveFile) {
