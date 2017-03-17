@@ -12,9 +12,14 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
     public function findToBeExecuted()
     {
         $currentDate = new \DateTime();
+
         $qb = $this->createQueryBuilder('dis')
+            ->join('dis.dataSourceIntegration', 'dsi')
             ->where('dis.executedAt <= :currentDate')
-            ->setParameter('currentDate', $currentDate);
+            ->andWhere('dsi.active = :dataSourceActive')
+            ->setParameter('currentDate', $currentDate)
+            ->setParameter('dataSourceActive', true);
+
         return $qb->getQuery()->getResult();
     }
 }
