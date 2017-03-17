@@ -14,6 +14,7 @@ UR\Entity\Core\DataSource:
         format:
             type: string
             length: 100
+            nullable: true
         alertSetting:
             type: json_array
             nullable: true
@@ -37,6 +38,10 @@ UR\Entity\Core\DataSource:
         nextAlertTime:
             type: datetime
             nullable: true
+        useIntegration:
+            type: boolean
+            options:
+                default: false
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

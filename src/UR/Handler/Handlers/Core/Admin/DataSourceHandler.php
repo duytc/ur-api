@@ -10,7 +10,7 @@ use UR\Form\Type\RoleSpecificFormTypeInterface;
 use UR\Handler\Handlers\Core\DataSourceHandlerAbstract;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\IntegrationInterface;
-use UR\Model\Core\IntegrationPublisherModelInterface;
+use UR\Model\Core\IntegrationPublisherInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
@@ -78,15 +78,15 @@ class DataSourceHandler extends DataSourceHandlerAbstract
     }
 
     private function validateIntegration(DataSourceInterface $dataSource, array $parameters){
-        /**@var IntegrationPublisherModelInterface[] $integrationPublishers*/
+        /**@var IntegrationPublisherInterface[] $integrationPublishers*/
         $integrationPublishers = $this->integrationPublisherManager->getByPublisher($dataSource->getPublisher());
         $listIntegrationBelongToPublisher = [];
         if (!is_array($integrationPublishers)){
-            /**@var IntegrationPublisherModelInterface $integrationPublishers */
+            /**@var IntegrationPublisherInterface $integrationPublishers */
             $listIntegrationBelongToPublisher[] = $integrationPublishers->getPublisher()->getId();
         } else {
             $listIntegrationBelongToPublisher = array_map(function($integrationPublisher){
-                /**@var IntegrationPublisherModelInterface $integrationPublisher */
+                /**@var IntegrationPublisherInterface $integrationPublisher */
                 return $integrationPublisher->getIntegration()->getId();
             }, $integrationPublishers);
         }

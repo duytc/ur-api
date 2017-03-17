@@ -34,3 +34,6 @@ UR\Entity\Core\DataSource:
         enable:
             expose: true
             groups: [datasource.detail, datasource.summary]
+        useIntegration:
+            expose: true
+            groups: [datasource.detail, datasource.summary]

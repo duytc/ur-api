@@ -11,16 +11,4 @@ interface DataSourceIntegrationManagerInterface extends ManagerInterface
      * @return array|DataSourceIntegrationInterface[]
      */
     public function findByIntegrationCanonicalName($canonicalName);
-
-    /**
-     * @return array|DataSourceIntegrationInterface[]
-     */
-    public function getIntegrationBySchedule();
-
-    /**
-     * @param DataSourceIntegrationInterface $dataSourceIntegration
-     * @param \DateTime $lastExecuteTime
-     * @return DataSourceIntegrationInterface
-     */
-    public function updateLastExecuteTime(DataSourceIntegrationInterface $dataSourceIntegration, \DateTime $lastExecuteTime);
 }

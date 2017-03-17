@@ -18,6 +18,7 @@ interface DataSourceInterface extends ModelInterface
 
     /**
      * @param mixed $alertSetting
+     * @return self
      */
 
     public function setAlertSetting($alertSetting);
@@ -78,6 +79,7 @@ interface DataSourceInterface extends ModelInterface
 
     /**
      * @param mixed $apiKey
+     * @return self
      */
     public function setApiKey($apiKey = null);
 
@@ -89,6 +91,7 @@ interface DataSourceInterface extends ModelInterface
 
     /**
      * @param string $urEmail
+     * @return self
      */
     public function setUrEmail($urEmail);
 
@@ -99,6 +102,7 @@ interface DataSourceInterface extends ModelInterface
 
     /**
      * @param mixed $dataSourceEntries
+     * @return self
      */
     public function setDataSourceEntries($dataSourceEntries);
 
@@ -109,6 +113,7 @@ interface DataSourceInterface extends ModelInterface
 
     /**
      * @param mixed $enable
+     * @return self
      */
     public function setEnable($enable);
 
@@ -119,6 +124,7 @@ interface DataSourceInterface extends ModelInterface
 
     /**
      * @param ConnectedDataSourceInterface[] $connectedDataSources
+     * @return self
      */
     public function setConnectedDataSources($connectedDataSources);
 
@@ -129,6 +135,7 @@ interface DataSourceInterface extends ModelInterface
 
     /**
      * @param mixed $detectedFields
+     * @return self
      */
     public function setDetectedFields($detectedFields);
 
@@ -142,4 +149,15 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setNextAlertTime($nextAlertTime);
+
+    /**
+     * @return bool
+     */
+    public function getUseIntegration();
+
+    /**
+     * @param bool $useIntegration
+     * @return self
+     */
+    public function setUseIntegration($useIntegration);
 }

@@ -1,0 +1,25 @@
+UR\Entity\Core\DataSourceIntegrationSchedule:
+    type: entity
+    table: core_data_source_integration_schedule
+    repositoryClass: UR\Repository\Core\DataSourceIntegrationScheduleRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        uuid:
+            type: string
+            nullable: false
+        executedAt:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+        scheduleType:
+            type: string
+            nullable: false
+    manyToOne:
+        dataSourceIntegration:
+            targetEntity: UR\Entity\Core\DataSourceIntegration
+            inversedBy: dataSourceIntegrationSchedules

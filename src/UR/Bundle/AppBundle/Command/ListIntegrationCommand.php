@@ -62,7 +62,7 @@ class ListIntegrationCommand extends ContainerAwareCommand
             $i++;
 
             $params = $integration->getParams();
-            $params = is_array($params) ? implode(',', $params) : 'NULL';
+            $params = is_array($params) ? $this->getParamsString($params) : 'NULL';
 
             $output->writeln(sprintf('-- %d -- %s --------- %s ---------- %s ----------',
                 $i,
@@ -73,5 +73,26 @@ class ListIntegrationCommand extends ContainerAwareCommand
 
             $output->writeln(sprintf('|      |              |                 |                 |'));
         }
+    }
+
+    /**
+     * get Params String from params
+     *
+     * @param array $params array as [[ key => <param name>, type => <param type> ], ...]
+     * @return string
+     */
+    private function getParamsString(array $params)
+    {
+        $paramsStringArr = [];
+
+        foreach ($params as $param) {
+            if (!is_array($param) || (!array_key_exists('key', $param) && !array_key_exists('type', $param))) {
+                continue;
+            }
+
+            $paramsStringArr[] = sprintf('%s:%s', $param['key'], $param['type']);
+        }
+
+        return implode(',', $paramsStringArr);
     }
 }

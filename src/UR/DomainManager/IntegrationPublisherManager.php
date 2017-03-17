@@ -6,7 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\IntegrationInterface;
-use UR\Model\Core\IntegrationPublisherModelInterface;
+use UR\Model\Core\IntegrationPublisherInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\IntegrationPublisherRepositoryInterface;
@@ -27,7 +27,7 @@ class IntegrationPublisherManager implements IntegrationPublisherManagerInterfac
      */
     public function supportsEntity($entity)
     {
-        return is_subclass_of($entity, IntegrationPublisherModelInterface::class);
+        return is_subclass_of($entity, IntegrationPublisherInterface::class);
     }
 
     /**
@@ -35,7 +35,7 @@ class IntegrationPublisherManager implements IntegrationPublisherManagerInterfac
      */
     public function save(ModelInterface $integration)
     {
-        if (!$integration instanceof IntegrationPublisherModelInterface) throw new InvalidArgumentException('expect IntegrationPublisherModelInterface object');
+        if (!$integration instanceof IntegrationPublisherInterface) throw new InvalidArgumentException('expect IntegrationPublisherModelInterface object');
 
         $this->om->persist($integration);
         $this->om->flush();
@@ -46,7 +46,7 @@ class IntegrationPublisherManager implements IntegrationPublisherManagerInterfac
      */
     public function delete(ModelInterface $integration)
     {
-        if (!$integration instanceof IntegrationPublisherModelInterface) throw new InvalidArgumentException('expect IntegrationPublisherModelInterface object');
+        if (!$integration instanceof IntegrationPublisherInterface) throw new InvalidArgumentException('expect IntegrationPublisherModelInterface object');
 
         $this->om->remove($integration);
         $this->om->flush();

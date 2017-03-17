@@ -34,36 +34,36 @@ services:
             - { name: doctrine.event_listener, event: postFlush }
 
     ur_api.event_listener.update_filters_for_multiple_view_report_listener:
-            class: UR\Bundle\ApiBundle\EventListener\UpdateFiltersForMultipleViewReportListener
-            arguments:
-                - '@ur.services.report.params_builder'
-            tags:
-                - { name: doctrine.event_listener, event: preUpdate }
-                - { name: doctrine.event_listener, event: postFlush }
+        class: UR\Bundle\ApiBundle\EventListener\UpdateFiltersForMultipleViewReportListener
+        arguments:
+            - '@ur.services.report.params_builder'
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
 
     ur_api.event_listener.update_transformations_for_multiple_view_report_listener:
-            class: UR\Bundle\ApiBundle\EventListener\UpdateTransformationsForMultipleViewReportListener
-            arguments:
-                - '@ur.services.report.params_builder'
-            tags:
-                - { name: doctrine.event_listener, event: preUpdate }
-                - { name: doctrine.event_listener, event: postFlush }
+        class: UR\Bundle\ApiBundle\EventListener\UpdateTransformationsForMultipleViewReportListener
+        arguments:
+            - '@ur.services.report.params_builder'
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
 
     ur_api.event_listener.update_format_outputs_for_multiple_view_report_listener:
-                class: UR\Bundle\ApiBundle\EventListener\UpdateFormatOutputsForMultipleViewReportListener
-                arguments:
-                    - '@ur.services.report.params_builder'
-                tags:
-                    - { name: doctrine.event_listener, event: preUpdate }
-                    - { name: doctrine.event_listener, event: postFlush }
+        class: UR\Bundle\ApiBundle\EventListener\UpdateFormatOutputsForMultipleViewReportListener
+        arguments:
+            - '@ur.services.report.params_builder'
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
 
     ur_api.event_listener.auto_set_default_name_for_view_report_listener:
-                class: UR\Bundle\ApiBundle\EventListener\AutoSetDefaultNameForReportViewListener
-                arguments:
-                    - '@ur.services.report.params_builder'
-                tags:
-                    - { name: doctrine.event_listener, event: prePersist }
-                    - { name: doctrine.event_listener, event: preUpdate }
+        class: UR\Bundle\ApiBundle\EventListener\AutoSetDefaultNameForReportViewListener
+        arguments:
+            - '@ur.services.report.params_builder'
+        tags:
+            - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: preUpdate }
 
     ur_api.event_listener.update_next_alert_time_for_data_source_listener:
         class: UR\Bundle\ApiBundle\EventListener\UpdateNextAlertTimeForDataSourceListener
@@ -71,3 +71,29 @@ services:
         tags:
             - { name: doctrine.event_listener, event: prePersist }
             - { name: doctrine.event_listener, event: preUpdate }
+
+        class: UR\Bundle\ApiBundle\EventListener\AutoSetDefaultNameForReportViewListener
+        arguments:
+            - '@ur.services.report.params_builder'
+        tags:
+            - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: preUpdate }
+
+    ur_api.event_listener.update_secure_params_for_data_source_integration_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateSecureParamsForDataSourceIntegrationListener
+        tags:
+            - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: preUpdate }
+
+    ur_api.event_listener.update_next_execute_at_for_data_source_integration_schedule_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateDataSourceIntegrationScheduleListener
+        tags:
+            - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.update_back_fill_executed_for_data_source_integration_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateBackFillExecutedForDataSourceIntegrationListener
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postFlush }

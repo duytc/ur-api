@@ -8,7 +8,6 @@ use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceIntegrationManagerInterface;
 use UR\Handler\HandlerInterface;
@@ -67,73 +66,6 @@ class DataSourceIntegrationController extends RestControllerAbstract implements 
     }
 
     /**
-     * Get integration to be executed due to schedule
-     *
-     * @Rest\Get("/datasourceintegrations/byschedule")
-     *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.bySchedule", "integration.detail", "user.summary"})
-     *
-     * @ApiDoc(
-     *  section = "Data Source",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful"
-     *  }
-     * )
-     *
-     * @param Request $request
-     * @return DataSourceIntegrationInterface[]
-     */
-    public function getIntegrationByScheduleAction(Request $request)
-    {
-        /** @var DataSourceIntegrationManagerInterface $dsiManager */
-        $dsiManager = $this->get('ur.domain_manager.data_source_integration');
-
-        return $dsiManager->getIntegrationBySchedule();
-    }
-
-    /**
-     * update last execute time
-     *
-     * @Rest\Post("/datasourceintegrations/updatelastexecutetime")
-     *
-     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.detail", "integration.detail", "user.summary"})
-     *
-     * @ApiDoc(
-     *  section = "Data Source",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful"
-     *  }
-     * )
-     *
-     * @param Request $request
-     * @return \UR\Model\Core\DataSourceIntegrationInterface[]
-     */
-    public function postUpdateLastExecuteTimeAction(Request $request)
-    {
-        $id = $request->request->get('id', null);
-        $dataSourceIntegration = $this->one($id);
-        if (!($dataSourceIntegration instanceof DataSourceIntegrationInterface)) {
-            throw new NotFoundHttpException('Not found that data source integration');
-        }
-
-        $lastExecuteTime = $request->request->get('lastexecutetime', null);
-        try {
-            $lastExecuteTime = date_create($lastExecuteTime);
-        } catch (\Exception $e) {
-            throw new BadRequestHttpException('Invalid lastexecutetime');
-        }
-
-        /** @var DataSourceIntegrationManagerInterface $dsiManager */
-        $dsiManager = $this->get('ur.domain_manager.data_source_integration');
-
-        $dsiManager->updateLastExecuteTime($dataSourceIntegration, $lastExecuteTime);
-
-        return $this->view(true, Codes::HTTP_OK);
-    }
-
-    /**
      * Create a data source integration from the submitted data
      *
      * @ApiDoc(
@@ -152,6 +84,42 @@ class DataSourceIntegrationController extends RestControllerAbstract implements 
     public function postAction(Request $request)
     {
         return $this->post($request);
+    }
+
+    /**
+     * update backFill executed
+     *
+     * @Rest\Post("/datasourceintegrations/backfill")
+     *
+     * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.detail", "integration.detail", "user.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source Integration",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return \UR\Model\Core\DataSourceIntegrationInterface[]
+     */
+    public function postUpdateBackFillExecutedAction(Request $request)
+    {
+        $id = $request->request->get('id', null);
+
+        $dataSourceIntegration = $this->one($id);
+        if (!($dataSourceIntegration instanceof DataSourceIntegrationInterface)) {
+            throw new NotFoundHttpException('Not found that data source integration');
+        }
+
+        // update backFill Executed
+        $dataSourceIntegration->setBackFillExecuted(true);
+        /** @var DataSourceIntegrationManagerInterface $dsiManager */
+        $dsiManager = $this->get('ur.domain_manager.data_source_integration');
+        $dsiManager->save($dataSourceIntegration);
+
+        return $this->view(true, Codes::HTTP_OK);
     }
 
     /**

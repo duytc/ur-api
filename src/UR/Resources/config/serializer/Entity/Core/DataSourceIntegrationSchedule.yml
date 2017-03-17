@@ -1,0 +1,18 @@
+UR\Entity\Core\DataSourceIntegrationSchedule:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.bySchedule]
+        dataSourceIntegration:
+            expose: true
+            groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.summary, dataSourceIntegrationSchedule.bySchedule]
+        uuid:
+            expose: true
+            groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.bySchedule]
+        executeAt:
+            expose: true
+            groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.summary, dataSourceIntegrationSchedule.bySchedule]
+        scheduleType:
+            expose: true
+            groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.summary, dataSourceIntegrationSchedule.bySchedule]

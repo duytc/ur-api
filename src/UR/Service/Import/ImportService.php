@@ -95,6 +95,7 @@ class ImportService
         if (!DataSourceType::isSupportedExtension($file->getClientOriginalExtension())) {
             return false;
         }
+
         return true;
     }
 
@@ -104,6 +105,7 @@ class ImportService
         foreach ($newFields as $newField) {
             $currentFields = $this->updateDetectedField($newField, $currentFields, $option);
         }
+
         return $currentFields;
     }
 

@@ -11,6 +11,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\DomainManager\IntegrationManagerInterface;
 use UR\Entity\Core\IntegrationPublisher;
+use UR\Model\Core\Integration;
 use UR\Model\Core\IntegrationInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Service\StringUtilTrait;
@@ -22,6 +23,9 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
     /** @var Logger */
     private $logger;
 
+    /**
+     * @inheritdoc
+     */
     protected function configure()
     {
         $this
@@ -29,14 +33,20 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
             ->addArgument('cname', InputOption::VALUE_REQUIRED, 'Integration canonical name')
             ->addArgument('name', InputOption::VALUE_REQUIRED, 'Integration name')
             ->addOption('parameters', 'p', InputOption::VALUE_OPTIONAL,
-                'Integration parameters (optional), allow multiple parameters separated by comma, e.g. -p "username,password"')
+                'Integration parameters (optional) as name:type, allow multiple parameters separated by comma. 
+                Supported types are: plainText (default), date (Y-m-d), dynamicDateRange (last 1,2,3... days) 
+                and secure (will be encrypted in database and not show value in ui). 
+                e.g. -p "username,password:secure,startDate:date"')
             ->addOption('all-publishers', 'a', InputOption::VALUE_NONE,
-                'Enable for all users')
+                'Enable for all users (optional)')
             ->addOption('enables-users', 'u', InputOption::VALUE_OPTIONAL,
-                'Enable users (optional), allow multiple userId separated by comma, e.g. -u "5, 10, 3"')
+                'Enable for special users (optional), allow multiple userId separated by comma, e.g. -u "5,10,3"')
             ->setDescription('update individual fields of an integration such as display name, params or enabled-users. Notice: require integration cname to identify which integration is being updated.');
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         /** @var ContainerInterface $container */
@@ -53,160 +63,192 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         $userIdsStringOption = $input->getOption('enables-users');
         $isAllPublisherOption = $input->getOption('all-publishers');
 
-        if (!$this->validateInput($cName)) {
+        if (!$this->validateInput($cName, $output)) {
             return;
         }
 
         /** @var IntegrationManagerInterface $integrationManager */
         $integrationManager = $container->get('ur.domain_manager.integration');
         $integration = $integrationManager->findByCanonicalName($cName);
-        $isFoundIntegration = ($integration instanceof IntegrationInterface);
 
-        if (!$isFoundIntegration) {
-            $output->writeln(sprintf('Could not found integration %s. Please try other command ur:integration:create', $cName));
+        if (!$integration instanceof IntegrationInterface) {
+            $output->writeln(sprintf('Could not found integration with cname %s. Please try other command ur:integration:create to create', $cName));
             return;
         }
-        /**
-         * Update display name
-         */
-        if ($name != null && !empty($name)) {
-            $this->updateDisplayName($integration, $name, $integrationManager, $output);
+
+        /* Update display name */
+        if (!empty($name)) {
+            $this->updateDisplayName($integration, $name);
         }
 
-        /**
-         * Update parameter
-         */
-        // parse params from paramsString
-        $params = null;
-        if (!empty($paramsString)) {
+        /* Update parameter */
+        if (null !== $paramsString) {
+            // validate params
+            $paramsString = $input->getOption('parameters');
+            if (!empty($paramsString) && !preg_match('/^[a-zA-Z0-9,:\-_]+$/', $paramsString)) {
+                $output->writeln(sprintf('command run failed: parameter must not be null or empty, or wrong format (a-zA-Z,:\-_)'));
+                return false;
+            }
+
+            // make sure only one ":" for each param of params
             $params = explode(',', $paramsString);
-            // trim
-            $params = array_map(function ($param) {
-                return trim($param);
-            }, $params);
-        }
-        if ($params){
-            $this->updateParameters($integration, $params, $integrationManager, $output);
+            foreach ($params as $param) {
+                $paramNameAndType = explode(':', $param);
+                if (count($paramNameAndType) > 2) {
+                    $output->writeln(sprintf('command run failed: invalid param name and type, please use format "name:type"'));
+                    return false;
+                }
+
+                $paramType = count($paramNameAndType) < 2 ? Integration::PARAM_TYPE_PLAIN_TEXT : $paramNameAndType[1];
+                if (!in_array($paramType, Integration::$SUPPORTED_PARAM_TYPES)) {
+                    $output->writeln(sprintf('command run failed: not supported param type %s', $paramType));
+                    return false;
+                }
+            }
+
+            $this->updateParameters($integration, $paramsString);
         }
 
-        /**
-         * Update publishers
-         */
-        if ($userIdsStringOption && $isAllPublisherOption){
-            $this->logger->info(sprintf('command run failed: not allow use both option -u and -a'));
-        } elseif ($userIdsStringOption || $isAllPublisherOption) {
-            $this->updatePublishers($integration, $isAllPublisherOption, $userIdsStringOption, $container, $integrationManager, $output);
+        /* Update enable-users */
+        if ($userIdsStringOption && $isAllPublisherOption) {
+            $output->writeln(sprintf('command run failed: not allow use both option -u and -a'));
+            return;
         }
-        $output->writeln(sprintf('command run successfully: %s.', 'updated'));
+
+        if ($userIdsStringOption || $isAllPublisherOption) {
+            /** @var PublisherManagerInterface $publisherManager */
+            $publisherManager = $container->get('ur_user.domain_manager.publisher');
+            $this->updatePublishers($integration, $isAllPublisherOption, $userIdsStringOption, $publisherManager);
+        }
+
+        /* finally, save changes for Integration */
+        $integrationManager->save($integration);
+
+        $output->writeln(sprintf('command run successfully: %s updated.', 1));
     }
 
     /**
      * @param string $cname
+     * @param OutputInterface $output
      * @return bool
      */
-    private function validateInput($cname)
+    private function validateInput($cname, OutputInterface $output)
     {
-        if ($cname == null || empty($cname) || !preg_match('/^[0-9a-z-_]/', $cname)) {
-            $this->logger->info(sprintf('command run failed: cname must not be null or empty, or wrong format (a-z-_)'));
+        if (empty($cname) || !preg_match('/^[a-z0-9\-_]+$/', $cname)) {
+            $output->writeln(sprintf('command run failed: cname must not be null or empty, or wrong format (a-z\-_0-9)'));
             return false;
         }
+
         return true;
     }
 
     /**
      * @param IntegrationInterface $integration
      * @param string $name
-     * @param IntegrationManagerInterface $integrationManager
-     * @param OutputInterface $output
      */
-    private function updateDisplayName($integration, $name, $integrationManager, $output){
-        if (!$integration instanceof IntegrationInterface){
-            return;
-        }
-        $oldCname = $integration->getCanonicalName();
+    private function updateDisplayName(IntegrationInterface $integration, $name)
+    {
         $integration->setName($name);
-        $integration->setCanonicalName($oldCname);
-        $integrationManager->save($integration);
-        $output->writeln(sprintf('command run successfully: %s.', 'updated display name'));
     }
 
     /**
      * @param IntegrationInterface $integration
-     * @param string $params
-     * @param IntegrationManagerInterface $integrationManager
-     * @param OutputInterface $output
+     * @param string $paramsString
      */
-    private function updateParameters($integration, $params,  $integrationManager, $output){
-        if (!$integration instanceof IntegrationInterface){
-            return;
-        }
+    private function updateParameters(IntegrationInterface $integration, $paramsString)
+    {
+        /* parse params from paramsString */
+        $params = $this->parseParams($paramsString);
+
         $integration->setParams($params);
-        $integrationManager->save($integration);
-        $output->writeln(sprintf('command run successfully: %s.', 'updated parameters'));
     }
 
     /**
      * @param IntegrationInterface $integration
      * @param bool $isAllPublisherOption
      * @param string $userIdsStringOption
-     * @param ContainerInterface $container
-     * @param IntegrationManagerInterface $integrationManager
-     * @param OutputInterface $output
+     * @param PublisherManagerInterface $publisherManager
      */
-    private function updatePublishers($integration, $isAllPublisherOption, $userIdsStringOption, $container, $integrationManager, $output){
-        if (!$integration instanceof IntegrationInterface){
-            return;
-        }
-        /** @var PublisherManagerInterface $publisherManager */
-        $publisherManager = $container->get('ur_user.domain_manager.publisher');
-        /**
-         *  Get list user ids from command
-         */
-        $updatePublisherIds = null;if (!$integration instanceof IntegrationInterface){
-            return;
-        }
-        $allActivePublisher = $publisherManager->all();
+    private function updatePublishers(IntegrationInterface $integration, $isAllPublisherOption, $userIdsStringOption, PublisherManagerInterface $publisherManager)
+    {
+        /* update enableForAllUsers for integration */
+        $integration->setEnableForAllUsers($isAllPublisherOption);
 
-        if ($isAllPublisherOption) {
-            $updatePublisherIds = array_map(function ($publisher) {
-                /**@var PublisherInterface $publisher */
-                return $publisher->getId();
-            }, $allActivePublisher);
-        } else {
+        /* build integrationPublishers for integration */
+        if (!$isAllPublisherOption) {
+            $updatePublisherIds = null;
+            /**@var PublisherInterface[] $allActivePublishers */
+            $allActivePublishers = $publisherManager->all();
+
             $userIdsStringOption = explode(',', $userIdsStringOption);
+
             $updatePublisherIds = array_map(function ($userId) {
                 return trim($userId);
             }, $userIdsStringOption);
-        }
 
-        $currentIntegrationPublishers = $integration->getIntegrationPublishers();
-        foreach ($currentIntegrationPublishers as $pos => $integrationPublisher){
-            $pubId = $integrationPublisher->getPublisher()->getId();
-            if (!in_array($pubId, $updatePublisherIds)){
-                unset($currentIntegrationPublishers[$pos]);
-            } else {
-                $posDelete = array_search($pubId, $updatePublisherIds);
-                unset($updatePublisherIds[$posDelete]);
+            /* organize old integrationPublishers */
+            $currentIntegrationPublishers = $integration->getIntegrationPublishers();
+            foreach ($currentIntegrationPublishers as $pos => $integrationPublisher) {
+                $pubId = $integrationPublisher->getPublisher()->getId();
+
+                if (!in_array($pubId, $updatePublisherIds)) {
+                    unset($currentIntegrationPublishers[$pos]);
+                } else {
+                    $posDelete = array_search($pubId, $updatePublisherIds);
+                    unset($updatePublisherIds[$posDelete]);
+                }
             }
-        }
 
-        foreach ($updatePublisherIds as $publisherId) {
-            $publisherFilter = array_filter($allActivePublisher, function ($publisher) use ($publisherId) {
-                /**@var PublisherInterface $publisher */
-                return $publisher->getId() == $publisherId;
-            });
-            $publisher = $publisherFilter ? reset($publisherFilter) : null;
+            /* add new integrationPublisher for new publishers */
+            foreach ($updatePublisherIds as $publisherId) {
+                $publisherFilter = array_filter($allActivePublishers, function ($publisher) use ($publisherId) {
+                    /**@var PublisherInterface $publisher */
+                    return $publisher->getId() == $publisherId;
+                });
 
-            if ($publisher instanceof PublisherInterface) {
-                $integrationPublisher = new IntegrationPublisher();
-                $integrationPublisher->setIntegration($integration);
-                $integrationPublisher->setPublisher($publisher);
-                $currentIntegrationPublishers[] = $integrationPublisher;
+                $publisher = $publisherFilter ? reset($publisherFilter) : null;
+
+                if ($publisher instanceof PublisherInterface) {
+                    $integrationPublisher = new IntegrationPublisher();
+                    $integrationPublisher->setIntegration($integration);
+                    $integrationPublisher->setPublisher($publisher);
+
+                    $currentIntegrationPublishers[] = $integrationPublisher;
+                }
             }
+
+            $integration->setIntegrationPublishers($currentIntegrationPublishers);
+        }
+    }
+
+    /**
+     * parse Params. Support , as separator between params and : as separator between name and type
+     *
+     * @param string $paramsString
+     * @return array|null return null if paramsString empty|null. Return array if valid, array format as:
+     * [
+     * [ 'key' => <param name>, 'type' => <param type> ],
+     * ...
+     * ]
+     */
+    private function parseParams($paramsString)
+    {
+        if (empty($paramsString)) {
+            return null;
         }
 
-        $integration->setIntegrationPublishers($currentIntegrationPublishers);
-        $integrationManager->save($integration);
-        $output->writeln(sprintf('command run successfully: %s.', 'updated publishers'));
+        $params = explode(',', $paramsString);
+
+        $params = array_map(function ($param) {
+            // parse name:type
+            $paramNameAndType = explode(':', trim($param));
+
+            return [
+                'key' => $paramNameAndType[0],
+                'type' => count($paramNameAndType) < 2 ? Integration::PARAM_TYPE_PLAIN_TEXT : $paramNameAndType[1]
+            ];
+        }, $params);
+
+        return $params;
     }
 }

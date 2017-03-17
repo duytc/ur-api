@@ -1,5 +1,14 @@
 UR\Entity\Core\DataSourceIntegration:
     exclusion_policy: ALL
+    virtual_properties:
+        # notice: we return params without secure value in params
+        getParams:
+            serialized_name: params
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
+        # only for group "bySchedule" because this return params with real values.
+        getOriginalParams:
+            #serialized_name: originalParams
+            groups: [dataSourceIntegration.bySchedule]
     properties:
         id:
             expose: true
@@ -10,12 +19,29 @@ UR\Entity\Core\DataSourceIntegration:
         integration:
             expose: true
             groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
-        params:
-            expose: true
-            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
+        # notice: we want return params without secure value in params, so we must use getParams() instead of directly access $params
+        #params:
+        #    expose: true
+        #    groups: [dataSourceIntegration.detail, dataSourceIntegration.summary]
         schedule:
             expose: true
             groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
         active:
             expose: true
             groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
+        # back fill feature
+        backFill:
+            expose: true
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
+        backFillStartDate:
+            expose: true
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
+        backFillExecuted:
+            expose: true
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
+        backFillForce:
+            expose: true
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
+        dataSourceIntegrationSchedules:
+            expose: true
+            groups: [dataSourceIntegration.bySchedule]

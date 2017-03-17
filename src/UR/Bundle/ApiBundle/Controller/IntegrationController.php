@@ -45,10 +45,12 @@ class IntegrationController extends RestControllerAbstract implements ClassResou
     public function cgetAction()
     {
         $user = $this->getUser();
+
         /** @var IntegrationRepositoryInterface $integrationRepository */
         $integrationRepository = $this->get('ur.repository.integration');
         
         $qb = $integrationRepository->getIntegrationsForUserQuery($user);
+
         return $qb->getQuery()->getResult();
     }
 

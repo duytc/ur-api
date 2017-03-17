@@ -8,14 +8,43 @@ class Integration implements IntegrationInterface
 {
     use StringUtilTrait;
 
+    const PARAM_KEY_KEY = 'key';
+    const PARAM_KEY_VALUE = 'value';
+    const PARAM_KEY_TYPE = 'type';
+
+    const PARAM_TYPE_PLAIN_TEXT = 'plainText'; // e.g username, url, ...
+    const PARAM_TYPE_DATE = 'date'; // e.g startDate, ...
+    const PARAM_TYPE_DYNAMIC_DATE_RANGE = 'dynamicDateRange'; // e.g startDate, ...
+    const PARAM_TYPE_SECURE = 'secure'; // e.g password, token, key, ...
+
+    public static $SUPPORTED_PARAM_TYPES = [
+        self::PARAM_TYPE_PLAIN_TEXT,
+        self::PARAM_TYPE_DATE,
+        self::PARAM_TYPE_DYNAMIC_DATE_RANGE,
+        self::PARAM_TYPE_SECURE
+    ];
+
+    public static $SUPPORTED_PARAM_VALUE_DYNAMIC_DATE_RANGES = [
+        'last 2 days',
+        'last 3 days',
+        'last 4 days',
+        'last 5 days',
+        'last 6 days',
+        'last week'
+    ];
+
     protected $id;
     protected $name;
     protected $canonicalName;
     protected $params;
+    /** @var bool */
+    protected $enableForAllUsers;
+    /** @var IntegrationPublisherInterface[] */
     protected $integrationPublishers;
 
     public function __construct()
     {
+        $this->enableForAllUsers = false;
     }
 
     /**
@@ -40,7 +69,6 @@ class Integration implements IntegrationInterface
     public function setName($name)
     {
         $this->name = $name;
-        $this->canonicalName = $this->normalizeName($name);
 
         return $this;
     }
@@ -80,7 +108,25 @@ class Integration implements IntegrationInterface
     }
 
     /**
-     * @return IntegrationPublisherModelInterface[]
+     * @inheritdoc
+     */
+    public function isEnableForAllUsers()
+    {
+        return $this->enableForAllUsers;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setEnableForAllUsers($enableForAllUsers)
+    {
+        $this->enableForAllUsers = (bool)$enableForAllUsers;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
      */
     public function getIntegrationPublishers()
     {
@@ -88,10 +134,12 @@ class Integration implements IntegrationInterface
     }
 
     /**
-     * @param mixed $integrationPublishers
+     * @inheritdoc
      */
     public function setIntegrationPublishers($integrationPublishers)
     {
         $this->integrationPublishers = $integrationPublishers;
+
+        return $this;
     }
 }

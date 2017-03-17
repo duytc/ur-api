@@ -206,7 +206,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $this->workerManager->processAlert($alert->getAlertCode(), $publisherId, $alert->getAlertMessage(), $alert->getAlertDetails());
             }
 
-            throw new Exception(sprintf('Wrong Type format', $origin_name));
+            throw new Exception(sprintf('Cannot upload file because the file is in the wrong format. Data sources can only have one type of file and format.', $origin_name));
         }
 
         $result = [

@@ -40,7 +40,18 @@ interface IntegrationInterface extends ModelInterface
     public function setParams($params);
 
     /**
-     * @return IntegrationPublisherModelInterface[] 
+     * @return boolean
+     */
+    public function isEnableForAllUsers();
+
+    /**
+     * @param boolean $enableForAllUsers
+     * @return self
+     */
+    public function setEnableForAllUsers($enableForAllUsers);
+
+    /**
+     * @return IntegrationPublisherInterface[] 
      */
     public function getIntegrationPublishers();
 

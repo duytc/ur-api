@@ -10,6 +10,7 @@ class Integration extends IntegrationModel
     protected $name;
     protected $canonicalName;
     protected $params;
+    protected $enableForAllUsers;
     protected $integrationPublishers;
 
     /**

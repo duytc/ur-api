@@ -17,6 +17,10 @@ UR\Entity\Core\Integration:
         params:
             type: json_array
             nullable: true
+        enableForAllUsers:
+            type: boolean
+            options:
+                default: false
 
     oneToMany:
         integrationPublishers:

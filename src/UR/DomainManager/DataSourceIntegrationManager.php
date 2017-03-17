@@ -3,11 +3,11 @@
 namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
+use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\DataSourceIntegrationRepositoryInterface;
-use ReflectionClass;
 
 class DataSourceIntegrationManager implements DataSourceIntegrationManagerInterface
 {
@@ -79,23 +79,5 @@ class DataSourceIntegrationManager implements DataSourceIntegrationManagerInterf
     public function all($limit = null, $offset = null)
     {
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getIntegrationBySchedule()
-    {
-        return $this->repository->getIntegrationBySchedule();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function updateLastExecuteTime(DataSourceIntegrationInterface $dataSourceIntegration, \DateTime $lastExecuteTime)
-    {
-        /**@var DataSourceIntegrationInterface $dataSourceIntegration */
-        $dataSourceIntegration->setLastExecutedAt($lastExecuteTime);
-        $this->save($dataSourceIntegration);
     }
 }

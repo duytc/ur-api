@@ -13,6 +13,9 @@ UR\Entity\Core\Integration:
         params:
             expose: true
             groups: [integration.detail]
+        enableForAllUsers:
+            expose: true
+            groups: [integration.detail]
         integrationPublishers:
             expose: true
             groups: [integration.detail]

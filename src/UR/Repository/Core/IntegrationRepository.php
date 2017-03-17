@@ -15,11 +15,14 @@ class IntegrationRepository extends EntityRepository implements IntegrationRepos
             ->leftJoin('i.integrationPublishers', 'ip')
             ->select('i')
             ->where('ip.publisher = :publisher')
-            ->setParameter('publisher', $publisher);
+            ->orWhere('i.enableForAllUsers = :enableForAllUsers')
+            ->setParameter('publisher', $publisher)
+            ->setParameter('enableForAllUsers', true);
 
         if (is_int($limit)) {
             $qb->setMaxResults($limit);
         }
+
         if (is_int($offset)) {
             $qb->setFirstResult($offset);
         }

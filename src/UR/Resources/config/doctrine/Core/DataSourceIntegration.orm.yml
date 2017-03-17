@@ -12,7 +12,8 @@ UR\Entity\Core\DataSourceIntegration:
             type: json_array
             nullable: true
         schedule:
-            type: integer
+            type: json_array
+            nullable: true
         active:
             type: boolean
             option:
@@ -22,9 +23,33 @@ UR\Entity\Core\DataSourceIntegration:
             gedmo:
                 timestampable:
                     on: create
+
+        # back fill feature
+        backFill:
+            type: boolean
+            option:
+                default: false
+        backFillStartDate:
+            type: date
+            nullable: true
+        backFillExecuted:
+            type: boolean
+            option:
+                default: false
+        backFillForce:
+            type: boolean
+            option:
+                default: false
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource
 
         integration:
             targetEntity: UR\Entity\Core\Integration
+
+    oneToMany:
+        dataSourceIntegrationSchedules:
+            targetEntity: UR\Entity\Core\DataSourceIntegrationSchedule
+            mappedBy: dataSourceIntegration
+            cascade: ['persist', 'detach', 'remove']
+            orphanRemoval: true

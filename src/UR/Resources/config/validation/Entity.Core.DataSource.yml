@@ -4,9 +4,9 @@ UR\Entity\Core\DataSource:
             - NotBlank: ~
             - NotNull: ~
 #            - Type: string
-        format:
-            - NotBlank: ~
-            - NotNull: ~
+#        format:
+#            - NotBlank: ~
+#            - NotNull: ~
 #            - Choice:
 #                choices: ["csv", "xls", "xlsx", "json", "php"]
 #                message: "not valid type"

@@ -1,0 +1,60 @@
+parameters:
+    # entity class
+    ur.entity.core.data_source_integration_schedule.class: UR\Entity\Core\DataSourceIntegrationSchedule
+    # form class
+    ur.form.type.data_source_integration_schedule.class: UR\Form\Type\DataSourceIntegrationScheduleFormType
+
+services:
+    ur_api.handler.data_source_integration_schedule:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.data_source_integration_schedule
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.data_source_integration_schedule:
+        class: UR\Repository\Core\DataSourceIntegrationScheduleRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.data_source_integration_schedule.class%
+
+    ur.domain_manager.data_source_integration_schedule:
+        class: UR\DomainManager\DataSourceIntegrationScheduleManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.data_source_integration_schedule
+
+    ur.form.type.data_source_integration_schedule:
+        class: %ur.form.type.data_source_integration_schedule.class%
+        tags:
+            - { name: form.type, alias: ur_form_data_source_integration_schedule }
+
+    ur.handler.handlers.data_source_integration_schedule.abstract:
+        class: UR\Handler\Handlers\Core\DataSourceIntegrationScheduleHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.data_source_integration_schedule
+            - @ur.domain_manager.data_source_integration_schedule
+
+    ur.handler.handlers.data_source_integration_schedule.admin:
+        class: UR\Handler\Handlers\Core\Admin\DataSourceIntegrationScheduleHandler
+        parent: ur.handler.handlers.data_source_integration_schedule.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.data_source_integration_schedule.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\DataSourceIntegrationScheduleHandler
+        parent: ur.handler.handlers.data_source_integration_schedule.abstract
+        public: false
+
+    ur.handler.handler_manager.data_source_integration_schedule:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.data_source_integration_schedule.class%
+            -
+                - @ur.handler.handlers.data_source_integration_schedule.admin
+                - @ur.handler.handlers.data_source_integration_schedule.publisher

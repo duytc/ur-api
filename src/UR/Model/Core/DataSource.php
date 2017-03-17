@@ -16,6 +16,7 @@ class DataSource implements DataSourceInterface
     protected $enable;
     protected $detectedFields;
     protected $nextAlertTime;
+    protected $useIntegration; // bool, true if use integration
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -116,6 +117,7 @@ class DataSource implements DataSourceInterface
     public function setFormat($format)
     {
         $this->format = $format;
+        return $this;
     }
 
     /**
@@ -149,6 +151,7 @@ class DataSource implements DataSourceInterface
     public function setApiKey($apiKey = null)
     {
         $this->apiKey = $apiKey;
+        return $this;
     }
 
     /**
@@ -165,6 +168,7 @@ class DataSource implements DataSourceInterface
     public function setUrEmail($urEmail)
     {
         $this->urEmail = $urEmail;
+        return $this;
     }
 
     /**
@@ -181,6 +185,7 @@ class DataSource implements DataSourceInterface
     public function setDataSourceEntries($dataSourceEntries)
     {
         $this->dataSourceEntries = $dataSourceEntries;
+        return $this;
     }
 
     /**
@@ -197,6 +202,7 @@ class DataSource implements DataSourceInterface
     public function setAlertSetting($alertSetting)
     {
         $this->alertSetting = $alertSetting;
+        return $this;
     }
 
     /**
@@ -213,6 +219,7 @@ class DataSource implements DataSourceInterface
     public function setEnable($enable)
     {
         $this->enable = $enable;
+        return $this;
     }
 
     /**
@@ -229,6 +236,7 @@ class DataSource implements DataSourceInterface
     public function setConnectedDataSources($connectedDataSources)
     {
         $this->connectedDataSources = $connectedDataSources;
+        return $this;
     }
 
     /**
@@ -245,6 +253,24 @@ class DataSource implements DataSourceInterface
     public function setDetectedFields($detectedFields)
     {
         $this->detectedFields = $detectedFields;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getUseIntegration()
+    {
+        return $this->useIntegration;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setUseIntegration($useIntegration)
+    {
+        $this->useIntegration = $useIntegration;
+        return $this;
     }
 
     /**

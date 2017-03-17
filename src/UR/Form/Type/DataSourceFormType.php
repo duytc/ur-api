@@ -47,13 +47,13 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
                 'type' => new DataSourceIntegrationFormType(),
                 'allow_add' => true,
                 'allow_delete' => true,
-            ));
+            ))
+            ->add('useIntegration');
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(
                 $builder->create('publisher')
-                    ->addModelTransformer(new RoleToUserEntityTransformer(), false
-                    )
+                    ->addModelTransformer(new RoleToUserEntityTransformer(), false)
             );
         };
 

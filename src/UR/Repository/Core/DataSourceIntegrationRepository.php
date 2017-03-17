@@ -18,16 +18,4 @@ class DataSourceIntegrationRepository extends EntityRepository implements DataSo
 
         return $qb->getQuery()->getResult();
     }
-
-    /**
-     * @inheritdoc
-     */
-    public function getIntegrationBySchedule()
-    {
-        $currentDate = new \DateTime();
-        $qb = $this->createQueryBuilder('di')
-            ->where('dateadd(di.lastExecutedAt, INTERVAL di.schedule HOUR) <= :currentDate')
-            ->setParameter('currentDate', $currentDate);
-        return $qb->getQuery()->getResult();
-    }
 }

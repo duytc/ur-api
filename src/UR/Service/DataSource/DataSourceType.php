@@ -42,7 +42,7 @@ final class DataSourceType
 
     /**
      * @param $extension
-     * @return string
+     * @return string|null null if not found supported format
      */
     public static function getOriginalDataSourceType($extension)
     {
@@ -58,6 +58,6 @@ final class DataSourceType
             return self::DS_JSON_FORMAT;
         }
 
-        return "";
+        return null;
     }
 }

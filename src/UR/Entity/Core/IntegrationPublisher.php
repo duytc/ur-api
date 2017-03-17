@@ -3,7 +3,7 @@
 
 namespace UR\Entity\Core;
 
-use UR\Model\Core\IntegrationPublisherModel;
+use UR\Model\Core\IntegrationPublisher as IntegrationPublisherModel;
 
 class IntegrationPublisher extends IntegrationPublisherModel
 {
