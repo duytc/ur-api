@@ -83,7 +83,7 @@ class AutoImportData implements AutoImportDataInterface
             );
 
             if ($importSuccessAlert !== null) {
-                $this->workerManager->processAlert($importSuccessAlert->getAlertCode(), $publisherId, $importSuccessAlert->getMessage(), $importSuccessAlert->getDetails());
+                $this->workerManager->processAlert($importSuccessAlert->getAlertCode(), $publisherId, $importSuccessAlert->getAlertMessage(), $importSuccessAlert->getAlertDetails());
             }
 
             $this->importHistoryManager->deletePreviousImports($importHistories);
@@ -106,7 +106,7 @@ class AutoImportData implements AutoImportDataInterface
 
                 $this->logger->doImportLogging($e->getAlertCode(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getRow(), $e->getColumn());
                 if ($failureAlert != null) {
-                    $this->workerManager->processAlert($e->getAlertCode(), $publisherId, $failureAlert->getMessage(), $failureAlert->getDetails());
+                    $this->workerManager->processAlert($e->getAlertCode(), $publisherId, $failureAlert->getAlertMessage(), $failureAlert->getAlertDetails());
                 }
             }
         }
