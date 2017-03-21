@@ -2,6 +2,7 @@
 
 namespace UR\Form\Type;
 
+use Doctrine\Common\Collections\Collection;
 use Exception;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
@@ -14,6 +15,7 @@ use UR\Entity\Core\DataSource;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\IntegrationPublisherInterface;
 use UR\Model\User\Role\AdminInterface;
 use UR\Service\Alert\DataSource\DataSourceAlertInterface;
 
@@ -70,6 +72,13 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
                     return;
                 }
 
+                // validate integration permission
+                if (!$this->validateIntegration($dataSource)) {
+                    $form->get('dataSourceIntegrations')->addError(new FormError('integration is not yet enabled for this user'));
+                    return;
+                }
+
+                // re-mapping dataSource - dataSourceIntegrations by cascade persist
                 $dataSourceIntegrations = $dataSource->getDataSourceIntegrations();
 
                 /** @var DataSourceIntegrationInterface $dataSourceIntegration */
@@ -124,6 +133,58 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             }
 
             $checkedAlertKeys[] = $alert;
+        }
+
+        return true;
+    }
+
+    /**
+     * validate integration permission in data source
+     *
+     * @param DataSourceInterface $dataSource
+     * @return bool
+     */
+    private function validateIntegration(DataSourceInterface $dataSource)
+    {
+        /** @var Collection|DataSourceIntegrationInterface[] $dataSourceIntegrations */
+        $dataSourceIntegrations = $dataSource->getDataSourceIntegrations();
+
+        if ($dataSourceIntegrations instanceof Collection) {
+            $dataSourceIntegrations = $dataSourceIntegrations->toArray();
+        }
+
+        if (!is_array($dataSourceIntegrations) || count($dataSourceIntegrations) < 1) {
+            return true;
+        }
+
+        foreach ($dataSourceIntegrations as $dataSourceIntegration) {
+            $integration = $dataSourceIntegration->getIntegration();
+
+            // check if integration is enabled for all publishers
+            if ($integration->isEnableForAllUsers()) {
+                continue;
+            }
+
+            // validate publisher id
+            /** @var Collection|IntegrationPublisherInterface[] $integrationPublishers */
+            $integrationPublishers = $integration->getIntegrationPublishers();
+
+            if ($integrationPublishers instanceof Collection) {
+                $integrationPublishers = $integrationPublishers->toArray();
+            }
+
+            if (!is_array($integrationPublishers) || count($integrationPublishers) < 1) {
+                continue;
+            }
+
+            $enabledPublisherIds = array_map(function ($integrationPublisher) {
+                /** @var IntegrationPublisherInterface $integrationPublisher */
+                return $integrationPublisher->getPublisher()->getId();
+            }, $integrationPublishers);
+
+            if (!in_array($dataSource->getPublisherId(), $enabledPublisherIds)) {
+                return false;
+            }
         }
 
         return true;

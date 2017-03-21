@@ -5,12 +5,9 @@ namespace UR\Handler\Handlers\Core\Admin;
 
 use Symfony\Component\Form\FormFactoryInterface;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
-use UR\DomainManager\IntegrationPublisherManagerInterface;
 use UR\Form\Type\RoleSpecificFormTypeInterface;
 use UR\Handler\Handlers\Core\DataSourceHandlerAbstract;
 use UR\Model\Core\DataSourceInterface;
-use UR\Model\Core\IntegrationInterface;
-use UR\Model\Core\IntegrationPublisherInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
@@ -65,8 +62,8 @@ class DataSourceHandler extends DataSourceHandlerAbstract
             if (!$publisher instanceof PublisherInterface) {
                 throw new \Exception(sprintf('Not found publisher %d to for the DataSource', $publisherId));
             }
+
             $dataSource->setPublisher($publisher);
-            $this->validateIntegration($dataSource, $parameters);
         }
 
         return parent::processForm($dataSource, $parameters, $method);
@@ -75,28 +72,5 @@ class DataSourceHandler extends DataSourceHandlerAbstract
     protected function getPublisher($publisherId)
     {
         return $this->publisherManager->findPublisher($publisherId);
-    }
-
-    private function validateIntegration(DataSourceInterface $dataSource, array $parameters){
-        /**@var IntegrationPublisherInterface[] $integrationPublishers*/
-        $integrationPublishers = $this->integrationPublisherManager->getByPublisher($dataSource->getPublisher());
-        $listIntegrationBelongToPublisher = [];
-        if (!is_array($integrationPublishers)){
-            /**@var IntegrationPublisherInterface $integrationPublishers */
-            $listIntegrationBelongToPublisher[] = $integrationPublishers->getPublisher()->getId();
-        } else {
-            $listIntegrationBelongToPublisher = array_map(function($integrationPublisher){
-                /**@var IntegrationPublisherInterface $integrationPublisher */
-                return $integrationPublisher->getIntegration()->getId();
-            }, $integrationPublishers);
-        }
-
-        foreach ($parameters['dataSourceIntegrations'] as $dataSourceIntegration) {
-            /**@var IntegrationInterface $dataSourceIntegration */
-            $dataSourceIntegrationId = $dataSourceIntegration['integration'];
-            if (!in_array($dataSourceIntegrationId, $listIntegrationBelongToPublisher)) {
-                throw new \Exception(sprintf('You do not have right access to integration %d', $dataSourceIntegrationId));
-            }
-        }
     }
 }
