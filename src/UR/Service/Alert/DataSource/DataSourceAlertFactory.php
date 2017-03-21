@@ -52,6 +52,10 @@ class DataSourceAlertFactory
                     $alertObject = $this->getNoDataReceivedDailyAlert($jsonAlert, $alertCode, $dataSource);
                     break;
             }
+
+            if ($alertObject !== null) {
+                return $alertObject;
+            }
         }
 
         return $alertObject;
