@@ -80,6 +80,10 @@ class SqlBuilder implements SqlBuilderInterface
         $fields = array_merge($metrics, $dimensions);
         $tableColumns = array_keys($table->getColumns());
 
+        if (count($tableColumns) < 1) {
+            throw new InvalidArgumentException('data set has no data');
+        }
+
         foreach ($fields as $index => $field) {
             if (!in_array($field, $tableColumns)) {
                 unset($fields[$index]);

@@ -1,11 +1,9 @@
 <?php
 
 
-$currentDateTime = new DateTime('UTC');
+$date = '03-15-2007T00:00:00';
 
-$alertDateTime= DateTime::createFromFormat('Y-m-d H:i', date('Y-m-d'). '15' .':' . '16');
+$currentDateTime=DateTime::createFromFormat('m-d-Y\T', $date);
 
-$alertDateTime->setTimezone(new DateTimeZone('UTC'));
-$alertDateTime->add(new DateInterval('P1D'));
 
 echo phpinfo();

@@ -133,10 +133,10 @@ class AutoImportData implements AutoImportDataInterface
             if ($e->getAlertCode() === null) {
                 $message = $e->getMessage();
             } else {
-                $message = $this->logger->getDryRunMessage($e->getAlertCode(), $e->getRow(), $e->getColumn());
+                $message = $this->logger->getDryRunMessage($e->getAlertCode(), $e->getColumn());
             }
 
-            throw new BadRequestHttpException($message);
+            throw new \Exception($message);
         }
     }
 

@@ -77,7 +77,7 @@ class Synchronizer
         // add metrics
         foreach ($dataSet->getMetrics() as $key => $value) {
             if (strcmp($value, FieldType::NUMBER) === 0) {
-                $dataSetTable->addColumn($key, "decimal", ["precision" => 20, "scale" => 0, "notnull" => false, "default" => null]);
+                $dataSetTable->addColumn($key, "integer", ["notnull" => false, "default" => null]);
             } else if (strcmp($value, FieldType::DECIMAL) === 0) {
                 $dataSetTable->addColumn($key, $value, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
             } else if (strcmp($value, FieldType::MULTI_LINE_TEXT) === 0) {

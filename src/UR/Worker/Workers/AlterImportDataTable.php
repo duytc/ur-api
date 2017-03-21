@@ -94,7 +94,7 @@ class AlterImportDataTable
 
         foreach ($newColumns as $newColumn => $type) {
             if (strcmp($type, FieldType::NUMBER) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, "decimal", ["precision" => 20, "scale" => 0, "notnull" => false, "default" => null]);
+                $addCols[] = $dataTable->addColumn($newColumn, "integer", ["notnull" => false, "default" => null]);
             } else if (strcmp($type, FieldType::DECIMAL) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
             } else if (strcmp($type, FieldType::MULTI_LINE_TEXT) === 0) {

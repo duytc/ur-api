@@ -38,40 +38,40 @@ class ImportDataLogger
     {
         switch ($errorCode) {
             case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY:
-                $message = sprintf("Data imported successfully");
+                $message = sprintf('Data imported successfully');
                 break;
             case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL:
-                $message = sprintf("failed to import file with id#%s - MAPPING ERROR: no Field is mapped", $dataSourceEntryId);
+                $message = sprintf('failed to import file with id#%s - MAPPING ERROR: no Field is mapped', $dataSourceEntryId);
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_WRONG_TYPE_MAPPING:
-                $message = sprintf("Failed to import file with id#%s - MAPPING ERROR: wrong type mapping", $dataSourceEntryId);
+                $message = sprintf('Failed to import file with id#%s - MAPPING ERROR: wrong type mapping', $dataSourceEntryId);
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
-                $message = sprintf("Failed to import file with id#%s - REQUIRE ERROR: require fields%s not exist in file", $dataSourceEntryId, (is_string($column) ? sprintf(' "%s"', $column) : ''));
+                $message = sprintf('Failed to import file with id#%s - REQUIRE ERROR: require fields%s not exist in file', $dataSourceEntryId, (is_string($column) ? sprintf(' "%s"', $column) : ''));
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
-                $message = sprintf("Failed to import file with id#%s - FILTER ERROR: Wrong number format at row [%s] - column [%s]", $dataSourceEntryId, $row, $column);
+                $message = sprintf('Failed to import file with id#%s - FILTER ERROR: Wrong number format at row [%s] - column [%s]', $dataSourceEntryId, $row, $column);
                 break;
             case ConnectedDataSourceAlertInterface::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE:
-                $message = sprintf("Failed to import file with id#%s - TRANSFORM ERROR: Wrong date format at row [%s] - column [%s] ", $dataSourceEntryId, $row, $column);
+                $message = sprintf('Failed to import file with id#%s - TRANSFORM ERROR: Wrong date format at row [%s] - column [%s] ', $dataSourceEntryId, $row, $column);
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND:
-                $message = sprintf("Failed to import file with id#%s - no header found error", $dataSourceEntryId);
+                $message = sprintf('Failed to import file with id#%s - no header found error', $dataSourceEntryId);
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND:
-                $message = sprintf("Failed to import file with id#%s - can't find data error", $dataSourceEntryId);
+                $message = sprintf('Failed to import file with id#%s - cant find data error', $dataSourceEntryId);
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_FILE_NOT_FOUND:
-                $message = sprintf("Failed to import file with id#%s - file dose not exist", $dataSourceEntryId);
+                $message = sprintf('Failed to import file with id#%s - file dose not exist', $dataSourceEntryId);
                 break;
             default:
-                $message = sprintf("Unexpected Error");
+                $message = sprintf('The import failed, please contact your account manager');
                 break;
         }
 
@@ -79,41 +79,39 @@ class ImportDataLogger
     }
 
 
-    public function getDryRunMessage($errorCode, $row, $column)
+    public function getDryRunMessage($errorCode, $column)
     {
         switch ($errorCode) {
             case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL:
-                $message = sprintf("MAPPING ERROR: no Field is mapped");
+                $message = sprintf('Cannot preview data, no Field is mapped');
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_WRONG_TYPE_MAPPING:
-                $message = sprintf("MAPPING ERROR: wrong type mapping");
+                $message = sprintf('Cannot preview data, wrong type mapping');
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
-                $message = sprintf("REQUIRE ERROR: require fields %s not exist in file", (is_string($column) ? sprintf(' "%s"', $column) : ''));
+                $message = sprintf('Cannot preview data, require fields %s not exist in file', (is_string($column) ? sprintf(' "%s"', $column) : ''));
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
-                $message = sprintf("Wrong number format at row [%s] - column [%s]", $row, $column);
-                break;
             case ConnectedDataSourceAlertInterface::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE:
-                $message = sprintf("TRANSFORM ERROR: Wrong date format at row [%s] - column [%s] ", $row, $column);
+                $message = sprintf('Cannot preview data, there is invalid data in the "%s" field', $column);
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND:
-                $message = sprintf("No header found error");
+                $message = sprintf('Cannot preview data, no header found error');
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND:
-                $message = sprintf("Can't find data error");
+                $message = sprintf('Cannot preview data, cant find data error');
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_FILE_NOT_FOUND:
-                $message = sprintf("File dose not exist");
+                $message = sprintf('Cannot preview data, file dose not exist');
                 break;
             default:
-                $message = sprintf("Unexpected Error");
+                $message = sprintf('Cannot preview data, please contact your account manager');
                 break;
         }
 
@@ -129,7 +127,7 @@ class ImportDataLogger
     {
         switch (json_last_error()) {
             case JSON_ERROR_NONE:
-                $message = sprintf(" - No errors");
+                $message = sprintf(' - No errors');
                 break;
             case JSON_ERROR_DEPTH:
                 $message = sprintf(" - Maximum stack depth exceeded");

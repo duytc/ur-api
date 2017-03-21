@@ -21,8 +21,11 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
 
         $i = 0;
         $header = [];
-        for ($row = 0; $row < count($this->rows); $row++) {
-            $cur_row = $this->removeInvalidColumns(array_keys($this->rows[$row]));
+        for ($rowNum = 0; $rowNum < count($this->rows); $rowNum++) {
+
+            $row = $this->rows[$rowNum];
+            $this->rows[$rowNum] = $this->handleNestedColumns($row);
+            $cur_row = $this->removeInvalidColumns(array_keys($row));
 
             foreach ($cur_row as $item) {
                 if (!in_array($item, $header)) {
@@ -63,23 +66,21 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
             }
 
             $missing_columns = array_diff_key(array_flip($this->headers), $item);
-            foreach ($missing_columns as $name => $index) {
-                $row = [];
-                $i = 0;
-                foreach ($item as $k => $v) {
-                    if ($index === 0) {
-                        $row[$name] = null;
-                    }
-
-                    $row[$k] = $v;
-                    $i++;
-                    if ($i === $index) {
-                        $row[$name] = null;
-                    }
-                }
-
-                $item = $row;
+            if (count($missing_columns) === 0) {
+                continue;
             }
+
+            $row = [];
+            foreach ($this->headers as $index => $columnName) {
+
+                if (array_key_exists($columnName, $item)) {
+                    $row[$columnName] = $item[$columnName];
+                } else {
+                    $row[$columnName] = null;
+                }
+            }
+
+            $item = $row;
         }
 
         return $this->rows;
@@ -88,5 +89,23 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
     public function getDataRow()
     {
         return $this->dataRow;
+    }
+
+    private function handleNestedColumns(&$row)
+    {
+        foreach ($row as $column => &$value) {
+            if (!is_array($value)) {
+                continue;
+            }
+
+            foreach ($value as $childColumn => $childValue) {
+                $newColumn = $column . "." . $childColumn;
+                $row[$newColumn] = $childValue;
+            }
+
+            unset($row[$column]);
+        }
+
+        return $row;
     }
 }

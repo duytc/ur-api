@@ -21,7 +21,7 @@ use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class Parser implements ParserInterface
 {
-    private $numberSpecialCharacters = ['n/a', '-'];
+    private $numberSpecialCharacters = ['n/a', '-', 'na', 'novalue', 'no value', 'null', 'multi'];
 
     /**@var EventDispatcherInterface $eventDispatcher
      */
@@ -243,6 +243,7 @@ class Parser implements ParserInterface
                 $cellValue = str_replace("$", "", $cellValue);
                 $cellValue = str_replace("%", "", $cellValue);
                 $cellValue = str_replace(",", "", $cellValue);
+                $cellValue = str_replace("#", "", $cellValue);
                 if (strcmp($type, FieldType::DECIMAL) === 0) {
                     $cellValue = str_replace(" ", "", $cellValue);
                 }
