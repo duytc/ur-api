@@ -10,7 +10,6 @@ class Alert implements AlertInterface
     protected $id;
     protected $code;
     protected $isRead;
-    protected $message;
     protected $detail;
     protected $createdDate;
 
@@ -72,22 +71,6 @@ class Alert implements AlertInterface
     public function setIsRead($isRead)
     {
         $this->isRead = $isRead;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getMessage()
-    {
-        return $this->message;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setMessage($message)
-    {
-        $this->message = $message;
     }
 
     /**

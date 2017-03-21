@@ -3,9 +3,9 @@
 namespace UR\Service\Import;
 
 
+use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertFactory;
 use UR\Service\Alert\ConnectedDataSource\DataAddedAlert;
-use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
 use InvalidArgumentException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use UR\DomainManager\ImportHistoryManagerInterface;
@@ -13,6 +13,7 @@ use UR\Entity\Core\ImportHistory;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
+use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
 use UR\Service\DataSet\ParsedDataImporter;
 use UR\Service\Parser\ParsingFileService;
 use UR\Worker\Manager;
@@ -74,40 +75,47 @@ class AutoImportData implements AutoImportDataInterface
 
             /* alert when successful*/
             $importSuccessAlert = $this->connectedDataSourceAlertFactory->getAlert(
+                $importHistoryEntity->getId(),
                 $connectedDataSource->getAlertSetting(),
                 DataAddedAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY,
                 $dataSourceEntry->getFileName(),
-                $connectedDataSource->getDataSource()->getName(),
-                $connectedDataSource->getDataSet()->getName(),
+                $connectedDataSource->getDataSource(),
+                $connectedDataSource->getDataSet(),
+                null,
                 null
             );
 
             if ($importSuccessAlert !== null) {
-                $this->workerManager->processAlert($importSuccessAlert->getAlertCode(), $publisherId, $importSuccessAlert->getAlertMessage(), $importSuccessAlert->getAlertDetails());
+                $this->workerManager->processAlert($importSuccessAlert->getAlertCode(), $publisherId, $importSuccessAlert->getDetails());
             }
 
             $this->importHistoryManager->deletePreviousImports($importHistories);
         } catch (ImportDataException $e) { /* exception */
-            /* unexpected error */
+            $errorCode = $e->getAlertCode();
             if ($e->getAlertCode() === null) {
-                $this->workerManager->processAlert(ImportFailureAlert::ALERT_CODE_UN_EXPECTED_ERROR, $publisherId, "Unexpected Error", "Unexpected Error");
-                $message = sprintf("data-set#%s data-source#%s data-source-entry#%s (message: %s)", $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getMessage());
-                $this->logger->doExceptionLogging($message);
+                $errorCode = ImportFailureAlert::ALERT_CODE_UN_EXPECTED_ERROR;
                 if ($importHistoryEntity->getId() !== null) {
                     $this->importHistoryManager->delete($importHistoryEntity);
                 }
-            } else {  /* alert when parsing fail */
-                $failureAlert = $this->connectedDataSourceAlertFactory->getAlert(
-                    $connectedDataSource->getAlertSetting(),
-                    $e->getAlertCode(), $dataSourceEntry->getFileName(),
-                    $connectedDataSource->getDataSource()->getName(),
-                    $connectedDataSource->getDataSet()->getName(), $e->getColumn()
-                );
-
+                $message = sprintf("data-set#%s data-source#%s data-source-entry#%s (message: %s)", $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getMessage());
+                $this->logger->doExceptionLogging($message);
+            } else {
                 $this->logger->doImportLogging($e->getAlertCode(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getRow(), $e->getColumn());
-                if ($failureAlert != null) {
-                    $this->workerManager->processAlert($e->getAlertCode(), $publisherId, $failureAlert->getAlertMessage(), $failureAlert->getAlertDetails());
-                }
+            }
+
+            $failureAlert = $this->connectedDataSourceAlertFactory->getAlert(
+                null,
+                $connectedDataSource->getAlertSetting(),
+                $errorCode, $dataSourceEntry->getFileName(),
+                $connectedDataSource->getDataSource(),
+                $connectedDataSource->getDataSet(),
+                $e->getColumn(),
+                $e->getRow()
+            );
+
+            /* unexpected error */
+            if ($failureAlert != null) {
+                $this->workerManager->processAlert($e->getAlertCode(), $publisherId, $failureAlert->getDetails());
             }
         }
     }
@@ -130,13 +138,18 @@ class AutoImportData implements AutoImportDataInterface
 
             return $rows;
         } catch (ImportDataException $e) {
-            if ($e->getAlertCode() === null) {
-                $message = $e->getMessage();
-            } else {
-                $message = $this->logger->getDryRunMessage($e->getAlertCode(), $e->getColumn());
-            }
+            $details = [
+                AbstractConnectedDataSourceAlert::COLUMN => $e->getColumn()
+            ];
 
-            throw new \Exception($message);
+            $result = [
+                AbstractConnectedDataSourceAlert::CODE => $e->getAlertCode(),
+                AbstractConnectedDataSourceAlert::DETAILS => $details
+            ];
+
+            $message = json_encode($result);
+
+            throw new BadRequestHttpException($message);
         }
     }
 

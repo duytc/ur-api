@@ -3,40 +3,33 @@
 namespace UR\Service\Alert\ConnectedDataSource;
 
 
+use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceInterface;
+
 abstract class AbstractConnectedDataSourceAlert implements ConnectedDataSourceAlertInterface
 {
     protected $alertCode;
     protected $fileName;
-    protected $dataSourceName;
-    protected $dataSetName;
+    protected $dataSource;
+    protected $dataSet;
+    protected $importId;
 
     /**
      * AbstractConnectedDataSourceAlert constructor.
+     * @param $importId
      * @param $alertCode
      * @param $fileName
-     * @param $dataSourceName
-     * @param $dataSetName
+     * @param DataSourceInterface $dataSource
+     * @param DataSetInterface $dataSet
      */
-    public function __construct($alertCode, $fileName, $dataSourceName, $dataSetName)
+    public function __construct($importId, $alertCode, $fileName, DataSourceInterface $dataSource, DataSetInterface $dataSet)
     {
+        $this->importId = $importId;
         $this->alertCode = $alertCode;
         $this->fileName = $fileName;
-        $this->dataSourceName = $dataSourceName;
-        $this->dataSetName = $dataSetName;
+        $this->dataSource = $dataSource;
+        $this->dataSet = $dataSet;
     }
-
-
-    public function getAlertMessage()
-    {
-        return [self::MESSAGE => $this->getMessage()];
-    }
-
-    public function getAlertDetails()
-    {
-        return [self::DETAILS => $this->getDetails()];
-    }
-
-    public abstract function getMessage();
 
     public abstract function getDetails();
 

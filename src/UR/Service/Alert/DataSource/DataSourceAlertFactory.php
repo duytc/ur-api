@@ -17,7 +17,6 @@ class DataSourceAlertFactory
     public function getAlert($alertCode, $fileName, DataSourceInterface $dataSource)
     {
         $jsonAlerts = $dataSource->getAlertSetting();
-        $dataSourceName = $dataSource->getName();
         $alertObject = null;
         if (!is_array($jsonAlerts)) {
             return null;
@@ -26,9 +25,6 @@ class DataSourceAlertFactory
         foreach ($jsonAlerts as $jsonAlert) {
             if (!is_array($jsonAlert)
                 || !array_key_exists(DataSourceAlertInterface::ALERT_TYPE_KEY, $jsonAlert)
-                || !array_key_exists(DataSourceAlertInterface::ALERT_TIME_ZONE_KEY, $jsonAlert)
-                || !array_key_exists(DataSourceAlertInterface::ALERT_HOUR_KEY, $jsonAlert)
-                || !array_key_exists(DataSourceAlertInterface::ALERT_MINUTE_KEY, $jsonAlert)
                 || !array_key_exists(DataSourceAlertInterface::ALERT_ACTIVE_KEY, $jsonAlert)
             ) {
                 continue;
@@ -40,13 +36,13 @@ class DataSourceAlertFactory
 
             switch ($alertCode) {
                 case DataReceivedAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD:
-                    $alertObject = $this->getDataReceivedAlert($jsonAlert, $alertCode, $fileName, $dataSourceName);
+                    $alertObject = $this->getDataReceivedAlert($jsonAlert, $alertCode, $fileName, $dataSource);
                     break;
 
                 case WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT:
                 case WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT:
                 case WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT:
-                    $alertObject = $this->getWrongFormatAlert($jsonAlert, $alertCode, $fileName, $dataSourceName);
+                    $alertObject = $this->getWrongFormatAlert($jsonAlert, $alertCode, $fileName, $dataSource);
                     break;
                 case NoDataReceivedDailyAlert::ALERT_CODE_NO_DATA_RECEIVED_DAILY:
                     $alertObject = $this->getNoDataReceivedDailyAlert($jsonAlert, $alertCode, $dataSource);
@@ -65,10 +61,10 @@ class DataSourceAlertFactory
      * @param array $jsonAlert
      * @param $alertCode
      * @param $fileName
-     * @param $dataSourceName
+     * @param $dataSource
      * @return null|DataReceivedAlert
      */
-    private function getDataReceivedAlert(array $jsonAlert, $alertCode, $fileName, $dataSourceName)
+    private function getDataReceivedAlert(array $jsonAlert, $alertCode, $fileName, DataSourceInterface $dataSource)
     {
         if (strcmp($jsonAlert[DataSourceAlertInterface::ALERT_TYPE_KEY], DataSourceAlertInterface::ALERT_DATA_RECEIVED_KEY) !== 0) {
             return null;
@@ -77,10 +73,7 @@ class DataSourceAlertFactory
         return new DataReceivedAlert(
             $alertCode,
             $fileName,
-            $dataSourceName,
-            $jsonAlert[DataSourceAlertInterface::ALERT_TIME_ZONE_KEY],
-            $jsonAlert[DataSourceAlertInterface::ALERT_HOUR_KEY],
-            $jsonAlert[DataSourceAlertInterface::ALERT_MINUTE_KEY]
+            $dataSource
         );
     }
 
@@ -88,10 +81,10 @@ class DataSourceAlertFactory
      * @param $jsonAlert
      * @param $alertCode
      * @param $fileName
-     * @param $dataSourceName
+     * @param DataSourceInterface $dataSource
      * @return null|WrongFormatAlert
      */
-    private function getWrongFormatAlert($jsonAlert, $alertCode, $fileName, $dataSourceName)
+    private function getWrongFormatAlert($jsonAlert, $alertCode, $fileName, DataSourceInterface $dataSource)
     {
         if (strcmp($jsonAlert[DataSourceAlertInterface::ALERT_TYPE_KEY], DataSourceAlertInterface::ALERT_WRONG_FORMAT_KEY) !== 0) {
             return null;
@@ -100,16 +93,17 @@ class DataSourceAlertFactory
         return new WrongFormatAlert(
             $alertCode,
             $fileName,
-            $dataSourceName,
-            $jsonAlert[DataSourceAlertInterface::ALERT_TIME_ZONE_KEY],
-            $jsonAlert[DataSourceAlertInterface::ALERT_HOUR_KEY],
-            $jsonAlert[DataSourceAlertInterface::ALERT_MINUTE_KEY]
+            $dataSource
         );
     }
 
     private function getNoDataReceivedDailyAlert($jsonAlert, $alertCode, DataSourceInterface $dataSource)
     {
-        if (strcmp($jsonAlert[DataSourceAlertInterface::ALERT_TYPE_KEY], DataSourceAlertInterface::ALERT_DATA_NO_RECEIVED_KEY) !== 0) {
+        if (strcmp($jsonAlert[DataSourceAlertInterface::ALERT_TYPE_KEY], DataSourceAlertInterface::ALERT_DATA_NO_RECEIVED_KEY) !== 0
+            || !array_key_exists(DataSourceAlertInterface::ALERT_TIME_ZONE_KEY, $jsonAlert)
+            || !array_key_exists(DataSourceAlertInterface::ALERT_HOUR_KEY, $jsonAlert)
+            || !array_key_exists(DataSourceAlertInterface::ALERT_MINUTE_KEY, $jsonAlert)
+        ) {
             return null;
         }
 

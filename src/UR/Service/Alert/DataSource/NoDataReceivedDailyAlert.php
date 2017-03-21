@@ -10,11 +10,6 @@ use UR\Model\Core\DataSourceInterface;
 class NoDataReceivedDailyAlert extends AbstractDataSourceAlert
 {
     /**
-     * @var DataSourceInterface $dataSource
-     */
-    protected $dataSource;
-
-    /**
      * NoDataReceivedDailyAlert constructor.
      * @param $alertCode
      * @param $dataSource
@@ -24,18 +19,19 @@ class NoDataReceivedDailyAlert extends AbstractDataSourceAlert
      */
     public function __construct($alertCode, DataSourceInterface $dataSource, $alertTimeZone, $alertHour, $alertMinutes)
     {
-        parent::__construct($alertCode, null, $dataSource->getName(), $alertTimeZone, $alertHour, $alertMinutes);
-        $this->dataSource = $dataSource;
+        parent::__construct($alertCode, null, $dataSource);
+        $this->alertTimeZone = $alertTimeZone;
+        $this->alertHour = $alertHour;
+        $this->alertMinutes = $alertMinutes;
     }
 
-    protected function getMessage()
+    public function getDetails()
     {
-        return sprintf('Data source "%s" has not received data today (%s)', $this->dataSourceName, sprintf(date("Y-m-d")));
-    }
-
-    protected function getDetails()
-    {
-        return [self::DATA_SOURCE_ID => $this->dataSource->getId(), self::DETAILS => $this->getMessage()];
+        return [
+            self::DATA_SOURCE_ID => $this->dataSource->getId(),
+            self::DATA_SOURCE_NAME => $this->dataSource->getName(),
+            self::DATE => sprintf(date("Y-m-d"))
+        ];
     }
 
     /**

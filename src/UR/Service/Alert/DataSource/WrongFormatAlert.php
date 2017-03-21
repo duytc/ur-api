@@ -10,36 +10,18 @@ class WrongFormatAlert extends AbstractDataSourceAlert
      * @param $alertCode
      * @param $fileName
      * @param $dataSourceName
-     * @param $alertTimeZone
-     * @param $alertHour
-     * @param $alertMinutes
      */
-    public function __construct($alertCode, $fileName, $dataSourceName, $alertTimeZone, $alertHour, $alertMinutes)
+    public function __construct($alertCode, $fileName, $dataSourceName)
     {
-        parent::__construct($alertCode, $fileName, $dataSourceName, $alertTimeZone, $alertHour, $alertMinutes);
+        parent::__construct($alertCode, $fileName, $dataSourceName);
     }
 
-    protected function getMessage()
+    public function getDetails()
     {
-        switch ($this->alertCode) {
-            case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT:
-                $message = sprintf('Failed to upload file "%s" to data source "%s" - wrong format file.', $this->fileName, $this->dataSourceName);
-                break;
-            case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT:
-                $message = sprintf('Failed to receive file "%s" from email to data source "%s" - wrong format error.', $this->fileName, $this->dataSourceName);
-                break;
-            case self::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT:
-                $message = sprintf('Failed to receive file "%s" from api to data source "%s" - wrong format error.', $this->fileName, $this->dataSourceName);
-                break;
-            default:
-                return "";
-        }
-
-        return $message;
-    }
-
-    protected function getDetails()
-    {
-        return [self::DETAILS => $this->getMessage()];
+        return [
+            self::DATA_SOURCE_ID => $this->dataSource->getId(),
+            self::DATA_SOURCE_NAME => $this->dataSource->getName(),
+            self::FILE_NAME => $this->fileName
+        ];
     }
 }

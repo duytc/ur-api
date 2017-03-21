@@ -3,9 +3,13 @@
 namespace UR\Service\Alert\ConnectedDataSource;
 
 
+use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceInterface;
+
 class ImportFailureAlert extends AbstractConnectedDataSourceAlert
 {
     private $column;
+    private $row;
 
     /**
      * ImportFailureAlert constructor.
@@ -14,55 +18,39 @@ class ImportFailureAlert extends AbstractConnectedDataSourceAlert
      * @param $dataSourceName
      * @param $dataSetName
      * @param $column
+     * @param $row
      */
-    public function __construct($alertCode, $fileName, $dataSourceName, $dataSetName, $column)
+    public function __construct($alertCode, $fileName, DataSourceInterface $dataSourceName, DataSetInterface $dataSetName, $column, $row)
     {
-        parent::__construct($alertCode, $fileName, $dataSourceName, $dataSetName);
+        parent::__construct(null, $alertCode, $fileName, $dataSourceName, $dataSetName);
         $this->column = $column;
-    }
-
-    public function getMessage()
-    {
-        $message = "";
-        $importErrorMessage = sprintf('Failed to import file %s from data source  "%s" to data set "%s".', $this->fileName, $this->dataSourceName, $this->dataSetName);
-        switch ($this->getAlertCode()) {
-            case self::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL:
-                $message = sprintf('%s - mapping error: no Field in file is mapped to data set.', $importErrorMessage);
-                break;
-
-            case self::ALERT_CODE_WRONG_TYPE_MAPPING:
-                $message = sprintf('%s - mapping error: invalid type on field "%s".', $importErrorMessage, $this->column);
-                break;
-
-            case self::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
-                $message = sprintf('%s - field "%s" is required but not found in file.', $importErrorMessage, $this->column);
-                break;
-
-            case self::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
-                $message = sprintf('%s - invalid number format on field "%s".', $importErrorMessage, $this->column);
-                break;
-            case self::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE:
-                $message = sprintf('%s - invalid date format on field "%s".', $importErrorMessage, $this->column);
-                break;
-
-            case self::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND:
-                $message = sprintf('%s - no header found.', $importErrorMessage);
-                break;
-
-            case self::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND:
-                $message = sprintf('%s - no data found.', $importErrorMessage);
-                break;
-
-            case self::ALERT_CODE_FILE_NOT_FOUND:
-                $message = sprintf('%s - error: %s.', $importErrorMessage, ' file does not exist ');
-                break;
-        }
-
-        return $message;
+        $this->row = $row;
     }
 
     public function getDetails()
     {
-        return $this->getMessage();
+        $details = [
+            self::DATA_SOURCE_NAME => $this->dataSource->getName(),
+            self::DATA_SOURCE_ID => $this->dataSource->getId(),
+            self::DATA_SET_NAME => $this->dataSet->getName(),
+            self::DATA_SET_ID => $this->dataSet->getId(),
+            self::FILE_NAME => $this->fileName
+        ];
+
+        switch ($this->getAlertCode()) {
+            case self::ALERT_CODE_WRONG_TYPE_MAPPING:
+            case self::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
+            case self::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
+            case self::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE:
+                $details[self::COLUMN] = $this->column;
+                break;
+            case self::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL:
+            case self::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND:
+            case self::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND:
+            case self::ALERT_CODE_FILE_NOT_FOUND:
+                break;
+        }
+
+        return $details;
     }
 }

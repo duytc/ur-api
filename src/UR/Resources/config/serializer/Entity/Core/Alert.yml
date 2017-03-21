@@ -10,9 +10,6 @@ UR\Entity\Core\Alert:
         isRead:
             expose: true
             groups: [alert.detail, alert.summary]
-        message:
-            expose: true
-            groups: [alert.detail, alert.summary]
         detail:
             expose: true
             groups: [alert.detail, alert.summary]

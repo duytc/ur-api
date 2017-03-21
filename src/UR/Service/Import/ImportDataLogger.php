@@ -78,46 +78,6 @@ class ImportDataLogger
         return $message;
     }
 
-
-    public function getDryRunMessage($errorCode, $column)
-    {
-        switch ($errorCode) {
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL:
-                $message = sprintf('Cannot preview data, no Field is mapped');
-                break;
-
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_WRONG_TYPE_MAPPING:
-                $message = sprintf('Cannot preview data, wrong type mapping');
-                break;
-
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
-                $message = sprintf('Cannot preview data, require fields %s not exist in file', (is_string($column) ? sprintf(' "%s"', $column) : ''));
-                break;
-
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE:
-                $message = sprintf('Cannot preview data, there is invalid data in the "%s" field', $column);
-                break;
-
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND:
-                $message = sprintf('Cannot preview data, no header found error');
-                break;
-
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND:
-                $message = sprintf('Cannot preview data, cant find data error');
-                break;
-
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_FILE_NOT_FOUND:
-                $message = sprintf('Cannot preview data, file dose not exist');
-                break;
-            default:
-                $message = sprintf('Cannot preview data, please contact your account manager');
-                break;
-        }
-
-        return $message;
-    }
-
     public function doExceptionLogging($message)
     {
         $this->logger->error($message);

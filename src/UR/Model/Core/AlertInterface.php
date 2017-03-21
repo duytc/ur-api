@@ -23,9 +23,9 @@ interface AlertInterface extends ModelInterface
     public function getCode();
 
     /**
-     * @param mixed $type
+     * @param mixed $code
      */
-    public function setCode($type);
+    public function setCode($code);
 
     /**
      * @return mixed
@@ -36,16 +36,6 @@ interface AlertInterface extends ModelInterface
      * @param mixed $isRead
      */
     public function setIsRead($isRead);
-
-    /**
-     * @return mixed
-     */
-    public function getMessage();
-
-    /**
-     * @param mixed $message
-     */
-    public function setMessage($message);
 
     /**
      * @return mixed

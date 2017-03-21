@@ -14,9 +14,6 @@ UR\Entity\Core\Alert:
                 default: false
         code:
             type: integer
-        message:
-            type: json_array
-            nullable: true
         detail:
             type: json_array
             nullable: true

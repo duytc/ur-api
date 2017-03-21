@@ -37,12 +37,11 @@ class Manager
         $this->queueTask('loadingDataFromFileToDataImportTable', $params);
     }
 
-    public function processAlert($code, $publisherId, $message, $details)
+    public function processAlert($code, $publisherId, $details)
     {
         $params = new StdClass;
         $params->code = $code;
         $params->publisherId = $publisherId;
-        $params->message = $message;
         $params->details = $details;
 
         $this->queueTask('processAlert', $params);

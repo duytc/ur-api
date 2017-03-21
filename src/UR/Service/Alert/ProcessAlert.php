@@ -33,7 +33,7 @@ class ProcessAlert implements ProcessAlertInterface
     /**
      * @inheritdoc
      */
-    public function createAlert($alertCode, $publisherId, $message, $details)
+    public function createAlert($alertCode, $publisherId, $details)
     {
         $publisher = $this->publisherManager->findPublisher($publisherId);
         if (!$publisher instanceof PublisherInterface) {
@@ -43,7 +43,6 @@ class ProcessAlert implements ProcessAlertInterface
         $alert = new Alert();
         $alert->setCode($alertCode);
         $alert->setPublisher($publisher);
-        $alert->setMessage($message);
         $alert->setDetail($details);
 
         $this->alertManager->save($alert);
