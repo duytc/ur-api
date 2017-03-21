@@ -17,6 +17,7 @@ use UR\Domain\DTO\Report\Filters\TextFilter;
 use UR\Domain\DTO\Report\Filters\TextFilterInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
+use UR\Entity\Core\DataSet;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Service\StringUtilTrait;
@@ -79,9 +80,11 @@ class SqlBuilder implements SqlBuilderInterface
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $fields = array_merge($metrics, $dimensions);
         $tableColumns = array_keys($table->getColumns());
+        $dataSetRepository = $this->em->getRepository(DataSet::class);
+        $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
 
         if (count($tableColumns) < 1) {
-            throw new InvalidArgumentException('data set has no data');
+            throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
         }
 
         foreach ($fields as $index => $field) {
@@ -91,7 +94,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         if (empty($fields)) {
-            throw new InvalidArgumentException('at least one field must be selected');
+            throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
         }
 
         $qb = $this->connection->createQueryBuilder();
@@ -271,7 +274,9 @@ class SqlBuilder implements SqlBuilderInterface
 
         // if no field is valid
         if (empty($fields)) {
-            throw new InvalidArgumentException('at least one field must be selected');
+            $dataSetRepository = $this->em->getRepository(DataSet::class);
+            $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
+            throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
         }
 
         // build select query for each data set

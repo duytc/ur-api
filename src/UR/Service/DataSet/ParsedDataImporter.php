@@ -90,7 +90,7 @@ class ParsedDataImporter
                     $qb->execute();
                 } catch (Exception $e) {
                     $this->conn->rollBack();
-                    throw new ImportDataException(null, null, null, $e->getMessage());
+                    throw new ImportDataException(null, null, null, null, $e->getMessage());
                 }
             }
 
@@ -138,7 +138,7 @@ class ParsedDataImporter
             $stmt->execute($values);
         } catch (Exception $ex) {
             $this->conn->rollBack();
-            throw new ImportDataException(null, null, null, $ex);
+            throw new ImportDataException(null, null, null, null, $ex);
         }
         $this->conn->commit();
         $this->conn->close();

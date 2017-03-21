@@ -253,7 +253,7 @@ class Parser implements ParserInterface
                 }
 
                 if (!is_numeric($cellValue) && $cellValue !== null) {
-                    throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_WRONG_TYPE_MAPPING, $cur_row + 2, $fileColumn);
+                    throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_WRONG_TYPE_MAPPING, $cur_row + 2, $fileColumn, $cellValue, null);
                 }
             }
         }
@@ -273,7 +273,7 @@ class Parser implements ParserInterface
             foreach ($filters as $filter) {
                 $filterResult = $filter->filter($row[$column]);
                 if ($filterResult > 1) {
-                    throw new ImportDataException($filterResult, $cur_row + 2, $column);
+                    throw new ImportDataException($filterResult, $cur_row + 2, $column, $row[$column], null);
                 } else {
                     $isValidFilter = $isValidFilter & $filterResult;
                 }
@@ -321,7 +321,7 @@ class Parser implements ParserInterface
                 foreach ($transforms as $transform) {
                     $row[$column] = $transform->transform($row[$column]);
                     if ($row[$column] === 2) {
-                        throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, $cur_row + 2, $column);
+                        throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, $cur_row + 2, $column, null, null);
                     }
                 }
             }

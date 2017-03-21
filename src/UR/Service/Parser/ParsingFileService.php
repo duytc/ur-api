@@ -66,7 +66,7 @@ class ParsingFileService
         $this->parserConfig = new ParserConfig();
         $filePath = $this->uploadFileDir . $dataSourceEntry->getPath();
         if (!file_exists($filePath)) {
-            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_FILE_NOT_FOUND, null, null);
+            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_FILE_NOT_FOUND, null, null, null, null);
         }
 
         $file = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $filePath);
@@ -74,11 +74,11 @@ class ParsingFileService
         $columns = $file->getColumns();
         $dataRow = $file->getDataRow();
         if (!is_array($columns) || count($columns) < 1) {
-            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND, null, null);
+            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND, null, null, null, null);
         }
 
         if ($dataRow < 1) {
-            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND, null, null);
+            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND, null, null, null, null);
         }
 
         /*
@@ -86,7 +86,7 @@ class ParsingFileService
          */
         $this->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $columns);
         if (count($this->parserConfig->getAllColumnMappings()) === 0) {
-            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL, null, null);
+            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL, null, null, null, null);
         }
 
         $validRequires = true;
@@ -100,7 +100,7 @@ class ParsingFileService
         }
 
         if (!$validRequires) {
-            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL, null, $columnRequire);
+            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL, null, $columnRequire, null, null);
         }
 
         //filter config
@@ -350,7 +350,7 @@ class ParsingFileService
 
                     $row[$column] = $transform->transform($row[$column]);
                     if ($row[$column] === 2) {
-                        throw new ImportDataException(ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, 0, $column);
+                        throw new ImportDataException(ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, 0, $column, null, null);
                     }
                 }
             }

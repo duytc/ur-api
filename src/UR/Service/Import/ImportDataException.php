@@ -8,20 +8,23 @@ class ImportDataException extends \Exception
     private $alertCode;
     private $row;
     private $column;
+    private $content;
 
     /**
      * ImportDataException constructor.
-     * @param string $message
      * @param string $alertCode
      * @param int $row
      * @param \Exception $column
+     * @param null $content
+     * @param string $message
      */
-    public function __construct($alertCode, $row, $column, $message = null)
+    public function __construct($alertCode, $row, $column, $content, $message)
     {
         parent::__construct($message);
         $this->alertCode = $alertCode;
         $this->row = $row;
         $this->column = $column;
+        $this->content = $content;
     }
 
     /**
@@ -46,5 +49,21 @@ class ImportDataException extends \Exception
     public function getColumn()
     {
         return $this->column;
+    }
+
+    /**
+     * @return null
+     */
+    public function getContent()
+    {
+        return $this->content;
+    }
+
+    /**
+     * @param null $content
+     */
+    public function setContent($content)
+    {
+        $this->content = $content;
     }
 }

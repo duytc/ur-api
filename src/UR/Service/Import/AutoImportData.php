@@ -82,6 +82,7 @@ class AutoImportData implements AutoImportDataInterface
                 $connectedDataSource->getDataSource(),
                 $connectedDataSource->getDataSet(),
                 null,
+                null,
                 null
             );
 
@@ -110,7 +111,8 @@ class AutoImportData implements AutoImportDataInterface
                 $connectedDataSource->getDataSource(),
                 $connectedDataSource->getDataSet(),
                 $e->getColumn(),
-                $e->getRow()
+                $e->getRow(),
+                $e->getContent()
             );
 
             /* unexpected error */
@@ -139,7 +141,8 @@ class AutoImportData implements AutoImportDataInterface
             return $rows;
         } catch (ImportDataException $e) {
             $details = [
-                AbstractConnectedDataSourceAlert::COLUMN => $e->getColumn()
+                AbstractConnectedDataSourceAlert::COLUMN => $e->getColumn(),
+                AbstractConnectedDataSourceAlert::CONTENT => $e->getContent()
             ];
 
             $result = [

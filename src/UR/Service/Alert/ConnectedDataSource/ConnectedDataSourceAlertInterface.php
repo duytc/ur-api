@@ -30,4 +30,5 @@ interface ConnectedDataSourceAlertInterface
     const DATA_SOURCE_ID= 'dataSourceId';
     const DATA_SOURCE_NAME= 'dataSourceName';
     const CODE= 'code';
+    const CONTENT= 'content';
 }

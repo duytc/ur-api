@@ -17,9 +17,10 @@ class ConnectedDataSourceAlertFactory
      * @param DataSetInterface $dataSet
      * @param null $column
      * @param $row
+     * @param $content
      * @return null|DataAddedAlert|ImportFailureAlert
      */
-    public function getAlert($importId, $jsonAlerts, $alertCode, $fileName, DataSourceInterface $dataSource, DataSetInterface $dataSet, $column, $row)
+    public function getAlert($importId, $jsonAlerts, $alertCode, $fileName, DataSourceInterface $dataSource, DataSetInterface $dataSet, $column, $row, $content)
     {
         $alertObject = null;
         if (!is_array($jsonAlerts)) {
@@ -30,7 +31,7 @@ class ConnectedDataSourceAlertFactory
             case DataAddedAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY:
                 return $this->getDataLoadedSuccessfulAlert($importId, $alertCode, $jsonAlerts, $fileName, $dataSource, $dataSet);
             default:
-                return $this->getDataLoadedFailureAlert($alertCode, $jsonAlerts, $fileName, $dataSource, $dataSet, $column, $row);
+                return $this->getDataLoadedFailureAlert($alertCode, $jsonAlerts, $fileName, $dataSource, $dataSet, $column, $row, $content);
         }
     }
 
@@ -60,14 +61,15 @@ class ConnectedDataSourceAlertFactory
      * @param $dataSetName
      * @param $column
      * @param $row
+     * @param $content
      * @return null|ImportFailureAlert
      */
-    private function getDataLoadedFailureAlert($alertCode, $jsonAlerts, $fileName, $dataSourceName, $dataSetName, $column, $row)
+    private function getDataLoadedFailureAlert($alertCode, $jsonAlerts, $fileName, $dataSourceName, $dataSetName, $column, $row, $content)
     {
         if (!in_array(ImportFailureAlert::IMPORT_FAILURE, $jsonAlerts)) {
             return null;
         }
 
-        return new ImportFailureAlert($alertCode, $fileName, $dataSourceName, $dataSetName, $column, $row);
+        return new ImportFailureAlert($alertCode, $fileName, $dataSourceName, $dataSetName, $column, $row, $content);
     }
 }

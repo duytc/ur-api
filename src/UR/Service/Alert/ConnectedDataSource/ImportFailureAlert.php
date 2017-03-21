@@ -8,6 +8,7 @@ use UR\Model\Core\DataSourceInterface;
 
 class ImportFailureAlert extends AbstractConnectedDataSourceAlert
 {
+    private $content;
     private $column;
     private $row;
 
@@ -20,11 +21,12 @@ class ImportFailureAlert extends AbstractConnectedDataSourceAlert
      * @param $column
      * @param $row
      */
-    public function __construct($alertCode, $fileName, DataSourceInterface $dataSourceName, DataSetInterface $dataSetName, $column, $row)
+    public function __construct($alertCode, $fileName, DataSourceInterface $dataSourceName, DataSetInterface $dataSetName, $column, $row, $content)
     {
         parent::__construct(null, $alertCode, $fileName, $dataSourceName, $dataSetName);
         $this->column = $column;
         $this->row = $row;
+        $this->content = $content;
     }
 
     public function getDetails()
@@ -38,11 +40,14 @@ class ImportFailureAlert extends AbstractConnectedDataSourceAlert
         ];
 
         switch ($this->getAlertCode()) {
-            case self::ALERT_CODE_WRONG_TYPE_MAPPING:
             case self::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
+                $details[self::COLUMN] = $this->column;
+                break;
+            case self::ALERT_CODE_WRONG_TYPE_MAPPING:
             case self::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
             case self::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE:
                 $details[self::COLUMN] = $this->column;
+                $details[self::CONTENT] = $this->content;
                 break;
             case self::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL:
             case self::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND:
