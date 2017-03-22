@@ -13,7 +13,7 @@ use UR\Model\Core\DataSourceIntegration;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Service\StringUtilTrait;
 
-class MigrateDataSourceIntegrationScheduleCommand extends ContainerAwareCommand
+class MigrateDataSourceIntegrationScheduleSettingCommand extends ContainerAwareCommand
 {
     use StringUtilTrait;
 
@@ -33,7 +33,7 @@ class MigrateDataSourceIntegrationScheduleCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('ur:data-source-integration:migrate-schedule-setting')
+            ->setName('ur:migrate:data-source-integration:schedule-setting')
             ->setDescription('Migrate DataSourceIntegration schedule setting to latest format');
     }
 

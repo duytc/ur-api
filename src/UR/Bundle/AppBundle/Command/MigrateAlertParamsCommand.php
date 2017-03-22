@@ -33,7 +33,7 @@ class MigrateAlertParamsCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('ur:alert:migrate-params')
+            ->setName('ur:migrate:alert:params')
             ->setDescription('Migrate alert params to latest format');
     }
 
@@ -72,36 +72,22 @@ class MigrateAlertParamsCommand extends ContainerAwareCommand
             /*
              * from format: string
              */
-            $message = $alert->getMessage();
             $details = $alert->getDetail();
 
             /*
              * migrate to new format:
              * [
-             *     [ message => <message string>],
              *     [ details => <details string>,],
              *     ...
              * ]
              */
-            $newMessage = [];
             $newDetails = [];
 
-            if (is_array($message) && is_array($details)) {
-                if (array_key_exists(AbstractConnectedDataSourceAlert::MESSAGE, $message) && array_key_exists(AbstractConnectedDataSourceAlert::MESSAGE, $message)) {
-                    continue;
-                }
-            }
-
-            if (!is_array($message) || !array_key_exists(AbstractConnectedDataSourceAlert::MESSAGE, $message)) {
-                $newMessage = [AbstractConnectedDataSourceAlert::MESSAGE => $message];
-            }
-
-            if (!is_array($details)|| !array_key_exists(AbstractConnectedDataSourceAlert::DETAILS, $details)) {
+            if (!is_array($details) || !array_key_exists(AbstractConnectedDataSourceAlert::DETAILS, $details)) {
                 $newDetails = [AbstractConnectedDataSourceAlert::DETAILS => $details];
             }
 
             $migratedCount++;
-            $alert->setMessage($newMessage);
             $alert->setDetail($newDetails);
             $this->alertManager->save($alert);
         }

@@ -32,7 +32,7 @@ class MigrateAlertCodeCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('ur:alert:migrate-code')
+            ->setName('ur:migrate:alert:code')
             ->setDescription('Migrate alert code to latest format');
     }
 

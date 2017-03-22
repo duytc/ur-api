@@ -40,7 +40,7 @@ class MigrateIntegrationParamsCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('ur:integration:migrate-params')
+            ->setName('ur:migrate:integration:params')
             ->setDescription('Migrate Integration params to latest format, also migrate DataSourceIntegration params');
     }
 

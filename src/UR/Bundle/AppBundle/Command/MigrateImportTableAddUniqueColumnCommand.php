@@ -12,13 +12,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\IntegrationManagerInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Service\DataSet\ParsedDataImporter;
-use UR\Service\DataSet\Locator;
 use UR\Service\DataSet\Synchronizer;
 use UR\Service\DataSet\FieldType;
 use UR\Service\StringUtilTrait;
 
-class AddUniqueColumnCommand extends ContainerAwareCommand
+class MigrateImportTableAddUniqueColumnCommand extends ContainerAwareCommand
 {
     use StringUtilTrait;
 
@@ -28,7 +26,7 @@ class AddUniqueColumnCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('ur:import-table:add-unique-column')
+            ->setName('ur:migrate:import-table:add-unique-column')
             ->setDescription('Add column __unique_id for data import table if not exist');
     }
 
@@ -50,13 +48,12 @@ class AddUniqueColumnCommand extends ContainerAwareCommand
         $em = $container->get('doctrine.orm.entity_manager');
         $conn = $em->getConnection();
         $schema = new Schema();
-        $dataSetLocator = new Locator($conn);
         $dataSetSynchronizer = new Synchronizer($conn, new Comparator());
 
         /** @var DataSetInterface[] $dataSetMissingUniques */
         $dataSetMissingUniques = [];
         foreach ($dataSets as $dataSet) {
-            $dataTable = $dataSetLocator->getDataSetImportTable($dataSet->getId());
+            $dataTable = $dataSetSynchronizer->getDataSetImportTable($dataSet->getId());
             if (!$dataTable) {
                 continue;
             }
@@ -69,7 +66,7 @@ class AddUniqueColumnCommand extends ContainerAwareCommand
         }
 
         foreach ($dataSetMissingUniques as $dataSetMissingUnique) {
-            $dataSetTable = $dataSetLocator->getDataSetImportTable($dataSetMissingUnique->getId());
+            $dataSetTable = $dataSetSynchronizer->getDataSetImportTable($dataSetMissingUnique->getId());
             $addCols = [];
             $addCols[] = $dataSetTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, FieldType::TEXT, array("notnull" => true));
 
