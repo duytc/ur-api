@@ -23,7 +23,7 @@ class CreateDailyAlertForDataSourceCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('ur:data-source:create-daily-alert')
+            ->setName('ur:data-source:create-not-received-alert')
             ->setDescription('Create alert if data is not received daily');
     }
 
