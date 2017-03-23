@@ -106,9 +106,12 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
 
             // validate dynamic date range if existed
             $value = $param[Integration::PARAM_KEY_VALUE];
-            if ($type === Integration::PARAM_TYPE_DYNAMIC_DATE_RANGE && !in_array($value, Integration::$SUPPORTED_PARAM_VALUE_DYNAMIC_DATE_RANGES)) {
-                $form->get('params')->addError(new FormError(sprintf('not supported dynamicDateRange "value" as %s in params', $value)));
-                return false;
+            if ($type === Integration::PARAM_TYPE_DYNAMIC_DATE_RANGE) {
+                // note: allow empty or null value, then dateRange will be yesterday by default
+                if (!empty($value) && !in_array($value, Integration::$SUPPORTED_PARAM_VALUE_DYNAMIC_DATE_RANGES)) {
+                    $form->get('params')->addError(new FormError(sprintf('not supported dynamicDateRange "value" as %s in params', $value)));
+                    return false;
+                }
             }
         }
 
