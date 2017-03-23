@@ -97,3 +97,8 @@ services:
         tags:
             - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.create_data_import_table_when_create_new_data_set_listener:
+        class: UR\Bundle\ApiBundle\EventListener\CreateDataImportTableWhenCreateNewDataSetListener
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
