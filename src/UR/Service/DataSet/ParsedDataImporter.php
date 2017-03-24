@@ -1,6 +1,7 @@
 <?php
 namespace UR\Service\DataSet;
 
+use DateTime;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -47,15 +48,25 @@ class ParsedDataImporter
         $this->lockingDatabaseTable->lockTable($tableName);
 
         $dimensions = $connectedDataSource->getDataSet()->getDimensions();
+        $metrics = $connectedDataSource->getDataSet()->getMetrics();
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
-
+        $dateColumns = [];
         foreach ($columns as $k => $column) {
             if (in_array($column, self::$restrictedColumns, true)) {
                 throw new \InvalidArgumentException(sprintf('%s cannot be used as a column name. It is reserved for internal use.', $column));
             }
+
             if (!preg_match('#[_a-z]+#i', $column)) {
                 throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
+            }
+
+            if ((array_key_exists($column, $dimensions) &&  $dimensions[$column] === FieldType::DATE) ||
+                (array_key_exists($column, $metrics) &&  $metrics[$column] === FieldType::DATE)) {
+                $dateColumns[] = $column;
+                $columns[] = sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $column);
+                $columns[] = sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $column);
+                $columns[] = sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $column);
             }
         }
 
@@ -70,7 +81,9 @@ class ParsedDataImporter
         $columns[DataSetInterface::UNIQUE_ID_COLUMN] = DataSetInterface::UNIQUE_ID_COLUMN;
         $question_marks = [];
         $this->preparedInsertCount = 0;
-        foreach ($rows as $row) {
+
+        foreach ($rows as &$row) {
+            $this->insertMonthYearAt($dateColumns, $row);
             $uniqueKeys = array_intersect_key($row, $dimensions);
             $uniqueId = md5(implode(":", $uniqueKeys));
             $row[DataSetInterface::DATA_SOURCE_ID_COLUMN] = $connectedDataSource->getDataSource()->getId();
@@ -113,6 +126,24 @@ class ParsedDataImporter
         $this->lockingDatabaseTable->unLockTable();
 
         return true;
+    }
+
+    private function insertMonthYearAt(array $indexes, &$row)
+    {
+        foreach($indexes as $index) {
+            $date = DateTime::createFromFormat('Y-m-d', $row[$index]);
+            if ($date instanceof DateTime) {
+                $month = $date->format('n');
+                $year = $date->format('Y');
+                $day = $date->format('j');
+            } else {
+                $month = null;
+                $year = null;
+            }
+            $row[sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $index)] = $day;
+            $row[sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $index)] = $month;
+            $row[sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $index)] = $year;
+        }
     }
 
     private function placeholders($text, $count = 0, $separator = ",")

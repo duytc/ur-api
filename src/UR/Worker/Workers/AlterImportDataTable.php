@@ -7,6 +7,7 @@ use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\SchemaException;
 use Doctrine\DBAL\Schema\TableDiff;
+use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use stdClass;
 use UR\DomainManager\DataSetManagerInterface;
@@ -87,6 +88,11 @@ class AlterImportDataTable
                 $delCol = $dataTable->getColumn($deletedColumn);
                 $delCols[] = $delCol;
                 $dataTable->dropColumn($deletedColumn);
+                if ($type == FieldType::DATE) {
+                    $dataTable->dropColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $deletedColumn));
+                    $dataTable->dropColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $deletedColumn));
+                    $dataTable->dropColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $deletedColumn));
+                }
             } catch (SchemaException $exception) {
                 stdOut($exception->getMessage());
             }
@@ -94,13 +100,16 @@ class AlterImportDataTable
 
         foreach ($newColumns as $newColumn => $type) {
             if (strcmp($type, FieldType::NUMBER) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, "integer", ["notnull" => false, "default" => null]);
+                $addCols[] = $dataTable->addColumn($newColumn, Type::INTEGER, ["notnull" => false, "default" => null]);
             } else if (strcmp($type, FieldType::DECIMAL) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
             } else if (strcmp($type, FieldType::MULTI_LINE_TEXT) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, FieldType::TEXT, ["notnull" => false, "default" => null]);
             } else if (strcmp($type, FieldType::DATE) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, FieldType::DATE, ["notnull" => false, "default" => null]);
+                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
+                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
+                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
             } else {
                 $addCols[] = $dataTable->addColumn($newColumn, $type, ["notnull" => false, "default" => null]);
             }
