@@ -35,8 +35,9 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
             ->addOption('parameters', 'p', InputOption::VALUE_OPTIONAL,
                 'Integration parameters (optional) as name:type, allow multiple parameters separated by comma. 
                 Supported types are: plainText (default), date (Y-m-d), dynamicDateRange (last 1,2,3... days) 
-                and secure (will be encrypted in database and not show value in ui). 
-                e.g. -p "username,password:secure,startDate:date"')
+                , secure (will be encrypted in database and not show value in ui)
+                and regex (for regex matching)
+                e.g. -p "username,password:secure,startDate:date,pattern:regex"')
             ->addOption('all-publishers', 'a', InputOption::VALUE_NONE,
                 'Enable for all users (optional)')
             ->addOption('enables-users', 'u', InputOption::VALUE_OPTIONAL,
@@ -64,7 +65,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         $isAllPublisherOption = $input->getOption('all-publishers');
 
         if (!$this->validateInput($cName, $output)) {
-            return;
+            return 0;
         }
 
         /** @var IntegrationManagerInterface $integrationManager */
@@ -73,7 +74,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
 
         if (!$integration instanceof IntegrationInterface) {
             $output->writeln(sprintf('Could not found integration with cname %s. Please try other command ur:integration:create to create', $cName));
-            return;
+            return 0;
         }
 
         /* Update display name */
@@ -112,7 +113,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         /* Update enable-users */
         if ($userIdsStringOption && $isAllPublisherOption) {
             $output->writeln(sprintf('command run failed: not allow use both option -u and -a'));
-            return;
+            return 0;
         }
 
         if ($userIdsStringOption || $isAllPublisherOption) {
@@ -125,6 +126,8 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         $integrationManager->save($integration);
 
         $output->writeln(sprintf('command run successfully: %s updated.', 1));
+
+        return 1;
     }
 
     /**

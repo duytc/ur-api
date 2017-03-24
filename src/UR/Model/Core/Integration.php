@@ -14,14 +14,18 @@ class Integration implements IntegrationInterface
 
     const PARAM_TYPE_PLAIN_TEXT = 'plainText'; // e.g username, url, ...
     const PARAM_TYPE_DATE = 'date'; // e.g startDate, ...
-    const PARAM_TYPE_DYNAMIC_DATE_RANGE = 'dynamicDateRange'; // e.g startDate, ...
+    const PARAM_TYPE_DYNAMIC_DATE_RANGE = 'dynamicDateRange'; // e.g dateRange, ...
     const PARAM_TYPE_SECURE = 'secure'; // e.g password, token, key, ...
+    const PARAM_TYPE_REGEX = 'regex'; // e.g pattern, ...
+
+    const SUPPORTED_PARAM_VALUE_REGEX = '/^(?!(\/.*))(?!(.*\/[gmixsuXUAJ]*$))/';
 
     public static $SUPPORTED_PARAM_TYPES = [
         self::PARAM_TYPE_PLAIN_TEXT,
         self::PARAM_TYPE_DATE,
         self::PARAM_TYPE_DYNAMIC_DATE_RANGE,
-        self::PARAM_TYPE_SECURE
+        self::PARAM_TYPE_SECURE,
+        self::PARAM_TYPE_REGEX
     ];
 
     public static $SUPPORTED_PARAM_VALUE_DYNAMIC_DATE_RANGES = [

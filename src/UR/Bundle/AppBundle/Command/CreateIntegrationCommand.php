@@ -35,8 +35,9 @@ class CreateIntegrationCommand extends ContainerAwareCommand
             ->addOption('parameters', 'p', InputOption::VALUE_OPTIONAL,
                 'Integration parameters (optional) as name:type, allow multiple parameters separated by comma. 
                 Supported types are: plainText (default), date (Y-m-d), dynamicDateRange (last 1,2,3... days) 
-                and secure (will be encrypted in database and not show value in ui). 
-                e.g. -p "username,password:secure,startDate:date"')
+                , secure (will be encrypted in database and not show value in ui)
+                and regex (for regex matching)
+                e.g. -p "username,password:secure,startDate:date,pattern:regex"')
             ->addOption('all-publishers', 'a', InputOption::VALUE_NONE,
                 'Enable for all users')
             ->addOption('enables-users', 'u', InputOption::VALUE_OPTIONAL,

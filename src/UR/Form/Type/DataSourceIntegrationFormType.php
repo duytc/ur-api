@@ -113,6 +113,14 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
                     return false;
                 }
             }
+
+            // validate regex if existed
+            if ($type === Integration::PARAM_TYPE_REGEX) {
+                if (!preg_match(Integration::SUPPORTED_PARAM_VALUE_REGEX, $value, $matches)) {
+                    $form->get('params')->addError(new FormError(sprintf('invalid regex value as %s in params', $value)));
+                    return false;
+                }
+            }
         }
 
         return true;
