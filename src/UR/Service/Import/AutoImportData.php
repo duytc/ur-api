@@ -93,7 +93,7 @@ class AutoImportData implements AutoImportDataInterface
             $this->importHistoryManager->deletePreviousImports($importHistories);
         } catch (ImportDataException $e) { /* exception */
             $errorCode = $e->getAlertCode();
-            if ($e->getAlertCode() === null) {
+            if ($errorCode === null) {
                 $errorCode = ImportFailureAlert::ALERT_CODE_UN_EXPECTED_ERROR;
                 if ($importHistoryEntity->getId() !== null) {
                     $this->importHistoryManager->delete($importHistoryEntity);
@@ -101,7 +101,7 @@ class AutoImportData implements AutoImportDataInterface
                 $message = sprintf("data-set#%s data-source#%s data-source-entry#%s (message: %s)", $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getMessage());
                 $this->logger->doExceptionLogging($message);
             } else {
-                $this->logger->doImportLogging($e->getAlertCode(), $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getRow(), $e->getColumn());
+                $this->logger->doImportLogging($errorCode, $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getRow(), $e->getColumn());
             }
 
             $failureAlert = $this->connectedDataSourceAlertFactory->getAlert(
@@ -117,7 +117,7 @@ class AutoImportData implements AutoImportDataInterface
 
             /* unexpected error */
             if ($failureAlert != null) {
-                $this->workerManager->processAlert($e->getAlertCode(), $publisherId, $failureAlert->getDetails());
+                $this->workerManager->processAlert($errorCode, $publisherId, $failureAlert->getDetails());
             }
         }
     }
