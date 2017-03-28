@@ -117,32 +117,6 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         return $response;
     }
 
-
-    /**
-     * Replay Data of an Entry
-     *
-     * @Rest\Get("/datasourceentries/{id}/replaydata" )
-     *
-     * @ApiDoc(
-     *  section = "Data Source Entry",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful"
-     *  }
-     * )
-     *
-     * @param int $id the resource id
-     * @return mixed
-     * @throws \Exception
-     */
-    public function replayDataAction($id)
-    {
-        /** @var DataSourceEntryInterface $dataSourceEntry */
-        $dataSourceEntry = $this->one($id);
-        $this->checkFileExist($dataSourceEntry);
-        return $this->replayDataSourceEntryData($dataSourceEntry);
-    }
-
     /**
      * Create a data source entry from the submitted data
      *
@@ -162,6 +136,33 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     public function postAction(Request $request)
     {
         return $this->post($request);
+    }
+
+    /**
+     * Replay Data of an Entry
+     *
+     * @Rest\Post("/datasourceentries/{id}/replaydata" )
+     *
+     * @ApiDoc(
+     *  section = "Data Source Entry",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     * @return mixed
+     * @throws \Exception
+     */
+    public function postReplayDataAction($id)
+    {
+        /** @var DataSourceEntryInterface $dataSourceEntry */
+        $dataSourceEntry = $this->one($id);
+
+        $this->checkFileExist($dataSourceEntry);
+
+        return $this->replayDataSourceEntryData($dataSourceEntry);
     }
 
     /**
