@@ -5,6 +5,7 @@ namespace UR\Bundle\AppBundle\Command;
 use Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -28,9 +29,9 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
     {
         $this
             ->setName('ur:data-set:load-file')
-            ->addArgument('connectedDataSourceId', InputOption::VALUE_REQUIRED, 'Connected data source id')
-            ->addArgument('dataSourceEntryId', InputOption::VALUE_REQUIRED, 'Data source entry id')
-            ->addArgument('importId', InputOption::VALUE_OPTIONAL, 'Import history id')
+            ->addArgument('connectedDataSourceId', InputArgument::REQUIRED, 'Connected data source id')
+            ->addArgument('dataSourceEntryId', InputArgument::REQUIRED, 'Data source entry id')
+            ->addArgument('importId', InputArgument::OPTIONAL, 'Import history id. It will be created automatically if not provided')
             ->setDescription('Load data from entry file to data import table');
     }
 
@@ -66,33 +67,36 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
         /* get inputs */
         $connectedDataSourceId = $input->getArgument('connectedDataSourceId');
         $dataSourceEntryId = $input->getArgument('dataSourceEntryId');
-        $input->hasArgument('importId');
         $importId = $input->getArgument('importId');
 
         /* validate inputs */
         if (!$this->validateInput($connectedDataSourceId, $dataSourceEntryId, $importId, $output)) {
-            throw new \Exception(sprintf('command run failed: prams must integer'));
+            throw new \Exception(sprintf('command run failed: params must integer'));
         }
 
         /**@var DataSourceEntryInterface $dataSourceEntry */
         $dataSourceEntry = $dataSourceEntryManager->find($dataSourceEntryId);
 
         if ($dataSourceEntry === null) {
-            throw new \Exception(sprintf('cannot find datasoure Entry with id:%d ', $dataSourceEntryId));
+            throw new \Exception(sprintf('cannot find data source entry with id: %d ', $dataSourceEntryId));
         }
 
         /**@var ConnectedDataSourceInterface $connectedDataSource */
         $connectedDataSource = $connectedDataSourceManager->find($connectedDataSourceId);
 
         if ($connectedDataSource->getDataSet() === null) {
-            throw new \Exception(sprintf('no data set connect with connected data source id:%d ', $connectedDataSourceId));
+            throw new \Exception(sprintf('no data set with connected data source id: %d ', $connectedDataSourceId));
         }
 
-        if (is_array($importId)) {
+        if (!$importId) {
             /* create new import History */
             $importHistoryEntity = $importHistoryManager->createImportHistoryByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource);
         } else {
             $importHistoryEntity = $importHistoryManager->find($importId);
+
+            if (!$importHistoryEntity) {
+                throw new \Exception(sprintf('can not find import history with id: %d', $importId));
+            }
         }
 
         $publisherId = $connectedDataSource->getDataSet()->getPublisherId();
@@ -104,7 +108,7 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
             $importHistories = $importHistoryManager->getImportHistoryByDataSourceEntry($dataSourceEntry, $connectedDataSource->getDataSet(), $importHistoryEntity);
 
             if ($importHistoryEntity === null) {
-                throw new \Exception('can not found import history with id = %d', $importId);
+                throw new \Exception(sprintf('can not find import history with id: %d', $importId));
             }
 
             /*
@@ -130,7 +134,16 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
             }
 
             $importHistoryManager->deletePreviousImports($importHistories);
-            $logger->warning(sprintf('success import file "%s" from data source "%s" to data set "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSource()->getName(), $connectedDataSource->getDataSet()->getName()));
+            $logger->info(
+                sprintf('success importing file "%s" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d)',
+                    $dataSourceEntry->getFileName(),
+                    $connectedDataSource->getDataSet()->getName(),
+                    $dataSourceEntry->getId(),
+                    $connectedDataSource->getDataSet()->getId(),
+                    $connectedDataSource->getId(),
+                    $connectedDataSource->getDataSource()->getId()
+                )
+            );
         } catch (ImportDataException $e) { /* exception */
             $errorCode = $e->getAlertCode();
             $isImportFail = true;
@@ -141,7 +154,15 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
         } catch (\Exception $exception) {
             $errorCode = ImportFailureAlert::ALERT_CODE_UN_EXPECTED_ERROR;
             $isImportFail = true;
-            $message = sprintf("fail to import data-set#%s data-source#%s data-source-entry#%s (message: %s)", $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $exception->getMessage());
+            $message = sprintf('failed to import file "%" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d, message: %s)',
+                $dataSourceEntry->getFileName(),
+                $connectedDataSource->getDataSet()->getName(),
+                $dataSourceEntry->getId(),
+                $connectedDataSource->getDataSet()->getId(),
+                $connectedDataSource->getId(),
+                $connectedDataSource->getDataSource()->getId(),
+                $exception->getMessage()
+            );
             $logger->error($message);
         }
 
@@ -185,15 +206,13 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
 
         // validate input
         if (!isInteger($connectedDataSourceId) || !isInteger($dataSourceEntryId)) {
-            $output->writeln(sprintf('command run failed: prams must integer'));
+            $output->writeln(sprintf('command run failed: params must be an integer'));
             return false;
         }
 
-        if (!is_array($importId)) {
-            if (!isInteger($dataSourceEntryId)) {
-                $output->writeln(sprintf('command run failed: importId must integer'));
-                return false;
-            }
+        if ($importId && !isInteger($dataSourceEntryId)) {
+            $output->writeln(sprintf('command run failed: importId must be an integer'));
+            return false;
         }
 
         return true;
