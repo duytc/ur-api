@@ -134,7 +134,7 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
             }
 
             $importHistoryManager->deletePreviousImports($importHistories);
-            $logger->info(
+            $logger->notice(
                 sprintf('success importing file "%s" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d)',
                     $dataSourceEntry->getFileName(),
                     $connectedDataSource->getDataSet()->getName(),
