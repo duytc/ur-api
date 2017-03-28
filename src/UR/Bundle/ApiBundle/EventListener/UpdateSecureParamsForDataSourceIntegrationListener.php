@@ -48,20 +48,22 @@ class UpdateSecureParamsForDataSourceIntegrationListener
 
         // extract all secure params to array [ <param name> => <param value>, ... ]
         $oldSecureParamNameValue = [];
-        foreach ($oldParams as $param) {
-            if (!is_array($param)
-                || !array_key_exists(Integration::PARAM_KEY_KEY, $param)
-                || !array_key_exists(Integration::PARAM_KEY_TYPE, $param)
-                || !array_key_exists(Integration::PARAM_KEY_VALUE, $param)
-            ) {
-                continue;
-            }
+        if (is_array($oldParams)){
+            foreach ($oldParams as $param) {
+                if (!is_array($param)
+                    || !array_key_exists(Integration::PARAM_KEY_KEY, $param)
+                    || !array_key_exists(Integration::PARAM_KEY_TYPE, $param)
+                    || !array_key_exists(Integration::PARAM_KEY_VALUE, $param)
+                ) {
+                    continue;
+                }
 
-            if ($param[Integration::PARAM_KEY_TYPE] !== Integration::PARAM_TYPE_SECURE) {
-                continue;
-            }
+                if ($param[Integration::PARAM_KEY_TYPE] !== Integration::PARAM_TYPE_SECURE) {
+                    continue;
+                }
 
-            $oldSecureParamNameValue[$param[Integration::PARAM_KEY_KEY]] = $param[Integration::PARAM_KEY_VALUE];
+                $oldSecureParamNameValue[$param[Integration::PARAM_KEY_KEY]] = $param[Integration::PARAM_KEY_VALUE];
+            }
         }
 
         // restore un-changed secure value in params: decode old value then copy to new
@@ -82,10 +84,12 @@ class UpdateSecureParamsForDataSourceIntegrationListener
                 continue;
             }
 
-            $oldSecureParamValue = $oldSecureParamNameValue[$param[Integration::PARAM_KEY_KEY]];
-            // decode
-            $oldSecureParamValue = $dataSourceIntegration->decryptSecureParam($oldSecureParamValue);
-            $param[Integration::PARAM_KEY_VALUE] = $oldSecureParamValue;
+            if (array_key_exists($param[Integration::PARAM_KEY_KEY], $oldSecureParamNameValue)) {
+                $oldSecureParamValue = $oldSecureParamNameValue[$param[Integration::PARAM_KEY_KEY]];
+                // decode
+                $oldSecureParamValue = $dataSourceIntegration->decryptSecureParam($oldSecureParamValue);
+                $param[Integration::PARAM_KEY_VALUE] = $oldSecureParamValue;
+            }
         }
 
         $dataSourceIntegration->setParams($params);

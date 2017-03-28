@@ -11,6 +11,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\DomainManager\IntegrationManagerInterface;
 use UR\Entity\Core\IntegrationPublisher;
+use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\Integration;
 use UR\Model\Core\IntegrationInterface;
 use UR\Model\User\Role\PublisherInterface;
@@ -42,6 +43,8 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
                 'Enable for all users (optional)')
             ->addOption('enables-users', 'u', InputOption::VALUE_OPTIONAL,
                 'Enable for special users (optional), allow multiple userId separated by comma, e.g. -u "5,10,3"')
+            ->addOption('force-update-all-datasources', 'f', InputOption::VALUE_NONE,
+                'Update params to existing datasources-integrations (optional)')
             ->setDescription('update individual fields of an integration such as display name, params or enabled-users. Notice: require integration cname to identify which integration is being updated.');
     }
 
@@ -61,8 +64,9 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         $cName = $input->getArgument('cname');
         $name = $input->getArgument('name');
         $paramsString = $input->getOption('parameters');
-        $userIdsStringOption = $input->getOption('enables-users');
-        $isAllPublisherOption = $input->getOption('all-publishers');
+        $userIdsString = $input->getOption('enables-users');
+        $isAllPublishers = $input->getOption('all-publishers');
+        $isUpdateAllDataSourceIntegrations = $input->getOption('force-update-all-datasources');
 
         if (!$this->validateInput($cName, $output)) {
             return 0;
@@ -88,7 +92,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
             $paramsString = $input->getOption('parameters');
             if (!empty($paramsString) && !preg_match('/^[a-zA-Z0-9,:\-_]+$/', $paramsString)) {
                 $output->writeln(sprintf('command run failed: parameter must not be null or empty, or wrong format (a-zA-Z,:\-_)'));
-                return false;
+                return;
             }
 
             // make sure only one ":" for each param of params
@@ -97,29 +101,34 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
                 $paramNameAndType = explode(':', $param);
                 if (count($paramNameAndType) > 2) {
                     $output->writeln(sprintf('command run failed: invalid param name and type, please use format "name:type"'));
-                    return false;
+                    return;
                 }
 
                 $paramType = count($paramNameAndType) < 2 ? Integration::PARAM_TYPE_PLAIN_TEXT : $paramNameAndType[1];
                 if (!in_array($paramType, Integration::$SUPPORTED_PARAM_TYPES)) {
                     $output->writeln(sprintf('command run failed: not supported param type %s', $paramType));
-                    return false;
+                    return;
                 }
             }
 
             $this->updateParameters($integration, $paramsString);
+
+            // also update param settings for all dataSourceIntegrations if required
+            if ($isUpdateAllDataSourceIntegrations) {
+                $this->updateDataSourceIntegrations($integration, $paramsString);
+            }
         }
 
         /* Update enable-users */
-        if ($userIdsStringOption && $isAllPublisherOption) {
+        if ($userIdsString && $isAllPublishers) {
             $output->writeln(sprintf('command run failed: not allow use both option -u and -a'));
             return 0;
         }
 
-        if ($userIdsStringOption || $isAllPublisherOption) {
+        if ($userIdsString || $isAllPublishers) {
             /** @var PublisherManagerInterface $publisherManager */
             $publisherManager = $container->get('ur_user.domain_manager.publisher');
-            $this->updatePublishers($integration, $isAllPublisherOption, $userIdsStringOption, $publisherManager);
+            $this->updatePublishers($integration, $isAllPublishers, $userIdsString, $publisherManager);
         }
 
         /* finally, save changes for Integration */
@@ -168,6 +177,67 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
 
     /**
      * @param IntegrationInterface $integration
+     * @param string $paramsString
+     */
+    private function updateDataSourceIntegrations(IntegrationInterface $integration, $paramsString)
+    {
+        /* parse params from paramsString */
+        $newIntegrationParams = $this->parseParams($paramsString);
+        if (!is_array($newIntegrationParams)) {
+            return;
+        }
+
+        $container = $this->getContainer();
+        $dataSourceIntegrationManger = $container->get('ur.domain_manager.data_source_integration');
+        $dataSourceIntegrations = $dataSourceIntegrationManger->findByIntegrationCanonicalName($integration->getCanonicalName());
+
+        foreach ($dataSourceIntegrations as $dataSourceIntegration) {
+            /** @var DataSourceIntegrationInterface $dataSourceIntegration */
+            $oldDataSourceIntegrationParams = $dataSourceIntegration->getOriginalParams();
+            if (!is_array($oldDataSourceIntegrationParams)) {
+                continue;
+            }
+
+            // init new data source integration params values due to new Integration params
+            $newDataSourceIntegrationParams = array_map(function ($newIntegrationParam) {
+                $newIntegrationParam[Integration::PARAM_KEY_VALUE] = null;
+                return $newIntegrationParam;
+            }, $newIntegrationParams);
+
+            // bind old value to new data source integration params
+            foreach ($oldDataSourceIntegrationParams as $oldDataSourceIntegrationParam) {
+                foreach ($newDataSourceIntegrationParams as &$newDataSourceIntegrationParam) {
+                    // bind old value to new data source integration params if key and type are not changed
+                    // else, the new value is initialized value as above
+                    if ($oldDataSourceIntegrationParam[Integration::PARAM_KEY_KEY] == $newDataSourceIntegrationParam[Integration::PARAM_KEY_KEY]) {
+                        if ($newDataSourceIntegrationParam[Integration::PARAM_KEY_TYPE] == $oldDataSourceIntegrationParam[Integration::PARAM_KEY_TYPE]) {
+                            $newDataSourceIntegrationParam[Integration::PARAM_KEY_VALUE] = $oldDataSourceIntegrationParam[Integration::PARAM_KEY_VALUE];
+                        }
+                        // advance to keep old value if type change from secure to plainText
+                        // if from plainText to secure, we already have a listener to do this
+                        elseif ($oldDataSourceIntegrationParam[Integration::PARAM_KEY_TYPE] == Integration::PARAM_TYPE_SECURE
+                            && $newDataSourceIntegrationParam[Integration::PARAM_KEY_TYPE] == Integration::PARAM_TYPE_PLAIN_TEXT
+                        ) {
+                            $newDataSourceIntegrationParam[Integration::PARAM_KEY_VALUE] = $dataSourceIntegration->decryptSecureParam($oldDataSourceIntegrationParam[Integration::PARAM_KEY_VALUE]);
+                        }
+                        // advance to keep old value if type change from secure to plainText
+                        // if from plainText to secure, we already have a listener to do this
+                        elseif ($oldDataSourceIntegrationParam[Integration::PARAM_KEY_TYPE] == Integration::PARAM_TYPE_PLAIN_TEXT
+                            && $newDataSourceIntegrationParam[Integration::PARAM_KEY_TYPE] == Integration::PARAM_TYPE_SECURE
+                        ) {
+                            $newDataSourceIntegrationParam[Integration::PARAM_KEY_VALUE] = $oldDataSourceIntegrationParam[Integration::PARAM_KEY_VALUE];
+                        }
+                    }
+                }
+            }
+
+            $dataSourceIntegration->setParams($newDataSourceIntegrationParams);
+            $dataSourceIntegrationManger->save($dataSourceIntegration);
+        }
+    }
+
+    /**
+     * @param IntegrationInterface $integration
      * @param bool $isAllPublisherOption
      * @param string $userIdsStringOption
      * @param PublisherManagerInterface $publisherManager
@@ -180,7 +250,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         /* build integrationPublishers for integration */
         if (!$isAllPublisherOption) {
             $updatePublisherIds = null;
-            /**@var PublisherInterface[] $allActivePublishers */
+            /** @var PublisherInterface[] $allActivePublishers */
             $allActivePublishers = $publisherManager->all();
 
             $userIdsStringOption = explode(',', $userIdsStringOption);
@@ -205,7 +275,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
             /* add new integrationPublisher for new publishers */
             foreach ($updatePublisherIds as $publisherId) {
                 $publisherFilter = array_filter($allActivePublishers, function ($publisher) use ($publisherId) {
-                    /**@var PublisherInterface $publisher */
+                    /** @var PublisherInterface $publisher */
                     return $publisher->getId() == $publisherId;
                 });
 
