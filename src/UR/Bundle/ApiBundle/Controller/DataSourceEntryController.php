@@ -224,8 +224,8 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
             foreach ($ids as $id) {
                 /**@var DataSourceEntryInterface $dataSourceEntry */
                 $dataSourceEntry = $this->one($id);
-                $importHistoryManager = $this->get('ur.domain_manager.import_history');
-                $importHistoryManager->replayDataSourceEntryData($dataSourceEntry);
+
+                $this->replayDataSourceEntryData($dataSourceEntry);
             }
         }
     }
@@ -314,6 +314,10 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         return $filePath;
     }
 
+    /**
+     * @param DataSourceEntryInterface $dataSourceEntry
+     * @throws \Exception
+     */
     private function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry)
     {
         $workerManager = $this->get('ur.worker.manager');
