@@ -19,6 +19,12 @@ class LoadingDataFromFileToDataImportTable
     const RUN_COMMAND = 'ur:data-set:load-file';
 
     /**
+     * @var String
+     * i.e prod or dev
+     */
+    private $env;
+
+    /**
      * @var ImportHistoryManagerInterface
      */
     private $importHistoryManager;
@@ -43,8 +49,9 @@ class LoadingDataFromFileToDataImportTable
     private $logDir;
 
 
-    function __construct(Logger $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager, $queue, $logDir, ImportHistoryManagerInterface $importHistoryManager)
+    function __construct($env, Logger $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager, $queue, $logDir, ImportHistoryManagerInterface $importHistoryManager)
     {
+        $this->env = $env;
         $this->logger = $logger;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
         $this->connectedDataSourceManager = $connectedDataSourceManager;
@@ -77,7 +84,15 @@ class LoadingDataFromFileToDataImportTable
 
         $fp = fopen($logFile, 'a');
 
-        $process = new Process(sprintf('%s %s %d %d %d', self::PHP_BIN, self::RUN_COMMAND, $connectedDataSourceId, $entryId, $importHistoryEntity->getId()));
+        // make sure command runs as same environment and allow NOTICE messages
+        // INFO messages will be printed. Make sure all important logs are NOTICE and above
+        $envFlags = sprintf('--env=%s -v', $this->env);
+
+        if ($this->env == 'prod') {
+            $envFlags .= ' --no-debug';
+        }
+
+        $process = new Process(sprintf('%s %s %s %d %d %d', self::PHP_BIN, self::RUN_COMMAND, $envFlags, $connectedDataSourceId, $entryId, $importHistoryEntity->getId()));
 
         try {
             $process->mustRun(
@@ -86,7 +101,7 @@ class LoadingDataFromFileToDataImportTable
                 }
             );
         } catch (SqlLockTableException $exception) {
-            $this->logger->warning('put job back to tube');
+            $this->logger->warning('Table is locked. Putting job back into the queue');
             $this->queue->putInTube($tube, $job->getData(), 0, 15);
         } catch (\Exception $e) {
             // top level log is very clean. This is the supervisor log but it provides the name of the specific file for more debugging
