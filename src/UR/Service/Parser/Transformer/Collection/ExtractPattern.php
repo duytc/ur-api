@@ -2,7 +2,9 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Config\Definition\Exception\Exception;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
 class ExtractPattern implements CollectionTransformerInterface
@@ -73,10 +75,17 @@ class ExtractPattern implements CollectionTransformerInterface
         $this->replacementValue = $replacementValue;
     }
 
-    public function transform(Collection $collection)
+    /**
+     * @param Collection $collection
+     * @param EntityManagerInterface|null $em
+     * @param ConnectedDataSourceInterface|null $connectedDataSource
+     * @return Collection
+     */
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
     {
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
+        $types = $collection->getTypes();
 
         if (!$this->isOverride) {
             $columns[] = $this->targetField;
@@ -98,7 +107,7 @@ class ExtractPattern implements CollectionTransformerInterface
             }
         }
 
-        return new Collection($columns, $rows);
+        return new Collection($columns, $rows, $types);
     }
 
     private function getRegexValue($str)

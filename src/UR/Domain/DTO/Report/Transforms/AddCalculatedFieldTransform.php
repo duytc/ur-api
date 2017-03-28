@@ -35,6 +35,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
 		$this->fieldName = $addCalculatedField[self::FIELD_NAME_KEY];
 		$this->expression = $addCalculatedField[self::EXPRESSION_CALCULATED_FIELD];
 		$this->type = $addCalculatedField[self::TYPE_KEY];
+		$this->defaultValue = $addCalculatedField[self::DEFAULT_VALUE_CALCULATED_FIELD];
 	}
 
 	/**
@@ -54,7 +55,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
 			try {
 				$calculatedValue = $this->language->evaluate($expressionForm, ['row' => $row]);
 			} catch (\Exception $ex) {
-				$calculatedValue = null;
+				$calculatedValue = $this->defaultValue;
 			}
 
 			$row[$this->fieldName] = $calculatedValue;

@@ -1,0 +1,23 @@
+UR\Entity\Core\LinkedMapDataSet:
+    type: entity
+    table: core_linked_map_data_set
+    repositoryClass: UR\Repository\Core\LinkedMapDataSetRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    uniqueConstraints:
+        compound_primary_key:
+            columns:
+                - connected_data_source_id
+                - map_data_set_id
+    fields:
+        mappedFields:
+            type: json_array
+            nullable: false
+    manyToOne:
+        connectedDataSource:
+            targetEntity: UR\Entity\Core\ConnectedDataSource
+        mapDataSet:
+            targetEntity: UR\Entity\Core\DataSet

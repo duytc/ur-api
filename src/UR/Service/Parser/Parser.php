@@ -2,6 +2,7 @@
 
 namespace UR\Service\Parser;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PostLoadDataEvent;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformCollectionDataEvent;
@@ -15,6 +16,7 @@ use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
+use UR\Service\Parser\Transformer\Augmentation;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
@@ -25,13 +27,18 @@ class Parser implements ParserInterface
      */
     protected $eventDispatcher;
 
+    /** @var EntityManagerInterface */
+    protected $em;
+
     /**
      * Parser constructor.
      * @param EventDispatcherInterface $eventDispatcher
+     * @param EntityManagerInterface $em
      */
-    public function __construct(EventDispatcherInterface $eventDispatcher)
+    public function __construct(EventDispatcherInterface $eventDispatcher, EntityManagerInterface $em)
     {
         $this->eventDispatcher = $eventDispatcher;
+        $this->em = $em;
     }
 
     /**
@@ -90,6 +97,15 @@ class Parser implements ParserInterface
         }
 
         $dataSetColumns = array_merge($connectedDataSource->getDataSet()->getDimensions(), $connectedDataSource->getDataSet()->getMetrics());
+        $types = [];
+        foreach ($dataSetColumns as $dsColumn => $type) {
+            if (!array_key_exists($dsColumn, $columnsMapping)) {
+                $types[$dsColumn] = $type;
+                continue;
+            }
+
+            $types[$columnsMapping[$dsColumn]] = $type;
+        }
 
         /* 2. do filtering data */
         // dispatch event pre filtering data
@@ -153,7 +169,7 @@ class Parser implements ParserInterface
 
         // TODO: may dispatch event after filtering data
 
-        $collection = new Collection($columns, $rows);
+        $collection = new Collection($columns, $rows, $types);
 
         if (count($rows) < 1) {
             return $collection;
@@ -199,7 +215,11 @@ class Parser implements ParserInterface
         foreach ($allFieldsTransforms as $transform) {
             /** @var CollectionTransformerInterface $transform */
             try {
-                $collection = $transform->transform($collection);
+                if ($transform instanceof Augmentation) {
+                    $collection = $transform->transform($collection, $this->em, $connectedDataSource);
+                } else {
+                    $collection = $transform->transform($collection);
+                }
             } catch (\Exception $e) {
                 return $collection;
             }

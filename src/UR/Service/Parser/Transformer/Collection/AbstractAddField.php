@@ -2,6 +2,8 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
+use Doctrine\ORM\EntityManagerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
 abstract class AbstractAddField implements CollectionTransformerInterface
@@ -20,17 +22,14 @@ abstract class AbstractAddField implements CollectionTransformerInterface
         $this->column = $column;
     }
 
-    /**
-     * @param Collection $collection
-     * @return Collection
-     */
-    public function transform(Collection $collection)
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
     {
         $rows = $collection->getRows();
         if (count($rows) < 1) {
             return $collection;
         }
         $columns = $collection->getColumns();
+        $types = $collection->getTypes();
 
         if (in_array($this->column, $columns, true)) {
             return $collection;
@@ -46,7 +45,7 @@ abstract class AbstractAddField implements CollectionTransformerInterface
             $row[$this->column] = $value;
         }
 
-        return new Collection($columns, $rows);
+        return new Collection($columns, $rows, $types);
     }
 
     /**

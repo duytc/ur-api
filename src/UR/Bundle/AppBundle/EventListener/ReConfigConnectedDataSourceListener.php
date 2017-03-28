@@ -7,8 +7,11 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Symfony\Component\Config\Definition\Exception\Exception;
+use UR\Entity\Core\LinkedMapDataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\LinkedMapDataSetInterface;
+use UR\Service\Parser\Transformer\Augmentation;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\ExtractPattern;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
@@ -117,17 +120,28 @@ class ReConfigConnectedDataSourceListener
         }
 
         $em = $args->getEntityManager();
+        $linkedMapDataSetRepository = $em->getRepository(LinkedMapDataSet::class);
         // detect all changed fields
         foreach ($this->changedEntities as $entity) {
+            if (!$entity instanceof DataSetInterface) {
+                continue;
+            }
             // delete all configs of connected dataSources related to deletedFields
             $connectedDataSources = $entity->getConnectedDataSources();
 
             foreach ($connectedDataSources as &$connectedDataSource) {
-                $this->deleteConfigForConnectedDataSource($connectedDataSource, $this->updateFields, $this->deletedFields);
+                $this->updateConfigForConnectedDataSource($connectedDataSource, $this->updateFields, $this->deletedFields);
             }
 
             $entity->setConnectedDataSources($connectedDataSources);
             $em->merge($entity);
+
+            $linkedConnectedDataSources = $linkedMapDataSetRepository->getByMapDataSet($entity);
+
+            /** @var LinkedMapDataSetInterface $linkedConnectedDataSource */
+            foreach($linkedConnectedDataSources as $linkedConnectedDataSource) {
+                $this->updateConfigForConnectedDataSource($linkedConnectedDataSource->getConnectedDataSource(), $this->updateFields, $this->deletedFields);
+            }
         }
 
         // reset for new onFlush event
@@ -142,7 +156,7 @@ class ReConfigConnectedDataSourceListener
      * @param array $updatedFields
      * @param array $deletedFields
      */
-    private function deleteConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, array $updatedFields, array $deletedFields)
+    private function updateConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, array $updatedFields, array $deletedFields)
     {
         $mapFields = $connectedDataSource->getMapFields();
         $requires = $connectedDataSource->getRequires();
@@ -183,10 +197,8 @@ class ReConfigConnectedDataSourceListener
                     continue;
                 }
 
-                $this->updateAddTypeTransform($transform, $delFields, $updatedFields, $transforms, $key);
-
-                if (count($transforms[$key][CollectionTransformerInterface::FIELDS_KEY]) === 0) {
-                    unset($transforms[$key]);
+                foreach ($transformObjects as $transformObject) {
+                    $this->updateConnectedCollectionTransform($transform, $delFields, $updatedFields, $transforms, $key, $transformObject);
                 }
             }
         }
@@ -221,25 +233,63 @@ class ReConfigConnectedDataSourceListener
         }
     }
 
-    public function updateAddTypeTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key)
+    public function updateConnectedCollectionTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key, CollectionTransformerInterface $transformObject)
     {
-        $keyToCompare = CollectionTransformerInterface::FIELD_KEY;
+        if ($transformObject instanceof Augmentation) {
+            if (in_array($transformObject->getSourceField(), $delFields)) {
+                unset($transforms[$key]);
+            } else {
+                $mapFields = $transformObject->getMapFields();
+                foreach ($mapFields as $index => $values) {
+                    if (in_array($values[Augmentation::DATA_SOURCE_SIDE], $delFields)) {
+                        unset($mapFields[$index]);
+                    } else if (array_key_exists($values[Augmentation::DATA_SOURCE_SIDE], $updatedFields)) {
+                        $values[Augmentation::DATA_SOURCE_SIDE] = $updatedFields[$values[Augmentation::DATA_SOURCE_SIDE]];
+                        $mapFields[$index] = $values;
+                    }
+                }
 
-        if (in_array($transform[CollectionTransformerInterface::TYPE_KEY], [CollectionTransformerInterface::EXTRACT_PATTERN, CollectionTransformerInterface::REPLACE_TEXT])) {
-            $keyToCompare = ExtractPattern::TARGET_FIELD_KEY;
-        }
+                $transform[Augmentation::MAP_FIELDS_KEY] = $mapFields;
+            }
+            $customConditions = $transformObject->getCustomCondition();
+            foreach($customConditions as $i=>&$customCondition) {
+                $field = $customCondition[Augmentation::CUSTOM_FIELD_KEY];
+                if (in_array($field, $delFields)) {
+                    unset($customConditions[$i]);
+                }
 
-        foreach ($transform[CollectionTransformerInterface::FIELDS_KEY] as $k => &$field) {
-
-            if (in_array($field[$keyToCompare], $delFields)) {
-                unset($transforms[$key][CollectionTransformerInterface::FIELDS_KEY][$k]);
+                foreach($updatedFields as $k=>$v) {
+                    if ($field == $k) {
+                        $customCondition[Augmentation::CUSTOM_FIELD_KEY] = $v;
+                    }
+                }
             }
 
-            if (array_key_exists($field[$keyToCompare], $updatedFields)) {
-                $field[$keyToCompare] = $updatedFields[$field[$keyToCompare]];
+            $transform[Augmentation::CUSTOM_CONDITION] = $customConditions;
+        } else {
+
+            $keyToCompare = CollectionTransformerInterface::FIELD_KEY;
+
+            if (in_array($transform[CollectionTransformerInterface::TYPE_KEY], [CollectionTransformerInterface::EXTRACT_PATTERN, CollectionTransformerInterface::REPLACE_TEXT])) {
+                $keyToCompare = ExtractPattern::TARGET_FIELD_KEY;
+            }
+
+            foreach ($transform[CollectionTransformerInterface::FIELDS_KEY] as $k => &$field) {
+
+                if (in_array($field[$keyToCompare], $delFields)) {
+                    unset($transforms[$key][CollectionTransformerInterface::FIELDS_KEY][$k]);
+                }
+
+                if (array_key_exists($field[$keyToCompare], $updatedFields)) {
+                    $field[$keyToCompare] = $updatedFields[$field[$keyToCompare]];
+                }
+            }
+
+            $transforms[$key][CollectionTransformerInterface::FIELDS_KEY] = array_values($transforms[$key][CollectionTransformerInterface::FIELDS_KEY]);
+
+            if (count($transforms[$key][CollectionTransformerInterface::FIELDS_KEY]) === 0) {
+                unset($transforms[$key]);
             }
         }
-
-        $transforms[$key][CollectionTransformerInterface::FIELDS_KEY] = array_values($transforms[$key][CollectionTransformerInterface::FIELDS_KEY]);
     }
 }

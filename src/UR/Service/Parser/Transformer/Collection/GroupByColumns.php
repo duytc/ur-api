@@ -2,6 +2,8 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
+use Doctrine\ORM\EntityManagerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
 class GroupByColumns implements CollectionTransformerInterface
@@ -13,9 +15,10 @@ class GroupByColumns implements CollectionTransformerInterface
         $this->groupByColumns = $groupByColumns;
     }
 
-    public function transform(Collection $collection)
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
     {
         $rows = array_values($collection->getRows());
+        $types = $collection->getTypes();
 
         if (count($rows) < 1) {
             return $collection;
@@ -32,7 +35,7 @@ class GroupByColumns implements CollectionTransformerInterface
         $sumFieldKeys = array_diff($columns, $groupColumnKeys);
 
         if (!empty($groupColumnKeys)) {
-            $rows = self::group($rows, $groupColumnKeys, $sumFieldKeys);
+            $rows = self::group($rows, $types, $groupColumnKeys, $sumFieldKeys);
         }
 
         return new Collection($collection->getColumns(), $rows);
@@ -42,13 +45,14 @@ class GroupByColumns implements CollectionTransformerInterface
      * Array grouping
      *
      * @param array $array
+     * @param array $types
      * @param array $groupFields array of grouping fields
      * @param array $sumFields array of summing fields
      * @param string $separator
      *
      * @return array
      */
-    public static function group(array $array, array $groupFields, array $sumFields = array(), $separator = ',')
+    public static function group(array $array, array $types, array $groupFields, array $sumFields = array(), $separator = ',')
     {
         $result = [];
 
@@ -86,7 +90,8 @@ class GroupByColumns implements CollectionTransformerInterface
                     }
 
                     if (!$isFirst) {
-                        if (is_numeric($element[$sumField]) && false === strpos($sumFieldKey, 'as_string')) {
+                        if (array_key_exists($sumField, $types) && $types[$sumField] == 'number' && false === strpos($sumFieldKey, 'as_string')) {
+//                        if (is_numeric($element[$sumField]) && false === strpos($sumFieldKey, 'as_string')) {
                             $result[$key][$sumField] += $element[$sumField];
                         } else {
                             $arr[$key][$sumField][] = $element[$sumField];

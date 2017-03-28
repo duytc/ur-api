@@ -2,6 +2,8 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
+use Doctrine\ORM\EntityManagerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
 class SortByColumns implements CollectionTransformerInterface
@@ -15,7 +17,7 @@ class SortByColumns implements CollectionTransformerInterface
         $this->sortByColumns = $sortByColumns;
     }
 
-    public function transform(Collection $collection)
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
     {
         $rows = $collection->getRows();
         if (count($rows) < 1) {
@@ -38,7 +40,7 @@ class SortByColumns implements CollectionTransformerInterface
 
         $rows = $this->array_sort_by_column($rows, $this->sortByColumns);
 
-        return new Collection($collection->getColumns(), $rows);
+        return new Collection($collection->getColumns(), $rows, $collection->getTypes());
     }
 
     /**

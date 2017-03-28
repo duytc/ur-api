@@ -2,6 +2,8 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
+use Doctrine\ORM\EntityManagerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
 class ComparisonPercent implements CollectionTransformerInterface
@@ -20,9 +22,10 @@ class ComparisonPercent implements CollectionTransformerInterface
         $this->columnB = $columnB;
     }
 
-    public function transform(Collection $collection)
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
     {
         $rows = $collection->getRows();
+        $types = $collection->getTypes();
 
         if (count($rows) < 1) {
             return $collection;
@@ -42,7 +45,7 @@ class ComparisonPercent implements CollectionTransformerInterface
                 $row[$this->newColumn] = $value;
             }
 
-            return new Collection($columns, $rows);
+            return new Collection($columns, $rows, $types);
         }
 
         if (in_array($this->newColumn, $collection->getColumns(), true)) {
@@ -65,7 +68,7 @@ class ComparisonPercent implements CollectionTransformerInterface
             $row[$this->newColumn] = $value;
         }
 
-        return new Collection($columns, $rows);
+        return new Collection($columns, $rows, $types);
     }
 
     /**

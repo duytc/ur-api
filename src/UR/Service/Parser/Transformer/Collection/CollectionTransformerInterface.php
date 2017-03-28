@@ -2,6 +2,8 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
+use Doctrine\ORM\EntityManagerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
 interface CollectionTransformerInterface
@@ -18,8 +20,10 @@ interface CollectionTransformerInterface
     const COMPARISON_PERCENT = 'comparisonPercent';
     const REPLACE_TEXT = 'replaceText';
     const EXTRACT_PATTERN = 'extractPattern';
+    const AUGMENTATION = 'augmentation';
 
     /* priority for formats, the smaller will be execute first */
+    const TRANSFORM_PRIORITY_AUGMENTATION = 1;
     const TRANSFORM_PRIORITY_ADD_CONCATENATION_FIELD = 10;
     const TRANSFORM_PRIORITY_GROUP = 20;
     const TRANSFORM_PRIORITY_ADD_FIELD = 30;
@@ -29,11 +33,7 @@ interface CollectionTransformerInterface
     const TRANSFORM_PRIORITY_REPLACE_TEXT = 50;
     const TRANSFORM_PRIORITY_EXTRACT_PATTERN = 60;
 
-    /**
-     * @param Collection $collection
-     * @return Collection
-     */
-    public function transform(Collection $collection);
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null);
 
     /**
      * The idea is that some column transformers should run before others to avoid conflicts

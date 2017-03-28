@@ -27,7 +27,8 @@ class TransformerFactory
         CollectionTransformerInterface::COMPARISON_PERCENT,
         CollectionTransformerInterface::ADD_CONCATENATED_FIELD,
         CollectionTransformerInterface::REPLACE_TEXT,
-        CollectionTransformerInterface::EXTRACT_PATTERN
+        CollectionTransformerInterface::EXTRACT_PATTERN,
+        CollectionTransformerInterface::AUGMENTATION
     ];
 
     /**
@@ -57,6 +58,9 @@ class TransformerFactory
                 break;
             case ColumnTransformerInterface::DATE_FORMAT:
                 $transformObject = $this->getDateFormatTransform($jsonTransform);
+                break;
+            case CollectionTransformerInterface::AUGMENTATION:
+                $transformObject = $this->getAugmentationTransforms($jsonTransform);
                 break;
             default:
                 $transformObject = $this->getCollectionTransforms($jsonTransform);
@@ -338,5 +342,55 @@ class TransformerFactory
         }
 
         return $extractPatternTransforms;
+    }
+
+    /**
+     * @param $augmentationConfig
+     * @return array
+     */
+    private function getAugmentationTransforms(array $augmentationConfig)
+    {
+        $augmentationTransforms = [];
+        if (!is_array($augmentationConfig)
+            || !array_key_exists(Augmentation::MAP_DATA_SET, $augmentationConfig)
+            || !array_key_exists(Augmentation::MAP_CONDITION_KEY, $augmentationConfig)
+            || !array_key_exists(Augmentation::MAP_FIELDS_KEY, $augmentationConfig)
+        ) {
+            return [];
+        }
+
+        if (!is_array($augmentationConfig[Augmentation::MAP_CONDITION_KEY])
+            || !is_array($augmentationConfig[Augmentation::MAP_FIELDS_KEY])
+        ) {
+            return [];
+        }
+
+        if (!array_key_exists(Augmentation::MAP_DATA_SET_SIDE, $augmentationConfig[Augmentation::MAP_CONDITION_KEY])
+            || !array_key_exists(Augmentation::DATA_SOURCE_SIDE, $augmentationConfig[Augmentation::MAP_CONDITION_KEY])
+        ) {
+            return [];
+        }
+
+        foreach($augmentationConfig[Augmentation::MAP_FIELDS_KEY] as $mapField) {
+            if (!is_array($mapField)) {
+                return [];
+            }
+
+            if (!array_key_exists(Augmentation::MAP_DATA_SET_SIDE, $mapField)
+                || !array_key_exists(Augmentation::DATA_SOURCE_SIDE, $mapField)
+            ) {
+                return [];
+            }
+        }
+
+        $augmentationTransforms[] = new Augmentation(
+            $augmentationConfig[Augmentation::MAP_DATA_SET],
+            $augmentationConfig[Augmentation::MAP_CONDITION_KEY],
+            $augmentationConfig[Augmentation::MAP_FIELDS_KEY],
+            array_key_exists(Augmentation::DROP_UNMATCHED, $augmentationConfig) ? $augmentationConfig[Augmentation::DROP_UNMATCHED] : false,
+            !array_key_exists(Augmentation::CUSTOM_CONDITION, $augmentationConfig) ? null : $augmentationConfig[Augmentation::CUSTOM_CONDITION]
+        );
+
+        return $augmentationTransforms;
     }
 }

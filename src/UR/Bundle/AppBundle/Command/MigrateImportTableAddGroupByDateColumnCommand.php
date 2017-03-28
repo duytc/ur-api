@@ -65,6 +65,7 @@ class MigrateImportTableAddGroupByDateColumnCommand extends ContainerAwareComman
                 }
             }
         } else {
+
             /**@var DataSetInterface $dataSet */
             $dataSet = $dataSetManager->find($dataSetId);
             $success = $service->updateDataSet($dataSet);

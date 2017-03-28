@@ -160,6 +160,7 @@ class ParsedDataImporter
                 $day = null;
                 $month = null;
                 $year = null;
+                $day = null;
             }
             $row[sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $index)] = $day;
             $row[sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $index)] = $month;

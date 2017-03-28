@@ -2,6 +2,8 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
+use Doctrine\ORM\EntityManagerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
 class ReplaceText implements CollectionTransformerInterface
@@ -55,10 +57,11 @@ class ReplaceText implements CollectionTransformerInterface
         $this->isOverride = $isOverride;
     }
 
-    public function transform(Collection $collection)
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
     {
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
+        $types = $collection->getTypes();
 
         $isMultiTrans = false;
         if (!$this->isOverride) {
@@ -89,7 +92,7 @@ class ReplaceText implements CollectionTransformerInterface
             }
         }
 
-        return new Collection($columns, $rows);
+        return new Collection($columns, $rows, $types);
     }
 
     public function replaceText(array &$row, $field)
