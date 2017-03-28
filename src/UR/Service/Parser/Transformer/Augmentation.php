@@ -124,14 +124,14 @@ class Augmentation implements CollectionTransformerInterface
                     $field = $condition[self::CUSTOM_FIELD_KEY];
                     switch($condition[self::CUSTOM_OPERATOR_KEY]) {
                         case self::CUSTOM_OPERATOR_EQUAL:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text'])) {
+                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
                                 $qb->andWhere(sprintf('%s = "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
                             } else {
                                 $qb->andWhere(sprintf('%s = %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
                             }
                             break;
                         case self::CUSTOM_OPERATOR_NOT_EQUAL:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text'])) {
+                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
                                 $qb->andWhere(sprintf('%s <> "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
                             } else {
                                 $qb->andWhere(sprintf('%s <> %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
@@ -144,28 +144,28 @@ class Augmentation implements CollectionTransformerInterface
                             $qb->andWhere(sprintf('%s NOT LIKE "%%%s%%"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
                             break;
                         case self::CUSTOM_OPERATOR_LESS_THAN:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text'])) {
+                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
                                 $qb->andWhere(sprintf('%s < "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
                             } else {
                                 $qb->andWhere(sprintf('%s < %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
                             }
                             break;
                         case self::CUSTOM_OPERATOR_LESS_THAN_OR_EQUAL:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text'])) {
+                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
                                 $qb->andWhere(sprintf('%s <= "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
                             } else {
                                 $qb->andWhere(sprintf('%s <= %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
                             }
                             break;
                         case self::CUSTOM_OPERATOR_GREATER_THAN:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text'])) {
+                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
                                 $qb->andWhere(sprintf('%s > "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
                             } else {
                                 $qb->andWhere(sprintf('%s > %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
                             }
                             break;
                         case self::CUSTOM_OPERATOR_GREATER_THAN_OR_EQUAL:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text'])) {
+                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
                                 $qb->andWhere(sprintf('%s >= "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
                             } else {
                                 $qb->andWhere(sprintf('%s >= %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
@@ -174,7 +174,7 @@ class Augmentation implements CollectionTransformerInterface
                         case self::CUSTOM_OPERATOR_IN:
                             $values = explode(',', $condition[self::CUSTOM_VALUE_KEY]);
                             foreach($values as &$value) {
-                                if (in_array($mapDataSetTypes[$field], ['datetime', 'text'])) {
+                                if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
                                     $value = sprintf('"%s"', $value);
                                 }
                             }
@@ -184,7 +184,7 @@ class Augmentation implements CollectionTransformerInterface
                         case self::CUSTOM_OPERATOR_NOT_IN:
                             $values = explode(',', $condition[self::CUSTOM_VALUE_KEY]);
                             foreach($values as &$value) {
-                                if (in_array($mapDataSetTypes[$field], ['datetime', 'text'])) {
+                                if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
                                     $value = sprintf('"%s"', $value);
                                 }
                             }
