@@ -90,8 +90,9 @@ class GroupByColumns implements CollectionTransformerInterface
                     }
 
                     if (!$isFirst) {
-                        if (array_key_exists($sumField, $types) && $types[$sumField] == 'number' && false === strpos($sumFieldKey, 'as_string')) {
-//                        if (is_numeric($element[$sumField]) && false === strpos($sumFieldKey, 'as_string')) {
+                        $isSumField = array_key_exists($sumField, $types) && ($types[$sumField] == 'number' || $types[$sumField] == 'decimal');
+
+                        if ($isSumField && false === strpos($sumFieldKey, 'as_string')) {
                             $result[$key][$sumField] += $element[$sumField];
                         } else {
                             $arr[$key][$sumField][] = $element[$sumField];
