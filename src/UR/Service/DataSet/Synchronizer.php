@@ -77,7 +77,7 @@ class Synchronizer
         // add dimensions
         foreach ($dataSet->getDimensions() as $key => $value) {
             $dataSetTable->addColumn($key, $value, ["notnull" => false, "default" => null]);
-            if (strcmp($value, FieldType::DATE) === 0) {
+            if (strcmp($value, FieldType::DATE) === 0 OR strcmp($value, FieldType::DATETIME) === 0) {
                 // add month and year also
                 $dataSetTable->addColumn(sprintf(self::DAY_FIELD_TEMPLATE, $key), Type::INTEGER, ["notnull" => false, "default" => null]);
                 $dataSetTable->addColumn(sprintf(self::MONTH_FIELD_TEMPLATE, $key), Type::INTEGER, ["notnull" => false, "default" => null]);
@@ -93,7 +93,7 @@ class Synchronizer
                 $dataSetTable->addColumn($key, $value, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
             } else if (strcmp($value, FieldType::MULTI_LINE_TEXT) === 0) {
                 $dataSetTable->addColumn($key, FieldType::TEXT, ["notnull" => false, "default" => null]);
-            } else if (strcmp($value, FieldType::DATE) === 0) {
+            } else if (strcmp($value, FieldType::DATE) === 0 OR strcmp($value, FieldType::DATETIME) === 0) {
                 $dataSetTable->addColumn($key, FieldType::DATE, ["notnull" => false, "default" => null]);
                 // add month and year also
                 $dataSetTable->addColumn(sprintf(self::DAY_FIELD_TEMPLATE, $key), Type::INTEGER, ["notnull" => false, "default" => null]);

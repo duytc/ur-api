@@ -88,7 +88,7 @@ class AlterImportDataTable
                 $delCol = $dataTable->getColumn($deletedColumn);
                 $delCols[] = $delCol;
                 $dataTable->dropColumn($deletedColumn);
-                if ($type == FieldType::DATE) {
+                if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
                     $dataTable->dropColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $deletedColumn));
                     $dataTable->dropColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $deletedColumn));
                     $dataTable->dropColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $deletedColumn));
@@ -105,7 +105,7 @@ class AlterImportDataTable
                 $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
             } else if (strcmp($type, FieldType::MULTI_LINE_TEXT) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, FieldType::TEXT, ["notnull" => false, "default" => null]);
-            } else if (strcmp($type, FieldType::DATE) === 0) {
+            } else if (strcmp($type, FieldType::DATE) === 0 OR strcmp($type, FieldType::DATETIME) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, FieldType::DATE, ["notnull" => false, "default" => null]);
                 $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
                 $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);

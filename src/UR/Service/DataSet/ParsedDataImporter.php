@@ -61,8 +61,9 @@ class ParsedDataImporter
                 throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
             }
 
-            if ((array_key_exists($column, $dimensions) &&  $dimensions[$column] === FieldType::DATE) ||
-                (array_key_exists($column, $metrics) &&  $metrics[$column] === FieldType::DATE)) {
+            if ((array_key_exists($column, $dimensions) && ($dimensions[$column] === FieldType::DATE || $dimensions[$column] === FieldType::DATETIME)) ||
+                (array_key_exists($column, $metrics) && ($metrics[$column] === FieldType::DATE || $metrics[$column] === FieldType::DATETIME))
+            ) {
                 $dateColumns[] = $column;
                 $columns[] = sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $column);
                 $columns[] = sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $column);
@@ -130,13 +131,17 @@ class ParsedDataImporter
 
     private function insertMonthYearAt(array $indexes, &$row)
     {
-        foreach($indexes as $index) {
+        foreach ($indexes as $index) {
             $date = DateTime::createFromFormat('Y-m-d', $row[$index]);
+            $dateTime = DateTime::createFromFormat('Y-m-d H:i:s', $row[$index]);
+            $date = $date ? $date : $dateTime;
+
             if ($date instanceof DateTime) {
                 $month = $date->format('n');
                 $year = $date->format('Y');
                 $day = $date->format('j');
             } else {
+                $day = null;
                 $month = null;
                 $year = null;
             }
