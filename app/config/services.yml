@@ -122,19 +122,18 @@ services:
     ur.worker.workers.auto_import_data:
         class: UR\Service\Import\AutoImportData
         arguments:
-            - @ur.worker.manager
-            - @ur.domain_manager.import_history
-            - @ur.service.import.do_log
             - @ur.service.parsing_file_service
             - @ur.service.data_set.importer
 
     ur.worker.workers.re_import_new_entry_received:
         class: UR\Worker\Workers\LoadingDataFromFileToDataImportTable
         arguments:
-            - @ur.worker.workers.auto_import_data
+            - @logger
             - @ur.domain_manager.data_source_entry
             - @ur.domain_manager.connected_data_source
             - @leezy.pheanstalk
+            - %log_file_dir%
+            - @ur.domain_manager.import_history
 
     ur.worker.workers.alter_import_data_table:
         class: UR\Worker\Workers\AlterImportDataTable
@@ -142,6 +141,7 @@ services:
             - @ur.domain_manager.data_set
             - @doctrine.orm.entity_manager
             - @leezy.pheanstalk
+            - @logger
 
     ur.service.alert.process_alert:
         class: UR\Service\Alert\ProcessAlert

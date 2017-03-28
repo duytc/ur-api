@@ -21,8 +21,6 @@ use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class Parser implements ParserInterface
 {
-    private $numberSpecialCharacters = ['n/a', '-', 'na', 'novalue', 'no value', 'null', 'multi'];
-
     /**@var EventDispatcherInterface $eventDispatcher
      */
     protected $eventDispatcher;
@@ -36,6 +34,12 @@ class Parser implements ParserInterface
         $this->eventDispatcher = $eventDispatcher;
     }
 
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param ParserConfig $parserConfig
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return Collection
+     */
     public function parse(DataSourceInterface $dataSource, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource)
     {
         $columnsMapping = $parserConfig->getAllColumnMappings();
@@ -115,6 +119,11 @@ class Parser implements ParserInterface
         $cur_row = -1;
         foreach ($rows as &$row) {
             $cur_row++;
+            if (!is_array($row)) {
+                unset($rows[$cur_row]);
+                continue;
+            }
+
             $isMapped = count(array_diff_key(array_flip($fileCols), $row));
             if ($isMapped > 0) {
                 $row = array_combine($fileCols, $row);
@@ -214,6 +223,7 @@ class Parser implements ParserInterface
             self::EVENT_NAME_PRE_TRANSFORM_COLUMN_DATA,
             $preTransformColumnEvent
         );
+
         $preTransformColumnEvent = $preFilterEvent->getArguments();
         if (is_array($preTransformColumnEvent) && array_key_exists('collection', $preTransformColumnEvent)) {
             $collection = $preTransformColumnEvent['collection'];
@@ -231,37 +241,43 @@ class Parser implements ParserInterface
         return $this->getFinalParserCollection($rows, $columns, $parserConfig);
     }
 
-    private function reformatFileData($row, $fileColumn, $type, $cur_row)
+    /**
+     * @param array $row
+     * @param $fileColumn
+     * @param string $type
+     * @param int $cur_row
+     * @return mixed|null
+     * @throws ImportDataException
+     */
+    private function reformatFileData(array $row, $fileColumn, $type, $cur_row)
     {
         $cellValue = $row[$fileColumn];
         if (strcmp($cellValue, "") === 0) {
-            $cellValue = null;
+            return null;
         }
 
-        if ($cellValue !== null) {
-            if (strcmp($type, FieldType::NUMBER) === 0 || strcmp($type, FieldType::DECIMAL) === 0) {
-                $cellValue = str_replace("$", "", $cellValue);
-                $cellValue = str_replace("%", "", $cellValue);
-                $cellValue = str_replace(",", "", $cellValue);
-                $cellValue = str_replace("#", "", $cellValue);
-                if (strcmp($type, FieldType::DECIMAL) === 0) {
-                    $cellValue = str_replace(" ", "", $cellValue);
-                }
+        if (strcmp($type, FieldType::DECIMAL) === 0 || strcmp($type, FieldType::NUMBER) === 0) {
+            preg_replace('/^[.-0-9]+/', $cellValue, '');
 
-                if (in_array(strtolower(trim($cellValue)), $this->numberSpecialCharacters)) {
-                    return null;
-                }
-
-                if (!is_numeric($cellValue) && $cellValue !== null) {
-                    throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_WRONG_TYPE_MAPPING, $cur_row + 2, $fileColumn, $cellValue, null);
-                }
+            if ($cellValue === null) {
+                return null;
+            } else if (!is_numeric($cellValue)) {
+                throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_WRONG_TYPE_MAPPING, $cur_row + 2, $fileColumn, $cellValue);
             }
         }
 
         return $cellValue;
     }
 
-    private function doFilter(ParserConfig $parserConfig, $fileCols, $row, $cur_row)
+    /**
+     * @param ParserConfig $parserConfig
+     * @param array $fileCols
+     * @param array $row
+     * @param int $cur_row
+     * @return int
+     * @throws ImportDataException
+     */
+    private function doFilter(ParserConfig $parserConfig, array $fileCols, array $row, $cur_row)
     {
         $isValidFilter = 1;
         foreach ($parserConfig->getColumnFilters() as $column => $filters) {
@@ -272,18 +288,20 @@ class Parser implements ParserInterface
 
             foreach ($filters as $filter) {
                 $filterResult = $filter->filter($row[$column]);
-                if ($filterResult > 1) {
-                    throw new ImportDataException($filterResult, $cur_row + 2, $column, $row[$column], null);
-                } else {
-                    $isValidFilter = $isValidFilter & $filterResult;
-                }
+                $isValidFilter = $isValidFilter & $filterResult;
             }
         }
 
         return $isValidFilter;
     }
 
-    private function getColumnsAfterDoCollectionTransforms($row, $columnFromMap, $extraColumns)
+    /**
+     * @param array $row
+     * @param array $columnFromMap
+     * @param array $extraColumns
+     * @return array
+     */
+    private function getColumnsAfterDoCollectionTransforms(array $row, array $columnFromMap, array $extraColumns)
     {
         $columns = [];
         foreach ($row as $field => $value) {
@@ -299,11 +317,21 @@ class Parser implements ParserInterface
         return $columns;
     }
 
-    private function getFinalParserCollection($rows, $columns, ParserConfig $parserConfig)
+    /**
+     * @param array $rows
+     * @param array $columns
+     * @param ParserConfig $parserConfig
+     * @return Collection
+     * @throws ImportDataException
+     */
+    private function getFinalParserCollection(array $rows, array $columns, ParserConfig $parserConfig)
     {
-        $cur_row = -1;
-        foreach ($rows as &$row) {
-            $cur_row++;
+        foreach ($rows as $cur_row => &$row) {
+            if (!is_array($row)) {
+                unset($rows[$cur_row]);
+                continue;
+            }
+
             $row = array_intersect_key($row, $columns);
 
             $keys = array_map(function ($key) use ($columns) {
@@ -321,7 +349,7 @@ class Parser implements ParserInterface
                 foreach ($transforms as $transform) {
                     $row[$column] = $transform->transform($row[$column]);
                     if ($row[$column] === 2) {
-                        throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, $cur_row + 2, $column, null, null);
+                        throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, $cur_row + 2, $column);
                     }
                 }
             }

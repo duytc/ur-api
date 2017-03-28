@@ -9,6 +9,7 @@ use Doctrine\DBAL\Schema\SchemaException;
 use Doctrine\DBAL\Schema\TableDiff;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
+use Monolog\Logger;
 use stdClass;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\Exception\SqlLockTableException;
@@ -35,19 +36,22 @@ class AlterImportDataTable
 
     private $queue;
 
+    private $logger;
+
     /**
      * AlterImportDataTable constructor.
      * @param DataSetManagerInterface $dataSetManager
      * @param EntityManagerInterface $entityManager
      * @param $queue
      */
-    public function __construct(DataSetManagerInterface $dataSetManager, EntityManagerInterface $entityManager, $queue)
+    public function __construct(DataSetManagerInterface $dataSetManager, EntityManagerInterface $entityManager, $queue, Logger $logger)
     {
         $this->dataSetManager = $dataSetManager;
         $this->entityManager = $entityManager;
         $this->conn = $entityManager->getConnection();
         $this->lockingDatabaseTable = new LockingDatabaseTable($this->conn);
         $this->queue = $queue;
+        $this->logger = $logger;
     }
 
     public function alterDataSetTable(StdClass $params, $job, $tube)
@@ -94,7 +98,7 @@ class AlterImportDataTable
                     $dataTable->dropColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $deletedColumn));
                 }
             } catch (SchemaException $exception) {
-                stdOut($exception->getMessage());
+                $this->logger->warning($exception->getMessage());
             }
         }
 
@@ -134,6 +138,7 @@ class AlterImportDataTable
 
         } catch (\Exception $e) {
             $this->lockingDatabaseTable->unLockTable();
+            $this->logger->error($e->getMessage());
             throw new \mysqli_sql_exception("Cannot Sync Schema " . $schema->getName());
         }
 

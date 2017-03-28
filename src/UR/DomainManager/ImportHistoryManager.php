@@ -5,7 +5,9 @@ namespace UR\DomainManager;
 use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\DBAL\Query\QueryBuilder;
 use ReflectionClass;
+use UR\Entity\Core\ImportHistory;
 use UR\Exception\InvalidArgumentException;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
@@ -112,9 +114,9 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     /**
      * @inheritdoc
      */
-    public function getImportHistoryByDataSourceEntry(DataSourceEntryInterface $dataSourceEntry, DataSetInterface $dataSet)
+    public function getImportHistoryByDataSourceEntry(DataSourceEntryInterface $dataSourceEntry, DataSetInterface $dataSet, ImportHistoryInterface $importHistory)
     {
-        return $this->repository->getImportHistoryByDataSourceEntry($dataSourceEntry, $dataSet);
+        return $this->repository->getImportHistoryByDataSourceEntry($dataSourceEntry, $dataSet, $importHistory);
     }
 
     /**
@@ -123,5 +125,17 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     public function deletePreviousImports($importHistories)
     {
         $this->repository->deleteImportedData($importHistories);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function createImportHistoryByDataSourceEntryAndConnectedDataSource(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $importHistoryEntity = new ImportHistory();
+        $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
+        $importHistoryEntity->setDataSet($connectedDataSource->getDataSet());
+        $this->save($importHistoryEntity);
+        return $importHistoryEntity;
     }
 }

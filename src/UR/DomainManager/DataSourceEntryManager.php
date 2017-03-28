@@ -121,7 +121,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             // validate file extension before processing upload
             $isExtensionSupport = $this->importService->validateExtensionSupports($file);
             if (!$isExtensionSupport) {
-                throw new ImportDataException(WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT, null, null, null, null);
+                throw new ImportDataException(WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT);
             }
 
             // automatically update data source format if has no entry before
@@ -135,7 +135,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $isValidExtension = $this->importService->validateFileUpload($file, $dataSource);
             if (!$isValidExtension) {
-                throw new ImportDataException(WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT, null, null, null, null);
+                throw new ImportDataException(WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT);
             }
 
             // save file to upload dir

@@ -3,6 +3,8 @@
 namespace UR\DomainManager;
 
 use Doctrine\DBAL\Query\QueryBuilder;
+use UR\Entity\Core\ImportHistory;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
@@ -20,9 +22,10 @@ interface ImportHistoryManagerInterface extends ManagerInterface
     /**
      * @param DataSourceEntryInterface $dataSourceEntry
      * @param DataSetInterface $dataSet
+     * @param ImportHistoryInterface $importHistory
      * @return mixed
      */
-    public function getImportHistoryByDataSourceEntry(DataSourceEntryInterface $dataSourceEntry, DataSetInterface $dataSet);
+    public function getImportHistoryByDataSourceEntry(DataSourceEntryInterface $dataSourceEntry, DataSetInterface $dataSet, ImportHistoryInterface $importHistory);
 
     /**
      * @param DataSetInterface $dataSet
@@ -43,4 +46,11 @@ interface ImportHistoryManagerInterface extends ManagerInterface
      * @return mixed
      */
     public function deletePreviousImports($importHistories);
+
+    /**
+     * @param DataSourceEntryInterface $dataSourceEntry
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return ImportHistory
+     */
+    public function createImportHistoryByDataSourceEntryAndConnectedDataSource(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource);
 }

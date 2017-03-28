@@ -3,20 +3,14 @@
 namespace UR\Service\Import;
 
 
+use UR\Model\Core\DataSetInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
-use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertFactory;
-use UR\Service\Alert\ConnectedDataSource\DataAddedAlert;
-use InvalidArgumentException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use UR\DomainManager\ImportHistoryManagerInterface;
-use UR\Entity\Core\ImportHistory;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
-use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
 use UR\Service\DataSet\ParsedDataImporter;
 use UR\Service\Parser\ParsingFileService;
-use UR\Worker\Manager;
 
 class AutoImportData implements AutoImportDataInterface
 {
@@ -25,101 +19,27 @@ class AutoImportData implements AutoImportDataInterface
      */
     private $importer;
 
-    /** @var Manager */
-    private $workerManager;
-
     /**
-     * @var ImportHistoryManagerInterface
+     * @var ParsingFileService
      */
-    private $importHistoryManager;
-
-    /**
-     * @var ImportDataLogger
-     */
-    private $logger;
-
     private $parsingFileService;
 
-    private $connectedDataSourceAlertFactory;
-
-    function __construct(Manager $workerManager, ImportHistoryManagerInterface $importHistoryManager, ImportDataLogger $logger, ParsingFileService $parsingFileService, ParsedDataImporter $importer)
+    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer)
     {
-        $this->workerManager = $workerManager;
-        $this->importHistoryManager = $importHistoryManager;
-        $this->logger = $logger;
         $this->parsingFileService = $parsingFileService;
         $this->importer = $importer;
-        $this->connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
     }
 
-    public function loadingDataFromFileToDatabase(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry)
+    /**
+     * @inheritdoc
+     */
+    public function loadingDataFromFileToDatabase(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, ImportHistoryInterface $importHistoryEntity)
     {
-        if ($connectedDataSource->getDataSet() === null) {
-            $this->logger->doExceptionLogging('not found data set with this id');
-            throw new InvalidArgumentException('not found data set with this id');
-        }
+        /* parsing data */
+        $collection = $this->parsingData($connectedDataSource, $dataSourceEntry);
 
-        $publisherId = $connectedDataSource->getDataSource()->getPublisherId();
-        $importHistories = $this->importHistoryManager->getImportHistoryByDataSourceEntry($dataSourceEntry, $connectedDataSource->getDataSet());
-        $importHistoryEntity = new ImportHistory();
-
-        try {
-            /* parsing data */
-            $collection = $this->parsingData($connectedDataSource, $dataSourceEntry);
-
-            /* creating import history */
-            $this->createImportHistory($importHistoryEntity, $dataSourceEntry, $connectedDataSource);
-
-            /* import data to database */
-            $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource);
-
-            /* alert when successful*/
-            $importSuccessAlert = $this->connectedDataSourceAlertFactory->getAlert(
-                $importHistoryEntity->getId(),
-                $connectedDataSource->getAlertSetting(),
-                DataAddedAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY,
-                $dataSourceEntry->getFileName(),
-                $connectedDataSource->getDataSource(),
-                $connectedDataSource->getDataSet(),
-                null,
-                null,
-                null
-            );
-
-            if ($importSuccessAlert !== null) {
-                $this->workerManager->processAlert($importSuccessAlert->getAlertCode(), $publisherId, $importSuccessAlert->getDetails());
-            }
-
-            $this->importHistoryManager->deletePreviousImports($importHistories);
-        } catch (ImportDataException $e) { /* exception */
-            $errorCode = $e->getAlertCode();
-            if ($errorCode === null) {
-                $errorCode = ImportFailureAlert::ALERT_CODE_UN_EXPECTED_ERROR;
-                if ($importHistoryEntity->getId() !== null) {
-                    $this->importHistoryManager->delete($importHistoryEntity);
-                }
-                $message = sprintf("data-set#%s data-source#%s data-source-entry#%s (message: %s)", $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getMessage());
-                $this->logger->doExceptionLogging($message);
-            } else {
-                $this->logger->doImportLogging($errorCode, $connectedDataSource->getDataSet()->getId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getRow(), $e->getColumn());
-            }
-
-            $failureAlert = $this->connectedDataSourceAlertFactory->getAlert(
-                null,
-                $connectedDataSource->getAlertSetting(),
-                $errorCode, $dataSourceEntry->getFileName(),
-                $connectedDataSource->getDataSource(),
-                $connectedDataSource->getDataSet(),
-                $e->getColumn(),
-                $e->getRow(),
-                $e->getContent()
-            );
-
-            /* unexpected error */
-            if ($failureAlert != null) {
-                $this->workerManager->processAlert($errorCode, $publisherId, $failureAlert->getDetails());
-            }
-        }
+        /* import data to database */
+        $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource);
     }
 
     /**
@@ -132,7 +52,7 @@ class AutoImportData implements AutoImportDataInterface
             $rows = $collection->getRows();
 
             if (count($rows) < 1) {
-                return $this->parsingFileService->getNoDataRows($this->getAllDataSetFields($connectedDataSource));
+                return $this->parsingFileService->getNoDataRows($connectedDataSource->getDataSet()->getAllDimensionMetrics());
             }
 
             $this->parsingFileService->addTransformColumnAfterParsing($connectedDataSource->getTransforms());
@@ -156,9 +76,14 @@ class AutoImportData implements AutoImportDataInterface
         }
     }
 
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param DataSourceEntryInterface $dataSourceEntry
+     * @return \UR\Service\DTO\Collection
+     */
     private function parsingData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry)
     {
-        $allFields = $this->getAllDataSetFields($connectedDataSource);
+        $allFields = $connectedDataSource->getDataSet()->getAllDimensionMetrics();
 
         /*
          * parsing data
@@ -172,19 +97,5 @@ class AutoImportData implements AutoImportDataInterface
         }
 
         return $this->parsingFileService->setDataOfColumnsNotMappedToNull($rows, $allFields);
-    }
-
-    private function createImportHistory(ImportHistoryInterface $importHistoryEntity, DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource)
-    {
-        $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
-        $importHistoryEntity->setDataSet($connectedDataSource->getDataSet());
-        $this->importHistoryManager->save($importHistoryEntity);
-    }
-
-    private function getAllDataSetFields(ConnectedDataSourceInterface $connectedDataSource)
-    {
-        $dimensions = $connectedDataSource->getDataSet()->getDimensions();
-        $metrics = $connectedDataSource->getDataSet()->getMetrics();
-        return array_merge($dimensions, $metrics);
     }
 }

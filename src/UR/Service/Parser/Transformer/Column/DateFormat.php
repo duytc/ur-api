@@ -4,6 +4,8 @@ namespace UR\Service\Parser\Transformer\Column;
 
 use DateTime;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
+use UR\Service\Import\ImportDataException;
 
 class DateFormat extends AbstractCommonColumnTransform implements ColumnTransformerInterface
 {
@@ -46,6 +48,11 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         $this->isCustomFormatDateFrom = $isCustomFormatDateFrom;
     }
 
+    /**
+     * @param $value
+     * @return int|null|string
+     * @throws ImportDataException
+     */
     public function transform($value)
     {
         if ($value instanceof DateTime) {
@@ -62,7 +69,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         $date = DateTime::createFromFormat($fromDateFormat, $value);
 
         if (!$date) {
-            return 2;
+            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, 0, $this->getField());
         }
 
         return $date->format($this->dateFormat);

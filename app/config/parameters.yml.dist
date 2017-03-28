@@ -26,6 +26,7 @@ parameters:
     jwt_key_pass_phrase:  'tagcade'                               # ssh key pass phrase
     jwt_token_ttl:        86400
     upload_file_dir: %kernel.root_dir%/../data/file_upload
+    log_file_dir: %kernel.root_dir%/../app/logs/import
     shared_report_view_link: http://localhost:9010/#/public/unifiedReport/report/detail?reportView=$$REPORT_VIEW_ID$$&token=$$SHARED_KEY$$
     ur_email_template: 'pub$PUBLISHER_ID$.$TOKEN$@unified-reports.dev'
     ur_batch_size: 5000

@@ -30,6 +30,11 @@ class ParsedDataImporter
 
     private $lockingDatabaseTable;
 
+    /**
+     * ParsedDataImporter constructor.
+     * @param EntityManagerInterface $em
+     * @param $batchSize
+     */
     public function __construct(EntityManagerInterface $em, $batchSize)
     {
         $this->batchSize = $batchSize;
@@ -37,6 +42,13 @@ class ParsedDataImporter
         $this->lockingDatabaseTable = new LockingDatabaseTable($this->conn);
     }
 
+    /**
+     * @param Collection $collection
+     * @param $importId
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return bool
+     * @throws Exception
+     */
     public function importParsedDataFromFileToDatabase(Collection $collection, $importId, ConnectedDataSourceInterface $connectedDataSource)
     {
         $dataSetSynchronizer = new Synchronizer($this->conn, new Comparator());
@@ -54,11 +66,11 @@ class ParsedDataImporter
         $dateColumns = [];
         foreach ($columns as $k => $column) {
             if (in_array($column, self::$restrictedColumns, true)) {
-                throw new \InvalidArgumentException(sprintf('%s cannot be used as a column name. It is reserved for internal use.', $column));
+                throw new \Exception(sprintf('%s cannot be used as a column name. It is reserved for internal use.', $column));
             }
 
             if (!preg_match('#[_a-z]+#i', $column)) {
-                throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
+                throw new \Exception(sprintf('column names can only contain alpha characters and underscores'));
             }
 
             if ((array_key_exists($column, $dimensions) && ($dimensions[$column] === FieldType::DATE || $dimensions[$column] === FieldType::DATETIME)) ||
@@ -84,6 +96,10 @@ class ParsedDataImporter
         $this->preparedInsertCount = 0;
 
         foreach ($rows as &$row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
             $this->insertMonthYearAt($dateColumns, $row);
             $uniqueKeys = array_intersect_key($row, $dimensions);
             $uniqueId = md5(implode(":", $uniqueKeys));
@@ -104,7 +120,7 @@ class ParsedDataImporter
                     $qb->execute();
                 } catch (Exception $e) {
                     $this->conn->rollBack();
-                    throw new ImportDataException(null, null, null, null, $e->getMessage());
+                    throw new Exception($e->getMessage());
                 }
             }
 
@@ -174,7 +190,7 @@ class ParsedDataImporter
             $stmt->execute($values);
         } catch (Exception $ex) {
             $this->conn->rollBack();
-            throw new ImportDataException(null, null, null, null, $ex);
+            throw new Exception($ex->getMessage());
         }
         $this->conn->commit();
         $this->conn->close();

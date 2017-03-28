@@ -4,6 +4,7 @@ namespace UR\Service\Parser\Filter;
 
 
 use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
+use UR\Service\Import\ImportDataException;
 
 class DateFilter extends AbstractFilter implements ColumnFilterInterface
 {
@@ -31,22 +32,30 @@ class DateFilter extends AbstractFilter implements ColumnFilterInterface
         $this->format = '!' . $format;
     }
 
-
+    /**
+     * @param $value
+     * @return bool
+     * @throws ImportDataException
+     */
     public function filter($value)
     {
-        $value = \DateTime::createFromFormat($this->format, $value);
+        $date = \DateTime::createFromFormat($this->format, $value);
 
-        if (!$value) {
-            return ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE;
+        if (!$date) {
+            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, null, $this->getField(), $value);
         }
 
-        if ($value <= $this->endDate && $value >= $this->startDate) {
+        if ($date <= $this->endDate && $date >= $this->startDate) {
             return true;
         }
 
         return false;
     }
 
+    /**
+     * @return bool
+     * @throws \Exception
+     */
     public function validate()
     {
         if (!$this->startDate || !$this->endDate) {

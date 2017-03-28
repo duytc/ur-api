@@ -78,6 +78,10 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         return $this;
     }
 
+    /**
+     * @param $headerRow
+     * @return $this
+     */
     public function setHeaderRow($headerRow)
     {
         $this->headerRow = $headerRow;
@@ -85,6 +89,10 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         return $this;
     }
 
+    /**
+     * @param array $headers
+     * @return $this
+     */
     public function setHeaders(array $headers)
     {
         $this->headers = $headers;
@@ -93,6 +101,10 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         return $this;
     }
 
+    /**
+     * @param $dataRow
+     * @return $this
+     */
     public function setDataRow($dataRow)
     {
         $this->dataRow = $dataRow;
@@ -100,6 +112,9 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         return $this;
     }
 
+    /**
+     * @return array
+     */
     public function getColumns()
     {
         if (is_array($this->headers)) {
@@ -115,6 +130,7 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         foreach ($this->delimiters as $delimiter) {
             try {
                 $this->csv->setDelimiter($delimiter);
+                $this->csv->setLimit(500);
                 $all_rows = $this->csv->fetchAll();
 
                 if (is_array($all_rows) && count($all_rows) > 0) {
@@ -172,7 +188,11 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         return $this->convertEncodingToASCII($this->headers);
     }
 
-    public function getRows($fromDateFormat)
+    /**
+     * @param array $fromDateFormat
+     * @return array
+     */
+    public function getRows(array $fromDateFormat)
     {
         $this->csv->setOffset($this->dataRow);
         $allData = $this->csv->fetchAll();
@@ -186,6 +206,9 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         return $rows;
     }
 
+    /**
+     * @return int
+     */
     public function getDataRow()
     {
         return $this->dataRow;

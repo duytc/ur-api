@@ -30,7 +30,7 @@ interface DataSetInterface extends ModelInterface
     public function setName($name);
 
     /**
-     * @return mixed
+     * @return array
      */
     public function getDimensions();
 
@@ -40,7 +40,7 @@ interface DataSetInterface extends ModelInterface
     public function setDimensions($dimensions);
 
     /**
-     * @return mixed
+     * @return array
      */
     public function getMetrics();
 
@@ -104,4 +104,9 @@ interface DataSetInterface extends ModelInterface
      * @param mixed $allowOverwriteExistingData
      */
     public function setAllowOverwriteExistingData($allowOverwriteExistingData);
+
+    /**
+     * @return array
+     */
+    public function getAllDimensionMetrics();
 }

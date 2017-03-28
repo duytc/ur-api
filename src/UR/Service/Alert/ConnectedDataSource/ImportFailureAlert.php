@@ -14,16 +14,18 @@ class ImportFailureAlert extends AbstractConnectedDataSourceAlert
 
     /**
      * ImportFailureAlert constructor.
+     * @param $importId
      * @param $alertCode
      * @param $fileName
-     * @param $dataSourceName
-     * @param $dataSetName
-     * @param $column
+     * @param DataSourceInterface $dataSourceName
+     * @param DataSetInterface $dataSetName
+     * @param DataSetInterface $column
      * @param $row
+     * @param $content
      */
-    public function __construct($alertCode, $fileName, DataSourceInterface $dataSourceName, DataSetInterface $dataSetName, $column, $row, $content)
+    public function __construct($importId, $alertCode, $fileName, DataSourceInterface $dataSourceName, DataSetInterface $dataSetName, $column, $row, $content)
     {
-        parent::__construct(null, $alertCode, $fileName, $dataSourceName, $dataSetName);
+        parent::__construct($importId, $alertCode, $fileName, $dataSourceName, $dataSetName);
         $this->column = $column;
         $this->row = $row;
         $this->content = $content;
@@ -32,6 +34,7 @@ class ImportFailureAlert extends AbstractConnectedDataSourceAlert
     public function getDetails()
     {
         $details = [
+            self::IMPORT_ID => $this->importId,
             self::DATA_SOURCE_NAME => $this->dataSource->getName(),
             self::DATA_SOURCE_ID => $this->dataSource->getId(),
             self::DATA_SET_NAME => $this->dataSet->getName(),

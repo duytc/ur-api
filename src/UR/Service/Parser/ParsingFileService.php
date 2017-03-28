@@ -6,10 +6,12 @@ namespace UR\Service\Parser;
 use Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\DataSourceEntryMetadata;
 use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
 use UR\Service\DataSet\MetadataField;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSource\DataSourceFileFactory;
+use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
@@ -61,24 +63,31 @@ class ParsingFileService
         $this->transformerFactory = new TransformerFactory();
     }
 
+    /**
+     * @param DataSourceEntryInterface $dataSourceEntry
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return Collection
+     * @throws ImportDataException
+     */
     public function doParser(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource)
     {
         $this->parserConfig = new ParserConfig();
         $filePath = $this->uploadFileDir . $dataSourceEntry->getPath();
         if (!file_exists($filePath)) {
-            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_FILE_NOT_FOUND, null, null, null, null);
+            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_FILE_NOT_FOUND);
         }
 
-        $file = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $filePath);
+        /** @var DataSourceInterface $dataSourceFileData */
+        $dataSourceFileData = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $filePath);
 
-        $columns = $file->getColumns();
-        $dataRow = $file->getDataRow();
+        $columns = $dataSourceFileData->getColumns();
+        $dataRow = $dataSourceFileData->getDataRow();
         if (!is_array($columns) || count($columns) < 1) {
-            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND, null, null, null, null);
+            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND);
         }
 
         if ($dataRow < 1) {
-            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND, null, null, null, null);
+            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND);
         }
 
         /*
@@ -86,7 +95,7 @@ class ParsingFileService
          */
         $this->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $columns);
         if (count($this->parserConfig->getAllColumnMappings()) === 0) {
-            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL, null, null, null, null);
+            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL);
         }
 
         $validRequires = true;
@@ -100,7 +109,7 @@ class ParsingFileService
         }
 
         if (!$validRequires) {
-            throw  new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL, null, $columnRequire, null, null);
+            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL, null, $columnRequire);
         }
 
         //filter config
@@ -109,28 +118,40 @@ class ParsingFileService
         //transform config
         $this->createTransformConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $dataSourceEntry);
 
-        return $this->parser->parse($file, $this->parserConfig, $connectedDataSource);
+        return $this->parser->parse($dataSourceFileData, $this->parserConfig, $connectedDataSource);
     }
 
-    public function addTransformColumnAfterParsing($transforms)
+    /**
+     * @param array $transforms
+     */
+    public function addTransformColumnAfterParsing(array $transforms)
     {
-        /**
-         * @var array $transforms
-         */
         foreach ($transforms as $transform) {
             $transformObject = $this->transformerFactory->getTransform($transform);
-            if ($transformObject instanceof NumberFormat)
+            if ($transformObject instanceof NumberFormat) {
                 $this->parserConfig->addTransformColumn($transformObject->getField(), $transformObject);
+            }
         }
     }
 
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param ParserConfig $parserConfig
+     * @param array $columns
+     */
     public function createMapFieldsConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, array $columns)
     {
+        $mapFields = $connectedDataSource->getMapFields();
+        if (!is_array($mapFields)) {
+            return;
+        }
+
         foreach ($columns as $column) {
             $column = strtolower(trim($column));
-            foreach ($connectedDataSource->getMapFields() as $k => $v) {
-                if (strcmp($column, $k) === 0) {
-                    $parserConfig->addColumn($k, $v);
+
+            foreach ($mapFields as $detectedField => $dimensionOrMetric) {
+                if (strcmp($column, $detectedField) === 0) {
+                    $parserConfig->addColumn($detectedField, $dimensionOrMetric);
                     break;
                 }
             }
@@ -145,15 +166,20 @@ class ParsingFileService
     private function createFilterConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig)
     {
         $filters = $connectedDataSource->getFilters();
-        if (!is_array($filters) && $filters !== null) {
+        if (!is_array($filters)) {
             throw new Exception(sprintf("ConnectedDataSource Filters Setting should be an array"));
         }
 
         $filterFactory = new FilterFactory();
         foreach ($filters as $filter) {
+            if (!is_array($filter)) {
+                continue;
+            }
+
             // filter Date
             if (strcmp($filter[ColumnFilterInterface::FIELD_TYPE_FILTER_KEY], FieldType::DATE) === 0) {
                 $mapFields = $connectedDataSource->getMapFields();
+
                 if (array_key_exists($filter[ColumnFilterInterface::FILED_NAME_FILTER_KEY], $mapFields)) {
                     $format = $this->getFormatDateFromTransform($connectedDataSource, $mapFields[$filter[ColumnFilterInterface::FILED_NAME_FILTER_KEY]]);
                     $filter[DateFilter::FORMAT_FILTER_KEY] = $format;
@@ -170,6 +196,11 @@ class ParsingFileService
         }
     }
 
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param $field
+     * @return null
+     */
     private function getFormatDateFromTransform(ConnectedDataSourceInterface $connectedDataSource, $field)
     {
         $transforms = $connectedDataSource->getTransforms();
@@ -189,10 +220,12 @@ class ParsingFileService
      */
     private function createTransformConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, DataSourceEntryInterface $dataSourceEntry)
     {
-        $dimensions = $connectedDataSource->getDataSet()->getDimensions();
-        $metrics = $connectedDataSource->getDataSet()->getMetrics();
-        $allFields = array_merge($dimensions, $metrics);
+        $allFields = $connectedDataSource->getDataSet()->getAllDimensionMetrics();
         foreach ($connectedDataSource->getTransforms() as $transform) {
+            if (!is_array($transform)) {
+                continue;
+            }
+
             $transformObjects = $this->transformerFactory->getTransform($transform);
 
             if ($transformObjects instanceof DateFormat) {
@@ -248,12 +281,15 @@ class ParsingFileService
      */
     private function getMetadataInternalValue($internalField, DataSourceEntryInterface $dataSourceEntry)
     {
-        $metadata = $dataSourceEntry->getDataSourceEntryMetadata();
-        $result = null;
-
+        // replace by filename
         $result = str_replace(MetadataField::FILE_NAME, $dataSourceEntry->getFileName(), $internalField);
-        if ($metadata === null)
+
+        // replace by metadata
+        $metadata = $dataSourceEntry->getDataSourceEntryMetadata();
+        if (!$metadata instanceof DataSourceEntryMetadata) {
             return $result;
+        }
+
         $result = str_replace(MetadataField::EMAIL_SUBJECT, $metadata->getEmailSubject(), $result);
         $result = str_replace(MetadataField::EMAIL_BODY, $metadata->getEmailBody(), $result);
         $result = str_replace(MetadataField::EMAIL_DATE_TIME, $metadata->getEmailDatetime(), $result);
@@ -268,14 +304,14 @@ class ParsingFileService
      * @param ParserConfig $parserConfig
      * @param DataSourceEntryInterface $dataSourceEntry
      */
-    private function addInternalVariable($field, $targetField, $allFields, ParserConfig $parserConfig, DataSourceEntryInterface $dataSourceEntry)
+    private function addInternalVariable($field, $targetField, array $allFields, ParserConfig $parserConfig, DataSourceEntryInterface $dataSourceEntry)
     {
         $internalField = sprintf("[%s]", $field);
         if (in_array($internalField, MetadataField::$internalFields)) {
             $parserConfig->addTransformCollection(new AddField($field, $this->getSingleMetaDataFieldValue($internalField, $dataSourceEntry), FieldType::TEXT));
         }
 
-        if ($targetField !== null || array_key_exists($targetField, $allFields)) {
+        if ($targetField !== null && array_key_exists($targetField, $allFields)) {
             $targetFieldType = $allFields[$targetField];
             if (strcmp($targetFieldType, FieldType::DATE) === 0 && !$parserConfig->hasColumnMapping($targetField)) {
                 $parserConfig->addColumn($targetField, $targetField);
@@ -283,10 +319,19 @@ class ParsingFileService
         }
     }
 
-    public function overrideDuplicate($rows, $dimensions)
+    /**
+     * @param array $rows
+     * @param array $dimensions
+     * @return array
+     */
+    public function overrideDuplicate(array $rows, array $dimensions)
     {
         $duplicateRows = [];
-        foreach ($rows as &$row) {
+        foreach ($rows as $index => &$row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
             $uniqueKeys = array_intersect_key($row, $dimensions);
             $uniqueId = md5(implode(":", $uniqueKeys));
 
@@ -294,23 +339,35 @@ class ParsingFileService
         }
 
         $rows = array_values($duplicateRows);
+
         return $rows;
     }
 
+    /**
+     * @param $allFields
+     * @return array
+     */
     public function getNoDataRows($allFields)
     {
         $allFields = array_map(function ($column) {
             return null;
         }, $allFields);
 
-        $returnHeader[] = $allFields;
-
-        return $returnHeader;
+        return [$allFields];
     }
 
-    public function setDataOfColumnsNotMappedToNull($rows, $allFields)
+    /**
+     * @param $rows
+     * @param array $allFields
+     * @return Collection
+     */
+    public function setDataOfColumnsNotMappedToNull($rows, array $allFields)
     {
         foreach ($rows as &$row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
             $temp = [];
             foreach ($allFields as $field => $type) {
                 if (!array_key_exists($field, $row)) {
@@ -328,9 +385,18 @@ class ParsingFileService
         return new Collection(array_keys($allFields), $rows);
     }
 
-    public function formatColumnsTransformsAfterParser($rows)
+    /**
+     * @param array $rows
+     * @return array
+     * @throws ImportDataException
+     */
+    public function formatColumnsTransformsAfterParser(array $rows)
     {
         foreach ($rows as &$row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
             foreach ($this->parserConfig->getColumnTransforms() as $column => $transforms) {
                 /** @var ColumnTransformerInterface[] $transforms */
                 if (!array_key_exists($column, $row)) {
@@ -349,9 +415,6 @@ class ParsingFileService
                     }
 
                     $row[$column] = $transform->transform($row[$column]);
-                    if ($row[$column] === 2) {
-                        throw new ImportDataException(ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, 0, $column, null, null);
-                    }
                 }
             }
         }

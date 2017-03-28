@@ -18,7 +18,7 @@ class ImportDataException extends \Exception
      * @param null $content
      * @param string $message
      */
-    public function __construct($alertCode, $row, $column, $content, $message)
+    public function __construct($alertCode, $row = null, $column = null, $content = null, $message = null)
     {
         parent::__construct($message);
         $this->alertCode = $alertCode;

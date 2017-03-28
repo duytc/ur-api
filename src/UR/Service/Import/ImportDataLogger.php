@@ -78,11 +78,6 @@ class ImportDataLogger
         return $message;
     }
 
-    public function doExceptionLogging($message)
-    {
-        $this->logger->error($message);
-    }
-
     public function doLoggingForJson($dataSetId, $dataSourceId, $dataSourceEntryId)
     {
         switch (json_last_error()) {

@@ -125,7 +125,7 @@ class ParserConfig
     /**
      * @return CollectionTransformerInterface[]
      */
-    public function getCollectionTransforms()
+    public function     getCollectionTransforms()
     {
         return $this->collectionTransforms;
     }

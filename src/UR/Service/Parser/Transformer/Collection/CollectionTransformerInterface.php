@@ -29,6 +29,10 @@ interface CollectionTransformerInterface
     const TRANSFORM_PRIORITY_REPLACE_TEXT = 50;
     const TRANSFORM_PRIORITY_EXTRACT_PATTERN = 60;
 
+    /**
+     * @param Collection $collection
+     * @return Collection
+     */
     public function transform(Collection $collection);
 
     /**

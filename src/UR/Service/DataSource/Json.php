@@ -7,17 +7,23 @@ use UR\Behaviors\ParserUtilTrait;
 class Json extends CommonDataSourceFile implements DataSourceInterface
 {
     use ParserUtilTrait;
-    protected $rows;
+    protected $rows = [];
     protected $headers;
     protected $dataRow = 1;
 
+    /**
+     * Json constructor.
+     * @param string $filePath
+     */
     public function __construct($filePath)
     {
         $str = file_get_contents($filePath, true);
-        $this->rows = json_decode($str, true);
-        if ($this->rows === null) {
+        $result = json_decode($str, true);
+        if (!is_array($result)) {
             return;
         }
+
+        $this->rows = $result;
 
         $i = 0;
         $header = [];
@@ -43,6 +49,9 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
         $this->headers = $header;
     }
 
+    /**
+     * @return array
+     */
     public function getColumns()
     {
         if (is_array($this->headers)) {
@@ -52,7 +61,11 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
         return [];
     }
 
-    public function getRows($fromDateFormat)
+    /**
+     * @param array $fromDateFormat
+     * @return array
+     */
+    public function getRows(array $fromDateFormat)
     {
         //set all missing columns to null
         foreach ($this->rows as $key => &$item) {
@@ -86,12 +99,19 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
         return $this->rows;
     }
 
+    /**
+     * @return int
+     */
     public function getDataRow()
     {
         return $this->dataRow;
     }
 
-    private function handleNestedColumns(&$row)
+    /**
+     * @param array $row
+     * @return array
+     */
+    private function handleNestedColumns(array &$row)
     {
         foreach ($row as $column => &$value) {
             if (!is_array($value)) {

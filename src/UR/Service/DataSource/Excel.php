@@ -27,6 +27,12 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
     protected $numOfColumns;
     protected $chunkSize;
 
+    /**
+     * Excel constructor.
+     * @param string $filePath
+     * @param Factory $phpExcel
+     * @param $chunkSize
+     */
     public function __construct($filePath, Factory $phpExcel, $chunkSize)
     {
         $this->chunkSize = $chunkSize;
@@ -136,6 +142,9 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         }
     }
 
+    /**
+     * @return array
+     */
     public function getColumns()
     {
         if (is_array($this->headers)) {
@@ -145,7 +154,11 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         return [];
     }
 
-    public function getRows($fromDateFormats)
+    /**
+     * @param array $fromDateFormats
+     * @return array
+     */
+    public function getRows(array $fromDateFormats)
     {
         if (in_array($this->inputFileType, $this->excel_2003_formats)) {
             $this->rows = [];
@@ -192,14 +205,24 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         } else
             if (in_array($this->inputFileType, $this->excel_2007_formats)) {
                 $curRow = 1;
+                /**
+                 * @var Sheet $sheet
+                 */
                 foreach ($this->excel->getSheetIterator() as $sheet) {
                     foreach ($sheet->getRowIterator() as $row) {
-                        if ($curRow >= $this->dataRow)
+                        if ($curRow >= $this->dataRow) {
+                            if (count($row) !== count($this->headers)) {
+                                $missingColumns = array_diff_key($this->headers, $row);
+                                $this->setMissingColumnValueToNull(array_keys($missingColumns), $row);
+                            }
+
                             $this->rows[$curRow - 1] = $row;
+                        }
                         $curRow++;
                     }
                 }
             }
+
         return $this->rows;
     }
 
@@ -208,7 +231,13 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         return $this->dataRow;
     }
 
-    public function getPhpExcelObj($filePath, $chunkSize, $startRow)
+    /**
+     * @param string $filePath
+     * @param int $chunkSize
+     * @param int $startRow
+     * @return \PHPExcel
+     */
+    private function getPhpExcelObj($filePath, $chunkSize, $startRow)
     {
         $objReader = \PHPExcel_IOFactory::createReaderForFile($filePath);
         $this->chunkFile = new ChunkReadFilter();
@@ -218,5 +247,16 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         $this->chunkFile->setRows($startRow, $chunkSize);
         $objPHPExcel = $objReader->load($filePath);
         return $objPHPExcel;
+    }
+
+    /**
+     * @param array $array_keys
+     * @param array $row
+     */
+    private function setMissingColumnValueToNull(array $array_keys, array &$row)
+    {
+        foreach ($array_keys as $array_key) {
+            $row[$array_key] = null;
+        }
     }
 }

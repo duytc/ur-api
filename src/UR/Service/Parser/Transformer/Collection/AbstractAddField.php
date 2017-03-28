@@ -20,6 +20,10 @@ abstract class AbstractAddField implements CollectionTransformerInterface
         $this->column = $column;
     }
 
+    /**
+     * @param Collection $collection
+     * @return Collection
+     */
     public function transform(Collection $collection)
     {
         $rows = $collection->getRows();
@@ -45,5 +49,9 @@ abstract class AbstractAddField implements CollectionTransformerInterface
         return new Collection($columns, $rows);
     }
 
+    /**
+     * @param array $row
+     * @return mixed
+     */
     abstract protected function getValue(array $row);
 }

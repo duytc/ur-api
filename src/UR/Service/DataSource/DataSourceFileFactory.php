@@ -27,8 +27,8 @@ class DataSourceFileFactory
     }
 
     /**
-     * @param $fileType
-     * @param $filePath
+     * @param string $fileType
+     * @param string $filePath
      * @return Csv|Excel|Json|JsonNewFormat
      */
     public function getFile($fileType, $filePath)

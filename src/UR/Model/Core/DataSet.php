@@ -64,7 +64,7 @@ class DataSet implements DataSetInterface
      */
     public function getDimensions()
     {
-        return $this->dimensions;
+        return is_array($this->dimensions) ? $this->dimensions : [];
     }
 
     /**
@@ -80,7 +80,7 @@ class DataSet implements DataSetInterface
      */
     public function getMetrics()
     {
-        return $this->metrics;
+        return is_array($this->metrics) ? $this->metrics : [];
     }
 
     /**
@@ -182,5 +182,13 @@ class DataSet implements DataSetInterface
     public function setAllowOverwriteExistingData($allowOverwriteExistingData)
     {
         $this->allowOverwriteExistingData = $allowOverwriteExistingData;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getAllDimensionMetrics()
+    {
+        return array_merge($this->getDimensions(), $this->getMetrics());
     }
 }

@@ -189,9 +189,7 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
 
     private function buildImportedData(array $results, ImportHistoryInterface $importHistory)
     {
-        $dimensions = $importHistory->getDataSet()->getDimensions();
-        $metrics = $importHistory->getDataSet()->getMetrics();
-        $fields = array_merge($dimensions, $metrics);
+        $fields = $importHistory->getDataSet()->getAllDimensionMetrics();
 
         if (count($results) < 1) {
             return [array_fill_keys(array_keys($fields), "")];

@@ -16,9 +16,19 @@ interface DataSourceInterface
 
     const MAX_ROW_XLS = 65535;
 
+    /**
+     * @return array
+     */
     public function getColumns();
 
-    public function getRows($fromDateFormat);
+    /**
+     * @param array $fromDateFormat
+     * @return array
+     */
+    public function getRows(array $fromDateFormat);
 
+    /**
+     * @return int
+     */
     public function getDataRow();
 }
