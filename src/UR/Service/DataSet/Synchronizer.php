@@ -77,7 +77,7 @@ class Synchronizer
         // add dimensions
         foreach ($dataSet->getDimensions() as $key => $value) {
             $dataSetTable->addColumn($key, $value, ["notnull" => false, "default" => null]);
-            if (strcmp($value, FieldType::DATE) === 0 OR strcmp($value, FieldType::DATETIME) === 0) {
+            if ($value === FieldType::DATE || $value === FieldType::DATETIME) {
                 // add month and year also
                 $dataSetTable->addColumn(sprintf(self::DAY_FIELD_TEMPLATE, $key), Type::INTEGER, ["notnull" => false, "default" => null]);
                 $dataSetTable->addColumn(sprintf(self::MONTH_FIELD_TEMPLATE, $key), Type::INTEGER, ["notnull" => false, "default" => null]);
@@ -87,13 +87,13 @@ class Synchronizer
 
         // add metrics
         foreach ($dataSet->getMetrics() as $key => $value) {
-            if (strcmp($value, FieldType::NUMBER) === 0) {
+            if ($value === FieldType::NUMBER) {
                 $dataSetTable->addColumn($key, "integer", ["notnull" => false, "default" => null]);
-            } else if (strcmp($value, FieldType::DECIMAL) === 0) {
+            } else if ($value === FieldType::DECIMAL) {
                 $dataSetTable->addColumn($key, $value, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
-            } else if (strcmp($value, FieldType::MULTI_LINE_TEXT) === 0) {
+            } else if ($value === FieldType::MULTI_LINE_TEXT) {
                 $dataSetTable->addColumn($key, FieldType::TEXT, ["notnull" => false, "default" => null]);
-            } else if (strcmp($value, FieldType::DATE) === 0 OR strcmp($value, FieldType::DATETIME) === 0) {
+            } else if ($value === FieldType::DATE || $value === FieldType::DATETIME) {
                 $dataSetTable->addColumn($key, FieldType::DATE, ["notnull" => false, "default" => null]);
                 // add month and year also
                 $dataSetTable->addColumn(sprintf(self::DAY_FIELD_TEMPLATE, $key), Type::INTEGER, ["notnull" => false, "default" => null]);

@@ -272,12 +272,33 @@ class Parser implements ParserInterface
     private function reformatFileData(array $row, $fileColumn, $type, $cur_row)
     {
         $cellValue = $row[$fileColumn];
-        if (strcmp($cellValue, "") === 0) {
+        if (empty($cellValue)) {
             return null;
         }
 
-        if (strcmp($type, FieldType::DECIMAL) === 0 || strcmp($type, FieldType::NUMBER) === 0) {
-            preg_replace('/^[.-0-9]+/', $cellValue, '');
+        if ($type === FieldType::DECIMAL || $type === FieldType::NUMBER) {
+            $cellValue = preg_replace('/[^\d.-]+/', '', $cellValue);
+
+            $firstNegativePosition = strpos($cellValue, '-');
+            if ($firstNegativePosition === 0) {
+                $afterFirstNegative = substr($cellValue, 1);
+                $afterFirstNegative = preg_replace('/\-{1,}/', '', $afterFirstNegative);
+                $cellValue = '-' . $afterFirstNegative;
+            } else if ($firstNegativePosition > 0) {
+                $cellValue = preg_replace('/\-{1,}/', '', $cellValue);
+            }
+
+            $firstDotPosition = strpos($cellValue, '.');
+            if ($firstDotPosition !== false) {
+                $first = substr($cellValue, 0, $firstDotPosition);
+                if (!is_numeric($first)) {
+                    $first .= '0';
+                }
+
+                $second = substr($cellValue, $firstDotPosition + 1);
+                $second = preg_replace('/\.{1,}/', '', $second);
+                $cellValue = $first . '.' . $second;
+            }
 
             if ($cellValue === null) {
                 return null;
