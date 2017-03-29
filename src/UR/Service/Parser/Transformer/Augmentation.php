@@ -2,7 +2,6 @@
 
 namespace UR\Service\Parser\Transformer;
 
-use Doctrine\DBAL\Schema\Column;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Entity\Core\LinkedMapDataSet;
 use UR\Exception\InvalidArgumentException;
@@ -26,14 +25,6 @@ class Augmentation implements CollectionTransformerInterface
     const CUSTOM_OPERATOR_NOT_EQUAL  = 'notEqual';
     const CUSTOM_OPERATOR_CONTAINS  = 'contain';
     const CUSTOM_OPERATOR_NOT_CONTAINS  = 'notContain';
-    const CUSTOM_OPERATOR_LESS_THAN  = 'lessThan';
-    const CUSTOM_OPERATOR_LESS_THAN_OR_EQUAL  = 'lessThanOrEqual';
-    const CUSTOM_OPERATOR_GREATER_THAN  = 'greaterThan';
-    const CUSTOM_OPERATOR_GREATER_THAN_OR_EQUAL  = 'greaterThanOrEqual';
-    const CUSTOM_OPERATOR_IN  = 'in';
-    const CUSTOM_OPERATOR_NOT_IN  = 'notIn';
-    const CUSTOM_OPERATOR_NULL  = 'null';
-    const CUSTOM_OPERATOR_NOT_NULL  = 'notNull';
     const CUSTOM_VALUE_KEY = 'value';
 
     /**
@@ -103,105 +94,42 @@ class Augmentation implements CollectionTransformerInterface
         if (count($rows) < 1) {
             return $collection;
         }
-        $qb = $em->getConnection()->createQueryBuilder();
+        $conn = $em->getConnection();
+        $qb = $conn->createQueryBuilder();
         $tableName = sprintf(SqlBuilder::DATA_SET_TABLE_NAME_TEMPLATE, $this->mapDataSet);
-        $qb->from($tableName)->select('*');
-        $columnTypes = $em->getConnection()->getSchemaManager()->listTableColumns($tableName);
-        $mapDataSetTypes = [];
-
-        /** @var Column $column */
-        foreach($columnTypes as $column) {
-            $mapDataSetTypes[$column->getName()] = $column->getType()->getName();
-        }
+        $qb->from($conn->quoteIdentifier($tableName))->select('*');
 
         if (is_array($this->customCondition)) {
             $mappedFields = [];
-            foreach($this->customCondition as $condition) {
+            foreach($this->customCondition as $i=>$condition) {
                 if (array_key_exists(self::CUSTOM_FIELD_KEY, $condition)
                     && array_key_exists(self::CUSTOM_OPERATOR_KEY, $condition)
                     && array_key_exists(self::CUSTOM_VALUE_KEY, $condition)
                 ) {
                     $field = $condition[self::CUSTOM_FIELD_KEY];
-                    switch($condition[self::CUSTOM_OPERATOR_KEY]) {
+                    $paramField = sprintf(':%s', $this->removeSpacesInVariableName($condition[self::CUSTOM_FIELD_KEY]));
+                    $operator = $condition[self::CUSTOM_OPERATOR_KEY];
+                    switch($operator) {
                         case self::CUSTOM_OPERATOR_EQUAL:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
-                                $qb->andWhere(sprintf('%s = "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            } else {
-                                $qb->andWhere(sprintf('%s = %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            }
+                            $qb->andWhere(sprintf('%s = %s', $conn->quoteIdentifier($field), $paramField))
+                                ->setParameter($paramField, $condition[self::CUSTOM_VALUE_KEY]);
                             break;
                         case self::CUSTOM_OPERATOR_NOT_EQUAL:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
-                                $qb->andWhere(sprintf('%s <> "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            } else {
-                                $qb->andWhere(sprintf('%s <> %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            }
+                            $qb->andWhere(sprintf('%s <> %s', $conn->quoteIdentifier($field), $paramField))
+                                ->setParameter($paramField, $condition[self::CUSTOM_VALUE_KEY]);
                             break;
                         case self::CUSTOM_OPERATOR_CONTAINS:
-                            $qb->andWhere(sprintf('%s LIKE "%%%s%%"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
+                            $qb->andWhere(sprintf('%s LIKE %s', $conn->quoteIdentifier($field), $paramField))
+                                ->setParameter($paramField, sprintf('%%%s%%', $condition[self::CUSTOM_VALUE_KEY]));
                             break;
                         case self::CUSTOM_OPERATOR_NOT_CONTAINS:
-                            $qb->andWhere(sprintf('%s NOT LIKE "%%%s%%"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            break;
-                        case self::CUSTOM_OPERATOR_LESS_THAN:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
-                                $qb->andWhere(sprintf('%s < "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            } else {
-                                $qb->andWhere(sprintf('%s < %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            }
-                            break;
-                        case self::CUSTOM_OPERATOR_LESS_THAN_OR_EQUAL:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
-                                $qb->andWhere(sprintf('%s <= "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            } else {
-                                $qb->andWhere(sprintf('%s <= %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            }
-                            break;
-                        case self::CUSTOM_OPERATOR_GREATER_THAN:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
-                                $qb->andWhere(sprintf('%s > "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            } else {
-                                $qb->andWhere(sprintf('%s > %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            }
-                            break;
-                        case self::CUSTOM_OPERATOR_GREATER_THAN_OR_EQUAL:
-                            if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
-                                $qb->andWhere(sprintf('%s >= "%s"', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            } else {
-                                $qb->andWhere(sprintf('%s >= %d', $condition[self::CUSTOM_FIELD_KEY], $condition[self::CUSTOM_VALUE_KEY]));
-                            }
-                            break;
-                        case self::CUSTOM_OPERATOR_IN:
-                            $values = explode(',', $condition[self::CUSTOM_VALUE_KEY]);
-                            foreach($values as &$value) {
-                                if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
-                                    $value = sprintf('"%s"', $value);
-                                }
-                            }
-                            $expr = $qb->expr()->in($condition[self::CUSTOM_FIELD_KEY], $values);
-                            $qb->andWhere($expr);
-                            break;
-                        case self::CUSTOM_OPERATOR_NOT_IN:
-                            $values = explode(',', $condition[self::CUSTOM_VALUE_KEY]);
-                            foreach($values as &$value) {
-                                if (in_array($mapDataSetTypes[$field], ['datetime', 'text', 'date'])) {
-                                    $value = sprintf('"%s"', $value);
-                                }
-                            }
-                            $expr = $qb->expr()->notIn($condition[self::CUSTOM_FIELD_KEY], $values);
-                            $qb->andWhere($expr);
-                            break;
-                        case self::CUSTOM_OPERATOR_NULL:
-                            $expr = $qb->expr()->isNull($condition[self::CUSTOM_FIELD_KEY]);
-                            $qb->andWhere($expr);
-                            break;
-                        case self::CUSTOM_OPERATOR_NOT_NULL:
-                            $expr = $qb->expr()->isNotNull($condition[self::CUSTOM_FIELD_KEY]);
-                            $qb->andWhere($expr);
+                            $qb->andWhere(sprintf('%s NOT LIKE %s', $conn->quoteIdentifier($field), $paramField))
+                                ->setParameter($paramField, sprintf('%%%s%%', $condition[self::CUSTOM_VALUE_KEY]));
                             break;
                         default:
-                            throw new InvalidArgumentException(sprintf('operator %s is not supported', $condition[self::CUSTOM_OPERATOR_KEY]));
+                            throw new InvalidArgumentException(sprintf('operator %s is not supported', $operator));
                     }
+
                     $mappedFields[] = $field;
                 }
             }
@@ -235,6 +163,11 @@ class Augmentation implements CollectionTransformerInterface
         }
 
         return new Collection($columns, array_values($rows), $types);
+    }
+
+    protected function removeSpacesInVariableName($name)
+    {
+        return preg_replace('/\s+/', '_', $name);
     }
 
     protected function getMappedValue($mappedResult, $sourceValue, &$matched)
