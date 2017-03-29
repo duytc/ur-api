@@ -11,6 +11,7 @@ use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Exception\SqlLockTableException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use Leezy\PheanstalkBundle\Proxy\PheanstalkProxyInterface;
 
 class LoadingDataFromFileToDataImportTable
 {
@@ -44,12 +45,15 @@ class LoadingDataFromFileToDataImportTable
      */
     private $connectedDataSourceManager;
 
+    /**
+     * @var PheanstalkProxyInterface
+     */
     private $queue;
 
     private $logDir;
 
 
-    function __construct($env, Logger $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager, $queue, $logDir, ImportHistoryManagerInterface $importHistoryManager)
+    function __construct($env, Logger $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager, PheanstalkProxyInterface $queue, $logDir, ImportHistoryManagerInterface $importHistoryManager)
     {
         $this->env = $env;
         $this->logger = $logger;
