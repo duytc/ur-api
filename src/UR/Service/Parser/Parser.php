@@ -272,7 +272,7 @@ class Parser implements ParserInterface
     private function reformatFileData(array $row, $fileColumn, $type, $cur_row)
     {
         $cellValue = $row[$fileColumn];
-        if (empty($cellValue)) {
+        if ($cellValue === "") {
             return null;
         }
 
