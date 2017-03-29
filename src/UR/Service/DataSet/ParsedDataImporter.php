@@ -57,43 +57,44 @@ class ParsedDataImporter
         $table = $dataSetSynchronizer->createEmptyDataSetTable($connectedDataSource->getDataSet());
         $tableName = $table->getName();
 
-        $this->lockingDatabaseTable->lockTable($tableName);
+        try {
+            $this->lockingDatabaseTable->lockTable($tableName);
 
-        $dimensions = $connectedDataSource->getDataSet()->getDimensions();
-        $metrics = $connectedDataSource->getDataSet()->getMetrics();
-        $rows = $collection->getRows();
-        $columns = $collection->getColumns();
-        $dateColumns = [];
-        foreach ($columns as $k => $column) {
-            if (in_array($column, self::$restrictedColumns, true)) {
-                throw new \Exception(sprintf('%s cannot be used as a column name. It is reserved for internal use.', $column));
+            $dimensions = $connectedDataSource->getDataSet()->getDimensions();
+            $metrics = $connectedDataSource->getDataSet()->getMetrics();
+            $rows = $collection->getRows();
+            $columns = $collection->getColumns();
+            $dateColumns = [];
+            foreach ($columns as $k => $column) {
+                if (in_array($column, self::$restrictedColumns, true)) {
+                    throw new \InvalidArgumentException(sprintf('%s cannot be used as a column name. It is reserved for internal use.', $column));
+                }
+
+                if (!preg_match('#[_a-z]+#i', $column)) {
+                    throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
+                }
+
+                if ((array_key_exists($column, $dimensions) && ($dimensions[$column] === FieldType::DATE|| $dimensions[$column] === FieldType::DATETIME)) ||
+                    (array_key_exists($column, $metrics) && ($metrics[$column] === FieldType::DATE || $metrics[$column] === FieldType::DATETIME))
+                ) {
+                    $dateColumns[] = $column;
+                    $columns[] = sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $column);
+                    $columns[] = sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $column);
+                    $columns[] = sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $column);
+                }
             }
 
-            if (!preg_match('#[_a-z]+#i', $column)) {
-                throw new \Exception(sprintf('column names can only contain alpha characters and underscores'));
+            if (!is_array($rows) || count($rows) < 1) {
+                return true;
             }
 
-            if ((array_key_exists($column, $dimensions) && ($dimensions[$column] === FieldType::DATE || $dimensions[$column] === FieldType::DATETIME)) ||
-                (array_key_exists($column, $metrics) && ($metrics[$column] === FieldType::DATE || $metrics[$column] === FieldType::DATETIME))
-            ) {
-                $dateColumns[] = $column;
-                $columns[] = sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $column);
-                $columns[] = sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $column);
-                $columns[] = sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $column);
-            }
-        }
-
-        if (!is_array($rows) || count($rows) < 1) {
-            return true;
-        }
-
-        $isOverwriteData = $connectedDataSource->getDataSet()->getAllowOverwriteExistingData();
-        $insert_values = array();
-        $columns[DataSetInterface::DATA_SOURCE_ID_COLUMN] = DataSetInterface::DATA_SOURCE_ID_COLUMN;
-        $columns[DataSetInterface::IMPORT_ID_COLUMN] = DataSetInterface::IMPORT_ID_COLUMN;
-        $columns[DataSetInterface::UNIQUE_ID_COLUMN] = DataSetInterface::UNIQUE_ID_COLUMN;
-        $question_marks = [];
-        $this->preparedInsertCount = 0;
+            $isOverwriteData = $connectedDataSource->getDataSet()->getAllowOverwriteExistingData();
+            $insert_values = array();
+            $columns[DataSetInterface::DATA_SOURCE_ID_COLUMN] = DataSetInterface::DATA_SOURCE_ID_COLUMN;
+            $columns[DataSetInterface::IMPORT_ID_COLUMN] = DataSetInterface::IMPORT_ID_COLUMN;
+            $columns[DataSetInterface::UNIQUE_ID_COLUMN] = DataSetInterface::UNIQUE_ID_COLUMN;
+            $question_marks = [];
+            $this->preparedInsertCount = 0;
 
         foreach ($rows as &$row) {
             if (!is_array($row)) {
@@ -107,42 +108,43 @@ class ParsedDataImporter
             $row[DataSetInterface::IMPORT_ID_COLUMN] = $importId;
             $row[DataSetInterface::UNIQUE_ID_COLUMN] = $uniqueId;
 
-            if ($isOverwriteData) {
-                //update
-                $where = sprintf("%s = :%s AND %s IS NULL", DataSetInterface::UNIQUE_ID_COLUMN, DataSetInterface::UNIQUE_ID_COLUMN, DataSetInterface::OVERWRITE_DATE);
-                $set = sprintf("%s = :%s", DataSetInterface::OVERWRITE_DATE, DataSetInterface::OVERWRITE_DATE);
-                $updateSql = sprintf("UPDATE %s SET %s WHERE %s", $tableName, $set, $where);
-                $qb = $this->conn->prepare($updateSql);
-                $qb->bindValue(DataSetInterface::OVERWRITE_DATE, date('Y-m-d H:i:sP'));
-                $qb->bindValue(DataSetInterface::UNIQUE_ID_COLUMN, $uniqueId);
-                $this->preparedInsertCount++;
-                try {
+                if ($isOverwriteData) {
+                    //update
+                    $where = sprintf("%s = :%s AND %s IS NULL", DataSetInterface::UNIQUE_ID_COLUMN, DataSetInterface::UNIQUE_ID_COLUMN, DataSetInterface::OVERWRITE_DATE);
+                    $set = sprintf("%s = :%s", DataSetInterface::OVERWRITE_DATE, DataSetInterface::OVERWRITE_DATE);
+                    $updateSql = sprintf("UPDATE %s SET %s WHERE %s", $tableName, $set, $where);
+                    $qb = $this->conn->prepare($updateSql);
+                    $qb->bindValue(DataSetInterface::OVERWRITE_DATE, date('Y-m-d H:i:sP'));
+                    $qb->bindValue(DataSetInterface::UNIQUE_ID_COLUMN, $uniqueId);
+                    $this->preparedInsertCount++;
+
                     $qb->execute();
-                } catch (Exception $e) {
-                    $this->conn->rollBack();
-                    throw new Exception($e->getMessage());
+                }
+
+                $question_marks[] = '(' . $this->placeholders('?', sizeof($row)) . ')';
+                $insert_values = array_merge($insert_values, array_values($row));
+                $this->preparedInsertCount++;
+                $insertSql = sprintf("INSERT INTO %s (%s) VALUES %s", $tableName, implode(",", $columns), implode(',', $question_marks));
+                if ($this->preparedInsertCount === $this->batchSize) {
+                    $this->preparedInsertCount = 0;
+                    $this->executeInsert($insertSql, $insert_values);
+                    $insert_values = [];
+                    $question_marks = [];
                 }
             }
 
-            $question_marks[] = '(' . $this->placeholders('?', sizeof($row)) . ')';
-            $insert_values = array_merge($insert_values, array_values($row));
-            $this->preparedInsertCount++;
-            $insertSql = sprintf("INSERT INTO %s (%s) VALUES %s", $tableName, implode(",", $columns), implode(',', $question_marks));
-            if ($this->preparedInsertCount === $this->batchSize) {
-                $this->preparedInsertCount = 0;
+            if ($this->preparedInsertCount > 0 && is_array($columns) && is_array($question_marks)) {
                 $this->executeInsert($insertSql, $insert_values);
-                $insert_values = [];
-                $question_marks = [];
             }
+
+            $this->lockingDatabaseTable->unLockTable();
+
+            return true;
+        } catch (Exception $exception) {
+            $this->conn->rollBack();
+            $this->lockingDatabaseTable->unLockTable();
+            throw new ImportDataException(null, null, null, null, $exception->getMessage());
         }
-
-        if ($this->preparedInsertCount > 0 && is_array($columns) && is_array($question_marks)) {
-            $this->executeInsert($insertSql, $insert_values);
-        }
-
-        $this->lockingDatabaseTable->unLockTable();
-
-        return true;
     }
 
     private function insertMonthYearAt(array $indexes, &$row)
@@ -160,8 +162,8 @@ class ParsedDataImporter
                 $day = null;
                 $month = null;
                 $year = null;
-                $day = null;
             }
+
             $row[sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $index)] = $day;
             $row[sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $index)] = $month;
             $row[sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $index)] = $year;
@@ -187,12 +189,8 @@ class ParsedDataImporter
 
         $this->conn->beginTransaction();
         $stmt = $this->conn->prepare($sql);
-        try {
-            $stmt->execute($values);
-        } catch (Exception $ex) {
-            $this->conn->rollBack();
-            throw new Exception($ex->getMessage());
-        }
+        $stmt->execute($values);
+
         $this->conn->commit();
         $this->conn->close();
     }
