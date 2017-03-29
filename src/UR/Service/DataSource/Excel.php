@@ -11,8 +11,9 @@ use UR\Behaviors\ParserUtilTrait;
 class Excel extends CommonDataSourceFile implements DataSourceInterface
 {
     use ParserUtilTrait;
-    private $excel_2003_formats = ['Excel5', 'OOCalc', 'Excel2003XML'];
-    private $excel_2007_formats = ['Excel2007'];
+
+    public static $EXCEL_2003_FORMATS = ['Excel5', 'OOCalc', 'Excel2003XML'];
+    public static $EXCEL_2007_FORMATS = ['Excel2007'];
 
     protected $excel;
     protected $sheet;
@@ -38,107 +39,133 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         $this->chunkSize = $chunkSize;
         $this->filePath = $filePath;
         $this->inputFileType = \PHPExcel_IOFactory::identify($filePath);
-        if (in_array($this->inputFileType, $this->excel_2003_formats)) {
+
+        // TODO: breakdown into functions process excel2003 and excel2007
+        if (in_array($this->inputFileType, self::$EXCEL_2003_FORMATS)) {
             $objPHPExcel = $this->getPhpExcelObj($filePath, 100, 1);
             $this->sheet = $objPHPExcel->getActiveSheet();
             $this->numOfColumns = $this->sheet->getHighestColumn();
-            $max = 0;
-            $pre_columns = [];
+
+            $maxColumnsCount = 0;
+            $previousColumns = [];
             $match = 0;
             $i = 0;
-            for ($row = 1; $row <= $this->sheet->getHighestDataRow(); $row++) {
-                $highestDataColumn = $this->sheet->getHighestDataColumn($row);
-                $cur_rows = $this->sheet->rangeToArray('A' . $row . ':' . $highestDataColumn . $row,
-                    NULL,
-                    TRUE,
-                    FALSE);
 
-                $cur_row = array_filter($cur_rows[0], function ($value) {
+            for ($rowIndex = 1, $highestDataRow = $this->sheet->getHighestDataRow(); $rowIndex <= $highestDataRow; $rowIndex++) {
+                $highestDataColumnIndex = $this->sheet->getHighestDataColumn($rowIndex);
+                $currentRows = $this->sheet->rangeToArray(
+                    'A' . $rowIndex . ':' . $highestDataColumnIndex . $rowIndex,
+                    $nullValue = null,
+                    $calculateFormulas = true,
+                    $formatData = false, $returnCellRef = false
+                );
+
+                $currentRow = array_filter($currentRows[0], function ($value) {
                     if (is_numeric($value)) {
                         return true;
                     }
+
                     return (!is_null($value) && !empty($value));
                 });
 
-                if (count($cur_row) < 1) {
+                if (count($currentRow) < 1) {
                     continue;
                 }
 
                 $i++;
 
-                if (count($cur_row) > $max) {
-                    $this->headers = $cur_row;
-                    $this->ogiHeaders = $cur_rows[0];
-                    $max = count($cur_row);
-                    $this->headerRow = $row;
+                if (count($currentRow) > $maxColumnsCount) {
+                    $this->headers = $currentRow;
+                    $this->ogiHeaders = $currentRows[0];
+                    $maxColumnsCount = count($currentRow);
+                    $this->headerRow = $rowIndex;
                 }
 
-                if ((count($cur_row) !== count($pre_columns)) && count($cur_row) > 0) {
+                if ((count($currentRow) !== count($previousColumns)) && count($currentRow) > 0) {
                     $match = 0;
-                    $pre_columns = $cur_row;
+                    $previousColumns = $currentRow;
                     continue;
                 }
 
                 $match++;
                 if ($match === self::FIRST_MATCH) {
-                    if ($row === self::SECOND_ROW)
-                        $this->dataRow = $row;
+                    if ($rowIndex === self::SECOND_ROW)
+                        $this->dataRow = $rowIndex;
                     else
-                        $this->dataRow = $row - 1;
+                        $this->dataRow = $rowIndex - 1;
                 }
 
                 if ($match > self::ROW_MATCH && count($this->headers) > 0) {
                     break;
                 }
 
-                if ($i >= DataSourceInterface::DETECT_HEADER_ROWS)
+                if ($i >= DataSourceInterface::DETECT_HEADER_ROWS) {
                     break;
+                }
 
             }
             $objPHPExcel->disconnectWorksheets();
             unset($objPHPExcel, $this->sheet);
 
-        } else if (in_array($this->inputFileType, $this->excel_2007_formats)) {
+        } else if (in_array($this->inputFileType, self::$EXCEL_2007_FORMATS)) {
             $this->excel = ReaderFactory::create(Type::XLSX);
             $this->excel->open($filePath);
-            foreach ($this->excel->getSheetIterator() as $sheet) {
-                $max = 0;
-                $i = 0;
-                $pre_columns = [];
-                $match = 0;
-                /**@var Sheet $sheet */
-                foreach ($sheet->getRowIterator() as $row) {
-                    $i++;
-                    $cur_row = $this->removeInvalidColumns($row);
 
-                    if (count($cur_row) > $max) {
-                        $this->headers = $cur_row;
-                        $max = count($this->headers);
+            foreach ($this->excel->getSheetIterator() as $sheet) {
+                $maxColumnsCount = 0;
+                $i = 0;
+                $previousColumns = [];
+                $match = 0;
+
+                /**@var Sheet $sheet */
+                foreach ($sheet->getRowIterator() as $rowIndex2 => $row) {
+                    $i++;
+
+                    // trim invalid trailing columns, only do this if found header before
+                    $currentRow = (is_array($this->headers))
+                        ? $this->removeInvalidTrailingColumns($row)
+                        : $row;
+
+                    if (count($currentRow) > $maxColumnsCount) {
+                        // set row with max length as header
+                        $this->headers = $currentRow;
+                        $maxColumnsCount = count($this->headers);
                         $this->headerRow = $i;
                     }
 
-                    if ((count($cur_row) !== count($pre_columns)) && count($cur_row) > 0) {
+                    if ((count($currentRow) !== count($previousColumns)) && count($currentRow) > 0) {
                         $match = 0;
-                        $pre_columns = $cur_row;
+                        $previousColumns = $currentRow;
                         continue;
                     }
 
                     $match++;
+
+                    // set dataRow index due to match
                     if ($match === self::FIRST_MATCH) {
-                        if ($i === self::SECOND_ROW)
+                        if ($i === self::SECOND_ROW) {
                             $this->dataRow = $i;
-                        else
+                        } else {
                             $this->dataRow = $i - 1;
+                        }
                     }
+
                     if ($match > self::ROW_MATCH) {
                         break;
                     }
 
-                    if ($i > DataSourceInterface::DETECT_HEADER_ROWS)
+                    if ($i > DataSourceInterface::DETECT_HEADER_ROWS) {
                         break;
+                    }
                 }
+
                 break;
             }
+        }
+
+        // finally, set default column name to header for empty values
+        if (is_array($this->headers)) {
+            $this->headers = $this->setDefaultColumnValueForHeader($this->headers);
         }
     }
 
@@ -160,7 +187,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getRows(array $fromDateFormats)
     {
-        if (in_array($this->inputFileType, $this->excel_2003_formats)) {
+        if (in_array($this->inputFileType, self::$EXCEL_2003_FORMATS)) {
             $this->rows = [];
             $beginRowsReadRange = $this->dataRow;
             for ($startRow = $this->dataRow; $startRow <= self::MAX_ROW_XLS; $startRow += $this->chunkSize) {
@@ -203,7 +230,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
             }
 
         } else
-            if (in_array($this->inputFileType, $this->excel_2007_formats)) {
+            if (in_array($this->inputFileType, self::$EXCEL_2007_FORMATS)) {
                 $curRow = 1;
                 /**
                  * @var Sheet $sheet

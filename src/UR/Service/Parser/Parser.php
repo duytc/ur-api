@@ -141,7 +141,7 @@ class Parser implements ParserInterface
             }
 
             $isMapped = count(array_diff_key(array_flip($fileCols), $row));
-            if ($isMapped > 0) {
+            if ($isMapped > 0 && count($fileCols) === count($row)) {
                 $row = array_combine($fileCols, $row);
             }
 
