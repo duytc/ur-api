@@ -143,7 +143,7 @@ class ParsedDataImporter
         } catch (Exception $exception) {
             $this->conn->rollBack();
             $this->lockingDatabaseTable->unLockTable();
-            throw new Exception(null, null, null, null, $exception->getMessage());
+            throw new Exception($exception->getMessage(), $exception->getCode(), $exception);
         }
     }
 
