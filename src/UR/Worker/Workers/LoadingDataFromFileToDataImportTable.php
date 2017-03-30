@@ -48,10 +48,16 @@ class LoadingDataFromFileToDataImportTable
 
     private $logDir;
 
+    private $rootDir;
 
-    function __construct($env, Logger $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager, $queue, $logDir, ImportHistoryManagerInterface $importHistoryManager)
+    private $isDebug;
+
+
+    function __construct($rootDir, $env, $isDebug, Logger $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager, $queue, $logDir, ImportHistoryManagerInterface $importHistoryManager)
     {
+        $this->rootDir = $rootDir;
         $this->env = $env;
+        $this->isDebug = $isDebug;
         $this->logger = $logger;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
         $this->connectedDataSourceManager = $connectedDataSourceManager;
@@ -87,12 +93,11 @@ class LoadingDataFromFileToDataImportTable
         // make sure command runs as same environment and allow NOTICE messages
         // INFO messages will be printed. Make sure all important logs are NOTICE and above
         $envFlags = sprintf('--env=%s -v', $this->env);
-
-        if ($this->env == 'prod') {
+        if (!$this->isDebug) {
             $envFlags .= ' --no-debug';
         }
 
-        $process = new Process(sprintf('%s %s %s %d %d %d', self::PHP_BIN, self::RUN_COMMAND, $envFlags, $connectedDataSourceId, $entryId, $importHistoryEntity->getId()));
+        $process = new Process(sprintf('%s %s %s %d %d %d', $this->getAppConsoleCommand(), self::RUN_COMMAND, $envFlags, $connectedDataSourceId, $entryId, $importHistoryEntity->getId()));
 
         try {
             $process->mustRun(
@@ -114,5 +119,14 @@ class LoadingDataFromFileToDataImportTable
         } finally {
             fclose($fp);
         }
+    }
+
+    private function getAppConsoleCommand()
+    {
+        $pathToSymfonyConsole = $this->rootDir;
+
+        $command = sprintf('php %s/console', $pathToSymfonyConsole);
+
+        return $command;
     }
 }

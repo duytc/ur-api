@@ -128,7 +128,9 @@ services:
     ur.worker.workers.re_import_new_entry_received:
         class: UR\Worker\Workers\LoadingDataFromFileToDataImportTable
         arguments:
+            - '%kernel.root_dir%'
             - '%kernel.environment%'
+            - '%kernel.debug%'
             - @logger
             - @ur.domain_manager.data_source_entry
             - @ur.domain_manager.connected_data_source

@@ -28,8 +28,8 @@ class MigrateImportTableAddGroupByDateColumnCommand extends ContainerAwareComman
             ->addOption('all-datasets', 'a', InputOption::VALUE_NONE,
                 'Enable for all users')
             ->addOption('dataset', 'd', InputOption::VALUE_OPTIONAL,
-                'Enable for all users')
-            ->setDescription('Add column __unique_id for data import table if not exist');
+                'Enable for a data set, need provide data set id, example -d 8')
+            ->setDescription('Add group by date, month, year column for data import table if exist date or datetime field');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -48,12 +48,12 @@ class MigrateImportTableAddGroupByDateColumnCommand extends ContainerAwareComman
 
         $service = new UpdateImportTableAddGroupByDateColumn($em, $this->logger);
 
-        $success = false;
+        $success = true;
 
         $isAllPublisherOption = $input->getOption('all-datasets');
         $dataSetId = $input->getOption('dataset');
 
-        if (!$this->validateInput($output, $isAllPublisherOption, $dataSetId)){
+        if (!$this->validateInput($output, $isAllPublisherOption, $dataSetId)) {
             return;
         }
 
@@ -61,14 +61,15 @@ class MigrateImportTableAddGroupByDateColumnCommand extends ContainerAwareComman
             $allDataSets = $dataSetManager->all();
             foreach ($allDataSets as $dataSet) {
                 if ($dataSet instanceof DataSetInterface) {
-                    $success = $service->updateDataSet($dataSet);
+                    $success = $service->updateDataSetForDateFields($dataSet);
+                    $service->updateDataSetForOverrideDateField($dataSet);
                 }
             }
         } else {
-
             /**@var DataSetInterface $dataSet */
             $dataSet = $dataSetManager->find($dataSetId);
-            $success = $service->updateDataSet($dataSet);
+            $success = $service->updateDataSetForDateFields($dataSet);
+            $service->updateDataSetForOverrideDateField($dataSet);
         }
         if ($success) {
             $this->logger->info(sprintf('command run successfully'));
@@ -83,13 +84,14 @@ class MigrateImportTableAddGroupByDateColumnCommand extends ContainerAwareComman
      * @param $dataSetOption
      * @return bool
      */
-    private function validateInput($output, $isAllPublisherOption, $dataSetOption){
-        if (!$isAllPublisherOption && !$dataSetOption){
+    private function validateInput($output, $isAllPublisherOption, $dataSetOption)
+    {
+        if (!$isAllPublisherOption && !$dataSetOption) {
             $output->writeln('Use option -a or -d with dataSourceId. Try one of them');
             return false;
         }
 
-        if ($isAllPublisherOption && $dataSetOption){
+        if ($isAllPublisherOption && $dataSetOption) {
             $output->writeln('Can not use option -a and -d together. Try one of them');
             return false;
         }

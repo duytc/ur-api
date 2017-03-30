@@ -5,6 +5,7 @@ namespace UR\Service\DataSet;
 use DateTime;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\SchemaException;
 use Doctrine\DBAL\Schema\TableDiff;
 use Doctrine\ORM\EntityManager;
 use Monolog\Logger;
@@ -38,12 +39,14 @@ class UpdateImportTableAddGroupByDateColumn
      * @param DataSetInterface $dataSet
      * @return bool
      */
-    public function updateDataSet(DataSetInterface $dataSet)
+    public function updateDataSetForDateFields(DataSetInterface $dataSet)
     {
-        if (!$dataSet instanceof DataSetInterface){
+        if (!$dataSet instanceof DataSetInterface) {
             $this->logger->error("Data Set not exist ");
             return false;
         }
+
+        $this->logger->info(sprintf('start updating date and datetime fields in data set: ' . $dataSet->getId()));
 
         $conn = $this->em->getConnection();
         $schema = new Schema();
@@ -55,8 +58,8 @@ class UpdateImportTableAddGroupByDateColumn
             return false;
         }
 
-        /** @var DataSetInterface[] $dataSetMissingUniques */
-        $dataSetMissingUniques = [];
+        /** @var DataSetInterface[] $dataSetHaveDateFields */
+        $dataSetHaveDateFields = [];
 
         $dimensions = $dataSet->getDimensions();
         $metrics = $dataSet->getMetrics();
@@ -65,32 +68,32 @@ class UpdateImportTableAddGroupByDateColumn
         foreach ($fields as $field => $type) {
             if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
                 if (
-                    !in_array($dataSet, $dataSetMissingUniques) && (
+                    !in_array($dataSet, $dataSetHaveDateFields) && (
                         !$dataSetTable->hasColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $field)) ||
                         !$dataSetTable->hasColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $field)) ||
                         !$dataSetTable->hasColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $field)))
                 ) {
-                    $dataSetMissingUniques[] = $dataSet;
+                    $dataSetHaveDateFields[] = $dataSet;
                 }
             }
         }
 
-        foreach ($dataSetMissingUniques as $dataSetMissingUnique) {
-            $dataSetTable = $dataSetSynchronizer->getDataSetImportTable($dataSetMissingUnique->getId());
+        foreach ($dataSetHaveDateFields as $dataSetHaveDateField) {
+            $dataSetTable = $dataSetSynchronizer->getDataSetImportTable($dataSetHaveDateField->getId());
 
             $addCols = [];
 
             foreach ($fields as $newColumn => $type) {
                 if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
-                    if (!$dataSetTable->hasColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $newColumn))){
+                    if (!$dataSetTable->hasColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $newColumn))) {
                         $addCols[] = $dataSetTable->addColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
                     }
 
-                    if (!$dataSetTable->hasColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $newColumn))){
+                    if (!$dataSetTable->hasColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $newColumn))) {
                         $addCols[] = $dataSetTable->addColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
                     }
 
-                    if (!$dataSetTable->hasColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $newColumn))){
+                    if (!$dataSetTable->hasColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $newColumn))) {
                         $addCols[] = $dataSetTable->addColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
                     }
                 }
@@ -131,28 +134,110 @@ class UpdateImportTableAddGroupByDateColumn
                 }
 
                 $updateQb = $conn->createQueryBuilder();
+                $numberValidDates = 0;
+
                 foreach ($row as $index => $date) {
-                    if (DateTime::createFromFormat('Y-m-d', $date)){
+                    if (!$date) {
+                        continue;
+                    }
+
+                    if (DateTime::createFromFormat('Y-m-d', $date)) {
                         $date = DateTime::createFromFormat('Y-m-d', $date);
                     } else {
                         $date = DateTime::createFromFormat('Y-m-d H:i:s', $date);
                     }
 
                     if ($date instanceof DateTime) {
+                        $numberValidDates++;
                         $month = $date->format('n');
                         $year = $date->format('Y');
                         $day = $date->format('j');
-                        $updateQb->update($dataSetTable->getName(), 't')->set(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $index), $day);
-                        $updateQb->update($dataSetTable->getName(), 't')->set(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $index), $month);
-                        $updateQb->update($dataSetTable->getName(), 't')->set(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $index), $year);
+
+                        if ($day) {
+                            $updateQb->update($dataSetTable->getName(), 't')->set(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $index), $day);
+                        }
+
+                        if ($month) {
+                            $updateQb->update($dataSetTable->getName(), 't')->set(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $index), $month);
+                        }
+
+                        if ($year) {
+                            $updateQb->update($dataSetTable->getName(), 't')->set(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $index), $year);
+                        }
                     }
                 }
-                $updateQb->where('t.__id=:table_id')->setParameter(':table_id', $id);
-                $updateQb->execute();
+
+                if ($numberValidDates > 0) {
+                    $updateQb->where('t.__id=:table_id')->setParameter(':table_id', $id);
+
+                    try {
+                        $updateQb->execute();
+                    } catch (\Exception $e) {
+                        $this->logger->alert($e->getMessage());
+                    }
+                }
             }
         }
 
-        $this->logger->info(sprintf('command run successfully dataSet: '.$dataSet->getId()));
+        $this->logger->info(sprintf('command updating date and datetime fields successfully on dataSet: ' . $dataSet->getId()));
+        return true;
+    }
+
+    /**
+     * @param DataSetInterface $dataSet
+     * @return bool
+     */
+    public function updateDataSetForOverrideDateField(DataSetInterface $dataSet)
+    {
+        if (!$dataSet instanceof DataSetInterface) {
+            $this->logger->error("Data Set not exist ");
+            return false;
+        }
+
+        $this->logger->info(sprintf('start updating override date field on data set: ' . $dataSet->getId()));
+
+        $conn = $this->em->getConnection();
+        $schema = new Schema();
+        $dataSetSynchronizer = new Synchronizer($conn, new Comparator());
+
+        $dataSetTable = $dataSetSynchronizer->getDataSetImportTable($dataSet->getId());
+        if (!$dataSetTable) {
+            $this->logger->error(sprintf("DataSet table %s not exist ", $dataSet->getId()));
+            return false;
+        }
+
+        $addCols = [];
+        $delCols = [];
+
+        if ($dataSetTable->hasColumn(DataSetInterface::OVERWRITE_DATE) &&
+            $dataSetTable->getColumn(DataSetInterface::OVERWRITE_DATE)->getType() != Type::getType(FieldType::DATETIME)
+        ) {
+            try {
+                $deletedColumn = $dataSetTable->getColumn(DataSetInterface::OVERWRITE_DATE);
+                $delCols[] = $deletedColumn;
+                $dataSetTable->dropColumn(DataSetInterface::OVERWRITE_DATE);
+            } catch (SchemaException $exception) {
+                $this->logger->warning($exception->getMessage());
+            }
+        }
+
+        if (!$dataSetTable->hasColumn(DataSetInterface::OVERWRITE_DATE)) {
+            $addCols[] = $dataSetTable->addColumn(DataSetInterface::OVERWRITE_DATE, FieldType::DATETIME, array("notnull" => false, "default" => null));
+        }
+
+        $updateTable = new TableDiff($dataSetTable->getName(), $addCols, [], $delCols, [], [], []);
+
+        try {
+            $dataSetSynchronizer->syncSchema($schema);
+            $alterSqls = $conn->getDatabasePlatform()->getAlterTableSQL($updateTable);
+            foreach ($alterSqls as $alterSql) {
+                $conn->exec($alterSql);
+            }
+        } catch (\Exception $e) {
+            $this->logger->error("Cannot Sync Schema " . $schema->getName());
+        }
+
+        $this->logger->info(sprintf('command updating override date field successfully on dataSet: ' . $dataSet->getId()));
         return true;
     }
 }
