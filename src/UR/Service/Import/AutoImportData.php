@@ -60,19 +60,16 @@ class AutoImportData implements AutoImportDataInterface
 
             return $rows;
         } catch (ImportDataException $e) {
+
             $details = [
-                AbstractConnectedDataSourceAlert::COLUMN => $e->getColumn(),
-                AbstractConnectedDataSourceAlert::CONTENT => $e->getContent()
-            ];
-
-            $result = [
                 AbstractConnectedDataSourceAlert::CODE => $e->getAlertCode(),
-                AbstractConnectedDataSourceAlert::DETAILS => $details
+                AbstractConnectedDataSourceAlert::DETAILS => [
+                    AbstractConnectedDataSourceAlert::COLUMN => $e->getColumn(),
+                    AbstractConnectedDataSourceAlert::CONTENT => $e->getContent()
+                ]
             ];
 
-            $message = json_encode($result);
-
-            throw new BadRequestHttpException($message);
+            throw new PublicImportDataException($details, $e);
         }
     }
 
