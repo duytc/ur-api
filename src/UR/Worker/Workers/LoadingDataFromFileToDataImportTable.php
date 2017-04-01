@@ -68,15 +68,21 @@ class LoadingDataFromFileToDataImportTable
 
     public function loadingDataFromFileToDataImportTable(StdClass $params, $job, $tube)
     {
+        $dataSourceEntryId = $params->entryId;
         $connectedDataSourceId = $params->connectedDataSourceId;
-        $entryId = $params->entryId;
+
         /**@var DataSourceEntryInterface $dataSourceEntry */
-        $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
+        $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+            $this->logger->warning(sprintf('Data Source Entry %d not found (may be deleted before)', $dataSourceEntryId));
+            return;
+        }
+
         /**@var ConnectedDataSourceInterface $connectedDataSource */
-        try {
-            $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
-        } catch (\Exception $exception) {
-            $this->logger->warning($exception->getMessage());
+        $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            $this->logger->warning(sprintf('Connected Data Source %d not found (may be deleted before)', $connectedDataSourceId));
+            return;
         }
 
         /* creating import history */
@@ -97,7 +103,7 @@ class LoadingDataFromFileToDataImportTable
             $envFlags .= ' --no-debug';
         }
 
-        $process = new Process(sprintf('%s %s %s %d %d %d', $this->getAppConsoleCommand(), self::RUN_COMMAND, $envFlags, $connectedDataSourceId, $entryId, $importHistoryEntity->getId()));
+        $process = new Process(sprintf('%s %s %s %d %d %d', $this->getAppConsoleCommand(), self::RUN_COMMAND, $envFlags, $connectedDataSourceId, $dataSourceEntryId, $importHistoryEntity->getId()));
 
         try {
             $process->mustRun(

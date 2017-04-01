@@ -272,39 +272,49 @@ class Parser implements ParserInterface
     private function reformatFileData(array $row, $fileColumn, $type, $cur_row)
     {
         $cellValue = $row[$fileColumn];
-        if ($cellValue === "") {
-            return null;
-        }
 
-        if ($type === FieldType::DECIMAL || $type === FieldType::NUMBER) {
-            $cellValue = preg_replace('/[^\d.-]+/', '', $cellValue);
+        switch ($type) {
+            case FieldType::DECIMAL:
+            case FieldType::NUMBER:
+                $cellValue = preg_replace('/[^\d.-]+/', '', $cellValue);
 
-            $firstNegativePosition = strpos($cellValue, '-');
-            if ($firstNegativePosition === 0) {
-                $afterFirstNegative = substr($cellValue, 1);
-                $afterFirstNegative = preg_replace('/\-{1,}/', '', $afterFirstNegative);
-                $cellValue = '-' . $afterFirstNegative;
-            } else if ($firstNegativePosition > 0) {
-                $cellValue = preg_replace('/\-{1,}/', '', $cellValue);
-            }
-
-            $firstDotPosition = strpos($cellValue, '.');
-            if ($firstDotPosition !== false) {
-                $first = substr($cellValue, 0, $firstDotPosition);
-                if (!is_numeric($first)) {
-                    $first .= '0';
+                // advance process on dash character
+                // if dash is at first position => negative flag
+                // else => remove dash
+                $firstNegativePosition = strpos($cellValue, '-');
+                if ($firstNegativePosition === 0) {
+                    $afterFirstNegative = substr($cellValue, 1);
+                    $afterFirstNegative = preg_replace('/\-{1,}/', '', $afterFirstNegative);
+                    $cellValue = '-' . $afterFirstNegative;
+                } else if ($firstNegativePosition > 0) {
+                    $cellValue = preg_replace('/\-{1,}/', '', $cellValue);
                 }
 
-                $second = substr($cellValue, $firstDotPosition + 1);
-                $second = preg_replace('/\.{1,}/', '', $second);
-                $cellValue = $first . '.' . $second;
-            }
+                // advance process on dot character
+                // if dash is at first position => append 0
+                // else => remove dot
+                $firstDotPosition = strpos($cellValue, '.');
+                if ($firstDotPosition !== false) {
+                    $first = substr($cellValue, 0, $firstDotPosition);
+                    if (!is_numeric($first)) {
+                        $first = '0';
+                    }
 
-            if ($cellValue === null) {
-                return null;
-            } else if (!is_numeric($cellValue)) {
-                throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_WRONG_TYPE_MAPPING, $cur_row + 2, $fileColumn, $cellValue);
-            }
+                    $second = substr($cellValue, $firstDotPosition + 1);
+                    $second = preg_replace('/\.{1,}/', '', $second);
+                    $cellValue = $first . '.' . $second;
+                }
+
+                if (!is_numeric($cellValue)) {
+                    $cellValue = null;
+                }
+
+                break;
+
+            default:
+                // TEXT, MULTI_LINE_TEXT,
+                // DATE, DATETIME. For DATE and DATETIME, we will check in DateFormat:transform and unset row data if transform failed
+                break;
         }
 
         return $cellValue;
@@ -381,6 +391,7 @@ class Parser implements ParserInterface
 
             $row = array_combine($keys, $row);
 
+            $isNeedRemoveRow = false; // true if current row is need remove from rows, this depends on the transform result
             foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
                 /** @var ColumnTransformerInterface[] $transforms */
                 if (!array_key_exists($column, $row)) {
@@ -389,10 +400,21 @@ class Parser implements ParserInterface
 
                 foreach ($transforms as $transform) {
                     $row[$column] = $transform->transform($row[$column]);
-                    if ($row[$column] === 2) {
-                        throw new ImportDataException(ConnectedDataSourceAlertInterface::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, $cur_row + 2, $column);
+
+                    // special for type DATE and DATETIME: if transformed value is null, we unset row data
+                    if (null === $row[$column] && $transform instanceof DateFormat) {
+                        $isNeedRemoveRow = true;
+                        break; // break loop transforms of one columns
                     }
                 }
+
+                if ($isNeedRemoveRow) {
+                    break; // break loop columns
+                }
+            }
+
+            if ($isNeedRemoveRow) {
+                unset($rows[$cur_row]);
             }
         }
 

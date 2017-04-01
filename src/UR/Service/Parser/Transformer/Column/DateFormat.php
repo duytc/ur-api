@@ -69,7 +69,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         $date = DateTime::createFromFormat($fromDateFormat, $value);
 
         if (!$date) {
-            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, 0, $this->getField());
+            return null;
         }
 
         return $date->format($this->dateFormat);

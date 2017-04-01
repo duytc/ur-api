@@ -3,12 +3,10 @@
 namespace UR\Service\Import;
 
 
-use UR\Model\Core\DataSetInterface;
-use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
+use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\DataSet\ParsedDataImporter;
 use UR\Service\Parser\ParsingFileService;
 
@@ -60,7 +58,6 @@ class AutoImportData implements AutoImportDataInterface
 
             return $rows;
         } catch (ImportDataException $e) {
-
             $details = [
                 AbstractConnectedDataSourceAlert::CODE => $e->getAlertCode(),
                 AbstractConnectedDataSourceAlert::DETAILS => [

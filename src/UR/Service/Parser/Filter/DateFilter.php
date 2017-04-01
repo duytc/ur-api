@@ -42,7 +42,7 @@ class DateFilter extends AbstractFilter implements ColumnFilterInterface
         $date = \DateTime::createFromFormat($this->format, $value);
 
         if (!$date) {
-            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, null, $this->getField(), $value);
+            return false;
         }
 
         if ($date <= $this->endDate && $date >= $this->startDate) {
