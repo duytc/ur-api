@@ -7,7 +7,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use UR\Behaviors\ConvertFileEncoding;
+use UR\Behaviors\FileUtilsTrait;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -16,8 +16,8 @@ use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use UR\Service\Alert\DataSource\AbstractDataSourceAlert;
-use UR\Service\Alert\DataSource\DataSourceAlertFactory;
 use UR\Service\Alert\DataSource\DataReceivedAlert;
+use UR\Service\Alert\DataSource\DataSourceAlertFactory;
 use UR\Service\Alert\DataSource\WrongFormatAlert;
 use UR\Service\DataSource\DataSourceType;
 use UR\Service\Import\ImportDataException;
@@ -26,12 +26,19 @@ use UR\Worker\Manager;
 
 class DataSourceEntryManager implements DataSourceEntryManagerInterface
 {
-    use ConvertFileEncoding;
+    use FileUtilsTrait;
+
+    /** @var ObjectManager */
     protected $om;
+    /** @var DataSourceEntryRepositoryInterface */
     protected $repository;
+    /** @var string */
     private $uploadFileDir;
+    /** @var Manager */
     private $workerManager;
+    /** @var ImportService */
     private $importService;
+    /** @var DataSourceAlertFactory */
     private $alertFactory;
 
     public function __construct(ObjectManager $om, DataSourceEntryRepositoryInterface $repository, Manager $workerManager, $uploadFileDir, ImportService $importService)
@@ -113,8 +120,12 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             throw new \Exception(sprintf("receivedVia %s is not supported", $receivedVia));
         }
 
-        $origin_name = $file->getClientOriginalName();
-        $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
+        $originName = $file->getClientOriginalName();
+        // escape $filename (remove special characters)
+        $originName = $this->escapeFileNameContainsSpecialCharacters($originName);
+
+        $filename = basename($originName, '.' . $file->getClientOriginalExtension());
+
         $publisherId = $dataSource->getPublisher()->getId();
 
         try {
@@ -139,10 +150,10 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             }
 
             // save file to upload dir
-            if (strcmp($receivedVia, DataSourceEntry::RECEIVED_VIA_API) === 0) {
-                $name = $origin_name;
+            if (DataSourceEntry::RECEIVED_VIA_API === $receivedVia) {
+                $name = $originName;
             } else {
-                $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
+                $name = $filename . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
             }
 
             if (strlen($name) > 230) {
@@ -162,12 +173,12 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $convertResult = $this->convertToUtf8($filePath, $this->importService->getKernelRootDir());
             if (!$convertResult) {
-                throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $origin_name));
+                throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $originName));
             }
 
             $hash = sha1_file($filePath);
             if ($this->fileAlreadyImported($dataSource, $hash)) {
-                throw new Exception(sprintf('File "%s" is already imported', $origin_name));
+                throw new Exception(sprintf('File "%s" is already imported', $originName));
             }
 
             // create new data source entry
@@ -175,7 +186,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $dataSourceEntry->setPath($dirItem . '/' . $name)
                 ->setIsValid(true)
                 ->setReceivedVia($receivedVia)
-                ->setFileName($origin_name)
+                ->setFileName($originName)
                 ->setHashFile($hash)
                 ->setMetaData($metadata);
 
@@ -188,7 +199,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $alert = $this->alertFactory->getAlert(
                 DataReceivedAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD,
-                $origin_name,
+                $originName,
                 $dataSource);
 
             if ($alert instanceof DataReceivedAlert) {
@@ -199,20 +210,20 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $code = $exception->getAlertCode();
             $alert = $this->alertFactory->getAlert(
                 $code,
-                $origin_name,
+                $originName,
                 $dataSource);
 
             if ($alert instanceof AbstractDataSourceAlert) {
                 $this->workerManager->processAlert($alert->getAlertCode(), $publisherId, $alert->getDetails());
             }
 
-            throw new Exception(sprintf('Cannot upload file because the file is in the wrong format. Data sources can only have one type of file and format.', $origin_name));
+            throw new Exception(sprintf('Cannot upload file because the file is in the wrong format. Data sources can only have one type of file and format.', $originName));
         }
 
         $result = [
-            'file' => $origin_name,
+            'file' => $originName,
             'status' => true,
-            'message' => sprintf('File %s is uploaded successfully', $origin_name)
+            'message' => sprintf('File %s is uploaded successfully', $originName)
         ];
 
         return $result;

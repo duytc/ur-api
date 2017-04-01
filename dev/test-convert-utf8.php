@@ -4,7 +4,7 @@ require __DIR__ . '/../src/UR/Behaviors/ConvertFileEncoding.php';
 
 class TestConvertUtf8
 {
-    use \UR\Behaviors\ConvertFileEncoding;
+    use \UR\Behaviors\FileUtilsTrait;
 
     function testConvertToUtf8($filePath)
     {

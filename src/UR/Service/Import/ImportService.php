@@ -5,18 +5,25 @@ namespace UR\Service\Import;
 
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
-use UR\Behaviors\ConvertFileEncoding;
+use UR\Behaviors\FileUtilsTrait;
 use UR\Model\Core\DataSourceInterface;
-use UR\Service\DataSource\DataSourceType;
 use UR\Service\DataSource\DataSourceFileFactory;
+use UR\Service\DataSource\DataSourceType;
 
 class ImportService
 {
-    use ConvertFileEncoding;
+    use FileUtilsTrait;
+
     const UPLOAD = 'upload';
     const DELETE = 'delete';
+
+    /** @var string */
     protected $uploadRootDir;
+    /** @var string */
     protected $kernelRootDir;
+    /**
+     * @var DataSourceFileFactory
+     */
     private $fileFactory;
 
     /**
@@ -50,9 +57,12 @@ class ImportService
                 throw new \Exception(sprintf("File %s is not valid - wrong format", $origin_name));
             }
 
-            $file_name = basename($origin_name, '.' . $file->getClientOriginalExtension());
+            $filename = basename($origin_name, '.' . $file->getClientOriginalExtension());
 
-            $name = $file_name . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
+            // escape $filename (remove special characters)
+            $filename = $this->escapeFileNameContainsSpecialCharacters($filename);
+
+            $name = $filename . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
 
             $file->move($uploadPath, $name);
             $filePath = $uploadPath . '/' . $name;
@@ -98,7 +108,6 @@ class ImportService
 
         return true;
     }
-
 
     public function detectedFieldsForDataSource(array $newFields, array $currentFields, $option)
     {
