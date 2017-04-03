@@ -5,10 +5,10 @@ namespace UR\Service\Parser;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PostLoadDataEvent;
+use UR\Bundle\ApiBundle\Event\CustomCodeParse\PostParseDataEvent;
+use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreFilterDataEvent;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformCollectionDataEvent;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformColumnDataEvent;
-use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreFilterDataEvent;
-use UR\Bundle\ApiBundle\Event\UrGenericEvent;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertInterface;
 use UR\Service\DataSet\FieldType;
@@ -17,8 +17,8 @@ use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
 use UR\Service\Parser\Transformer\Augmentation;
-use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
+use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class Parser implements ParserInterface
@@ -73,17 +73,11 @@ class Parser implements ParserInterface
         $rows = array_values($dataSource->getRows($format));
 
         // dispatch event after loading data
-        $postLoadDataEvent = new UrGenericEvent(
-            new PostLoadDataEvent(
-                $connectedDataSource->getDataSet()->getPublisherId(),
-                $connectedDataSource->getId(),
-                $connectedDataSource->getDataSource()->getId(),
-                null,
-                null,
-                $rows,
-                null,
-                null
-            )
+        $postLoadDataEvent = new PostLoadDataEvent(
+            $connectedDataSource->getDataSet()->getPublisherId(),
+            $connectedDataSource->getId(),
+            $connectedDataSource->getDataSource()->getId(),
+            $rows
         );
 
         $this->eventDispatcher->dispatch(
@@ -91,10 +85,7 @@ class Parser implements ParserInterface
             $postLoadDataEvent
         );
 
-        $postLoadDataEventResult = $postLoadDataEvent->getArguments();
-        if (is_array($postLoadDataEventResult) && array_key_exists('row', $postLoadDataEventResult)) {
-            $rows = $postLoadDataEventResult['rows'];
-        }
+        $rows = $postLoadDataEvent->getRows();
 
         $dataSetColumns = array_merge($connectedDataSource->getDataSet()->getDimensions(), $connectedDataSource->getDataSet()->getMetrics());
         $types = [];
@@ -109,17 +100,11 @@ class Parser implements ParserInterface
 
         /* 2. do filtering data */
         // dispatch event pre filtering data
-        $preFilterEvent = new UrGenericEvent(
-            new PreFilterDataEvent(
-                $connectedDataSource->getDataSet()->getPublisherId(),
-                $connectedDataSource->getId(),
-                $connectedDataSource->getDataSource()->getId(),
-                null,
-                null,
-                $rows,
-                null,
-                null
-            )
+        $preFilterEvent = new PreFilterDataEvent(
+            $connectedDataSource->getDataSet()->getPublisherId(),
+            $connectedDataSource->getId(),
+            $connectedDataSource->getDataSource()->getId(),
+            $rows
         );
 
         $this->eventDispatcher->dispatch(
@@ -127,10 +112,7 @@ class Parser implements ParserInterface
             $preFilterEvent
         );
 
-        $preFilterEventResult = $preFilterEvent->getArguments();
-        if (is_array($preFilterEventResult) && array_key_exists('row', $preFilterEventResult)) {
-            $rows = $preFilterEventResult['rows'];
-        }
+        $rows = $preFilterEvent->getRows();
 
         $cur_row = -1;
         foreach ($rows as &$row) {
@@ -188,17 +170,11 @@ class Parser implements ParserInterface
         }
 
         // dispatch event pre transforming collection data
-        $preTransformCollectionEvent = new UrGenericEvent(
-            new PreTransformCollectionDataEvent(
-                $connectedDataSource->getDataSet()->getPublisherId(),
-                $connectedDataSource->getId(),
-                $connectedDataSource->getDataSource()->getId(),
-                null,
-                null,
-                $collection,
-                null,
-                null
-            )
+        $preTransformCollectionEvent = new PreTransformCollectionDataEvent(
+            $connectedDataSource->getDataSet()->getPublisherId(),
+            $connectedDataSource->getId(),
+            $connectedDataSource->getDataSource()->getId(),
+            $collection
         );
 
         $this->eventDispatcher->dispatch(
@@ -206,10 +182,7 @@ class Parser implements ParserInterface
             $preTransformCollectionEvent
         );
 
-        $preTransformCollectionEvent = $preFilterEvent->getArguments();
-        if (is_array($preTransformCollectionEvent) && array_key_exists('collection', $preTransformCollectionEvent)) {
-            $collection = $preTransformCollectionEvent['collection'];
-        }
+        $collection = $preTransformCollectionEvent->getCollection();
 
         // transform collection
         foreach ($allFieldsTransforms as $transform) {
@@ -226,17 +199,11 @@ class Parser implements ParserInterface
         }
 
         // dispatch event pre transforming column data
-        $preTransformColumnEvent = new UrGenericEvent(
-            new PreTransformColumnDataEvent(
-                $connectedDataSource->getDataSet()->getPublisherId(),
-                $connectedDataSource->getId(),
-                $connectedDataSource->getDataSource()->getId(),
-                null,
-                null,
-                $collection,
-                null,
-                null
-            )
+        $preTransformColumnEvent = new PreTransformColumnDataEvent(
+            $connectedDataSource->getDataSet()->getPublisherId(),
+            $connectedDataSource->getId(),
+            $connectedDataSource->getDataSource()->getId(),
+            $collection
         );
 
         $this->eventDispatcher->dispatch(
@@ -244,10 +211,7 @@ class Parser implements ParserInterface
             $preTransformColumnEvent
         );
 
-        $preTransformColumnEvent = $preFilterEvent->getArguments();
-        if (is_array($preTransformColumnEvent) && array_key_exists('collection', $preTransformColumnEvent)) {
-            $collection = $preTransformColumnEvent['collection'];
-        }
+        $collection = $preTransformColumnEvent->getCollection();
 
         // transform column
         $rows = array_values($collection->getRows());
@@ -258,7 +222,30 @@ class Parser implements ParserInterface
 
         $columns = $this->getColumnsAfterDoCollectionTransforms($rows[0], $columnFromMap, $collection->getColumns());
 
-        return $this->getFinalParserCollection($rows, $columns, $parserConfig);
+        $types = $collection->getTypes();
+
+        $collection = $this->getFinalParserCollection($rows, $columns, $parserConfig);
+
+        // todo refactor, this is messy to have to set types like this
+
+        $collection->setTypes($types);
+
+        // dispatch event post parse data
+        $postParseDataEvent = new PostParseDataEvent(
+            $connectedDataSource->getDataSet()->getPublisherId(),
+            $connectedDataSource->getId(),
+            $connectedDataSource->getDataSource()->getId(),
+            $collection
+        );
+
+        $this->eventDispatcher->dispatch(
+            self::EVENT_NAME_POST_PARSE_DATA,
+            $postParseDataEvent
+        );
+
+        $collection = $postParseDataEvent->getCollection();
+
+        return $collection;
     }
 
     /**

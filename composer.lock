@@ -1167,7 +1167,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSUserBundle/zipball/624191ae6c519e0bdf11183925b7e11b506f94e2",
+                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSUserBundle/zipball/2e0243e9e8a3ca0dab753fc5f2e79b4b3093ac9a",
                 "reference": "7abb0ff366c404f2c2b34fd264693071148351a2",
                 "shasum": ""
             },
@@ -4107,12 +4107,12 @@
             "source": {
                 "type": "git",
                 "url": "git@github.com:tagcade/unified-reports-custom-transform-bundle.git",
-                "reference": "58016a72910b94e933a6662c464cbd42ea117844"
+                "reference": "bc8cfd1ad604a98979bc543d3caba89764007c2b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tagcade/unified-reports-custom-transform-bundle/zipball/58016a72910b94e933a6662c464cbd42ea117844",
-                "reference": "58016a72910b94e933a6662c464cbd42ea117844",
+                "url": "https://api.github.com/repos/tagcade/unified-reports-custom-transform-bundle/zipball/bc8cfd1ad604a98979bc543d3caba89764007c2b",
+                "reference": "bc8cfd1ad604a98979bc543d3caba89764007c2b",
                 "shasum": ""
             },
             "require": {
@@ -4149,7 +4149,7 @@
                 "source": "https://github.com/tagcade/unified-reports-custom-transform-bundle/tree/master",
                 "issues": "https://github.com/tagcade/unified-reports-custom-transform-bundle/issues"
             },
-            "time": "2017-02-15 11:09:47"
+            "time": "2017-04-03 10:43:19"
         },
         {
             "name": "twig/twig",
@@ -4533,7 +4533,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/liip/LiipFunctionalTestBundle/zipball/8466b71c7a923295c3045b257efb53015f432ff5",
+                "url": "https://api.github.com/repos/liip/LiipFunctionalTestBundle/zipball/a92dab0a48a5e92877b1546c336b298662f041c1",
                 "reference": "9ce4e7f1948e559d986141b57f913bb83fcc9734",
                 "shasum": ""
             },

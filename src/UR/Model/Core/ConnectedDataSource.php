@@ -63,6 +63,19 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     }
 
     /**
+     * set id, be careful. Current only for dryRun mode only
+     *
+     * @param int $id
+     * @return mixed
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+    /**
      * @inheritdoc
      */
     public function getMapFields()

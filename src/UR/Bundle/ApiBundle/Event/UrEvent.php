@@ -5,8 +5,17 @@ use Symfony\Component\EventDispatcher\Event;
 
 class UrEvent extends Event
 {
+    /**
+     * @var int
+     */
     protected $publisherId;
+    /**
+     * @var int
+     */
     protected $connectedDataSourceId;
+    /**
+     * @var int
+     */
     protected $dataSourceId;
 
     /**

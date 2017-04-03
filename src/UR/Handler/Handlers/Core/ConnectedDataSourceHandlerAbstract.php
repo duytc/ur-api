@@ -4,6 +4,7 @@ namespace UR\Handler\Handlers\Core;
 
 
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
+use UR\Entity\Core\ConnectedDataSource;
 use UR\Exception\InvalidFormException;
 use UR\Exception\LogicException;
 use UR\Form\Type\ConnectedDataSourceFormType;
@@ -52,12 +53,16 @@ abstract class ConnectedDataSourceHandlerAbstract extends RoleHandlerAbstract
         $form->submit($parameters, $initializeMissingFields);
 
         if ($form->isValid()) {
+            /** @var ConnectedDataSource $entity */
             $entity = $form->getData();
 
             $isDryRun = array_key_exists(ConnectedDataSourceFormType::IS_DRY_RUN, $parameters) ? (bool)$parameters[ConnectedDataSourceFormType::IS_DRY_RUN] : false;
 
             if (!$isDryRun) {
                 $this->domainManager->save($entity);
+            } else {
+                $id = array_key_exists('connectedDataSourceId', $parameters) ? $parameters['connectedDataSourceId'] : null;
+                $entity->setId($id);
             }
 
             return $entity;
