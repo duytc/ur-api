@@ -17,7 +17,7 @@ services:
     ur_app.event_listener.data_source_entry_inserted_listener:
         class: UR\Bundle\AppBundle\EventListener\ReImportWhenDataSourceEntryInsertedListener
         arguments:
-            - @ur.worker.manager
+            - @ur.service.loading_data_service
         tags:
             - { name: doctrine.event_listener, event: onFlush }
             - { name: doctrine.event_listener, event: postFlush }
@@ -25,10 +25,9 @@ services:
     ur_app.event_listener.connected_data_source_entry_inserted_listener:
         class: UR\Bundle\AppBundle\EventListener\ReImportWhenConnectedDataSourceEntryInsertedListener
         arguments:
-            - @ur.worker.manager
+            - @ur.service.loading_data_service
         tags:
             - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postUpdate }
+            - { name: doctrine.event_listener, event: postPersist }
             - { name: doctrine.event_listener, event: postFlush }
-
-    ur_app.event_listener.data_source_update_next_alert_time_listener:
-        class: UR\B

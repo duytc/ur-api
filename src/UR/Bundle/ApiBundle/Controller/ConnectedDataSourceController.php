@@ -97,10 +97,10 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         $filePaths = $request->request->get('filePaths', null);
 
         // temporary create connected data source entity (not save to database)
+        // do this because the new connected data source (not yet save) may be difference from old connected data source in database
         $postResult = $this->postAndReturnEntityData($request);
         /** @var ConnectedDataSourceInterface $tempConnectedDataSource */
         $tempConnectedDataSource = $postResult->getData();
-
 
         return $this->handleDryRun($tempConnectedDataSource, $filePaths);
     }

@@ -23,6 +23,11 @@ class DataSet implements DataSetInterface
      */
     protected $connectedDataSources;
 
+    /**
+     * @var LinkedMapDataSetInterface[]
+     */
+    protected $linkedMapDataSets;
+
     public function __construct()
     {
     }
@@ -190,5 +195,21 @@ class DataSet implements DataSetInterface
     public function getAllDimensionMetrics()
     {
         return array_merge($this->getDimensions(), $this->getMetrics());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLinkedMapDataSets()
+    {
+        return $this->linkedMapDataSets;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLinkedMapDataSets(array $linkedMapDataSets)
+    {
+        $this->linkedMapDataSets = $linkedMapDataSets;
     }
 }

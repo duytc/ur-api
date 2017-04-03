@@ -1,0 +1,11 @@
+parameters:
+    # entity class
+    ur.entity.core.linked_map_data_set.class: UR\Entity\Core\LinkedMapDataSet
+
+services:
+    ur.repository.linked_map_data_set:
+        class: UR\Repository\Core\LinkedMapDataSetRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.linked_map_data_set.class%

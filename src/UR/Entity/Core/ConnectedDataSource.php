@@ -5,6 +5,7 @@ namespace UR\Entity\Core;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ConnectedDataSource as ConnectedDataSourceModel;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\LinkedMapDataSetInterface;
 
 class ConnectedDataSource extends ConnectedDataSourceModel
 {
@@ -28,6 +29,11 @@ class ConnectedDataSource extends ConnectedDataSourceModel
      * @var DataSetInterface
      */
     protected $dataSet;
+
+    /**
+     * @var LinkedMapDataSetInterface[]
+     */
+    protected $linkedMapDataSets;
 
     /**
      * @inheritdoc

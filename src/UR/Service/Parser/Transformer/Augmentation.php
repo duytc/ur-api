@@ -3,7 +3,6 @@
 namespace UR\Service\Parser\Transformer;
 
 use Doctrine\ORM\EntityManagerInterface;
-use UR\Entity\Core\LinkedMapDataSet;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
@@ -101,15 +100,15 @@ class Augmentation implements CollectionTransformerInterface
 
         if (is_array($this->customCondition)) {
             $mappedFields = [];
-            foreach($this->customCondition as $i=>$condition) {
+            foreach ($this->customCondition as $i => $condition) {
                 if (array_key_exists(self::CUSTOM_FIELD_KEY, $condition)
                     && array_key_exists(self::CUSTOM_OPERATOR_KEY, $condition)
                     && array_key_exists(self::CUSTOM_VALUE_KEY, $condition)
                 ) {
                     $field = $condition[self::CUSTOM_FIELD_KEY];
-                    $paramField = sprintf(':%s', $this->removeSpacesInVariableName($condition[self::CUSTOM_FIELD_KEY]));
+                    $paramField = sprintf(':%s_%d', $this->removeSpacesInVariableName($condition[self::CUSTOM_FIELD_KEY]), $i);
                     $operator = $condition[self::CUSTOM_OPERATOR_KEY];
-                    switch($operator) {
+                    switch ($operator) {
                         case self::CUSTOM_OPERATOR_EQUAL:
                             $qb->andWhere(sprintf('%s = %s', $conn->quoteIdentifier($field), $paramField))
                                 ->setParameter($paramField, $condition[self::CUSTOM_VALUE_KEY]);
@@ -133,9 +132,6 @@ class Augmentation implements CollectionTransformerInterface
                     $mappedFields[] = $field;
                 }
             }
-
-            $linkedMapDataSetRepository = $em->getRepository(LinkedMapDataSet::class);
-            $linkedMapDataSetRepository->override($this->mapDataSet, $connectedDataSource, $mappedFields);
         }
 
         $mappedResult = $qb->execute()->fetchAll();

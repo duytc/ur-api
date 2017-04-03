@@ -40,4 +40,28 @@ class LinkedMapDataSetRepository extends EntityRepository implements LinkedMapDa
             throw $ex;
         }
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function deleteByConnectedDataSource($connectedDataSourceId)
+    {
+        $sql= 'DELETE FROM core_linked_map_data_set WHERE connected_data_source_id = :connectedDataSourceId';
+
+        $connection = $this->getEntityManager()->getConnection();
+        $qb = $connection->prepare($sql);
+
+        $qb->bindValue('connectedDataSourceId', $connectedDataSourceId, Type::INTEGER);
+
+        $connection->beginTransaction();
+        try {
+            if (false === $qb->execute()) {
+                throw new \Exception('Execute error');
+            }
+            $connection->commit();
+        } catch (\Exception $ex) {
+            $connection->rollBack();
+            throw $ex;
+        }
+    }
 }

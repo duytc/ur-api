@@ -21,6 +21,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
+            ->add('connectedDataSourceId', null, ['mapped' => false])
             ->add('dataSet')
             ->add('dataSource')
             ->add('mapFields')

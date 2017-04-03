@@ -19,6 +19,11 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $replayData;
 
     /**
+     * @var LinkedMapDataSetInterface[]
+     */
+    protected $linkedMapDataSets;
+
+    /**
      * @return boolean
      */
     public function isReplayData()
@@ -185,5 +190,21 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     {
         $this->userReorderTransformsAllowed = $userReorderTransformsAllowed;
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLinkedMapDataSets()
+    {
+        return $this->linkedMapDataSets;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLinkedMapDataSets(array $linkedMapDataSets)
+    {
+        $this->linkedMapDataSets = $linkedMapDataSets;
     }
 }

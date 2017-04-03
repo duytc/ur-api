@@ -36,3 +36,9 @@ UR\Entity\Core\DataSet:
             cascade: ['persist', 'detach', 'remove']
             mappedBy: dataSet
             orphanRemoval: true
+
+        linkedMapDataSets:
+            targetEntity: UR\Entity\Core\LinkedMapDataSet
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: mapDataSet
+            orphanRemoval: true

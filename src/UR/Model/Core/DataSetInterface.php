@@ -109,4 +109,14 @@ interface DataSetInterface extends ModelInterface
      * @return array
      */
     public function getAllDimensionMetrics();
+
+    /**
+     * @return LinkedMapDataSetInterface[]
+     */
+    public function getLinkedMapDataSets();
+
+    /**
+     * @param LinkedMapDataSetInterface[] $linkedMapDataSets
+     */
+    public function setLinkedMapDataSets(array $linkedMapDataSets);
 }

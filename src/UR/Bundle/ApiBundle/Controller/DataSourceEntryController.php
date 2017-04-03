@@ -320,13 +320,12 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      */
     private function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry)
     {
-        $workerManager = $this->get('ur.worker.manager');
+        $loadingDataService = $this->get('ur.service.loading_data_service');
+        $linkedMapDataSetRepository = $this->get('ur.repository.linked_map_data_set');
         if (!$dataSourceEntry->getDataSource()->getEnable()) {
             throw new \Exception(sprintf("Could not replay data - entry in disabled Data Source "));
         }
 
-        foreach ($dataSourceEntry->getDataSource()->getConnectedDataSources() as $connectedDataSource) {
-            $workerManager->loadingDataFromFileToDataImportTable($connectedDataSource->getId(), $dataSourceEntry->getId(), $connectedDataSource->getDataSet()->getId());
-        }
+        $loadingDataService->doLoadDataFromEntryToDataBase($dataSourceEntry, $linkedMapDataSetRepository);
     }
 }

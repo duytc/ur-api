@@ -5,9 +5,10 @@ namespace UR\Bundle\AppBundle\EventListener;
 
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
+use UR\Entity\Core\LinkedMapDataSet;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\ModelInterface;
-use UR\Worker\Manager;
+use UR\Service\Import\LoadingDataService;
 
 /**
  * Class ConnectedDataSourceChangeListener
@@ -23,12 +24,12 @@ class ReImportWhenDataSourceEntryInsertedListener
      */
     protected $insertedEntities = [];
 
-    /** @var Manager */
-    private $workerManager;
+    /** @var LoadingDataService */
+    private $loadingDataService;
 
-    function __construct(Manager $workerManager)
+    function __construct(LoadingDataService $loadingDataService)
     {
-        $this->workerManager = $workerManager;
+        $this->loadingDataService = $loadingDataService;
     }
 
     public function onFlush(OnFlushEventArgs $args)
@@ -45,6 +46,9 @@ class ReImportWhenDataSourceEntryInsertedListener
 
     public function postFlush(PostFlushEventArgs $args)
     {
+        $em = $args->getEntityManager();
+        $linkedMapDataSetRepository = $em->getRepository(LinkedMapDataSet::class);
+
         if (count($this->insertedEntities) < 1) {
             return;
         }
@@ -55,10 +59,7 @@ class ReImportWhenDataSourceEntryInsertedListener
             }
 
             if ($entity->getDataSource()->getEnable()) {
-                foreach ($entity->getDataSource()->getConnectedDataSources() as $connectedDataSource) {
-                    $this->workerManager->loadingDataFromFileToDataImportTable($connectedDataSource->getId(), $entity->getId(), $connectedDataSource->getDataSet()->getId());
-                }
-
+                $this->loadingDataService->doLoadDataFromEntryToDataBase($entity, $linkedMapDataSetRepository);
             }
         }
 

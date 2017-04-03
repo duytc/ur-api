@@ -101,4 +101,16 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @return self
      */
     public function setUserReorderTransformsAllowed($userReorderTransformsAllowed);
+
+
+    /**
+     * @return LinkedMapDataSetInterface[]
+     */
+    public function getLinkedMapDataSets();
+
+    /**
+     * @param LinkedMapDataSetInterface[] $linkedMapDataSets
+     * @return self
+     */
+    public function setLinkedMapDataSets(array $linkedMapDataSets);
 }

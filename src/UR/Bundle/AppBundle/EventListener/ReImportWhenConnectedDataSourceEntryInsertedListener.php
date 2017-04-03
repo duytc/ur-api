@@ -4,12 +4,16 @@ namespace UR\Bundle\AppBundle\EventListener;
 
 
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
+use UR\Entity\Core\LinkedMapDataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\ModelInterface;
-use UR\Worker\Manager;
+use UR\Service\Import\LoadingDataService;
+use UR\Service\Parser\Transformer\Augmentation;
+use UR\Service\Parser\Transformer\TransformerFactory;
 
 /**
  * Class ConnectedDataSourceChangeListener
@@ -25,12 +29,15 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
      */
     protected $insertedEntities = [];
 
-    /** @var Manager */
-    private $workerManager;
+    /** @var LoadingDataService */
+    private $loadingDataService;
 
-    function __construct(Manager $workerManager)
+    private $transformFactory;
+
+    function __construct(LoadingDataService $loadingDataService)
     {
-        $this->workerManager = $workerManager;
+        $this->loadingDataService = $loadingDataService;
+        $this->transformFactory = new TransformerFactory();
     }
 
     public function onFlush(OnFlushEventArgs $args)
@@ -53,10 +60,14 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
             return;
         }
 
+        $em = $args->getEntityManager();
+        $linkedMapDataSetRepository = $em->getRepository(LinkedMapDataSet::class);
+
         foreach ($this->insertedEntities as $entity) {
             if (!$entity instanceof ConnectedDataSourceInterface) {
                 continue;
             }
+
             if (!$entity->isReplayData()) {
                 continue;
             }
@@ -69,12 +80,98 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
                 }
 
                 foreach ($dataSourceEntries as $dataSourceEntry) {
-                    $this->workerManager->loadingDataFromFileToDataImportTable($entity->getId(), $dataSourceEntry->getId(), $entity->getDataSet()->getId());
+                    $this->loadingDataService->doLoadDataFromEntryToDataBase($dataSourceEntry, $linkedMapDataSetRepository);
                 }
             }
         }
 
         // reset for new onFlush event
         $this->insertedEntities = [];
+    }
+
+    public function postPersist(LifecycleEventArgs $args)
+    {
+        $entity = $args->getEntity();
+        $em = $args->getEntityManager();
+
+        if (!$entity instanceof ConnectedDataSourceInterface) {
+            return;
+        }
+
+        $transforms = $entity->getTransforms();
+        $augmentationTransforms = $this->getAugmentationTransforms($transforms);
+        $linkedMapDataSetRepository = $em->getRepository(LinkedMapDataSet::class);
+        /**
+         * @var Augmentation[] $augmentationTransforms
+         */
+        foreach ($augmentationTransforms as $insertedAugmentationTransform) {
+            $linkedMapDataSetRepository->override($insertedAugmentationTransform->getMapDataSet(), $entity, $insertedAugmentationTransform->getMapFields());
+        }
+    }
+
+    public function postUpdate(LifecycleEventArgs $args)
+    {
+        $em = $args->getEntityManager();
+        $entity = $args->getEntity();
+
+        if (!$entity instanceof ConnectedDataSourceInterface) {
+            return;
+        }
+
+        $uow = $em->getUnitOfWork();
+        $changedFields = $uow->getEntityChangeSet($entity);
+
+        if (!array_key_exists('transforms', $changedFields)) {
+            return;
+        }
+
+        $values = $changedFields['transforms'];
+        /**
+         * @var Augmentation[] $beforeAugmentationTransforms
+         */
+        $beforeAugmentationTransforms = $this->getAugmentationTransforms($values[0]);
+
+        /**
+         * @var Augmentation[] $afterAugmentationTransforms
+         */
+        $afterAugmentationTransforms = $this->getAugmentationTransforms($values[1]);
+
+        $linkedMapDataSetRepository = $em->getRepository(LinkedMapDataSet::class);
+        /*
+         * delete all linked data set with this connected data source
+         */
+        if (count($beforeAugmentationTransforms) > 0) {
+            $linkedMapDataSetRepository->deleteByConnectedDataSource($entity->getId());
+        }
+
+        /*
+         * add augmentation transform
+         */
+        /**
+         * @var Augmentation[] $afterAugmentationTransforms
+         */
+        foreach ($afterAugmentationTransforms as $insertedAugmentationTransform) {
+            $linkedMapDataSetRepository->override($insertedAugmentationTransform->getMapDataSet(), $entity, $insertedAugmentationTransform->getMapFields());
+        }
+    }
+
+    private function getAugmentationTransforms(array $transforms)
+    {
+        $result = [];
+        foreach ($transforms as $transform) {
+            $transformObjects = $this->transformFactory->getTransform($transform);
+
+            if (!is_array($transformObjects)) {
+                continue;
+            }
+
+            foreach ($transformObjects as $transformObject) {
+                if ($transformObject instanceof Augmentation) {
+                    $result[] = $transformObject;
+                }
+            }
+        }
+
+        return $result;
     }
 }

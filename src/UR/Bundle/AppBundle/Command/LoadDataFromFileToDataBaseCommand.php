@@ -6,11 +6,11 @@ use Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertFactory;
 use UR\Service\Alert\ConnectedDataSource\DataAddedAlert;
 use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
@@ -77,15 +77,15 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
         /**@var DataSourceEntryInterface $dataSourceEntry */
         $dataSourceEntry = $dataSourceEntryManager->find($dataSourceEntryId);
 
-        if ($dataSourceEntry === null) {
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
             throw new \Exception(sprintf('cannot find data source entry with id: %d ', $dataSourceEntryId));
         }
 
         /**@var ConnectedDataSourceInterface $connectedDataSource */
         $connectedDataSource = $connectedDataSourceManager->find($connectedDataSourceId);
 
-        if ($connectedDataSource->getDataSet() === null) {
-            throw new \Exception(sprintf('no data set with connected data source id: %d ', $connectedDataSourceId));
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            throw new \Exception(sprintf('cannot find connected data source with id: %d ', $connectedDataSourceId));
         }
 
         if (!$importId) {
@@ -94,7 +94,7 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
         } else {
             $importHistoryEntity = $importHistoryManager->find($importId);
 
-            if (!$importHistoryEntity) {
+            if (!$importHistoryEntity instanceof ImportHistoryInterface) {
                 throw new \Exception(sprintf('can not find import history with id: %d', $importId));
             }
         }
@@ -106,10 +106,6 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
              * get import histories by data source entry and connected data source
              */
             $importHistories = $importHistoryManager->getImportHistoryByDataSourceEntry($dataSourceEntry, $connectedDataSource->getDataSet(), $importHistoryEntity);
-
-            if ($importHistoryEntity === null) {
-                throw new \Exception(sprintf('can not find import history with id: %d', $importId));
-            }
 
             /*
              * call service load data to data base
@@ -167,7 +163,6 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
         }
 
         if ($isImportFail) {
-
             $failureAlert = $connectedDataSourceAlertFactory->getAlert(
                 $importHistoryEntity->getId(),
                 $connectedDataSource->getAlertSetting(),

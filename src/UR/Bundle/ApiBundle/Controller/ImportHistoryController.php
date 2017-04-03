@@ -159,6 +159,9 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
         $importHistories[] = $importHistory;
         $importHistoryRepository = $this->get('ur.repository.import_history');
         $importHistoryRepository->deleteImportedData($importHistories);
+        $loadingDataService = $this->get('ur.service.loading_data_service');
+        $linkedMapDataSetRepository = $this->get('ur.repository.linked_map_data_set');
+        $loadingDataService->doLoadDataFromEntryToDataBase($importHistory->getDataSourceEntry(), $linkedMapDataSetRepository, true);
     }
 
     /**

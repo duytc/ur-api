@@ -21,4 +21,10 @@ interface LinkedMapDataSetRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function override($mapDataSet, ConnectedDataSourceInterface $connectedDataSource, array $mappedFields);
+
+    /**
+     * @param $connectedDataSourceId
+     * @return mixed
+     */
+    public function deleteByConnectedDataSource($connectedDataSourceId);
 }
