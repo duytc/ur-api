@@ -10,7 +10,6 @@ use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreFilterDataEvent;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformCollectionDataEvent;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformColumnDataEvent;
 use UR\Model\Core\ConnectedDataSourceInterface;
-use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\DTO\Collection;
@@ -298,9 +297,29 @@ class Parser implements ParserInterface
 
                 break;
 
+            case FieldType::DATE:
+            case FieldType::DATETIME:
+                // make sure date value contain number,
+                // else the value is invalid, then we return 'null' for the date transformer removes entire row due to date null
+                // e.g:
+                // "1/21/17" is valid, "Jan 21 17" is valid,
+                // "Jan abc21 17" is valid (but when date transformer creates date, it will be invalid),
+                // "total" is invalid date, so we return null, then date transformer remove entire row contains this date
+                if (!preg_match('/[\d]+/', $cellValue)) {
+                    $cellValue = null;
+                }
+
+                break;
+
+            case FieldType::TEXT:
+            case FieldType::MULTI_LINE_TEXT:
+                if ($cellValue === "") {
+                    return null; // treat empty string as null value
+                }
+
+                break;
+
             default:
-                // TEXT, MULTI_LINE_TEXT,
-                // DATE, DATETIME. For DATE and DATETIME, we will check in DateFormat:transform and unset row data if transform failed
                 break;
         }
 
@@ -371,6 +390,12 @@ class Parser implements ParserInterface
             }
 
             $row = array_intersect_key($row, $columns);
+            if (empty($row)) {
+                // after array)intersect_key, the $row may be an empty array
+                // so that we must remove to avoid an empty row data
+                unset($rows[$cur_row]);
+                continue;
+            }
 
             $keys = array_map(function ($key) use ($columns) {
                 return $columns[$key];
@@ -386,13 +411,15 @@ class Parser implements ParserInterface
                 }
 
                 foreach ($transforms as $transform) {
-                    $row[$column] = $transform->transform($row[$column]);
-
-                    // special for type DATE and DATETIME: if transformed value is null, we unset row data
+                    // special for type DATE and DATETIME: if value is null, we unset row data
+                    // and do not do transform on null value
                     if (null === $row[$column] && $transform instanceof DateFormat) {
                         $isNeedRemoveRow = true;
                         break; // break loop transforms of one columns
                     }
+
+                    // do transform, throw exception on invalid value
+                    $row[$column] = $transform->transform($row[$column]);
                 }
 
                 if ($isNeedRemoveRow) {

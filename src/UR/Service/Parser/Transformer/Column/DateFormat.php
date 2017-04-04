@@ -12,6 +12,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     const FROM_KEY = 'from';
     const TO_KEY = 'to';
     const IS_CUSTOM_FORMAT_DATE_FROM = 'isCustomFormatDateFrom';
+
     protected $fromDateFormat;
     protected $toDateFormat;
     protected $isCustomFormatDateFrom;
@@ -49,9 +50,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     }
 
     /**
-     * @param $value
-     * @return int|null|string
-     * @throws ImportDataException
+     * @inheritdoc
      */
     public function transform($value)
     {
@@ -68,18 +67,24 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         $fromDateFormat = $this->isCustomFormatDateFrom ? $this->convertCustomFromDateFormat($this->fromDateFormat) : $this->fromDateFormat;
         $date = DateTime::createFromFormat($fromDateFormat, $value);
 
-        if (!$date) {
-            return null;
+        if (!$date instanceof DateTime) {
+            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, 0, $this->getField());
         }
 
         return $date->format($this->dateFormat);
     }
 
+    /**
+     * @return string
+     */
     public function getFromDateFormat()
     {
         return $this->fromDateFormat;
     }
 
+    /**
+     * @return string
+     */
     public function getToDateFormat()
     {
         return $this->toDateFormat;
@@ -178,6 +183,9 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         return $convertedDateFormat;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function validate()
     {
         if (!$this->isCustomFormatDateFrom && !in_array($this->fromDateFormat, $this->supportedDateFormats)) {

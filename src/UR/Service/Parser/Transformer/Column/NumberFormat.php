@@ -31,10 +31,13 @@ class NumberFormat extends AbstractCommonColumnTransform implements ColumnTransf
         $this->thousandsSeparator = $thousandsSeparator;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function transform($value)
     {
         if (!is_numeric($value)) {
-            return $value;
+            return null; // return null on non numeric value
         }
 
         $thousandsSeparator = $this->thousandsSeparator === self::SEPARATOR_NONE ? '' : $this->thousandsSeparator;
@@ -42,6 +45,9 @@ class NumberFormat extends AbstractCommonColumnTransform implements ColumnTransf
         return number_format($value, $this->decimals, '.', $thousandsSeparator);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function validate()
     {
         if (!is_numeric($this->decimals)) {
