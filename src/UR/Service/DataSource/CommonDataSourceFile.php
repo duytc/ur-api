@@ -28,7 +28,7 @@ Abstract class CommonDataSourceFile
 
         // find the index that is trailing empty columns start point
         foreach ($arr as $index => $value) {
-            if (!empty($value)) {
+            if ($value !== null && $value !== '') {
                 $foundIndex = false;
                 continue;
             }

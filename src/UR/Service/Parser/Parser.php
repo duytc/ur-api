@@ -299,6 +299,11 @@ class Parser implements ParserInterface
 
             case FieldType::DATE:
             case FieldType::DATETIME:
+                // the cellValue may be a DateTime instance if file type is excel. The object is return by excel reader library
+                if ($cellValue instanceof \DateTime) {
+                    break;
+                }
+
                 // make sure date value contain number,
                 // else the value is invalid, then we return 'null' for the date transformer removes entire row due to date null
                 // e.g:
