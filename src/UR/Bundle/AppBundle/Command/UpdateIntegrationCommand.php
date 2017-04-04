@@ -36,7 +36,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
             ->addOption('parameters', 'p', InputOption::VALUE_OPTIONAL,
                 'Integration parameters (optional) as name:type, allow multiple parameters separated by comma. 
                 Supported types are: plainText (default), date (Y-m-d), dynamicDateRange (last 1,2,3... days) 
-                , secure (will be encrypted in database and not show value in ui)
+                , secure (will be encrypted in database and not show value in ui), option (array of string, separated by ; such as string11; string1 2; String 1 3)
                 and regex (for regex matching)
                 e.g. -p "username,password:secure,startDate:date,pattern:regex"')
             ->addOption('all-publishers', 'a', InputOption::VALUE_NONE,
@@ -90,24 +90,25 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         if (null !== $paramsString) {
             // validate params
             $paramsString = $input->getOption('parameters');
-            if (!empty($paramsString) && !preg_match('/^[a-zA-Z0-9,:\-_]+$/', $paramsString)) {
-                $output->writeln(sprintf('command run failed: parameter must not be null or empty, or wrong format (a-zA-Z,:\-_)'));
-                return;
+            if (!empty($paramsString) && !preg_match('/^[a-zA-Z0-9,:;\s-_]+$/', $paramsString)) {
+                $output->writeln(sprintf('command run failed: parameter must not be null or empty, or wrong format (a-zA-Z0-9,:;\s-_)'));
+                return 0;
             }
 
             // make sure only one ":" for each param of params
             $params = explode(',', $paramsString);
             foreach ($params as $param) {
                 $paramNameAndType = explode(':', $param);
-                if (count($paramNameAndType) > 2) {
-                    $output->writeln(sprintf('command run failed: invalid param name and type, please use format "name:type"'));
-                    return;
-                }
 
+                if (count($paramNameAndType) > 3) {
+                    $output->writeln(sprintf('command run failed: invalid param name and type, please use format "name:type:value"'));
+                    return false;
+                }
+                
                 $paramType = count($paramNameAndType) < 2 ? Integration::PARAM_TYPE_PLAIN_TEXT : $paramNameAndType[1];
                 if (!in_array($paramType, Integration::$SUPPORTED_PARAM_TYPES)) {
                     $output->writeln(sprintf('command run failed: not supported param type %s', $paramType));
-                    return;
+                    return 0;
                 }
             }
 
@@ -201,6 +202,9 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
             // init new data source integration params values due to new Integration params
             $newDataSourceIntegrationParams = array_map(function ($newIntegrationParam) {
                 $newIntegrationParam[Integration::PARAM_KEY_VALUE] = null;
+                if (array_key_exists(Integration::PARAM_KEY_OPTION_VALUES, $newIntegrationParam)){
+                    unset($newIntegrationParam[Integration::PARAM_KEY_OPTION_VALUES]);
+                }
                 return $newIntegrationParam;
             }, $newIntegrationParams);
 
@@ -316,9 +320,23 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
             // parse name:type
             $paramNameAndType = explode(':', trim($param));
 
+            $value = null;
+
+            if (count($paramNameAndType) > 2){
+                //For option params
+                if ($paramNameAndType[1] == Integration::PARAM_TYPE_OPTION) {
+                    $value = explode(';', $paramNameAndType[2]);
+                }
+                //For other params
+                else {
+                    $value = $paramNameAndType[2];
+                }
+            }
+            
             return [
-                'key' => $paramNameAndType[0],
-                'type' => count($paramNameAndType) < 2 ? Integration::PARAM_TYPE_PLAIN_TEXT : $paramNameAndType[1]
+                Integration::PARAM_KEY_KEY => $paramNameAndType[0],
+                Integration::PARAM_KEY_TYPE => count($paramNameAndType) < 2 ? Integration::PARAM_TYPE_PLAIN_TEXT : $paramNameAndType[1],
+                Integration::PARAM_KEY_OPTION_VALUES => $value ? $value : null
             ];
         }, $params);
 

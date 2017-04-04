@@ -11,12 +11,14 @@ class Integration implements IntegrationInterface
     const PARAM_KEY_KEY = 'key';
     const PARAM_KEY_VALUE = 'value';
     const PARAM_KEY_TYPE = 'type';
+    const PARAM_KEY_OPTION_VALUES = 'optionValues';
 
     const PARAM_TYPE_PLAIN_TEXT = 'plainText'; // e.g username, url, ...
     const PARAM_TYPE_DATE = 'date'; // e.g startDate, ...
     const PARAM_TYPE_DYNAMIC_DATE_RANGE = 'dynamicDateRange'; // e.g dateRange, ...
     const PARAM_TYPE_SECURE = 'secure'; // e.g password, token, key, ...
     const PARAM_TYPE_REGEX = 'regex'; // e.g pattern, ...
+    const PARAM_TYPE_OPTION = 'option'; // e.g Suply;Demand;Suply by Demand;Demand by Suply, ...
 
     const SUPPORTED_PARAM_VALUE_REGEX = '/^(?!(\/.*))(?!(.*\/[gmixsuXUAJ]*$))/';
 
@@ -25,7 +27,8 @@ class Integration implements IntegrationInterface
         self::PARAM_TYPE_DATE,
         self::PARAM_TYPE_DYNAMIC_DATE_RANGE,
         self::PARAM_TYPE_SECURE,
-        self::PARAM_TYPE_REGEX
+        self::PARAM_TYPE_REGEX,
+        self::PARAM_TYPE_OPTION
     ];
 
     public static $SUPPORTED_PARAM_VALUE_DYNAMIC_DATE_RANGES = [
