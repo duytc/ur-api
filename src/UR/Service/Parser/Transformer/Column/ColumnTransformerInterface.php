@@ -3,8 +3,9 @@
 namespace UR\Service\Parser\Transformer\Column;
 
 use UR\Service\Import\ImportDataException;
+use UR\Service\Parser\Transformer\TransformerInterface;
 
-interface ColumnTransformerInterface
+interface ColumnTransformerInterface extends TransformerInterface
 {
     const FIELD_KEY = 'field';
     const TYPE_KEY = 'type';

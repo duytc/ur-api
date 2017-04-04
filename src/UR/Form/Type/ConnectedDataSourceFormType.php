@@ -57,16 +57,24 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                         }
                     }
 
-                    if($connDataSource->getFilters()!==null) {
-                        $this->validateFilters($connDataSource->getFilters());
+                    if ($connDataSource->getFilters() !== null) {
+                        try {
+                            $this->validateFilters($connDataSource->getFilters());
+                        } catch (\Exception $e) {
+                            $form->get('filters')->addError(new FormError($e->getMessage()));
+                        }
                     }
 
-                    if($connDataSource->getTransforms()!==null){
-                        $this->validateTransforms($dataSet, $connDataSource);
+                    if ($connDataSource->getTransforms() !== null) {
+                        try {
+                            $this->validateTransforms($dataSet, $connDataSource);
+                        } catch (\Exception $e) {
+                            $form->get('transforms')->addError(new FormError($e->getMessage()));
+                        }
                     }
 
                     if (!$this->validateAlertSetting($connDataSource)) {
-                        $form->get('transforms')->addError(new FormError('Alerts Setting error'));
+                        $form->get('alertSetting')->addError(new FormError('Alerts Setting error'));
                     }
                 }
             }

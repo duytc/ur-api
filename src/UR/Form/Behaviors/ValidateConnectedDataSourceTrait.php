@@ -6,15 +6,22 @@ namespace UR\Form\Behaviors;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Repository\Core\ConnectedDataSourceRepository;
-use UR\Service\DataSet\MetadataField;
 use UR\Service\DataSet\FieldType;
+use UR\Service\DataSet\MetadataField;
 use UR\Service\Parser\Filter\FilterFactory;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Service\Parser\Transformer\TransformerFactory;
+use UR\Service\Parser\Transformer\TransformerInterface;
 
 trait ValidateConnectedDataSourceTrait
 {
+    /**
+     * validate Mapping Fields
+     *
+     * @param DataSetInterface $dataSet
+     * @param ConnectedDataSourceInterface $connDataSource
+     * @return bool
+     */
     public function validateMappingFields(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
     {
         foreach ($connDataSource->getMapFields() as $mapField) {
@@ -26,6 +33,12 @@ trait ValidateConnectedDataSourceTrait
         return true;
     }
 
+    /**
+     * validate Require Fields
+     *
+     * @param ConnectedDataSourceInterface $connDataSource
+     * @return bool
+     */
     public function validateRequireFields(ConnectedDataSourceInterface $connDataSource)
     {
         $allowedFields = array_merge($connDataSource->getMapFields(), array_flip(MetadataField::$internalFields));
@@ -47,7 +60,7 @@ trait ValidateConnectedDataSourceTrait
     public function validateFilters($connDataSourceFilters)
     {
         if (!is_array($connDataSourceFilters) && $connDataSourceFilters !== null) {
-            throw new Exception(sprintf("ConnectedDataSource Filters Setting should be an array"));
+            throw new Exception(sprintf('ConnectedDataSource Filters Setting should be an array'));
         }
 
         $filterFactory = new FilterFactory();
@@ -59,11 +72,20 @@ trait ValidateConnectedDataSourceTrait
         }
     }
 
+    /**
+     * validate Transforms
+     *
+     * @param DataSetInterface $dataSet
+     * @param ConnectedDataSourceInterface $connDataSource
+     * @throws \Exception
+     */
     public function validateTransforms(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
     {
         $transformFactory = new TransformerFactory();
 
+        // validate all transforms
         foreach ($connDataSource->getTransforms() as $transform) {
+            /** @var array|TransformerInterface[]|TransformerInterface $transformObjects */
             $transformObjects = $transformFactory->getTransform($transform);
 
             if (!is_array($transformObjects)) {
@@ -76,42 +98,42 @@ trait ValidateConnectedDataSourceTrait
             }
         }
 
+        // make sure date field has at least one transformation
         $fields = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
         foreach ($fields as $field => $type) {
             if (!in_array($field, $connDataSource->getMapFields())) {
                 continue;
             }
 
-            if (strcmp($type, FieldType::DATE) === 0) {
-                $count = 0;
+            if ($type === FieldType::DATE) {
+                $transformForDateCount = 0;
                 foreach ($connDataSource->getTransforms() as $transform) {
                     $transformObj = $transformFactory->getTransform($transform);
 
                     if ($transformObj instanceof DateFormat) {
-                        if (strcmp($transformObj->getField(), $field) === 0) {
-                            $count++;
+                        if ($transformObj->getField() === $field) {
+                            $transformForDateCount++;
                         }
                     }
                 }
 
-                if ($count === 0) {
-                    throw  new Exception("Date type mapped should have a single field transformation");
+                if ($transformForDateCount === 0) {
+                    throw new Exception('Date type mapped should have a single field transformation');
                 }
             }
         }
     }
 
+    /**
+     * validate Alert Setting
+     *
+     * @param ConnectedDataSourceInterface $connDataSource
+     * @return bool
+     */
     public function validateAlertSetting(ConnectedDataSourceInterface $connDataSource)
     {
-        return true;
-    }
+        // TODO: do validate here...
 
-    public function isDataSetFields($field, DataSetInterface $dataSet)
-    {
-        $dataSetFields = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
-        if (!array_key_exists($field, $dataSetFields)) {
-            return false;
-        }
         return true;
     }
 }

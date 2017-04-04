@@ -5,8 +5,9 @@ namespace UR\Service\Parser\Transformer\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
+use UR\Service\Parser\Transformer\TransformerInterface;
 
-interface CollectionTransformerInterface
+interface CollectionTransformerInterface extends TransformerInterface
 {
     const TYPE_KEY = 'type';
     const FIELDS_KEY = 'fields';
@@ -45,6 +46,4 @@ interface CollectionTransformerInterface
      * @return int
      */
     public function getDefaultPriority();
-
-    public function validate();
 }

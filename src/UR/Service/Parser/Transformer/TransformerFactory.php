@@ -33,7 +33,7 @@ class TransformerFactory
 
     /**
      * @param $jsonTransform |null
-     * @return array|null|GroupByColumns|SortByColumns|DateFormat|NumberFormat
+     * @return array|TransformerInterface[]|TransformerInterface
      * @throws \Exception
      */
     public function getTransform(array $jsonTransform)
@@ -56,12 +56,15 @@ class TransformerFactory
             case ColumnTransformerInterface::NUMBER_FORMAT:
                 $transformObject = $this->getNumberFormatTransform($jsonTransform);
                 break;
+
             case ColumnTransformerInterface::DATE_FORMAT:
                 $transformObject = $this->getDateFormatTransform($jsonTransform);
                 break;
+
             case CollectionTransformerInterface::AUGMENTATION:
                 $transformObject = $this->getAugmentationTransforms($jsonTransform);
                 break;
+
             default:
                 $transformObject = $this->getCollectionTransforms($jsonTransform);
         }
@@ -69,6 +72,13 @@ class TransformerFactory
         return $transformObject;
     }
 
+    /**
+     * get NumberFormat Transform
+     *
+     * @param array $jsonTransform
+     * @return NumberFormat
+     * @throws \Exception
+     */
     private function getNumberFormatTransform(array $jsonTransform)
     {
         if (!array_key_exists(NumberFormat::DECIMALS, $jsonTransform)
@@ -87,6 +97,13 @@ class TransformerFactory
         );
     }
 
+    /**
+     * get DateFormat Transform
+     *
+     * @param array $jsonTransform
+     * @return DateFormat
+     * @throws \Exception
+     */
     private function getDateFormatTransform(array $jsonTransform)
     {
         if (!array_key_exists(DateFormat::FROM_KEY, $jsonTransform)
@@ -108,7 +125,7 @@ class TransformerFactory
 
     /**
      * @param $jsonTransform
-     * @return array|null|AddField|GroupByColumns|SortByColumns
+     * @return array|TransformerInterface[]|TransformerInterface
      * @throws \Exception
      */
     private function getCollectionTransforms(array $jsonTransform)
@@ -244,7 +261,7 @@ class TransformerFactory
             $addCalculatedFieldTransforms[] = new AddCalculatedField(
                 $addCalculatedFieldConfig[AddCalculatedField::FIELD_KEY],
                 $addCalculatedFieldConfig[AddCalculatedField::EXPRESSION_KEY],
-                0
+                array_key_exists(AddCalculatedField::DEFAULT_VALUES_KEY, $addCalculatedFieldConfig) ? $addCalculatedFieldConfig[AddCalculatedField::DEFAULT_VALUES_KEY] : null
             );
         }
 
