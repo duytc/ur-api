@@ -208,9 +208,9 @@ class ReConfigConnectedDataSourceListener
         $connectedDataSource->setTransforms(array_values($transforms));
     }
 
-    public function getChangedFields(array $values, array $renameFields, array &$newDimensions, array &$updateDimensions, array &$deletedFields)
+    public function getChangedFields(array $values, array $renameFields, array &$newFields, array &$updateFields, array &$deletedFields)
     {
-        $deletedFields = array_diff_key($values[0], $values[1]);
+        $deletedFields = array_diff_assoc($values[0], $values[1]);
         foreach ($renameFields as $renameField) {
             if (!array_key_exists('from', $renameField) || !array_key_exists('to', $renameField)) {
                 continue;
@@ -220,15 +220,15 @@ class ReConfigConnectedDataSourceListener
             $newFieldName = $renameField['to'];
 
             if (array_key_exists($oldFieldName, $deletedFields)) {
-                $updateDimensions[$oldFieldName] = $newFieldName;
+                $updateFields[$oldFieldName] = $newFieldName;
                 unset($deletedFields[$oldFieldName]);
             }
         }
 
-        $newDimensions = array_diff_key($values[1], $values[0]);
-        foreach ($updateDimensions as $updateDimension) {
-            if (array_key_exists($updateDimension, $newDimensions)) {
-                unset($newDimensions[$updateDimension]);
+        $newFields = array_diff_assoc($values[1], $values[0]);
+        foreach ($updateFields as $updateDimension) {
+            if (array_key_exists($updateDimension, $newFields)) {
+                unset($newFields[$updateDimension]);
             }
         }
     }

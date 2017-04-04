@@ -130,6 +130,31 @@ class AlterImportDataTable
                     $sql .= sprintf("(%s,%s)", $curCol->getPrecision(), $curCol->getScale());
                 }
                 $alterSqls[] = $sql;
+
+                if ($curCol->getType()->getName() == FieldType::DATE || $curCol->getType()->getName() == FieldType::DATETIME){
+                    $oldDay = sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $oldName);
+                    $oldMonth = sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $oldName);
+                    $oldYear = sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $oldName);
+
+                    $newDay = sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $newName);
+                    $newMonth = sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $newName);
+                    $newYear = sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $newName);
+
+                    if ($dataTable->hasColumn($oldDay)){
+                        $sqlDay = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldDay, $newDay, Type::INTEGER);
+                        $alterSqls[] = $sqlDay;
+                    }
+
+                    if ($dataTable->hasColumn($oldMonth)){
+                        $sqlMonth = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldMonth, $newMonth, Type::INTEGER);
+                        $alterSqls[] = $sqlMonth;
+                    }
+
+                    if ($dataTable->hasColumn($oldYear)){
+                        $sqlYear = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldYear, $newYear, Type::INTEGER);
+                        $alterSqls[] = $sqlYear;
+                    }
+                }
             }
 
             foreach ($alterSqls as $alterSql) {
