@@ -22,9 +22,11 @@ interface CollectionTransformerInterface extends TransformerInterface
     const REPLACE_TEXT = 'replaceText';
     const EXTRACT_PATTERN = 'extractPattern';
     const AUGMENTATION = 'augmentation';
+    const SUBSET_GROUP = 'subset-group';
 
     /* priority for formats, the smaller will be execute first */
     const TRANSFORM_PRIORITY_AUGMENTATION = 1;
+    const TRANSFORM_PRIORITY_SUBSET_GROUP = 2;
     const TRANSFORM_PRIORITY_ADD_CONCATENATION_FIELD = 10;
     const TRANSFORM_PRIORITY_GROUP = 20;
     const TRANSFORM_PRIORITY_ADD_FIELD = 30;

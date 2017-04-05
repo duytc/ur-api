@@ -28,7 +28,8 @@ class TransformerFactory
         CollectionTransformerInterface::ADD_CONCATENATED_FIELD,
         CollectionTransformerInterface::REPLACE_TEXT,
         CollectionTransformerInterface::EXTRACT_PATTERN,
-        CollectionTransformerInterface::AUGMENTATION
+        CollectionTransformerInterface::AUGMENTATION,
+        CollectionTransformerInterface::SUBSET_GROUP
     ];
 
     /**
@@ -64,7 +65,9 @@ class TransformerFactory
             case CollectionTransformerInterface::AUGMENTATION:
                 $transformObject = $this->getAugmentationTransforms($jsonTransform);
                 break;
-
+            case CollectionTransformerInterface::SUBSET_GROUP:
+                $transformObject = $this->getSubsetGroupTransforms($jsonTransform);
+                break;
             default:
                 $transformObject = $this->getCollectionTransforms($jsonTransform);
         }
@@ -409,5 +412,42 @@ class TransformerFactory
         );
 
         return $augmentationTransforms;
+    }
+
+    private function getSubsetGroupTransforms(array $subsetGroupConfig)
+    {
+        $subsetTransforms = [];
+        if (!is_array($subsetGroupConfig)
+            || !array_key_exists(SubsetGroup::MAP_FIELDS_KEY, $subsetGroupConfig)
+            || !array_key_exists(SubsetGroup::GROUP_FIELD_KEY, $subsetGroupConfig)
+        ) {
+            return [];
+        }
+
+        if (!is_array($subsetGroupConfig[SubsetGroup::MAP_FIELDS_KEY])
+            || !is_array($subsetGroupConfig[SubsetGroup::GROUP_FIELD_KEY])
+        ) {
+            return [];
+        }
+
+
+        foreach($subsetGroupConfig[SubsetGroup::MAP_FIELDS_KEY] as $mapField) {
+            if (!is_array($mapField)) {
+                return [];
+            }
+
+            if (!array_key_exists(SubsetGroup::GROUP_DATA_SET_SIDE, $mapField)
+                || !array_key_exists(SubsetGroup::DATA_SOURCE_SIDE, $mapField)
+            ) {
+                return [];
+            }
+        }
+
+        $subsetTransforms[] = new SubsetGroup(
+            $subsetGroupConfig[SubsetGroup::GROUP_FIELD_KEY],
+            $subsetGroupConfig[SubsetGroup::MAP_FIELDS_KEY]
+        );
+
+        return $subsetTransforms;
     }
 }

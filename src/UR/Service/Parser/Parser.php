@@ -19,6 +19,7 @@ use UR\Service\Parser\Transformer\Augmentation;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
+use UR\Service\Parser\Transformer\SubsetGroup;
 
 class Parser implements ParserInterface
 {
@@ -187,7 +188,7 @@ class Parser implements ParserInterface
         foreach ($allFieldsTransforms as $transform) {
             /** @var CollectionTransformerInterface $transform */
             try {
-                if ($transform instanceof Augmentation) {
+                if ($transform instanceof Augmentation || $transform instanceof SubsetGroup) {
                     $collection = $transform->transform($collection, $this->em, $connectedDataSource);
                 } else {
                     $collection = $transform->transform($collection);

@@ -17,6 +17,7 @@ use UR\Service\Parser\Transformer\Collection\ExtractPattern;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
+use UR\Service\Parser\Transformer\SubsetGroup;
 use UR\Service\Parser\Transformer\TransformerFactory;
 use UR\Worker\Manager;
 
@@ -266,7 +267,20 @@ class ReConfigConnectedDataSourceListener
             }
 
             $transform[Augmentation::CUSTOM_CONDITION] = $customConditions;
-        } else {
+        } else if ($transformObject instanceof SubsetGroup){
+            $mapFields = $transformObject->getMapFields();
+            foreach ($mapFields as $index => $values) {
+                if (in_array($values[SubsetGroup::DATA_SOURCE_SIDE], $delFields)) {
+                    unset($mapFields[$index]);
+                } else if (array_key_exists($values[SubsetGroup::DATA_SOURCE_SIDE], $updatedFields)) {
+                    $values[SubsetGroup::DATA_SOURCE_SIDE] = $updatedFields[$values[SubsetGroup::DATA_SOURCE_SIDE]];
+                    $mapFields[$index] = $values;
+                }
+            }
+
+            $transform[SubsetGroup::MAP_FIELDS_KEY] = $mapFields;
+        }
+        else {
 
             $keyToCompare = CollectionTransformerInterface::FIELD_KEY;
 
