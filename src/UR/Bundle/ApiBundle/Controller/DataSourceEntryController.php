@@ -9,11 +9,13 @@ use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Response;
+use UR\Model\Core\ImportHistoryInterface;
 
 /**
  * @Rest\RouteResource("datasourceentry")
@@ -270,10 +272,31 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      *
      * @return View
      *
-     * @throws NotFoundHttpException when the resource not exist
+     * @throws \Exception
      */
     public function deleteAction($id)
     {
+        $dataSourceEntry = $this->getHandler()->get($id);
+
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+            throw new \Exception(sprintf('Data Source Entry %d does not exist', $id));
+        }
+        
+        /** @var ImportHistoryManagerInterface $importHistoryManager */
+        $importHistoryManager = $this->get('ur.domain_manager.import_history');
+        $importHistories = $importHistoryManager->getImportHistoryByDataSourceEntryWithoutDataSet($dataSourceEntry);
+
+        $dataSets = array_map(function ($importHistory) {
+            /**@var ImportHistoryInterface $importHistory */
+            return $importHistory->getDataSet()->getName();
+        }, $importHistories);
+
+        $dataSets = array_values(array_unique($dataSets));
+
+        if (count($dataSets) > 0) {
+            throw new \Exception(sprintf('Must undo loaded data from "data set %s" before delete data source entry "%s"', implode('", "data set ', $dataSets), $dataSourceEntry->getFileName()));
+        }
+
         return $this->delete($id);
     }
 
