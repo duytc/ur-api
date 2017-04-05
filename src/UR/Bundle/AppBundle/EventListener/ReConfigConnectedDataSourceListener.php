@@ -237,21 +237,39 @@ class ReConfigConnectedDataSourceListener
     public function updateConnectedCollectionTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key, CollectionTransformerInterface $transformObject)
     {
         if ($transformObject instanceof Augmentation) {
-            if (in_array($transformObject->getSourceField(), $delFields)) {
+            if (array_key_exists($transformObject->getSourceField(), $updatedFields)) {
+                $transform[Augmentation::MAP_CONDITION_KEY][Augmentation::DATA_SOURCE_SIDE] = $updatedFields[$transformObject->getSourceField()];
+            }
+
+            if (array_key_exists($transformObject->getDestinationField(), $updatedFields)) {
+                $transform[Augmentation::MAP_CONDITION_KEY][Augmentation::MAP_DATA_SET_SIDE] = $updatedFields[$transformObject->getDestinationField()];
+            }
+
+            if (
+                in_array($transformObject->getSourceField(), $delFields)
+                || in_array($transformObject->getDestinationField(), $delFields)
+            ) {
                 unset($transforms[$key]);
-            } else {
+            }
+            else {
                 $mapFields = $transformObject->getMapFields();
                 foreach ($mapFields as $index => $values) {
-                    if (in_array($values[Augmentation::DATA_SOURCE_SIDE], $delFields)) {
+                    if (in_array($values[Augmentation::DATA_SOURCE_SIDE], $delFields)
+                        || in_array($values[Augmentation::DATA_SOURCE_SIDE], $delFields)
+                    ) {
                         unset($mapFields[$index]);
                     } else if (array_key_exists($values[Augmentation::DATA_SOURCE_SIDE], $updatedFields)) {
                         $values[Augmentation::DATA_SOURCE_SIDE] = $updatedFields[$values[Augmentation::DATA_SOURCE_SIDE]];
+                        $mapFields[$index] = $values;
+                    } else if (array_key_exists($values[Augmentation::MAP_DATA_SET_SIDE], $updatedFields)) {
+                        $values[Augmentation::MAP_DATA_SET_SIDE] = $updatedFields[$values[Augmentation::MAP_DATA_SET_SIDE]];
                         $mapFields[$index] = $values;
                     }
                 }
 
                 $transform[Augmentation::MAP_FIELDS_KEY] = $mapFields;
             }
+
             $customConditions = $transformObject->getCustomCondition();
             foreach($customConditions as $i=>&$customCondition) {
                 $field = $customCondition[Augmentation::CUSTOM_FIELD_KEY];
