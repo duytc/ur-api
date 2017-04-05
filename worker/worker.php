@@ -34,7 +34,8 @@ $availableWorkers = [
     $container->get('ur.worker.workers.re_import_new_entry_received'),
     $container->get('ur.worker.workers.alert_worker'),
     $container->get('ur.worker.workers.synchronize_user_worker'),
-    $container->get('ur.worker.workers.alter_import_data_table')
+    $container->get('ur.worker.workers.alter_import_data_table'),
+    $container->get('ur.worker.workers.truncate_import_data_table')
 ];
 
 $workerPool = new \UR\Worker\Pool($availableWorkers);

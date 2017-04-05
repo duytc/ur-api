@@ -2,6 +2,8 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Schema\Comparator;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
@@ -13,8 +15,10 @@ use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSetInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
+use UR\Service\DataSet\Synchronizer;
 
 /**
  * @Rest\RouteResource("DataSet")
@@ -81,6 +85,77 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         } else {
             return $this->getPagination($qb, $request);
         }
+    }
+
+    /**
+     * Get number rows of all data sets
+     *
+     * @Rest\Get("/datasets/rows", requirements={"id" = "\d+"})
+     *
+     * @Rest\View(serializerGroups={"dataset.detail", "user.summary", "connectedDataSource.summary"})
+     *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     * @Rest\QueryParam(name="hasConnectedDataSource", nullable=true, description="has connected data source option")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return mixed
+     * @throws \Exception
+     */
+    public function cgetCountRowsAction(Request $request)
+    {
+        $dataSets = $this->cgetAction($request);
+
+        $params = array_merge($request->query->all(), $request->attributes->all());
+
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+            return $this->getNumberOfRows($dataSets, false);
+        } else {
+            return $this->getNumberOfRows($dataSets, true);
+        }
+    }
+
+    /**
+     * Get number rows of all data sets
+     *
+     * @Rest\Get("/datasets/{id}/rows", requirements={"id" = "\d+"})
+     *
+     * @Rest\View(serializerGroups={"dataset.detail", "user.summary", "connectedDataSource.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param integer $id
+     * @return mixed
+     * @throws \Exception
+     */
+    public function getCountRowsAction($id)
+    {
+        $dataSet = $this->one($id);
+
+        if (!$dataSet instanceof DataSetInterface){
+            throw new \Exception('Data Set in invalid');
+        }
+
+        return $this->getDataSetNumberOfRows($dataSet);
     }
 
     /**
@@ -314,6 +389,48 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     }
 
     /**
+     * Truncate dataset table
+     *
+     * @Rest\Post("datasets/{id}/truncate", requirements={"id" = "\d+"})
+     *
+     * @ApiDoc(
+     *  section = "DataSet",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param $id
+     *
+     * @return mixed
+     * @throws \Exception
+     */
+    public function postTruncateAction($id)
+    {
+        $dataSet = $this->one($id);
+
+        if (!$dataSet instanceof DataSetInterface){
+            throw new \Exception(sprintf('Data Set %d does not exist', $id));
+        }
+
+        $importHistoryManager = $this->get('ur.domain_manager.import_history');
+        $importHistories = $importHistoryManager->getImportedHistoryByDataSet($dataSet);
+
+        foreach ($importHistories as $importHistory){
+            if ($importHistory instanceof ImportHistoryInterface){
+                $importHistoryManager->delete($importHistory);
+            }
+        }
+
+        $worker = $this->get('ur.worker.manager');
+        $worker->truncateDataSetTable($dataSet->getId());
+
+        return '';
+    }
+
+    /**
      * Delete an existing data set
      *
      * @ApiDoc(
@@ -360,5 +477,59 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.data_set');
+    }
+
+    /**
+     * @var DataSetInterface[] $dataSets
+     * @var boolean $isPagination
+     * @return \UR\Model\Core\DataSetInterface[]
+     */
+    private function getNumberOfRows($dataSets, $isPagination = false){
+        $realDataSets = $dataSets;
+        if ($isPagination){
+            $realDataSets = $dataSets['records'];
+        }
+
+        $result = array_map(function($dataSet){
+            /**@var DataSetInterface $dataSet */
+            return [
+                'id' => $dataSet->getId(),
+                'numberOfRows' => $this->getDataSetNumberOfRows($dataSet)
+            ];
+        }, $realDataSets);
+
+        return $result;
+    }
+
+    /**
+     * @var DataSetInterface $dataSet
+     * @return integer
+     */
+    private function getDataSetNumberOfRows($dataSet){
+        $entityManager = $this->get('doctrine.orm.entity_manager');
+
+        /** @var Connection $conn */
+        $conn = $entityManager->getConnection();
+        $dataSetSynchronizer = new Synchronizer($conn, new Comparator());;
+
+        $result = 0;
+        if ($dataSet instanceof DataSetInterface) {
+            $dataTable = $dataSetSynchronizer->getDataSetImportTable($dataSet->getId());
+
+            // check if table not existed
+            if ($dataTable) {
+                try {
+                    $countSQL = sprintf("select count(*) from %s", $dataTable->getName());
+                    $stmt = $conn->prepare($countSQL);
+                    $stmt->execute();
+                    $result = $stmt->fetchAll();
+                    $stmt->closeCursor();
+                } catch (\Exception $e) {
+
+                }
+            }
+        }
+
+        return $result[0]['count(*)'];
     }
 }

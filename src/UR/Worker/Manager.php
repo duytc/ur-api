@@ -58,6 +58,14 @@ class Manager
         $this->queueTask('alterDataSetTable', $params);
     }
 
+    public function truncateDataSetTable($dataSetId)
+    {
+        $params = new StdClass;
+        $params->dataSetId = $dataSetId;
+
+        $this->queueTask('truncateDataSetTable', $params);
+    }
+
     /**
      * @param string $task
      * @param StdClass $params
