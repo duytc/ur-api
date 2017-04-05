@@ -294,7 +294,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $dataSets = array_values(array_unique($dataSets));
 
         if (count($dataSets) > 0) {
-            throw new \Exception(sprintf('Must undo loaded data from "data set %s" before delete data source entry "%s"', implode('", "data set ', $dataSets), $dataSourceEntry->getFileName()));
+            throw new \Exception(sprintf('Loaded data cannot be deleted. If you wish to continue, you must unload the file "%s" from all data sets', $dataSourceEntry->getFileName()));
         }
 
         return $this->delete($id);
