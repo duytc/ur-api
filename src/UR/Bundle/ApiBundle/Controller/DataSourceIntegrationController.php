@@ -25,6 +25,8 @@ class DataSourceIntegrationController extends RestControllerAbstract implements 
      *
      * @Rest\View(serializerGroups={"datasource.detail", "dataSourceIntegration.detail", "integration.detail", "user.summary"})
      *
+     * @Rest\QueryParam(name="dataSourceId", nullable=true, requirements="\d+", description="the dataSource id")
+     *
      * @ApiDoc(
      *  section = "Data Source Integration",
      *  resource = true,
@@ -33,11 +35,20 @@ class DataSourceIntegrationController extends RestControllerAbstract implements 
      *  }
      * )
      *
-     * @return DataSourceIntegrationInterface[]
+     * @param Request $request
+     * @return \UR\Model\Core\DataSourceIntegrationInterface[]
      */
-    public function cgetAction()
+    public function cgetAction(Request $request)
     {
-        return $this->all();
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (isset($params['dataSourceId'])) {
+            $dataSourceId = $params['dataSourceId'];
+            /** @var DataSourceIntegrationManagerInterface $dsisManager */
+            $dsiManager = $this->get('ur.domain_manager.data_source_integration');
+            return $dsiManager->findByDataSource($dataSourceId);
+        } else {
+            return $this->all();
+        }
     }
 
     /**

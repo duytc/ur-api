@@ -80,4 +80,12 @@ class DataSourceIntegrationManager implements DataSourceIntegrationManagerInterf
     {
         return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByDataSource($dataSource)
+    {
+        return $this->repository->findByDataSource($dataSource);
+    }
 }

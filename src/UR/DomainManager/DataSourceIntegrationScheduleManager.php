@@ -6,6 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\DataSourceIntegrationScheduleRepositoryInterface;
 
@@ -79,6 +80,14 @@ class DataSourceIntegrationScheduleManager implements DataSourceIntegrationSched
     public function findToBeExecuted()
     {
         return $this->repository->findToBeExecuted();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByDataSource(DataSourceInterface $dataSource)
+    {
+        return $this->repository->findByDataSource($dataSource);
     }
 
     /**

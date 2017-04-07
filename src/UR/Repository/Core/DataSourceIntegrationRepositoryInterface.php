@@ -12,4 +12,10 @@ interface DataSourceIntegrationRepositoryInterface extends ObjectRepository
      * @return array|DataSourceIntegrationInterface[]
      */
     public function findByIntegrationCanonicalName($canonicalName);
+
+    /**
+     * @param integer $dataSourceId
+     * @return array|DataSourceIntegrationInterface[]
+     */
+    public function findByDataSource($dataSourceId);
 }

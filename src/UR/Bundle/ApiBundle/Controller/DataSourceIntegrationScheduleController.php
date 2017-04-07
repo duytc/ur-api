@@ -6,13 +6,16 @@ use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\Util\Codes;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceIntegrationScheduleManagerInterface;
+use UR\DomainManager\DataSourceManagerInterface;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSourceIntegration;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
+use UR\Model\Core\DataSourceInterface;
 
 /**
  * @Rest\RouteResource("datasourceintegrationschedules")
@@ -24,6 +27,8 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
      *
      * @Rest\View(serializerGroups={"dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.detail", "integration.detail", "user.summary"})
      *
+     * @Rest\QueryParam(name="datasource", nullable=true, requirements="\d+", description="the datasource id")
+     *
      * @ApiDoc(
      *  section = "Data Source Integration Schedule",
      *  resource = true,
@@ -32,9 +37,10 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
      *  }
      * )
      *
-     * @return DataSourceIntegrationScheduleInterface[]
+     * @param Request $request
+     * @return \UR\Model\Core\DataSourceIntegrationScheduleInterface[]
      */
-    public function cgetAction()
+    public function cgetAction(Request $request)
     {
         return $this->all();
     }
@@ -91,6 +97,35 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
     }
 
     /**
+     * Get integration to be executed due to schedule
+     *
+     * @Rest\Get("/datasourceintegrationschedules/bydatasource")
+     *
+     * @Rest\View(serializerGroups={"dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.bySchedule", "integration.detail", "user.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return DataSourceIntegrationScheduleInterface[]
+     */
+    public function getDataSourceIntegrationSchedulesByDataSourceAction(Request $request)
+    {
+        // The REST naming is not standard. This REST Api seems to be that use the cgetAction()
+        // But because of the difference from serializer groups, we must use this REST API:
+        // - the cgetAction: use group dataSourceIntegration.detail that return datasourceintegration params contain transformed-value 'null' if type is 'secure'
+        // - this action: use group dataSourceIntegration.bySchedule that return original datasourceintegration params (so value is original value)
+        // TODO: move to action cgetAction if can do it
+
+        return $this->findByDataSource($request);
+    }
+
+    /**
      * update executeAt time
      *
      * @Rest\Post("/datasourceintegrationschedules/updateexecuteat")
@@ -144,6 +179,39 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
         $dsisManager->updateExecuteAt($dataSourceIntegrationSchedule, $executedAt);
 
         return $this->view(true, Codes::HTTP_OK);
+    }
+
+    /**
+     * find By DataSource
+     *
+     * @param Request $request
+     * @return array|\UR\Model\Core\DataSourceIntegrationScheduleInterface[]
+     */
+    private function findByDataSource(Request $request)
+    {
+        $dataSourceId = $request->query->get('datasource', null);
+        $dataSourceId = filter_var($dataSourceId, FILTER_VALIDATE_INT);
+        if (false === $dataSourceId || $dataSourceId < 0) {
+            throw new BadRequestHttpException(sprintf('Invalid datasource id %s', $dataSourceId));
+        }
+
+        /** @var DataSourceManagerInterface $dataSourceManager */
+        $dataSourceManager = $this->get('ur.domain_manager.data_source');
+        $dataSource = $dataSourceManager->find($dataSourceId);
+        if (!$dataSource instanceof DataSourceInterface) {
+            throw new NotFoundHttpException(
+                sprintf("The %s resource '%s' was not found or you do not have access", $this->getResourceName(), $dataSourceId)
+            );
+        }
+
+        // check permission
+        $this->checkUserPermission($dataSource);
+
+        // find and return
+        /** @var DataSourceIntegrationScheduleManagerInterface $dsisManager */
+        $dsisManager = $this->get('ur.domain_manager.data_source_integration_schedule');
+
+        return $dsisManager->findByDataSource($dataSource);
     }
 
     /**
