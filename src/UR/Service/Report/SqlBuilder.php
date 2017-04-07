@@ -78,10 +78,19 @@ class SqlBuilder implements SqlBuilderInterface
         $dimensions = $dataSet->getDimensions();
         $filters = $dataSet->getFilters();
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
-        $fields = array_merge($metrics, $dimensions);
         $tableColumns = array_keys($table->getColumns());
         $dataSetRepository = $this->em->getRepository(DataSet::class);
         $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
+        /*
+         * we get all fields from data set instead of selected fields in report view.
+         * Notice: after that, we should filter all fields that is not yet selected.
+         * This is important to allow use the none-selected fields in the transformers.
+         * If not, the transformers have no value on none-selected fields, so that produce the null value
+         */
+        $fields = array_keys($dataSetEntity->getAllDimensionMetrics());
+        // merge with dimensions, metrics of dataSetDTO because it contains hidden columns such as __date_month, __date_year, ...
+        $fields = array_merge($fields, $dimensions, $metrics);
+        $fields = array_values(array_unique($fields));
 
         if (count($tableColumns) < 1) {
             throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
@@ -262,8 +271,21 @@ class SqlBuilder implements SqlBuilderInterface
         $metrics = $dataSet->getMetrics();
         $dimensions = $dataSet->getDimensions();
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
-        $fields = array_merge($metrics, $dimensions);
         $tableColumns = array_keys($table->getColumns());
+        $dataSetRepository = $this->em->getRepository(DataSet::class);
+        $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
+        /*
+         * TODO: this is duplicate code with buildQueryForSingleDataSet()
+         * TODO: refactor to use a common function
+         * we get all fields from data set instead of selected fields in report view.
+         * Notice: after that, we should filter all fields that is not yet selected.
+         * This is important to allow use the none-selected fields in the transformers.
+         * If not, the transformers have no value on none-selected fields, so that produce the null value
+         */
+        $fields = array_keys($dataSetEntity->getAllDimensionMetrics());
+        // merge with dimensions, metrics of dataSetDTO because it contains hidden columns such as __date_month, __date_year, ...
+        $fields = array_merge($fields, $dimensions, $metrics);
+        $fields = array_values(array_unique($fields));
 
         // filter all fields that are not in table's columns
         foreach ($fields as $index => $field) {
@@ -274,8 +296,6 @@ class SqlBuilder implements SqlBuilderInterface
 
         // if no field is valid
         if (empty($fields)) {
-            $dataSetRepository = $this->em->getRepository(DataSet::class);
-            $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
             throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
         }
 

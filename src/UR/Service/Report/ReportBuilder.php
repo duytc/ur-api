@@ -3,8 +3,6 @@
 namespace UR\Service\Report;
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use UR\Behaviors\JoinConfigUtilTrait;
-use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface as DataSetDTO;
 use UR\Domain\DTO\Report\DateRange;
 use UR\Domain\DTO\Report\Filters\DateFilter;
@@ -234,22 +232,23 @@ class ReportBuilder implements ReportBuilderInterface
             foreach ($metrics as $metric) {
                 if (!array_key_exists($metric, $row)) {
                     $row[$metric] = null;
-                    // continue;
                 }
             }
 
             foreach ($dimensions as $dimension) {
                 if (!array_key_exists($dimension, $row)) {
                     $row[$dimension] = null;
-                    //continue;
                 }
             }
 
-            foreach ($row as $key => $value) {
-                if (!in_array($key, $metrics) && !in_array($key, $dimensions)) {
-                    unset($row[$key]);
-                }
-            }
+            // filter all fields in row if key is not in dimensions and metrics of report view
+            //foreach ($row as $key => $value) {
+            //    if (!in_array($key, $metrics) && !in_array($key, $dimensions)) {
+            //        unset($row[$key]);
+            //    }
+            //}
+            // but now we do not filter because we allow non-selected fields are used in addCalculatedField transformer.
+            // So, after that we need to filter non-selected fields from final reports
         }
 
         if (count($rows) == 0) {
@@ -349,7 +348,11 @@ class ReportBuilder implements ReportBuilderInterface
 
         $dimensions = array_merge($dimensions, $outputJoinFields);
 
-        /* get all reports data */
+        /*
+         * get all reports data
+         * Notice: reports data contains all fields in Data Set, i.e both selected and non-selected fields in report view.
+         * So, after that we need filter all non-selected fields from reports data
+         */
         $data = $this->reportSelector->getReportData($params, $overridingFilters);
         $rows = $data[SqlBuilder::STATEMENT_KEY]->fetchAll();
         if (count($rows) < 1) {
@@ -423,24 +426,26 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* build columns that will be showed in total */
         $showInTotal = is_array($params->getShowInTotal()) ? $params->getShowInTotal() : $metrics;
-//      $showInTotal = $this->getShowInTotal($showInTotal, $metrics);
 
         /** @var JoinConfigInterface[] $joinConfig */
         $joinConfig = $params->getJoinConfigs();
         $hiddenJoinFields = [];
-        foreach ($joinConfig as $config){
-            if (!$config->isVisible()){
+        foreach ($joinConfig as $config) {
+            if (!$config->isVisible()) {
                 $hiddenJoinFields[] = $config->getOutputField();
             }
         }
+
         $reports = $reportCollection->getRows();
-        foreach ($reports as &$report){
-            foreach ($hiddenJoinFields as $hiddenJoinField){
+        foreach ($reports as &$report) {
+            foreach ($hiddenJoinFields as $hiddenJoinField) {
                 unset($report[$hiddenJoinField]);
             }
             unset($report);
         }
+
         $reportCollection->setRows($reports);
+
         /* group reports */
         /** @var ReportResultInterface $reportResult */
         $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $params->getIsShowDataSetName(), $isSingleDataSet);
@@ -456,6 +461,83 @@ class ReportBuilder implements ReportBuilderInterface
              }
          }
          $reportResult->setColumns($mappedColumns);*/
+
+        /* Filter all non-selected fields from reports data */
+        $nonSelectedFields = [];
+
+        // get nonSelectedFields from data sets if single report view used multiple data set
+        /** @var \UR\Domain\DTO\Report\DataSets\DataSetInterface[] $dataSets */
+        $dataSets = $params->getDataSets();
+        if (is_array($dataSets)) {
+            $allDataSetFields = [];
+            $selectedFields = [];
+
+            foreach ($dataSets as $dataSet) {
+                // get all fields from data set entity
+                $dataSetId = $dataSet->getDataSetId();
+                $dataSetEntity = $this->dataSetManager->find($dataSetId);
+                if (!$dataSetEntity instanceof DataSetInterface) {
+                    continue;
+                }
+
+                $allDataSetFieldsTmp = array_keys($dataSetEntity->getAllDimensionMetrics());
+
+                // merge hidden fields from data set DTO to data set entity
+                $allDataSetFieldsTmp = array_merge($allDataSetFieldsTmp, $dataSet->getDimensions(), $dataSet->getMetrics());
+                $allDataSetFieldsTmp = array_values(array_unique($allDataSetFieldsTmp));
+
+                // get all selected fields from data set DTO
+                $metrics = $dataSet->getMetrics();
+                $dimensions = $dataSet->getDimensions();
+                $selectedFieldsTmp = array_merge($metrics, $dimensions);
+
+                // convert field to field_<data set id>
+                $allDataSetFieldsTmp = array_map(function ($item) use ($dataSet) {
+                    return sprintf('%s_%d', $item, $dataSet->getDataSetId());
+                }, $allDataSetFieldsTmp);
+
+                $selectedFieldsTmp = array_map(function ($item) use ($dataSet) {
+                    return sprintf('%s_%d', $item, $dataSet->getDataSetId());
+                }, $selectedFieldsTmp);
+
+                $allDataSetFields = array_merge($allDataSetFields, $allDataSetFieldsTmp);
+                $selectedFields = array_merge($selectedFields, $selectedFieldsTmp);
+            }
+
+            $nonSelectedFields = array_diff($allDataSetFields, $selectedFields);
+        }
+
+        // get nonSelectedFields from sub-report-views if report-multi-views used multiple report views
+        /** @var \UR\Domain\DTO\Report\ReportViews\ReportViewInterface[] $reportViews */
+        $reportViews = $params->getReportViews();
+        if (is_array($reportViews)) {
+            $allSubReportFields = [];
+            $selectedFields = [];
+
+            foreach ($reportViews as $reportView) {
+                // get all fields from report view entity
+                $reportViewId = $reportView->getReportViewId();
+                $reportViewEntity = $this->reportViewManager->find($reportViewId);
+                if (!$reportViewEntity instanceof ReportViewInterface) {
+                    continue;
+                }
+
+                $allReportViewFieldsTmp = array_merge($reportViewEntity->getDimensions(), $reportViewEntity->getMetrics());
+
+                // get all selected fields from data set DTO
+                $metrics = $reportView->getMetrics();
+                $dimensions = $reportView->getDimensions();
+                $selectedFieldsTmp = array_merge($metrics, $dimensions);
+
+                $allSubReportFields = array_merge($allSubReportFields, $allReportViewFieldsTmp);
+                $selectedFields = array_merge($selectedFields, $selectedFieldsTmp);
+            }
+
+            $nonSelectedFields = array_diff($allSubReportFields, $selectedFields);
+        }
+
+        // do filter
+        $this->filterNonSelectedFieldsFromReports($reportResult, $nonSelectedFields);
 
         /* format data if need */
         if ($isNeedFormatReport) {
@@ -496,6 +578,49 @@ class ReportBuilder implements ReportBuilderInterface
         foreach ($transforms as $transform) {
             $transform->transform($reportCollection, $metrics, $dimensions, $outputJoinField);
         }
+    }
+
+    /**
+     * filter Non-Selected Fields From Reports
+     * All fields not selected from data set will be remove from report
+     * All fields created from transformers (add field, ...) will be kept because that fields does not belong to data set
+     *
+     * @param ReportResultInterface $reportResult
+     * @param array $nonSelectedFields selected fields that picked from data set.
+     */
+    private function filterNonSelectedFieldsFromReports(ReportResultInterface $reportResult, array $nonSelectedFields)
+    {
+        $reports = $reportResult->getReports();
+        $totals = $reportResult->getTotal();
+        $averages = $reportResult->getAverage();
+
+        foreach ($nonSelectedFields as $nonSelectedField) {
+            /* filter for all records of reports */
+            foreach ($reports as &$row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                if (array_key_exists($nonSelectedField, $row)) {
+                    unset($row[$nonSelectedField]);
+                }
+            }
+
+            /* filter for totals */
+            if (array_key_exists($nonSelectedField, $totals)) {
+                unset($totals[$nonSelectedField]);
+            }
+
+            /* filter for averages */
+            if (array_key_exists($nonSelectedField, $averages)) {
+                unset($averages[$nonSelectedField]);
+            }
+        }
+
+        /* set value again */
+        $reportResult->setReports($reports);
+        $reportResult->setTotal($totals);
+        $reportResult->setAverage($averages);
     }
 
     /**
