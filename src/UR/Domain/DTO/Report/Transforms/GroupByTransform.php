@@ -78,14 +78,14 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 					continue;
 				}
 
-				if ((in_array($key, $metrics) || in_array($key, $dimensions)) && in_array($collection->getTypeOf($key), [FieldType::NUMBER, FieldType::DECIMAL])) {
+				if ($value && (in_array($key, $metrics) || in_array($key, $dimensions)) && in_array($collection->getTypeOf($key), [FieldType::NUMBER, FieldType::DECIMAL])) {
 					$result[$key] = 0;
 				}
 			}
 
 			foreach ($groupedReport as $report) {
 				foreach ($report as $key => $value) {
-					if (in_array($collection->getTypeOf($key), [FieldType::NUMBER, FieldType::DECIMAL]) && !in_array($key, $this->fields)) {
+					if ($value && in_array($collection->getTypeOf($key), [FieldType::NUMBER, FieldType::DECIMAL]) && !in_array($key, $this->fields)) {
 						$result[$key] += $value;
 					}
 				}
