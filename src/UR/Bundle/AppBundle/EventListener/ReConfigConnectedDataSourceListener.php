@@ -241,10 +241,6 @@ class ReConfigConnectedDataSourceListener
                 $transform[Augmentation::MAP_CONDITION_KEY][Augmentation::DATA_SOURCE_SIDE] = $updatedFields[$transformObject->getSourceField()];
             }
 
-            if (array_key_exists($transformObject->getDestinationField(), $updatedFields)) {
-                $transform[Augmentation::MAP_CONDITION_KEY][Augmentation::MAP_DATA_SET_SIDE] = $updatedFields[$transformObject->getDestinationField()];
-            }
-
             if (
                 in_array($transformObject->getSourceField(), $delFields)
                 || in_array($transformObject->getDestinationField(), $delFields)

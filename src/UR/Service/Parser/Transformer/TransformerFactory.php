@@ -264,7 +264,7 @@ class TransformerFactory
             $addCalculatedFieldTransforms[] = new AddCalculatedField(
                 $addCalculatedFieldConfig[AddCalculatedField::FIELD_KEY],
                 $addCalculatedFieldConfig[AddCalculatedField::EXPRESSION_KEY],
-                array_key_exists(AddCalculatedField::DEFAULT_VALUES_KEY, $addCalculatedFieldConfig) ? $addCalculatedFieldConfig[AddCalculatedField::DEFAULT_VALUES_KEY] : null
+                array_key_exists(AddCalculatedField::DEFAULT_VALUES_KEY, $addCalculatedFieldConfig) ? $addCalculatedFieldConfig[AddCalculatedField::DEFAULT_VALUES_KEY] : []
             );
         }
 
