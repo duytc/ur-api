@@ -17,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\ImportHistoryInterface;
+use UR\Service\PublicSimpleException;
 
 /**
  * @Rest\RouteResource("datasourceentry")
@@ -302,7 +303,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $dataSets = array_values(array_unique($dataSets));
 
         if (count($dataSets) > 0) {
-            throw new \Exception(sprintf('Loaded data cannot be deleted. If you wish to continue, you must unload the file "%s" from all data sets', $dataSourceEntry->getFileName()));
+            throw new PublicSimpleException(sprintf('Loaded data cannot be deleted. If you wish to continue, you must unload the file "%s" from all data sets', $dataSourceEntry->getFileName()));
         }
 
         return $this->delete($id);

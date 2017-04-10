@@ -13,6 +13,7 @@ use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;
 use UR\Repository\Core\ReportViewRepositoryInterface;
+use UR\Service\PublicSimpleException;
 
 class ReportViewManager implements ReportViewManagerInterface
 {
@@ -57,12 +58,12 @@ class ReportViewManager implements ReportViewManagerInterface
     public function delete(ModelInterface $reportView)
     {
         if (!$reportView instanceof ReportViewInterface) {
-            throw new InvalidArgumentException('expect ReportViewInterface object');
+            throw new PublicSimpleException('expect ReportViewInterface object');
         }
 
         $reportViewMultiViewRepository = $this->om->getRepository(ReportViewMultiView::class);
         if ($reportViewMultiViewRepository->checkIfReportViewBelongsToMultiView($reportView)) {
-            throw new InvalidArgumentException('This report view belongs to another report view');
+            throw new PublicSimpleException('This report view belongs to another report view');
         }
 
         $this->om->remove($reportView);
