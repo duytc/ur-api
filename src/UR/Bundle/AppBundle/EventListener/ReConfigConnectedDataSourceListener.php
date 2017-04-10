@@ -138,7 +138,7 @@ class ReConfigConnectedDataSourceListener
             $connectedDataSources = $entity->getConnectedDataSources();
 
             foreach ($connectedDataSources as &$connectedDataSource) {
-                $this->updateConfigForConnectedDataSource($connectedDataSource, $this->updateFields, $this->deletedFields);
+                $this->updateConfigForConnectedDataSource($connectedDataSource, $this->updateFields, $this->deletedFields, $entity->getId());
             }
 
             $entity->setConnectedDataSources($connectedDataSources);
@@ -147,8 +147,8 @@ class ReConfigConnectedDataSourceListener
             $linkedConnectedDataSources = $linkedMapDataSetRepository->getByMapDataSet($entity);
 
             /** @var LinkedMapDataSetInterface $linkedConnectedDataSource */
-            foreach ($linkedConnectedDataSources as $linkedConnectedDataSource) {
-                $this->updateConfigForConnectedDataSource($linkedConnectedDataSource->getConnectedDataSource(), $this->updateFields, $this->deletedFields);
+            foreach($linkedConnectedDataSources as $linkedConnectedDataSource) {
+                $this->updateConfigForConnectedDataSource($linkedConnectedDataSource->getConnectedDataSource(), $this->updateFields, $this->deletedFields, $entity->getId());
             }
         }
 
@@ -163,8 +163,9 @@ class ReConfigConnectedDataSourceListener
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param array $updatedFields
      * @param array $deletedFields
+     * @param $updatingDataSetId
      */
-    private function updateConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, array $updatedFields, array $deletedFields)
+    private function updateConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, array $updatedFields, array $deletedFields, $updatingDataSetId = null)
     {
         $mapFields = $connectedDataSource->getMapFields();
         $requires = $connectedDataSource->getRequires();
@@ -204,7 +205,7 @@ class ReConfigConnectedDataSourceListener
                 }
 
                 foreach ($transformObjects as $transformObject) {
-                    $this->updateConnectedCollectionTransform($transform, $delFields, $updatedFields, $transforms, $key, $transformObject);
+                    $this->updateConnectedCollectionTransform($transform, $delFields, $updatedFields, $transforms, $key, $transformObject, $updatingDataSetId);
                 }
             }
         }
@@ -239,36 +240,51 @@ class ReConfigConnectedDataSourceListener
         }
     }
 
-    private function updateConnectedCollectionTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key, CollectionTransformerInterface $transformObject)
+    public function updateConnectedCollectionTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key, CollectionTransformerInterface $transformObject, $dataSetId = null)
     {
         if ($transformObject instanceof Augmentation) {
+            if (array_key_exists($transformObject->getDestinationField(), $updatedFields)
+                && $transformObject->getMapDataSet() == $dataSetId
+            ) {
+                $transform[Augmentation::MAP_CONDITION_KEY][Augmentation::MAP_DATA_SET_SIDE] = $updatedFields[$transformObject->getDestinationField()];
+            }
+
             if (array_key_exists($transformObject->getSourceField(), $updatedFields)) {
                 $transform[Augmentation::MAP_CONDITION_KEY][Augmentation::DATA_SOURCE_SIDE] = $updatedFields[$transformObject->getSourceField()];
             }
 
-            if (
-                in_array($transformObject->getSourceField(), $delFields)
-                || in_array($transformObject->getDestinationField(), $delFields)
+            if (in_array($transformObject->getDestinationField(), $delFields)
+                && $transformObject->getMapDataSet() == $dataSetId
             ) {
                 unset($transforms[$key]);
-            } else {
-                $mapFields = $transformObject->getMapFields();
-                foreach ($mapFields as $index => $values) {
-                    if (in_array($values[Augmentation::DATA_SOURCE_SIDE], $delFields)
-                        || in_array($values[Augmentation::DATA_SOURCE_SIDE], $delFields)
-                    ) {
-                        unset($mapFields[$index]);
-                    } else if (array_key_exists($values[Augmentation::DATA_SOURCE_SIDE], $updatedFields)) {
-                        $values[Augmentation::DATA_SOURCE_SIDE] = $updatedFields[$values[Augmentation::DATA_SOURCE_SIDE]];
-                        $mapFields[$index] = $values;
-                    } else if (array_key_exists($values[Augmentation::MAP_DATA_SET_SIDE], $updatedFields)) {
-                        $values[Augmentation::MAP_DATA_SET_SIDE] = $updatedFields[$values[Augmentation::MAP_DATA_SET_SIDE]];
-                        $mapFields[$index] = $values;
-                    }
+            }
+
+            $mapFields = $transformObject->getMapFields();
+            foreach ($mapFields as $index => $values) {
+                if (in_array($values[Augmentation::DATA_SOURCE_SIDE], $delFields)) {
+                    unset($mapFields[$index]);
                 }
 
-                $transform[Augmentation::MAP_FIELDS_KEY] = $mapFields;
+                if (in_array($values[Augmentation::MAP_DATA_SET_SIDE], $delFields)
+                    && $transformObject->getMapDataSet() == $dataSetId
+                ) {
+                    unset($mapFields[$index]);
+                }
+
+                if (array_key_exists($values[Augmentation::DATA_SOURCE_SIDE], $updatedFields)) {
+                    $values[Augmentation::DATA_SOURCE_SIDE] = $updatedFields[$values[Augmentation::DATA_SOURCE_SIDE]];
+                    $mapFields[$index] = $values;
+                }
+
+                if (array_key_exists($values[Augmentation::MAP_DATA_SET_SIDE], $updatedFields)
+                    && $transformObject->getMapDataSet() == $dataSetId
+                ) {
+                    $values[Augmentation::MAP_DATA_SET_SIDE] = $updatedFields[$values[Augmentation::MAP_DATA_SET_SIDE]];
+                    $mapFields[$index] = $values;
+                }
             }
+
+            $transform[Augmentation::MAP_FIELDS_KEY] = $mapFields;
 
             $customConditions = $transformObject->getCustomCondition();
             foreach ($customConditions as $i => &$customCondition) {
@@ -277,8 +293,8 @@ class ReConfigConnectedDataSourceListener
                     unset($customConditions[$i]);
                 }
 
-                foreach ($updatedFields as $k => $v) {
-                    if ($field == $k) {
+                foreach($updatedFields as $k=>$v) {
+                    if ($field == $k && $transformObject->getMapDataSet() == $dataSetId) {
                         $customCondition[Augmentation::CUSTOM_FIELD_KEY] = $v;
                     }
                 }
@@ -288,14 +304,36 @@ class ReConfigConnectedDataSourceListener
         } else if ($transformObject instanceof SubsetGroup) {
             $mapFields = $transformObject->getMapFields();
             foreach ($mapFields as $index => $values) {
-                if (in_array($values[SubsetGroup::DATA_SOURCE_SIDE], $delFields)) {
+                if (in_array($values[SubsetGroup::DATA_SOURCE_SIDE], $delFields)
+                || in_array($values[SubsetGroup::GROUP_DATA_SET_SIDE], $delFields)
+                ) {
                     unset($mapFields[$index]);
-                } else if (array_key_exists($values[SubsetGroup::DATA_SOURCE_SIDE], $updatedFields)) {
+                }
+
+                if (array_key_exists($values[SubsetGroup::DATA_SOURCE_SIDE], $updatedFields)) {
                     $values[SubsetGroup::DATA_SOURCE_SIDE] = $updatedFields[$values[SubsetGroup::DATA_SOURCE_SIDE]];
+                    $mapFields[$index] = $values;
+                }
+
+                if (array_key_exists($values[SubsetGroup::GROUP_DATA_SET_SIDE], $updatedFields)) {
+                    $values[SubsetGroup::GROUP_DATA_SET_SIDE] = $updatedFields[$values[SubsetGroup::GROUP_DATA_SET_SIDE]];
                     $mapFields[$index] = $values;
                 }
             }
 
+            $groupFields = $transformObject->getGroupFields();
+            foreach($groupFields as &$field) {
+                if (in_array($field, $delFields)) {
+                    unset($field);
+                    continue;
+                }
+
+                if (array_key_exists($field, $updatedFields)) {
+                    $field = $updatedFields[$field];
+                }
+            }
+
+            $transform[SubsetGroup::GROUP_FIELD_KEY] = $groupFields;
             $transform[SubsetGroup::MAP_FIELDS_KEY] = $mapFields;
         } else {
 

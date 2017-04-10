@@ -21,7 +21,7 @@ class SubsetGroup implements CollectionTransformerInterface
     const GROUP_FIELD_KEY = 'groupFields';
 
     /**
-     * @var string
+     * @var array
      */
     protected $groupFields;
 
@@ -135,7 +135,7 @@ class SubsetGroup implements CollectionTransformerInterface
     }
 
     /**
-     * @return string
+     * @return array
      */
     public function getGroupFields()
     {
