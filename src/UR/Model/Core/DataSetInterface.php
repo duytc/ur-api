@@ -119,4 +119,19 @@ interface DataSetInterface extends ModelInterface
      * @param LinkedMapDataSetInterface[] $linkedMapDataSets
      */
     public function setLinkedMapDataSets(array $linkedMapDataSets);
+
+    /**
+     * @return array
+     */
+    public function getDataSetImportJobs();
+
+    /**
+     * @param array $dataSetImportJobs
+     */
+    public function setDataSetImportJobs(array $dataSetImportJobs);
+
+    /**
+     * @param DataSetImportJobInterface $dataSetImportJob
+     */
+    public function addDataSetImportJobs(DataSetImportJobInterface $dataSetImportJob);
 }

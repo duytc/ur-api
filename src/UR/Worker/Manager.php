@@ -3,7 +3,7 @@
 namespace UR\Worker;
 
 use Pheanstalk_PheanstalkInterface;
-use StdClass;
+use stdClass;
 use UR\Service\DateUtilInterface;
 use Leezy\PheanstalkBundle\Proxy\PheanstalkProxyInterface;
 
@@ -27,19 +27,31 @@ class Manager
         $this->queue = $queue;
     }
 
-    public function loadingDataFromFileToDataImportTable($connectedDataSourceId, $entryId, $dataSetId)
+    /**
+     * @param int $connectedDataSourceId
+     * @param array|int[] $entryIds
+     * @param int $dataSetId
+     * @param string $importJobId
+     */
+    public function loadingDataFromFileToDataImportTable($connectedDataSourceId, $entryIds, $dataSetId, $importJobId)
     {
-        $params = new StdClass;
+        $params = new stdClass;
         $params->connectedDataSourceId = $connectedDataSourceId;
-        $params->entryId = $entryId;
+        $params->entryIds = $entryIds;
         $params->dataSetId = $dataSetId;
+        $params->importJobId = $importJobId;
 
         $this->queueTask('loadingDataFromFileToDataImportTable', $params);
     }
 
+    /**
+     * @param int $code
+     * @param int $publisherId
+     * @param array $details
+     */
     public function processAlert($code, $publisherId, $details)
     {
-        $params = new StdClass;
+        $params = new stdClass;
         $params->code = $code;
         $params->publisherId = $publisherId;
         $params->details = $details;
@@ -47,13 +59,21 @@ class Manager
         $this->queueTask('processAlert', $params);
     }
 
-    public function alterDataSetTable($dataSetId, $newFields, $updateFields, $deletedFields)
+    /**
+     * @param int $dataSetId
+     * @param array $newFields
+     * @param array $updateFields
+     * @param array $deletedFields
+     * @param string $importJobId
+     */
+    public function alterDataSetTable($dataSetId, $newFields, $updateFields, $deletedFields, $importJobId)
     {
-        $params = new StdClass;
+        $params = new stdClass;
         $params->dataSetId = $dataSetId;
         $params->newColumns = $newFields;
         $params->updateColumns = $updateFields;
         $params->deletedColumns = $deletedFields;
+        $params->importJobId = $importJobId;
 
         $this->queueTask('alterDataSetTable', $params);
     }
@@ -68,11 +88,11 @@ class Manager
 
     /**
      * @param string $task
-     * @param StdClass $params
+     * @param stdClass $params
      */
-    protected function queueTask($task, StdClass $params)
+    protected function queueTask($task, stdClass $params)
     {
-        $payload = new StdClass;
+        $payload = new stdClass;
 
         $payload->task = $task;
         $payload->params = $params;

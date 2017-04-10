@@ -6,6 +6,7 @@ use Box\Spout\Common\Type;
 use Box\Spout\Reader\ReaderFactory;
 use Box\Spout\Reader\XLSX\Sheet;
 use Liuggio\ExcelBundle\Factory;
+use PHPExcel_Reader_IReader;
 use UR\Behaviors\ParserUtilTrait;
 
 class Excel extends CommonDataSourceFile implements DataSourceInterface
@@ -266,6 +267,9 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
      */
     private function getPhpExcelObj($filePath, $chunkSize, $startRow)
     {
+        /**
+         * @var PHPExcel_Reader_IReader $objReader
+         */
         $objReader = \PHPExcel_IOFactory::createReaderForFile($filePath);
         $this->chunkFile = new ChunkReadFilter();
         $objReader->setReadFilter($this->chunkFile);

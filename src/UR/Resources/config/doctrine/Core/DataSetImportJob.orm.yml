@@ -1,0 +1,21 @@
+UR\Entity\Core\DataSetImportJob:
+    type: entity
+    table: core_data_set_import_job
+    repositoryClass: UR\Repository\Core\DataSetImportJobRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        jobId:
+            type: string
+            nullable: true
+        createdDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+    manyToOne:
+        dataSet:
+            targetEntity: UR\Entity\Core\DataSet

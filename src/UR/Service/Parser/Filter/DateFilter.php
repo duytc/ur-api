@@ -3,7 +3,6 @@
 namespace UR\Service\Parser\Filter;
 
 
-use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
 use UR\Service\Import\ImportDataException;
 
 class DateFilter extends AbstractFilter implements ColumnFilterInterface

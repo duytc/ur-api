@@ -215,7 +215,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
     /**
      * @param DataSourceInterface $dataSource
      * @param PagerParam $param
-     * @return QueryBuilder
+     * @return \Doctrine\ORM\QueryBuilder
      */
     public function getImportedHistoryByDataSourceQuery(DataSourceInterface $dataSource, PagerParam $param)
     {

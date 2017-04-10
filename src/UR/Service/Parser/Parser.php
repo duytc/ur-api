@@ -138,10 +138,10 @@ class Parser implements ParserInterface
                     continue;
                 }
 
-                $row[$fileColumn] = $this->reformatFileData($row, $fileColumn, $type, $cur_row);
+                $row[$fileColumn] = $this->reformatFileData($row, $fileColumn, $type);
             }
 
-            $isValidFilter = $this->doFilter($parserConfig, $fileCols, $row, $cur_row);
+            $isValidFilter = $this->doFilter($parserConfig, $fileCols, $row);
 
             if (!$isValidFilter) {
                 unset($rows[$cur_row]);
@@ -252,11 +252,10 @@ class Parser implements ParserInterface
      * @param array $row
      * @param $fileColumn
      * @param string $type
-     * @param int $cur_row
      * @return mixed|null
-     * @throws ImportDataException
+     * @internal param int $cur_row
      */
-    private function reformatFileData(array $row, $fileColumn, $type, $cur_row)
+    private function reformatFileData(array $row, $fileColumn, $type)
     {
         $cellValue = $row[$fileColumn];
 
@@ -336,11 +335,10 @@ class Parser implements ParserInterface
      * @param ParserConfig $parserConfig
      * @param array $fileCols
      * @param array $row
-     * @param int $cur_row
      * @return int
      * @throws ImportDataException
      */
-    private function doFilter(ParserConfig $parserConfig, array $fileCols, array $row, $cur_row)
+    private function doFilter(ParserConfig $parserConfig, array $fileCols, array $row)
     {
         $isValidFilter = 1;
         foreach ($parserConfig->getColumnFilters() as $column => $filters) {

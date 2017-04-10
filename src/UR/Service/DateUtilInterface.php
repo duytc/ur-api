@@ -4,7 +4,6 @@ namespace UR\Service;
 
 use DateTime;
 use UR\Domain\DTO\Report\DateRange;
-use UR\Exception\Report\InvalidDateException;
 
 interface DateUtilInterface
 {
@@ -16,7 +15,7 @@ interface DateUtilInterface
      * @param int|DateTime|null $dateString
      * @param bool $returnTodayIfEmpty
      * @return DateTime
-     * @throws InvalidDateException when an incorrect date format is supplied
+     * @throws \Exception when an incorrect date format is supplied
      */
     public function getDateTime($dateString = null, $returnTodayIfEmpty = false);
 

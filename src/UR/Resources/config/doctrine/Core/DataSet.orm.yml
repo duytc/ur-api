@@ -42,3 +42,9 @@ UR\Entity\Core\DataSet:
             cascade: ['persist', 'detach', 'remove']
             mappedBy: mapDataSet
             orphanRemoval: true
+
+        dataSetImportJobs:
+            targetEntity: UR\Entity\Core\DataSetImportJob
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: dataSet
+            orphanRemoval: true

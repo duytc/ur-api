@@ -9,7 +9,6 @@ use Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DTO\Collection;
-use UR\Service\Import\ImportDataException;
 
 class ParsedDataImporter
 {
@@ -74,7 +73,7 @@ class ParsedDataImporter
                     throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
                 }
 
-                if ((array_key_exists($column, $dimensions) && ($dimensions[$column] === FieldType::DATE|| $dimensions[$column] === FieldType::DATETIME)) ||
+                if ((array_key_exists($column, $dimensions) && ($dimensions[$column] === FieldType::DATE || $dimensions[$column] === FieldType::DATETIME)) ||
                     (array_key_exists($column, $metrics) && ($metrics[$column] === FieldType::DATE || $metrics[$column] === FieldType::DATETIME))
                 ) {
                     $dateColumns[] = $column;
@@ -96,17 +95,17 @@ class ParsedDataImporter
             $question_marks = [];
             $this->preparedInsertCount = 0;
 
-        foreach ($rows as &$row) {
-            if (!is_array($row)) {
-                continue;
-            }
+            foreach ($rows as &$row) {
+                if (!is_array($row)) {
+                    continue;
+                }
 
-            $this->insertMonthYearAt($dateColumns, $row);
-            $uniqueKeys = array_intersect_key($row, $dimensions);
-            $uniqueId = md5(implode(":", $uniqueKeys));
-            $row[DataSetInterface::DATA_SOURCE_ID_COLUMN] = $connectedDataSource->getDataSource()->getId();
-            $row[DataSetInterface::IMPORT_ID_COLUMN] = $importId;
-            $row[DataSetInterface::UNIQUE_ID_COLUMN] = $uniqueId;
+                $this->insertMonthYearAt($dateColumns, $row);
+                $uniqueKeys = array_intersect_key($row, $dimensions);
+                $uniqueId = md5(implode(":", $uniqueKeys));
+                $row[DataSetInterface::DATA_SOURCE_ID_COLUMN] = $connectedDataSource->getDataSource()->getId();
+                $row[DataSetInterface::IMPORT_ID_COLUMN] = $importId;
+                $row[DataSetInterface::UNIQUE_ID_COLUMN] = $uniqueId;
 
                 if ($isOverwriteData) {
                     //update

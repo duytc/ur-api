@@ -15,6 +15,7 @@ use UR\Model\Core\DataSourceEntryInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Response;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\ImportHistoryInterface;
 
 /**
@@ -164,7 +165,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
 
         $this->checkFileExist($dataSourceEntry);
 
-        return $this->replayDataSourceEntryData($dataSourceEntry);
+        return $this->replayDataSourceEntryData([$dataSourceEntry->getId()], $dataSourceEntry->getDataSource());
     }
 
     /**
@@ -223,11 +224,18 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $replay = ($replay === 'true') ? true : false;
 
         if ($replay === true) {
+            $entryIds = [];
+
             foreach ($ids as $id) {
                 /**@var DataSourceEntryInterface $dataSourceEntry */
                 $dataSourceEntry = $this->one($id);
+                $entryIds[] = $dataSourceEntry->getId();
+                $dataSource = $dataSourceEntry->getDataSource();
+            }
 
-                $this->replayDataSourceEntryData($dataSourceEntry);
+            if (count($entryIds) > 0) {
+                /**@var DataSourceInterface $dataSource */
+                $this->replayDataSourceEntryData($entryIds, $dataSource);
             }
         }
     }
@@ -281,7 +289,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
             throw new \Exception(sprintf('Data Source Entry %d does not exist', $id));
         }
-        
+
         /** @var ImportHistoryManagerInterface $importHistoryManager */
         $importHistoryManager = $this->get('ur.domain_manager.import_history');
         $importHistories = $importHistoryManager->getImportHistoryByDataSourceEntryWithoutDataSet($dataSourceEntry);
@@ -338,17 +346,19 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
     }
 
     /**
-     * @param DataSourceEntryInterface $dataSourceEntry
+     * @param array $entryIds
+     * @param DataSourceInterface $dataSource
      * @throws \Exception
      */
-    private function replayDataSourceEntryData(DataSourceEntryInterface $dataSourceEntry)
+    private function replayDataSourceEntryData(array $entryIds, DataSourceInterface $dataSource)
     {
-        $loadingDataService = $this->get('ur.service.loading_data_service');
-        $linkedMapDataSetRepository = $this->get('ur.repository.linked_map_data_set');
-        if (!$dataSourceEntry->getDataSource()->getEnable()) {
+        if (!$dataSource->getEnable()) {
             throw new \Exception(sprintf("Could not replay data - entry in disabled Data Source "));
         }
 
-        $loadingDataService->doLoadDataFromEntryToDataBase($dataSourceEntry, $linkedMapDataSetRepository);
+        asort($entryIds);
+
+        $loadingDataService = $this->get('ur.service.loading_data_service');
+        $loadingDataService->doLoadDataFromEntryToDataBase($dataSource->getConnectedDataSources(), $entryIds);
     }
 }

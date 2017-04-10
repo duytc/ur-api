@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use Doctrine\ORM\QueryBuilder;
 use Exception;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
@@ -393,6 +394,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         /** @var DataSourceInterface $dataSource */
         $dataSource = $this->one($id);
         $importHistoryManager = $this->get('ur.domain_manager.import_history');
+        /** @var QueryBuilder $qb */
         $qb = $importHistoryManager->getImportedHistoryByDataSourceQuery($dataSource, $this->getParams());
 
         $params = array_merge($request->query->all(), $request->attributes->all());

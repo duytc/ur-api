@@ -7,10 +7,12 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Symfony\Component\Config\Definition\Exception\Exception;
+use UR\Entity\Core\DataSetImportJob;
 use UR\Entity\Core\LinkedMapDataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\LinkedMapDataSetInterface;
+use UR\Service\Import\CreateDataSetImportJobEntity;
 use UR\Service\Parser\Transformer\Augmentation;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\ExtractPattern;
@@ -109,7 +111,12 @@ class ReConfigConnectedDataSourceListener
         $deletedFields = array_merge($deletedDimensions, $deletedMetrics);
 
         // alter data_import table
-        $this->workerManager->alterDataSetTable($entity->getId(), $newFields, $updateFields, $deletedFields);
+        $createDataSetImportEntity = new CreateDataSetImportJobEntity();
+        $dataSetImportJobEntity = $createDataSetImportEntity->createDataSetImportJobEntity($entity);
+
+        $em->persist($dataSetImportJobEntity);
+
+        $this->workerManager->alterDataSetTable($entity->getId(), $newFields, $updateFields, $deletedFields, $dataSetImportJobEntity->getJobId());
         $this->updateFields = $updateFields;
         $this->deletedFields = $deletedFields;
     }
@@ -140,7 +147,7 @@ class ReConfigConnectedDataSourceListener
             $linkedConnectedDataSources = $linkedMapDataSetRepository->getByMapDataSet($entity);
 
             /** @var LinkedMapDataSetInterface $linkedConnectedDataSource */
-            foreach($linkedConnectedDataSources as $linkedConnectedDataSource) {
+            foreach ($linkedConnectedDataSources as $linkedConnectedDataSource) {
                 $this->updateConfigForConnectedDataSource($linkedConnectedDataSource->getConnectedDataSource(), $this->updateFields, $this->deletedFields);
             }
         }
@@ -191,9 +198,7 @@ class ReConfigConnectedDataSourceListener
                 }
 
                 continue;
-
             } else {
-
                 if ($transformObjects instanceof GroupByColumns || $transformObjects instanceof SortByColumns) {
                     continue;
                 }
@@ -209,7 +214,7 @@ class ReConfigConnectedDataSourceListener
         $connectedDataSource->setTransforms(array_values($transforms));
     }
 
-    public function getChangedFields(array $values, array $renameFields, array &$newFields, array &$updateFields, array &$deletedFields)
+    private function getChangedFields(array $values, array $renameFields, array &$newFields, array &$updateFields, array &$deletedFields)
     {
         $deletedFields = array_diff_assoc($values[0], $values[1]);
         foreach ($renameFields as $renameField) {
@@ -234,7 +239,7 @@ class ReConfigConnectedDataSourceListener
         }
     }
 
-    public function updateConnectedCollectionTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key, CollectionTransformerInterface $transformObject)
+    private function updateConnectedCollectionTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key, CollectionTransformerInterface $transformObject)
     {
         if ($transformObject instanceof Augmentation) {
             if (array_key_exists($transformObject->getSourceField(), $updatedFields)) {
@@ -246,8 +251,7 @@ class ReConfigConnectedDataSourceListener
                 || in_array($transformObject->getDestinationField(), $delFields)
             ) {
                 unset($transforms[$key]);
-            }
-            else {
+            } else {
                 $mapFields = $transformObject->getMapFields();
                 foreach ($mapFields as $index => $values) {
                     if (in_array($values[Augmentation::DATA_SOURCE_SIDE], $delFields)
@@ -267,13 +271,13 @@ class ReConfigConnectedDataSourceListener
             }
 
             $customConditions = $transformObject->getCustomCondition();
-            foreach($customConditions as $i=>&$customCondition) {
+            foreach ($customConditions as $i => &$customCondition) {
                 $field = $customCondition[Augmentation::CUSTOM_FIELD_KEY];
                 if (in_array($field, $delFields)) {
                     unset($customConditions[$i]);
                 }
 
-                foreach($updatedFields as $k=>$v) {
+                foreach ($updatedFields as $k => $v) {
                     if ($field == $k) {
                         $customCondition[Augmentation::CUSTOM_FIELD_KEY] = $v;
                     }
@@ -281,7 +285,7 @@ class ReConfigConnectedDataSourceListener
             }
 
             $transform[Augmentation::CUSTOM_CONDITION] = $customConditions;
-        } else if ($transformObject instanceof SubsetGroup){
+        } else if ($transformObject instanceof SubsetGroup) {
             $mapFields = $transformObject->getMapFields();
             foreach ($mapFields as $index => $values) {
                 if (in_array($values[SubsetGroup::DATA_SOURCE_SIDE], $delFields)) {
@@ -293,8 +297,7 @@ class ReConfigConnectedDataSourceListener
             }
 
             $transform[SubsetGroup::MAP_FIELDS_KEY] = $mapFields;
-        }
-        else {
+        } else {
 
             $keyToCompare = CollectionTransformerInterface::FIELD_KEY;
 

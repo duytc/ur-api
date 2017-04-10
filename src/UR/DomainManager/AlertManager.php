@@ -7,7 +7,6 @@ use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\AlertInterface;
 use UR\Model\ModelInterface;
-use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\AlertRepositoryInterface;
 
 class AlertManager implements AlertManagerInterface

@@ -23,4 +23,9 @@ interface ColumnTransformerInterface extends TransformerInterface
      * @return bool
      */
     public function validate();
+
+    /**
+     * @return mixed
+     */
+    public function getField();
 }

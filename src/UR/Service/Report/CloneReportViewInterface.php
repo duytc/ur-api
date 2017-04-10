@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: linhvu
- * Date: 19/01/2017
- * Time: 16:53
- */
 
 namespace UR\Service\Report;
 

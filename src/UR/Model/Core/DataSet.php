@@ -2,6 +2,7 @@
 
 namespace UR\Model\Core;
 
+use Doctrine\Common\Collections\Collection;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\UserEntityInterface;
 
@@ -27,6 +28,11 @@ class DataSet implements DataSetInterface
      * @var LinkedMapDataSetInterface[]
      */
     protected $linkedMapDataSets;
+
+    /**
+     * @var DataSetImportJobInterface[]
+     */
+    protected $dataSetImportJobs;
 
     public function __construct()
     {
@@ -211,5 +217,37 @@ class DataSet implements DataSetInterface
     public function setLinkedMapDataSets(array $linkedMapDataSets)
     {
         $this->linkedMapDataSets = $linkedMapDataSets;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSetImportJobs()
+    {
+        return $this->dataSetImportJobs;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setDataSetImportJobs(array $dataSetImportJobs)
+    {
+        $this->dataSetImportJobs = $dataSetImportJobs;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function addDataSetImportJobs(DataSetImportJobInterface $dataSetImportJob)
+    {
+        if ($this->dataSetImportJobs instanceof Collection) {
+            $this->dataSetImportJobs = $this->dataSetImportJobs->toArray();
+        }
+
+        if (!is_array($this->dataSetImportJobs)) {
+            $this->dataSetImportJobs = [];
+        }
+
+        $this->dataSetImportJobs[] = $dataSetImportJob;
     }
 }

@@ -37,4 +37,5 @@ parameters:
     ur.events.custom_code_event.pre_transform_collection_data: ur.events.custom_code_event.pre_transform_collection_data
     ur.events.custom_code_event.pre_transform_column_data: ur.events.custom_code_event.pre_transform_column_data
     ur.events.custom_code_event.post_parse_data: ur.events.custom_code_event.post_parse_data
+    ur.command.load_data_to_database.timeout: 3600
 

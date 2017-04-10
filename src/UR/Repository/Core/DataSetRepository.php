@@ -4,6 +4,8 @@ namespace UR\Repository\Core;
 
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\QueryBuilder;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
@@ -89,6 +91,10 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
         return $qb;
     }
 
+    /**
+     * @param DataSourceInterface $dataSource
+     * @return QueryBuilder
+     */
     public function getDataSetByDataSourceQuery(DataSourceInterface $dataSource)
     {
         $qb = $this->createQueryBuilder('ds')
@@ -100,6 +106,10 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
         return $qb;
     }
 
+    /**
+     * @param UserRoleInterface $publisher
+     * @return QueryBuilder
+     */
     public function getDataSetHasConnectedDataSourceQuery(UserRoleInterface $publisher)
     {
         $qb = $this->createQueryBuilderForUser($publisher)
@@ -108,6 +118,10 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
         return $qb;
     }
 
+    /**
+     * @param UserRoleInterface $publisher
+     * @return array
+     */
     public function getDataSetHasConnectedDataSource(UserRoleInterface $publisher)
     {
         $qb = $this->getDataSetHasConnectedDataSourceQuery($publisher);
@@ -115,6 +129,10 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
         return $qb->getQuery()->getResult();
     }
 
+    /**
+     * @param UserRoleInterface $publisher
+     * @return QueryBuilder
+     */
     public function getDataSetHasNotConnectedDataSourceQuery(UserRoleInterface $publisher)
     {
         $dataSets = $this->getDataSetHasConnectedDataSource($publisher);
@@ -123,6 +141,7 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
 
         $dataSetIds = [];
         foreach ($dataSets as $dataSet) {
+            /**@var DataSetInterface $dataSet */
             $dataSetIds[] = $dataSet->getId();
         }
 
@@ -158,7 +177,7 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
     /**
      * @inheritdoc
      */
-    public function getDataSetByName($dataSetName, $limit= null, $offset= null)
+    public function getDataSetByName($dataSetName, $limit = null, $offset = null)
     {
         $qb = $this->createQueryBuilder('ds')
             ->where('ds.name = :name')

@@ -9,14 +9,18 @@ use Doctrine\DBAL\Schema\SchemaException;
 use Doctrine\DBAL\Schema\TableDiff;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
+use Leezy\PheanstalkBundle\Proxy\PheanstalkProxyInterface;
 use Monolog\Logger;
+use Pheanstalk_Job;
 use stdClass;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\Exception\SqlLockTableException;
+use UR\Model\Core\DataSetImportJobInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\LockingDatabaseTable;
 use UR\Service\DataSet\Synchronizer;
+use UR\Service\Import\DataSetImportJobQueueService;
 
 class AlterImportDataTable
 {
@@ -30,10 +34,18 @@ class AlterImportDataTable
      */
     private $entityManager;
 
+    /**
+     * @var DataSetImportJobQueueService
+     */
+    private $dataSetImportJobQueueService;
+
     private $conn;
 
     private $lockingDatabaseTable;
 
+    /**
+     * @var PheanstalkProxyInterface
+     */
     private $queue;
 
     private $logger;
@@ -43,8 +55,10 @@ class AlterImportDataTable
      * @param DataSetManagerInterface $dataSetManager
      * @param EntityManagerInterface $entityManager
      * @param $queue
+     * @param Logger $logger
+     * @param DataSetImportJobQueueService $dataSetImportJobQueueService
      */
-    public function __construct(DataSetManagerInterface $dataSetManager, EntityManagerInterface $entityManager, $queue, Logger $logger)
+    public function __construct(DataSetManagerInterface $dataSetManager, EntityManagerInterface $entityManager, $queue, Logger $logger, DataSetImportJobQueueService $dataSetImportJobQueueService)
     {
         $this->dataSetManager = $dataSetManager;
         $this->entityManager = $entityManager;
@@ -52,11 +66,20 @@ class AlterImportDataTable
         $this->lockingDatabaseTable = new LockingDatabaseTable($this->conn);
         $this->queue = $queue;
         $this->logger = $logger;
+        $this->dataSetImportJobQueueService = $dataSetImportJobQueueService;
     }
 
-    public function alterDataSetTable(StdClass $params, $job, $tube)
+    public function alterDataSetTable(stdClass $params, Pheanstalk_Job $job, $tube)
     {
         $dataSetId = $params->dataSetId;
+        $importJobId = $params->importJobId;
+
+        $exeCuteJob = $this->dataSetImportJobQueueService->isExecuteJob($dataSetId, $importJobId, $this->logger);
+        if (!$exeCuteJob instanceof DataSetImportJobInterface) {
+            $this->queue->putInTube($tube, $job->getData(), 1024, 15);
+            return;
+        }
+
         /**
          * @var DataSetInterface $dataSet
          */
@@ -76,12 +99,14 @@ class AlterImportDataTable
 
         // check if table not existed
         if (!$dataTable) {
+            $this->dataSetImportJobQueueService->deleteJob($exeCuteJob);
             return;
         }
+
         try {
             $this->lockingDatabaseTable->lockTable($dataTable->getName());
         } catch (SqlLockTableException $exception) {
-            $this->queue->putInTube($tube, $job->getData(), 0, 15);
+            $this->queue->putInTube($tube, $job->getData(), 1024, 15);
             return;
         }
 
@@ -131,7 +156,7 @@ class AlterImportDataTable
                 }
                 $alterSqls[] = $sql;
 
-                if ($curCol->getType()->getName() == FieldType::DATE || $curCol->getType()->getName() == FieldType::DATETIME){
+                if ($curCol->getType()->getName() == FieldType::DATE || $curCol->getType()->getName() == FieldType::DATETIME) {
                     $oldDay = sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $oldName);
                     $oldMonth = sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $oldName);
                     $oldYear = sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $oldName);
@@ -140,17 +165,17 @@ class AlterImportDataTable
                     $newMonth = sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $newName);
                     $newYear = sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $newName);
 
-                    if ($dataTable->hasColumn($oldDay)){
+                    if ($dataTable->hasColumn($oldDay)) {
                         $sqlDay = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldDay, $newDay, Type::INTEGER);
                         $alterSqls[] = $sqlDay;
                     }
 
-                    if ($dataTable->hasColumn($oldMonth)){
+                    if ($dataTable->hasColumn($oldMonth)) {
                         $sqlMonth = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldMonth, $newMonth, Type::INTEGER);
                         $alterSqls[] = $sqlMonth;
                     }
 
-                    if ($dataTable->hasColumn($oldYear)){
+                    if ($dataTable->hasColumn($oldYear)) {
                         $sqlYear = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldYear, $newYear, Type::INTEGER);
                         $alterSqls[] = $sqlYear;
                     }
@@ -166,6 +191,8 @@ class AlterImportDataTable
             $this->logger->error($e->getMessage());
             throw new \mysqli_sql_exception("Cannot Sync Schema " . $schema->getName());
         }
+
+        $this->dataSetImportJobQueueService->deleteJob($exeCuteJob);
 
         $this->lockingDatabaseTable->unLockTable();
     }

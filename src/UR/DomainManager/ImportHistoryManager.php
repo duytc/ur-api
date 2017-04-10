@@ -3,7 +3,6 @@
 namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
-use Doctrine\DBAL\Query\QueryBuilder;
 use ReflectionClass;
 use UR\Entity\Core\ImportHistory;
 use UR\Exception\InvalidArgumentException;
@@ -102,9 +101,7 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     }
 
     /**
-     * @param DataSourceInterface $dataSource
-     * @param PagerParam $param
-     * @return QueryBuilder
+     * @inheritdoc
      */
     public function getImportedHistoryByDataSourceQuery(DataSourceInterface $dataSource, PagerParam $param)
     {

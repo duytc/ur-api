@@ -3,7 +3,9 @@
 namespace UR\Exception;
 
 
-class NotSupportedException extends \UnsupportedOperationException
+use Ramsey\Uuid\Exception\UnsupportedOperationException;
+
+class NotSupportedException extends UnsupportedOperationException 
 {
 
 } 

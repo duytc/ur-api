@@ -2,7 +2,7 @@
 
 namespace UR\DomainManager;
 
-use Doctrine\DBAL\Query\QueryBuilder;
+use Doctrine\ORM\QueryBuilder;
 use UR\Entity\Core\ImportHistory;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;

@@ -4,7 +4,6 @@ namespace UR\Service;
 
 use DateTime;
 use UR\Domain\DTO\Report\DateRange;
-use UR\Exception\Report\InvalidDateException;
 
 class DateUtil implements DateUtilInterface
 {
@@ -26,7 +25,7 @@ class DateUtil implements DateUtilInterface
         $validPattern = '#\d{4}-\d{2}-\d{2}#';
 
         if (!preg_match($validPattern, $dateString)) {
-            throw new InvalidDateException('dateString must be a date in the format YYMMDD');
+            throw new \Exception('dateString must be a date in the format YYMMDD');
         }
 
         $dateTime = DateTime::createFromFormat(self::DATE_FORMAT, $dateString);

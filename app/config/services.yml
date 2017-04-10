@@ -137,6 +137,8 @@ services:
             - @leezy.pheanstalk
             - %log_file_dir%
             - @ur.domain_manager.import_history
+            - @ur.service.import.data_set_import_job
+            - %ur.command.load_data_to_database.timeout%
 
     ur.worker.workers.alter_import_data_table:
         class: UR\Worker\Workers\AlterImportDataTable
@@ -145,6 +147,7 @@ services:
             - @doctrine.orm.entity_manager
             - @leezy.pheanstalk
             - @logger
+            - @ur.service.import.data_set_import_job
 
     ur.worker.workers.truncate_import_data_table:
         class: UR\Worker\Workers\TruncateImportDataTable
@@ -222,3 +225,11 @@ services:
         class: UR\Service\Import\LoadingDataService
         arguments:
             - @ur.worker.manager
+            - @ur.domain_manager.data_set_import_job
+            - @ur.repository.import_history
+            - @ur.repository.linked_map_data_set
+
+    ur.service.import.data_set_import_job:
+        class: UR\Service\Import\DataSetImportJobQueueService
+        arguments:
+            - @ur.domain_manager.data_set_import_job

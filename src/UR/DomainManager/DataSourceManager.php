@@ -5,7 +5,6 @@ namespace UR\DomainManager;
 use Doctrine\Common\Persistence\ObjectManager;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSetInterface;
-use UR\Model\Core\DataSourceAlertSetting;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;

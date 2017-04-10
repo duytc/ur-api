@@ -1,0 +1,17 @@
+parameters:
+    # entity class
+    ur.entity.core.data_set_import_job.class: UR\Entity\Core\DataSetImportJob
+
+services:
+    ur.repository.data_set_import_job:
+        class: UR\Repository\Core\DataSetImportJobRepository
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.data_set_import_job.class%
+
+    ur.domain_manager.data_set_import_job:
+        class: UR\DomainManager\DataSetImportJobManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.data_set_import_job

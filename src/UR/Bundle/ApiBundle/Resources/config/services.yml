@@ -16,6 +16,7 @@ imports:
     - { resource: services/service.report_view_data_set.yml }
     - { resource: services/service.report_view_multi_view.yml }
     - { resource: services/service.linked_map_data_set.yml }
+    - { resource: services/service.data-set-import-job.yml }
 
 
 parameters:

@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Entity\Core\LinkedMapDataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -29,14 +30,14 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
      */
     protected $insertedEntities = [];
 
-    /** @var LoadingDataService */
-    private $loadingDataService;
+    /** @var ContainerInterface $container */
+    private $container;
 
     private $transformFactory;
 
-    function __construct(LoadingDataService $loadingDataService)
+    function __construct(ContainerInterface $container)
     {
-        $this->loadingDataService = $loadingDataService;
+        $this->container = $container;
         $this->transformFactory = new TransformerFactory();
     }
 
@@ -60,9 +61,8 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
             return;
         }
 
-        $em = $args->getEntityManager();
-        $linkedMapDataSetRepository = $em->getRepository(LinkedMapDataSet::class);
-
+        $connectedDataSources = [];
+        $entryIds = [];
         foreach ($this->insertedEntities as $entity) {
             if (!$entity instanceof ConnectedDataSourceInterface) {
                 continue;
@@ -80,13 +80,19 @@ class ReImportWhenConnectedDataSourceEntryInsertedListener
                 }
 
                 foreach ($dataSourceEntries as $dataSourceEntry) {
-                    $this->loadingDataService->doLoadDataFromEntryToDataBase($dataSourceEntry, $linkedMapDataSetRepository);
+                    $entryIds[] = $dataSourceEntry->getId();
                 }
+
+                $connectedDataSources[] = $entity;
             }
         }
 
         // reset for new onFlush event
         $this->insertedEntities = [];
+
+        /** @var LoadingDataService */
+        $loadingDataService = $this->container->get('ur.service.loading_data_service');
+        $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSources, $entryIds);
     }
 
     public function postPersist(LifecycleEventArgs $args)

@@ -3,6 +3,7 @@
 namespace UR\Service\DataSet;
 
 use \Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
@@ -37,7 +38,7 @@ class Synchronizer
      *
      * @param Schema $schema
      * @return $this
-     * @throws \Doctrine\DBAL\DBALException
+     * @throws DBALException
      */
     public function syncSchema(Schema $schema)
     {
@@ -120,7 +121,7 @@ class Synchronizer
 
     /**
      * @param int $id
-     * @return \Doctrine\DBAL\Schema\Table|false
+     * @return Table|false
      */
     public function getDataSetImportTable($id)
     {
