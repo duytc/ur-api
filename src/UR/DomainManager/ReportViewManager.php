@@ -58,7 +58,7 @@ class ReportViewManager implements ReportViewManagerInterface
     public function delete(ModelInterface $reportView)
     {
         if (!$reportView instanceof ReportViewInterface) {
-            throw new PublicSimpleException('expect ReportViewInterface object');
+            throw new InvalidArgumentException('expect ReportViewInterface object');
         }
 
         $reportViewMultiViewRepository = $this->om->getRepository(ReportViewMultiView::class);
