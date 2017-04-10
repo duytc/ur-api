@@ -36,8 +36,8 @@ class CreateIntegrationCommand extends ContainerAwareCommand
                 'Integration parameters (optional) as name:type, allow multiple parameters separated by comma. 
                 Supported types are: plainText (default), date (Y-m-d), dynamicDateRange (last 1,2,3... days) 
                 , secure (will be encrypted in database and not show value in ui), option (array of string, separated by ; such as string11; string1 2; String 1 3)
-                and regex (for regex matching)
-                e.g. -p "username,password:secure,startDate:date,pattern:regex"')
+                regex (for regex matching) and bool (true | false)
+                e.g. -p "username,password:secure,startDate:date,pattern:regex,dailyBreakdown:bool"')
             ->addOption('all-publishers', 'a', InputOption::VALUE_NONE,
                 'Enable for all users')
             ->addOption('enables-users', 'u', InputOption::VALUE_OPTIONAL,
@@ -219,22 +219,25 @@ class CreateIntegrationCommand extends ContainerAwareCommand
             // parse name:type
             $paramNameAndType = explode(':', trim($param));
 
-            $value = null;
+            $paramElement = [
+                Integration::PARAM_KEY_KEY => $paramNameAndType[0],
+                Integration::PARAM_KEY_TYPE => count($paramNameAndType) < 2 ? Integration::PARAM_TYPE_PLAIN_TEXT : $paramNameAndType[1],
+            ];
 
             if (count($paramNameAndType) > 2) {
                 //For option params
                 if ($paramNameAndType[1] == Integration::PARAM_TYPE_OPTION) {
-                    $value = explode(';', $paramNameAndType[2]);
-                } //For other params
-                else {
-                    $value = $paramNameAndType[2];
+                    $paramElement[Integration::PARAM_KEY_OPTION_VALUES] = explode(';', $paramNameAndType[2]);
+                }
+
+                //For bool params
+                if ($paramNameAndType[1] == Integration::PARAM_TYPE_BOOL) {
+                    $defaultValue = strtolower($paramNameAndType[2]) == 'true' || strtolower($paramNameAndType[2]) == '1' ? true : false;
+                    $paramElement[Integration::PARAM_KEY_DEFAULT_VALUE] = $defaultValue;
                 }
             }
-            return [
-                Integration::PARAM_KEY_KEY => $paramNameAndType[0],
-                Integration::PARAM_KEY_TYPE => count($paramNameAndType) < 2 ? Integration::PARAM_TYPE_PLAIN_TEXT : $paramNameAndType[1],
-                Integration::PARAM_KEY_OPTION_VALUES => $value ? $value : null
-            ];
+
+            return $paramElement;
         }, $params);
 
         return $params;
