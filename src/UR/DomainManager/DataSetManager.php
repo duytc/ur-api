@@ -60,19 +60,19 @@ class DataSetManager implements DataSetManagerInterface
     public function delete(ModelInterface $dataSet)
     {
         if (!$dataSet instanceof DataSetInterface) {
-            throw new PublicSimpleException('expect DataSetInterface Object');
+            throw new InvalidArgumentException('expect DataSetInterface Object');
         }
 
         $reportViewDataSetRepository = $this->om->getRepository(ReportViewDataSet::class);
         $reportViewDataSets = $reportViewDataSetRepository->getByDataSet($dataSet);
         if (count($reportViewDataSets) > 0) {
-            throw new PublicSimpleException("There're some report view still refer to this data set");
+            throw new PublicSimpleException("There are some report views that refer to this data set");
         }
 
         $linkedMapDataSetRepository = $this->om->getRepository(LinkedMapDataSet::class);
         $linkedMaps = $linkedMapDataSetRepository->getByMapDataSet($dataSet);
         if(count($linkedMaps) > 0){
-            throw new PublicSimpleException("There're some connected data source has augmentation transforms refer to this data set");
+            throw new PublicSimpleException("There are some connected data sources with data augmentation transforms that refer to this data set");
         }
 
         $this->om->remove($dataSet);
