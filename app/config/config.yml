@@ -192,8 +192,10 @@ fos_rest:
             'UR\Exception\InvalidArgumentException': 400
             'UR\Exception\LogicException': 400
             'UR\Service\Import\PublicImportDataException': 400
+            'UR\Service\PublicSimpleException': 500
         messages:
-          'UR\Service\Import\PublicImportDataException': true
+            'UR\Service\Import\PublicImportDataException': true
+            'UR\Service\PublicSimpleException': true
 
 # lexik_jwt_authentication Configuration
 lexik_jwt_authentication:
