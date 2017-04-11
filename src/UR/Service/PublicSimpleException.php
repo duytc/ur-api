@@ -8,10 +8,8 @@ namespace UR\Service;
 
 class PublicSimpleException extends \Exception
 {
-    public function __construct($details)
+    public function __construct($message)
     {
-        $message = json_encode($details);
-
         parent::__construct($message, 500);
     }
 }
