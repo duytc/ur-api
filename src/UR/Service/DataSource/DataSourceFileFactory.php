@@ -48,7 +48,7 @@ class DataSourceFileFactory
 
                 return new Json($filePath);
             default:
-                throw new Exception(sprintf('Dose not support this file type'));
+                throw new Exception(sprintf('Does not support this file type'));
         }
     }
 }

@@ -74,12 +74,21 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
      */
     public function delete(ModelInterface $dataSourceEntry)
     {
-        if (!$dataSourceEntry instanceof DataSourceEntryInterface) throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
+        // sure entity is a DataSourceEntry
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+            throw new InvalidArgumentException('expect DataSourceEntryInterface Object');
+        }
+
+        // remove
         $this->om->remove($dataSourceEntry);
+
+        // update detected fields (update count of detected fields)
         $newFields = $this->importService->getNewFieldsFromFiles($this->uploadFileDir . $dataSourceEntry->getPath(), $dataSourceEntry->getDataSource());
-        $detectedFields = $this->importService->detectedFieldsForDataSource($newFields, $dataSourceEntry->getDataSource()->getDetectedFields(), ImportService::DELETE);
+        $detectedFields = $this->importService->detectFieldsForDataSource($newFields, $dataSourceEntry->getDataSource()->getDetectedFields(), ImportService::ACTION_DELETE);
         $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
         $this->om->flush();
+
+        // delete the entry file
         if (file_exists($this->uploadFileDir . $dataSourceEntry->getPath())) {
             unlink($this->uploadFileDir . $dataSourceEntry->getPath());
         }
@@ -130,7 +139,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
         try {
             // validate file extension before processing upload
-            $isExtensionSupport = $this->importService->validateExtensionSupports($file);
+            $isExtensionSupport = DataSourceType::isSupportedExtension($file->getClientOriginalExtension());
             if (!$isExtensionSupport) {
                 throw new ImportDataException(WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT);
             }
@@ -144,7 +153,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $this->om->flush();
             }
 
-            $isValidExtension = $this->importService->validateFileUpload($file, $dataSource);
+            $isValidExtension = $this->importService->validateUploadedFile($file, $dataSource);
             if (!$isValidExtension) {
                 throw new ImportDataException(WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT);
             }
@@ -177,7 +186,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             }
 
             $hash = sha1_file($filePath);
-            if ($this->fileAlreadyImported($dataSource, $hash)) {
+            if ($this->isFileAlreadyImported($dataSource, $hash)) {
                 throw new Exception(sprintf('File "%s" is already imported', $originName));
             }
 
@@ -190,8 +199,9 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 ->setHashFile($hash)
                 ->setMetaData($metadata);
 
+            // update detected fields (update count of detected fields)
             $newFields = $this->importService->getNewFieldsFromFiles($filePath, $dataSource);
-            $detectedFields = $this->importService->detectedFieldsForDataSource($newFields, $dataSource->getDetectedFields(), ImportService::UPLOAD);
+            $detectedFields = $this->importService->detectFieldsForDataSource($newFields, $dataSource->getDetectedFields(), ImportService::ACTION_UPLOAD);
             $dataSource->setDetectedFields($detectedFields);
 
             $dataSourceEntry->setDataSource($dataSource);
@@ -237,14 +247,24 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         return $this->repository->getDataSourceEntriesForPublisher($publisher, $limit, $offset);
     }
 
-    private function fileAlreadyImported(DataSourceInterface $dataSource, $hash)
-    {
-        $importedFiles = $this->repository->getImportedFileByHash($dataSource, $hash);
-        return is_array($importedFiles) && count($importedFiles) > 0;
-    }
-
+    /**
+     * @inheritdoc
+     */
     public function getDataSourceEntryToday(DataSourceInterface $dataSource, DateTime $dsNextTime)
     {
         return $this->repository->getDataSourceEntryForDataSourceByDate($dataSource, $dsNextTime);
+    }
+
+    /**
+     * check if file is Already Imported
+     *
+     * @param DataSourceInterface $dataSource
+     * @param $hash
+     * @return bool
+     */
+    private function isFileAlreadyImported(DataSourceInterface $dataSource, $hash)
+    {
+        $importedFiles = $this->repository->getImportedFileByHash($dataSource, $hash);
+        return is_array($importedFiles) && count($importedFiles) > 0;
     }
 }
