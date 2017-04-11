@@ -374,8 +374,12 @@ class ParsingFileService
                     $temp[$field] = null;
                 } else if ($row[$field] === null) {
                     $temp[$field] = null;
+                } else if (strcmp($type, FieldType::NUMBER) === 0) {
+                    $temp[$field] = intval($row[$field]);
+                } else if (strcmp($type, FieldType::DECIMAL) === 0) {
+                    $temp[$field] = floatval($row[$field]);
                 } else {
-                    $temp[$field] = strcmp($type, FieldType::NUMBER) === 0 ? round($row[$field]) : $row[$field];
+                    $temp[$field] = $row[$field];
                 }
             }
 
