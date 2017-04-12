@@ -28,26 +28,38 @@ class DataSetImportJobQueueService
      */
     public function isExecuteJob($dataSetId, $importJobId, Logger $logger)
     {
-        /**@var DataSetImportJobInterface $exeCuteJob */
-        $exeCuteJob = $this->dataSetImportJobManager->getExecuteImportJobByDataSetId($dataSetId);
+        /**@var DataSetImportJobInterface $executeJob */
+        try {
+            $executeJob = $this->dataSetImportJobManager->getExecuteImportJobByDataSetId($dataSetId);
+        } catch (\Exception $e) {
+            $logger->notice(sprintf('DataSet import job id %s does not exist, putting job back into the queue', $dataSetId));
+            // temporary fix for race condition that causes sync problems
+            // check that the API creates this database entry BEFORE the beanstalk job
+            return false;
+        }
+
+        // more validation to prevent any chance of error
+        if (!$executeJob instanceof DataSetImportJobInterface) {
+            return false;
+        }
 
         /*
          * check if data set has another job before this job, put job back to queue
          * this make sure jobs are executes in order
          * job is created and not to be executed in 1 hour will be delete
          */
-        if ($exeCuteJob->getJobId() !== $importJobId) {
-            $logger->notice(sprintf('DataSet with id %d is busy, putted job back into the queue', $dataSetId));
+        if ($executeJob->getJobId() !== $importJobId) {
+            $logger->notice(sprintf('DataSet with id %d is busy, putting job back into the queue', $dataSetId));
             $dateTime = new Datetime('now');
-            $subtractHour = ($dateTime->getTimestamp() - $exeCuteJob->getCreatedDate()->getTimestamp()) / 3600;
+            $subtractHour = ($dateTime->getTimestamp() - $executeJob->getCreatedDate()->getTimestamp()) / 3600;
             if ($subtractHour > 1) {
-                $this->dataSetImportJobManager->delete($exeCuteJob);
+                $this->dataSetImportJobManager->delete($executeJob);
             }
 
             return false;
         }
 
-        return $exeCuteJob;
+        return $executeJob;
     }
 
     public function deleteJob(DataSetImportJobInterface $exeCuteJob)
