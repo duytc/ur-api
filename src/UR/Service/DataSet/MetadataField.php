@@ -8,6 +8,7 @@ final class MetadataField
     const EMAIL_SUBJECT = '[__email_subject]';
     const EMAIL_BODY = '[__email_body]';
     const EMAIL_DATE_TIME = '[__email_date_time]';
+    const INTEGRATION_REPORT_DATE = '__report_date';
 
     public static $internalFields = [
         self::FILE_NAME,

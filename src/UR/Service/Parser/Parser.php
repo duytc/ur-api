@@ -11,7 +11,6 @@ use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformCollectionDataEvent;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformColumnDataEvent;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSet\FieldType;
-use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
@@ -42,35 +41,21 @@ class Parser implements ParserInterface
     }
 
     /**
-     * @param DataSourceInterface $dataSource
+     * @param array $fileCols
+     * @param array $rows
      * @param ParserConfig $parserConfig
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @return Collection
      */
-    public function parse(DataSourceInterface $dataSource, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource)
+    public function parse(array $fileCols, array $rows, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource)
     {
         $columnsMapping = $parserConfig->getAllColumnMappings();
         $columnFromMap = array_flip($parserConfig->getAllColumnMappings());
 
-        $fileCols = array_map("strtolower", $dataSource->getColumns());
+        $fileCols = array_map("strtolower", $fileCols);
         $fileCols = array_map("trim", $fileCols);
 
         $columns = array_intersect($fileCols, $parserConfig->getAllColumnMappings());
-        $columns = array_map(function ($fromColumn) use ($columnFromMap) {
-            return $columnFromMap[$fromColumn];
-        }, $columns);
-
-        $format = [];//format date
-        foreach ($parserConfig->getColumnTransforms() as $field => $columnTransform) {
-            foreach ($columnTransform as $item) {
-                if ($item instanceof DateFormat) {
-                    $format[$field] = $item->getFromDateFormat();
-                }
-            }
-        }
-
-        /* 1. get all row data */
-        $rows = array_values($dataSource->getRows($format));
 
         // dispatch event after loading data
         $postLoadDataEvent = new PostLoadDataEvent(
@@ -368,6 +353,7 @@ class Parser implements ParserInterface
         foreach ($row as $field => $value) {
             if (array_key_exists($field, $columnFromMap)) {
                 $columns[$field] = $columnFromMap[$field];
+                continue;
             }
 
             if (in_array($field, $extraColumns)) {
