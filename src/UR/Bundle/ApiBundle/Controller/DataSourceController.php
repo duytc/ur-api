@@ -452,7 +452,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $files = $request->files;
         $dirItem = '/' . $dataSource->getPublisherId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
         $importService = $this->get('ur.service.import');
-        $result = $importService->detectedFieldsFromFiles($files, $dirItem, $dataSource);
+        $result = $importService->detectFieldsFromFiles($files, $dirItem, $dataSource);
         if (!is_array($result)) {
             throw new BadRequestHttpException('Could not detect fields from uploaded file');
         }

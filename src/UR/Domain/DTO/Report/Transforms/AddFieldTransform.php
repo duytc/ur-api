@@ -9,9 +9,7 @@ use UR\Service\DTO\Collection;
 
 class AddFieldTransform extends NewFieldTransform implements TransformInterface
 {
-    const PRIORITY = 3;
 	const TRANSFORMS_TYPE = 'addField';
-
     const FIELD_VALUE = 'value';
 
     protected $value;

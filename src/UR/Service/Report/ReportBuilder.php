@@ -422,7 +422,7 @@ class ReportBuilder implements ReportBuilderInterface
     {
         /* transform data */
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        $this->transformReports($reportCollection, $transforms, $params->isUserReorderTransformsAllowed(), $metrics, $dimensions, $outputJoinField);
+        $this->transformReports($reportCollection, $transforms, $metrics, $dimensions, $outputJoinField);
 
         /* build columns that will be showed in total */
         $showInTotal = is_array($params->getShowInTotal()) ? $params->getShowInTotal() : $metrics;
@@ -555,23 +555,12 @@ class ReportBuilder implements ReportBuilderInterface
      *
      * @param Collection $reportCollection
      * @param array $transforms
-     * @param bool $userReorderTransformsAllowed
      * @param array $metrics
      * @param array $dimensions
      * @param $outputJoinField
      */
-    private function transformReports(Collection $reportCollection, array $transforms, $userReorderTransformsAllowed, array &$metrics, array &$dimensions, array $outputJoinField)
+    private function transformReports(Collection $reportCollection, array $transforms, array &$metrics, array &$dimensions, array $outputJoinField)
     {
-        if ($userReorderTransformsAllowed === false) {
-            // sort transform by priority
-            usort($transforms, function (TransformInterface $a, TransformInterface $b) {
-                if ($a->getPriority() == $b->getPriority()) {
-                    return 0;
-                }
-                return ($a->getPriority() < $b->getPriority()) ? -1 : 1;
-            });
-        }
-
         /**
          * @var TransformInterface $transform
          */

@@ -68,7 +68,7 @@ class ImportDataLogger
                 break;
 
             case ConnectedDataSourceAlertInterface::ALERT_CODE_FILE_NOT_FOUND:
-                $message = sprintf('Failed to import file with id#%s - file dose not exist', $dataSourceEntryId);
+                $message = sprintf('Failed to import file with id#%s - file does not exist', $dataSourceEntryId);
                 break;
             default:
                 $message = sprintf('The import failed, please contact your account manager');

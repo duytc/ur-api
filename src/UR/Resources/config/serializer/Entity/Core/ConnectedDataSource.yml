@@ -28,6 +28,3 @@ UR\Entity\Core\ConnectedDataSource:
         replayData:
             expose: true
             groups: [connectedDataSource.detail, connectedDataSource.summary]
-        userReorderTransformsAllowed:
-            expose: true
-            groups: [connectedDataSource.detail, connectedDataSource.summary]

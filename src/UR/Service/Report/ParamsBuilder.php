@@ -49,7 +49,6 @@ class ParamsBuilder implements ParamsBuilderInterface
 	const START_DATE = 'startDate';
 	const END_DATE = 'endDate';
 	const USER_DEFINED_DATE_RANGE = 'userDefineDateRange';
-	const AUTO_REORDER_TRANSFORMS = 'userReorderTransformsAllowed';
 	const IS_SHOW_DATA_SET_NAME = 'isShowDataSetName';
 
 	/**
@@ -147,12 +146,6 @@ class ParamsBuilder implements ParamsBuilderInterface
 
 		if (array_key_exists(self::END_DATE, $data) && !empty($data[self::END_DATE])) {
 			$param->setEndDate($data[self::END_DATE]);
-		}
-
-		if (array_key_exists(self::AUTO_REORDER_TRANSFORMS, $data)) {
-			$param->setUserReorderTransformsAllowed(filter_var($data[self::AUTO_REORDER_TRANSFORMS], FILTER_VALIDATE_BOOLEAN));
-		} else {
-			$param->setUserReorderTransformsAllowed(true);
 		}
 
         if (array_key_exists(self::IS_SHOW_DATA_SET_NAME, $data) && !empty($data[self::IS_SHOW_DATA_SET_NAME])) {

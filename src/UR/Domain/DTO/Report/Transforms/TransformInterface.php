@@ -35,11 +35,6 @@ interface TransformInterface
 	public function getMetricsAndDimensions(array &$metrics, array &$dimensions);
 
 	/**
-	 * @return int
-	 */
-	public function getPriority();
-
-	/**
 	 * @return mixed
 	 */
 	public function getTransformsType();

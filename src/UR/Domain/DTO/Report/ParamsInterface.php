@@ -132,17 +132,6 @@ interface ParamsInterface
     /**
      * @return boolean
      */
-    public function isUserReorderTransformsAllowed();
-
-    /**
-     * @param boolean $userReorderTransformsAllowed
-     * @return self
-     */
-    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed);
-
-    /**
-     * @return boolean
-     */
     public function getIsShowDataSetName();
 
     /**

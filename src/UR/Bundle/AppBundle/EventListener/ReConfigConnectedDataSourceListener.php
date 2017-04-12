@@ -147,7 +147,7 @@ class ReConfigConnectedDataSourceListener
             $linkedConnectedDataSources = $linkedMapDataSetRepository->getByMapDataSet($entity);
 
             /** @var LinkedMapDataSetInterface $linkedConnectedDataSource */
-            foreach($linkedConnectedDataSources as $linkedConnectedDataSource) {
+            foreach ($linkedConnectedDataSources as $linkedConnectedDataSource) {
                 $this->updateConfigForConnectedDataSource($linkedConnectedDataSource->getConnectedDataSource(), $this->updateFields, $this->deletedFields, $entity->getId());
             }
         }
@@ -293,7 +293,7 @@ class ReConfigConnectedDataSourceListener
                     unset($customConditions[$i]);
                 }
 
-                foreach($updatedFields as $k=>$v) {
+                foreach ($updatedFields as $k => $v) {
                     if ($field == $k && $transformObject->getMapDataSet() == $dataSetId) {
                         $customCondition[Augmentation::CUSTOM_FIELD_KEY] = $v;
                     }
@@ -305,7 +305,7 @@ class ReConfigConnectedDataSourceListener
             $mapFields = $transformObject->getMapFields();
             foreach ($mapFields as $index => $values) {
                 if (in_array($values[SubsetGroup::DATA_SOURCE_SIDE], $delFields)
-                || in_array($values[SubsetGroup::GROUP_DATA_SET_SIDE], $delFields)
+                    || in_array($values[SubsetGroup::GROUP_DATA_SET_SIDE], $delFields)
                 ) {
                     unset($mapFields[$index]);
                 }
@@ -322,7 +322,7 @@ class ReConfigConnectedDataSourceListener
             }
 
             $groupFields = $transformObject->getGroupFields();
-            foreach($groupFields as &$field) {
+            foreach ($groupFields as &$field) {
                 if (in_array($field, $delFields)) {
                     unset($field);
                     continue;

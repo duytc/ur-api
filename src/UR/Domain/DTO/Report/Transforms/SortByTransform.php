@@ -7,9 +7,7 @@ use UR\Service\DTO\Collection;
 
 class SortByTransform extends AbstractTransform implements TransformInterface
 {
-	const PRIORITY = 4;
 	const TRANSFORMS_TYPE = 'sortBy';
-
 	const SORT_DESC = 'desc';
 	const SORT_ASC = 'asc';
 	const FIELDS_KEY = 'names';

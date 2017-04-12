@@ -52,14 +52,6 @@ class AddConcatenatedField extends AbstractAddField
         return $result;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getDefaultPriority()
-    {
-        return self::TRANSFORM_PRIORITY_ADD_CONCATENATION_FIELD;
-    }
-
     public function validate()
     {
         // TODO: Implement validate() method.

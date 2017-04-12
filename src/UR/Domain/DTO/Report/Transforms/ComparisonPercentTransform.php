@@ -10,9 +10,7 @@ class ComparisonPercentTransform extends NewFieldTransform implements TransformI
 {
 	use CalculateRatiosTrait;
 
-	const PRIORITY = 3;
 	const TRANSFORMS_TYPE = 'comparisionPercent';
-
 	const NUMERATOR_KEY = 'numerator';
 	const DENOMINATOR_KEY = 'denominator';
 

@@ -80,9 +80,9 @@ class ParsingFileService
         /** @var DataSourceInterface $dataSourceFileData */
         $dataSourceFileData = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $filePath);
 
-        $columns = $dataSourceFileData->getColumns();
+        $columnsInFile = $dataSourceFileData->getColumns();
         $dataRow = $dataSourceFileData->getDataRow();
-        if (!is_array($columns) || count($columns) < 1) {
+        if (!is_array($columnsInFile) || count($columnsInFile) < 1) {
             throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND);
         }
 
@@ -90,10 +90,20 @@ class ParsingFileService
             throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND);
         }
 
-        /*
-         * mapping field
-         */
-        $this->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $columns);
+        $dataSourceEntryMetadata = $dataSourceEntry->getDataSourceEntryMetadata();
+
+        $formats = $this->getFormatDateForEachFieldInDataSourceFile();
+
+        /* 1. get all row data */
+        $rows = array_values($dataSourceFileData->getRows($formats));
+
+        /* adding hidden column __report_date for files received via integration */
+        if ($dataSourceEntry->getReceivedVia() === DataSourceEntryInterface::RECEIVED_VIA_INTEGRATION) {
+            $this->addExtraColumnsAndRowsDataForIntegrationEntry($columnsInFile, $rows, $dataSourceEntryMetadata);
+        }
+
+        /* mapping field */
+        $this->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $columnsInFile);
         if (count($this->parserConfig->getAllColumnMappings()) === 0) {
             throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL);
         }
@@ -118,7 +128,8 @@ class ParsingFileService
         //transform config
         $this->createTransformConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $dataSourceEntry);
 
-        return $this->parser->parse($dataSourceFileData, $this->parserConfig, $connectedDataSource);
+
+        return $this->parser->parse($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
     }
 
     /**
@@ -137,23 +148,20 @@ class ParsingFileService
     /**
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param ParserConfig $parserConfig
-     * @param array $columns
+     * @param array $fileColumns
      */
-    public function createMapFieldsConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, array $columns)
+    public function createMapFieldsConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, array $fileColumns)
     {
         $mapFields = $connectedDataSource->getMapFields();
         if (!is_array($mapFields)) {
             return;
         }
 
-        foreach ($columns as $column) {
-            $column = strtolower(trim($column));
+        foreach ($fileColumns as $fileColumn) {
+            $fileColumn = strtolower(trim($fileColumn));
 
-            foreach ($mapFields as $detectedField => $dimensionOrMetric) {
-                if (strcmp($column, $detectedField) === 0) {
-                    $parserConfig->addColumn($detectedField, $dimensionOrMetric);
-                    break;
-                }
+            if (array_key_exists($fileColumn, $mapFields)) {
+                $parserConfig->addColumn($fileColumn, $mapFields[$fileColumn]);
             }
         }
     }
@@ -374,8 +382,12 @@ class ParsingFileService
                     $temp[$field] = null;
                 } else if ($row[$field] === null) {
                     $temp[$field] = null;
+                } else if (strcmp($type, FieldType::NUMBER) === 0) {
+                    $temp[$field] = intval($row[$field]);
+                } else if (strcmp($type, FieldType::DECIMAL) === 0) {
+                    $temp[$field] = floatval($row[$field]);
                 } else {
-                    $temp[$field] = strcmp($type, FieldType::NUMBER) === 0 ? round($row[$field]) : $row[$field];
+                    $temp[$field] = $row[$field];
                 }
             }
 
@@ -455,5 +467,28 @@ class ParsingFileService
         }
 
         return $result;
+    }
+
+    private function getFormatDateForEachFieldInDataSourceFile()
+    {
+        $formats = [];//format date
+        foreach ($this->parserConfig->getColumnTransforms() as $field => $columnTransform) {
+            foreach ($columnTransform as $item) {
+                if ($item instanceof DateFormat) {
+                    $formats[$field] = $item->getFromDateFormat();
+                }
+            }
+        }
+
+        return $formats;
+    }
+
+    private function addExtraColumnsAndRowsDataForIntegrationEntry(&$columnsInFile, &$rows, DataSourceEntryMetadata $dataSourceEntryMetadata)
+    {
+        $columnsInFile[] = MetadataField::INTEGRATION_REPORT_DATE;
+
+        foreach ($rows as &$row) {
+            $row[] = $dataSourceEntryMetadata->getIntegrationReportDate();
+        }
     }
 }

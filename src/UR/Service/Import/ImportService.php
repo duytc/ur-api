@@ -14,8 +14,8 @@ class ImportService
 {
     use FileUtilsTrait;
 
-    const UPLOAD = 'upload';
-    const DELETE = 'delete';
+    const ACTION_UPLOAD = 'upload';
+    const ACTION_DELETE = 'delete';
 
     /** @var string */
     protected $uploadRootDir;
@@ -39,22 +39,31 @@ class ImportService
         $this->fileFactory = $fileFactory;
     }
 
-    public function detectedFieldsFromFiles(FileBag $files, $dirItem, DataSourceInterface $dataSource)
+    /**
+     * detect Fields From Files
+     *
+     * @param FileBag $files
+     * @param string $dirItem
+     * @param DataSourceInterface $dataSource
+     * @return array format as ['fields' => <detected fields>, 'filePath' => <dirItem/filename>];
+     * @throws \Exception
+     */
+    public function detectFieldsFromFiles(FileBag $files, $dirItem, DataSourceInterface $dataSource)
     {
         $uploadPath = $this->uploadRootDir . $dirItem;
 
         $keys = $files->keys();
         $currentFields = $dataSource->getDetectedFields();
-        $name = "";
+        $name = '';
 
         foreach ($keys as $key) {
             /**@var UploadedFile $file */
             $file = $files->get($key);
 
-            $isValidFile = $this->validateFileUpload($file, $dataSource);
+            $isValidFile = $this->validateUploadedFile($file, $dataSource);
             $origin_name = $file->getClientOriginalName();
             if (!$isValidFile) {
-                throw new \Exception(sprintf("File %s is not valid - wrong format", $origin_name));
+                throw new \Exception(sprintf('File %s is not valid - wrong format', $origin_name));
             }
 
             $filename = basename($origin_name, '.' . $file->getClientOriginalExtension());
@@ -71,53 +80,54 @@ class ImportService
             if ($convertResult) {
                 $newFields = $this->getNewFieldsFromFiles($filePath, $dataSource);
                 if (count($newFields) < 1) {
-                    throw new \Exception(sprintf("Cannot detect header of File %s", $origin_name));
+                    throw new \Exception(sprintf('Cannot detect header of File %s', $origin_name));
                 }
 
-                $currentFields = $this->detectedFieldsForDataSource($newFields, $currentFields, self::UPLOAD);
+                $currentFields = $this->detectFieldsForDataSource($newFields, $currentFields, self::ACTION_UPLOAD);
             }
         }
 
-        return ["fields" => $currentFields, "filePath" => $dirItem . '/' . $name];
+        return ['fields' => $currentFields, 'filePath' => $dirItem . '/' . $name];
     }
 
     /**
-     * validate File Upload
+     * validate Uploaded File
      *
      * @param UploadedFile $file
      * @param DataSourceInterface $dataSource
      * @return bool
      */
-    public function validateFileUpload(UploadedFile $file, DataSourceInterface $dataSource)
+    public function validateUploadedFile(UploadedFile $file, DataSourceInterface $dataSource)
     {
-        return $dataSource->getFormat() == DataSourceType::getOriginalDataSourceType($file->getClientOriginalExtension());
+        $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($file->getClientOriginalExtension());
+
+        return $dataSource->getFormat() == $dataSourceTypeExtension;
     }
 
     /**
-     * validate extension support or not
+     * detect Fields For Data Source
      *
-     * @param UploadedFile $file
-     * @return bool
+     * @param array $newDetectedFields
+     * @param array $currentDetectedFields
+     * @param string $action UPLOAD or DELETE
+     * @return array|mixed
      */
-    public function validateExtensionSupports(UploadedFile $file)
+    public function detectFieldsForDataSource(array $newDetectedFields, array $currentDetectedFields, $action)
     {
-        // check if in supported formats
-        if (!DataSourceType::isSupportedExtension($file->getClientOriginalExtension())) {
-            return false;
+        foreach ($newDetectedFields as $newDetectedField) {
+            $currentDetectedFields = $this->updateDetectedFields($newDetectedField, $currentDetectedFields, $action);
         }
 
-        return true;
+        return $currentDetectedFields;
     }
 
-    public function detectedFieldsForDataSource(array $newFields, array $currentFields, $option)
-    {
-        foreach ($newFields as $newField) {
-            $currentFields = $this->updateDetectedField($newField, $currentFields, $option);
-        }
-
-        return $currentFields;
-    }
-
+    /**
+     * get New Fields From Files
+     *
+     * @param string $inputFile
+     * @param DataSourceInterface $dataSource
+     * @return array
+     */
     public function getNewFieldsFromFiles($inputFile, DataSourceInterface $dataSource)
     {
         /**@var \UR\Service\DataSource\DataSourceInterface $file */
@@ -143,28 +153,40 @@ class ImportService
         return $newFields;
     }
 
-    private function updateDetectedField($newField, $detectedFields, $option)
+    /**
+     * update Detected Fields
+     *
+     * @param string $newDetectedField
+     * @param array $currentDetectedFields
+     * @param string $action UPLOAD OR DELETE
+     * @return mixed
+     */
+    private function updateDetectedFields($newDetectedField, array $currentDetectedFields, $action)
     {
-        $newField = strtolower(trim($newField));
-        switch ($option) {
-            case self::UPLOAD:
-                if (!array_key_exists($newField, $detectedFields)) {
-                    $detectedFields[$newField] = 1;
+        $newDetectedField = strtolower(trim($newDetectedField));
+
+        switch ($action) {
+            case self::ACTION_UPLOAD:
+                if (!array_key_exists($newDetectedField, $currentDetectedFields)) {
+                    $currentDetectedFields[$newDetectedField] = 1;
                 } else {
-                    $detectedFields[$newField] += 1;
+                    $currentDetectedFields[$newDetectedField] += 1;
                 }
+
                 break;
-            case self::DELETE:
-                if (isset($detectedFields[$newField])) {
-                    $detectedFields[$newField] -= 1;
-                    if ($detectedFields[$newField] <= 0) {
-                        unset($detectedFields[$newField]);
+
+            case self::ACTION_DELETE:
+                if (isset($currentDetectedFields[$newDetectedField])) {
+                    $currentDetectedFields[$newDetectedField] -= 1;
+                    if ($currentDetectedFields[$newDetectedField] <= 0) {
+                        unset($currentDetectedFields[$newDetectedField]);
                     }
                 }
+
                 break;
         }
 
-        return $detectedFields;
+        return $currentDetectedFields;
     }
 
     /**

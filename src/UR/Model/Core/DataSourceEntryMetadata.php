@@ -7,11 +7,12 @@ use UR\Service\DataSet\MetadataField;
 
 class DataSourceEntryMetadata
 {
-    const META_DATA_EMAIL_SUBJECT = "subject";
-    const META_DATA_EMAIL_FROM = "from";
-    const META_DATA_EMAIL_BODY = "body";
-    const META_DATA_EMAIL_DATE = "dateTime";
-    const META_DATA_FILE_NAME = "filename";
+    const META_DATA_EMAIL_SUBJECT = 'subject';
+    const META_DATA_EMAIL_FROM = 'from';
+    const META_DATA_EMAIL_BODY = 'body';
+    const META_DATA_EMAIL_DATE = 'dateTime';
+    const META_DATA_FILE_NAME = 'filename';
+    const INTEGRATION_META_DATA_REPORT_DATE = 'date';
 
     static $MAPPED_META_DATA_EMAIL_HIDDEN_COLUMNS = [
         self::META_DATA_EMAIL_BODY => MetadataField::EMAIL_BODY,
@@ -25,14 +26,19 @@ class DataSourceEntryMetadata
     protected $emailBody;
     protected $emailSubject;
     protected $emailDatetime;
+    protected $integrationReportDate;
     private $metadata;
 
     /**
      * DataSourceEntryMetadata constructor.
-     * @param array $metadata
+     * @param $metadata
      */
-    public function __construct(array $metadata)
+    public function __construct($metadata)
     {
+        if (!is_array($metadata) || count($metadata) < 1) {
+            $metadata = [];
+        }
+
         $this->metadata = $metadata;
     }
 
@@ -115,6 +121,19 @@ class DataSourceEntryMetadata
     public function setEmailDatetime($emailDatetime)
     {
         $this->emailDatetime = $emailDatetime;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getIntegrationReportDate()
+    {
+        if (!array_key_exists(self::INTEGRATION_META_DATA_REPORT_DATE, $this->metadata)) {
+            return null;
+        }
+
+        $this->integrationReportDate = $this->metadata[self::INTEGRATION_META_DATA_REPORT_DATE];
+        return $this->integrationReportDate;
     }
 
     /**

@@ -71,14 +71,6 @@ class ComparisonPercent implements CollectionTransformerInterface
         return new Collection($columns, $rows, $types);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getDefaultPriority()
-    {
-        return self::TRANSFORM_PRIORITY_COMPARISON_PERCENT;
-    }
-
     public function validate()
     {
         // TODO: Implement validate() method.
