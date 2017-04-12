@@ -92,18 +92,6 @@ interface ConnectedDataSourceInterface extends ModelInterface
     public function setReplayData($replayData);
 
     /**
-     * @return bool
-     */
-    public function isUserReorderTransformsAllowed();
-
-    /**
-     * @param mixed $userReorderTransformsAllowed
-     * @return self
-     */
-    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed);
-
-
-    /**
      * @return LinkedMapDataSetInterface[]
      */
     public function getLinkedMapDataSets();

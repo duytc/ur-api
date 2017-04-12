@@ -149,14 +149,6 @@ class ReplaceText implements CollectionTransformerInterface
     }
 
     /**
-     * @inheritdoc
-     */
-    public function getDefaultPriority()
-    {
-        return self::TRANSFORM_PRIORITY_REPLACE_TEXT;
-    }
-
-    /**
      * @return string
      */
     public function getPosition()

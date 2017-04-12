@@ -37,15 +37,4 @@ interface CollectionTransformerInterface extends TransformerInterface
     const TRANSFORM_PRIORITY_EXTRACT_PATTERN = 60;
 
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null);
-
-    /**
-     * The idea is that some column transformers should run before others to avoid conflicts
-     * i.e usually you would want to group columns before adding calculated fields
-     * The parser config should read this priority value and order the transformers based on this value
-     * Lower numbers mean higher priority, for example -10 is higher than 0.
-     * Maybe we should allow the end user to override this if they know what they are doing
-     *
-     * @return int
-     */
-    public function getDefaultPriority();
 }

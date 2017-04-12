@@ -63,14 +63,6 @@ class AddField extends AbstractAddField
     }
 
     /**
-     * @inheritdoc
-     */
-    public function getDefaultPriority()
-    {
-        return self::TRANSFORM_PRIORITY_ADD_FIELD;
-    }
-
-    /**
      * @return mixed
      */
     public function getTransformValue()

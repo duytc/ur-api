@@ -145,15 +145,6 @@ class Parser implements ParserInterface
         /* 3. do transforming data */
         $allFieldsTransforms = $parserConfig->getCollectionTransforms();
 
-        if (!$connectedDataSource->isUserReorderTransformsAllowed()) {
-            usort($allFieldsTransforms, function (CollectionTransformerInterface $a, CollectionTransformerInterface $b) {
-                if ($a->getDefaultPriority() == $b->getDefaultPriority()) {
-                    return 0;
-                }
-                return ($a->getDefaultPriority() < $b->getDefaultPriority()) ? -1 : 1;
-            });
-        }
-
         // dispatch event pre transforming collection data
         $preTransformCollectionEvent = new PreTransformCollectionDataEvent(
             $connectedDataSource->getDataSet()->getPublisherId(),

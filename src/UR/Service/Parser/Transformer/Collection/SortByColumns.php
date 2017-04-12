@@ -43,14 +43,6 @@ class SortByColumns implements CollectionTransformerInterface
         return new Collection($collection->getColumns(), $rows, $collection->getTypes());
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getDefaultPriority()
-    {
-        return self::TRANSFORM_PRIORITY_SORT;
-    }
-
     public function array_sort_by_column(&$arr, $cols)
     {
         $sort_name = array();

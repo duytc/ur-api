@@ -11,10 +11,6 @@ UR\Entity\Core\ReportView:
         transforms:
             type: json_array
             nullable: true
-        userReorderTransformsAllowed:
-            type: boolean
-            options:
-                default: true
         weightedCalculations:
             type: json_array
             nullable: true

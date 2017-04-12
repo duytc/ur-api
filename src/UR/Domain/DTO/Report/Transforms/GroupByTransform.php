@@ -9,9 +9,7 @@ use UR\Service\StringUtilTrait;
 class GroupByTransform extends AbstractTransform implements TransformInterface
 {
 	use StringUtilTrait;
-	const PRIORITY = 2;
 	const TRANSFORMS_TYPE = 'groupBy';
-
 	const FIELDS_KEY = 'fields';
 
 	/**

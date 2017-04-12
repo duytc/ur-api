@@ -228,14 +228,6 @@ class AddCalculatedField extends AbstractAddField
     /**
      * @inheritdoc
      */
-    public function getDefaultPriority()
-    {
-        return self::TRANSFORM_PRIORITY_ADD_CALCULATED_FIELD;
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function validate()
     {
         /*

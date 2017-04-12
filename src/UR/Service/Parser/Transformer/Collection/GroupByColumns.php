@@ -107,14 +107,6 @@ class GroupByColumns implements CollectionTransformerInterface
         return array_values($result);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getDefaultPriority()
-    {
-        return self::TRANSFORM_PRIORITY_GROUP;
-    }
-
     public function validate()
     {
         // TODO: Implement validate() method.

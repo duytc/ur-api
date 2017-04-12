@@ -132,14 +132,6 @@ class ExtractPattern implements CollectionTransformerInterface
     }
 
     /**
-     * @inheritdoc
-     */
-    public function getDefaultPriority()
-    {
-        return self::TRANSFORM_PRIORITY_EXTRACT_PATTERN;
-    }
-
-    /**
      * @return string
      */
     public function getPattern()

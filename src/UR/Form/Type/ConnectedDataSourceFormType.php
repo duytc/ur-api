@@ -30,7 +30,6 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
             ->add('requires')
             ->add('alertSetting')
             ->add('replayData')
-            ->add('userReorderTransformsAllowed')
             ->add(self::IS_DRY_RUN, null, ['mapped' => false])
             ->add('filePaths', null, ['mapped' => false]);
 

@@ -7,8 +7,6 @@ use UR\Service\DTO\Collection;
 
 class ReplaceTextTransform extends AbstractTransform implements TransformInterface
 {
-
-    const PRIORITY = 3;
     const TRANSFORMS_TYPE = 'replaceText';
 
     const FIELD_KEY = 'field';

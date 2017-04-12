@@ -115,11 +115,6 @@ class ReportView implements ReportViewInterface
     /**
      * @var bool
      */
-    protected $userReorderTransformsAllowed;
-
-    /**
-     * @var bool
-     */
     protected $isShowDataSetName;
 
     /**
@@ -428,24 +423,6 @@ class ReportView implements ReportViewInterface
     public function setReportViewDataSets($reportViewDataSets)
     {
         $this->reportViewDataSets = $reportViewDataSets;
-        return $this;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isUserReorderTransformsAllowed()
-    {
-        return $this->userReorderTransformsAllowed;
-    }
-
-    /**
-     * @param mixed $userReorderTransformsAllowed
-     * @return self
-     */
-    public function setUserReorderTransformsAllowed($userReorderTransformsAllowed)
-    {
-        $this->userReorderTransformsAllowed = $userReorderTransformsAllowed;
         return $this;
     }
 

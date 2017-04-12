@@ -7,9 +7,7 @@ use UR\Service\DTO\Collection;
 
 class AddCalculatedFieldTransform extends NewFieldTransform implements TransformInterface
 {
-    const PRIORITY = 3;
     const TRANSFORMS_TYPE = 'addCalculatedField';
-
     const EXPRESSION_CALCULATED_FIELD = 'expression';
     const DEFAULT_VALUE_CALCULATED_FIELD = 'defaultValues';
     const DEFAULT_VALUE_KEY = 'defaultValue';
