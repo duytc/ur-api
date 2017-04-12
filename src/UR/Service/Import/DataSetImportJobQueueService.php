@@ -32,7 +32,7 @@ class DataSetImportJobQueueService
         try {
             $executeJob = $this->dataSetImportJobManager->getExecuteImportJobByDataSetId($dataSetId);
         } catch (\Exception $e) {
-            $logger->notice(sprintf('DataSet import job id %s does not exist, putting job back into the queue', $dataSetId));
+            $logger->notice(sprintf('DataSet with id %d does not have an import job with id %s, putting job back into the queue', $dataSetId, $importJobId));
             // temporary fix for race condition that causes sync problems
             // check that the API creates this database entry BEFORE the beanstalk job
             return false;
@@ -49,7 +49,7 @@ class DataSetImportJobQueueService
          * job is created and not to be executed in 1 hour will be delete
          */
         if ($executeJob->getJobId() !== $importJobId) {
-            $logger->notice(sprintf('DataSet with id %d is busy, putting job back into the queue', $dataSetId));
+            $logger->notice(sprintf('DataSet with id %d is busy, putting job %s back into the queue', $dataSetId, $importJobId));
             $dateTime = new Datetime('now');
             $subtractHour = ($dateTime->getTimestamp() - $executeJob->getCreatedDate()->getTimestamp()) / 3600;
             if ($subtractHour > 1) {
