@@ -134,6 +134,7 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
             try {
                 $this->csv->setDelimiter($delimiter);
                 $this->csv->setLimit(500);
+                $this->csv->stripBom(true);
                 $all_rows = $this->csv->fetchAll();
 
                 if (is_array($all_rows) && count($all_rows) > 0) {
@@ -198,6 +199,7 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     public function getRows(array $fromDateFormat)
     {
         $this->csv->setOffset($this->dataRow);
+        $this->csv->stripBom(true);
         $allData = $this->csv->fetchAll();
 //        $rows = [];
 //        foreach ($allData as $item) {
