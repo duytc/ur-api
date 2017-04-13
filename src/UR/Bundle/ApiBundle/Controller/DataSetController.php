@@ -12,9 +12,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
@@ -203,6 +205,34 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     {
         return $this->post($request);
     }
+
+    /**
+     * @param Request $request
+     * @param $id
+     * @return bool
+     */
+    public function postReloadalldataAction(Request $request, $id)
+    {
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $this->one($id);
+        $connectedDataSources = $dataSet->getConnectedDataSources();
+        foreach($connectedDataSources as $connectedDataSource) {
+            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+                continue;
+            }
+
+            $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
+            $entryIds = array_map(function(DataSourceEntryInterface $entry) {
+                return $entry->getId();
+            }, $entries->toArray());
+
+            $loadingDataService = $this->get('ur.service.loading_data_service');
+            $loadingDataService->doLoadDataFromEntryToDataBase([$connectedDataSource], $entryIds);
+        }
+
+        return true;
+    }
+
 
     /**
      * Update an existing data set from the submitted data or create a new ad network

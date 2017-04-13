@@ -14,6 +14,7 @@ use UR\Handler\HandlerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\Import\AutoImportDataInterface;
 
@@ -103,6 +104,27 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         $tempConnectedDataSource = $postResult->getData();
 
         return $this->handleDryRun($tempConnectedDataSource, $filePaths);
+    }
+
+    /**
+     * @param Request $request
+     * @param $id
+     * @return bool
+     */
+    public function postReloadalldataAction(Request $request, $id)
+    {
+        /** @var ConnectedDataSourceInterface $connectedDataSource */
+        $connectedDataSource = $this->one($id);
+
+        $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
+        $entryIds = array_map(function(DataSourceEntryInterface $entry) {
+            return $entry->getId();
+        }, $entries->toArray());
+
+        $loadingDataService = $this->get('ur.service.loading_data_service');
+        $loadingDataService->doLoadDataFromEntryToDataBase([$connectedDataSource], $entryIds);
+
+        return true;
     }
 
     /**
