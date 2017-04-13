@@ -188,8 +188,8 @@ class ParsingFileService
             if (strcmp($filter[ColumnFilterInterface::FIELD_TYPE_FILTER_KEY], FieldType::DATE) === 0) {
                 $mapFields = $connectedDataSource->getMapFields();
 
-                if (array_key_exists($filter[ColumnFilterInterface::FILED_NAME_FILTER_KEY], $mapFields)) {
-                    $format = $this->getFormatDateFromTransform($connectedDataSource, $mapFields[$filter[ColumnFilterInterface::FILED_NAME_FILTER_KEY]]);
+                if (array_key_exists($filter[ColumnFilterInterface::FIELD_NAME_FILTER_KEY], $mapFields)) {
+                    $format = $this->getFormatDateFromTransform($connectedDataSource, $mapFields[$filter[ColumnFilterInterface::FIELD_NAME_FILTER_KEY]]);
                     $filter[DateFilter::FORMAT_FILTER_KEY] = $format;
                 }
             }

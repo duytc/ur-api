@@ -14,6 +14,8 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 	const COMPARISON_TYPE_END_WITH = 'end with';
 	const COMPARISON_TYPE_IN = 'in';
 	const COMPARISON_TYPE_NOT_IN = 'not in';
+	const COMPARISON_TYPE_NULL = 'isEmpty';
+	const COMPARISON_TYPE_NOT_NULL = 'isNotEmpty';
 
 	const FIELD_TYPE_FILTER_KEY = 'type';
 	const FILED_NAME_FILTER_KEY = 'field';
@@ -28,7 +30,9 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 		self::COMPARISON_TYPE_START_WITH,
 		self::COMPARISON_TYPE_END_WITH,
 		self::COMPARISON_TYPE_IN,
-		self::COMPARISON_TYPE_NOT_IN
+		self::COMPARISON_TYPE_NOT_IN,
+		self::COMPARISON_TYPE_NULL,
+		self::COMPARISON_TYPE_NOT_NULL
 	];
 
 	/** @var string */
@@ -132,6 +136,10 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 				return $this->inFilter($reportsCollections);
 			case self::COMPARISON_TYPE_NOT_IN:
 				return $this->notInFilter($reportsCollections);
+			case self::COMPARISON_TYPE_NULL:
+				return $this->nullFilter($reportsCollections);
+			case self::COMPARISON_TYPE_NOT_NULL:
+				return $this->notNullFilter($reportsCollections);
 			default:
 				return $reportsCollections;
 		}
@@ -280,6 +288,36 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 			}
 
 			return (!in_array($report[$this->getFieldName()], $this->getComparisonValue()));
+		}, ARRAY_FILTER_USE_BOTH);
+
+		$reportsCollections->setReports($filterReports);
+
+		return $reportsCollections;
+	}
+
+	protected function nullFilter(ReportResult $reportsCollections)
+	{
+		$reports = $reportsCollections->getReports();
+		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+			return null == $report[$this->getFieldName()];
+		}, ARRAY_FILTER_USE_BOTH);
+
+		$reportsCollections->setReports($filterReports);
+
+		return $reportsCollections;
+	}
+
+	protected function notNullFilter(ReportResult $reportsCollections)
+	{
+		$reports = $reportsCollections->getReports();
+		$filterReports = array_filter($reports, function ($report) {
+			if (!array_key_exists($this->getFieldName(), $report)) {
+				return false;
+			}
+			return null != $report[$this->getFieldName()];
 		}, ARRAY_FILTER_USE_BOTH);
 
 		$reportsCollections->setReports($filterReports);

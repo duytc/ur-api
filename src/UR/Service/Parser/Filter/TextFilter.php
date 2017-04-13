@@ -15,6 +15,8 @@ class TextFilter extends AbstractFilter implements ColumnFilterInterface
     const COMPARISON_TYPE_NOT_IN = 'not in';
     const COMPARISON_TYPE_FILTER_KEY = 'comparison';
     const COMPARISON_VALUE_FILTER_KEY = 'compareValue';
+    const COMPARISON_TYPE_NULL = 'isEmpty';
+    const COMPARISON_TYPE_NOT_NULL = 'isNotEmpty';
 
     public static $SUPPORTED_COMPARISON_TYPES = [
         self::COMPARISON_TYPE_EQUAL,
@@ -24,7 +26,9 @@ class TextFilter extends AbstractFilter implements ColumnFilterInterface
         self::COMPARISON_TYPE_START_WITH,
         self::COMPARISON_TYPE_END_WITH,
         self::COMPARISON_TYPE_IN,
-        self::COMPARISON_TYPE_NOT_IN
+        self::COMPARISON_TYPE_NOT_IN,
+        self::COMPARISON_TYPE_NULL,
+        self::COMPARISON_TYPE_NOT_NULL
     ];
 
     /** @var string */
@@ -52,6 +56,15 @@ class TextFilter extends AbstractFilter implements ColumnFilterInterface
     public function filter($value)
     {
         $value = strtolower($value);
+
+        if (self::COMPARISON_TYPE_NOT_NULL === $this->comparisonType) {
+            return $value != null;
+        }
+
+        if (self::COMPARISON_TYPE_NULL === $this->comparisonType) {
+            return $value == null;
+        }
+
         $this->comparisonValue = array_map('strtolower', $this->comparisonValue);
 
         if (!is_array($this->comparisonValue)) {
@@ -135,6 +148,10 @@ class TextFilter extends AbstractFilter implements ColumnFilterInterface
      */
     private function validateComparisonValue()
     {
+        if ($this->comparisonType == self::COMPARISON_TYPE_NULL || $this->comparisonType == self::COMPARISON_TYPE_NOT_NULL) {
+            return;
+        }
+
         // expect array
         if (!is_array($this->comparisonValue)) {
             throw new \Exception(sprintf('Expect comparisonValue is array with comparisonType "%s", got %s', $this->comparisonType, $this->comparisonValue));

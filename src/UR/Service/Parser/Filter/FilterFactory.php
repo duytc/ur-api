@@ -21,11 +21,11 @@ class FilterFactory
 
         /* all filter must has 'field' and 'name' key */
         if (!array_key_exists(ColumnFilterInterface::FIELD_TYPE_FILTER_KEY, $jsonFilter)
-            || !array_key_exists(ColumnFilterInterface::FILED_NAME_FILTER_KEY, $jsonFilter)
+            || !array_key_exists(ColumnFilterInterface::FIELD_NAME_FILTER_KEY, $jsonFilter)
         ) {
             throw new \Exception (sprintf('Either parameters: "%s" or "%s" does not exits in filter',
                 ColumnFilterInterface::FIELD_TYPE_FILTER_KEY,
-                ColumnFilterInterface::FILED_NAME_FILTER_KEY));
+                ColumnFilterInterface::FIELD_NAME_FILTER_KEY));
         }
 
         /*
@@ -64,7 +64,7 @@ class FilterFactory
         }
 
         return new NumberFilter(
-            $filter[NumberFilter::FILED_NAME_FILTER_KEY],
+            $filter[NumberFilter::FIELD_NAME_FILTER_KEY],
             $filter[NumberFilter::COMPARISON_TYPE_FILTER_KEY],
             $filter[NumberFilter::COMPARISON_VALUE_FILTER_KEY]
         );
@@ -81,7 +81,7 @@ class FilterFactory
         }
 
         return new TextFilter(
-            $filter[TextFilter::FILED_NAME_FILTER_KEY],
+            $filter[TextFilter::FIELD_NAME_FILTER_KEY],
             $filter[TextFilter::COMPARISON_TYPE_FILTER_KEY],
             $filter[TextFilter::COMPARISON_VALUE_FILTER_KEY]
         );
@@ -100,7 +100,7 @@ class FilterFactory
         }
 
         return new DateFilter(
-            $filter[DateFilter::FILED_NAME_FILTER_KEY],
+            $filter[DateFilter::FIELD_NAME_FILTER_KEY],
             $filter[DateFilter::START_DATE_FILTER_KEY],
             $filter[DateFilter::END_DATE_FILTER_KEY],
             $filter[DateFilter::FORMAT_FILTER_KEY]

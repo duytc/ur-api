@@ -5,7 +5,7 @@ namespace UR\Service\Parser\Filter;
 interface ColumnFilterInterface
 {
     const FIELD_TYPE_FILTER_KEY = 'type';
-    const FILED_NAME_FILTER_KEY = 'field';
+    const FIELD_NAME_FILTER_KEY = 'field';
     const DATE = 'date';
     const NUMBER = 'number';
     const TEXT = 'text';

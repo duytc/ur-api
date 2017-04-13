@@ -518,6 +518,12 @@ class SqlBuilder implements SqlBuilderInterface
                 case NumberFilter::COMPARISON_TYPE_NOT_IN:
                     return sprintf('(%s IS NULL OR %s NOT IN (%s))', $fieldName, $fieldName, $bindParamName);
 
+                case TextFilter::COMPARISON_TYPE_NOT_NULL:
+                    return sprintf('(%s IS NOT NULL)', $fieldName);
+
+                case TextFilter::COMPARISON_TYPE_NULL:
+                    return sprintf('(%s IS NULL)', $fieldName);
+
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));
             }
@@ -566,6 +572,12 @@ class SqlBuilder implements SqlBuilderInterface
 
                 case TextFilter::COMPARISON_TYPE_NOT_IN:
                     return sprintf('(%s IS NULL OR %s = \'\' OR %s NOT IN (%s))', $fieldName, $fieldName, $fieldName, $bindParamName);
+
+                case TextFilter::COMPARISON_TYPE_NOT_NULL:
+                    return sprintf('(%s IS NOT NULL)', $fieldName);
+
+                case TextFilter::COMPARISON_TYPE_NULL:
+                    return sprintf('(%s IS NULL)', $fieldName);
 
                 default:
                     throw new InvalidArgumentException(sprintf('comparison type %d is not supported', $filter->getComparisonType()));

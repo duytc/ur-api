@@ -3,7 +3,6 @@
 namespace UR\Service\Parser\Filter;
 
 
-
 use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
 
 class NumberFilter extends AbstractFilter implements ColumnFilterInterface
@@ -18,6 +17,8 @@ class NumberFilter extends AbstractFilter implements ColumnFilterInterface
     const COMPARISON_TYPE_NOT_IN = 'not in';
     const COMPARISON_TYPE_FILTER_KEY = 'comparison';
     const COMPARISON_VALUE_FILTER_KEY = 'compareValue';
+    const COMPARISON_TYPE_NULL = 'isEmpty';
+    const COMPARISON_TYPE_NOT_NULL = 'isNotEmpty';
 
     const EPSILON = 10e-12;
 
@@ -29,7 +30,9 @@ class NumberFilter extends AbstractFilter implements ColumnFilterInterface
         self::COMPARISON_TYPE_GREATER_OR_EQUAL,
         self::COMPARISON_TYPE_NOT_EQUAL,
         self::COMPARISON_TYPE_IN,
-        self::COMPARISON_TYPE_NOT_IN
+        self::COMPARISON_TYPE_NOT_IN,
+        self::COMPARISON_TYPE_NULL,
+        self::COMPARISON_TYPE_NOT_NULL
     ];
 
     /** @var string */
@@ -56,6 +59,14 @@ class NumberFilter extends AbstractFilter implements ColumnFilterInterface
      */
     public function filter($value)
     {
+        if (self::COMPARISON_TYPE_NOT_NULL === $this->comparisonType) {
+            return $value != null;
+        }
+
+        if (self::COMPARISON_TYPE_NULL === $this->comparisonType) {
+            return $value == null;
+        }
+
         if ($value === null || $value === "") {
             return false;
         }
@@ -132,6 +143,10 @@ class NumberFilter extends AbstractFilter implements ColumnFilterInterface
      */
     private function validateComparisonValue()
     {
+        if ($this->comparisonType == self::COMPARISON_TYPE_NULL || $this->comparisonType == self::COMPARISON_TYPE_NOT_NULL) {
+            return;
+        }
+
         // expect array
         if ($this->comparisonType == self::COMPARISON_TYPE_IN
             || $this->comparisonType == self::COMPARISON_TYPE_NOT_IN
