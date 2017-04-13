@@ -44,9 +44,13 @@ class AlertHandler extends AlertHandlerAbstract
     /**
      * @inheritdoc
      */
-    protected function processForm(ModelInterface $reportSchedule, array $parameters, $method = "PUT")
+    protected function processForm(ModelInterface $alert, array $parameters, $method = "PUT")
     {
-        /** @var AlertInterface $reportSchedule */
-        return parent::processForm($reportSchedule, $parameters, $method);
+        /** @var AlertInterface $alert */
+        if (null == $alert->getPublisher()) {
+            $alert->setPublisher($this->getUserRole());
+        }
+
+        return parent::processForm($alert, $parameters, $method);
     }
 }

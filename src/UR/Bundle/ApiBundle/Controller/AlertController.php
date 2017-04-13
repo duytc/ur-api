@@ -98,7 +98,6 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      */
     public function postAction(Request $request)
     {
-
         return $this->post($request);
     }
 

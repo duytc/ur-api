@@ -7,6 +7,10 @@ use UR\Model\User\Role\PublisherInterface;
 
 interface AlertInterface extends ModelInterface
 {
+    /* define all alert codes */
+    // TODO: move all other alert codes to here...
+    const ALERT_CODE_BROWSER_AUTOMATION_LOGIN_FAIL = 2001;
+
     /**
      * @return mixed
      */

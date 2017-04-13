@@ -7,6 +7,10 @@ use UR\Model\User\UserEntityInterface;
 
 class Alert implements AlertInterface
 {
+    public static $SUPPORTED_ALERT_CODES = [
+        self::ALERT_CODE_BROWSER_AUTOMATION_LOGIN_FAIL
+    ];
+
     protected $id;
     protected $code;
     protected $isRead;
