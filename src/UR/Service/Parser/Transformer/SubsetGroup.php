@@ -48,12 +48,21 @@ class SubsetGroup implements CollectionTransformerInterface
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
 
+        $mappedFields = array_flip($connectedDataSource->getMapFields());
+        if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
+            $dimensions = $connectedDataSource->getDataSet()->getDimensions();
+            $dimensions = array_intersect_key($mappedFields, $dimensions);
+            $dimensions = array_merge($dimensions, $this->groupFields);
+            $rows = $this->overrideDuplicate($rows, $dimensions);
+        }
+
+        $collection->setRows($rows);
         foreach ($rows as $row) {
             $dataColumns = array_keys($row);
-            $diff = array_diff($this->groupFields, $dataColumns);
-
-            if (!empty($diff)) {
-                return $collection;
+            foreach($this->groupFields as &$groupField) {
+                if (!in_array($groupField, $dataColumns)) {
+                    $groupField = $mappedFields[$groupField];
+                }
             }
 
             break;
@@ -96,6 +105,26 @@ class SubsetGroup implements CollectionTransformerInterface
         $collection->setColumns($columns);
 
         return $collection;
+    }
+
+    protected function overrideDuplicate(array $rows, array $dimensions)
+    {
+        $dimensions = array_flip($dimensions);
+        $duplicateRows = [];
+        foreach ($rows as $index => &$row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $uniqueKeys = array_intersect_key($row, $dimensions);
+            $uniqueId = md5(implode(":", $uniqueKeys));
+
+            $duplicateRows[$uniqueId] = $row;
+        }
+
+        $rows = array_values($duplicateRows);
+
+        return $rows;
     }
 
     protected function getJoinKey(array $columns, array $row)
