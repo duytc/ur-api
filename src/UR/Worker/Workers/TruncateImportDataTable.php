@@ -6,6 +6,7 @@ namespace UR\Worker\Workers;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\ORM\EntityManagerInterface;
+use Leezy\PheanstalkBundle\Proxy\PheanstalkProxyInterface;
 use Monolog\Logger;
 use stdClass;
 use UR\DomainManager\DataSetManagerInterface;
@@ -30,9 +31,13 @@ class TruncateImportDataTable
 
     private $lockingDatabaseTable;
 
+    /** @var PheanstalkProxyInterface */
     private $queue;
 
     private $logger;
+
+    /** @var int */
+    private $delayForJobWhenPutBack;
 
     /**
      * AlterImportDataTable constructor.
@@ -40,8 +45,9 @@ class TruncateImportDataTable
      * @param EntityManagerInterface $entityManager
      * @param $queue
      * @param Logger $logger
+     * @param int $delayForJobWhenPutBack
      */
-    public function __construct(DataSetManagerInterface $dataSetManager, EntityManagerInterface $entityManager, $queue, Logger $logger)
+    public function __construct(DataSetManagerInterface $dataSetManager, EntityManagerInterface $entityManager, PheanstalkProxyInterface $queue, Logger $logger, $delayForJobWhenPutBack)
     {
         $this->dataSetManager = $dataSetManager;
         $this->entityManager = $entityManager;
@@ -49,6 +55,7 @@ class TruncateImportDataTable
         $this->lockingDatabaseTable = new LockingDatabaseTable($this->conn);
         $this->queue = $queue;
         $this->logger = $logger;
+        $this->delayForJobWhenPutBack = (is_integer($delayForJobWhenPutBack) && $delayForJobWhenPutBack > 0) ? $delayForJobWhenPutBack : 5;
     }
 
     public function truncateDataSetTable(StdClass $params, $job = null, $tube = null)
@@ -75,7 +82,7 @@ class TruncateImportDataTable
         try {
             $this->lockingDatabaseTable->lockTable($dataTable->getName());
         } catch (SqlLockTableException $exception) {
-            $this->queue->putInTube($tube, $job->getData(), 0, 15);
+            $this->queue->putInTube($tube, $job->getData(), 0, $this->delayForJobWhenPutBack);
             return;
         }
 

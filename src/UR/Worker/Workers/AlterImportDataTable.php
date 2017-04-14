@@ -50,6 +50,9 @@ class AlterImportDataTable
 
     private $logger;
 
+    /** @var int in seconds */
+    private $delayForJobWhenPutBack = 5;
+
     /**
      * AlterImportDataTable constructor.
      * @param DataSetManagerInterface $dataSetManager
@@ -57,8 +60,9 @@ class AlterImportDataTable
      * @param $queue
      * @param Logger $logger
      * @param DataSetImportJobQueueService $dataSetImportJobQueueService
+     * @param $delayForJobWhenPutBack
      */
-    public function __construct(DataSetManagerInterface $dataSetManager, EntityManagerInterface $entityManager, $queue, Logger $logger, DataSetImportJobQueueService $dataSetImportJobQueueService)
+    public function __construct(DataSetManagerInterface $dataSetManager, EntityManagerInterface $entityManager, $queue, Logger $logger, DataSetImportJobQueueService $dataSetImportJobQueueService, $delayForJobWhenPutBack)
     {
         $this->dataSetManager = $dataSetManager;
         $this->entityManager = $entityManager;
@@ -67,6 +71,7 @@ class AlterImportDataTable
         $this->queue = $queue;
         $this->logger = $logger;
         $this->dataSetImportJobQueueService = $dataSetImportJobQueueService;
+        $this->delayForJobWhenPutBack = (is_integer($delayForJobWhenPutBack) && $delayForJobWhenPutBack > 0) ? $delayForJobWhenPutBack : 5;
     }
 
     public function alterDataSetTable(stdClass $params, Pheanstalk_Job $job, $tube)
@@ -76,7 +81,7 @@ class AlterImportDataTable
 
         $exeCuteJob = $this->dataSetImportJobQueueService->isExecuteJob($dataSetId, $importJobId, $this->logger);
         if (!$exeCuteJob instanceof DataSetImportJobInterface) {
-            $this->queue->putInTube($tube, $job->getData(), 1024, 15);
+            $this->queue->putInTube($tube, $job->getData(), 1024, $this->delayForJobWhenPutBack);
             return;
         }
 
@@ -106,7 +111,7 @@ class AlterImportDataTable
         try {
             $this->lockingDatabaseTable->lockTable($dataTable->getName());
         } catch (SqlLockTableException $exception) {
-            $this->queue->putInTube($tube, $job->getData(), 1024, 15);
+            $this->queue->putInTube($tube, $job->getData(), 1024, $this->delayForJobWhenPutBack);
             return;
         }
 

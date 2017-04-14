@@ -66,7 +66,25 @@ class LoadingDataFromFileToDataImportTable
 
     private $timeout;
 
-    function __construct($rootDir, $env, $isDebug, Logger $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager, PheanstalkProxyInterface $queue, $logDir, ImportHistoryManagerInterface $importHistoryManager, DataSetImportJobQueueService $dataSetImportJobQueueService, $timeout)
+    /** @var int in seconds */
+    private $delayForJobWhenPutBack = 5;
+
+    /**
+     * LoadingDataFromFileToDataImportTable constructor.
+     * @param $rootDir
+     * @param $env
+     * @param $isDebug
+     * @param Logger $logger
+     * @param DataSourceEntryManagerInterface $dataSourceEntryManager
+     * @param ConnectedDataSourceManagerInterface $connectedDataSourceManager
+     * @param PheanstalkProxyInterface $queue
+     * @param $logDir
+     * @param ImportHistoryManagerInterface $importHistoryManager
+     * @param DataSetImportJobQueueService $dataSetImportJobQueueService
+     * @param $timeout
+     * @param $delayForJobWhenPutBack
+     */
+    function __construct($rootDir, $env, $isDebug, Logger $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager, PheanstalkProxyInterface $queue, $logDir, ImportHistoryManagerInterface $importHistoryManager, DataSetImportJobQueueService $dataSetImportJobQueueService, $timeout, $delayForJobWhenPutBack)
     {
         $this->rootDir = $rootDir;
         $this->env = $env;
@@ -79,6 +97,7 @@ class LoadingDataFromFileToDataImportTable
         $this->importHistoryManager = $importHistoryManager;
         $this->dataSetImportJobQueueService = $dataSetImportJobQueueService;
         $this->timeout = $timeout;
+        $this->delayForJobWhenPutBack = (is_integer($delayForJobWhenPutBack) && $delayForJobWhenPutBack > 0) ? $delayForJobWhenPutBack : 5;
     }
 
     /**
@@ -94,7 +113,7 @@ class LoadingDataFromFileToDataImportTable
         $exeCuteJob = $this->dataSetImportJobQueueService->isExecuteJob($dataSetId, $importJobId, $this->logger);
 
         if (!$exeCuteJob instanceof DataSetImportJobInterface) {
-            $this->queue->putInTube($tube, $job->getData(), 1024, 15);
+            $this->queue->putInTube($tube, $job->getData(), 1024, $this->delayForJobWhenPutBack);
             return;
         }
 
@@ -155,7 +174,7 @@ class LoadingDataFromFileToDataImportTable
                 );
             } catch (SqlLockTableException $exception) {
                 $this->logger->warning('Table is locked. Putting job back into the queue');
-                $this->queue->putInTube($tube, $job->getData(), 0, 15);
+                $this->queue->putInTube($tube, $job->getData(), 0, $this->delayForJobWhenPutBack);
             } catch (\Exception $e) {
                 // top level log is very clean. This is the supervisor log but it provides the name of the specific file for more debugging
                 // if the admin wants to know more about the failure, they have the exact log file
