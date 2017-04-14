@@ -123,7 +123,7 @@ class ParsedDataImporter
                 $question_marks[] = '(' . $this->placeholders('?', sizeof($row)) . ')';
                 $insert_values = array_merge($insert_values, array_values($row));
                 $this->preparedInsertCount++;
-                $insertSql = sprintf("INSERT INTO %s (%s) VALUES %s", $tableName, implode(",", $columns), implode(',', $question_marks));
+                $insertSql = sprintf("INSERT INTO %s (`%s`) VALUES %s", $tableName, implode("`,`", $columns), implode(',', $question_marks));
                 if ($this->preparedInsertCount === $this->batchSize) {
                     $this->preparedInsertCount = 0;
                     $this->executeInsert($insertSql, $insert_values);
