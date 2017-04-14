@@ -8,6 +8,7 @@ use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\DataSet\ParsedDataImporter;
+use UR\Service\DTO\Report\ReportResult;
 use UR\Service\Parser\ParsingFileService;
 
 class AutoImportData implements AutoImportDataInterface
@@ -56,7 +57,23 @@ class AutoImportData implements AutoImportDataInterface
             $this->parsingFileService->addTransformColumnAfterParsing($connectedDataSource->getTransforms());
             $rows = $this->parsingFileService->formatColumnsTransformsAfterParser($collection->getRows());
 
-            return $rows;
+            $dataSet = $connectedDataSource->getDataSet();
+
+            $columns = [];
+            $firstReport = count($rows) > 0 ? $rows[0] : array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+            foreach ($firstReport as $field => $value) {
+                $columns[$field] = $field;
+            }
+
+            $dataTransferObject = [];
+            $dataTransferObject['reports'] = $rows;
+            $dataTransferObject['columns'] = $columns;
+            $dataTransferObject['total'] = count ($rows);
+            $dataTransferObject['average'] = [];
+            $dataTransferObject['types'] = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+            $dataTransferObject['range'] = null;
+
+            return $dataTransferObject;
         } catch (ImportDataException $e) {
             $details = [
                 AbstractConnectedDataSourceAlert::CODE => $e->getAlertCode(),
