@@ -149,7 +149,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
     {
         switch ($conditionComparator) {
             case self::CONDITION_COMPARISON_VALUE_IS_INVALID:
-                return $value === self::INVALID_VALUE;
+                return $value == self::INVALID_VALUE;
 
             case self::CONDITION_COMPARISON_VALUE_IN:
                 return in_array($value, $conditionValue);

@@ -194,7 +194,7 @@ class AddCalculatedField extends AbstractAddField
     {
         switch ($conditionComparator) {
             case self::CONDITION_COMPARISON_VALUE_IS_INVALID:
-                return $value === self::INVALID_VALUE;
+                return $value == self::INVALID_VALUE;
 
             case self::CONDITION_COMPARISON_VALUE_IN:
                 return in_array($value, $conditionValue);
@@ -209,10 +209,10 @@ class AddCalculatedField extends AbstractAddField
                 return $value <= $conditionValue;
 
             case self::CONDITION_COMPARISON_VALUE_EQUAL:
-                return $value === $conditionValue;
+                return $value == $conditionValue;
 
             case self::CONDITION_COMPARISON_VALUE_NOT_EQUAL:
-                return $value !== $conditionValue;
+                return $value != $conditionValue;
 
             case self::CONDITION_COMPARISON_VALUE_GREATER:
                 return $value > $conditionValue;
