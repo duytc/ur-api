@@ -5,6 +5,7 @@ namespace UR\Bundle\ApiBundle\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Handler\HandlerInterface;
@@ -203,6 +204,10 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
                 $connDataSource = $item;
                 break;
             }
+        }
+
+        if ($connDataSource === null) {
+            return $results;
         }
 
         $transformFactory = new TransformerFactory();

@@ -8,13 +8,14 @@ use Pheanstalk_Job;
 use stdClass;
 use Symfony\Component\Process\Process;
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
+use UR\DomainManager\DataSetImportJobManagerInterface;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Exception\SqlLockTableException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetImportJobInterface;
 use UR\Model\Core\DataSourceEntryInterface;
-use UR\Service\Import\DataSetImportJobQueueService;
+use UR\Service\Command\CommandService;
 
 class LoadingDataFromFileToDataImportTable
 {
@@ -23,20 +24,14 @@ class LoadingDataFromFileToDataImportTable
     const RUN_COMMAND = 'ur:data-set:load-file';
 
     /**
-     * @var String
-     * i.e prod or dev
-     */
-    private $env;
-
-    /**
      * @var ImportHistoryManagerInterface
      */
     private $importHistoryManager;
 
     /**
-     * @var DataSetImportJobQueueService
+     * @var DataSetImportJobManagerInterface
      */
-    private $dataSetImportJobQueueService;
+    private $dataSetImportJobManager;
 
     /**
      * @var Logger $logger
@@ -58,46 +53,23 @@ class LoadingDataFromFileToDataImportTable
      */
     private $queue;
 
-    private $logDir;
-
-    private $rootDir;
-
-    private $isDebug;
-
     private $timeout;
 
-    /** @var int in seconds */
-    private $delayForJobWhenPutBack = 5;
+    private $commandService;
 
-    /**
-     * LoadingDataFromFileToDataImportTable constructor.
-     * @param $rootDir
-     * @param $env
-     * @param $isDebug
-     * @param Logger $logger
-     * @param DataSourceEntryManagerInterface $dataSourceEntryManager
-     * @param ConnectedDataSourceManagerInterface $connectedDataSourceManager
-     * @param PheanstalkProxyInterface $queue
-     * @param $logDir
-     * @param ImportHistoryManagerInterface $importHistoryManager
-     * @param DataSetImportJobQueueService $dataSetImportJobQueueService
-     * @param $timeout
-     * @param $delayForJobWhenPutBack
-     */
-    function __construct($rootDir, $env, $isDebug, Logger $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager, PheanstalkProxyInterface $queue, $logDir, ImportHistoryManagerInterface $importHistoryManager, DataSetImportJobQueueService $dataSetImportJobQueueService, $timeout, $delayForJobWhenPutBack)
+    private $jobDelay;
+
+    function __construct(CommandService $commandService, Logger $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, ConnectedDataSourceManagerInterface $connectedDataSourceManager, PheanstalkProxyInterface $queue, ImportHistoryManagerInterface $importHistoryManager, DataSetImportJobManagerInterface $dataSetImportJobManager, $timeout, $jobDelay)
     {
-        $this->rootDir = $rootDir;
-        $this->env = $env;
-        $this->isDebug = $isDebug;
+        $this->commandService = $commandService;
         $this->logger = $logger;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
         $this->connectedDataSourceManager = $connectedDataSourceManager;
         $this->queue = $queue;
-        $this->logDir = $logDir;
         $this->importHistoryManager = $importHistoryManager;
-        $this->dataSetImportJobQueueService = $dataSetImportJobQueueService;
+        $this->dataSetImportJobManager = $dataSetImportJobManager;
         $this->timeout = $timeout;
-        $this->delayForJobWhenPutBack = (is_integer($delayForJobWhenPutBack) && $delayForJobWhenPutBack > 0) ? $delayForJobWhenPutBack : 5;
+        $this->jobDelay = $jobDelay;
     }
 
     /**
@@ -110,10 +82,21 @@ class LoadingDataFromFileToDataImportTable
         $importJobId = $params->importJobId;
         $dataSetId = $params->dataSetId;
 
-        $exeCuteJob = $this->dataSetImportJobQueueService->isExecuteJob($dataSetId, $importJobId, $this->logger);
+        try {
+            /**@var DataSetImportJobInterface $exeCuteJob */
+            $exeCuteJob = $this->dataSetImportJobManager->getExecuteImportJobByDataSetId($dataSetId);
+        } catch (\Exception $exception) {
+            /*job not found*/
+            return;
+        }
 
-        if (!$exeCuteJob instanceof DataSetImportJobInterface) {
-            $this->queue->putInTube($tube, $job->getData(), 1024, $this->delayForJobWhenPutBack);
+        /*
+         * check if data set has another job before this job, put job back to queue
+         * this make sure jobs are executes in order
+         */
+        if ($exeCuteJob->getJobId() !== $importJobId) {
+            $this->logger->notice(sprintf('DataSet with id %d is busy, putted job back into the queue', $dataSetId));
+            $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay);
             return;
         }
 
@@ -139,24 +122,12 @@ class LoadingDataFromFileToDataImportTable
             /* creating import history */
             $importHistoryEntity = $this->importHistoryManager->createImportHistoryByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource);
 
-            if (!is_dir($this->logDir)) {
-                mkdir($this->logDir, 0777, true);
-            }
-
-            $logFile = sprintf('%s/import_log_%s.log', $this->logDir, $importHistoryEntity->getId());
+            $logFile = $this->commandService->createLogFile('import_log', $dataSetId);
 
             $fp = fopen($logFile, 'a');
 
-            // make sure command runs as same environment and allow NOTICE messages
-            // INFO messages will be printed. Make sure all important logs are NOTICE and above
-            $envFlags = sprintf('--env=%s -v', $this->env);
-            if (!$this->isDebug) {
-                $envFlags .= ' --no-debug';
-            }
-
-            $loadDataCommand = sprintf('%s %s %s %d %d %d',
-                $this->getAppConsoleCommand(),
-                self::RUN_COMMAND, $envFlags,
+            $loadDataCommand = sprintf('%s %d %d %d',
+                $this->commandService->getAppConsoleCommand(self::RUN_COMMAND),
                 $connectedDataSourceId,
                 $dataSourceEntryId,
                 $importHistoryEntity->getId()
@@ -174,7 +145,7 @@ class LoadingDataFromFileToDataImportTable
                 );
             } catch (SqlLockTableException $exception) {
                 $this->logger->warning('Table is locked. Putting job back into the queue');
-                $this->queue->putInTube($tube, $job->getData(), 0, $this->delayForJobWhenPutBack);
+                $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay);
             } catch (\Exception $e) {
                 // top level log is very clean. This is the supervisor log but it provides the name of the specific file for more debugging
                 // if the admin wants to know more about the failure, they have the exact log file
@@ -188,15 +159,6 @@ class LoadingDataFromFileToDataImportTable
             }
         }
 
-        $this->dataSetImportJobQueueService->deleteJob($exeCuteJob);
-    }
-
-    private function getAppConsoleCommand()
-    {
-        $pathToSymfonyConsole = $this->rootDir;
-
-        $command = sprintf('php %s/console', $pathToSymfonyConsole);
-
-        return $command;
+        $this->dataSetImportJobManager->delete($exeCuteJob);
     }
 }

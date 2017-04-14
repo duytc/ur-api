@@ -102,11 +102,6 @@ class AutoImportData implements AutoImportDataInterface
         $collection = $this->parsingFileService->doParser($dataSourceEntry, $connectedDataSource);
         $rows = $collection->getRows();
 
-        //overwrite duplicate
-        if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
-            $rows = $this->parsingFileService->overrideDuplicate($rows, $connectedDataSource->getDataSet()->getDimensions());
-        }
-
         return $this->parsingFileService->setDataOfColumnsNotMappedToNull($rows, $allFields);
     }
 }

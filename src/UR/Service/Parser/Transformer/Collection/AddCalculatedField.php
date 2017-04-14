@@ -61,7 +61,7 @@ class AddCalculatedField extends AbstractAddField
         parent::__construct($column);
 
         $this->expression = $expression;
-        
+
         if (is_array($defaultValues)) {
             $this->defaultValues = $defaultValues;
         } else $this->defaultValues = [];

@@ -5,12 +5,10 @@ namespace UR\Service\Parser\Transformer;
 
 
 use Doctrine\ORM\EntityManagerInterface;
-use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
-use UR\Service\Report\SqlBuilder;
 
 class SubsetGroup implements CollectionTransformerInterface
 {
@@ -47,16 +45,7 @@ class SubsetGroup implements CollectionTransformerInterface
     {
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
-
         $mappedFields = array_flip($connectedDataSource->getMapFields());
-        if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
-            $dimensions = $connectedDataSource->getDataSet()->getDimensions();
-            $dimensions = array_intersect_key($mappedFields, $dimensions);
-            $dimensions = array_merge($dimensions, $this->groupFields);
-            $rows = $this->overrideDuplicate($rows, $dimensions);
-        }
-
-        $collection->setRows($rows);
         foreach ($rows as $row) {
             $dataColumns = array_keys($row);
             foreach($this->groupFields as &$groupField) {
@@ -105,26 +94,6 @@ class SubsetGroup implements CollectionTransformerInterface
         $collection->setColumns($columns);
 
         return $collection;
-    }
-
-    protected function overrideDuplicate(array $rows, array $dimensions)
-    {
-        $dimensions = array_flip($dimensions);
-        $duplicateRows = [];
-        foreach ($rows as $index => &$row) {
-            if (!is_array($row)) {
-                continue;
-            }
-
-            $uniqueKeys = array_intersect_key($row, $dimensions);
-            $uniqueId = md5(implode(":", $uniqueKeys));
-
-            $duplicateRows[$uniqueId] = $row;
-        }
-
-        $rows = array_values($duplicateRows);
-
-        return $rows;
     }
 
     protected function getJoinKey(array $columns, array $row)

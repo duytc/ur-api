@@ -5,14 +5,12 @@ parameters:
     # params
 
 services:
-    tagcade_app.event_listener.data_set_change_listener:
-        class: UR\Bundle\AppBundle\EventListener\ReConfigConnectedDataSourceListener
+    ur_app.event_listener.update_connected_data_source_when_data_set_changed_listener:
+        class: UR\Bundle\AppBundle\EventListener\UpdateConnectedDataSourceWhenDataSetChangedListener
         arguments:
             - @ur.worker.manager
         tags:
-            - { name: doctrine.event_listener, event: onFlush }
             - { name: doctrine.event_listener, event: postUpdate }
-            - { name: doctrine.event_listener, event: postFlush }
 
     ur_app.event_listener.data_source_entry_inserted_listener:
         class: UR\Bundle\AppBundle\EventListener\ReImportWhenDataSourceEntryInsertedListener
@@ -22,12 +20,25 @@ services:
             - { name: doctrine.event_listener, event: onFlush }
             - { name: doctrine.event_listener, event: postFlush }
 
-    ur_app.event_listener.connected_data_source_entry_inserted_listener:
-        class: UR\Bundle\AppBundle\EventListener\ReImportWhenConnectedDataSourceEntryInsertedListener
+    ur_app.event_listener.re_import_when_connected_data_source_changed_listener:
+        class: UR\Bundle\AppBundle\EventListener\ReImportWhenConnectedDataSourceChangedListener
         arguments:
             - @service_container
         tags:
-            - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: postUpdate }
+            - { name: doctrine.event_listener, event: postFlush, priority: -20 }
+
+    ur_app.event_listener.alter_data_set_listener:
+        class: UR\Bundle\AppBundle\EventListener\AlterDataSetListener
+        arguments:
+            - @ur.worker.manager
+        tags:
+            - { name: doctrine.event_listener, event: postUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
+
+    ur_app.event_listener.update_linked_map_when_connected_data_source_changed_listener:
+        class: UR\Bundle\AppBundle\EventListener\UpdateLinkedMapWhenConnectedDataSourceChangedListener
+        tags:
             - { name: doctrine.event_listener, event: postUpdate }
             - { name: doctrine.event_listener, event: postPersist }
-            - { name: doctrine.event_listener, event: postFlush }

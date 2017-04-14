@@ -128,28 +128,25 @@ services:
     ur.worker.workers.re_import_new_entry_received:
         class: UR\Worker\Workers\LoadingDataFromFileToDataImportTable
         arguments:
-            - '%kernel.root_dir%'
-            - '%kernel.environment%'
-            - '%kernel.debug%'
+            - @ur.service.command
             - @logger
             - @ur.domain_manager.data_source_entry
             - @ur.domain_manager.connected_data_source
             - @leezy.pheanstalk
-            - %log_file_dir%
             - @ur.domain_manager.import_history
-            - @ur.service.import.data_set_import_job
+            - @ur.domain_manager.data_set_import_job
             - %ur.command.load_data_to_database.timeout%
-            - %delay_for_job_when_put_back%
+            - %ur.worker.delay_time_before_job_become_ready%
 
     ur.worker.workers.alter_import_data_table:
         class: UR\Worker\Workers\AlterImportDataTable
         arguments:
-            - @ur.domain_manager.data_set
-            - @doctrine.orm.entity_manager
+            - @ur.service.command
             - @leezy.pheanstalk
             - @logger
-            - @ur.service.import.data_set_import_job
-            - %delay_for_job_when_put_back%
+            - @ur.domain_manager.data_set_import_job
+            - %ur.command.alter_data_set_table.timeout%
+            - %ur.worker.delay_time_before_job_become_ready%
 
     ur.worker.workers.truncate_import_data_table:
         class: UR\Worker\Workers\TruncateImportDataTable
@@ -158,7 +155,8 @@ services:
             - @doctrine.orm.entity_manager
             - @leezy.pheanstalk
             - @logger
-            - %delay_for_job_when_put_back%
+            - %ur.worker.delay_time_before_job_become_ready%
+            - @ur.domain_manager.data_set_import_job
 
     ur.service.alert.process_alert:
         class: UR\Service\Alert\ProcessAlert
@@ -232,7 +230,11 @@ services:
             - @ur.repository.import_history
             - @ur.repository.linked_map_data_set
 
-    ur.service.import.data_set_import_job:
-        class: UR\Service\Import\DataSetImportJobQueueService
+    ur.service.command:
+        class: UR\Service\Command\CommandService
         arguments:
-            - @ur.domain_manager.data_set_import_job
+            - '%kernel.root_dir%'
+            - '%kernel.environment%'
+            - '%kernel.debug%'
+            - %log_file_dir%
+            - %data_set_import_temp_file_dir%

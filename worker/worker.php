@@ -77,14 +77,14 @@ while (true) {
         $queue->bury($job);
         continue;
     }
-    if (!$params instanceof Stdclass) {
+    if (!$params instanceof stdclass) {
         stdErr(sprintf('The task parameters are not valid', $task));
         $queue->bury($job);
         continue;
     }
     stdOut(sprintf('Received job %s (ID: %s) with payload %s', $task, $job->getId(), $rawPayload));
     try {
-        if ($task == 'loadingDataFromFileToDataImportTable' || $task == 'alterDataSetTable') {
+        if ($task == 'loadingDataFromFileToDataImportTable' || $task == 'alterDataSetTable' || $task == 'truncateDataSetTable') {
             $worker->$task($params, $job, TUBE_NAME);
         } else {
             $worker->$task($params); // dynamic method call

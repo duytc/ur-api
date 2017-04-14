@@ -17,7 +17,6 @@ use UR\Model\Core\DataSetInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
-use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Service\DataSet\Synchronizer;
@@ -70,7 +69,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
 
         if ($publisher instanceof AdminInterface) {
             if (isset($params['publisher'])) {
-                $publisherId =  filter_var($params['publisher'], FILTER_VALIDATE_INT);
+                $publisherId = filter_var($params['publisher'], FILTER_VALIDATE_INT);
                 $user = $this->get('ur_user.domain_manager.publisher')->find($publisherId);
                 if (!$user instanceof PublisherInterface) {
                     throw new InvalidArgumentException(sprintf('publisher %d does not exist', $publisherId));
@@ -153,7 +152,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     {
         $dataSet = $this->one($id);
 
-        if (!$dataSet instanceof DataSetInterface){
+        if (!$dataSet instanceof DataSetInterface) {
             throw new \Exception('Data Set in invalid');
         }
 
@@ -216,17 +215,18 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         /** @var DataSetInterface $dataSet */
         $dataSet = $this->one($id);
         $connectedDataSources = $dataSet->getConnectedDataSources();
-        foreach($connectedDataSources as $connectedDataSource) {
+        $loadingDataService = $this->get('ur.service.loading_data_service');
+
+        foreach ($connectedDataSources as $connectedDataSource) {
             if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
                 continue;
             }
 
             $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
-            $entryIds = array_map(function(DataSourceEntryInterface $entry) {
+            $entryIds = array_map(function (DataSourceEntryInterface $entry) {
                 return $entry->getId();
             }, $entries->toArray());
 
-            $loadingDataService = $this->get('ur.service.loading_data_service');
             $loadingDataService->doLoadDataFromEntryToDataBase([$connectedDataSource], $entryIds);
         }
 
@@ -441,21 +441,15 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     {
         $dataSet = $this->one($id);
 
-        if (!$dataSet instanceof DataSetInterface){
+        if (!$dataSet instanceof DataSetInterface) {
             throw new \Exception(sprintf('Data Set %d does not exist', $id));
         }
 
         $importHistoryManager = $this->get('ur.domain_manager.import_history');
         $importHistories = $importHistoryManager->getImportedHistoryByDataSet($dataSet);
 
-        foreach ($importHistories as $importHistory){
-            if ($importHistory instanceof ImportHistoryInterface){
-                $importHistoryManager->delete($importHistory);
-            }
-        }
-
-        $worker = $this->get('ur.worker.manager');
-        $worker->truncateDataSetTable($dataSet->getId());
+        $loadingDataService = $this->get('ur.service.loading_data_service');
+        $loadingDataService->undoImport($importHistories);
 
         return '';
     }
@@ -514,13 +508,14 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * @var boolean $isPagination
      * @return \UR\Model\Core\DataSetInterface[]
      */
-    private function getNumberOfRows($dataSets, $isPagination = false){
+    private function getNumberOfRows($dataSets, $isPagination = false)
+    {
         $realDataSets = $dataSets;
-        if ($isPagination){
+        if ($isPagination) {
             $realDataSets = $dataSets['records'];
         }
 
-        $result = array_map(function($dataSet){
+        $result = array_map(function ($dataSet) {
             /**@var DataSetInterface $dataSet */
             return [
                 'id' => $dataSet->getId(),
@@ -535,7 +530,8 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * @var DataSetInterface $dataSet
      * @return integer
      */
-    private function getDataSetNumberOfRows($dataSet){
+    private function getDataSetNumberOfRows($dataSet)
+    {
         $entityManager = $this->get('doctrine.orm.entity_manager');
 
         /** @var Connection $conn */

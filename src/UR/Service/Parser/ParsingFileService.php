@@ -327,29 +327,6 @@ class ParsingFileService
         }
     }
 
-    /**
-     * @param array $rows
-     * @param array $dimensions
-     * @return array
-     */
-    public function overrideDuplicate(array $rows, array $dimensions)
-    {
-        $duplicateRows = [];
-        foreach ($rows as $index => &$row) {
-            if (!is_array($row)) {
-                continue;
-            }
-
-            $uniqueKeys = array_intersect_key($row, $dimensions);
-            $uniqueId = md5(implode(":", $uniqueKeys));
-
-            $duplicateRows[$uniqueId] = $row;
-        }
-
-        $rows = array_values($duplicateRows);
-
-        return $rows;
-    }
 
     /**
      * @param $allFields
@@ -383,7 +360,7 @@ class ParsingFileService
                 } else if ($row[$field] === null) {
                     $temp[$field] = null;
                 } else if (strcmp($type, FieldType::NUMBER) === 0) {
-                    $temp[$field] = intval($row[$field]);
+                    $temp[$field] = round($row[$field]);
                 } else if (strcmp($type, FieldType::DECIMAL) === 0) {
                     $temp[$field] = floatval($row[$field]);
                 } else {

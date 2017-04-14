@@ -51,7 +51,7 @@ class LoadingDataService
         foreach ($connectedDataSources as $connectedDataSource) {
             $dataSet = $connectedDataSource->getDataSet();
 
-            $dataSetImportJobEntity = $this->dataSetImportJobManager->createNewDataSetImportJob($dataSet);
+            $dataSetImportJobEntity = $this->dataSetImportJobManager->createNewDataSetImportJob($dataSet, 'load data from entries to table');
             if (!$dataSetImportJobEntity instanceof DataSetImportJobInterface) {
                 continue;
             }
@@ -113,7 +113,7 @@ class LoadingDataService
                     continue;
                 }
 
-                $dataSetImportJobEntity = $this->dataSetImportJobManager->createNewDataSetImportJob($linkedMapConnectedDataSource->getDataSet());
+                $dataSetImportJobEntity = $this->dataSetImportJobManager->createNewDataSetImportJob($linkedMapConnectedDataSource->getDataSet(), 'load data from entries to data import table with augmentation');
                 if (!$dataSetImportJobEntity instanceof DataSetImportJobInterface) {
                     continue;
                 }

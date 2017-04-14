@@ -134,8 +134,13 @@ class Parser implements ParserInterface
             }
         }
 
-        // TODO: may dispatch event after filtering data
+        //overwrite duplicate
+        if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
+            $mappedDimensions = array_intersect_key($columnsMapping, $connectedDataSource->getDataSet()->getDimensions());
+            $rows = $this->overrideDuplicate($rows, array_flip($mappedDimensions));
+        }
 
+        // TODO: may dispatch event after filtering data
         $collection = new Collection($columns, $rows, $types);
 
         if (count($rows) < 1) {
@@ -163,14 +168,10 @@ class Parser implements ParserInterface
         // transform collection
         foreach ($allFieldsTransforms as $transform) {
             /** @var CollectionTransformerInterface $transform */
-            try {
-                if ($transform instanceof Augmentation || $transform instanceof SubsetGroup) {
-                    $collection = $transform->transform($collection, $this->em, $connectedDataSource);
-                } else {
-                    $collection = $transform->transform($collection);
-                }
-            } catch (\Exception $e) {
-                return $collection;
+            if ($transform instanceof Augmentation || $transform instanceof SubsetGroup) {
+                $collection = $transform->transform($collection, $this->em, $connectedDataSource);
+            } else {
+                $collection = $transform->transform($collection);
             }
         }
 
@@ -414,5 +415,30 @@ class Parser implements ParserInterface
         }
 
         return new Collection($columns, $rows);
+    }
+
+
+    /**
+     * @param array $rows
+     * @param array $dimensions
+     * @return array
+     */
+    private function overrideDuplicate(array $rows, array $dimensions)
+    {
+        $duplicateRows = [];
+        foreach ($rows as $index => &$row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $uniqueKeys = array_intersect_key($row, $dimensions);
+            $uniqueId = md5(implode(":", $uniqueKeys));
+
+            $duplicateRows[$uniqueId] = $row;
+        }
+
+        $rows = array_values($duplicateRows);
+
+        return $rows;
     }
 }

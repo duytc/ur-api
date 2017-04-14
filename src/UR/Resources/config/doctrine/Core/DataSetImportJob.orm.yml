@@ -11,6 +11,12 @@ UR\Entity\Core\DataSetImportJob:
         jobId:
             type: string
             nullable: true
+        jobName:
+            type: string
+            nullable: true
+        jobData:
+            type: json_array
+            nullable: true
         createdDate:
             type: datetime
             gedmo:

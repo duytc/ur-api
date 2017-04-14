@@ -11,5 +11,7 @@ class DataSetImportJob extends DataSetImportJobModel
     protected $id;
     protected $dataSet;
     protected $jobId;
+    protected $jobName;
+    protected $jobData;
     protected $createdDate;
 }

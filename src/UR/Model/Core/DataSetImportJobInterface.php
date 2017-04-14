@@ -43,4 +43,27 @@ interface DataSetImportJobInterface extends ModelInterface
      * @return self
      */
     public function setCreatedDate($createdDate);
+
+
+    /**
+     * @return mixed
+     */
+    public function getJobName();
+
+    /**
+     * @param mixed $jobName
+     * @return self
+     */
+    public function setJobName($jobName);
+
+    /**
+     * @return mixed
+     */
+    public function getJobData();
+
+    /**
+     * @param mixed $jobData
+     * @return self
+     */
+    public function setJobData($jobData);
 }

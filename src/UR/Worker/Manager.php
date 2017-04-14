@@ -78,10 +78,11 @@ class Manager
         $this->queueTask('alterDataSetTable', $params);
     }
 
-    public function truncateDataSetTable($dataSetId)
+    public function truncateDataSetTable($dataSetId, $importJobId)
     {
         $params = new StdClass;
         $params->dataSetId = $dataSetId;
+        $params->importJobId = $importJobId;
 
         $this->queueTask('truncateDataSetTable', $params);
     }

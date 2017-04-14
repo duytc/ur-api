@@ -22,7 +22,8 @@ interface DataSetImportJobManagerInterface extends ManagerInterface
 
     /**
      * @param DataSetInterface $dataSet
+     * @param string $jobName
      * @return DataSetImportJobInterface
      */
-    public function createNewDataSetImportJob(DataSetInterface $dataSet);
+    public function createNewDataSetImportJob(DataSetInterface $dataSet, $jobName);
 }

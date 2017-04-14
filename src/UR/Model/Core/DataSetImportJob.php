@@ -19,6 +19,10 @@ class DataSetImportJob implements DataSetImportJobInterface
      */
     protected $jobId;
 
+    protected $jobName;
+
+    protected $jobData;
+
     protected $createdDate;
 
     /**
@@ -81,5 +85,57 @@ class DataSetImportJob implements DataSetImportJobInterface
         $this->createdDate = $createdDate;
 
         return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getJobName()
+    {
+        return $this->jobName;
+    }
+
+    /**
+     * @param mixed $jobName
+     * @return $this
+     */
+    public function setJobName($jobName)
+    {
+        $this->jobName = $jobName;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getJobData()
+    {
+        return $this->jobData;
+    }
+
+    /**
+     * @param mixed $jobData
+     * @return $this
+     */
+    public function setJobData($jobData)
+    {
+        $this->jobData = $jobData;
+        return $this;
+    }
+
+    /**
+     * @param DataSetInterface $dataSet
+     * @param $jobName
+     * @return DataSetImportJobInterface
+     */
+    public static function createEmptyDataSetImportJob(DataSetInterface $dataSet, $jobName)
+    {
+        $jobId = bin2hex(random_bytes(20));
+        $dataSetImportJob = (new \UR\Entity\Core\DataSetImportJob())
+            ->setJobName($jobName)
+            ->setDataSet($dataSet)
+            ->setJobId($jobId);
+
+        return $dataSetImportJob;
     }
 }

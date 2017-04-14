@@ -15,7 +15,7 @@ class DataSetImportJobRepository extends EntityRepository implements DataSetImpo
         $qb = $this->createQueryBuilder('dij')
             ->where('dij.dataSet=:dataSet')
             ->setParameter('dataSet', $dataSetId)
-            ->orderBy('dij.createdDate', 'ASC')
+            ->orderBy('dij.createdDate, dij.id', 'ASC')
             ->setMaxResults(1);
 
         return $qb->getQuery()->getSingleResult();

@@ -4,15 +4,11 @@ namespace UR\Bundle\AppBundle\EventListener;
 
 
 use Doctrine\ORM\Event\LifecycleEventArgs;
-use Doctrine\ORM\Event\OnFlushEventArgs;
-use Doctrine\ORM\Event\PostFlushEventArgs;
 use Symfony\Component\Config\Definition\Exception\Exception;
-use UR\Entity\Core\DataSetImportJob;
 use UR\Entity\Core\LinkedMapDataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\LinkedMapDataSetInterface;
-use UR\Service\Import\CreateDataSetImportJobEntity;
 use UR\Service\Parser\Transformer\Augmentation;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\ExtractPattern;
@@ -30,20 +26,12 @@ use UR\Worker\Manager;
  *
  * @package UR\Bundle\AppBundle\EventListener
  */
-class ReConfigConnectedDataSourceListener
+class UpdateConnectedDataSourceWhenDataSetChangedListener
 {
     /**
      * @var array|DataSetInterface[]
      */
     protected $changedEntities = [];
-
-    /**
-     * @var array|DataSetInterface[]
-     */
-    protected $updatedEntity = [];
-
-    protected $deletedFields = [];
-    protected $updateFields = [];
 
     /** @var Manager */
     private $workerManager;
@@ -53,38 +41,27 @@ class ReConfigConnectedDataSourceListener
         $this->workerManager = $workerManager;
     }
 
-    public function onFlush(OnFlushEventArgs $args)
-    {
-        $em = $args->getEntityManager();
-        $uow = $em->getUnitOfWork();
-
-        $this->changedEntities = array_merge($this->changedEntities, $uow->getScheduledEntityUpdates());
-
-        $this->changedEntities = array_filter($this->changedEntities, function ($entity) {
-            return $entity instanceof DataSetInterface;
-        });
-    }
-
     public function postUpdate(LifecycleEventArgs $args)
     {
-        $em = $args->getEntityManager();
-        $entity = $args->getEntity();
-        $uow = $em->getUnitOfWork();
-        $this->updatedEntity = $entity;
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $args->getEntity();
 
-        if (!$entity instanceof DataSetInterface) {
+        $em = $args->getEntityManager();
+        $uow = $em->getUnitOfWork();
+
+        if (!$dataSet instanceof DataSetInterface) {
             return;
         }
 
-        // detect changed metrics, dimensions
+        /* detect changed metrics, dimensions */
         $renameFields = [];
-        $actions = $entity->getActions();
+        $actions = $dataSet->getActions();
 
-        if (array_key_exists('rename', $entity->getActions())) {
+        if (array_key_exists('rename', $dataSet->getActions())) {
             $renameFields = $actions['rename'];
         }
 
-        $changedFields = $uow->getEntityChangeSet($entity);
+        $changedFields = $uow->getEntityChangeSet($dataSet);
         $newDimensions = [];
         $newMetrics = [];
         $updateDimensions = [];
@@ -106,55 +83,27 @@ class ReConfigConnectedDataSourceListener
             throw new Exception('cannot delete dimensions');
         }
 
-        $newFields = array_merge($newDimensions, $newMetrics);
         $updateFields = array_merge($updateDimensions, $updateMetrics);
         $deletedFields = array_merge($deletedDimensions, $deletedMetrics);
 
-        // alter data_import table
-        $createDataSetImportEntity = new CreateDataSetImportJobEntity();
-        $dataSetImportJobEntity = $createDataSetImportEntity->createDataSetImportJobEntity($entity);
+        /* update connected data sources */
+        $connectedDataSources = $dataSet->getConnectedDataSources();
 
-        $em->persist($dataSetImportJobEntity);
-
-        $this->workerManager->alterDataSetTable($entity->getId(), $newFields, $updateFields, $deletedFields, $dataSetImportJobEntity->getJobId());
-        $this->updateFields = $updateFields;
-        $this->deletedFields = $deletedFields;
-    }
-
-    public function postFlush(PostFlushEventArgs $args)
-    {
-        if (count($this->changedEntities) < 1) {
-            return;
+        foreach ($connectedDataSources as &$connectedDataSource) {
+            $this->updateConfigForConnectedDataSource($connectedDataSource, $updateFields, $deletedFields, $dataSet->getId());
         }
 
-        $em = $args->getEntityManager();
+        $dataSet->setConnectedDataSources($connectedDataSources);
+        $em->merge($dataSet);
+
+        /* update linked connected data sources */
         $linkedMapDataSetRepository = $em->getRepository(LinkedMapDataSet::class);
-        // detect all changed fields
-        foreach ($this->changedEntities as $entity) {
-            if (!$entity instanceof DataSetInterface) {
-                continue;
-            }
-            // delete all configs of connected dataSources related to deletedFields
-            $connectedDataSources = $entity->getConnectedDataSources();
+        $linkedConnectedDataSources = $linkedMapDataSetRepository->getByMapDataSet($dataSet);
 
-            foreach ($connectedDataSources as &$connectedDataSource) {
-                $this->updateConfigForConnectedDataSource($connectedDataSource, $this->updateFields, $this->deletedFields, $entity->getId());
-            }
-
-            $entity->setConnectedDataSources($connectedDataSources);
-            $em->merge($entity);
-
-            $linkedConnectedDataSources = $linkedMapDataSetRepository->getByMapDataSet($entity);
-
-            /** @var LinkedMapDataSetInterface $linkedConnectedDataSource */
-            foreach ($linkedConnectedDataSources as $linkedConnectedDataSource) {
-                $this->updateConfigForConnectedDataSource($linkedConnectedDataSource->getConnectedDataSource(), $this->updateFields, $this->deletedFields, $entity->getId());
-            }
+        /** @var LinkedMapDataSetInterface $linkedConnectedDataSource */
+        foreach ($linkedConnectedDataSources as $linkedConnectedDataSource) {
+            $this->updateConfigForConnectedDataSource($linkedConnectedDataSource->getConnectedDataSource(), $updateFields, $deletedFields, $dataSet->getId());
         }
-
-        // reset for new onFlush event
-        $this->changedEntities = [];
-        $em->flush();
     }
 
     /**
@@ -240,7 +189,7 @@ class ReConfigConnectedDataSourceListener
         }
     }
 
-    public function updateConnectedCollectionTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key, CollectionTransformerInterface $transformObject, $dataSetId = null)
+    private function updateConnectedCollectionTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key, CollectionTransformerInterface $transformObject, $dataSetId = null)
     {
         if ($transformObject instanceof Augmentation) {
             if (array_key_exists($transformObject->getDestinationField(), $updatedFields)
