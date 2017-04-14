@@ -39,6 +39,12 @@ abstract class AbstractAddField implements CollectionTransformerInterface
 
         foreach ($rows as $idx => &$row) {
             $value = $this->getValue($row);
+
+            // json does not support NAN or INF values
+            if (is_float($value) && (is_nan($value) || is_infinite($value))) {
+                $value = null;
+            }
+
             if (is_array($value)) {
                 return $value;
             }

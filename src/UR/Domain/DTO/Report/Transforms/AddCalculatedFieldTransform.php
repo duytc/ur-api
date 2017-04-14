@@ -79,7 +79,14 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
                 $calculatedValue = self::INVALID_VALUE;
             }
 
-            $row[$this->fieldName] = $this->getDefaultValueByCondition($calculatedValue, $row);;
+            $value = $this->getDefaultValueByCondition($calculatedValue, $row);
+
+            // json does not support NAN or INF values
+            if (is_float($value) && (is_nan($value) || is_infinite($value))) {
+                $value = null;
+            }
+
+            $row[$this->fieldName] = $value;
         }
 
         $collection->setRows($rows);
