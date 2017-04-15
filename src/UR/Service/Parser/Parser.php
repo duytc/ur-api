@@ -164,6 +164,7 @@ class Parser implements ParserInterface
         );
 
         $collection = $preTransformCollectionEvent->getCollection();
+        $collection = $this->addTemporaryFields($collection, $connectedDataSource);
 
         // transform collection
         foreach ($allFieldsTransforms as $transform) {
@@ -174,6 +175,8 @@ class Parser implements ParserInterface
                 $collection = $transform->transform($collection);
             }
         }
+
+        $collection = $this->removeTemporaryFields($collection, $connectedDataSource);
 
         // dispatch event pre transforming column data
         $preTransformColumnEvent = new PreTransformColumnDataEvent(
@@ -225,6 +228,64 @@ class Parser implements ParserInterface
         return $collection;
     }
 
+    /**
+     * @param Collection $collection
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return Collection
+     */
+    private function addTemporaryFields(Collection $collection, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $columns = $collection->getColumns();
+        $types = $collection->getTypes();
+        $rows = $collection->getRows();
+        foreach($connectedDataSource->getTemporaryFields() as $temp) {
+            $columns[] = $temp;
+            $types[$temp] = FieldType::TEMPORARY;
+
+            foreach($rows as &$row) {
+                $row[$temp ] = '';
+            }
+        }
+
+        $collection->setColumns($columns);
+        $collection->setTypes($types);
+        $collection->setRows($rows);
+
+        return $collection;
+    }
+
+    /**
+     * @param Collection $collection
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return Collection
+     */
+    private function removeTemporaryFields(Collection $collection, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $columns = $collection->getColumns();
+        $types = $collection->getTypes();
+        $rows = $collection->getRows();
+        foreach($connectedDataSource->getTemporaryFields() as $temp) {
+            if(($key = array_search($temp, $columns)) !== false) {
+                unset($columns[$key]);
+            }
+
+            if (array_key_exists($temp, $types)) {
+                unset($types[$temp]);
+            }
+
+            foreach($rows as &$row) {
+                if (array_key_exists($temp, $row)) {
+                    unset($row[$temp]);
+                }
+            }
+        }
+
+        $collection->setColumns($columns);
+        $collection->setRows($rows);
+        $collection->setTypes($types);
+
+        return $collection;
+    }
     /**
      * @param array $row
      * @param $fileColumn

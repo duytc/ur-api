@@ -11,6 +11,11 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $requires;
     protected $alertSetting;
 
+    /**
+     * @var array
+     */
+    protected $temporaryFields;
+
     /** @var  bool $replayData */
     protected $replayData;
 
@@ -149,6 +154,24 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setAlertSetting($alertSetting)
     {
         $this->alertSetting = $alertSetting;
+    }
+
+    /**
+     * @return array
+     */
+    public function getTemporaryFields()
+    {
+        return $this->temporaryFields;
+    }
+
+    /**
+     * @param array $temporaryFields
+     * @return self
+     */
+    public function setTemporaryFields($temporaryFields)
+    {
+        $this->temporaryFields = $temporaryFields;
+        return $this;
     }
 
     /**

@@ -82,6 +82,17 @@ interface ConnectedDataSourceInterface extends ModelInterface
     public function setAlertSetting($alertSetting);
 
     /**
+     * @return array
+     */
+    public function getTemporaryFields();
+
+    /**
+     * @param array $temporaryFields
+     * @return self
+     */
+    public function setTemporaryFields($temporaryFields);
+
+    /**
      * @return boolean
      */
     public function isReplayData();

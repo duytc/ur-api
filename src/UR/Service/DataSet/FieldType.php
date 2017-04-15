@@ -10,6 +10,7 @@ final class FieldType
     const MULTI_LINE_TEXT = 'multiLineText'; // text
     const NUMBER = 'number'; // integer
     const DECIMAL = 'decimal'; // double/float
+    const TEMPORARY = 'temporary';
 
     private static $types = [
         self::DATE,

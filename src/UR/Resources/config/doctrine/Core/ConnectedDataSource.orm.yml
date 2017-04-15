@@ -27,6 +27,9 @@ UR\Entity\Core\ConnectedDataSource:
             type: boolean
             option:
                 default: false
+        temporaryFields:
+            type: json_array
+            nullable: true
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource
