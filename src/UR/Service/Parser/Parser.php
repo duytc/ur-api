@@ -238,7 +238,13 @@ class Parser implements ParserInterface
         $columns = $collection->getColumns();
         $types = $collection->getTypes();
         $rows = $collection->getRows();
-        foreach($connectedDataSource->getTemporaryFields() as $temp) {
+        $temporaryFields = $connectedDataSource->getTemporaryFields();
+
+        if (empty($temporaryFields)) {
+            return $collection;
+        }
+
+        foreach($temporaryFields as $temp) {
             $columns[] = $temp;
             $types[$temp] = FieldType::TEMPORARY;
 
@@ -264,7 +270,13 @@ class Parser implements ParserInterface
         $columns = $collection->getColumns();
         $types = $collection->getTypes();
         $rows = $collection->getRows();
-        foreach($connectedDataSource->getTemporaryFields() as $temp) {
+        $temporaryFields = $connectedDataSource->getTemporaryFields();
+
+        if (empty($temporaryFields)) {
+            return $collection;
+        }
+
+        foreach($temporaryFields as $temp) {
             if(($key = array_search($temp, $columns)) !== false) {
                 unset($columns[$key]);
             }
