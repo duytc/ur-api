@@ -17,7 +17,8 @@ class Synchronizer
     const YEAR_FIELD_TEMPLATE = '__%s_year';
     const DAY_FIELD_TEMPLATE = '__%s_day';
 
-
+    const LONGTEXT_TYPE_LENGTH = 65535;
+    const TEXT_TYPE_LENGTH = 2048;
     /**
      * @var Connection
      */
@@ -77,12 +78,16 @@ class Synchronizer
         // create import table
         // add dimensions
         foreach ($dataSet->getDimensions() as $key => $value) {
-            $dataSetTable->addColumn($key, $value, ["notnull" => false, "default" => null]);
+            $col = $dataSetTable->addColumn($key, $value, ["notnull" => false, "default" => null]);
             if ($value === FieldType::DATE || $value === FieldType::DATETIME) {
                 // add month and year also
                 $dataSetTable->addColumn(sprintf(self::DAY_FIELD_TEMPLATE, $key), Type::INTEGER, ["notnull" => false, "default" => null]);
                 $dataSetTable->addColumn(sprintf(self::MONTH_FIELD_TEMPLATE, $key), Type::INTEGER, ["notnull" => false, "default" => null]);
                 $dataSetTable->addColumn(sprintf(self::YEAR_FIELD_TEMPLATE, $key), Type::INTEGER, ["notnull" => false, "default" => null]);
+            } else if ($value === FieldType::MULTI_LINE_TEXT) {
+                $col->setLength(self::LONGTEXT_TYPE_LENGTH);
+            } else if ($value === FieldType::TEXT) {
+                $col->setLength(self::TEXT_TYPE_LENGTH);
             }
         }
 
@@ -93,7 +98,9 @@ class Synchronizer
             } else if ($value === FieldType::DECIMAL) {
                 $dataSetTable->addColumn($key, $value, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
             } else if ($value === FieldType::MULTI_LINE_TEXT) {
-                $dataSetTable->addColumn($key, FieldType::TEXT, ["notnull" => false, "default" => null]);
+                $dataSetTable->addColumn($key, Type::TEXT, ["notnull" => false, "default" => null]);
+            } else if ($value === FieldType::TEXT) {
+                $dataSetTable->addColumn($key, Type::TEXT, ["notnull" => false, "default" => null, "length" => self::TEXT_TYPE_LENGTH]);
             } else if ($value === FieldType::DATE || $value === FieldType::DATETIME) {
                 $dataSetTable->addColumn($key, FieldType::DATE, ["notnull" => false, "default" => null]);
                 // add month and year also

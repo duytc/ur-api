@@ -20,6 +20,8 @@ use UR\Service\StringUtilTrait;
 class AlterImportDataTableCommand extends ContainerAwareCommand
 {
     use StringUtilTrait;
+    const SQL_TYPE_LONGTEXT = 'longtext';
+    const SQL_TYPE_TEXT = 'text';
 
     /**
      * @inheritdoc
@@ -82,46 +84,23 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
             return;
         }
 
-        $delCols = [];
-        $addCols = [];
-        foreach ($deletedColumns as $deletedColumn => $type) {
-            $delCol = $dataTable->getColumn($deletedColumn);
-            $delCols[] = $delCol;
-            $dataTable->dropColumn($deletedColumn);
-            if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
-                $dataTable->dropColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $deletedColumn));
-                $dataTable->dropColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $deletedColumn));
-                $dataTable->dropColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $deletedColumn));
-            }
-        }
-
-        foreach ($newColumns as $newColumn => $type) {
-            if (strcmp($type, FieldType::NUMBER) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, Type::INTEGER, ["notnull" => false, "default" => null]);
-            } else if (strcmp($type, FieldType::DECIMAL) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
-            } else if (strcmp($type, FieldType::MULTI_LINE_TEXT) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, FieldType::TEXT, ["notnull" => false, "default" => null]);
-            } else if (strcmp($type, FieldType::DATE) === 0 OR strcmp($type, FieldType::DATETIME) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, FieldType::DATE, ["notnull" => false, "default" => null]);
-                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
-                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
-                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
-            } else {
-                $addCols[] = $dataTable->addColumn($newColumn, $type, ["notnull" => false, "default" => null]);
-            }
-        }
-
-        $updateTable = new TableDiff($dataTable->getName(), $addCols, [], $delCols, [], [], []);
-        $dataSetSynchronizer->syncSchema($schema);
-        $alterSqls = $conn->getDatabasePlatform()->getAlterTableSQL($updateTable);
+        // do rename columns before add or delete column
+        $renameColumnsSqls = [];
+        $columns = $dataSet->getAllDimensionMetrics();
         foreach ($updateColumns as $oldName => $newName) {
             $curCol = $dataTable->getColumn($oldName);
-            $sql = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldName, $newName, $curCol->getType()->getName());
+            $type = $curCol->getType()->getName();
+            if ($type === FieldType::TEXT && array_key_exists($newName, $columns) && $columns[$newName] === FieldType::MULTI_LINE_TEXT) {
+                $type = self::SQL_TYPE_LONGTEXT;
+            } else if ($type === FieldType::TEXT && array_key_exists($newName, $columns) && $columns[$newName] === FieldType::TEXT) {
+                $type = self::SQL_TYPE_TEXT;
+            }
+
+            $sql = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldName, $newName, $type);
             if (strtolower($curCol->getType()->getName()) === strtolower(FieldType::NUMBER) || strtolower($curCol->getType()->getName()) === strtolower(FieldType::DECIMAL)) {
                 $sql .= sprintf("(%s,%s)", $curCol->getPrecision(), $curCol->getScale());
             }
-            $alterSqls[] = $sql;
+            $renameColumnsSqls[] = $sql;
 
             if ($curCol->getType()->getName() == FieldType::DATE || $curCol->getType()->getName() == FieldType::DATETIME) {
                 $oldDay = sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $oldName);
@@ -134,23 +113,67 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
 
                 if ($dataTable->hasColumn($oldDay)) {
                     $sqlDay = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldDay, $newDay, Type::INTEGER);
-                    $alterSqls[] = $sqlDay;
+                    $renameColumnsSqls[] = $sqlDay;
                 }
 
                 if ($dataTable->hasColumn($oldMonth)) {
                     $sqlMonth = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldMonth, $newMonth, Type::INTEGER);
-                    $alterSqls[] = $sqlMonth;
+                    $renameColumnsSqls[] = $sqlMonth;
                 }
 
                 if ($dataTable->hasColumn($oldYear)) {
                     $sqlYear = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldYear, $newYear, Type::INTEGER);
-                    $alterSqls[] = $sqlYear;
+                    $renameColumnsSqls[] = $sqlYear;
                 }
             }
         }
 
-        foreach ($alterSqls as $alterSql) {
+        // execute rename sql
+        foreach ($renameColumnsSqls as $alterSql) {
             $conn->exec($alterSql);
+        }
+
+        //get table again after rename columns
+        $dataTable = $dataSetSynchronizer->getDataSetImportTable($dataSet->getId());
+
+        $delCols = [];
+        $addCols = [];
+        foreach ($deletedColumns as $deletedColumn => $type) {
+            $delCol = $dataTable->getColumn($deletedColumn);
+            $delCols[] = $dataTable->dropColumn($delCol);
+            if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
+                $delCols[] = $dataTable->dropColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $deletedColumn));
+                $delCols[] = $dataTable->dropColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $deletedColumn));
+                $delCols[] = $dataTable->dropColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $deletedColumn));
+            }
+        }
+
+        foreach ($newColumns as $newColumn => $type) {
+            if (strcmp($type, FieldType::NUMBER) === 0) {
+                $addCols[] = $dataTable->addColumn($newColumn, Type::INTEGER, ["notnull" => false, "default" => null]);
+            } else if (strcmp($type, FieldType::DECIMAL) === 0) {
+                $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
+            } else if (strcmp($type, FieldType::MULTI_LINE_TEXT) === 0) {
+                $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false, "default" => null]);
+            } else if (strcmp($type, FieldType::TEXT) === 0) {
+                $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false, "default" => null, "length" => Synchronizer::TEXT_TYPE_LENGTH]);
+            } else if (strcmp($type, FieldType::DATE) === 0 OR strcmp($type, FieldType::DATETIME) === 0) {
+                $addCols[] = $dataTable->addColumn($newColumn, FieldType::DATE, ["notnull" => false, "default" => null]);
+                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
+                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
+                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
+            } else {
+                $addCols[] = $dataTable->addColumn($newColumn, $type, ["notnull" => false, "default" => null]);
+            }
+        }
+
+        $updateTable = new TableDiff($dataTable->getName(), $addCols, [], $delCols, [], [], []);
+        $dataSetSynchronizer->syncSchema($schema);
+        $addOrDeleteColumnsSqls = $conn->getDatabasePlatform()->getAlterTableSQL($updateTable);
+
+        // execute add or delete columns sql
+        foreach ($addOrDeleteColumnsSqls as $addOrDeleteColumnsSql) {
+            $conn->exec($addOrDeleteColumnsSql);
         }
     }
 }
