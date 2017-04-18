@@ -12,11 +12,11 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     const FROM_KEY = 'from';
     const TO_KEY = 'to';
     const IS_CUSTOM_FORMAT_DATE_FROM = 'isCustomFormatDateFrom';
+    const DEFAULT_DATE_FORMAT = 'Y-m-d';
 
     protected $fromDateFormat;
     protected $toDateFormat;
     protected $isCustomFormatDateFrom;
-    private $dateFormat;
 
     private $supportedDateFormats = [
         'Y-m-d',  // 2016-01-15
@@ -55,23 +55,44 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     public function transform($value)
     {
         if ($value instanceof DateTime) {
-            return $value->format($this->toDateFormat);
+            return $value->format(self::DEFAULT_DATE_FORMAT);
         }
 
         $value = trim($value);
 
-        if (strcmp($value, "0000-00-00") === 0 || $value === null || $value === "") {
+        if ($value === null || $value === "") {
             return null;
         }
 
         $fromDateFormat = $this->isCustomFormatDateFrom ? $this->convertCustomFromDateFormat($this->fromDateFormat) : $this->fromDateFormat;
         $date = DateTime::createFromFormat($fromDateFormat, $value);
 
+        //throw exception when wrong date value or format
         if (!$date instanceof DateTime) {
             throw new ImportDataException(ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, 0, $this->getField());
         }
 
-        return $date->format($this->dateFormat);
+        return $date->format(self::DEFAULT_DATE_FORMAT);
+    }
+
+    /**
+     * reformat date from default Y-m-d to another format
+     * @param $value
+     * @return null|string
+     */
+    public function transformFromDatabaseToClient($value)
+    {
+        if ($value instanceof DateTime) {
+            return $value->format($this->toDateFormat);
+        }
+
+        $date = DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $value);
+
+        if ($value === '0000-00-00' || !$date instanceof DateTime) {
+            return null;
+        }
+
+        return $date->format($this->toDateFormat);
     }
 
     /**
@@ -104,22 +125,6 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     public function setToDateFormat(string $toDateFormat)
     {
         $this->toDateFormat = $toDateFormat;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getDateFormat()
-    {
-        return $this->dateFormat;
-    }
-
-    /**
-     * @param mixed $dateFormat
-     */
-    public function setDateFormat($dateFormat)
-    {
-        $this->dateFormat = $dateFormat;
     }
 
     /**

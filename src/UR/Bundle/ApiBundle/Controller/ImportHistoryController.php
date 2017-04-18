@@ -216,10 +216,7 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
                 $transformObject = $transformFactory->getTransform($transform);
 
                 if ($transformObject instanceof DateFormat) {
-                    $transformObject->setFromDateFormat('Y-m-d');
-                    $transformObject->setIsCustomFormatDateFrom(false);
-                    $transformObject->setDateFormat($transformObject->getToDateFormat());
-                    $row[$transformObject->getField()] = $transformObject->transform($row[$transformObject->getField()]);
+                    $row[$transformObject->getField()] = $transformObject->transformFromDatabaseToClient($row[$transformObject->getField()]);
                     continue;
                 }
 
