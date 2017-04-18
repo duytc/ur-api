@@ -1,12 +1,11 @@
 <?php
 
-namespace UR\Service\Parser\Transformer;
+namespace UR\Service\Parser\Transformer\Collection;
 
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
-use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Report\SqlBuilder;
 
 class Augmentation implements CollectionTransformerInterface

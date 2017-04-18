@@ -14,11 +14,11 @@ use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
-use UR\Service\Parser\Transformer\Augmentation;
+use UR\Service\Parser\Transformer\Collection\Augmentation;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
-use UR\Service\Parser\Transformer\SubsetGroup;
+use UR\Service\Parser\Transformer\Collection\SubsetGroup;
 
 class Parser implements ParserInterface
 {

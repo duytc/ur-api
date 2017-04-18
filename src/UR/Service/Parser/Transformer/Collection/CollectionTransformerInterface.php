@@ -22,7 +22,9 @@ interface CollectionTransformerInterface extends TransformerInterface
     const REPLACE_TEXT = 'replaceText';
     const EXTRACT_PATTERN = 'extractPattern';
     const AUGMENTATION = 'augmentation';
-    const SUBSET_GROUP = 'subset-group';
+    const SUBSET_GROUP = 'subsetGroup';
+    const CONVERT_CASE = 'convertCase';
+    const NORMALIZE_TEXT = 'normalizeText';
 
     /* priority for formats, the smaller will be execute first */
     const TRANSFORM_PRIORITY_AUGMENTATION = 1;
@@ -35,6 +37,8 @@ interface CollectionTransformerInterface extends TransformerInterface
     const TRANSFORM_PRIORITY_SORT = 40;
     const TRANSFORM_PRIORITY_REPLACE_TEXT = 50;
     const TRANSFORM_PRIORITY_EXTRACT_PATTERN = 60;
+    const TRANSFORM_PRIORITY_CONVERT_CASE = 70;
+    const TRANSFORM_PRIORITY_NORMALIZE_TEXT = 70;
 
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null);
 }

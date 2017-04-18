@@ -2,14 +2,19 @@
 
 namespace UR\Service\Parser\Transformer;
 
+use Doctrine\DBAL\Types\ConversionException;
 use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
 use UR\Service\Parser\Transformer\Collection\AddField;
+use UR\Service\Parser\Transformer\Collection\Augmentation;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
+use UR\Service\Parser\Transformer\Collection\ConvertCase;
 use UR\Service\Parser\Transformer\Collection\ExtractPattern;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
+use UR\Service\Parser\Transformer\Collection\NormalizeText;
 use UR\Service\Parser\Transformer\Collection\ReplaceText;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
+use UR\Service\Parser\Transformer\Collection\SubsetGroup;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Service\Parser\Transformer\Column\NumberFormat;
@@ -185,6 +190,14 @@ class TransformerFactory
                 $transformObject = $this->getExtractPatternTransforms($config);
                 break;
 
+            case CollectionTransformerInterface::CONVERT_CASE:
+                $transformObject = $this->getConvertCaseTransforms($config);
+                break;
+
+            case CollectionTransformerInterface::NORMALIZE_TEXT:
+                $transformObject = $this->getNormalizeTextTransforms($config);
+                break;
+
             default:
                 throw new \Exception (sprintf('Filter type must be one of "%s", "%s" given',
                     implode(", ", $this->transformTypes),
@@ -358,6 +371,74 @@ class TransformerFactory
                 !array_key_exists(ExtractPattern::IS_REG_EXPRESSION_CASE_INSENSITIVE_KEY, $extractPatternConfig) ? false : $extractPatternConfig[ExtractPattern::IS_REG_EXPRESSION_CASE_INSENSITIVE_KEY],
                 !array_key_exists(ExtractPattern::IS_REG_EXPRESSION_MULTI_LINE_KEY, $extractPatternConfig) ? false : $extractPatternConfig[ExtractPattern::IS_REG_EXPRESSION_MULTI_LINE_KEY],
                 !array_key_exists(ExtractPattern::REPLACEMENT_VALUE_KEY, $extractPatternConfig) ? 1 : $extractPatternConfig[ExtractPattern::REPLACEMENT_VALUE_KEY]
+            );
+        }
+
+        return $extractPatternTransforms;
+    }
+
+    /**
+     * @param $convertCaseConfigs
+     * @return array
+     */
+    private function getConvertCaseTransforms(array $convertCaseConfigs)
+    {
+        $extractPatternTransforms = [];
+        foreach ($convertCaseConfigs as $convertCaseConfig) {
+            if (!is_array($convertCaseConfig)
+                || !array_key_exists(ConvertCase::FIELD_KEY, $convertCaseConfig)
+                || !array_key_exists(ConvertCase::CONVERT_TYPE_KEY, $convertCaseConfig)
+            ) {
+                continue;
+            }
+
+            $isOverride = array_key_exists(ConvertCase::IS_OVERRIDE_KEY, $convertCaseConfig) ? filter_var($convertCaseConfig[ConvertCase::IS_OVERRIDE_KEY], FILTER_VALIDATE_BOOLEAN) : true;
+            if ($isOverride === false && !array_key_exists(ConvertCase::TARGET_FIELD_KEY, $convertCaseConfig)) {
+                continue;
+            }
+
+            $convertType = $convertCaseConfig[ConvertCase::CONVERT_TYPE_KEY];
+            if (!in_array($convertType, [ConvertCase::LOWER_CASE_CONVERT, ConvertCase::UPPER_CASE_CONVERT])) {
+                continue;
+            }
+
+            $extractPatternTransforms[] = new ConvertCase(
+                $convertCaseConfig[ConvertCase::FIELD_KEY],
+                $convertType,
+                $isOverride,
+                $convertCaseConfig[ConvertCase::TARGET_FIELD_KEY]
+            );
+        }
+
+        return $extractPatternTransforms;
+    }
+
+    /**
+     * @param $normalizeTextConfigs
+     * @return array
+     */
+    private function getNormalizeTextTransforms(array $normalizeTextConfigs)
+    {
+        $extractPatternTransforms = [];
+        foreach ($normalizeTextConfigs as $normalizeTextConfig) {
+            if (!is_array($normalizeTextConfig)
+                || !array_key_exists(NormalizeText::FIELD_KEY, $normalizeTextConfig)
+            ) {
+                continue;
+            }
+
+            $isOverride = array_key_exists(NormalizeText::IS_OVERRIDE_KEY, $normalizeTextConfig) ? filter_var($normalizeTextConfig[NormalizeText::IS_OVERRIDE_KEY], FILTER_VALIDATE_BOOLEAN) : true;
+            if ($isOverride === false && !array_key_exists(NormalizeText::TARGET_FIELD_KEY, $normalizeTextConfig)) {
+                continue;
+            }
+
+            $extractPatternTransforms[] = new NormalizeText(
+                $normalizeTextConfig[NormalizeText::FIELD_KEY],
+                $isOverride,
+                $normalizeTextConfig[NormalizeText::TARGET_FIELD_KEY],
+                array_key_exists(NormalizeText::NUMBER_REMOVED_KEY, $normalizeTextConfig) ? filter_var($normalizeTextConfig[NormalizeText::NUMBER_REMOVED_KEY], FILTER_VALIDATE_BOOLEAN) : false,
+                array_key_exists(NormalizeText::ALPHABET_CHARACTER_REMOVED_KEY, $normalizeTextConfig) ? filter_var($normalizeTextConfig[NormalizeText::ALPHABET_CHARACTER_REMOVED_KEY], FILTER_VALIDATE_BOOLEAN) : false,
+                array_key_exists(NormalizeText::DASHES_REMOVED_KEY, $normalizeTextConfig) ? filter_var($normalizeTextConfig[NormalizeText::DASHES_REMOVED_KEY], FILTER_VALIDATE_BOOLEAN) : false
             );
         }
 

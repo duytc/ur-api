@@ -9,7 +9,7 @@ use UR\Entity\Core\LinkedMapDataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\LinkedMapDataSetInterface;
-use UR\Service\Parser\Transformer\Augmentation;
+use UR\Service\Parser\Transformer\Collection\Augmentation;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\ExtractPattern;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
@@ -286,20 +286,30 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
             $transform[SubsetGroup::MAP_FIELDS_KEY] = $mapFields;
         } else {
 
-            $keyToCompare = CollectionTransformerInterface::FIELD_KEY;
+            $fieldKey = CollectionTransformerInterface::FIELD_KEY;
+            $targetFieldKey = ExtractPattern::TARGET_FIELD_KEY;
 
-            if (in_array($transform[CollectionTransformerInterface::TYPE_KEY], [CollectionTransformerInterface::EXTRACT_PATTERN, CollectionTransformerInterface::REPLACE_TEXT])) {
-                $keyToCompare = ExtractPattern::TARGET_FIELD_KEY;
-            }
+//            if (in_array($transform[CollectionTransformerInterface::TYPE_KEY],
+//                [CollectionTransformerInterface::EXTRACT_PATTERN, CollectionTransformerInterface::REPLACE_TEXT, CollectionTransformerInterface::CONVERT_CASE, CollectionTransformerInterface::NORMALIZE_TEXT]
+//            )) {
+//                $keyToCompare = ExtractPattern::TARGET_FIELD_KEY;
+//            }
 
             foreach ($transform[CollectionTransformerInterface::FIELDS_KEY] as $k => &$field) {
-
-                if (in_array($field[$keyToCompare], $delFields)) {
+                if (in_array($field[$fieldKey], $delFields)) {
                     unset($transforms[$key][CollectionTransformerInterface::FIELDS_KEY][$k]);
                 }
 
-                if (array_key_exists($field[$keyToCompare], $updatedFields)) {
-                    $field[$keyToCompare] = $updatedFields[$field[$keyToCompare]];
+                if (array_key_exists($field[$fieldKey], $updatedFields)) {
+                    $field[$fieldKey] = $updatedFields[$field[$fieldKey]];
+                }
+
+                if (in_array($field[$targetFieldKey], $delFields)) {
+                    unset($transforms[$key][CollectionTransformerInterface::FIELDS_KEY][$k]);
+                }
+
+                if (array_key_exists($field[$targetFieldKey], $updatedFields)) {
+                    $field[$targetFieldKey] = $updatedFields[$field[$targetFieldKey]];
                 }
             }
 
