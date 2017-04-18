@@ -55,7 +55,7 @@ class AutoImportData implements AutoImportDataInterface
             $dataSet = $connectedDataSource->getDataSet();
 
             $columns = [];
-            $firstReport = count($rows) > 0 ? $rows[0] : array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+            $firstReport = count($rows) > 0 ? current($rows) : array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
             foreach ($firstReport as $field => $value) {
                 $columns[$field] = $field;
             }
