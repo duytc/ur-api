@@ -1,7 +1,7 @@
 <?php
 
 
-namespace UR\Service\Parser\Transformer;
+namespace UR\Service\Parser\Transformer\Collection;
 
 
 use Doctrine\ORM\EntityManagerInterface;
