@@ -326,20 +326,6 @@ class ParsingFileService
         }
     }
 
-
-    /**
-     * @param $allFields
-     * @return array
-     */
-    public function getNoDataRows($allFields)
-    {
-        $allFields = array_map(function ($column) {
-            return null;
-        }, $allFields);
-
-        return [$allFields];
-    }
-
     /**
      * @param $rows
      * @param array $allFields

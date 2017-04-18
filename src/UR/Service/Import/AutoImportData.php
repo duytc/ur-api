@@ -48,11 +48,6 @@ class AutoImportData implements AutoImportDataInterface
     {
         try {
             $collection = $this->parsingData($connectedDataSource, $dataSourceEntry);
-            $rows = $collection->getRows();
-
-            if (count($rows) < 1) {
-                return $this->parsingFileService->getNoDataRows($connectedDataSource->getDataSet()->getAllDimensionMetrics());
-            }
 
             $this->parsingFileService->addTransformColumnAfterParsing($connectedDataSource->getTransforms());
             $rows = $this->parsingFileService->formatColumnsTransformsAfterParser($collection->getRows());
