@@ -4,6 +4,7 @@ namespace UR\Bundle\ApiBundle\Controller;
 
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
+use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -85,6 +86,33 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     public function postAction(Request $request)
     {
         return $this->post($request);
+    }
+
+    /**
+     * @param Request $request
+     * @param $id
+     * @return View
+     */
+    public function postCloneAction(Request $request, $id)
+    {
+        /** @var ConnectedDataSourceInterface $connectedDataSource */
+        $connectedDataSource = $this->one($id);
+        $name = $request->request->get('name', null);
+
+        /** @var ConnectedDataSourceInterface $newConnectedDataSource */
+        $newConnectedDataSource = clone $connectedDataSource;
+        $newConnectedDataSource->setId(null);
+        $newConnectedDataSource->setReplayData(false); //explicitly set to FALSE to avoid automatically inserting new data
+
+        if (empty($name)) {
+            $name = $connectedDataSource->getDataSource()->getName();
+        }
+
+        $newConnectedDataSource->setName($name);
+        
+        $this->get('ur.domain_manager.connected_data_source')->save($newConnectedDataSource);
+
+        return $this->view(null, Codes::HTTP_CREATED);
     }
 
     /**

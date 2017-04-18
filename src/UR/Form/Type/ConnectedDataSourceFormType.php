@@ -21,6 +21,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
+            ->add('name')
             ->add('connectedDataSourceId', null, ['mapped' => false])
             ->add('dataSet')
             ->add('dataSource')
@@ -41,12 +42,18 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                 $connDataSource = $event->getData();
                 $form = $event->getForm();
 
+                // set default name as data source name if name is null or is an empty string
+                $name = $connDataSource->getName();
+
+                if (null === $name || '' === $name) {
+                    $connDataSource->setName($connDataSource->getDataSource()->getName());
+                }
+
                 // validate mapping fields
                 /** @var DataSetInterface $dataSet */
                 $dataSet = $connDataSource->getDataSet();
 
                 if ($dataSet !== null || $connDataSource->getId() !== null) {
-
                     if (!$this->validateMappingFields($dataSet, $connDataSource)) {
                         $form->get('mapFields')->addError(new FormError('one or more fields of your mapping does not exist in DataSet Dimensions or Metrics'));
                     }

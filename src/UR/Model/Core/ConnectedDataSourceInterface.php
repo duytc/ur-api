@@ -7,9 +7,21 @@ use UR\Model\ModelInterface;
 interface ConnectedDataSourceInterface extends ModelInterface
 {
     /**
+     * @param $id
      * @return mixed
      */
-    public function getId();
+    public function setId($id);
+
+    /**
+     * @return string
+     */
+    public function getName();
+
+    /**
+     * @param string $name
+     * @return self
+     */
+    public function setName($name);
 
     /**
      * @return mixed
@@ -18,6 +30,7 @@ interface ConnectedDataSourceInterface extends ModelInterface
 
     /**
      * @param mixed $mapFields
+     * @return self
      */
     public function setMapFields($mapFields);
 
@@ -28,6 +41,7 @@ interface ConnectedDataSourceInterface extends ModelInterface
 
     /**
      * @param mixed $filters
+     * @return self
      */
     public function setFilters($filters);
 
@@ -38,6 +52,7 @@ interface ConnectedDataSourceInterface extends ModelInterface
 
     /**
      * @param mixed $transforms
+     * @return self
      */
     public function setTransforms($transforms);
 
@@ -48,6 +63,7 @@ interface ConnectedDataSourceInterface extends ModelInterface
 
     /**
      * @param DataSourceInterface $dataSource
+     * @return self
      */
     public function setDataSource($dataSource);
 
@@ -58,6 +74,7 @@ interface ConnectedDataSourceInterface extends ModelInterface
 
     /**
      * @param DataSetInterface $dataSet
+     * @return self
      */
     public function setDataSet($dataSet);
 
@@ -68,6 +85,7 @@ interface ConnectedDataSourceInterface extends ModelInterface
 
     /**
      * @param mixed $requires
+     * @return self
      */
     public function setRequires($requires);
 
@@ -78,6 +96,7 @@ interface ConnectedDataSourceInterface extends ModelInterface
 
     /**
      * @param mixed $alertSetting
+     * @return self
      */
     public function setAlertSetting($alertSetting);
 
@@ -99,6 +118,7 @@ interface ConnectedDataSourceInterface extends ModelInterface
 
     /**
      * @param boolean $replayData
+     * @return self
      */
     public function setReplayData($replayData);
 

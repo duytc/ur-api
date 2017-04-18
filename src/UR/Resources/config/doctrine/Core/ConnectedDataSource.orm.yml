@@ -8,6 +8,9 @@ UR\Entity\Core\ConnectedDataSource:
             generator:
                 strategy: AUTO
     fields:
+        name:
+            type: string
+            length: 100
         mapFields:
             type: json_array
             nullable: true

@@ -102,14 +102,7 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
         $publisherId = $connectedDataSource->getDataSet()->getPublisherId();
 
         try {
-            /*
-             * get import histories by data source entry and connected data source
-             */
-            $importHistories = $importHistoryManager->getImportHistoryByDataSourceEntry($dataSourceEntry, $connectedDataSource->getDataSet(), $importHistoryEntity);
-
-            /*
-             * call service load data to data base
-             */
+            /* call service load data to data base */
             $autoImport->loadingDataFromFileToDatabase($connectedDataSource, $dataSourceEntry, $importHistoryEntity);
 
             /* alert when successful*/
@@ -129,7 +122,13 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
                 $workerManager->processAlert($importSuccessAlert->getAlertCode(), $publisherId, $importSuccessAlert->getDetails());
             }
 
-            $importHistoryManager->deletePreviousImports($importHistories);
+            // delete all previous import histories that have same data source entry id and data set
+            //// get import histories by data source entry and data set
+            // $importHistories = $importHistoryManager->getImportHistoryByDataSourceEntry($dataSourceEntry, $connectedDataSource->getDataSet(), $importHistoryEntity);
+            // $importHistoryManager->deletePreviousImports($importHistories);
+            // but now not need that because of allowing data set has many connected data source on same data source
+            // TODO: remove when stable
+
             $logger->notice(
                 sprintf('success importing file "%s" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d)',
                     $dataSourceEntry->getFileName(),

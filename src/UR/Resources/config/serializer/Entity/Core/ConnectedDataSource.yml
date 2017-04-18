@@ -4,6 +4,9 @@ UR\Entity\Core\ConnectedDataSource:
         id:
             expose: true
             groups: [connectedDataSource.detail, connectedDataSource.summary]
+        name:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
         dataSource:
             expose: true
             groups: [connectedDataSource.detail, connectedDataSource.summary]
