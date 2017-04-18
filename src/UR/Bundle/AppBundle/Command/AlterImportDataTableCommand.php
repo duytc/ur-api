@@ -61,7 +61,6 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
         $entityManager = $this->getContainer()->get('doctrine.orm.entity_manager');
         $conn = $entityManager->getConnection();
 
-
         /**
          * @var DataSetInterface $dataSet
          */
@@ -75,7 +74,6 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
         $updateColumns = $rawConfig['updateColumns'];
         $newColumns = $rawConfig['newColumns'];
 
-        $schema = new Schema();
         $dataSetSynchronizer = new Synchronizer($conn, new Comparator());;
         $dataTable = $dataSetSynchronizer->getDataSetImportTable($dataSet->getId());
 
@@ -96,11 +94,13 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
                 $type = self::SQL_TYPE_TEXT;
             }
 
-            $sql = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldName, $newName, $type);
-            if (strtolower($curCol->getType()->getName()) === strtolower(FieldType::NUMBER) || strtolower($curCol->getType()->getName()) === strtolower(FieldType::DECIMAL)) {
-                $sql .= sprintf("(%s,%s)", $curCol->getPrecision(), $curCol->getScale());
+            if ($dataTable->hasColumn($oldName)) {
+                $sql = sprintf("ALTER TABLE %s CHANGE `%s` `%s` %s", $dataTable->getName(), $oldName, $newName, $type);
+                if (strtolower($curCol->getType()->getName()) === strtolower(FieldType::NUMBER) || strtolower($curCol->getType()->getName()) === strtolower(FieldType::DECIMAL)) {
+                    $sql .= sprintf("(%s,%s)", $curCol->getPrecision(), $curCol->getScale());
+                }
+                $renameColumnsSqls[] = $sql;
             }
-            $renameColumnsSqls[] = $sql;
 
             if ($curCol->getType()->getName() == FieldType::DATE || $curCol->getType()->getName() == FieldType::DATETIME) {
                 $oldDay = sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $oldName);
@@ -112,17 +112,17 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
                 $newYear = sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $newName);
 
                 if ($dataTable->hasColumn($oldDay)) {
-                    $sqlDay = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldDay, $newDay, Type::INTEGER);
+                    $sqlDay = sprintf("ALTER TABLE %s CHANGE `%s` `%s` %s", $dataTable->getName(), $oldDay, $newDay, Type::INTEGER);
                     $renameColumnsSqls[] = $sqlDay;
                 }
 
                 if ($dataTable->hasColumn($oldMonth)) {
-                    $sqlMonth = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldMonth, $newMonth, Type::INTEGER);
+                    $sqlMonth = sprintf("ALTER TABLE %s CHANGE `%s` `%s` %s", $dataTable->getName(), $oldMonth, $newMonth, Type::INTEGER);
                     $renameColumnsSqls[] = $sqlMonth;
                 }
 
                 if ($dataTable->hasColumn($oldYear)) {
-                    $sqlYear = sprintf("ALTER TABLE %s CHANGE %s %s %s", $dataTable->getName(), $oldYear, $newYear, Type::INTEGER);
+                    $sqlYear = sprintf("ALTER TABLE %s CHANGE `%s` `%s` %s", $dataTable->getName(), $oldYear, $newYear, Type::INTEGER);
                     $renameColumnsSqls[] = $sqlYear;
                 }
             }
@@ -139,15 +139,21 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
         $delCols = [];
         $addCols = [];
         foreach ($deletedColumns as $deletedColumn => $type) {
-            $delCol = $dataTable->getColumn($deletedColumn);
-            $delCols[] = $dataTable->dropColumn($delCol);
+            $delCols[] = $dataTable->getColumn($deletedColumn);
             if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
-                $delCols[] = $dataTable->dropColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $deletedColumn));
-                $delCols[] = $dataTable->dropColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $deletedColumn));
-                $delCols[] = $dataTable->dropColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $deletedColumn));
+                $delCols[] = $dataTable->getColumn(sprintf(Synchronizer::DAY_FIELD_TEMPLATE, $deletedColumn));
+                $delCols[] = $dataTable->getColumn(sprintf(Synchronizer::MONTH_FIELD_TEMPLATE, $deletedColumn));
+                $delCols[] = $dataTable->getColumn(sprintf(Synchronizer::YEAR_FIELD_TEMPLATE, $deletedColumn));
             }
         }
 
+        $deletedColumnsTable = new TableDiff($dataTable->getName(), [], [], $delCols);
+        $deleteColumnsSqls = $conn->getDatabasePlatform()->getAlterTableSQL($deletedColumnsTable);
+        foreach ($deleteColumnsSqls as $deleteColumnsSql) {
+            $conn->exec($deleteColumnsSql);
+        }
+
+        $dataTable = $dataSetSynchronizer->getDataSetImportTable($dataSet->getId());
         foreach ($newColumns as $newColumn => $type) {
             if (strcmp($type, FieldType::NUMBER) === 0) {
                 $addCols[] = $dataTable->addColumn($newColumn, Type::INTEGER, ["notnull" => false, "default" => null]);
@@ -167,13 +173,12 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
             }
         }
 
-        $updateTable = new TableDiff($dataTable->getName(), $addCols, [], $delCols, [], [], []);
-        $dataSetSynchronizer->syncSchema($schema);
-        $addOrDeleteColumnsSqls = $conn->getDatabasePlatform()->getAlterTableSQL($updateTable);
+        $addedColumnsTable = new TableDiff($dataTable->getName(), $addCols);
+        $addColumnsSqls = $conn->getDatabasePlatform()->getAlterTableSQL($addedColumnsTable);
 
         // execute add or delete columns sql
-        foreach ($addOrDeleteColumnsSqls as $addOrDeleteColumnsSql) {
-            $conn->exec($addOrDeleteColumnsSql);
+        foreach ($addColumnsSqls as $addColumnsSql) {
+            $conn->exec($addColumnsSql);
         }
     }
 }
