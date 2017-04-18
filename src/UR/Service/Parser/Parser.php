@@ -244,12 +244,12 @@ class Parser implements ParserInterface
             return $collection;
         }
 
-        foreach($temporaryFields as $temp) {
+        foreach ($temporaryFields as $temp) {
             $columns[] = $temp;
             $types[$temp] = FieldType::TEMPORARY;
 
-            foreach($rows as &$row) {
-                $row[$temp ] = '';
+            foreach ($rows as &$row) {
+                $row[$temp] = '';
             }
         }
 
@@ -276,8 +276,8 @@ class Parser implements ParserInterface
             return $collection;
         }
 
-        foreach($temporaryFields as $temp) {
-            if(($key = array_search($temp, $columns)) !== false) {
+        foreach ($temporaryFields as $temp) {
+            if (($key = array_search($temp, $columns)) !== false) {
                 unset($columns[$key]);
             }
 
@@ -285,7 +285,7 @@ class Parser implements ParserInterface
                 unset($types[$temp]);
             }
 
-            foreach($rows as &$row) {
+            foreach ($rows as &$row) {
                 if (array_key_exists($temp, $row)) {
                     unset($row[$temp]);
                 }
@@ -298,6 +298,7 @@ class Parser implements ParserInterface
 
         return $collection;
     }
+
     /**
      * @param array $row
      * @param $fileColumn

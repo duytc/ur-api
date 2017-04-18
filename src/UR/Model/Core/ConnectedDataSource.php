@@ -5,6 +5,7 @@ namespace UR\Model\Core;
 class ConnectedDataSource implements ConnectedDataSourceInterface
 {
     protected $id;
+    protected $name;
     protected $mapFields;
     protected $filters;
     protected $transforms;
@@ -33,13 +34,14 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     }
 
     /**
-     * @param boolean $replayData
+     * @inheritdoc
      */
     public function setReplayData($replayData)
     {
         $this->replayData = $replayData;
-    }
 
+        return $this;
+    }
 
     /**
      * @var DataSourceInterface
@@ -79,6 +81,24 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     /**
      * @inheritdoc
      */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setName($name)
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getMapFields()
     {
         return $this->mapFields;
@@ -90,6 +110,8 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setMapFields($mapFields)
     {
         $this->mapFields = $mapFields;
+
+        return $this;
     }
 
     /**
@@ -106,6 +128,8 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setFilters($filters)
     {
         $this->filters = $filters;
+
+        return $this;
     }
 
     /**
@@ -122,6 +146,8 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setTransforms($transforms)
     {
         $this->transforms = $transforms;
+
+        return $this;
     }
 
     /**
@@ -138,6 +164,8 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setRequires($requires)
     {
         $this->requires = $requires;
+
+        return $this;
     }
 
     /**
@@ -154,6 +182,8 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setAlertSetting($alertSetting)
     {
         $this->alertSetting = $alertSetting;
+
+        return $this;
     }
 
     /**
@@ -171,6 +201,7 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setTemporaryFields($temporaryFields)
     {
         $this->temporaryFields = $temporaryFields;
+
         return $this;
     }
 
@@ -188,6 +219,8 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setDataSource($dataSource)
     {
         $this->dataSource = $dataSource;
+
+        return $this;
     }
 
     /**
@@ -204,6 +237,8 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setDataSet($dataSet)
     {
         $this->dataSet = $dataSet;
+
+        return $this;
     }
 
     /**
@@ -220,5 +255,7 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setLinkedMapDataSets(array $linkedMapDataSets)
     {
         $this->linkedMapDataSets = $linkedMapDataSets;
+
+        return $this;
     }
 }
