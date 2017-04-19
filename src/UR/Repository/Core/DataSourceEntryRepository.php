@@ -129,6 +129,8 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
                 default:
                     break;
             }
+        } else {
+            $qb->addOrderBy('dse.receivedDate', 'desc');
         }
         return $qb;
     }
