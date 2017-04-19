@@ -30,4 +30,11 @@ interface ConnectedDataSourceRepositoryInterface extends ObjectRepository
      * @return QueryBuilder
      */
     public function getConnectedDataSourceByDataSetQuery(DataSetInterface $dataSet, PagerParam $param);
+
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param $transforms
+     * @return mixed
+     */
+    public function updateTransforms(ConnectedDataSourceInterface $connectedDataSource, $transforms);
 }
