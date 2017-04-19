@@ -14,8 +14,8 @@ use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\ExtractPattern;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
+use UR\Service\Parser\Transformer\Collection\SubsetGroup;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
-use UR\Service\Parser\Transformer\SubsetGroup;
 use UR\Service\Parser\Transformer\TransformerFactory;
 use UR\Worker\Manager;
 
@@ -296,20 +296,24 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
 //            }
 
             foreach ($transform[CollectionTransformerInterface::FIELDS_KEY] as $k => &$field) {
-                if (in_array($field[$fieldKey], $delFields)) {
-                    unset($transforms[$key][CollectionTransformerInterface::FIELDS_KEY][$k]);
+                if (array_key_exists($fieldKey, $field)) {
+                    if (in_array($field[$fieldKey], $delFields)) {
+                        unset($transforms[$key][CollectionTransformerInterface::FIELDS_KEY][$k]);
+                    }
+
+                    if (array_key_exists($field[$fieldKey], $updatedFields)) {
+                        $field[$fieldKey] = $updatedFields[$field[$fieldKey]];
+                    }
                 }
 
-                if (array_key_exists($field[$fieldKey], $updatedFields)) {
-                    $field[$fieldKey] = $updatedFields[$field[$fieldKey]];
-                }
+                if (array_key_exists($targetFieldKey, $field)) {
+                    if (in_array($field[$targetFieldKey], $delFields)) {
+                        unset($transforms[$key][CollectionTransformerInterface::FIELDS_KEY][$k]);
+                    }
 
-                if (in_array($field[$targetFieldKey], $delFields)) {
-                    unset($transforms[$key][CollectionTransformerInterface::FIELDS_KEY][$k]);
-                }
-
-                if (array_key_exists($field[$targetFieldKey], $updatedFields)) {
-                    $field[$targetFieldKey] = $updatedFields[$field[$targetFieldKey]];
+                    if (array_key_exists($field[$targetFieldKey], $updatedFields)) {
+                        $field[$targetFieldKey] = $updatedFields[$field[$targetFieldKey]];
+                    }
                 }
             }
 
