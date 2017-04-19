@@ -97,10 +97,11 @@ class ParsingFileService
         /* 1. get all row data */
         $rows = array_values($dataSourceFileData->getRows($formats));
 
-        /* adding hidden column __report_date for files received via integration */
-        if ($dataSourceEntry->getReceivedVia() === DataSourceEntryInterface::RECEIVED_VIA_INTEGRATION) {
-            $this->addExtraColumnsAndRowsDataForIntegrationEntry($columnsInFile, $rows, $dataSourceEntryMetadata);
-        }
+//        /* adding hidden column __report_date for files received via integration */
+//        if ($dataSourceEntry->getReceivedVia() === DataSourceEntryInterface::RECEIVED_VIA_INTEGRATION) {
+//            $this->addExtraColumnsAndRowsDataForIntegrationEntry($columnsInFile, $rows, $dataSourceEntryMetadata);
+//        }
+        $this->addExtraColumnsAndRowsDataFromMetadata($columnsInFile, $rows, $dataSourceEntryMetadata);
 
         /* mapping field */
         $this->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $columnsInFile);
@@ -145,7 +146,7 @@ class ParsingFileService
         }
     }
 
-    /**
+    /**UpdateConnectedDataSourceWhenDataSetChangedListener
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param ParserConfig $parserConfig
      * @param array $fileColumns
@@ -439,12 +440,52 @@ class ParsingFileService
         return $formats;
     }
 
-    private function addExtraColumnsAndRowsDataForIntegrationEntry(&$columnsInFile, &$rows, DataSourceEntryMetadata $dataSourceEntryMetadata)
+    private function addExtraColumnsAndRowsDataFromMetadata(&$columnsInFile, &$rows, DataSourceEntryMetadata $dataSourceEntryMetadata)
     {
+        /**
+         * Currently we use only date field from metadata.
+         * Other fields can be added such as from, subject, body, filename, received date...
+         */
+        if (!$dataSourceEntryMetadata instanceof DataSourceEntryMetadata) {
+            return;
+        }
+
         $columnsInFile[] = MetadataField::INTEGRATION_REPORT_DATE;
+        $columnsInFile[] = MetadataField::FILE_NAME;
+        $columnsInFile[] = MetadataField::EMAIL_DATE_TIME;
+        $columnsInFile[] = MetadataField::EMAIL_SUBJECT;
+        $columnsInFile[] = MetadataField::EMAIL_BODY;
 
         foreach ($rows as &$row) {
-            $row[] = $dataSourceEntryMetadata->getIntegrationReportDate();
+            if (null != $dataSourceEntryMetadata->getIntegrationReportDate()) {
+                $row[] = $dataSourceEntryMetadata->getIntegrationReportDate();
+            } else {
+                $row[] = null;
+            }
+
+            if (null != $dataSourceEntryMetadata->getFileName()) {
+                $row[] = $dataSourceEntryMetadata->getFileName();
+            } else {
+                $row[] = null;
+            }
+
+            if (null != $dataSourceEntryMetadata->getEmailDatetime()) {
+                $row[] = $dataSourceEntryMetadata->getEmailDatetime();
+            } else {
+                $row[] = null;
+            }
+
+            if (null != $dataSourceEntryMetadata->getEmailSubject()) {
+                $row[] = $dataSourceEntryMetadata->getEmailSubject();
+            } else {
+                $row[] = null;
+            }
+
+            if (null != $dataSourceEntryMetadata->getEmailBody()) {
+                $row[] = $dataSourceEntryMetadata->getEmailBody();
+            } else {
+                $row[] = null;
+            }
         }
     }
 }

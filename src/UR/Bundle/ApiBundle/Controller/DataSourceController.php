@@ -512,7 +512,13 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         /** @var FileBag $fileBag */
         $fileBag = $request->files;
 
-        return $this->processUploadedFiles($dataSource, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD);
+        $metadata = null;
+        $rawMetadata = $request->request->get('metadata', null);
+        if (null !== $rawMetadata){
+            $metadata = json_decode($rawMetadata, true);
+        }
+        
+        return $this->processUploadedFiles($dataSource, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD, true, $metadata);
     }
 
     /**
