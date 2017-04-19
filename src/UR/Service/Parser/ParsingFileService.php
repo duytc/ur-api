@@ -12,6 +12,7 @@ use UR\Service\DataSet\MetadataField;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\DataSource\DataSourceInterface;
+use UR\Service\DataSource\Excel;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
@@ -30,11 +31,6 @@ use UR\Service\Parser\Transformer\TransformerFactory;
 
 class ParsingFileService
 {
-    /**
-     * @var string
-     */
-    private $uploadFileDir;
-
     protected $parser;
 
     /**
@@ -51,37 +47,34 @@ class ParsingFileService
 
     /**
      * ParsingFileService constructor.
-     * @param string $uploadFileDir
      * @param Parser $parser
      * @param DataSourceFileFactory $fileFactory
      */
-    public function __construct($uploadFileDir, Parser $parser, DataSourceFileFactory $fileFactory)
+    public function __construct(Parser $parser, DataSourceFileFactory $fileFactory)
     {
-        $this->uploadFileDir = $uploadFileDir;
         $this->parser = $parser;
         $this->fileFactory = $fileFactory;
         $this->transformerFactory = new TransformerFactory();
+        $this->parserConfig = new ParserConfig();
     }
 
     /**
      * @param DataSourceEntryInterface $dataSourceEntry
      * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param int $limit
      * @return Collection
+     * @throws Exception
      * @throws ImportDataException
      */
-    public function doParser(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource)
+    public function doParser(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource, $limit = null)
     {
-        $this->parserConfig = new ParserConfig();
-        $filePath = $this->uploadFileDir . $dataSourceEntry->getPath();
-        if (!file_exists($filePath)) {
-            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_FILE_NOT_FOUND);
-        }
-
         /** @var DataSourceInterface $dataSourceFileData */
-        $dataSourceFileData = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $filePath);
+        $dataSourceFileData = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $dataSourceEntry->getPath());
 
         $columnsInFile = $dataSourceFileData->getColumns();
+
         $dataRow = $dataSourceFileData->getDataRow();
+
         if (!is_array($columnsInFile) || count($columnsInFile) < 1) {
             throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND);
         }
@@ -92,10 +85,19 @@ class ParsingFileService
 
         $dataSourceEntryMetadata = $dataSourceEntry->getDataSourceEntryMetadata();
 
-        $formats = $this->getFormatDateForEachFieldInDataSourceFile();
+
+        if ($dataSourceFileData instanceof Excel) {
+            $formats = $this->getFormatDateForEachFieldInDataSourceFile();
+            $dataSourceFileData->setFromDateFormats($formats);
+        }
 
         /* 1. get all row data */
-        $rows = array_values($dataSourceFileData->getRows($formats));
+        if (is_numeric($limit)){
+            $rows = $dataSourceFileData->getLimitedRows($limit);
+        } else {
+            $rows = $dataSourceFileData->getRows();
+        }
+        $rows = array_values($rows);
 
 //        /* adding hidden column __report_date for files received via integration */
 //        if ($dataSourceEntry->getReceivedVia() === DataSourceEntryInterface::RECEIVED_VIA_INTEGRATION) {

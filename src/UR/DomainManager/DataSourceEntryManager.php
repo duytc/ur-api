@@ -83,7 +83,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $this->om->remove($dataSourceEntry);
 
         // update detected fields (update count of detected fields)
-        $newFields = $this->importService->getNewFieldsFromFiles($this->uploadFileDir . $dataSourceEntry->getPath(), $dataSourceEntry->getDataSource());
+        $newFields = $this->importService->getNewFieldsFromFiles($dataSourceEntry->getPath(), $dataSourceEntry->getDataSource());
         $detectedFields = $this->importService->detectFieldsForDataSource($newFields, $dataSourceEntry->getDataSource()->getDetectedFields(), ImportService::ACTION_DELETE);
         $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
         $this->om->flush();
@@ -200,7 +200,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 ->setMetaData($metadata);
 
             // update detected fields (update count of detected fields)
-            $newFields = $this->importService->getNewFieldsFromFiles($filePath, $dataSource);
+            $newFields = $this->importService->getNewFieldsFromFiles($dataSourceEntry->getPath(), $dataSource);
             $detectedFields = $this->importService->detectFieldsForDataSource($newFields, $dataSource->getDetectedFields(), ImportService::ACTION_UPLOAD);
             $dataSource->setDetectedFields($detectedFields);
 

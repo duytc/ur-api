@@ -9,6 +9,7 @@ use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -119,6 +120,51 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $response->setContent(file_get_contents($filePath));
 
         return $response;
+    }
+
+    /**
+     * Get preview of single data source entry without any transform
+     *
+     * @Rest\Get("/datasourceentries/{id}/preview", requirements={"id" = "\d+"})
+     *
+     * @Rest\View(serializerGroups={"datasource.summary", "dataSourceIntegration.summary", "integration.summary", "user.summary"})
+     *
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="limit number rows to display")
+     *
+     * @ApiDoc(
+     *  section = "Data Source Entry",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @param int $id the resource id
+     * @return mixed
+     */
+    public function getPreviewentryAction(Request $request, $id)
+    {
+        $dataSourceEntry = $this->one($id);
+
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+            throw new AccessDeniedException(
+                sprintf(
+                    'You do not have permission to data source entry %s or it does not exist',
+                    $id
+                )
+            );
+        }
+
+        $params = array_merge($request->query->all(), $request->attributes->all());
+
+        $limit = 100;
+        if (isset($params['limit'])) {
+            $limit = (int) $params['limit'];
+        }
+
+        $dataSourceEntryPreview = $this->get('ur.service.data_source_entry_preview_service');
+        return $dataSourceEntryPreview->preview($dataSourceEntry, $limit);
     }
 
     /**

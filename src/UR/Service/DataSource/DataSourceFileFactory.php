@@ -5,9 +5,13 @@ namespace UR\Service\DataSource;
 
 use Liuggio\ExcelBundle\Factory;
 use Symfony\Component\Config\Definition\Exception\Exception;
+use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
+use UR\Service\Import\ImportDataException;
 
 class DataSourceFileFactory
 {
+    private $uploadFileDir;
+
     /**
      * @var Factory
      */
@@ -19,25 +23,41 @@ class DataSourceFileFactory
      * FileFactory constructor.
      * @param Factory $phpExcel
      * @param $chunkSize
+     * @param $uploadFileDir
      */
-    public function __construct(Factory $phpExcel, $chunkSize)
+    public function __construct(Factory $phpExcel, $chunkSize, $uploadFileDir)
     {
+        $this->uploadFileDir = $uploadFileDir;
         $this->phpExcel = $phpExcel;
         $this->chunkSize = $chunkSize;
     }
 
     /**
      * @param string $fileType
-     * @param string $filePath
-     * @return Csv|Excel|Json|JsonNewFormat
+     * @param $entryPath
+     * @return Csv|Excel|Excel2007|Json|JsonNewFormat
+     * @throws ImportDataException
      */
-    public function getFile($fileType, $filePath)
+    public function getFile($fileType, $entryPath)
     {
+        $filePath = $this->uploadFileDir . $entryPath;
+        if (!file_exists($filePath)) {
+            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_FILE_NOT_FOUND);
+        }
+
         switch ($fileType) {
             case DataSourceType::DS_CSV_FORMAT:
                 return new Csv($filePath);
             case DataSourceType::DS_EXCEL_FORMAT:
-                return new Excel($filePath, $this->phpExcel, $this->chunkSize);
+                $inputFileType = \PHPExcel_IOFactory::identify($filePath);
+                if (in_array($inputFileType, Excel::$EXCEL_2003_FORMATS)) {
+                    return new Excel($filePath, $this->chunkSize);
+                } else if (in_array($inputFileType, Excel2007::$EXCEL_2007_FORMATS)) {
+                    return new Excel2007($filePath, $this->chunkSize);
+                } else {
+                    throw new Exception(sprintf('Does not support this Excel type'));
+                }
+
             case DataSourceType::DS_JSON_FORMAT:
                 $str = file_get_contents($filePath, true);
                 $json = json_decode($str, true);

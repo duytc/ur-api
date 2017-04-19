@@ -124,6 +124,7 @@ services:
         arguments:
             - @ur.service.parsing_file_service
             - @ur.service.data_set.importer
+            - %ur.dryrun.maxsize%
 
     ur.worker.workers.re_import_new_entry_received:
         class: UR\Worker\Workers\LoadingDataFromFileToDataImportTable
@@ -206,7 +207,6 @@ services:
     ur.service.parsing_file_service:
         class: UR\Service\Parser\ParsingFileService
         arguments:
-            - %upload_file_dir%
             - @ur.service.parser
             - @ur.service.file_factory
 
@@ -221,6 +221,13 @@ services:
         arguments:
             - @phpexcel
             - %ur_reading_xls_chunk_size%
+            - %upload_file_dir%
+
+    ur.service.data_source_entry_preview_service:
+        class: UR\Service\DataSource\DataSourceEntryPreviewService
+        arguments:
+            - '@ur.service.file_factory'
+            - '%max_excel_file_size%'
 
     ur.service.loading_data_service:
         class: UR\Service\Import\LoadingDataService

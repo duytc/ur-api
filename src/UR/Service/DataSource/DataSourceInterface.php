@@ -22,13 +22,18 @@ interface DataSourceInterface
     public function getColumns();
 
     /**
-     * @param array $fromDateFormat
      * @return array
      */
-    public function getRows(array $fromDateFormat);
+    public function getRows();
 
     /**
      * @return int
      */
     public function getDataRow();
+
+    /**
+     * @param $limit
+     * @return array
+     */
+    public function getLimitedRows($limit);
 }

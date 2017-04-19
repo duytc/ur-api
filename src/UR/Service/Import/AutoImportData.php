@@ -23,10 +23,16 @@ class AutoImportData implements AutoImportDataInterface
      */
     private $parsingFileService;
 
-    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer)
+    /**
+     * @var integer
+     */
+    private $maxDryRunSize;
+
+    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, $maxDryRunSize)
     {
         $this->parsingFileService = $parsingFileService;
         $this->importer = $importer;
+        $this->maxDryRunSize = $maxDryRunSize;
     }
 
     /**
@@ -47,7 +53,7 @@ class AutoImportData implements AutoImportDataInterface
     public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry)
     {
         try {
-            $collection = $this->parsingData($connectedDataSource, $dataSourceEntry);
+            $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, $this->maxDryRunSize);
 
             $this->parsingFileService->addTransformColumnAfterParsing($connectedDataSource->getTransforms());
             $rows = $this->parsingFileService->formatColumnsTransformsAfterParser($collection->getRows());
@@ -85,16 +91,18 @@ class AutoImportData implements AutoImportDataInterface
     /**
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param DataSourceEntryInterface $dataSourceEntry
+     * @param $limit
      * @return \UR\Service\DTO\Collection
+     * @throws ImportDataException
      */
-    private function parsingData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry)
+    private function parsingData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, $limit = null)
     {
         $allFields = $connectedDataSource->getDataSet()->getAllDimensionMetrics();
 
         /*
          * parsing data
          */
-        $collection = $this->parsingFileService->doParser($dataSourceEntry, $connectedDataSource);
+        $collection = $this->parsingFileService->doParser($dataSourceEntry, $connectedDataSource, $limit);
         $rows = $collection->getRows();
 
         return $this->parsingFileService->setDataOfColumnsNotMappedToNull($rows, $allFields);

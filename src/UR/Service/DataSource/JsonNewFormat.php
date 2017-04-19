@@ -40,10 +40,9 @@ class JsonNewFormat extends CommonDataSourceFile implements DataSourceInterface
     }
 
     /**
-     * @param array $fromDateFormat
-     * @return array
+     * @inheritdoc
      */
-    public function getRows(array $fromDateFormat)
+    public function getRows()
     {
         return $this->rows;
     }
@@ -92,5 +91,18 @@ class JsonNewFormat extends CommonDataSourceFile implements DataSourceInterface
         }
 
         return $rows;
+    }
+
+    /**
+     * @param $limit
+     * @return array
+     */
+    public function getLimitedRows($limit)
+    {
+        if (is_numeric($limit)){
+            return array_slice($this->rows, 0, $limit);
+        }
+
+        return $this->rows;
     }
 }

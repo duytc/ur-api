@@ -4,6 +4,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
@@ -66,4 +67,10 @@ interface DataSourceEntryRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getDataSourceEntryForDataSourceByDate(DataSourceInterface $dataSource, \DateTime $dsNextTime);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @return DataSourceEntryInterface|null
+     */
+    public function getLatestDataSourceEntryForDataSource(DataSourceInterface $dataSource);
 }

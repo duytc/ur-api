@@ -193,29 +193,45 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     }
 
     /**
-     * @param array $fromDateFormat
+     * @inheritdoc
+     */
+    public function getRows()
+    {
+        return $this->fetchData();
+    }
+
+    /**
+     * @param $limit
      * @return array
      */
-    public function getRows(array $fromDateFormat)
+    public function getLimitedRows($limit = 100)
+    {
+        if (is_numeric($limit)) {
+            $this->csv->setLimit($limit);
+        }
+
+        return $this->fetchData();
+    }
+
+    private function fetchData()
     {
         $this->csv->setOffset($this->dataRow);
         $this->csv->stripBom(true);
         $allData = $this->csv->fetchAll();
-        $rows = [];
-        foreach ($allData as $item) {
-            // refactor this code
-            // $modifiedRow = $this->removeInvalidColumns($item);
-            $modifiedRow = $item;
-            if (count($modifiedRow) >= count($this->headers)) {
-                $rows[] = $modifiedRow;
-            }
-        }
-
-        return $rows;
+//        $rows = [];
+//        foreach ($allData as $item) {
+//            // refactor this code
+//            $modifiedRow = $this->removeInvalidColumns($item);
+//            if (count($modifiedRow) === count($this->headers)) {
+//                $rows[] = $modifiedRow;
+//            }
+//        }
+//
+//        return $rows;
         // above code is need for csv file has "total" row but not have date column
         // but current not use removeInvalidColumns because this remove entire row if contain an empty value
         // we return this file data
-        // return $allData;
+        return $allData;
     }
 
     /**

@@ -78,7 +78,7 @@ class ImportService
 
             $convertResult = $this->convertToUtf8($filePath, $this->kernelRootDir);
             if ($convertResult) {
-                $newFields = $this->getNewFieldsFromFiles($filePath, $dataSource);
+                $newFields = $this->getNewFieldsFromFiles($dirItem . '/' . $name, $dataSource);
                 if (count($newFields) < 1) {
                     throw new \Exception(sprintf('Cannot detect header of File %s', $origin_name));
                 }

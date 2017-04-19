@@ -62,10 +62,9 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
     }
 
     /**
-     * @param array $fromDateFormat
-     * @return array
+     * @inheritdoc
      */
-    public function getRows(array $fromDateFormat)
+    public function getRows()
     {
         //set all missing columns to null
         foreach ($this->rows as $key => &$item) {
@@ -127,5 +126,18 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
         }
 
         return $row;
+    }
+
+    /**
+     * @param $limit
+     * @return array
+     */
+    public function getLimitedRows($limit)
+    {
+        $this->getRows();
+
+        if (is_numeric($limit)) {
+            return array_slice($this->rows, 0, $limit);
+        }
     }
 }

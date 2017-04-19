@@ -5,6 +5,7 @@ namespace UR\Repository\Core;
 use DateInterval;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
@@ -205,5 +206,21 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
             ->setParameter('toDate', $dsNextTime);
 
         return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @return DataSourceEntryInterface|null
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function getLatestDataSourceEntryForDataSource(DataSourceInterface $dataSource)
+    {
+        $qb = $this->createQueryBuilder('dte')
+            ->where('dte.dataSource = :dataSource')
+            ->setParameter('dataSource', $dataSource->getId())
+            ->addOrderBy('dte.receivedDate', 'ASC')
+            ->setMaxResults(1);
+
+        return $qb->getQuery()->getOneOrNullResult();
     }
 }

@@ -8,6 +8,13 @@ use UR\Domain\DTO\Report\DateRange;
 
 class ReportResult implements ReportResultInterface
 {
+    const REPORT_RESULT_REPORTS = 'reports';
+    const REPORT_RESULT_TOTAL = 'total';
+    const REPORT_RESULT_AVERAGE = 'average';
+    const REPORT_RESULT_COLUMNS = 'columns';
+    const REPORT_RESULT_TYPES = 'types';
+    const REPORT_RESULT_DATE_RANGE = 'dateRange';
+
     /**
      * @var array
      */
@@ -155,12 +162,12 @@ class ReportResult implements ReportResultInterface
     public function toArray()
     {
         return [
-            'reports' => $this->reports,
-            'total' => $this->total,
-            'average' => $this->average,
-            'columns' => $this->columns,
-            'types' => $this->types,
-            'dateRange' => $this->dateRange
+            self::REPORT_RESULT_REPORTS => $this->reports,
+            self::REPORT_RESULT_TOTAL => $this->total,
+            self::REPORT_RESULT_AVERAGE => $this->average,
+            self::REPORT_RESULT_COLUMNS => $this->columns,
+            self::REPORT_RESULT_TYPES => $this->types,
+            self::REPORT_RESULT_DATE_RANGE => $this->dateRange
         ];
     }
 }
