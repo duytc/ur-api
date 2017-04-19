@@ -133,6 +133,21 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
         return $qb;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceEntryIdsByDataSourceId(DataSourceInterface $dataSource)
+    {
+        $qb = $this->createQueryBuilder('dse')
+            ->select('dse.id')
+            ->join('dse.dataSource', 'ds')
+            ->where('dse.dataSource = :dataSource')
+            ->andWhere('dse.isActive=1')
+            ->setParameter('dataSource', $dataSource);
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function getDataSourceEntriesForPublisher(PublisherInterface $publisher, $limit = null, $offset = null)
     {
         $qb = $this->getDataSourceEntriesForPublisherQuery($publisher, $limit, $offset);

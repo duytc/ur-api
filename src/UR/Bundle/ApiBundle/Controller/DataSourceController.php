@@ -111,7 +111,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
-     * Get a single data source for the given id
+     * Get all entries for a single data source by the given id
      *
      * @Rest\Get("/datasources/{id}/datasourceentries", requirements={"id" = "\d+"})
      *
@@ -139,6 +139,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      */
     public function getDataSourceEntriesAction(Request $request, $id)
     {
+        /** @var DataSourceInterface $dataSource */
         $dataSource = $this->one($id);
         $dataSourceEntryRepository = $this->get('ur.repository.data_source_entry');
         $qb = $dataSourceEntryRepository->getDataSourceEntriesByDataSourceIdQuery($dataSource, $this->getParams());
@@ -149,6 +150,32 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         } else {
             return $this->getPagination($qb, $request);
         }
+    }
+
+    /**
+     * Get all entry ids for a single data source by the given id
+     *
+     * @Rest\Get("/datasources/{id}/datasourceentryids", requirements={"id" = "\d+"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @param int $id the resource id
+     * @return array
+     */
+    public function getDataSourceEntryIdsAction(Request $request, $id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+        $dataSourceEntryRepository = $this->get('ur.repository.data_source_entry');
+
+        return $dataSourceEntryRepository->getDataSourceEntryIdsByDataSourceId($dataSource);
     }
 
     /**
