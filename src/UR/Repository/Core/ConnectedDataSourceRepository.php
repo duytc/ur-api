@@ -3,6 +3,8 @@
 namespace UR\Repository\Core;
 
 use Doctrine\ORM\EntityRepository;
+use UR\Entity\Core\ConnectedDataSource;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\PagerParam;
@@ -69,5 +71,15 @@ class ConnectedDataSourceRepository extends EntityRepository implements Connecte
             ->setParameter('dataSource', $dataSource);
 
         return $qb->getQuery()->getResult();
+    }
+
+    public function updateTransforms(ConnectedDataSourceInterface $connectedDataSource, $transforms)
+    {
+        $qb = $this->_em->createQueryBuilder();
+        $qb->update(ConnectedDataSource::class, 'cds')
+            ->set('cds.transforms', $qb->expr()->literal(json_encode($transforms)))
+            ->where('cds.id = ?1')
+            ->setParameter(1, $connectedDataSource->getId())
+            ->getQuery()->execute();
     }
 }

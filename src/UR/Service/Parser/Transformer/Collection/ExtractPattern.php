@@ -112,20 +112,19 @@ class ExtractPattern implements CollectionTransformerInterface
 
     private function getRegexValue($str)
     {
-        $matched = preg_match($this->pattern, $str, $matches);
-        if ($matched < 1) {
-            return null;
-        }
-
-        $str = $matches[self::FIRST_MATCH];
-        // convert replacement value if it has back references form
-        $this->replacementValue = preg_replace_callback('(\[[0-9]\])', function ($matches) {
-            return preg_replace('/\[([0-9])\]/', '$$1', $matches[0]);
-        }, $this->replacementValue);
-
         try {
-            $result = preg_replace($this->pattern, $this->replacementValue, $str);
-            return $result;
+            $matched = @preg_match($this->pattern, $str, $matches);
+            if ($matched < 1) {
+                return null;
+            }
+
+            $str = $matches[self::FIRST_MATCH];
+            // convert replacement value if it has back references form
+            $this->replacementValue = @preg_replace_callback('(\[[0-9]\])', function ($matches) {
+                return preg_replace('/\[([0-9])\]/', '$$1', $matches[0]);
+            }, $this->replacementValue);
+
+            return preg_replace($this->pattern, $this->replacementValue, $str);
         } catch (Exception $exception) {
             return null;
         }
