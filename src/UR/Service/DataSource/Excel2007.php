@@ -186,4 +186,12 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
 
         return $limitedRows;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getTotalRows()
+    {
+        return count($this->getRows());
+    }
 }

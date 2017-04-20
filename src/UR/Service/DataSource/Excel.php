@@ -142,6 +142,14 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         return $this->getChunkRows($beginRowsReadRange, $limit);
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getTotalRows()
+    {
+        return count($this->getRows());
+    }
+
     public function getDataRow()
     {
         return $this->dataRow;

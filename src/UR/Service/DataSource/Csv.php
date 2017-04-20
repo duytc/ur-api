@@ -213,6 +213,14 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         return $this->fetchData();
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getTotalRows()
+    {
+        return count($this->fetchData());
+    }
+
     private function fetchData()
     {
         $this->csv->setOffset($this->dataRow);

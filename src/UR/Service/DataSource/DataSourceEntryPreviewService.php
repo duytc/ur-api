@@ -57,8 +57,9 @@ class DataSourceEntryPreviewService implements DataSourceEntryPreviewServiceInte
         }
 
         $allRows = $dataSourceFileData->getLimitedRows($limit);
+        $totalRowsCount = $dataSourceFileData->getTotalRows();
 
-        return $this->formatAsReport($columns, array_values($allRows));
+        return $this->formatAsReport($columns, array_values($allRows), $totalRowsCount);
     }
 
     /**

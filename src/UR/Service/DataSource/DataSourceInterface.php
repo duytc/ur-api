@@ -36,4 +36,9 @@ interface DataSourceInterface
      * @return array
      */
     public function getLimitedRows($limit);
+
+    /**
+     * @return int
+     */
+    public function getTotalRows();
 }

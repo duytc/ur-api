@@ -140,4 +140,12 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
             return array_slice($this->rows, 0, $limit);
         }
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getTotalRows()
+    {
+        return count($this->getRows());
+    }
 }

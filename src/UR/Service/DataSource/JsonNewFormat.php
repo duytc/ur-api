@@ -105,4 +105,12 @@ class JsonNewFormat extends CommonDataSourceFile implements DataSourceInterface
 
         return $this->rows;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getTotalRows()
+    {
+        return count($this->getRows());
+    }
 }
