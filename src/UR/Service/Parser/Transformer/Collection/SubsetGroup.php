@@ -50,6 +50,10 @@ class SubsetGroup implements CollectionTransformerInterface
             $dataColumns = array_keys($row);
             foreach($this->groupFields as &$groupField) {
                 if (!in_array($groupField, $dataColumns)) {
+                    if (!array_key_exists($groupField, $mappedFields)) {
+                        return $collection;
+                    }
+
                     $groupField = $mappedFields[$groupField];
                 }
             }
