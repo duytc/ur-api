@@ -2,7 +2,6 @@
 
 namespace UR\Service\Parser\Transformer;
 
-use Doctrine\DBAL\Types\ConversionException;
 use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
 use UR\Service\Parser\Transformer\Collection\AddField;
 use UR\Service\Parser\Transformer\Collection\Augmentation;

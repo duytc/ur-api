@@ -6,15 +6,16 @@ namespace UR\Service\Parser;
 use Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
-use UR\Model\Core\DataSourceEntryMetadata;
 use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
-use UR\Service\DataSet\MetadataField;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\DataSource\DataSourceInterface;
 use UR\Service\DataSource\Excel;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
+use UR\Service\Metadata\DataSourceEntryMetadataFactory;
+use UR\Service\Metadata\Email\EmailMetadata;
+use UR\Service\Metadata\MetadataInterface;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
 use UR\Service\Parser\Filter\DateFilter;
 use UR\Service\Parser\Filter\FilterFactory;
@@ -43,6 +44,8 @@ class ParsingFileService
      */
     private $transformerFactory;
 
+    private $dataSourceEntryMetadataFactory;
+
     private $fileFactory;
 
     /**
@@ -56,6 +59,7 @@ class ParsingFileService
         $this->fileFactory = $fileFactory;
         $this->transformerFactory = new TransformerFactory();
         $this->parserConfig = new ParserConfig();
+        $this->dataSourceEntryMetadataFactory = new DataSourceEntryMetadataFactory();
     }
 
     /**
@@ -83,9 +87,6 @@ class ParsingFileService
             throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND);
         }
 
-        $dataSourceEntryMetadata = $dataSourceEntry->getDataSourceEntryMetadata();
-
-
         if ($dataSourceFileData instanceof Excel) {
             $formats = $this->getFormatDateForEachFieldInDataSourceFile();
             $dataSourceFileData->setFromDateFormats($formats);
@@ -103,7 +104,6 @@ class ParsingFileService
 //        if ($dataSourceEntry->getReceivedVia() === DataSourceEntryInterface::RECEIVED_VIA_INTEGRATION) {
 //            $this->addExtraColumnsAndRowsDataForIntegrationEntry($columnsInFile, $rows, $dataSourceEntryMetadata);
 //        }
-        $this->addExtraColumnsAndRowsDataFromMetadata($columnsInFile, $rows, $dataSourceEntryMetadata);
 
         /* mapping field */
         $this->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $columnsInFile);
@@ -265,7 +265,7 @@ class ParsingFileService
                 $transformObject->validate();
 
                 if ($transformObject instanceof AddField) {
-                    $internalFieldValue = $this->getMetadataInternalValue($transformObject->getTransformValue(), $dataSourceEntry);
+                    $internalFieldValue = $this->getMetadataInternalValueForAddField($transformObject->getTransformValue(), $dataSourceEntry);
                     if ($internalFieldValue !== null) {
                         $transformObject->setTransformValue($internalFieldValue);
                     }
@@ -276,7 +276,7 @@ class ParsingFileService
 
                     $transformObject->setType($allFields[$transformObject->getColumn()]);
                 } else if ($transformObject instanceof ReplaceText || $transformObject instanceof ExtractPattern) {
-                    $this->addInternalVariable($transformObject->getField(), $transformObject->getTargetField(), $allFields, $parserConfig, $dataSourceEntry);
+                    $this->addInternalVariableToTransform($transformObject->getField(), $transformObject->getTargetField(), $allFields, $parserConfig, $dataSourceEntry);
                 }
 
                 $parserConfig->addTransformCollection($transformObject);
@@ -285,24 +285,27 @@ class ParsingFileService
     }
 
     /**
-     * @param $internalField
+     * @param $addFieldValue
      * @param DataSourceEntryInterface $dataSourceEntry
      * @return mixed|null
      */
-    private function getMetadataInternalValue($internalField, DataSourceEntryInterface $dataSourceEntry)
+    private function getMetadataInternalValueForAddField($addFieldValue, DataSourceEntryInterface $dataSourceEntry)
     {
         // replace by filename
-        $result = str_replace(MetadataField::FILE_NAME, $dataSourceEntry->getFileName(), $internalField);
+        $result = str_replace(MetadataInterface::FILE_NAME, $dataSourceEntry->getFileName(), $addFieldValue);
 
         // replace by metadata
-        $metadata = $dataSourceEntry->getDataSourceEntryMetadata();
-        if (!$metadata instanceof DataSourceEntryMetadata) {
+        $metadata = $this->dataSourceEntryMetadataFactory->getMetadata($dataSourceEntry);
+        if (!$metadata instanceof MetadataInterface) {
             return $result;
         }
 
-        $result = str_replace(MetadataField::EMAIL_SUBJECT, $metadata->getEmailSubject(), $result);
-        $result = str_replace(MetadataField::EMAIL_BODY, $metadata->getEmailBody(), $result);
-        $result = str_replace(MetadataField::EMAIL_DATE_TIME, $metadata->getEmailDatetime(), $result);
+        if ($metadata instanceof EmailMetadata) {
+            $result = str_replace(EmailMetadata::EMAIL_SUBJECT, $metadata->getEmailSubject(), $result);
+            $result = str_replace(EmailMetadata::EMAIL_BODY, $metadata->getEmailBody(), $result);
+            $result = str_replace(EmailMetadata::EMAIL_DATE_TIME, $metadata->getEmailDatetime(), $result);
+            $result = str_replace(EmailMetadata::INTEGRATION_REPORT_DATE, $metadata->getIntegrationReportDate(), $result);
+        }
 
         return $result;
     }
@@ -314,10 +317,11 @@ class ParsingFileService
      * @param ParserConfig $parserConfig
      * @param DataSourceEntryInterface $dataSourceEntry
      */
-    private function addInternalVariable($field, $targetField, array $allFields, ParserConfig $parserConfig, DataSourceEntryInterface $dataSourceEntry)
+    private function addInternalVariableToTransform($field, $targetField, array $allFields, ParserConfig $parserConfig, DataSourceEntryInterface $dataSourceEntry)
     {
         $internalField = sprintf("[%s]", $field);
-        if (in_array($internalField, MetadataField::$internalFields)) {
+        $metadataFields = array_merge(EmailMetadata::$internalFields);
+        if (in_array($internalField, $metadataFields)) {
             $parserConfig->addTransformCollection(new AddField($field, $this->getSingleMetaDataFieldValue($internalField, $dataSourceEntry), FieldType::TEXT));
         }
 
@@ -400,32 +404,16 @@ class ParsingFileService
      */
     private function getSingleMetaDataFieldValue($internalField, DataSourceEntryInterface $dataSourceEntry)
     {
-        $metadata = $dataSourceEntry->getDataSourceEntryMetadata();
-        $result = null;
-
-        if (strcmp($internalField, MetadataField::FILE_NAME) === 0) {
+        if (strcmp($internalField, MetadataInterface::FILE_NAME) === 0) {
             return $dataSourceEntry->getFileName();
         }
 
-        if ($metadata === null) {
+        $dataSourceEntryMetadata = $this->dataSourceEntryMetadataFactory->getMetadata($dataSourceEntry);
+        if ($dataSourceEntryMetadata === null) {
             return null;
         }
 
-        switch ($internalField) {
-            case MetadataField::EMAIL_SUBJECT:
-                $result = $metadata->getEmailSubject();
-                break;
-            case MetadataField::EMAIL_BODY:
-                $result = $metadata->getEmailBody();
-                break;
-            case MetadataField::EMAIL_DATE_TIME:
-                $result = $metadata->getEmailDatetime();
-                break;
-            default:
-                return null;
-        }
-
-        return $result;
+        return $dataSourceEntryMetadata->getMetadataValueByInternalVariable($internalField);
     }
 
     private function getFormatDateForEachFieldInDataSourceFile()
@@ -440,54 +428,5 @@ class ParsingFileService
         }
 
         return $formats;
-    }
-
-    private function addExtraColumnsAndRowsDataFromMetadata(&$columnsInFile, &$rows, DataSourceEntryMetadata $dataSourceEntryMetadata)
-    {
-        /**
-         * Currently we use only date field from metadata.
-         * Other fields can be added such as from, subject, body, filename, received date...
-         */
-        if (!$dataSourceEntryMetadata instanceof DataSourceEntryMetadata) {
-            return;
-        }
-
-        $columnsInFile[] = MetadataField::INTEGRATION_REPORT_DATE;
-        $columnsInFile[] = MetadataField::FILE_NAME;
-        $columnsInFile[] = MetadataField::EMAIL_DATE_TIME;
-        $columnsInFile[] = MetadataField::EMAIL_SUBJECT;
-        $columnsInFile[] = MetadataField::EMAIL_BODY;
-
-        foreach ($rows as &$row) {
-            if (null != $dataSourceEntryMetadata->getIntegrationReportDate()) {
-                $row[] = $dataSourceEntryMetadata->getIntegrationReportDate();
-            } else {
-                $row[] = null;
-            }
-
-            if (null != $dataSourceEntryMetadata->getFileName()) {
-                $row[] = $dataSourceEntryMetadata->getFileName();
-            } else {
-                $row[] = null;
-            }
-
-            if (null != $dataSourceEntryMetadata->getEmailDatetime()) {
-                $row[] = $dataSourceEntryMetadata->getEmailDatetime();
-            } else {
-                $row[] = null;
-            }
-
-            if (null != $dataSourceEntryMetadata->getEmailSubject()) {
-                $row[] = $dataSourceEntryMetadata->getEmailSubject();
-            } else {
-                $row[] = null;
-            }
-
-            if (null != $dataSourceEntryMetadata->getEmailBody()) {
-                $row[] = $dataSourceEntryMetadata->getEmailBody();
-            } else {
-                $row[] = null;
-            }
-        }
     }
 }

@@ -7,7 +7,7 @@ use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\FieldType;
-use UR\Service\DataSet\MetadataField;
+use UR\Service\Metadata\Email\EmailMetadata;
 use UR\Service\Parser\Filter\FilterFactory;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Service\Parser\Transformer\TransformerFactory;
@@ -41,7 +41,7 @@ trait ValidateConnectedDataSourceTrait
      */
     public function validateRequireFields(ConnectedDataSourceInterface $connDataSource)
     {
-        $allowedFields = array_merge($connDataSource->getMapFields(), array_flip(MetadataField::$internalFields));
+        $allowedFields = array_merge($connDataSource->getMapFields(), array_flip(array_merge(EmailMetadata::$internalFields)));
 
         foreach ($connDataSource->getRequires() as $require) {
             if (!in_array($require, $allowedFields)) {

@@ -2,7 +2,6 @@
 
 namespace UR\Entity\Core;
 
-use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistory as ImportHistoryModel;

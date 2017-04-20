@@ -211,14 +211,6 @@ class DataSourceEntry implements DataSourceEntryInterface
     }
 
     /**
-     * @inheritdoc
-     */
-    public function getDataSourceEntryMetadata()
-    {
-        return new DataSourceEntryMetadata($this->metaData);
-    }
-
-    /**
      * @return boolean|null
      */
     public function isIsDryRun()

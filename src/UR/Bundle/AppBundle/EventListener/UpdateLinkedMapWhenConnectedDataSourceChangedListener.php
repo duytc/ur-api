@@ -7,7 +7,7 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use UR\Entity\Core\LinkedMapDataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\ModelInterface;
-use UR\Service\Parser\Transformer\Augmentation;
+use UR\Service\Parser\Transformer\Collection\Augmentation;
 use UR\Service\Parser\Transformer\TransformerFactory;
 
 /**

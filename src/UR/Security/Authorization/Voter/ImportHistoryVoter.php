@@ -2,7 +2,6 @@
 
 namespace UR\Security\Authorization\Voter;
 
-use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\User\UserEntityInterface;
 
