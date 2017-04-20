@@ -546,7 +546,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
             // check if table not existed
             if ($dataTable) {
                 try {
-                    $countSQL = sprintf("select count(*) from %s", $dataTable->getName());
+                    $countSQL = sprintf("select count(*) from %s where %s is null", $dataTable->getName(), DataSetInterface::OVERWRITE_DATE);
                     $stmt = $conn->prepare($countSQL);
                     $stmt->execute();
                     $result = $stmt->fetchAll();
