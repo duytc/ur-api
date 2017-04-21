@@ -533,6 +533,9 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      */
     private function getDataSetNumberOfRows($dataSet)
     {
+        // hotfix disable this because of poor performance
+        return '-';
+
         $entityManager = $this->get('doctrine.orm.entity_manager');
 
         /** @var Connection $conn */
