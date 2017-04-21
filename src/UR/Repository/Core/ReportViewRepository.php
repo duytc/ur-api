@@ -4,6 +4,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -125,4 +126,16 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
 
         return $qb->getQuery()->getSingleResult() ;
     }
+
+    public function getReportViewThatUseDataSet(DataSetInterface $dataSet)
+    {
+        return $this->createQueryBuilder('rv')
+            ->join('rv.reportViewDataSets', 'rvds')
+            ->where('rvds.dataSet = :dataSet')
+            ->setParameter('dataSet', $dataSet)
+            ->getQuery()
+            ->getResult();
+    }
+
+
 }

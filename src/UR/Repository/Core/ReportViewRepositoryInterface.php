@@ -5,6 +5,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -49,4 +50,10 @@ interface ReportViewRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getReportViewHasMaximumId();
+
+    /**
+     * @param DataSetInterface $dataSet
+     * @return mixed
+     */
+    public function getReportViewThatUseDataSet(DataSetInterface $dataSet);
 }

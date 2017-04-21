@@ -4,17 +4,24 @@ namespace UR\Bundle\ApiBundle\EventListener;
 
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
+use UR\Bundle\ApiBundle\Behaviors\UpdateReportViewTrait;
+use UR\Entity\Core\ReportView;
 use UR\Entity\Core\ReportViewDataSet;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Repository\Core\ReportViewDataSetRepositoryInterface;
+use UR\Service\Report\SqlBuilder;
 
 class DataSetChangeListener
 {
+    use UpdateReportViewTrait;
 	const METRICS_KEY = 'metrics';
 	const DIMENSIONS_KEY = 'dimensions';
 	const FIELD_TYPES_KEY = 'fieldTypes';
+	const TRANSFORMS_KEY = 'transforms';
+	const FORMATS_KEY = 'formats';
+	const JOIN_CONFIG_KEY = 'joinConfigs';
 
 	/**
 	 * @var array
@@ -44,6 +51,7 @@ class DataSetChangeListener
 	{
 		$em = $args->getEntityManager();
 		$reportViewDataSetRepository = $em->getRepository(ReportViewDataSet::class);
+		$reportViewRepository = $em->getRepository(ReportView::class);
 		if (empty($this->changedDataSets)) {
 			return;
 		}
@@ -52,15 +60,19 @@ class DataSetChangeListener
 			if (!$dataSet instanceof DataSetInterface) {
 				continue;
 			}
-			$reportViewDataSets = $reportViewDataSetRepository->getByDataSet($dataSet);
-			/** @var ReportViewDataSetInterface $reportViewDataSet */
-			foreach($reportViewDataSets as $reportViewDataSet) {
-				$reportView = $reportViewDataSet->getReportView();
-				$result = $this->refreshDimensionsMetricsForSingleReportView($reportView, $dataSet, $reportViewDataSetRepository);
+            $reportViews = $reportViewRepository->getReportViewThatUseDataSet($dataSet);
+			/** @var ReportViewInterface $reportView */
+			foreach($reportViews as $reportView) {
+				$result = $this->refreshSingleReportView($reportView, $dataSet, $reportViewDataSetRepository);
+
 				$reportView->setDimensions($result[self::DIMENSIONS_KEY]);
 				$reportView->setMetrics($result[self::METRICS_KEY]);
 				$reportView->setFieldTypes($result[self::FIELD_TYPES_KEY]);
-				$em->persist($reportView);
+                $reportView->setTransforms($result[self::TRANSFORMS_KEY]);
+                $reportView->setFormats($result[self::FORMATS_KEY]);
+                $reportView->setJoinBy($result[self::JOIN_CONFIG_KEY]);
+
+                $em->persist($reportView);
 			}
 		}
 
@@ -74,13 +86,14 @@ class DataSetChangeListener
 	 * @param ReportViewDataSetRepositoryInterface $reportViewDataSetRepository
 	 * @return array
 	 */
-	protected function refreshDimensionsMetricsForSingleReportView(ReportViewInterface $reportView, DataSetInterface $changedDataSet, ReportViewDataSetRepositoryInterface $reportViewDataSetRepository)
+	protected function refreshSingleReportView(ReportViewInterface $reportView, DataSetInterface $changedDataSet, ReportViewDataSetRepositoryInterface $reportViewDataSetRepository)
 	{
 		//calculate metrics
 		$metrics = $this->getMetrics($changedDataSet);
 		$dimensions = $this->getDimensions($changedDataSet);
 		$fieldTypes = $reportView->getFieldTypes();
 		$reportViewDataSets = $reportViewDataSetRepository->getByReportView($reportView);
+
 		/** @var ReportViewDataSetInterface $reportViewDataSet */
 		foreach($reportViewDataSets as $reportViewDataSet) {
 			if ($reportViewDataSet->getDataSet()->getId() === $changedDataSet->getId()) {
@@ -92,13 +105,80 @@ class DataSetChangeListener
 			$dimensions = array_merge($dimensions, $this->getDimensions($reportViewDataSet->getDataSet()));
 		}
 
+        $allDimensionsMetrics = array_merge($metrics, $dimensions);
+		$transforms = $this->refreshTransformsForSingleReportView($reportView, $allDimensionsMetrics);
+		$formats = $this->refreshFormatsForSingleReportView($reportView, $allDimensionsMetrics);
+        $joinConfigs = $this->refreshJoinConfigsForSingleReportView($reportView, $allDimensionsMetrics);
+
 		return array(
 			self::METRICS_KEY => $metrics,
 			self::DIMENSIONS_KEY => $dimensions,
-			self::FIELD_TYPES_KEY => $fieldTypes
+			self::FIELD_TYPES_KEY => $fieldTypes,
+			self::TRANSFORMS_KEY => $transforms,
+			self::FORMATS_KEY => $formats,
+            self::JOIN_CONFIG_KEY => $joinConfigs
 		);
 	}
 
+    /**
+     * @param ReportViewInterface $reportView
+     * @param array $allDimensionsMetrics
+     * @return array
+     */
+	protected function refreshTransformsForSingleReportView(ReportViewInterface $reportView, array $allDimensionsMetrics)
+	{
+        $transforms = $reportView->getTransforms();
+        foreach ($transforms as $key => $transform) {
+            $validTransform = $this->refreshTransform($transform, $allDimensionsMetrics);
+            if ($validTransform === null) {
+                unset($transforms[$key]);
+            } else {
+                $transforms[$key] = $validTransform;
+            }
+        }
+
+		return $transforms;
+	}
+
+
+	protected function refreshFormatsForSingleReportView(ReportViewInterface $reportView, array $allDimensionsMetrics)
+	{
+        $formats = $reportView->getFormats();
+        foreach($formats as $i=>$format) {
+            $validFormat = $this->refreshFormat($format, $allDimensionsMetrics);
+            if ($validFormat === null) {
+                unset($formats[$i]);
+            } else {
+                $formats[$i] = $validFormat;
+            }
+        }
+
+		return $formats;
+	}
+
+    protected function refreshJoinConfigsForSingleReportView(ReportViewInterface $reportView, array $allDimensionsMetrics)
+    {
+        $joinConfigs = $reportView->getJoinBy();
+        foreach($joinConfigs as $i=>$joinConfig) {
+            $joinConfigs[$i] = $this->refreshJoinConfig($joinConfig, $allDimensionsMetrics);
+        }
+
+        return $joinConfigs;
+    }
+
+    protected function refreshJoinConfig(array $joinConfig, $allDimensionsMetrics)
+    {
+        $joinFields = $joinConfig[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
+        foreach($joinFields as $i=>&$joinField) {
+            $field = sprintf('%s_%d', $joinField[SqlBuilder::JOIN_CONFIG_FIELD], $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET]);
+            if (!in_array($field, $allDimensionsMetrics)) {
+                $joinField[SqlBuilder::JOIN_CONFIG_FIELD] = null;
+            }
+        }
+
+        $joinConfig[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS] = $joinFields;
+        return $joinConfig;
+    }
 	/**
 	 * @param DataSetInterface $dataSet
 	 * @return array

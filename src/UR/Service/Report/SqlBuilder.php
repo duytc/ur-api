@@ -431,6 +431,10 @@ class SqlBuilder implements SqlBuilderInterface
         $conditions = [];
 
         foreach ($fromFields as $key => $value) {
+            if ($value === null) {
+                throw new InvalidArgumentException('Invalid join config');
+            }
+
             $conditions[] = sprintf('%s.%s = %s.%s', $fromAlias, $value, $alias, $fields[$key]);
         }
 
@@ -676,6 +680,10 @@ class SqlBuilder implements SqlBuilderInterface
 
             $toAlias = sprintf('t%s', $dataSetIndexes[$dataSetId]);
             $toJoinField = $joinField->getField();
+        }
+
+        if ($fromJoinField === null || $toJoinField === null) {
+            throw new InvalidArgumentException('Invalid join config');
         }
 
         if (strpos($toJoinField, ',') !== false) {
