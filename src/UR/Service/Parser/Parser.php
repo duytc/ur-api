@@ -506,6 +506,14 @@ class Parser implements ParserInterface
             }
 
             $uniqueKeys = array_intersect_key($row, $dimensions);
+
+            foreach($uniqueKeys as &$value) {
+                if ($value instanceof \DateTime) {
+                    // todo Date/Time support, how do we know which format to use?
+                    $value = $value->format('Y-m-d');
+                }
+            }
+
             $uniqueId = md5(implode(":", $uniqueKeys));
 
             $duplicateRows[$uniqueId] = $row;
