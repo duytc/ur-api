@@ -21,6 +21,7 @@ class Integration implements IntegrationInterface
     const PARAM_TYPE_REGEX = 'regex'; // e.g pattern, ...
     const PARAM_TYPE_OPTION = 'option'; // e.g Suply;Demand;Suply by Demand;Demand by Suply, ...
     const PARAM_TYPE_BOOL = 'bool'; // e.g true, false
+    const PARAM_TYPE_MULTI_OPTIONS = 'multiOptions'; // e.g (Suply;Demand);Suply by Demand;Demand by Suply, ...
 
     const SUPPORTED_PARAM_VALUE_REGEX = '/^(?!(\/.*))(?!(.*\/[gmixsuXUAJ]*$))/';
 
@@ -31,7 +32,8 @@ class Integration implements IntegrationInterface
         self::PARAM_TYPE_SECURE,
         self::PARAM_TYPE_REGEX,
         self::PARAM_TYPE_OPTION,
-        self::PARAM_TYPE_BOOL
+        self::PARAM_TYPE_BOOL,
+        self::PARAM_TYPE_MULTI_OPTIONS
     ];
 
     public static $SUPPORTED_PARAM_VALUE_DYNAMIC_DATE_RANGES = [

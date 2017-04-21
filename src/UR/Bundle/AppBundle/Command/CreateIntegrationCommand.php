@@ -35,9 +35,10 @@ class CreateIntegrationCommand extends ContainerAwareCommand
             ->addOption('parameters', 'p', InputOption::VALUE_OPTIONAL,
                 'Integration parameters (optional) as name:type, allow multiple parameters separated by comma. 
                 Supported types are: plainText (default), date (Y-m-d), dynamicDateRange (last 1,2,3... days) 
-                , secure (will be encrypted in database and not show value in ui), option (array of string, separated by ; such as string11; string1 2; String 1 3)
+                , secure (will be encrypted in database and not show value in ui), option (array of string, separated by ; such as string11; string1 2; String 1 3),
+                or multiOptions (multi select options),
                 regex (for regex matching) and bool (true | false)
-                e.g. -p "username,password:secure,startDate:date,pattern:regex,dailyBreakdown:bool"')
+                e.g. -p "username,password:secure,startDate:date,pattern:regex,reportType:option,dailyBreakdown:bool,dimensions:multiOptions"')
             ->addOption('all-publishers', 'a', InputOption::VALUE_NONE,
                 'Enable for all users')
             ->addOption('enables-users', 'u', InputOption::VALUE_OPTIONAL,
@@ -227,6 +228,10 @@ class CreateIntegrationCommand extends ContainerAwareCommand
             if (count($paramNameAndType) > 2) {
                 //For option params
                 if ($paramNameAndType[1] == Integration::PARAM_TYPE_OPTION) {
+                    $paramElement[Integration::PARAM_KEY_OPTION_VALUES] = explode(';', $paramNameAndType[2]);
+                }
+
+                if ($paramNameAndType[1] == Integration::PARAM_TYPE_MULTI_OPTIONS) {
                     $paramElement[Integration::PARAM_KEY_OPTION_VALUES] = explode(';', $paramNameAndType[2]);
                 }
 
