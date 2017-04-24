@@ -136,8 +136,20 @@ class Parser implements ParserInterface
 
         //overwrite duplicate
         if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
+            $dateFormats = [];
+            $columnTransforms = $parserConfig->getColumnTransforms();
+            $mappedFields = $parserConfig->getAllColumnMappings();
+            foreach($columnTransforms as $transforms) {
+                foreach($transforms as $transform) {
+                    if (!$transform instanceof DateFormat) {
+                        continue;
+                    }
+
+                    $dateFormats[$mappedFields[$transform->getField()]] = $transform->getFromDateFormat();
+                }
+            }
             $mappedDimensions = array_intersect_key($columnsMapping, $connectedDataSource->getDataSet()->getDimensions());
-            $rows = $this->overrideDuplicate($rows, array_flip($mappedDimensions));
+            $rows = $this->overrideDuplicate($rows, array_flip($mappedDimensions), $dateFormats);
         }
 
         // TODO: may dispatch event after filtering data
@@ -495,9 +507,10 @@ class Parser implements ParserInterface
     /**
      * @param array $rows
      * @param array $dimensions
+     * @param array $dateFormats
      * @return array
      */
-    private function overrideDuplicate(array $rows, array $dimensions)
+    private function overrideDuplicate(array $rows, array $dimensions, array $dateFormats = [])
     {
         $duplicateRows = [];
         foreach ($rows as $index => &$row) {
@@ -506,14 +519,11 @@ class Parser implements ParserInterface
             }
 
             $uniqueKeys = array_intersect_key($row, $dimensions);
-
-            foreach($uniqueKeys as &$value) {
-                if ($value instanceof \DateTime) {
-                    // todo Date/Time support, how do we know which format to use?
-                    $value = $value->format('Y-m-d');
+            foreach($uniqueKeys as $key=>&$value) {
+                if ($value instanceof \DateTime && array_key_exists($key, $dateFormats)) {
+                   $value = $value->format($dateFormats[$key]);
                 }
             }
-
             $uniqueId = md5(implode(":", $uniqueKeys));
 
             $duplicateRows[$uniqueId] = $row;
