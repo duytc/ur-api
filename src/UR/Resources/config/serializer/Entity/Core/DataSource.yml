@@ -3,25 +3,25 @@ UR\Entity\Core\DataSource:
     properties:
         id:
             expose: true
-            groups: [datasource.detail, datasource.summary, datasource.importhistory, datasource.dataset]
+            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.importhistory, datasource.dataset]
         publisher:
             expose: true
-            groups: [datasource.detail, datasource.summary, datasource.dataset]
+            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.dataset]
         name:
             expose: true
-            groups: [datasource.detail, datasource.summary, datasource.importhistory, datasource.dataset]
+            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.importhistory, datasource.dataset]
         format:
             expose: true
-            groups: [datasource.detail, datasource.summary]
+            groups: [datasource.detail, datasource.summary, datasource.edit]
         dataSourceIntegrations:
             expose: true
-            groups: [datasource.detail, datasource.summary]
+            groups: [datasource.detail, datasource.summary, datasource.edit]
         connectedDataSources:
             expose: true
             groups: [datasource.detail]
         alertSetting:
             expose: true
-            groups: [datasource.detail, datasource.summary]
+            groups: [datasource.detail, datasource.summary, datasource.edit]
         detectedFields:
             expose: true
             groups: [datasource.dataset]
@@ -33,7 +33,10 @@ UR\Entity\Core\DataSource:
             groups: [datasource.detail]
         enable:
             expose: true
-            groups: [datasource.detail, datasource.summary]
+            groups: [datasource.detail, datasource.summary, datasource.edit]
         useIntegration:
+            expose: true
+            groups: [datasource.detail, datasource.summary, datasource.edit]
+        lastActivity:
             expose: true
             groups: [datasource.detail, datasource.summary]

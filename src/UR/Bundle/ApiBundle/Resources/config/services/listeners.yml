@@ -93,3 +93,28 @@ services:
         class: UR\Bundle\ApiBundle\EventListener\CreateDataImportTableWhenCreateNewDataSetListener
         tags:
             - { name: doctrine.event_listener, event: postPersist }
+
+    ur_api.event_listener.update_last_activity_for_data_source:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateLastActivityForDataSource
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.update_last_activity_for_data_set_when_connected_data_source_changed:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateLastActivityForDataSetWhenConnectedDataSourceChanged
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: postUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.update_last_activity_for_data_set_when_data_set_change:
+            class: UR\Bundle\ApiBundle\EventListener\UpdateLastActivityForDataSetWhenDataSetChanged
+            tags:
+                - { name: doctrine.event_listener, event: prePersist }
+                - { name: doctrine.event_listener, event: preUpdate }
+
+    ur_api.event_listener.update_last_activity_for_report_view_listener:
+            class: UR\Bundle\ApiBundle\EventListener\UpdateLastActivityForReportViewListener
+            tags:
+                - { name: doctrine.event_listener, event: prePersist }
+                - { name: doctrine.event_listener, event: preUpdate }

@@ -47,16 +47,21 @@ class AlterDataSetListener
 
         $em = $args->getEntityManager();
         $uow = $em->getUnitOfWork();
+        $changedFields = $uow->getEntityChangeSet($dataSet);
+
+        if (!array_key_exists('dimensions', $changedFields) && !array_key_exists('metrics', $changedFields)) {
+            return;
+        }
 
         // detect changed metrics, dimensions
         $renameFields = [];
-        $actions = $dataSet->getActions();
+        $actions = $dataSet->getActions() === null ? [] : $dataSet->getActions();
 
-        if (array_key_exists('rename', $dataSet->getActions())) {
+        if (array_key_exists('rename', $actions)) {
             $renameFields = $actions['rename'];
         }
 
-        $changedFields = $uow->getEntityChangeSet($dataSet);
+
         $newDimensions = [];
         $newMetrics = [];
         $updateDimensions = [];

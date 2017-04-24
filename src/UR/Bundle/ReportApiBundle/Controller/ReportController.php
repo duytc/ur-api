@@ -31,6 +31,7 @@ class ReportController extends FOSRestController
      * @Rest\QueryParam(name="startDate", nullable=true)
      * @Rest\QueryParam(name="endDate", nullable=true)
      * @Rest\QueryParam(name="isShowDataSetName", nullable=true)
+     * @Rest\QueryParam(name="id", nullable=true)
      *
      * @ApiDoc(
      *  section = "admin",
@@ -52,7 +53,8 @@ class ReportController extends FOSRestController
      *      {"name"="userDefineDateRange", "dataType"="bool", "required"=false, "description"="user define data range in multi view report"},
      *      {"name"="startDate", "dataType"="string", "required"=false, "description"="start date in multi view report"},
      *      {"name"="endDate", "dataType"="string", "required"=false, "description"="end date in multi view report"},
-     *      {"name"="isShowDataSetName", "dataType"="bool", "required"=false, "description"="show data set name or not"}
+     *      {"name"="isShowDataSetName", "dataType"="bool", "required"=false, "description"="show data set name or not"},
+     *      {"name"="id", "dataType"="bool", "required"=false, "description"="show data set name or not"}
      *  }
      * )
      *
@@ -61,6 +63,12 @@ class ReportController extends FOSRestController
     public function indexAction()
     {
         $params = $this->getParams();
+        $reportViewRepository = $this->get('ur.repository.report_view');
+
+        if ($params->getReportViewId() !== null) {
+            $reportViewRepository->updateLastRun($params->getReportViewId());
+        }
+
         return $this->getReportBuilder()->getReport($params);
     }
 

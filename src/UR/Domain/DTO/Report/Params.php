@@ -71,6 +71,7 @@ class Params implements ParamsInterface
 
     protected $startDate;
     protected $endDate;
+    protected $reportViewId;
 
     /**
      * @var boolean
@@ -361,5 +362,21 @@ class Params implements ParamsInterface
     {
         $this->isShowDataSetName = $isShowDataSetName;
         return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getReportViewId()
+    {
+        return $this->reportViewId;
+    }
+
+    /**
+     * @param mixed $reportViewId
+     */
+    public function setReportViewId($reportViewId)
+    {
+        $this->reportViewId = $reportViewId;
     }
 }

@@ -15,6 +15,7 @@ class DataSet extends DataSetModel
     protected $metrics;
     protected $createdDate;
     protected $allowOverwriteExistingData;
+    protected $lastActivity;
 
     /** @var UserEntityInterface */
     protected $publisher;

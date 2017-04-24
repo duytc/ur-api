@@ -17,6 +17,7 @@ class DataSource implements DataSourceInterface
     protected $detectedFields;
     protected $nextAlertTime;
     protected $useIntegration; // bool, true if use integration
+    protected $lastActivity;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -287,6 +288,23 @@ class DataSource implements DataSourceInterface
     public function setNextAlertTime($nextAlertTime)
     {
         $this->nextAlertTime = $nextAlertTime;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLastActivity()
+    {
+        return $this->lastActivity;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLastActivity($lastActivity)
+    {
+        $this->lastActivity = $lastActivity;
         return $this;
     }
 }

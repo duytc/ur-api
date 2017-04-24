@@ -82,16 +82,18 @@ interface DataSetInterface extends ModelInterface
 
     /**
      * @param mixed $connectedDataSources
+     * @return self
      */
     public function setConnectedDataSources($connectedDataSources);
 
     /**
-     * @return mixed
+     * @return array
      */
     public function getActions();
 
     /**
      * @param mixed $actions
+     * @return self
      */
     public function setActions($actions);
 
@@ -102,6 +104,7 @@ interface DataSetInterface extends ModelInterface
 
     /**
      * @param mixed $allowOverwriteExistingData
+     * @return self
      */
     public function setAllowOverwriteExistingData($allowOverwriteExistingData);
 
@@ -117,6 +120,7 @@ interface DataSetInterface extends ModelInterface
 
     /**
      * @param LinkedMapDataSetInterface[] $linkedMapDataSets
+     * @return self
      */
     public function setLinkedMapDataSets(array $linkedMapDataSets);
 
@@ -127,6 +131,7 @@ interface DataSetInterface extends ModelInterface
 
     /**
      * @param array $dataSetImportJobs
+     * @return self
      */
     public function setDataSetImportJobs(array $dataSetImportJobs);
 
@@ -134,4 +139,15 @@ interface DataSetInterface extends ModelInterface
      * @param DataSetImportJobInterface $dataSetImportJob
      */
     public function addDataSetImportJobs(DataSetImportJobInterface $dataSetImportJob);
+
+    /**
+     * @return mixed
+     */
+    public function getLastActivity();
+
+    /**
+     * @param mixed $lastActivity
+     * @return self
+     */
+    public function setLastActivity($lastActivity);
 }

@@ -61,6 +61,16 @@ UR\Entity\Core\ReportView:
             nullable: false
             options:
                 default: false
+        lastActivity:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+        lastRun:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

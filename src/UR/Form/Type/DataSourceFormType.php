@@ -2,6 +2,7 @@
 
 namespace UR\Form\Type;
 
+use DateTime;
 use Doctrine\Common\Collections\Collection;
 use Exception;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -64,6 +65,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             function (FormEvent $event) {
                 /** @var DataSourceInterface $dataSource */
                 $dataSource = $event->getData();
+                $dataSource->setLastActivity(new DateTime());
 
                 // validate alert setting if has
                 $form = $event->getForm();

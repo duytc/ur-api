@@ -13,4 +13,5 @@ class ReportViewDataSet extends ReportViewDataSetModel
     protected $dimensions;
     protected $metrics;
     protected $dataSet;
+    protected $lastActivity;
 }

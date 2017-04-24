@@ -2,6 +2,7 @@
 
 namespace UR\Form\Type;
 
+use DateTime;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
@@ -36,6 +37,9 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
             ->add('filePaths', null, ['mapped' => false]);
 
         $builder->addEventListener(
+        /**
+         * @param FormEvent $event
+         */
             FormEvents::POST_SUBMIT,
             function (FormEvent $event) {
                 /** @var ConnectedDataSourceInterface $connDataSource */

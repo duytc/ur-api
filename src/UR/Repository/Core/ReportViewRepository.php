@@ -2,6 +2,7 @@
 
 namespace UR\Repository\Core;
 
+use DateTime;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSetInterface;
@@ -121,10 +122,10 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
 
     public function getReportViewHasMaximumId()
     {
-        $qb =  $this->createQueryBuilderForUser(null);
+        $qb = $this->createQueryBuilderForUser(null);
         $qb->select('rv, MAX(rv.id) as idMax');
 
-        return $qb->getQuery()->getSingleResult() ;
+        return $qb->getQuery()->getSingleResult();
     }
 
     public function getReportViewThatUseDataSet(DataSetInterface $dataSet)
@@ -137,5 +138,21 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
             ->getResult();
     }
 
+    /**
+     * @param $reportViewId
+     */
+    public function updateLastRun($reportViewId)
+    {
+        /**
+         * I wish to use native SQL to avoid doctrine events, because they would trigger many unneeded actions.
+         */
+        $conn = $this->_em->getConnection();
+        $time = new DateTime();
+        $updateSQL = sprintf('UPDATE `core_report_view` SET last_run = "%s" WHERE `id` = %s', $time->format('Y-m-d H:i:s'), (int) $reportViewId);
+        try {
+            $conn->exec($updateSQL);
+        } catch (\Exception $e) {
 
+        }
+    }
 }

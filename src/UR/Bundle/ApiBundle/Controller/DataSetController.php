@@ -165,7 +165,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      *
      * @Rest\Get("/datasets/{id}", requirements={"id" = "\d+"})
      *
-     * @Rest\View(serializerGroups={"dataset.detail", "user.summary", "connectedDataSource.summary", "datasource.summary"})
+     * @Rest\View(serializerGroups={"dataset.edit", "user.summary", "connectedDataSource.summary", "datasource.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",

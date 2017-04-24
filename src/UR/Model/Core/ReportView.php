@@ -117,6 +117,10 @@ class ReportView implements ReportViewInterface
      */
     protected $isShowDataSetName;
 
+    protected $lastActivity;
+
+    protected $lastRun;
+
     /**
      * @return mixed
      */
@@ -440,5 +444,39 @@ class ReportView implements ReportViewInterface
     public function setIsShowDataSetName($isShowDataSetName)
     {
         $this->isShowDataSetName = $isShowDataSetName;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLastActivity()
+    {
+        return $this->lastActivity;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLastActivity($lastActivity)
+    {
+        $this->lastActivity = $lastActivity;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLastRun()
+    {
+        return $this->lastRun;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLastRun($lastRun)
+    {
+        $this->lastRun = $lastRun;
+        return $this;
     }
 }

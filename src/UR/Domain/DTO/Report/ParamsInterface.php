@@ -139,4 +139,14 @@ interface ParamsInterface
      * @return self
      */
     public function setIsShowDataSetName($isShowDataSetName);
+
+    /**
+     * @return mixed
+     */
+    public function getReportViewId();
+
+    /**
+     * @param mixed $reportViewId
+     */
+    public function setReportViewId($reportViewId);
 }

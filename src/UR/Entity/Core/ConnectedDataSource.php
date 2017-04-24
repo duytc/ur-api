@@ -17,6 +17,7 @@ class ConnectedDataSource extends ConnectedDataSourceModel
     protected $requires;
     protected $alertSetting;
     protected $temporaryFields;
+    protected $lastActivity;
 
     /** @var  bool $replayData */
     protected $replayData;

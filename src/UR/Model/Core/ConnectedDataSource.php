@@ -11,6 +11,7 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $transforms;
     protected $requires;
     protected $alertSetting;
+    protected $lastActivity;
 
     /**
      * @var array
@@ -256,6 +257,23 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     {
         $this->linkedMapDataSets = $linkedMapDataSets;
 
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLastActivity()
+    {
+        return $this->lastActivity;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLastActivity($lastActivity)
+    {
+        $this->lastActivity = $lastActivity;
         return $this;
     }
 }

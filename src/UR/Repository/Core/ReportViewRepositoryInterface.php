@@ -56,4 +56,9 @@ interface ReportViewRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getReportViewThatUseDataSet(DataSetInterface $dataSet);
+
+    /**
+     * @param $reportViewId
+     */
+    public function updateLastRun($reportViewId);
 }

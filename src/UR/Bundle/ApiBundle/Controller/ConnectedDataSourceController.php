@@ -47,7 +47,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     /**
      * Get a single connectedDataSource group for the given id
      *
-     * @Rest\View(serializerGroups={"connectedDataSource.detail", "datasource.dataset", "dataset.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"connectedDataSource.edit", "datasource.dataset", "dataset.detail", "user.summary"})
      *
      * @ApiDoc(
      *  section = "ConnectedDataSource",

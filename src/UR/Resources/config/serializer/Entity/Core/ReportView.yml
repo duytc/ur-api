@@ -68,4 +68,10 @@ UR\Entity\Core\ReportView:
         userDefineDateRange:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        lastActivity:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+        lastRun:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
 

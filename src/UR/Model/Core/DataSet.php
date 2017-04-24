@@ -14,7 +14,8 @@ class DataSet implements DataSetInterface
     protected $metrics;
     protected $createdDate;
     protected $allowOverwriteExistingData;
-    protected $_actions;
+    protected $_actions = [];
+    protected $lastActivity;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -68,6 +69,7 @@ class DataSet implements DataSetInterface
     public function setName($name)
     {
         $this->name = $name;
+        return $this;
     }
 
     /**
@@ -84,6 +86,7 @@ class DataSet implements DataSetInterface
     public function setDimensions($dimensions)
     {
         $this->dimensions = $dimensions;
+        return $this;
     }
 
     /**
@@ -100,6 +103,7 @@ class DataSet implements DataSetInterface
     public function setMetrics($metrics)
     {
         $this->metrics = $metrics;
+        return $this;
     }
 
     /**
@@ -116,6 +120,7 @@ class DataSet implements DataSetInterface
     public function setCreatedDate($createdDate)
     {
         $this->createdDate = $createdDate;
+        return $this;
     }
 
     /**
@@ -161,6 +166,7 @@ class DataSet implements DataSetInterface
     public function setConnectedDataSources($connectedDataSources)
     {
         $this->connectedDataSources = $connectedDataSources;
+        return $this;
     }
 
     /**
@@ -177,10 +183,11 @@ class DataSet implements DataSetInterface
     public function setActions($actions)
     {
         $this->_actions = $actions;
+        return $this;
     }
 
     /**
-     * @return mixed
+     * @inheritdoc
      */
     public function getAllowOverwriteExistingData()
     {
@@ -188,11 +195,12 @@ class DataSet implements DataSetInterface
     }
 
     /**
-     * @param mixed $allowOverwriteExistingData
+     * @inheritdoc
      */
     public function setAllowOverwriteExistingData($allowOverwriteExistingData)
     {
         $this->allowOverwriteExistingData = $allowOverwriteExistingData;
+        return $this;
     }
 
     /**
@@ -217,6 +225,7 @@ class DataSet implements DataSetInterface
     public function setLinkedMapDataSets(array $linkedMapDataSets)
     {
         $this->linkedMapDataSets = $linkedMapDataSets;
+        return $this;
     }
 
     /**
@@ -233,6 +242,7 @@ class DataSet implements DataSetInterface
     public function setDataSetImportJobs(array $dataSetImportJobs)
     {
         $this->dataSetImportJobs = $dataSetImportJobs;
+        return $this;
     }
 
     /**
@@ -249,5 +259,22 @@ class DataSet implements DataSetInterface
         }
 
         $this->dataSetImportJobs[] = $dataSetImportJob;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLastActivity()
+    {
+        return $this->lastActivity;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLastActivity($lastActivity)
+    {
+        $this->lastActivity = $lastActivity;
+        return $this;
     }
 }

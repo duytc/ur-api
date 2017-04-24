@@ -42,6 +42,11 @@ UR\Entity\Core\DataSource:
             type: boolean
             options:
                 default: false
+        lastActivity:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

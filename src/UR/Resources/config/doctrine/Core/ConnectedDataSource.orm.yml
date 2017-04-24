@@ -33,6 +33,11 @@ UR\Entity\Core\ConnectedDataSource:
         temporaryFields:
             type: json_array
             nullable: true
+        lastActivity:
+            type: datetime
+            gedmo:
+                timestampable:
+                  on: create
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

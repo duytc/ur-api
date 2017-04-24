@@ -132,4 +132,15 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @return self
      */
     public function setLinkedMapDataSets(array $linkedMapDataSets);
+
+    /**
+     * @return mixed
+     */
+    public function getLastActivity();
+
+    /**
+     * @param mixed $lastActivity
+     * @return self
+     */
+    public function setLastActivity($lastActivity);
 }

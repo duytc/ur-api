@@ -53,15 +53,19 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
             return;
         }
 
+        $changedFields = $uow->getEntityChangeSet($dataSet);
+        if (!array_key_exists('dimensions', $changedFields) && !array_key_exists('metrics', $changedFields)) {
+            return;
+        }
+
         /* detect changed metrics, dimensions */
         $renameFields = [];
-        $actions = $dataSet->getActions();
+        $actions = $dataSet->getActions() === null ? [] : $dataSet->getActions();
 
-        if (array_key_exists('rename', $dataSet->getActions())) {
+        if (array_key_exists('rename', $actions)) {
             $renameFields = $actions['rename'];
         }
 
-        $changedFields = $uow->getEntityChangeSet($dataSet);
         $newDimensions = [];
         $newMetrics = [];
         $updateDimensions = [];
@@ -70,11 +74,11 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
         $deletedDimensions = [];
 
         foreach ($changedFields as $field => $values) {
-            if (strcmp($field, 'dimensions') === 0) {
+            if ($field === 'dimensions') {
                 $this->getChangedFields($values, $renameFields, $newDimensions, $updateDimensions, $deletedDimensions);
             }
 
-            if (strcmp($field, 'metrics') === 0) {
+            if ($field === 'metrics') {
                 $this->getChangedFields($values, $renameFields, $newMetrics, $updateMetrics, $deletedMetrics);
             }
         }

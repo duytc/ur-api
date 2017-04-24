@@ -20,6 +20,7 @@ class DataSource extends DataSourceModel
     protected $detectedFields;
     protected $nextAlertTime;
     protected $useIntegration;
+    protected $lastActivity;
 
     /** @var UserEntityInterface */
     protected $publisher;

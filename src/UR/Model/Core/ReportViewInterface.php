@@ -196,4 +196,26 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setIsShowDataSetName($isShowDataSetName);
+
+    /**
+     * @return mixed
+     */
+    public function getLastActivity();
+
+    /**
+     * @param mixed $lastActivity
+     * @return self
+     */
+    public function setLastActivity($lastActivity);
+
+    /**
+     * @return mixed
+     */
+    public function getLastRun();
+
+    /**
+     * @param mixed $LastRun
+     * @return self
+     */
+    public function setLastRun($LastRun);
 }

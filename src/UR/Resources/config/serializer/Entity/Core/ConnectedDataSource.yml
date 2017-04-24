@@ -3,34 +3,37 @@ UR\Entity\Core\ConnectedDataSource:
     properties:
         id:
             expose: true
-            groups: [connectedDataSource.detail, connectedDataSource.summary]
+            groups: [connectedDataSource.detail, connectedDataSource.summary, connectedDataSource.edit]
         name:
             expose: true
-            groups: [connectedDataSource.detail, connectedDataSource.summary]
+            groups: [connectedDataSource.detail, connectedDataSource.summary, connectedDataSource.edit]
         dataSource:
             expose: true
-            groups: [connectedDataSource.detail, connectedDataSource.summary]
+            groups: [connectedDataSource.detail, connectedDataSource.summary, connectedDataSource.edit]
         mapFields:
             expose: true
-            groups: [connectedDataSource.detail, connectedDataSource.summary]
+            groups: [connectedDataSource.detail, connectedDataSource.summary, connectedDataSource.edit]
         requires:
             expose: true
-            groups: [connectedDataSource.detail, connectedDataSource.summary]
+            groups: [connectedDataSource.detail, connectedDataSource.summary, connectedDataSource.edit]
         filters:
             expose: true
-            groups: [connectedDataSource.detail, connectedDataSource.summary]
+            groups: [connectedDataSource.detail, connectedDataSource.summary, connectedDataSource.edit]
         transforms:
             expose: true
-            groups: [connectedDataSource.detail, connectedDataSource.summary]
+            groups: [connectedDataSource.detail, connectedDataSource.summary, connectedDataSource.edit]
         alertSetting:
             expose: true
-            groups: [connectedDataSource.detail, connectedDataSource.summary]
+            groups: [connectedDataSource.detail, connectedDataSource.summary, connectedDataSource.edit]
         dataSet:
             expose: true
-            groups: [connectedDataSource.detail]
+            groups: [connectedDataSource.detail, connectedDataSource.edit]
         replayData:
             expose: true
-            groups: [connectedDataSource.detail, connectedDataSource.summary]
+            groups: [connectedDataSource.detail, connectedDataSource.summary, connectedDataSource.edit]
         temporaryFields:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary, connectedDataSource.edit]
+        lastActivity:
             expose: true
             groups: [connectedDataSource.detail, connectedDataSource.summary]

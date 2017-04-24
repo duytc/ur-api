@@ -160,4 +160,15 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setUseIntegration($useIntegration);
+
+    /**
+     * @return mixed
+     */
+    public function getLastActivity();
+
+    /**
+     * @param mixed $lastActivity
+     * @return self
+     */
+    public function setLastActivity($lastActivity);
 }

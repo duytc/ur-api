@@ -3,25 +3,28 @@ UR\Entity\Core\DataSet:
     properties:
         id:
             expose: true
-            groups: [dataset.detail, dataset.summary, dataset.importhistory]
+            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory]
         publisher:
             expose: true
-            groups: [dataset.detail]
+            groups: [dataset.detail, dataset.edit]
         name:
             expose: true
-            groups: [dataset.detail, dataset.summary, dataset.importhistory]
+            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory]
         dimensions:
             expose: true
-            groups: [dataset.detail, dataset.summary]
+            groups: [dataset.detail, dataset.summary, dataset.edit]
         metrics:
             expose: true
-            groups: [dataset.detail, dataset.summary]
+            groups: [dataset.detail, dataset.summary, dataset.edit]
         createdDate:
             expose: true
-            groups: [dataset.detail, dataset.summary]
+            groups: [dataset.detail, dataset.summary, dataset.edit]
         allowOverwriteExistingData:
             expose: true
-            groups: [dataset.detail, dataset.summary]
+            groups: [dataset.detail, dataset.summary, dataset.edit]
         connectedDataSources:
+            expose: true
+            groups: [dataset.detail, dataset.summary, dataset.edit]
+        lastActivity:
             expose: true
             groups: [dataset.detail, dataset.summary]
