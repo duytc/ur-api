@@ -519,9 +519,11 @@ class Parser implements ParserInterface
             }
 
             $uniqueKeys = array_intersect_key($row, $dimensions);
-            foreach($uniqueKeys as $key=>&$value) {
+            foreach($uniqueKeys as $key => &$value) {
                 if ($value instanceof \DateTime && array_key_exists($key, $dateFormats)) {
-                   $value = $value->format($dateFormats[$key]);
+                    // todo Date/Time support, how do we know which format to use?
+                    // remove this todo if worked
+                    $value = $value->format($dateFormats[$key]);
                 }
             }
             $uniqueId = md5(implode(":", $uniqueKeys));
