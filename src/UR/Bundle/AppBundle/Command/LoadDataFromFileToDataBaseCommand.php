@@ -102,6 +102,17 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
         $publisherId = $connectedDataSource->getDataSet()->getPublisherId();
 
         try {
+            $logger->notice(
+                sprintf('starting to import file "%s" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d)',
+                    $dataSourceEntry->getFileName(),
+                    $connectedDataSource->getDataSet()->getName(),
+                    $dataSourceEntry->getId(),
+                    $connectedDataSource->getDataSet()->getId(),
+                    $connectedDataSource->getId(),
+                    $connectedDataSource->getDataSource()->getId()
+                )
+            );
+
             /* call service load data to data base */
             $autoImport->loadingDataFromFileToDatabase($connectedDataSource, $dataSourceEntry, $importHistoryEntity);
 
