@@ -180,6 +180,8 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $filePath = $path . '/' . $name;
 
+            chmod($filePath, 0664);
+
             $convertResult = $this->convertToUtf8($filePath, $this->importService->getKernelRootDir());
             if (!$convertResult) {
                 throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $originName));
