@@ -7,6 +7,7 @@ use ReflectionClass;
 use UR\Entity\Core\ReportViewMultiView;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportView;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\ModelInterface;
@@ -121,7 +122,7 @@ class ReportViewManager implements ReportViewManagerInterface
             if (
                 $concatenatedOldFieldsToBeShared === $concatenatedFieldsToBeShared &&
                 (
-                    (array_key_exists('dateRange', $fields) && $this->compareDateRange($fields['dateRange'],$dateRange)) ||
+                    (array_key_exists('dateRange', $fields) && $this->compareDateRange($fields['dateRange'], $dateRange)) ||
                     (array_key_exists('dateRange', $fields) && $dateRange === null)
                 )
             ) {
@@ -153,6 +154,22 @@ class ReportViewManager implements ReportViewManagerInterface
         }
 
         return $newToken;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getReportViewsByDataSet(DataSetInterface $dataSet)
+    {
+        return $this->repository->getReportViewsByDataSet($dataSet);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getReportMultiViewsByReportView(ReportViewInterface $subReportView)
+    {
+        return $this->repository->getReportMultiViewsByReportView($subReportView);
     }
 
     protected function compareDateRange($source, $destination)

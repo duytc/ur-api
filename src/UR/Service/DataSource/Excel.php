@@ -204,7 +204,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
 
                 if (\PHPExcel_Shared_Date::isDateTime($cell)) {
                     foreach ($this->fromDateFormats as $field => $format) {
-                        if (strcmp($header, $field) === 0) {
+                        if ($header === $field) {
                             $rowData[] = date($format, \PHPExcel_Shared_Date::ExcelToPHP($cell->getValue()));
                         }
                     }

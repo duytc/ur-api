@@ -356,7 +356,7 @@ class TransformerFactory
             }
 
             $regexExpression = trim($extractPatternConfig[ExtractPattern::REG_EXPRESSION_KEY]);
-            if ((strcmp(substr($regexExpression, 0, 1), ExtractPattern::START_REGEX_SPECIAL) === 0)
+            if ((substr($regexExpression, 0, 1) === ExtractPattern::START_REGEX_SPECIAL)
             ) {
                 continue;
             }

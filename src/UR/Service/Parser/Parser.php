@@ -380,8 +380,8 @@ class Parser implements ParserInterface
                 break;
 
             case FieldType::TEXT:
-            case FieldType::MULTI_LINE_TEXT:
-                if ($cellValue === "") {
+            case FieldType::LARGE_TEXT:
+                if ($cellValue === '') {
                     return null; // treat empty string as null value
                 }
 

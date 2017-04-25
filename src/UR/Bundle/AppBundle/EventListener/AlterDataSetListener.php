@@ -60,8 +60,7 @@ class AlterDataSetListener
         if (array_key_exists('rename', $actions)) {
             $renameFields = $actions['rename'];
         }
-
-
+        
         $newDimensions = [];
         $newMetrics = [];
         $updateDimensions = [];
@@ -70,11 +69,11 @@ class AlterDataSetListener
         $deletedDimensions = [];
 
         foreach ($changedFields as $field => $values) {
-            if (strcmp($field, 'dimensions') === 0) {
+            if ($field === 'dimensions') {
                 $this->getChangedFields($values, $renameFields, $newDimensions, $updateDimensions, $deletedDimensions);
             }
 
-            if (strcmp($field, 'metrics') === 0) {
+            if ($field === 'metrics') {
                 $this->getChangedFields($values, $renameFields, $newMetrics, $updateMetrics, $deletedMetrics);
             }
         }

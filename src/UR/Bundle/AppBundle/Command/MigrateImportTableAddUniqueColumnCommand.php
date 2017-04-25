@@ -5,6 +5,7 @@ namespace UR\Bundle\AppBundle\Command;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\TableDiff;
+use Doctrine\DBAL\Types\Type;
 use Symfony\Bridge\Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -68,7 +69,7 @@ class MigrateImportTableAddUniqueColumnCommand extends ContainerAwareCommand
         foreach ($dataSetMissingUniques as $dataSetMissingUnique) {
             $dataSetTable = $dataSetSynchronizer->getDataSetImportTable($dataSetMissingUnique->getId());
             $addCols = [];
-            $addCols[] = $dataSetTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, FieldType::TEXT, array("notnull" => true));
+            $addCols[] = $dataSetTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, Type::STRING, array("notnull" => true, "length" => Synchronizer::FIELD_LENGTH_COLUMN_UNIQUE_ID));
 
             $updateTable = new TableDiff($dataSetTable->getName(), $addCols, [], [], [], [], []);
 

@@ -18,8 +18,11 @@ class Synchronizer
     const HIDDEN_FIELD_YEAR_TEMPLATE = '__%s_year';
     const HIDDEN_FIELD_DAY_TEMPLATE = '__%s_day';
 
-    const FIELD_LENGTH_LONGTEXT = 65535;
-    const FIELD_LENGTH_TEXT = 2048;
+    const FIELD_LENGTH_LARGE_TEXT = 65535;
+    const FIELD_LENGTH_TEXT = 512;
+
+    // TODO: organize const to right place. Current constants are discrete
+    const FIELD_LENGTH_COLUMN_UNIQUE_ID = 32; // current use md5(dimension1:dimension2:...) so that length is 32
 
     const DATA_IMPORT_TABLE_INDEX_PREFIX_TEMPLATE = '%s_index_%s'; // %s is data import table name, %s is field name
     const REQUIRED_INDEXES = ['primary', 'PRIMARY', 'unique_hash_idx'];
@@ -81,43 +84,59 @@ class Synchronizer
         $dataSetImportTable->setPrimaryKey(array(DataSetInterface::ID_COLUMN));
         $dataSetImportTable->addColumn(DataSetInterface::DATA_SOURCE_ID_COLUMN, Type::INTEGER, array('unsigned' => true, 'notnull' => true));
         $dataSetImportTable->addColumn(DataSetInterface::IMPORT_ID_COLUMN, Type::INTEGER, array('unsigned' => true, 'notnull' => true));
-        $dataSetImportTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, FieldType::TEXT, array('notnull' => true));
+        $dataSetImportTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, Type::STRING, array('notnull' => true, "length" => Synchronizer::FIELD_LENGTH_COLUMN_UNIQUE_ID));
         $dataSetImportTable->addColumn(DataSetInterface::OVERWRITE_DATE, FieldType::DATETIME, array('notnull' => false, 'default' => null));
 
         // add dimensions
         foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
-            $col = $dataSetImportTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
-
-            if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
-                // add month and year also
-                $dataSetImportTable->addColumn(self::getHiddenColumnDay($fieldName), Type::INTEGER, ['notnull' => false, 'default' => null]);
-
-                $dataSetImportTable->addColumn(self::getHiddenColumnMonth($fieldName), Type::INTEGER, ['notnull' => false, 'default' => null]);
-
-                $dataSetImportTable->addColumn(self::getHiddenColumnYear($fieldName), Type::INTEGER, ['notnull' => false, 'default' => null]);
-            } else if ($fieldType === FieldType::MULTI_LINE_TEXT) {
-                $col->setLength(self::FIELD_LENGTH_LONGTEXT);
+            if ($fieldType === FieldType::NUMBER) {
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
+            } else if ($fieldType === FieldType::DECIMAL) {
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $dataSetImportTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
+            } else if ($fieldType === FieldType::LARGE_TEXT) {
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => Synchronizer::FIELD_LENGTH_LARGE_TEXT]);
             } else if ($fieldType === FieldType::TEXT) {
-                $col->setLength(self::FIELD_LENGTH_TEXT);
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => Synchronizer::FIELD_LENGTH_TEXT]);
+            } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
+
+                $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[FieldType::NUMBER];
+                $dataSetImportTable->addColumn(Synchronizer::getHiddenColumnDay($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
+                $dataSetImportTable->addColumn(Synchronizer::getHiddenColumnMonth($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
+                $dataSetImportTable->addColumn(Synchronizer::getHiddenColumnYear($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
+            } else {
+                $dataSetImportTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
             }
         }
 
         // add metrics
         foreach ($dataSet->getMetrics() as $fieldName => $fieldType) {
             if ($fieldType === FieldType::NUMBER) {
-                $dataSetImportTable->addColumn($fieldName, 'integer', ['notnull' => false, 'default' => null]);
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
             } else if ($fieldType === FieldType::DECIMAL) {
-                $dataSetImportTable->addColumn($fieldName, $fieldType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
-            } else if ($fieldType === FieldType::MULTI_LINE_TEXT) {
-                $dataSetImportTable->addColumn($fieldName, Type::TEXT, ['notnull' => false, 'default' => null]);
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $dataSetImportTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
+            } else if ($fieldType === FieldType::LARGE_TEXT) {
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_LARGE_TEXT]);
             } else if ($fieldType === FieldType::TEXT) {
-                $dataSetImportTable->addColumn($fieldName, Type::TEXT, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_TEXT]);
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_TEXT]);
             } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
-                $dataSetImportTable->addColumn($fieldName, FieldType::DATE, ['notnull' => false, 'default' => null]);
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
+
                 // add month and year also
-                $dataSetImportTable->addColumn(sprintf(self::HIDDEN_FIELD_DAY_TEMPLATE, $fieldName), Type::INTEGER, ['notnull' => false, 'default' => null]);
-                $dataSetImportTable->addColumn(sprintf(self::HIDDEN_FIELD_MONTH_TEMPLATE, $fieldName), Type::INTEGER, ['notnull' => false, 'default' => null]);
-                $dataSetImportTable->addColumn(sprintf(self::HIDDEN_FIELD_YEAR_TEMPLATE, $fieldName), Type::INTEGER, ['notnull' => false, 'default' => null]);
+                $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[FieldType::NUMBER];
+                $dataSetImportTable->addColumn(self::getHiddenColumnDay($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
+                $dataSetImportTable->addColumn(self::getHiddenColumnMonth($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
+                $dataSetImportTable->addColumn(self::getHiddenColumnYear($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
             } else {
                 $dataSetImportTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
             }
@@ -263,19 +282,19 @@ class Synchronizer
 
             // add indexes for hidden columns day/month/year if this column type is date|datetime
             if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
-                $hiddenDayColumn = sprintf(self::HIDDEN_FIELD_DAY_TEMPLATE, $fieldName);
+                $hiddenDayColumn = self::getHiddenColumnDay($fieldName);
                 $dimensionsToBeCreatedIndexes[] = [
                     'fieldName' => $hiddenDayColumn,
                     'fieldType' => Type::INTEGER
                 ];
 
-                $hiddenMonthColumn = sprintf(self::HIDDEN_FIELD_MONTH_TEMPLATE, $fieldName);
+                $hiddenMonthColumn = self::getHiddenColumnMonth($fieldName);
                 $dimensionsToBeCreatedIndexes[] = [
                     'fieldName' => $hiddenMonthColumn,
                     'fieldType' => Type::INTEGER
                 ];
 
-                $hiddenYearColumn = sprintf(self::HIDDEN_FIELD_YEAR_TEMPLATE, $fieldName);
+                $hiddenYearColumn = self::getHiddenColumnYear($fieldName);
                 $dimensionsToBeCreatedIndexes[] = [
                     'fieldName' => $hiddenYearColumn,
                     'fieldType' => Type::INTEGER
@@ -310,8 +329,8 @@ class Synchronizer
             $createdIndexesCount++;
 
             // set field length if text of longtext
-            $fieldLength = $columnType === FieldType::MULTI_LINE_TEXT
-                ? self::FIELD_LENGTH_LONGTEXT
+            $fieldLength = $columnType === FieldType::LARGE_TEXT
+                ? self::FIELD_LENGTH_LARGE_TEXT
                 : ($columnType === FieldType::TEXT
                     ? self::FIELD_LENGTH_TEXT
                     : null // other types: not set length
@@ -361,6 +380,40 @@ class Synchronizer
     }
 
     /**
+     * alter Type For Column
+     *
+     * @param Connection $conn
+     * @param Table $dataTable
+     * @param $columnName
+     * @param $columnType
+     * @return bool
+     */
+    public static function alterTypeForColumn(Connection $conn, Table $dataTable, $columnName, $columnType)
+    {
+        if (!$dataTable->hasColumn($columnName)) {
+            return false;
+        }
+
+        // set field length if text of longtext
+        $columnLength = $columnType === FieldType::LARGE_TEXT
+            ? Synchronizer::FIELD_LENGTH_LARGE_TEXT
+            : ($columnType === FieldType::TEXT
+                ? Synchronizer::FIELD_LENGTH_TEXT
+                : null // other types: not set length
+            );
+
+        // hot fix for UNIQUE_ID
+        // TODO: refactor to use one definition place
+        if ($columnName === DataSetInterface::UNIQUE_ID_COLUMN) {
+            $columnLength = Synchronizer::FIELD_LENGTH_COLUMN_UNIQUE_ID;
+        }
+
+        self::prepareStatementAlterColumnType($conn, $columnName, $dataTable->getName(), $columnType, $columnLength);
+
+        return true;
+    }
+
+    /**
      * @return Connection
      */
     public function getConn(): Connection
@@ -399,6 +452,22 @@ class Synchronizer
     }
 
     /**
+     * prepare Statement Alter Column Type
+     * @param Connection $conn
+     * @param string $columnName
+     * @param string $tableName
+     * @param string $columnType
+     * @param null|int $columnLength
+     * @throws DBALException
+     */
+    public static function prepareStatementAlterColumnType(Connection $conn, $columnName, $tableName, $columnType, $columnLength = null)
+    {
+        $updateSql = self::alterColumnTypeSql($columnName, $tableName, $columnType, $columnLength);
+        $stmtCreateIndex = $conn->prepare($updateSql);
+        $stmtCreateIndex->execute();
+    }
+
+    /**
      * @param $indexName
      * @param $tableName
      * @param $fieldName
@@ -409,7 +478,7 @@ class Synchronizer
     {
         if (is_integer($fieldLength) && $fieldLength > 0) {
             // append length to fieldName
-            $fieldName = sprintf('%s(%d)', $fieldName, Synchronizer::FIELD_LENGTH_LONGTEXT);
+            $fieldName = sprintf('%s(%d)', $fieldName, $fieldLength);
         }
 
         return sprintf('CREATE INDEX %s ON %s (%s)',
@@ -429,6 +498,35 @@ class Synchronizer
         return sprintf('ALTER TABLE %s DROP INDEX %s;',
             $tableName,
             $indexName
+        );
+    }
+
+    /**
+     * @param $columnName
+     * @param $tableName
+     * @param string $columnType
+     * @param null $columnLength
+     * @return string sql drop index
+     */
+    public static function alterColumnTypeSql($columnName, $tableName, $columnType, $columnLength = null)
+    {
+        // set change columnType to native type of sql
+        $columnType = $columnType === FieldType::LARGE_TEXT
+            ? 'varchar'
+            : ($columnType === FieldType::TEXT
+                ? 'varchar'
+                : $columnType
+            );
+
+        if (is_integer($columnLength) && $columnLength > 0) {
+            // append length to columnType
+            $columnType = sprintf('%s(%d)', $columnType, $columnLength);
+        }
+
+        return sprintf('ALTER TABLE %s MODIFY %s %s;',
+            $tableName,
+            $columnName,
+            $columnType
         );
     }
 }

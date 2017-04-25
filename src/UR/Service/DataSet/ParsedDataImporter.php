@@ -77,9 +77,9 @@ class ParsedDataImporter
                     (array_key_exists($column, $metrics) && ($metrics[$column] === FieldType::DATE || $metrics[$column] === FieldType::DATETIME))
                 ) {
                     $dateColumns[] = $column;
-                    $columns[] = sprintf(Synchronizer::HIDDEN_FIELD_DAY_TEMPLATE, $column);
-                    $columns[] = sprintf(Synchronizer::HIDDEN_FIELD_MONTH_TEMPLATE, $column);
-                    $columns[] = sprintf(Synchronizer::HIDDEN_FIELD_YEAR_TEMPLATE, $column);
+                    $columns[] = Synchronizer::getHiddenColumnDay($column);
+                    $columns[] = Synchronizer::getHiddenColumnMonth($column);
+                    $columns[] = Synchronizer::getHiddenColumnYear($column);
                 }
             }
 
@@ -163,9 +163,9 @@ class ParsedDataImporter
                 $year = null;
             }
 
-            $row[sprintf(Synchronizer::HIDDEN_FIELD_DAY_TEMPLATE, $index)] = $day;
-            $row[sprintf(Synchronizer::HIDDEN_FIELD_MONTH_TEMPLATE, $index)] = $month;
-            $row[sprintf(Synchronizer::HIDDEN_FIELD_YEAR_TEMPLATE, $index)] = $year;
+            $row[Synchronizer::getHiddenColumnDay($index)] = $day;
+            $row[Synchronizer::getHiddenColumnMonth($index)] = $month;
+            $row[Synchronizer::getHiddenColumnYear($index)] = $year;
         }
     }
 

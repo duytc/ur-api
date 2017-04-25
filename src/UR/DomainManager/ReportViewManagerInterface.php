@@ -3,6 +3,7 @@
 namespace UR\DomainManager;
 
 use Doctrine\ORM\QueryBuilder;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;
@@ -26,4 +27,20 @@ interface ReportViewManagerInterface extends ManagerInterface
      * @return mixed
      */
     public function createTokenForReportView(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null);
+
+    /**
+     * get Report Views By Data Set
+     *
+     * @param DataSetInterface $dataSet
+     * @return ReportViewInterface[]
+     */
+    public function getReportViewsByDataSet(DataSetInterface $dataSet);
+
+    /**
+     * get Report Multi Views By Report View
+     *
+     * @param ReportViewInterface $subReportView
+     * @return ReportViewInterface[]
+     */
+    public function getReportMultiViewsByReportView(ReportViewInterface $subReportView);
 }

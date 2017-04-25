@@ -69,9 +69,9 @@ class UpdateImportTableAddGroupByDateColumn
             if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
                 if (
                     !in_array($dataSet, $dataSetHaveDateFields) && (
-                        !$dataSetTable->hasColumn(sprintf(Synchronizer::HIDDEN_FIELD_DAY_TEMPLATE, $field)) ||
-                        !$dataSetTable->hasColumn(sprintf(Synchronizer::HIDDEN_FIELD_MONTH_TEMPLATE, $field)) ||
-                        !$dataSetTable->hasColumn(sprintf(Synchronizer::HIDDEN_FIELD_YEAR_TEMPLATE, $field)))
+                        !$dataSetTable->hasColumn(Synchronizer::getHiddenColumnDay($field)) ||
+                        !$dataSetTable->hasColumn(Synchronizer::getHiddenColumnMonth($field)) ||
+                        !$dataSetTable->hasColumn(Synchronizer::getHiddenColumnYear($field)))
                 ) {
                     $dataSetHaveDateFields[] = $dataSet;
                 }
@@ -85,16 +85,18 @@ class UpdateImportTableAddGroupByDateColumn
 
             foreach ($fields as $newColumn => $type) {
                 if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
-                    if (!$dataSetTable->hasColumn(sprintf(Synchronizer::HIDDEN_FIELD_DAY_TEMPLATE, $newColumn))) {
-                        $addCols[] = $dataSetTable->addColumn(sprintf(Synchronizer::HIDDEN_FIELD_DAY_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
+                    $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[FieldType::NUMBER];
+
+                    if (!$dataSetTable->hasColumn(Synchronizer::getHiddenColumnDay($newColumn))) {
+                        $addCols[] = $dataSetTable->addColumn(Synchronizer::getHiddenColumnDay($newColumn), $colTypeDayOrMonthOrYear, ["notnull" => false, "default" => null]);
                     }
 
-                    if (!$dataSetTable->hasColumn(sprintf(Synchronizer::HIDDEN_FIELD_MONTH_TEMPLATE, $newColumn))) {
-                        $addCols[] = $dataSetTable->addColumn(sprintf(Synchronizer::HIDDEN_FIELD_MONTH_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
+                    if (!$dataSetTable->hasColumn(Synchronizer::getHiddenColumnMonth($newColumn))) {
+                        $addCols[] = $dataSetTable->addColumn(Synchronizer::getHiddenColumnMonth($newColumn), $colTypeDayOrMonthOrYear, ["notnull" => false, "default" => null]);
                     }
 
-                    if (!$dataSetTable->hasColumn(sprintf(Synchronizer::HIDDEN_FIELD_YEAR_TEMPLATE, $newColumn))) {
-                        $addCols[] = $dataSetTable->addColumn(sprintf(Synchronizer::HIDDEN_FIELD_YEAR_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
+                    if (!$dataSetTable->hasColumn(Synchronizer::getHiddenColumnYear($newColumn))) {
+                        $addCols[] = $dataSetTable->addColumn(Synchronizer::getHiddenColumnYear($newColumn), $colTypeDayOrMonthOrYear, ["notnull" => false, "default" => null]);
                     }
                 }
             }
@@ -154,15 +156,15 @@ class UpdateImportTableAddGroupByDateColumn
                         $day = $date->format('j');
 
                         if ($day) {
-                            $updateQb->update($dataSetTable->getName(), 't')->set(sprintf(Synchronizer::HIDDEN_FIELD_DAY_TEMPLATE, $index), $day);
+                            $updateQb->update($dataSetTable->getName(), 't')->set(Synchronizer::getHiddenColumnDay($index), $day);
                         }
 
                         if ($month) {
-                            $updateQb->update($dataSetTable->getName(), 't')->set(sprintf(Synchronizer::HIDDEN_FIELD_MONTH_TEMPLATE, $index), $month);
+                            $updateQb->update($dataSetTable->getName(), 't')->set(Synchronizer::getHiddenColumnMonth($index), $month);
                         }
 
                         if ($year) {
-                            $updateQb->update($dataSetTable->getName(), 't')->set(sprintf(Synchronizer::HIDDEN_FIELD_YEAR_TEMPLATE, $index), $year);
+                            $updateQb->update($dataSetTable->getName(), 't')->set(Synchronizer::getHiddenColumnYear($index), $year);
                         }
                     }
                 }

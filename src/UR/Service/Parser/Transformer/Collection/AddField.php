@@ -31,7 +31,7 @@ class AddField extends AbstractAddField
                 throw new \Exception(sprintf('Expression can not be null'));
             }
 
-            if (!in_array($this->type, [FieldType::TEXT, FieldType::MULTI_LINE_TEXT])) {
+            if (!in_array($this->type, [FieldType::TEXT, FieldType::LARGE_TEXT])) {
                 return $this->value;
             }
 

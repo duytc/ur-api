@@ -6,6 +6,7 @@ namespace UR\Repository\Core;
 use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\ReportViewInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -61,4 +62,20 @@ interface ReportViewRepositoryInterface extends ObjectRepository
      * @param $reportViewId
      */
     public function updateLastRun($reportViewId);
+
+    /**
+     * get Report Views By Data Set
+     *
+     * @param DataSetInterface $dataSet
+     * @return ReportViewInterface[]
+     */
+    public function getReportViewsByDataSet(DataSetInterface $dataSet);
+
+    /**
+     * get Report Multi Views By Report View
+     *
+     * @param ReportViewInterface $subReportView
+     * @return ReportViewInterface[]
+     */
+    public function getReportMultiViewsByReportView(ReportViewInterface $subReportView);
 }

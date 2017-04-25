@@ -6,6 +6,7 @@ use DateTime;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\ReportViewInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -154,5 +155,33 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
         } catch (\Exception $e) {
 
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getReportViewsByDataSet(DataSetInterface $dataSet)
+    {
+        $qb = $this->createQueryBuilder('rpv')
+            ->join('rpv.reportViewDataSets', 'rpvds')
+            ->where('rpvds.dataSet = :dataSet')
+            ->setParameter('dataSet', $dataSet);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * get Report Multi Views By Report View
+     *
+     * @param ReportViewInterface $subReportView
+     * @return ReportViewInterface[]
+     */
+    public function getReportMultiViewsByReportView(ReportViewInterface $subReportView) {
+        $qb = $this->createQueryBuilder('rpv')
+            ->join('rpv.reportViewMultiViews', 'rpvmv')
+            ->where('rpvmv.subView = :subReportView')
+            ->setParameter('subReportView', $subReportView);
+
+        return $qb->getQuery()->getResult();
     }
 }

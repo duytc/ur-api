@@ -13,22 +13,23 @@ use UR\Entity\Core\DataSet;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\User\Role\AdminInterface;
+use UR\Service\DataSet\FieldType;
 
 class DataSetFormType extends AbstractRoleSpecificFormType
 {
     static $SUPPORTED_DIMENSION_TYPES = [
-        'date',
-        'datetime',
-        'text'
+        FieldType::DATE,
+        FieldType::DATETIME,
+        FieldType::TEXT
     ];
 
     static $SUPPORTED_METRIC_TYPES = [
-        'date',
-        'datetime',
-        'text',
-        'multiLineText',
-        'number',
-        'decimal'
+        FieldType::DATE,
+        FieldType::DATETIME,
+        FieldType::TEXT,
+        FieldType::LARGE_TEXT,
+        FieldType::NUMBER,
+        FieldType::DECIMAL
     ];
 
     protected $actions = [];

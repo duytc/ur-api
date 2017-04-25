@@ -19,8 +19,10 @@ use UR\Service\StringUtilTrait;
 class AlterImportDataTableCommand extends ContainerAwareCommand
 {
     use StringUtilTrait;
+
     const SQL_TYPE_LONGTEXT = 'longtext';
     const SQL_TYPE_TEXT = 'text';
+    const SQL_TYPE_VARCHAR = 'string';
 
     /**
      * @inheritdoc
@@ -87,14 +89,21 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
         foreach ($updateColumns as $oldName => $newName) {
             $curCol = $dataTable->getColumn($oldName);
             $type = $curCol->getType()->getName();
-            if ($type === FieldType::TEXT && array_key_exists($newName, $columns) && $columns[$newName] === FieldType::MULTI_LINE_TEXT) {
-                $type = self::SQL_TYPE_LONGTEXT;
-            } else if ($type === FieldType::TEXT && array_key_exists($newName, $columns) && $columns[$newName] === FieldType::TEXT) {
+            if ($type === FieldType::TEXT && array_key_exists($newName, $columns) && $columns[$newName] === FieldType::LARGE_TEXT) {
                 $type = self::SQL_TYPE_TEXT;
+            } else if ($type === FieldType::TEXT && array_key_exists($newName, $columns) && $columns[$newName] === FieldType::TEXT) {
+                $type = self::SQL_TYPE_VARCHAR;
             }
 
             if ($dataTable->hasColumn($oldName)) {
-                $sql = sprintf("ALTER TABLE %s CHANGE `%s` `%s` %s", $dataTable->getName(), $oldName, $newName, $type);
+                $typeWithLength = ($type === self::SQL_TYPE_TEXT)
+                    ? sprintf('%s(%s)', $type, Synchronizer::FIELD_LENGTH_LARGE_TEXT)
+                    : (($type === self::SQL_TYPE_VARCHAR)
+                        ? sprintf('%s(%s)', $type, Synchronizer::FIELD_LENGTH_TEXT)
+                        : $type
+                    );
+
+                $sql = sprintf("ALTER TABLE %s CHANGE `%s` `%s` %s", $dataTable->getName(), $oldName, $newName, $typeWithLength);
                 if (strtolower($curCol->getType()->getName()) === strtolower(FieldType::NUMBER) || strtolower($curCol->getType()->getName()) === strtolower(FieldType::DECIMAL)) {
                     $sql .= sprintf("(%s,%s)", $curCol->getPrecision(), $curCol->getScale());
                 }
@@ -102,13 +111,13 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
             }
 
             if ($curCol->getType()->getName() == FieldType::DATE || $curCol->getType()->getName() == FieldType::DATETIME) {
-                $oldDay = sprintf(Synchronizer::HIDDEN_FIELD_DAY_TEMPLATE, $oldName);
-                $oldMonth = sprintf(Synchronizer::HIDDEN_FIELD_MONTH_TEMPLATE, $oldName);
-                $oldYear = sprintf(Synchronizer::HIDDEN_FIELD_YEAR_TEMPLATE, $oldName);
+                $oldDay = Synchronizer::getHiddenColumnDay($oldName);
+                $oldMonth = Synchronizer::getHiddenColumnMonth($oldName);
+                $oldYear = Synchronizer::getHiddenColumnYear($oldName);
 
-                $newDay = sprintf(Synchronizer::HIDDEN_FIELD_DAY_TEMPLATE, $newName);
-                $newMonth = sprintf(Synchronizer::HIDDEN_FIELD_MONTH_TEMPLATE, $newName);
-                $newYear = sprintf(Synchronizer::HIDDEN_FIELD_YEAR_TEMPLATE, $newName);
+                $newDay = Synchronizer::getHiddenColumnDay($newName);
+                $newMonth = Synchronizer::getHiddenColumnMonth($newName);
+                $newYear = Synchronizer::getHiddenColumnYear($newName);
 
                 if ($dataTable->hasColumn($oldDay)) {
                     $sqlDay = sprintf("ALTER TABLE %s CHANGE `%s` `%s` %s", $dataTable->getName(), $oldDay, $newDay, Type::INTEGER);
@@ -140,9 +149,9 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
         foreach ($deletedColumns as $deletedColumn => $type) {
             $delCols[] = $dataTable->getColumn($deletedColumn);
             if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
-                $delCols[] = $dataTable->getColumn(sprintf(Synchronizer::HIDDEN_FIELD_DAY_TEMPLATE, $deletedColumn));
-                $delCols[] = $dataTable->getColumn(sprintf(Synchronizer::HIDDEN_FIELD_MONTH_TEMPLATE, $deletedColumn));
-                $delCols[] = $dataTable->getColumn(sprintf(Synchronizer::HIDDEN_FIELD_YEAR_TEMPLATE, $deletedColumn));
+                $delCols[] = $dataTable->getColumn(Synchronizer::getHiddenColumnDay($deletedColumn));
+                $delCols[] = $dataTable->getColumn(Synchronizer::getHiddenColumnMonth($deletedColumn));
+                $delCols[] = $dataTable->getColumn(Synchronizer::getHiddenColumnYear($deletedColumn));
             }
         }
 
@@ -154,21 +163,28 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
 
         $dataTable = $dataSetSynchronizer->getDataSetImportTable($dataSet->getId());
         foreach ($newColumns as $newColumn => $type) {
-            if (strcmp($type, FieldType::NUMBER) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, Type::INTEGER, ["notnull" => false, "default" => null]);
-            } else if (strcmp($type, FieldType::DECIMAL) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, $type, ["precision" => 25, "scale" => 12, "notnull" => false, "default" => null]);
-            } else if (strcmp($type, FieldType::MULTI_LINE_TEXT) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false, "default" => null]);
-            } else if (strcmp($type, FieldType::TEXT) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, Type::TEXT, ["notnull" => false, "default" => null, "length" => Synchronizer::FIELD_LENGTH_TEXT]);
-            } else if (strcmp($type, FieldType::DATE) === 0 OR strcmp($type, FieldType::DATETIME) === 0) {
-                $addCols[] = $dataTable->addColumn($newColumn, FieldType::DATE, ["notnull" => false, "default" => null]);
-                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::HIDDEN_FIELD_DAY_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
-                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::HIDDEN_FIELD_MONTH_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
-                $addCols[] = $dataTable->addColumn(sprintf(Synchronizer::HIDDEN_FIELD_YEAR_TEMPLATE, $newColumn), Type::INTEGER, ["notnull" => false, "default" => null]);
+            if ($type === FieldType::NUMBER) {
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$type];
+                $addCols[] = $dataTable->addColumn($newColumn, $colType, ['notnull' => false, 'default' => null]);
+            } else if ($type === FieldType::DECIMAL) {
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$type];
+                $addCols[] = $dataTable->addColumn($newColumn, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
+            } else if ($type === FieldType::LARGE_TEXT) {
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$type];
+                $addCols[] = $dataTable->addColumn($newColumn, $colType, ['notnull' => false, 'default' => null, 'length' => Synchronizer::FIELD_LENGTH_LARGE_TEXT]);
+            } else if ($type === FieldType::TEXT) {
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$type];
+                $addCols[] = $dataTable->addColumn($newColumn, $colType, ['notnull' => false, 'default' => null, 'length' => Synchronizer::FIELD_LENGTH_TEXT]);
+            } else if ($type === FieldType::DATE OR $type === FieldType::DATETIME) {
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$type];
+                $addCols[] = $dataTable->addColumn($newColumn, $colType, ['notnull' => false, 'default' => null]);
+
+                $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[FieldType::NUMBER];
+                $addCols[] = $dataTable->addColumn(Synchronizer::getHiddenColumnDay($newColumn), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
+                $addCols[] = $dataTable->addColumn(Synchronizer::getHiddenColumnMonth($newColumn), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
+                $addCols[] = $dataTable->addColumn(Synchronizer::getHiddenColumnYear($newColumn), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
             } else {
-                $addCols[] = $dataTable->addColumn($newColumn, $type, ["notnull" => false, "default" => null]);
+                $addCols[] = $dataTable->addColumn($newColumn, $type, ['notnull' => false, 'default' => null]);
             }
         }
 

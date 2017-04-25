@@ -4,6 +4,7 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
 
 class GroupByColumns implements CollectionTransformerInterface
@@ -90,7 +91,7 @@ class GroupByColumns implements CollectionTransformerInterface
                     }
 
                     if (!$isFirst) {
-                        $isSumField = array_key_exists($sumField, $types) && ($types[$sumField] == 'number' || $types[$sumField] == 'decimal');
+                        $isSumField = array_key_exists($sumField, $types) && ($types[$sumField] == FieldType::NUMBER || $types[$sumField] == FieldType::DECIMAL);
 
                         if ($isSumField) {
                             $result[$key][$sumField] += $element[$sumField];

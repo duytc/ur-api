@@ -188,7 +188,7 @@ class ParsingFileService
             }
 
             // filter Date
-            if (strcmp($filter[ColumnFilterInterface::FIELD_TYPE_FILTER_KEY], FieldType::DATE) === 0) {
+            if ($filter[ColumnFilterInterface::FIELD_TYPE_FILTER_KEY] === FieldType::DATE) {
                 $mapFields = $connectedDataSource->getMapFields();
 
                 if (array_key_exists($filter[ColumnFilterInterface::FIELD_NAME_FILTER_KEY], $mapFields)) {
@@ -216,7 +216,7 @@ class ParsingFileService
     {
         $transforms = $connectedDataSource->getTransforms();
         foreach ($transforms as $transform) {
-            if (strcmp($transform[DateFormat::FIELD_KEY], $field) === 0) {
+            if ($transform[DateFormat::FIELD_KEY] === $field) {
                 return $transform[DateFormat::FROM_KEY];
             }
         }
@@ -327,7 +327,7 @@ class ParsingFileService
 
         if ($targetField !== null && array_key_exists($targetField, $allFields)) {
             $targetFieldType = $allFields[$targetField];
-            if (strcmp($targetFieldType, FieldType::DATE) === 0 && !$parserConfig->hasColumnMapping($targetField)) {
+            if ($targetFieldType === FieldType::DATE && !$parserConfig->hasColumnMapping($targetField)) {
                 $parserConfig->addColumn($targetField, $targetField);
             }
         }
@@ -351,9 +351,9 @@ class ParsingFileService
                     $temp[$field] = null;
                 } else if ($row[$field] === null) {
                     $temp[$field] = null;
-                } else if (strcmp($type, FieldType::NUMBER) === 0) {
+                } else if ($type === FieldType::NUMBER) {
                     $temp[$field] = round($row[$field]);
-                } else if (strcmp($type, FieldType::DECIMAL) === 0) {
+                } else if ($type === FieldType::DECIMAL) {
                     $temp[$field] = floatval($row[$field]);
                 } else {
                     $temp[$field] = $row[$field];
@@ -404,7 +404,7 @@ class ParsingFileService
      */
     private function getSingleMetaDataFieldValue($internalField, DataSourceEntryInterface $dataSourceEntry)
     {
-        if (strcmp($internalField, MetadataInterface::FILE_NAME) === 0) {
+        if ($internalField === MetadataInterface::FILE_NAME) {
             return $dataSourceEntry->getFileName();
         }
 
