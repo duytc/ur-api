@@ -51,6 +51,11 @@ class ReportView implements ReportViewInterface
     protected $transforms;
 
     /**
+     * @var \DateTime
+     */
+    protected $createdDate;
+
+    /**
      * @var array
      */
     protected $weightedCalculations;
@@ -213,6 +218,24 @@ class ReportView implements ReportViewInterface
     public function setTransforms($transforms)
     {
         $this->transforms = $transforms;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCreatedDate()
+    {
+        return $this->createdDate;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setCreatedDate($createdDate)
+    {
+        $this->createdDate = $createdDate;
+
         return $this;
     }
 

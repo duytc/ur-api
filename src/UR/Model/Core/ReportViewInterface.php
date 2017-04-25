@@ -55,6 +55,17 @@ interface ReportViewInterface extends ModelInterface
     public function setTransforms($transform);
 
     /**
+     * @return \DateTime
+     */
+    public function getCreatedDate();
+
+    /**
+     * @param \DateTime $createdDate
+     * @return self
+     */
+    public function setCreatedDate($createdDate);
+
+    /**
      * @return array
      */
     public function getMetrics();

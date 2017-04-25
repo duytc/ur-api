@@ -2,8 +2,6 @@
 
 namespace UR\Bundle\AppBundle\Command;
 
-use DateTime;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
@@ -14,7 +12,6 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\ReportViewInterface;
-use UR\Service\DataSet\FieldType;
 
 class MigrateLastActivityCommand extends ContainerAwareCommand
 {
@@ -52,17 +49,11 @@ class MigrateLastActivityCommand extends ContainerAwareCommand
         $container = $this->getContainer();
         $this->logger = $container->get('logger');
 
-        $output->writeln('Updating name for Connected Data Source');
+        $output->writeln('Starting command update last activity...');
 
         /** @var EntityManagerInterface $entityManager */
         $entityManager = $container->get('doctrine.orm.entity_manager');
         $conn = $entityManager->getConnection();
-
-        $this->syncURTable($conn, self::TABLE_DATA_SET, self::FIELD_LAST_ACTIVITY);
-        $this->syncURTable($conn, self::TABLE_DATA_SOURCE, self::FIELD_LAST_ACTIVITY);
-        $this->syncURTable($conn, self::TABLE_CONNECTED_DATA_SOURCE, self::FIELD_LAST_ACTIVITY);
-        $this->syncURTable($conn, self::TABLE_REPORT_VIEW, self::FIELD_LAST_ACTIVITY);
-        $this->syncURTable($conn, self::TABLE_REPORT_VIEW, self::FIELD_LAST_RUN);
 
         $this->updateSQLs = [];
 
@@ -94,76 +85,70 @@ class MigrateLastActivityCommand extends ContainerAwareCommand
             try {
                 $conn->exec($updateSQL);
             } catch (\Exception $e) {
-
+                $output->writeln('Command run failed. Exception: ' . $e->getMessage());
             }
         }
 
         $output->writeln('Command run successfully');
     }
 
-    private function syncURTable(Connection $conn, $tableName, $addColumn)
-    {
-        $sm = $conn->getSchemaManager();
-
-        if (!$sm->tablesExist([$tableName])) {
-            return false;
-        }
-
-        $dataTable = $sm->listTableDetails($tableName);
-
-        if (!$dataTable->hasColumn($addColumn)) {
-            $updateSQL = sprintf("ALTER TABLE %s ADD `%s` %s", $dataTable->getName(), $addColumn, FieldType::DATETIME);
-            try {
-                $conn->exec($updateSQL);
-            } catch (\Exception $e) {
-
-            }
-        }
-    }
-
+    /**
+     * @param DataSetInterface $dataSet
+     */
     private function addLastActivityOnDataSet(DataSetInterface $dataSet)
     {
         if (!$dataSet instanceof DataSetInterface) {
             return;
         }
-        if (null == $dataSet->getLastActivity()) {
-            $this->buildSQLUpdateField(self::TABLE_DATA_SET, self::FIELD_LAST_ACTIVITY, $dataSet->getId());
-        }
+
+        $this->buildSQLUpdateField(self::TABLE_DATA_SET, self::FIELD_LAST_ACTIVITY, $dataSet->getCreatedDate()->format('Y-m-d H:i:s'), $dataSet->getId());
     }
 
+    /**
+     * @param DataSourceInterface $dataSource
+     */
     private function addLastActivityOnDataSource(DataSourceInterface $dataSource)
     {
         if (!$dataSource instanceof DataSourceInterface) {
             return;
         }
-        if (null == $dataSource->getLastActivity()) {
-            $this->buildSQLUpdateField(self::TABLE_DATA_SOURCE, self::FIELD_LAST_ACTIVITY, $dataSource->getId());
-        }
+
+        $this->buildSQLUpdateField(self::TABLE_DATA_SOURCE, self::FIELD_LAST_ACTIVITY, date('Y-m-d H:i:s'), $dataSource->getId());
     }
 
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     */
     private function addLastActivityOnConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource)
     {
         if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
             return;
         }
-        if (null == $connectedDataSource->getLastActivity()) {
-            $this->buildSQLUpdateField(self::TABLE_CONNECTED_DATA_SOURCE, self::FIELD_LAST_ACTIVITY, $connectedDataSource->getId());
-        }
+
+        $this->buildSQLUpdateField(self::TABLE_CONNECTED_DATA_SOURCE, self::FIELD_LAST_ACTIVITY, date('Y-m-d H:i:s'), $connectedDataSource->getId());
     }
 
+    /**
+     * @param ReportViewInterface $reportView
+     */
     private function addLastActivityOnReportView(ReportViewInterface $reportView)
     {
         if (!$reportView instanceof ReportViewInterface) {
             return;
         }
-        if (null == $reportView->getLastActivity()) {
-            $this->buildSQLUpdateField(self::TABLE_REPORT_VIEW, self::FIELD_LAST_ACTIVITY, $reportView->getId());
-            $this->buildSQLUpdateField(self::TABLE_REPORT_VIEW, self::FIELD_LAST_RUN, $reportView->getId());
-        }
+
+        $this->buildSQLUpdateField(self::TABLE_REPORT_VIEW, self::FIELD_LAST_ACTIVITY, $reportView->getCreatedDate()->format('Y-m-d H:i:s'), $reportView->getId());
+        $this->buildSQLUpdateField(self::TABLE_REPORT_VIEW, self::FIELD_LAST_RUN, $reportView->getCreatedDate()->format('Y-m-d H:i:s'), $reportView->getId());
     }
 
-    private function buildSQLUpdateField($tableName, $fieldName, $id)
+    /**
+     * @param string $tableName
+     * @param string $fieldName
+     * @param mixed $value
+     * @param int $id
+     */
+    private function buildSQLUpdateField($tableName, $fieldName, $value, $id)
     {
-        $this->updateSQLs[] = sprintf('UPDATE `%s` SET `%s` = "%s" WHERE `id` = %s', $tableName, $fieldName, date('Y-m-d H:i:s'), (int)$id);
+        $this->updateSQLs[] = sprintf('UPDATE `%s` SET `%s` = "%s" WHERE `id` = %s', $tableName, $fieldName, $value, (int)$id);
     }
 }
