@@ -164,7 +164,6 @@ class MigrateLastActivityCommand extends ContainerAwareCommand
 
     private function buildSQLUpdateField($tableName, $fieldName, $id)
     {
-        $time = new DateTime();
-        $this->updateSQLs[] = sprintf('UPDATE `%s` SET `%s` = "%s" WHERE `id` = %s', $tableName, $fieldName, $time->format('Y-m-d H:i:s'), (int)$id);
+        $this->updateSQLs[] = sprintf('UPDATE `%s` SET `%s` = "%s" WHERE `id` = %s', $tableName, $fieldName, date('Y-m-d H:i:s'), (int)$id);
     }
 }

@@ -30,6 +30,17 @@ class UpdateLastActivityForDataSource
         $this->dataSources[] = $dataSourceEntry->getDataSource();
     }
 
+    public function postRemove(LifecycleEventArgs $args)
+    {
+        /** @var DataSourceEntryInterface $dataSourceEntry */
+        $dataSourceEntry = $args->getEntity();
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+            return;
+        }
+
+        $this->dataSources[] = $dataSourceEntry->getDataSource();
+    }
+
     /**
      * @param PostFlushEventArgs $args
      */
