@@ -4,8 +4,11 @@ namespace UR\Form\Type;
 
 
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\ReportViewMultiView;
+use UR\Model\Core\ReportViewMultiViewInterface;
 
 class ReportViewMultiViewFormType extends AbstractRoleSpecificFormType
 {
@@ -16,8 +19,22 @@ class ReportViewMultiViewFormType extends AbstractRoleSpecificFormType
             ->add('filters')
             ->add('subView')
             ->add('dimensions')
-            ->add('metrics')
-        ;
+            ->add('metrics');
+
+        $builder->addEventListener(
+            FormEvents::POST_SUBMIT,
+            function (FormEvent $event) {
+                /** @var ReportViewMultiViewInterface $reportViewMultiView */
+                $reportViewMultiView = $event->getData();
+                $form = $event->getForm();
+
+                $this->validateFilters($form, $reportViewMultiView->getFilters());
+
+                $this->validateDimensions($form, $reportViewMultiView->getDimensions());
+
+                $this->validateMetrics($form, $reportViewMultiView->getMetrics());
+            }
+        );
     }
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)
@@ -28,5 +45,26 @@ class ReportViewMultiViewFormType extends AbstractRoleSpecificFormType
     public function getName()
     {
         return 'ur_form_report_view_multi_view';
+    }
+
+    private function validateFilters($form, $filters)
+    {
+        // TODO: validate filters
+
+        return true;
+    }
+
+    private function validateDimensions($form, $dimensions)
+    {
+        // TODO: validate dimensions
+
+        return true;
+    }
+
+    private function validateMetrics($form, $metrics)
+    {
+        // TODO: validate metrics
+
+        return true;
     }
 }

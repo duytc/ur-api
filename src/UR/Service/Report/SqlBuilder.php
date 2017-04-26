@@ -171,8 +171,11 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             if ($filter instanceof DateFilterInterface) {
-                $qb->setParameter(sprintf(':startDate%d', $dataSetId ?? 0), $filter->getStartDate(), Type::DATE);
-                $qb->setParameter(sprintf(':endDate%d', $dataSetId ?? 0), $filter->getEndDate(), Type::DATE);
+                $startDate = $filter->getStartDate() instanceof \DateTime ? $filter->getStartDate() : date_create_from_format('Y-m-d', $filter->getStartDate());
+                $endDate = $filter->getEndDate() instanceof \DateTime ? $filter->getEndDate() : date_create_from_format('Y-m-d', $filter->getEndDate());
+
+                $qb->setParameter(sprintf(':startDate%d', $dataSetId ?? 0), $startDate, Type::DATE);
+                $qb->setParameter(sprintf(':endDate%d', $dataSetId ?? 0), $endDate, Type::DATE);
             } else if ($filter instanceof TextFilterInterface) {
                 if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN])) {
                     $bindParamName = sprintf(':%s%d', $filter->getFieldName(), $dataSetId ?? 0);

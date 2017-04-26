@@ -6,9 +6,9 @@ use UR\Service\DTO\Report\ReportResult;
 
 abstract class AbstractFilter
 {
-	const TYPE_DATE = 1;
-	const TYPE_TEXT = 2;
-	const TYPE_NUMBER = 3;
+	const TYPE_DATE = 'date';
+	const TYPE_TEXT = 'text';
+	const TYPE_NUMBER = 'number';
 
 	/**
 	 * @var string

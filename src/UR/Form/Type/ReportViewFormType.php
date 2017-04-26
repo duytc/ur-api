@@ -3,9 +3,7 @@
 namespace UR\Form\Type;
 
 
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -48,8 +46,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             ->add('formats')
             ->add('fieldTypes')
             ->add('subReportsIncluded')
-            ->add('isShowDataSetName')
-        ;
+            ->add('isShowDataSetName');
 
         $builder
             ->add('reportViewMultiViews', 'collection', array(
@@ -95,11 +92,11 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
         $builder->addEventListener(
             FormEvents::PRE_SUBMIT,
             function (FormEvent $event) {
-                foreach($this->originalReportViewDataSets as $reportViewDataSet) {
+                foreach ($this->originalReportViewDataSets as $reportViewDataSet) {
                     $this->em->remove($reportViewDataSet);
                 }
 
-                foreach($this->originalReportViewMultiViews as $reportViewMultiView) {
+                foreach ($this->originalReportViewMultiViews as $reportViewMultiView) {
                     $this->em->remove($reportViewMultiView);
                 }
 
@@ -112,6 +109,17 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             function (FormEvent $event) {
                 /** @var ReportViewInterface $reportView */
                 $reportView = $event->getData();
+                $form = $event->getForm();
+
+                $this->validateTransforms($form, $reportView->getTransforms());
+
+                $this->validateJoinBy($form, $reportView->getJoinBy());
+
+                $this->validateWeightedCalculations($form, $reportView->getWeightedCalculations());
+
+                $this->validateFormats($form, $reportView->getFormats());
+
+                $this->validateFieldTypes($form, $reportView->getFieldTypes());
 
                 if (!is_array($reportView->getFieldTypes())) {
                     $reportView->setFieldTypes([]);
@@ -128,7 +136,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
                 /**
                  * @var ReportViewDataSetInterface $reportViewDataSet
                  */
-                foreach($reportViewDataSets as $reportViewDataSet) {
+                foreach ($reportViewDataSets as $reportViewDataSet) {
                     $reportViewDataSet->setReportView($reportView);
                 }
 
@@ -137,7 +145,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
                 /**
                  * @var ReportViewMultiViewInterface $reportViewMultiView
                  */
-                foreach($reportViewMultiViews as $reportViewMultiView) {
+                foreach ($reportViewMultiViews as $reportViewMultiView) {
                     $reportViewMultiView->setReportView($reportView);
                 }
             }
@@ -152,5 +160,40 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
     public function getName()
     {
         return 'ur_form_report_view';
+    }
+
+    private function validateTransforms($form, $transforms)
+    {
+        // TODO: validate transforms
+
+        return true;
+    }
+
+    private function validateJoinBy($form, $joinBy)
+    {
+        // TODO: validate joinBy
+
+        return true;
+    }
+
+    private function validateWeightedCalculations($form, $weightedCalculations)
+    {
+        // TODO: validate weightedCalculations
+
+        return true;
+    }
+
+    private function validateFormats($form, $formats)
+    {
+        // TODO: validate formats
+
+        return true;
+    }
+
+    private function validateFieldTypes($form, $fieldTypes)
+    {
+        // TODO: validate fieldTypes
+
+        return true;
     }
 }

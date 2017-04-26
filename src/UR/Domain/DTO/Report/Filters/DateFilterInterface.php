@@ -40,4 +40,15 @@ interface DateFilterInterface extends FilterInterface
      * @return string
      */
     public function getDateType();
+
+	/**
+	 * @return boolean
+	 */
+	public function isUserDefine();
+
+	/**
+	 * @param boolean $userDefine
+	 * @return self
+	 */
+	public function setUserDefine($userDefine);
 }

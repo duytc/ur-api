@@ -12,11 +12,11 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	const DATE_FORMAT_FILTER_KEY = 'format';
 	const DATE_TYPE_FILTER_KEY = 'dateType';
 	const DATE_VALUE_FILTER_KEY = 'dateValue';
+	const DATE_USER_PROVIDED_FILTER_KEY = 'userProvided';
 
 	/* for date type */
 	const DATE_TYPE_CUSTOM_RANGE = 'customRange';
 	const DATE_TYPE_DYNAMIC = 'dynamic';
-    const DATE_TYPE_USER_PROVIDED= 'userProvided';
 
 	/* for date value in case "dateType" is customRange value */
 	const DATE_VALUE_FILTER_START_DATE_KEY = 'startDate';
@@ -33,8 +33,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	/* supported date types */
 	public static $SUPPORTED_DATE_TYPES = [
 		self::DATE_TYPE_CUSTOM_RANGE,
-		self::DATE_TYPE_DYNAMIC,
-        self::DATE_TYPE_USER_PROVIDED
+		self::DATE_TYPE_DYNAMIC
 	];
 
 	/* supported date values in case "dateType" is customRange value */
@@ -52,9 +51,11 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 
 	/** @var string|array */
 	protected $dateValue;
-	/**
-	 * @var string
-	 */
+
+	/** @var bool */
+	protected $userDefine;
+
+	/** @var string */
 	protected $dateFormat;
 
 	/**
@@ -86,6 +87,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 		// $this->dateFormat = $dateFilter[self::DATE_FORMAT_FILTER_KEY];
 		$this->dateType = $dateFilter[self::DATE_TYPE_FILTER_KEY];
 		$this->dateValue = $dateFilter[self::DATE_VALUE_FILTER_KEY];
+		$this->userDefine = (bool) $dateFilter[self::DATE_USER_PROVIDED_FILTER_KEY];
 
 		// validate dateValue
 		$this->validateDateValue();
@@ -120,7 +122,30 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	 */
 	public function getStartDate()
 	{
-		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType || self::DATE_TYPE_USER_PROVIDED == $this->dateType) {
+        // notice:
+        // userProvided is separate option with dateType
+        // at first call, if dateType is dynamic, the startDate-endDate are empty,
+        // so that we must get from dynamic
+        // if call again with startDate-endDate that user provided, we must use them
+
+		if ($this->isUserDefine()) {
+            if (!is_array($this->dateValue) || !array_key_exists(self::DATE_VALUE_FILTER_START_DATE_KEY, $this->dateValue)) {
+                // using user define but at the first time the dateValue may be empty
+                // so that we need to get due to dateType
+                // this occurs if dateType is dynamic
+                if (self::DATE_TYPE_DYNAMIC == $this->dateType) {
+                    return $this->getDynamicDate()[0];
+                }
+
+                // else: customRange => invalid because missing startDate-endDate in dateValue
+				return null; // todo: return null or throw an exception...
+            } else {
+                return $this->dateValue[self::DATE_VALUE_FILTER_START_DATE_KEY];
+            }
+		}
+
+		// else: not using userProvided => use normal customRange or dynamic
+		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType) {
 			return $this->dateValue[self::DATE_VALUE_FILTER_START_DATE_KEY];
 		}
 
@@ -133,7 +158,31 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	 */
 	public function getEndDate()
 	{
-		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType || self::DATE_TYPE_USER_PROVIDED == $this->dateType) {
+		// notice:
+		// userProvided is separate option with dateType
+		// at first call, if dateType is dynamic, the startDate-endDate are empty,
+		// so that we must get from dynamic
+		// if call again with startDate-endDate that user provided, we must use them
+
+		if ($this->isUserDefine()) {
+			if (!is_array($this->dateValue) || !array_key_exists(self::DATE_VALUE_FILTER_END_DATE_KEY, $this->dateValue)) {
+				// using user define but at the first time the dateValue may be empty
+				// so that we need to get due to dateType
+				// this occurs if dateType is dynamic
+				if (self::DATE_TYPE_DYNAMIC == $this->dateType) {
+					return $this->getDynamicDate()[1];
+				}
+
+				// else: customRange => invalid because missing startDate-endDate in dateValue
+				return null; // todo: return null or throw an exception...
+			} else {
+				return $this->dateValue[self::DATE_VALUE_FILTER_END_DATE_KEY];
+			}
+		}
+
+		// else: not using userProvided => use normal customRange or dynamic
+
+		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType || $this->isUserDefine()) {
 			return $this->dateValue[self::DATE_VALUE_FILTER_END_DATE_KEY];
 		}
 
@@ -157,7 +206,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 			}
 		}
 
-		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType || self::DATE_TYPE_USER_PROVIDED == $this->dateType) {
+		if (self::DATE_TYPE_CUSTOM_RANGE == $this->dateType) {
 			if (!is_array($this->dateValue)
 				|| !array_key_exists(self::DATE_VALUE_FILTER_START_DATE_KEY, $this->dateValue)
 				|| !array_key_exists(self::DATE_VALUE_FILTER_END_DATE_KEY, $this->dateValue)
@@ -278,6 +327,23 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	public function setDateValue($dateValue)
 	{
 		$this->dateValue = $dateValue;
+		return $this;
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function isUserDefine()
+	{
+		return $this->userDefine;
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function setUserDefine($userDefine)
+	{
+		$this->userDefine = $userDefine;
 		return $this;
 	}
 }

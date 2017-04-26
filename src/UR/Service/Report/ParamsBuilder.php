@@ -446,19 +446,23 @@ class ParamsBuilder implements ParamsBuilderInterface
         $param = new Params();
 
         if ($reportView->isMultiView()) {
+            $reportViewsRawData = $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews());
+            $reportViews = $this->createReportViews($reportViewsRawData);
+
             $param
-                ->setReportViews($this->createReportViews(
-                    $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews()))
-                )
+                ->setReportViews($reportViews)
                 ->setSubReportIncluded($reportView->isSubReportsIncluded())
                 ->setShowInTotal($reportView->getShowInTotal());
         } else {
-            $param
-                ->setDataSets($this->createDataSets(
-                    $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
-                );
+            $dataSetsRawData = $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets());
+            $dataSets = $this->createDataSets($dataSetsRawData);
 
-            $param->setJoinConfigs($this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets()));
+            $joinConfigs = $this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets());
+
+            $param
+                ->setDataSets($dataSets)
+                ->setJoinConfigs($joinConfigs);
+
             // set showInTotal to NULL to get all total values
             // DO NOT change
         }

@@ -269,25 +269,20 @@ class ReportBuilder implements ReportBuilderInterface
      */
     protected function overrideDateTypeFiltersForReportView(ReportViewDTO $reportView, $startDate, $endDate)
     {
-//        $noDateFilter = 0;
         $filters = $reportView->getFilters();
-        /** @var FilterInterface $filter */
+        /** @var FilterInterface|DateFilterInterface $filter */
         foreach ($filters as $filter) {
-            if ($filter instanceof DateFilterInterface && $filter->getDateType() === DateFilter::DATE_TYPE_USER_PROVIDED) {
+            if (!$filter instanceof DateFilterInterface) {
+                continue;
+            }
+
+            if ($filter->isUserDefine()) {
                 $filter->setDateValue(array(
                     DateFilter::DATE_VALUE_FILTER_START_DATE_KEY => $startDate,
                     DateFilter::DATE_VALUE_FILTER_END_DATE_KEY => $endDate
                 ));
-//                $noDateFilter++;
             }
         }
-
-//        if ($noDateFilter < 1) {
-//            $dateFields =  $this->getDateTypeFieldsForReportView($reportView);
-//            foreach ($dateFields as $dateField) {
-//                $filters[] =  $this->createDateFilter($dateField, $startDate, $endDate);
-//            }
-//        }
 
         $reportView->setFilters($filters);
 
@@ -326,7 +321,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         if (!empty($startDate) && !empty($endDate)) {
             foreach ($dataSets as $dataSet) {
-                $this->overrideDateTypeFilterForDataSet($dataSet, $startDate, $endDate, $outputJoinFields);
+                $this->overrideDateTypeFilterForDataSet($dataSet, $startDate, $endDate);
             }
         }
 
@@ -371,30 +366,25 @@ class ReportBuilder implements ReportBuilderInterface
      * @param DataSetDTO $dataSet
      * @param $startDate
      * @param $endDate
-     * @param $joinField
      * @return DataSetDTO
      */
-    protected function overrideDateTypeFilterForDataSet(DataSetDTO &$dataSet, $startDate, $endDate, $joinField = null)
+    protected function overrideDateTypeFilterForDataSet(DataSetDTO &$dataSet, $startDate, $endDate)
     {
-//        $noDateFilter = 0;
         $filters = $dataSet->getFilters();
-        /** @var FilterInterface $filter */
+
+        /** @var FilterInterface|DateFilterInterface $filter */
         foreach ($filters as $filter) {
-            if ($filter instanceof DateFilterInterface && $filter->getDateType() === DateFilter::DATE_TYPE_USER_PROVIDED) {
+            if (!$filter instanceof DateFilterInterface) {
+                continue;
+            }
+
+            if ($filter->isUserDefine()) {
                 $filter->setDateValue(array(
                     DateFilter::DATE_VALUE_FILTER_START_DATE_KEY => $startDate,
                     DateFilter::DATE_VALUE_FILTER_END_DATE_KEY => $endDate
                 ));
-//                $noDateFilter++;
             }
         }
-
-//        if ($noDateFilter < 1) {
-//	        $dateFields = $this->getDateTypeFieldsOfDataSet($dataSet->getDataSetId());
-//            foreach ($dateFields as $dateField) {
-//                $filters[] =  $this->createDateFilter($dateField, $startDate, $endDate);
-//            }
-//        }
 
         $dataSet->setFilters($filters);
 
