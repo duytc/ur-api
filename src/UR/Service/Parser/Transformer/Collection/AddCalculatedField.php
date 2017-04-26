@@ -13,7 +13,7 @@ class AddCalculatedField extends AbstractAddField
     const CONDITION_COMPARATOR_KEY = 'conditionComparator';
     const CONDITION_VALUE_KEY = 'conditionValue';
     const DEFAULT_VALUE_KEY = 'defaultValue';
-    const INVALID_VALUE = NULL;
+
 
     const CONDITION_FIELD_CALCULATED_VALUE = '$$CALCULATED_VALUE$$';
 
@@ -40,6 +40,8 @@ class AddCalculatedField extends AbstractAddField
         self::CONDITION_COMPARISON_VALUE_NOT_IN,
         self::CONDITION_COMPARISON_VALUE_IS_INVALID
     ];
+
+    public static $INVALID_VALUES = [NAN, INF, NULL];
 
     /** @var string */
     protected $column;
@@ -74,8 +76,12 @@ class AddCalculatedField extends AbstractAddField
      */
     protected function getValue(array $row)
     {
-        // execute expression to get value
         try {
+            $defaultValue = $this->getDefaultValueByValidCondition($row, $isMatched);
+            if ($isMatched === true) {
+                return $defaultValue;
+            }
+
             $this->expressionLanguage->register('abs', function ($number) {
                 return sprintf('(is_numeric(%1$s) ? abs(%1$s) : %1$s)', $number);
             }, function ($arguments, $number) {
@@ -87,17 +93,20 @@ class AddCalculatedField extends AbstractAddField
             });
 
             $expressionForm = $this->convertExpressionForm($this->expression, $row);
-            if ($expressionForm === null) {
-                return self::INVALID_VALUE;
+            if ($expressionForm === NULL) {
+                return NULL;
             }
 
             $result = $this->expressionLanguage->evaluate($expressionForm, ['row' => $row]);
         } catch (\Exception $exception) {
-            $result = self::INVALID_VALUE;
+            $result = NULL;
         }
 
-        // get value by condition ($this->defaultValues config)
-        return $this->getDefaultValueByCondition($result, $row);
+        if (in_array($result, self::$INVALID_VALUES)) {
+            return $this->getDefaultValueByInvalidCondition($result);
+        }
+
+        return $result;
     }
 
     /**
@@ -140,37 +149,28 @@ class AddCalculatedField extends AbstractAddField
     /**
      * getDefaultValueByValue
      *
-     * @param $value
      * @param array $row
+     * @param bool $isMatched
      * @return null
      */
-    private function getDefaultValueByCondition($value, array $row)
+    private function getDefaultValueByValidCondition(array $row, &$isMatched)
     {
         if (!is_array($this->defaultValues)) {
-            return $value;
+            $isMatched = false;
+            return NULL;
         }
 
         foreach ($this->defaultValues as $defaultValueConfig) {
-            // not need validate again for defaultValueConfig due to already validated before
             $conditionField = $defaultValueConfig[self::CONDITION_FIELD_KEY];
             $conditionComparator = $defaultValueConfig[self::CONDITION_COMPARATOR_KEY];
             $conditionValue = $defaultValueConfig[self::CONDITION_VALUE_KEY];
             $defaultValue = $defaultValueConfig[self::DEFAULT_VALUE_KEY];
-
-            // find value for compare
-            // value may be value of field or current calculated field
-            $valueForCompare = $value; // default value of CALCULATED_FIELD
-
-            if (self::CONDITION_FIELD_CALCULATED_VALUE !== $conditionField) {
-                // only get value from field in row if existed
-                if (!array_key_exists($conditionField, $row)) {
-                    continue; // field not found in row, abort check this condition
-                }
-
-                $valueForCompare = $row[$conditionField];
+            if ((in_array($conditionValue, self::$INVALID_VALUES) && $conditionComparator == self::CONDITION_FIELD_CALCULATED_VALUE) || !array_key_exists($conditionField, $row)) {
+                continue;
             }
 
-            // do match condition and return default value if matched
+            $valueForCompare = $row[$conditionField];
+
             // FIRST MATCH, FIRST SERVE. PLEASE MIND THE ORDER
             $isMatched = $this->matchCondition($valueForCompare, $conditionComparator, $conditionValue);
             if ($isMatched) {
@@ -178,7 +178,27 @@ class AddCalculatedField extends AbstractAddField
             }
         }
 
-        // not condition matched, return the original value
+        return NULL;
+    }
+
+    /**
+     * @param $value
+     * @return mixed
+     */
+    private function getDefaultValueByInvalidCondition($value)
+    {
+        if (!is_array($this->defaultValues)) {
+            return $value;
+        }
+
+        foreach ($this->defaultValues as $defaultValueConfig) {
+            $conditionComparator = $defaultValueConfig[self::CONDITION_COMPARATOR_KEY];
+            $conditionValue = $defaultValueConfig[self::CONDITION_VALUE_KEY];
+            if ($conditionComparator == self::CONDITION_COMPARISON_VALUE_IS_INVALID && $conditionValue == $value) {
+                return $defaultValueConfig[self::DEFAULT_VALUE_KEY];
+            }
+        }
+
         return $value;
     }
 
@@ -193,9 +213,6 @@ class AddCalculatedField extends AbstractAddField
     private function matchCondition($value, $conditionComparator, $conditionValue)
     {
         switch ($conditionComparator) {
-            case self::CONDITION_COMPARISON_VALUE_IS_INVALID:
-                return $value == self::INVALID_VALUE;
-
             case self::CONDITION_COMPARISON_VALUE_IN:
                 return in_array($value, $conditionValue);
 
