@@ -8,7 +8,8 @@ use UR\Model\User\UserEntityInterface;
 class Alert implements AlertInterface
 {
     public static $SUPPORTED_ALERT_CODES = [
-        self::ALERT_CODE_BROWSER_AUTOMATION_LOGIN_FAIL
+        self::ALERT_CODE_BROWSER_AUTOMATION_LOGIN_FAIL,
+        self::ALERT_CODE_BROWSER_AUTOMATION_TIME_OUT
     ];
 
     protected $id;
