@@ -125,6 +125,7 @@ services:
             - @ur.service.parsing_file_service
             - @ur.service.data_set.importer
             - %ur.dryrun.maxsize%
+            - @logger
 
     ur.worker.workers.re_import_new_entry_received:
         class: UR\Worker\Workers\LoadingDataFromFileToDataImportTable

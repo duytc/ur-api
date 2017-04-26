@@ -3,12 +3,12 @@
 namespace UR\Service\Import;
 
 
+use Monolog\Logger;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\DataSet\ParsedDataImporter;
-use UR\Service\DTO\Report\ReportResult;
 use UR\Service\Parser\ParsingFileService;
 
 class AutoImportData implements AutoImportDataInterface
@@ -28,11 +28,14 @@ class AutoImportData implements AutoImportDataInterface
      */
     private $maxDryRunSize;
 
-    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, $maxDryRunSize)
+    private $logger;
+
+    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, $maxDryRunSize, Logger $logger)
     {
         $this->parsingFileService = $parsingFileService;
         $this->importer = $importer;
         $this->maxDryRunSize = $maxDryRunSize;
+        $this->logger = $logger;
     }
 
     /**
@@ -44,6 +47,7 @@ class AutoImportData implements AutoImportDataInterface
         $collection = $this->parsingData($connectedDataSource, $dataSourceEntry);
 
         /* import data to database */
+        $this->logger->notice(sprintf('begin loading file "%s" data to database "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
         $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource);
     }
 
@@ -69,7 +73,7 @@ class AutoImportData implements AutoImportDataInterface
             $dataTransferObject = [];
             $dataTransferObject['reports'] = $rows;
             $dataTransferObject['columns'] = $columns;
-            $dataTransferObject['total'] = count ($rows);
+            $dataTransferObject['total'] = count($rows);
             $dataTransferObject['average'] = [];
             $dataTransferObject['types'] = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
             $dataTransferObject['range'] = null;
@@ -102,7 +106,9 @@ class AutoImportData implements AutoImportDataInterface
         /*
          * parsing data
          */
+        $this->logger->notice(sprintf('begin parsing file "%s"', $dataSourceEntry->getFileName()));
         $collection = $this->parsingFileService->doParser($dataSourceEntry, $connectedDataSource, $limit);
+        $this->logger->notice('parsing file completed');
         $rows = $collection->getRows();
 
         return $this->parsingFileService->setDataOfColumnsNotMappedToNull($rows, $allFields);

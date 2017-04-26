@@ -14,6 +14,9 @@ UR\Entity\Core\DataSetImportJob:
         jobName:
             type: string
             nullable: true
+        jobType:
+            type: string
+            nullable: true
         jobData:
             type: json_array
             nullable: true

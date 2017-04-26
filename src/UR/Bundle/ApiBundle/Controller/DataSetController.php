@@ -152,7 +152,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
                 return $entry->getId();
             }, $entries->toArray());
 
-            $loadingDataService->doLoadDataFromEntryToDataBase([$connectedDataSource], $entryIds);
+            $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
         }
 
         return true;

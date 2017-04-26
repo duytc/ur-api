@@ -73,7 +73,9 @@ class ReImportWhenDataSourceEntryInsertedListener
             /**
              * @var  DataSourceInterface $dataSource
              */
-            $loadingDataService->doLoadDataFromEntryToDataBase($dataSource->getConnectedDataSources(), $entryIds);
+            foreach ($dataSource->getConnectedDataSources() as $connectedDataSource) {
+                $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
+            }
         }
     }
 }

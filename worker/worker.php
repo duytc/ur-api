@@ -82,7 +82,7 @@ while (true) {
         $queue->bury($job);
         continue;
     }
-    stdOut(sprintf('Received job %s (ID: %s) with payload %s', $task, $job->getId(), $rawPayload));
+    stdOut(sprintf('[%s] Received job %s (ID: %s) with payload %s', (new DateTime())->format('Y-m-d H:i:s'), $task, $job->getId(), $rawPayload));
     try {
         if ($task == 'loadingDataFromFileToDataImportTable' || $task == 'alterDataSetTable' || $task == 'truncateDataSetTable') {
             $worker->$task($params, $job, TUBE_NAME);

@@ -121,6 +121,9 @@ class ReImportWhenConnectedDataSourceChangedListener
 
         /** @var LoadingDataService */
         $loadingDataService = $this->container->get('ur.service.loading_data_service');
-        $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSources, $entryIds);
+
+        foreach ($connectedDataSources as $connectedDataSource) {
+            $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
+        }
     }
 }

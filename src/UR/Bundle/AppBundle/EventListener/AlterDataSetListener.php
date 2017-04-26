@@ -19,6 +19,9 @@ use UR\Worker\Manager;
  */
 class AlterDataSetListener
 {
+    const NEW_FIELDS_KEY = 'newFields';
+    const UPDATED_FIELDS_KEY = 'updateFields';
+    const DELETED_FIELDS_KEY = 'deletedFields';
     /**
      * @var array|DataSetInterface[]
      */
@@ -84,9 +87,9 @@ class AlterDataSetListener
 
         $this->changedEntities[] = [
             'dataSet' => $dataSet,
-            'newFields' => array_merge($newDimensions, $newMetrics),
-            'updateFields' => array_merge($updateDimensions, $updateMetrics),
-            'deletedFields' => array_merge($deletedDimensions, $deletedMetrics)
+            self::NEW_FIELDS_KEY => array_merge($newDimensions, $newMetrics),
+            self::UPDATED_FIELDS_KEY => array_merge($updateDimensions, $updateMetrics),
+            self::DELETED_FIELDS_KEY => array_merge($deletedDimensions, $deletedMetrics)
         ];
     }
 
@@ -116,12 +119,22 @@ class AlterDataSetListener
                 continue;
             }
 
-            $newFields = $changedEntity['newFields'];
-            $updateFields = $changedEntity['updateFields'];
-            $deletedFields = $changedEntity['deletedFields'];
+            $newFields = $changedEntity[self::NEW_FIELDS_KEY];
+            $updateFields = $changedEntity[self::UPDATED_FIELDS_KEY];
+            $deletedFields = $changedEntity[self::DELETED_FIELDS_KEY];
+
+            $jobData = [
+                self::NEW_FIELDS_KEY => $newFields,
+                self::UPDATED_FIELDS_KEY => $updateFields,
+                self::DELETED_FIELDS_KEY => $deletedFields
+            ];
 
             // create job to alter data set table
-            $dataSetImportJob = DataSetImportJob::createEmptyDataSetImportJob($dataSet, 'alter data set');
+            $dataSetImportJob = DataSetImportJob::createEmptyDataSetImportJob(
+                $dataSet,
+                sprintf('alter data set "%s"', $dataSet->getName()),
+                DataSetImportJob::JOB_TYPE_ALTER,
+                $jobData);
             $em->persist($dataSetImportJob);
 
             // add to list

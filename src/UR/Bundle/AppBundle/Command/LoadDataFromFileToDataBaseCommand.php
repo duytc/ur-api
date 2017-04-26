@@ -172,6 +172,8 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
             $logger->error($message);
         }
 
+        $logger->notice('-----------------------------------------------------------------------------------------------------');
+
         if ($isImportFail) {
             $failureAlert = $connectedDataSourceAlertFactory->getAlert(
                 $importHistoryEntity->getId(),

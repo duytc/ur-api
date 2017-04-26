@@ -4,6 +4,8 @@ namespace UR\Model\Core;
 
 class DataSetImportJob implements DataSetImportJobInterface
 {
+    const JOB_TYPE_IMPORT = 'import';
+    const JOB_TYPE_ALTER = 'alter';
     /**
      * @var int
      */
@@ -22,6 +24,8 @@ class DataSetImportJob implements DataSetImportJobInterface
     protected $jobName;
 
     protected $jobData;
+
+    protected $jobType;
 
     protected $createdDate;
 
@@ -126,16 +130,37 @@ class DataSetImportJob implements DataSetImportJobInterface
     /**
      * @param DataSetInterface $dataSet
      * @param $jobName
+     * @param $jobType
+     * @param array $jobData
      * @return DataSetImportJobInterface
      */
-    public static function createEmptyDataSetImportJob(DataSetInterface $dataSet, $jobName)
+    public static function createEmptyDataSetImportJob(DataSetInterface $dataSet, $jobName, $jobType, array $jobData)
     {
         $jobId = bin2hex(random_bytes(20));
         $dataSetImportJob = (new \UR\Entity\Core\DataSetImportJob())
             ->setJobName($jobName)
             ->setDataSet($dataSet)
+            ->setJobType($jobType)
+            ->setJobData($jobData)
             ->setJobId($jobId);
 
         return $dataSetImportJob;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getJobType()
+    {
+        return $this->jobType;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setJobType($jobType)
+    {
+        $this->jobType = $jobType;
+        return $this;
     }
 }

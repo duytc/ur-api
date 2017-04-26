@@ -43,20 +43,27 @@ class LoadingDataService
     }
 
     /**
-     * @param ConnectedDataSourceInterface[] $connectedDataSources
+     * @param ConnectedDataSourceInterface $connectedDataSource
      * @param array $entryIds
      */
-    public function doLoadDataFromEntryToDataBase($connectedDataSources, array $entryIds)
+    public function doLoadDataFromEntryToDataBase(ConnectedDataSourceInterface $connectedDataSource, array $entryIds)
     {
-        foreach ($connectedDataSources as $connectedDataSource) {
-            $dataSet = $connectedDataSource->getDataSet();
+        sort($entryIds);
 
-            $dataSetImportJobEntity = $this->dataSetImportJobManager->createNewDataSetImportJob($dataSet, 'load data from entries to table');
+        $dataSet = $connectedDataSource->getDataSet();
+
+        foreach ($entryIds as $entryId) {
+            $jobData = [
+                'connectedDataSourceId' => $connectedDataSource->getId(),
+                'dataSourceEntryIds' => $entryId
+            ];
+
+            $dataSetImportJobEntity = $this->dataSetImportJobManager->createNewDataSetImportJob($dataSet, sprintf('load data from entries to data set "%s"', $dataSet->getName()), $jobData);
             if (!$dataSetImportJobEntity instanceof DataSetImportJobInterface) {
-                continue;
+                return;
             }
 
-            $this->workerManager->loadingDataFromFileToDataImportTable($connectedDataSource->getId(), $entryIds, $dataSet->getId(), $dataSetImportJobEntity->getJobId());
+            $this->workerManager->loadingDataFromFileToDataImportTable($connectedDataSource->getId(), $entryId, $dataSet->getId(), $dataSetImportJobEntity->getJobId());
 
             $this->doLoadDataFromEntryToDataBaseForAugmentation($connectedDataSource);
         }
@@ -104,21 +111,21 @@ class LoadingDataService
                  * @var  DataSourceEntryInterface[] $linkedMapDataSourceEntries
                  */
                 $linkedMapDataSourceEntries = $linkedMapDataSource->getDataSourceEntries();
-                $entryIds = [];
                 foreach ($linkedMapDataSourceEntries as $dsEntry) {
-                    $entryIds[] = $dsEntry->getId();
-                }
+                    $jobData = [
+                        'linkedMapDataSetId' => $linkedMapConnectedDataSource->getDataSet()->getId(),
+                        'linkedMapConnectedDataSourceId' => $linkedMapConnectedDataSource->getId(),
+                        'connectedDataSourceId' => $connectedDataSource->getId(),
+                        'dataSourceEntryIds' => $dsEntry->getId()
+                    ];
 
-                if (count($entryIds) < 1) {
-                    continue;
-                }
+                    $dataSetImportJobEntity = $this->dataSetImportJobManager->createNewDataSetImportJob($mappedDataSet, sprintf('load data from entries to linked map data set "%s" with augmentation', $linkedMapConnectedDataSource->getDataSet()->getName()), $jobData);
+                    if (!$dataSetImportJobEntity instanceof DataSetImportJobInterface) {
+                        continue;
+                    }
 
-                $dataSetImportJobEntity = $this->dataSetImportJobManager->createNewDataSetImportJob($linkedMapConnectedDataSource->getDataSet(), 'load data from entries to data import table with augmentation');
-                if (!$dataSetImportJobEntity instanceof DataSetImportJobInterface) {
-                    continue;
+                    $this->workerManager->loadingDataFromFileToDataImportTable($linkedMapDataSet->getConnectedDataSource()->getId(), $dsEntry->getId(), $mappedDataSet->getId(), $dataSetImportJobEntity->getJobId());
                 }
-
-                $this->workerManager->loadingDataFromFileToDataImportTable($linkedMapDataSet->getConnectedDataSource()->getId(), $entryIds, $linkedMapDataSet->getConnectedDataSource()->getDataSet()->getId(), $dataSetImportJobEntity->getJobId());
             }
         }
     }

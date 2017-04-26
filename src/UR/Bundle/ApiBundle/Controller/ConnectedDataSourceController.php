@@ -109,7 +109,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         }
 
         $newConnectedDataSource->setName($name);
-        
+
         $this->get('ur.domain_manager.connected_data_source')->save($newConnectedDataSource);
 
         return $this->view(null, Codes::HTTP_CREATED);
@@ -145,12 +145,12 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         $connectedDataSource = $this->one($id);
 
         $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
-        $entryIds = array_map(function(DataSourceEntryInterface $entry) {
+        $entryIds = array_map(function (DataSourceEntryInterface $entry) {
             return $entry->getId();
         }, $entries->toArray());
 
         $loadingDataService = $this->get('ur.service.loading_data_service');
-        $loadingDataService->doLoadDataFromEntryToDataBase([$connectedDataSource], $entryIds);
+        $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
 
         return true;
     }

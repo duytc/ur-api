@@ -97,8 +97,8 @@ class ParsedDataImporter
             $columns[DataSetInterface::IMPORT_ID_COLUMN] = DataSetInterface::IMPORT_ID_COLUMN;
             $columns[DataSetInterface::UNIQUE_ID_COLUMN] = DataSetInterface::UNIQUE_ID_COLUMN;
             $question_marks = [];
+            $uniqueIds = [];
             $this->preparedInsertCount = 0;
-
             foreach ($rows as &$row) {
                 if (!is_array($row)) {
                     continue;
@@ -110,34 +110,40 @@ class ParsedDataImporter
                 $row[DataSetInterface::DATA_SOURCE_ID_COLUMN] = $connectedDataSource->getDataSource()->getId();
                 $row[DataSetInterface::IMPORT_ID_COLUMN] = $importId;
                 $row[DataSetInterface::UNIQUE_ID_COLUMN] = $uniqueId;
-
-                if ($isOverwriteData) {
-                    //update
-                    $where = sprintf("%s = :%s AND %s IS NULL", DataSetInterface::UNIQUE_ID_COLUMN, DataSetInterface::UNIQUE_ID_COLUMN, DataSetInterface::OVERWRITE_DATE);
-                    $set = sprintf("%s = :%s", DataSetInterface::OVERWRITE_DATE, DataSetInterface::OVERWRITE_DATE);
-                    $updateSql = sprintf("UPDATE %s SET %s WHERE %s", $tableName, $set, $where);
-                    $qb = $this->conn->prepare($updateSql);
-                    $qb->bindValue(DataSetInterface::OVERWRITE_DATE, date('Y-m-d H:i:sP'));
-                    $qb->bindValue(DataSetInterface::UNIQUE_ID_COLUMN, $uniqueId);
-                    $this->preparedInsertCount++;
-
-                    $qb->execute();
-                }
-
+                //update
+                $uniqueIds[] = $uniqueId;
                 $question_marks[] = '(' . $this->placeholders('?', sizeof($row)) . ')';
                 $insert_values = array_merge($insert_values, array_values($row));
                 $this->preparedInsertCount++;
-                $insertSql = sprintf("INSERT INTO %s (`%s`) VALUES %s", $tableName, implode("`,`", $columns), implode(',', $question_marks));
                 if ($this->preparedInsertCount === $this->batchSize) {
-                    $this->preparedInsertCount = 0;
-                    $this->executeInsert($insertSql, $insert_values);
+                    $this->conn->beginTransaction();
+
+                    //update __overwrite_date if duplicate data
+                    if ($isOverwriteData) {
+                        $this->executeUpdate($tableName, $uniqueIds);
+                        $uniqueIds = [];
+                    }
+
+                    $this->executeInsert($tableName, $columns, $question_marks, $insert_values);
+
+                    //commit update and insert
+                    $this->conn->commit();
                     $insert_values = [];
                     $question_marks = [];
+                    $this->preparedInsertCount = 0;
                 }
             }
 
             if ($this->preparedInsertCount > 0 && is_array($columns) && is_array($question_marks)) {
-                $this->executeInsert($insertSql, $insert_values);
+                $this->conn->beginTransaction();
+                if ($isOverwriteData) {
+                    $this->executeUpdate($tableName, $uniqueIds);
+                }
+
+                $this->executeInsert($tableName, $columns, $question_marks, $insert_values);
+
+                //commit update and insert
+                $this->conn->commit();
             }
 
             $this->lockingDatabaseTable->unLockTable();
@@ -167,6 +173,10 @@ class ParsedDataImporter
         }
     }
 
+    /**
+     * @param array $indexes
+     * @param $row
+     */
     private function insertMonthYearAt(array $indexes, &$row)
     {
         foreach ($indexes as $index) {
@@ -190,6 +200,12 @@ class ParsedDataImporter
         }
     }
 
+    /**
+     * @param $text
+     * @param int $count
+     * @param string $separator
+     * @return string
+     */
     private function placeholders($text, $count = 0, $separator = ",")
     {
         $result = array();
@@ -202,16 +218,30 @@ class ParsedDataImporter
         return implode($separator, $result);
     }
 
-    private function executeInsert($sql, array $values)
+    /**
+     * @param $tableName
+     * @param array $columns
+     * @param array $question_marks
+     * @param array $insert_values
+     */
+    private function executeInsert($tableName, array $columns, array $question_marks, array $insert_values)
     {
-        $this->conn->beginTransaction();
-        $this->conn->commit(); //commit updates fields
+        $insertSql = sprintf("INSERT INTO %s (`%s`) VALUES %s", $tableName, implode("`,`", $columns), implode(',', $question_marks));
+        $stmt = $this->conn->prepare($insertSql);
+        $stmt->execute($insert_values);
+    }
 
-        $this->conn->beginTransaction();
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute($values);
-
-        $this->conn->commit();
-        $this->conn->close();
+    /**
+     * @param $tableName
+     * @param array $uniqueIds
+     */
+    private function executeUpdate($tableName, array $uniqueIds)
+    {
+        $where = sprintf("%s IN ('%s') AND %s IS NULL", DataSetInterface::UNIQUE_ID_COLUMN, implode("','", $uniqueIds), DataSetInterface::OVERWRITE_DATE);
+        $set = sprintf("%s = :%s", DataSetInterface::OVERWRITE_DATE, DataSetInterface::OVERWRITE_DATE);
+        $updateSql = sprintf("UPDATE %s SET %s WHERE %s", $tableName, $set, $where);
+        $qb = $this->conn->prepare($updateSql);
+        $qb->bindValue(DataSetInterface::OVERWRITE_DATE, date('Y-m-d H:i:sP'));
+        $qb->execute();
     }
 }

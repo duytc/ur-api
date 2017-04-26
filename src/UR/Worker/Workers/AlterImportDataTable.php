@@ -9,6 +9,7 @@ use stdClass;
 use Symfony\Component\Process\Process;
 use UR\DomainManager\DataSetImportJobManagerInterface;
 use UR\Service\Command\CommandService;
+use UR\Worker\Manager;
 
 class AlterImportDataTable
 {
@@ -67,10 +68,11 @@ class AlterImportDataTable
         /*
          * check if data set has another job before this job, put job back to queue
          * this make sure jobs are executes in order
+         * very important: must set TTR (time to run) when putting back to tube
          */
         if ($exeCuteJob->getJobId() !== $importJobId) {
             $this->logger->notice(sprintf('DataSet with id %d is busy, putted job back into the queue', $dataSetId));
-            $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay);
+            $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay, Manager::EXECUTION_TIME_THRESHOLD);
             return;
         }
 

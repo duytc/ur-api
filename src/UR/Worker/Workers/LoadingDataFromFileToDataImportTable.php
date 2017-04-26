@@ -16,6 +16,7 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetImportJobInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Command\CommandService;
+use UR\Worker\Manager;
 
 class LoadingDataFromFileToDataImportTable
 {
@@ -93,70 +94,69 @@ class LoadingDataFromFileToDataImportTable
         /*
          * check if data set has another job before this job, put job back to queue
          * this make sure jobs are executes in order
+         * very important: must set TTR (time to run) when putting back to tube
          */
         if ($exeCuteJob->getJobId() !== $importJobId) {
             $this->logger->notice(sprintf('DataSet with id %d is busy, putted job back into the queue', $dataSetId));
-            $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay);
+            $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay, Manager::EXECUTION_TIME_THRESHOLD);
             return;
         }
 
-        $dataSourceEntryIds = $params->entryIds;
+        $dataSourceEntryId = $params->entryId;
         $connectedDataSourceId = $params->connectedDataSourceId;
 
-        foreach ($dataSourceEntryIds as $dataSourceEntryId) {
 
-            /**@var DataSourceEntryInterface $dataSourceEntry */
-            $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
-            if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
-                $this->logger->warning(sprintf('Data Source Entry %d not found (may be deleted before)', $dataSourceEntryId));
-                return;
-            }
+        /**@var DataSourceEntryInterface $dataSourceEntry */
+        $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+            $this->logger->warning(sprintf('Data Source Entry %d not found (may be deleted before)', $dataSourceEntryId));
+            return;
+        }
 
-            /**@var ConnectedDataSourceInterface $connectedDataSource */
-            $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
-            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-                $this->logger->warning(sprintf('Connected Data Source %d not found (may be deleted before)', $connectedDataSourceId));
-                return;
-            }
+        /**@var ConnectedDataSourceInterface $connectedDataSource */
+        $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            $this->logger->warning(sprintf('Connected Data Source %d not found (may be deleted before)', $connectedDataSourceId));
+            return;
+        }
 
-            /* creating import history */
-            $importHistoryEntity = $this->importHistoryManager->createImportHistoryByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource);
+        /* creating import history */
+        $importHistoryEntity = $this->importHistoryManager->createImportHistoryByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource);
 
-            $logFile = $this->commandService->createLogFile('import_log', $dataSetId);
+        $logFile = $this->commandService->createLogFile('import_log', $dataSetId);
 
-            $fp = fopen($logFile, 'a');
+        $fp = fopen($logFile, 'a');
 
-            $loadDataCommand = sprintf('%s %d %d %d',
-                $this->commandService->getAppConsoleCommand(self::RUN_COMMAND),
-                $connectedDataSourceId,
-                $dataSourceEntryId,
-                $importHistoryEntity->getId()
-            );
+        $loadDataCommand = sprintf('%s %d %d %d',
+            $this->commandService->getAppConsoleCommand(self::RUN_COMMAND),
+            $connectedDataSourceId,
+            $dataSourceEntryId,
+            $importHistoryEntity->getId()
+        );
 
-            $process = new Process($loadDataCommand);
+        $process = new Process($loadDataCommand);
 
-            $process->setTimeout($this->timeout);
+        $process->setTimeout($this->timeout);
 
-            try {
-                $process->mustRun(
-                    function ($type, $buffer) use (&$fp) {
-                        fwrite($fp, $buffer);
-                    }
-                );
-            } catch (SqlLockTableException $exception) {
-                $this->logger->warning('Table is locked. Putting job back into the queue');
-                $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay);
-            } catch (\Exception $e) {
-                // top level log is very clean. This is the supervisor log but it provides the name of the specific file for more debugging
-                // if the admin wants to know more about the failure, they have the exact log file
-                $this->logger->error($e->getMessage());
-                $this->logger->warning(sprintf('Execution run failed (exit code %d), please see %s for more details', $process->getExitCode(), $logFile));
-                if ($importHistoryEntity->getId() !== null) {
-                    $this->importHistoryManager->delete($importHistoryEntity);
+        try {
+            $process->mustRun(
+                function ($type, $buffer) use (&$fp) {
+                    fwrite($fp, $buffer);
                 }
-            } finally {
-                fclose($fp);
+            );
+        } catch (SqlLockTableException $exception) {
+            $this->logger->warning('Table is locked. Putting job back into the queue');
+            $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay, Manager::EXECUTION_TIME_THRESHOLD);
+        } catch (\Exception $e) {
+            // top level log is very clean. This is the supervisor log but it provides the name of the specific file for more debugging
+            // if the admin wants to know more about the failure, they have the exact log file
+            $this->logger->error($e->getMessage());
+            $this->logger->warning(sprintf('Execution run failed (exit code %d), please see %s for more details', $process->getExitCode(), $logFile));
+            if ($importHistoryEntity->getId() !== null) {
+                $this->importHistoryManager->delete($importHistoryEntity);
             }
+        } finally {
+            fclose($fp);
         }
 
         $this->dataSetImportJobManager->delete($exeCuteJob);

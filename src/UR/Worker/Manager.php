@@ -29,15 +29,15 @@ class Manager
 
     /**
      * @param int $connectedDataSourceId
-     * @param array|int[] $entryIds
+     * @param int $entryId
      * @param int $dataSetId
      * @param string $importJobId
      */
-    public function loadingDataFromFileToDataImportTable($connectedDataSourceId, $entryIds, $dataSetId, $importJobId)
+    public function loadingDataFromFileToDataImportTable($connectedDataSourceId, $entryId, $dataSetId, $importJobId)
     {
         $params = new stdClass;
         $params->connectedDataSourceId = $connectedDataSourceId;
-        $params->entryIds = $entryIds;
+        $params->entryId = $entryId;
         $params->dataSetId = $dataSetId;
         $params->importJobId = $importJobId;
 

@@ -160,7 +160,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
 
         $limit = 100;
         if (isset($params['limit'])) {
-            $limit = (int) $params['limit'];
+            $limit = (int)$params['limit'];
         }
 
         $dataSourceEntryPreview = $this->get('ur.service.data_source_entry_preview_service');
@@ -406,6 +406,8 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         asort($entryIds);
 
         $loadingDataService = $this->get('ur.service.loading_data_service');
-        $loadingDataService->doLoadDataFromEntryToDataBase($dataSource->getConnectedDataSources(), $entryIds);
+        foreach ($dataSource->getConnectedDataSources() as $connectedDataSource) {
+            $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
+        }
     }
 }

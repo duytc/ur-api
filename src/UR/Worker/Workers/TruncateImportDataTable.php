@@ -13,6 +13,7 @@ use UR\DomainManager\DataSetImportJobManagerInterface;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\Synchronizer;
+use UR\Worker\Manager;
 
 class TruncateImportDataTable
 {
@@ -73,7 +74,7 @@ class TruncateImportDataTable
          */
         if ($exeCuteJob->getJobId() !== $importJobId) {
             $this->logger->notice(sprintf('DataSet with id %d is busy, putted job back into the queue', $dataSetId));
-            $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay);
+            $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay, Manager::EXECUTION_TIME_THRESHOLD);
             return;
         }
 
