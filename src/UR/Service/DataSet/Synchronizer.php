@@ -90,22 +90,22 @@ class Synchronizer
         // add dimensions
         foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
             if ($fieldType === FieldType::NUMBER) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
             } else if ($fieldType === FieldType::DECIMAL) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataSetImportTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
             } else if ($fieldType === FieldType::LARGE_TEXT) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => Synchronizer::FIELD_LENGTH_LARGE_TEXT]);
             } else if ($fieldType === FieldType::TEXT) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => Synchronizer::FIELD_LENGTH_TEXT]);
             } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
 
-                $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[FieldType::NUMBER];
+                $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[FieldType::NUMBER];
                 $dataSetImportTable->addColumn(Synchronizer::getHiddenColumnDay($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
                 $dataSetImportTable->addColumn(Synchronizer::getHiddenColumnMonth($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
                 $dataSetImportTable->addColumn(Synchronizer::getHiddenColumnYear($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
@@ -117,23 +117,23 @@ class Synchronizer
         // add metrics
         foreach ($dataSet->getMetrics() as $fieldName => $fieldType) {
             if ($fieldType === FieldType::NUMBER) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
             } else if ($fieldType === FieldType::DECIMAL) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataSetImportTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
             } else if ($fieldType === FieldType::LARGE_TEXT) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_LARGE_TEXT]);
             } else if ($fieldType === FieldType::TEXT) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_TEXT]);
             } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$fieldType];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataSetImportTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
 
                 // add month and year also
-                $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[FieldType::NUMBER];
+                $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[FieldType::NUMBER];
                 $dataSetImportTable->addColumn(self::getHiddenColumnDay($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
                 $dataSetImportTable->addColumn(self::getHiddenColumnMonth($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
                 $dataSetImportTable->addColumn(self::getHiddenColumnYear($fieldName), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);

@@ -23,11 +23,20 @@ final class FieldType
         self::DECIMAL
     ];
 
-    public static $MAPPED_FIELD_TYPE_DATABASE_TYPE = [
+    public static $MAPPED_FIELD_TYPE_DBAL_TYPE = [
         self::DATE => Type::DATE,
         self::DATETIME => Type::DATETIME,
         self::TEXT => Type::STRING,
         self::LARGE_TEXT => Type::STRING,
+        self::NUMBER => Type::INTEGER,
+        self::DECIMAL => Type::DECIMAL
+    ];
+
+    public static $MAPPED_FIELD_TYPE_DATABASE_TYPE = [
+        self::DATE => Type::DATE,
+        self::DATETIME => Type::DATETIME,
+        self::TEXT => 'varchar',
+        self::LARGE_TEXT => 'varchar',
         self::NUMBER => Type::INTEGER,
         self::DECIMAL => Type::DECIMAL
     ];

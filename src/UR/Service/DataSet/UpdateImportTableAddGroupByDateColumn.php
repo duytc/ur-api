@@ -85,7 +85,7 @@ class UpdateImportTableAddGroupByDateColumn
 
             foreach ($fields as $newColumn => $type) {
                 if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
-                    $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[FieldType::NUMBER];
+                    $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[FieldType::NUMBER];
 
                     if (!$dataSetTable->hasColumn(Synchronizer::getHiddenColumnDay($newColumn))) {
                         $addCols[] = $dataSetTable->addColumn(Synchronizer::getHiddenColumnDay($newColumn), $colTypeDayOrMonthOrYear, ["notnull" => false, "default" => null]);

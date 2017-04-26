@@ -89,17 +89,24 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
         foreach ($updateColumns as $oldName => $newName) {
             $curCol = $dataTable->getColumn($oldName);
             $type = $curCol->getType()->getName();
-            if ($type === FieldType::TEXT && array_key_exists($newName, $columns) && $columns[$newName] === FieldType::LARGE_TEXT) {
-                $type = self::SQL_TYPE_TEXT;
-            } else if ($type === FieldType::TEXT && array_key_exists($newName, $columns) && $columns[$newName] === FieldType::TEXT) {
-                $type = self::SQL_TYPE_VARCHAR;
+
+            // map DBAL type to our custom type
+            // e.g type string => type largeText if new column type is largeText
+            // e.g type string => type text if new column type is text
+            if ($type === Type::STRING && array_key_exists($newName, $columns) && $columns[$newName] === FieldType::LARGE_TEXT) {
+                $type = FieldType::LARGE_TEXT;
+            } else if ($type === Type::STRING && array_key_exists($newName, $columns) && $columns[$newName] === FieldType::TEXT) {
+                $type = FieldType::TEXT;
             }
 
             if ($dataTable->hasColumn($oldName)) {
-                $typeWithLength = ($type === self::SQL_TYPE_TEXT)
-                    ? sprintf('%s(%s)', $type, Synchronizer::FIELD_LENGTH_LARGE_TEXT)
-                    : (($type === self::SQL_TYPE_VARCHAR)
-                        ? sprintf('%s(%s)', $type, Synchronizer::FIELD_LENGTH_TEXT)
+                // build type-with-length as native sql type depend on our custom type
+                // e.g type=largeText => native sql is ...varchar(65535)
+                // e.g type=text => native sql is ...varchar(512)
+                $typeWithLength = ($type === FieldType::LARGE_TEXT)
+                    ? sprintf('%s(%s)', FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[FieldType::LARGE_TEXT], Synchronizer::FIELD_LENGTH_LARGE_TEXT)
+                    : (($type === FieldType::TEXT)
+                        ? sprintf('%s(%s)', FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[FieldType::LARGE_TEXT], Synchronizer::FIELD_LENGTH_TEXT)
                         : $type
                     );
 
@@ -164,22 +171,22 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
         $dataTable = $dataSetSynchronizer->getDataSetImportTable($dataSet->getId());
         foreach ($newColumns as $newColumn => $type) {
             if ($type === FieldType::NUMBER) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$type];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$type];
                 $addCols[] = $dataTable->addColumn($newColumn, $colType, ['notnull' => false, 'default' => null]);
             } else if ($type === FieldType::DECIMAL) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$type];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$type];
                 $addCols[] = $dataTable->addColumn($newColumn, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
             } else if ($type === FieldType::LARGE_TEXT) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$type];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$type];
                 $addCols[] = $dataTable->addColumn($newColumn, $colType, ['notnull' => false, 'default' => null, 'length' => Synchronizer::FIELD_LENGTH_LARGE_TEXT]);
             } else if ($type === FieldType::TEXT) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$type];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$type];
                 $addCols[] = $dataTable->addColumn($newColumn, $colType, ['notnull' => false, 'default' => null, 'length' => Synchronizer::FIELD_LENGTH_TEXT]);
             } else if ($type === FieldType::DATE OR $type === FieldType::DATETIME) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[$type];
+                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$type];
                 $addCols[] = $dataTable->addColumn($newColumn, $colType, ['notnull' => false, 'default' => null]);
 
-                $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DATABASE_TYPE[FieldType::NUMBER];
+                $colTypeDayOrMonthOrYear = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[FieldType::NUMBER];
                 $addCols[] = $dataTable->addColumn(Synchronizer::getHiddenColumnDay($newColumn), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
                 $addCols[] = $dataTable->addColumn(Synchronizer::getHiddenColumnMonth($newColumn), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
                 $addCols[] = $dataTable->addColumn(Synchronizer::getHiddenColumnYear($newColumn), $colTypeDayOrMonthOrYear, ['notnull' => false, 'default' => null]);
