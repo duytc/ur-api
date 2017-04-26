@@ -53,17 +53,6 @@ class UpdateLastActivityForDataSetWhenConnectedDataSourceChanged
         $this->dataSetToBeUpdatedList[] = $connectedDataSource->getDataSet();
     }
 
-    public function postRemove(LifecycleEventArgs $args)
-    {
-        /** @var ConnectedDataSourceInterface $dataSourceEntry */
-        $connectedDataSource = $args->getEntity();
-        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-            return;
-        }
-
-        $this->dataSetToBeUpdatedList[] = $connectedDataSource->getDataSet();
-    }
-
     /**
      * @param PostFlushEventArgs $args
      */

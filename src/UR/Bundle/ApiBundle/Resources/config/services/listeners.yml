@@ -99,7 +99,6 @@ services:
         tags:
             - { name: doctrine.event_listener, event: postPersist }
             - { name: doctrine.event_listener, event: postFlush }
-            - { name: doctrine.event_listener, event: postRemove }
 
     ur_api.event_listener.update_last_activity_for_data_set_when_connected_data_source_changed:
         class: UR\Bundle\ApiBundle\EventListener\UpdateLastActivityForDataSetWhenConnectedDataSourceChanged
@@ -107,7 +106,6 @@ services:
             - { name: doctrine.event_listener, event: postPersist }
             - { name: doctrine.event_listener, event: postUpdate }
             - { name: doctrine.event_listener, event: postFlush }
-            - { name: doctrine.event_listener, event: postRemove }
 
     ur_api.event_listener.update_last_activity_for_data_set_when_data_set_change:
             class: UR\Bundle\ApiBundle\EventListener\UpdateLastActivityForDataSetWhenDataSetChanged
