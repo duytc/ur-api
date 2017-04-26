@@ -13,7 +13,7 @@ use UR\Model\User\Role\UserRoleInterface;
 
 class ReportViewRepository extends EntityRepository implements ReportViewRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name'];
+    protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name', 'lastActivity' => 'lastActivity', 'lastRun' => 'lastRun'];
 
     /**
      * @inheritdoc
@@ -75,6 +75,12 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
                     break;
                 case $this->SORT_FIELDS['name']:
                     $qb->addOrderBy('rv.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['lastActivity']:
+                    $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['lastRun']:
+                    $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 default:
                     break;

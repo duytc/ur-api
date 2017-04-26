@@ -11,7 +11,7 @@ use UR\Model\PagerParam;
 
 class ConnectedDataSourceRepository extends EntityRepository implements ConnectedDataSourceRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name'];
+    protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name', 'lastActivity' => 'lastActivity'];
 
     public function getConnectedDataSourceByDataSetQuery(DataSetInterface $dataSet, PagerParam $param)
     {
@@ -42,6 +42,9 @@ class ConnectedDataSourceRepository extends EntityRepository implements Connecte
                     break;
                 case $this->SORT_FIELDS['name']:
                     $qb->addOrderBy('cds.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['lastActivity']:
+                    $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 default:
                     break;
