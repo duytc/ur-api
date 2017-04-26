@@ -14,6 +14,7 @@ class DataSet extends DataSetModel
     protected $dimensions;
     protected $metrics;
     protected $createdDate;
+    protected $totalRow;
     protected $allowOverwriteExistingData;
     protected $lastActivity;
 

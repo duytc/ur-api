@@ -21,6 +21,11 @@ class DataSet implements DataSetInterface
     protected $publisher;
 
     /**
+     * @var int
+     */
+    protected $totalRow;
+
+    /**
      * @var ConnectedDataSourceInterface[]
      */
     protected $connectedDataSources;
@@ -37,6 +42,7 @@ class DataSet implements DataSetInterface
 
     public function __construct()
     {
+        $this->totalRow = 0;
     }
 
     /**
@@ -234,6 +240,24 @@ class DataSet implements DataSetInterface
     public function getDataSetImportJobs()
     {
         return $this->dataSetImportJobs;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTotalRow()
+    {
+        return $this->totalRow;
+    }
+
+    /**
+     * @param int $totalRow
+     * @return self
+     */
+    public function setTotalRow($totalRow)
+    {
+        $this->totalRow = $totalRow;
+        return $this;
     }
 
     /**

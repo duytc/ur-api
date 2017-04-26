@@ -34,6 +34,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         $this->filePath = $filePath;
 
         $this->excel = ReaderFactory::create(Type::XLSX);
+        $this->excel->setShouldFormatDates(true);
         $this->excel->open($filePath);
 
         foreach ($this->excel->getSheetIterator() as $sheet) {

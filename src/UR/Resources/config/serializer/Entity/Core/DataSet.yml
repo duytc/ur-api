@@ -28,3 +28,6 @@ UR\Entity\Core\DataSet:
         lastActivity:
             expose: true
             groups: [dataset.detail, dataset.summary]
+        totalRow:
+            expose: true
+            groups: [dataset.summary]

@@ -3,9 +3,12 @@ namespace UR\Service\DataSet;
 
 use DateTime;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Comparator;
+use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use UR\Entity\Core\DataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DTO\Collection;
@@ -37,6 +40,7 @@ class ParsedDataImporter
     public function __construct(EntityManagerInterface $em, $batchSize)
     {
         $this->batchSize = $batchSize;
+        $this->em = $em;
         $this->conn = $em->getConnection();
         $this->lockingDatabaseTable = new LockingDatabaseTable($this->conn);
     }
@@ -137,6 +141,23 @@ class ParsedDataImporter
             }
 
             $this->lockingDatabaseTable->unLockTable();
+
+            //update total rows of data set
+            $qb = new QueryBuilder($this->conn);
+            $totalRow = $qb->select("count(__id)")
+                ->from($tableName)
+                ->where(sprintf('%s IS NULL', DataSetInterface::OVERWRITE_DATE))
+                ->execute()
+                ->fetchColumn(0);
+
+            $tableName = $this->em->getClassMetadata(DataSet::class)->getTableName();
+            $qb = new QueryBuilder($this->conn);
+            $qb->update($tableName, 'dts')
+                ->set('dts.total_row', $totalRow)
+                ->where('dts.id = :id')
+                ->setParameter('id', $connectedDataSource->getDataSet()->getId(), Type::INTEGER)
+            ;
+            $qb->execute();
 
             return true;
         } catch (Exception $exception) {
