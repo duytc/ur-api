@@ -14,6 +14,9 @@ final class FieldType
     const DECIMAL = 'decimal'; // double/float
     const TEMPORARY = 'temporary';
 
+    /** special for __unique_id: char instead of varchar */
+    const DATABASE_TYPE_UNIQUE_ID = 'char';
+
     public static $types = [
         self::DATE,
         self::DATETIME,

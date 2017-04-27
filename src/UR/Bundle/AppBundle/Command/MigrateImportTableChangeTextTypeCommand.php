@@ -92,7 +92,25 @@ class MigrateImportTableChangeTextTypeCommand extends ContainerAwareCommand
      */
     private function alterTypeForUniqueId(Connection $conn, Table $dataTable)
     {
-        Synchronizer::alterTypeForColumn($conn, $dataTable, DataSetInterface::UNIQUE_ID_COLUMN, FieldType::TEXT);
+        $columnName = DataSetInterface::UNIQUE_ID_COLUMN;
+        if (!$dataTable->hasColumn($columnName)) {
+            return;
+        }
+
+        $columnType = FieldType::DATABASE_TYPE_UNIQUE_ID;
+        $columnLength = Synchronizer::FIELD_LENGTH_COLUMN_UNIQUE_ID;
+
+        // append length to columnType
+        $columnType = sprintf('%s(%d)', $columnType, $columnLength);
+
+        $updateSql = sprintf('ALTER TABLE %s MODIFY %s %s;',
+            $dataTable->getName(),
+            $columnName,
+            $columnType
+        );
+
+        $stmtCreateIndex = $conn->prepare($updateSql);
+        $stmtCreateIndex->execute();
     }
 
     /**

@@ -87,6 +87,11 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
         $renameColumnsSqls = [];
         $columns = $dataSet->getAllDimensionMetrics();
         foreach ($updateColumns as $oldName => $newName) {
+            if (!$dataTable->hasColumn($oldName)) {
+                // make sure old column existing. It may be not exist if data set is not sync
+                continue;
+            }
+
             $curCol = $dataTable->getColumn($oldName);
             $type = $curCol->getType()->getName();
 

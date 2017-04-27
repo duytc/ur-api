@@ -69,7 +69,7 @@ class MigrateImportTableAddUniqueColumnCommand extends ContainerAwareCommand
         foreach ($dataSetMissingUniques as $dataSetMissingUnique) {
             $dataSetTable = $dataSetSynchronizer->getDataSetImportTable($dataSetMissingUnique->getId());
             $addCols = [];
-            $addCols[] = $dataSetTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, Type::STRING, array("notnull" => true, "length" => Synchronizer::FIELD_LENGTH_COLUMN_UNIQUE_ID));
+            $addCols[] = $dataSetTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, Type::STRING, array("notnull" => true, "length" => Synchronizer::FIELD_LENGTH_COLUMN_UNIQUE_ID, "fixed" => true)); // CHAR instead of VARCHAR
 
             $updateTable = new TableDiff($dataSetTable->getName(), $addCols, [], [], [], [], []);
 
