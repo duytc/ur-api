@@ -60,7 +60,7 @@ class LoadingDataService
 
             $dataSetImportJobEntity = $this->dataSetImportJobManager->createNewDataSetImportJob($dataSet, sprintf('load data from entries to data set "%s"', $dataSet->getName()), $jobData);
             if (!$dataSetImportJobEntity instanceof DataSetImportJobInterface) {
-                return;
+                continue;
             }
 
             $this->workerManager->loadingDataFromFileToDataImportTable($connectedDataSource->getId(), $entryId, $dataSet->getId(), $dataSetImportJobEntity->getJobId());

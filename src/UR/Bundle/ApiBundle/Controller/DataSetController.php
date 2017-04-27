@@ -13,7 +13,9 @@ use UR\Handler\HandlerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
+use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
 
@@ -142,17 +144,42 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         $connectedDataSources = $dataSet->getConnectedDataSources();
         $loadingDataService = $this->get('ur.service.loading_data_service');
 
+        $entryIds = [];
+
         foreach ($connectedDataSources as $connectedDataSource) {
             if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
                 continue;
             }
 
             $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
-            $entryIds = array_map(function (DataSourceEntryInterface $entry) {
+            $entryIds = array_merge($entryIds, array_map(function (DataSourceEntryInterface $entry) {
                 return $entry->getId();
-            }, $entries->toArray());
+            }, $entries->toArray()));
+        }
 
-            $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
+        sort($entryIds);
+
+        $flags = [];
+        foreach ($connectedDataSources as $connectedDataSource) {
+            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+                continue;
+            }
+            $dataSource = $connectedDataSource->getDataSource();
+            if (!$dataSource instanceof DataSourceInterface) {
+                continue;
+            }
+            foreach ($dataSource->getDataSourceEntries() as $dataSourceEntry) {
+                if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+                    continue;
+                }
+                $flags[$dataSourceEntry->getId()] = $connectedDataSource;
+            }
+
+        }
+
+        foreach ($entryIds as $entryId) {
+            $connectedDataSource = $flags[$entryId];
+            $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, [$entryId]);
         }
 
         return true;
