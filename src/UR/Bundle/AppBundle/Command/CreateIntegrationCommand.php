@@ -59,8 +59,8 @@ class CreateIntegrationCommand extends ContainerAwareCommand
         $this->logger->info('starting command...');
 
         /* get inputs */
-        $name = $input->getArgument('name');
         $cName = $input->getArgument('cname');
+        $name = $input->getArgument('name');
         $paramsString = $input->getOption('parameters');
         $userIdsStringOption = $input->getOption('enables-users');
         $isAllPublisherOption = $input->getOption('all-publishers');
