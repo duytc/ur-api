@@ -5,6 +5,7 @@ namespace UR\Repository\Core;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
+use UR\Bundle\ApiBundle\Behaviors\UpdateDataSetTotalRowTrait;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
@@ -16,6 +17,7 @@ use UR\Service\DataSet\Synchronizer;
 
 class ImportHistoryRepository extends EntityRepository implements ImportHistoryRepositoryInterface
 {
+    use UpdateDataSetTotalRowTrait;
     protected $SORT_FIELDS = ['id' => 'id', 'dataSet' => 'dataSet', 'dataSource' => 'dataSource'];
 
     /**
@@ -144,12 +146,17 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         $conn = $this->_em->getConnection();
         /**@var ImportHistoryInterface $importHistory */
         foreach ($importHistories as $importHistory) {
-            $query = "delete from " . sprintf(Synchronizer::DATA_IMPORT_TABLE_NAME_PREFIX_TEMPLATE, $importHistory->getDataSet()->getId()) . " where __import_id = ?";
+            $tableName = sprintf(Synchronizer::DATA_IMPORT_TABLE_NAME_PREFIX_TEMPLATE, $importHistory->getDataSet()->getId());
+            $query = sprintf('DELETE FROM %s WHERE %s = ?', $conn->quoteIdentifier($tableName), $conn->quoteIdentifier('__import_id'));
             $stmt = $conn->prepare($query);
             $stmt->bindValue(1, $importHistory->getId());
             $stmt->execute();
             $this->_em->remove($importHistory);
+
+            //update total rows of data set
+            $this->updateTotalRow($importHistory->getDataSet()->getId());
         }
+
         $this->_em->flush();
         $conn->close();
     }

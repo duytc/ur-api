@@ -6,7 +6,7 @@ UR\Entity\Core\DataSet:
             groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory]
         publisher:
             expose: true
-            groups: [dataset.detail, dataset.edit]
+            groups: [dataset.detail, dataset.edit, dataset.summary]
         name:
             expose: true
             groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory]

@@ -4,6 +4,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
+use UR\Entity\Core\LinkedMapDataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 
@@ -46,9 +47,10 @@ class LinkedMapDataSetRepository extends EntityRepository implements LinkedMapDa
      */
     public function deleteByConnectedDataSource($connectedDataSourceId)
     {
-        $sql= 'DELETE FROM core_linked_map_data_set WHERE connected_data_source_id = :connectedDataSourceId';
-
         $connection = $this->getEntityManager()->getConnection();
+        $tableName = $this->getEntityManager()->getClassMetadata(LinkedMapDataSet::class)->getTableName();
+        $sql= sprintf('DELETE FROM %s WHERE %s = :connectedDataSourceId', $connection->quoteIdentifier($tableName), $connection->quoteIdentifier('connected_data_source_id'));;
+
         $qb = $connection->prepare($sql);
 
         $qb->bindValue('connectedDataSourceId', $connectedDataSourceId, Type::INTEGER);

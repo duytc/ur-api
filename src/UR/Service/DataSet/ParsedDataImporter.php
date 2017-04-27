@@ -8,6 +8,7 @@ use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use UR\Bundle\ApiBundle\Behaviors\UpdateDataSetTotalRowTrait;
 use UR\Entity\Core\DataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
@@ -15,10 +16,16 @@ use UR\Service\DTO\Collection;
 
 class ParsedDataImporter
 {
+    use UpdateDataSetTotalRowTrait;
     /**
      * @var Connection
      */
     private $conn;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    private $em;
     private $batchSize;
     private static $restrictedColumns = [
         DataSetInterface::ID_COLUMN,
@@ -149,21 +156,7 @@ class ParsedDataImporter
             $this->lockingDatabaseTable->unLockTable();
 
             //update total rows of data set
-            $qb = new QueryBuilder($this->conn);
-            $totalRow = $qb->select("count(__id)")
-                ->from($tableName)
-                ->where(sprintf('%s IS NULL', DataSetInterface::OVERWRITE_DATE))
-                ->execute()
-                ->fetchColumn(0);
-
-            $tableName = $this->em->getClassMetadata(DataSet::class)->getTableName();
-            $qb = new QueryBuilder($this->conn);
-            $qb->update($tableName, 'dts')
-                ->set('dts.total_row', $totalRow)
-                ->where('dts.id = :id')
-                ->setParameter('id', $connectedDataSource->getDataSet()->getId(), Type::INTEGER)
-            ;
-            $qb->execute();
+            $this->updateTotalRow($connectedDataSource->getDataSet()->getId());
 
             return true;
         } catch (Exception $exception) {
@@ -243,5 +236,10 @@ class ParsedDataImporter
         $qb = $this->conn->prepare($updateSql);
         $qb->bindValue(DataSetInterface::OVERWRITE_DATE, date('Y-m-d H:i:sP'));
         $qb->execute();
+    }
+
+    protected function getEntityManager()
+    {
+        return $this->em;
     }
 }

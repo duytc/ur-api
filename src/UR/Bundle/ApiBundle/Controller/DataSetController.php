@@ -29,7 +29,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     /**
      * Get all data sets
      *
-     * @Rest\View(serializerGroups={"dataset.detail", "user.summary", "connectedDataSource.summary"})
+     * @Rest\View(serializerGroups={"dataset.summary", "user.summary", "connectedDataSource.summary"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
