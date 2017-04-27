@@ -11,6 +11,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Model\Core\DataSetImportJob;
+use UR\Model\Core\DataSetImportJobInterface;
 use UR\Model\Core\DataSetInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
@@ -135,7 +137,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     /**
      * @param Request $request
      * @param $id
-     * @return bool
+     * @return mixed
      */
     public function postReloadalldataAction(Request $request, $id)
     {
@@ -182,7 +184,20 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
             $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, [$entryId]);
         }
 
-        return true;
+        /**
+         * @var DataSetImportJobInterface[] $importJobs
+         */
+        $importJobs = $dataSet->getDataSetImportJobs();
+        $pendingLoads = 0;
+        foreach ($importJobs as $importJob) {
+            if($importJob->getJobType() !== DataSetImportJob::JOB_TYPE_IMPORT) {
+                continue;
+            }
+
+            $pendingLoads += 1;
+        }
+
+        return ['pendingLoads' => $pendingLoads];
     }
 
 
