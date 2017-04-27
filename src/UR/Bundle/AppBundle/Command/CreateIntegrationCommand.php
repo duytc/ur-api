@@ -30,8 +30,8 @@ class CreateIntegrationCommand extends ContainerAwareCommand
     {
         $this
             ->setName('ur:integration:create')
-            ->addArgument('name', InputOption::VALUE_REQUIRED, 'Integration name')
             ->addArgument('cname', InputOption::VALUE_REQUIRED, 'Integration canonical name')
+            ->addArgument('name', InputOption::VALUE_REQUIRED, 'Integration name')
             ->addOption('parameters', 'p', InputOption::VALUE_OPTIONAL,
                 'Integration parameters (optional) as name:type, allow multiple parameters separated by comma. 
                 Supported types are: plainText (default), date (Y-m-d), dynamicDateRange (last 1,2,3... days) 
