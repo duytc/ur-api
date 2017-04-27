@@ -106,6 +106,8 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
 
         /** @var LinkedMapDataSetInterface $linkedConnectedDataSource */
         foreach ($linkedConnectedDataSources as $linkedConnectedDataSource) {
+            $augmentationConnectedDataSource = $linkedConnectedDataSource->getConnectedDataSource();
+            $augmentationConnectedDataSource->setLinkedType(ConnectedDataSourceInterface::LINKED_TYPE_AUGMENTATION);
             $this->updateConfigForConnectedDataSource($linkedConnectedDataSource->getConnectedDataSource(), $updateFields, $deletedFields, $dataSet->getId());
         }
     }

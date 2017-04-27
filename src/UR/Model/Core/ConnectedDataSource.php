@@ -12,6 +12,11 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $requires;
     protected $alertSetting;
     protected $lastActivity;
+    /*
+     * this variable to know which linked type, currently we only have augmentation linked type
+     * re import data base on linked type when connected data source has augmentation transform
+     */
+    protected $__linkedType;
 
     /**
      * @var array
@@ -275,5 +280,21 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     {
         $this->lastActivity = $lastActivity;
         return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLinkedType()
+    {
+        return $this->__linkedType;
+    }
+
+    /**
+     * @param mixed $_linkedType
+     */
+    public function setLinkedType($_linkedType)
+    {
+        $this->__linkedType = $_linkedType;
     }
 }

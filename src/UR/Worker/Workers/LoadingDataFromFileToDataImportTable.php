@@ -86,9 +86,18 @@ class LoadingDataFromFileToDataImportTable
         try {
             /**@var DataSetImportJobInterface $exeCuteJob */
             $exeCuteJob = $this->dataSetImportJobManager->getExecuteImportJobByDataSetId($dataSetId);
+
         } catch (\Exception $exception) {
             /*job not found*/
             return;
+        }
+
+        /*get parent job if this job is loading data to data set with connected data source has augmentation */
+        try {
+            $parentExecuteJob = $this->dataSetImportJobManager->find($exeCuteJob->getWaitFor());
+        } catch (\Exception $exception) {
+            /*parent not found*/
+            $parentExecuteJob = null;
         }
 
         /*
@@ -96,7 +105,7 @@ class LoadingDataFromFileToDataImportTable
          * this make sure jobs are executes in order
          * very important: must set TTR (time to run) when putting back to tube
          */
-        if ($exeCuteJob->getJobId() !== $importJobId) {
+        if ($exeCuteJob->getJobId() !== $importJobId || $parentExecuteJob !== null) {
             $this->logger->notice(sprintf('DataSet with id %d is busy, putted job back into the queue', $dataSetId));
             $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay, Manager::EXECUTION_TIME_THRESHOLD);
             return;

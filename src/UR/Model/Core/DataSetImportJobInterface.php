@@ -78,4 +78,15 @@ interface DataSetImportJobInterface extends ModelInterface
      * @return self
      */
     public function setJobType($jobType);
+
+    /**
+     * @return mixed
+     */
+    public function getWaitFor();
+
+    /**
+     * @param mixed $waitFor
+     * @return self
+     */
+    public function setWaitFor($waitFor);
 }

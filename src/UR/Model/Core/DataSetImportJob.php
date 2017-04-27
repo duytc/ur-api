@@ -27,6 +27,8 @@ class DataSetImportJob implements DataSetImportJobInterface
 
     protected $jobType;
 
+    protected $waitFor;
+
     protected $createdDate;
 
     /**
@@ -132,9 +134,10 @@ class DataSetImportJob implements DataSetImportJobInterface
      * @param $jobName
      * @param $jobType
      * @param array $jobData
+     * @param $waitFor
      * @return DataSetImportJobInterface
      */
-    public static function createEmptyDataSetImportJob(DataSetInterface $dataSet, $jobName, $jobType, array $jobData)
+    public static function createEmptyDataSetImportJob(DataSetInterface $dataSet, $jobName, $jobType, array $jobData, $waitFor = null)
     {
         $jobId = bin2hex(random_bytes(20));
         $dataSetImportJob = (new \UR\Entity\Core\DataSetImportJob())
@@ -142,6 +145,7 @@ class DataSetImportJob implements DataSetImportJobInterface
             ->setDataSet($dataSet)
             ->setJobType($jobType)
             ->setJobData($jobData)
+            ->setWaitFor($waitFor)
             ->setJobId($jobId);
 
         return $dataSetImportJob;
@@ -161,6 +165,23 @@ class DataSetImportJob implements DataSetImportJobInterface
     public function setJobType($jobType)
     {
         $this->jobType = $jobType;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getWaitFor()
+    {
+        return $this->waitFor;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setWaitFor($waitFor)
+    {
+        $this->waitFor = $waitFor;
         return $this;
     }
 }

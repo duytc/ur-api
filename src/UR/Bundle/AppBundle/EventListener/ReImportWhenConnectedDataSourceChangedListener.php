@@ -90,14 +90,17 @@ class ReImportWhenConnectedDataSourceChangedListener
             return;
         }
 
-        $connectedDataSources = [];
-        $entryIds = [];
+        $loadingConfigs = [];
         foreach ($this->insertedOrChangedEntities as $entity) {
             if (!$entity instanceof ConnectedDataSourceInterface) {
                 continue;
             }
 
             if (!$entity->isReplayData()) {
+                continue;
+            }
+
+            if ($entity->getLinkedType() === ConnectedDataSourceInterface::LINKED_TYPE_AUGMENTATION) {
                 continue;
             }
 
@@ -108,11 +111,15 @@ class ReImportWhenConnectedDataSourceChangedListener
                     $dataSourceEntries = $dataSourceEntries->toArray();
                 }
 
+                $entryIds = [];
                 foreach ($dataSourceEntries as $dataSourceEntry) {
                     $entryIds[] = $dataSourceEntry->getId();
                 }
 
-                $connectedDataSources[] = $entity;
+                $loadingConfigs[] = [
+                    'connectedDataSource' => $entity,
+                    'entryIds' => $entryIds
+                ];
             }
         }
 
@@ -122,8 +129,8 @@ class ReImportWhenConnectedDataSourceChangedListener
         /** @var LoadingDataService */
         $loadingDataService = $this->container->get('ur.service.loading_data_service');
 
-        foreach ($connectedDataSources as $connectedDataSource) {
-            $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
+        foreach ($loadingConfigs as $loadingConfig) {
+            $loadingDataService->doLoadDataFromEntryToDataBase($loadingConfig['connectedDataSource'], $loadingConfig['entryIds']);
         }
     }
 }

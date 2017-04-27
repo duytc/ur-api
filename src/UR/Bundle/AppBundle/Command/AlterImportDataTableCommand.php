@@ -20,10 +20,6 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
 {
     use StringUtilTrait;
 
-    const SQL_TYPE_LONGTEXT = 'longtext';
-    const SQL_TYPE_TEXT = 'text';
-    const SQL_TYPE_VARCHAR = 'string';
-
     /**
      * @inheritdoc
      */

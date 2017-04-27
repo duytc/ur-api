@@ -13,7 +13,7 @@ use UR\Service\Parser\Transformer\TransformerFactory;
 /**
  * Class ConnectedDataSourceChangeListener
  *
- * when a file received or be replayed, doing import
+ * update linkedMap if a connected data source change
  *
  * @package UR\Bundle\AppBundle\EventListener
  */

@@ -6,6 +6,9 @@ use UR\Model\ModelInterface;
 
 interface ConnectedDataSourceInterface extends ModelInterface
 {
+
+    const LINKED_TYPE_AUGMENTATION = 'augmentation';
+
     /**
      * @param $id
      * @return mixed
@@ -143,4 +146,14 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @return self
      */
     public function setLastActivity($lastActivity);
+
+    /**
+     * @return mixed
+     */
+    public function getLinkedType();
+
+    /**
+     * @param mixed $_linkedType
+     */
+    public function setLinkedType($_linkedType);
 }

@@ -20,6 +20,9 @@ UR\Entity\Core\DataSetImportJob:
         jobData:
             type: json_array
             nullable: true
+        waitFor:
+            type: integer
+            nullable: true
         createdDate:
             type: datetime
             gedmo:

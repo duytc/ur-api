@@ -15,4 +15,5 @@ class DataSetImportJob extends DataSetImportJobModel
     protected $jobData;
     protected $jobType;
     protected $createdDate;
+    protected $waitFor;
 }
