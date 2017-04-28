@@ -773,7 +773,7 @@ class ReportBuilder implements ReportBuilderInterface
                 $value = $report[$searchField];
 
                 //Filter number
-                if ($type == FieldType::NUMBER || $type == FieldType::NUMBER) {
+                if ($type == FieldType::NUMBER || $type == FieldType::DECIMAL) {
                     $conditions = preg_split('/[\s]+/', $searchContent);
                     $value = $type == FieldType::NUMBER ? intval($value) : floatval($value);
                     foreach ($conditions as $condition) {
