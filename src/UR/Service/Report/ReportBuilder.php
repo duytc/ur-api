@@ -863,7 +863,7 @@ class ReportBuilder implements ReportBuilderInterface
      */
     private function compareMathCondition($condition, $value)
     {
-        if (preg_match('/([^\d]+)(\d+)/', $condition, $matches)) {
+        if (preg_match('/([^\d]+)([0-9\.]+)/', $condition, $matches)) {
             $compareOperator = $matches[1];
             $compareValue = $matches[2];
 
