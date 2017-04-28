@@ -155,8 +155,8 @@ class CreateIntegrationCommand extends ContainerAwareCommand
 
         // validate params
         $paramsString = $input->getOption('parameters');
-        if (!empty($paramsString) && !preg_match('/^[a-zA-Z0-9,:;\s-_]+$/', $paramsString)) {
-            $output->writeln(sprintf('command run failed: parameter must not be null or empty, or wrong format (a-zA-Z0-9,:;\s-_)'));
+        if (!empty($paramsString) && !preg_match('/^[a-zA-Z0-9,:;\s-_\/]+$/', $paramsString)) {
+            $output->writeln(sprintf('command run failed: parameter must not be null or empty, or wrong format (a-zA-Z0-9,:; -_/)'));
             return false;
         }
 
