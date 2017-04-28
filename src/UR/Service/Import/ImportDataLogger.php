@@ -4,6 +4,7 @@ namespace UR\Service\Import;
 
 
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\AlertInterface;
 use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertInterface;
 
 class ImportDataLogger
@@ -27,7 +28,7 @@ class ImportDataLogger
     {
         $message = $this->getMessageDetails($errorCode, $dataSourceEntryId, $row, $column);
 
-        if ($errorCode == ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY) {
+        if ($errorCode == AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORTED_SUCCESSFULLY) {
             $this->logger->info(sprintf("data-set#%s data-source#%s data-source-entry#%s (message: %s)", $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
         } else {
             $this->logger->error(sprintf("data-set#%s data-source#%s data-source-entry#%s (message: %s)", $dataSetId, $dataSourceId, $dataSourceEntryId, $message));
@@ -37,37 +38,37 @@ class ImportDataLogger
     public function getMessageDetails($errorCode, $dataSourceEntryId, $row, $column)
     {
         switch ($errorCode) {
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORTED_SUCCESSFULLY:
                 $message = sprintf('Data imported successfully');
                 break;
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_MAPPING_FAIL:
                 $message = sprintf('failed to import file with id#%s - MAPPING ERROR: no Field is mapped', $dataSourceEntryId);
                 break;
 
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_WRONG_TYPE_MAPPING:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_WRONG_TYPE_MAPPING:
                 $message = sprintf('Failed to import file with id#%s - MAPPING ERROR: wrong type mapping', $dataSourceEntryId);
                 break;
 
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_REQUIRED_FAIL:
                 $message = sprintf('Failed to import file with id#%s - REQUIRE ERROR: require fields%s not exist in file', $dataSourceEntryId, (is_string($column) ? sprintf(' "%s"', $column) : ''));
                 break;
 
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_NUMBER:
                 $message = sprintf('Failed to import file with id#%s - FILTER ERROR: Wrong number format at row [%s] - column [%s]', $dataSourceEntryId, $row, $column);
                 break;
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE:
                 $message = sprintf('Failed to import file with id#%s - TRANSFORM ERROR: Wrong date format at row [%s] - column [%s] ', $dataSourceEntryId, $row, $column);
                 break;
 
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_HEADER_FOUND:
                 $message = sprintf('Failed to import file with id#%s - no header found error', $dataSourceEntryId);
                 break;
 
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_DATA_ROW_FOUND:
                 $message = sprintf('Failed to import file with id#%s - cant find data error', $dataSourceEntryId);
                 break;
 
-            case ConnectedDataSourceAlertInterface::ALERT_CODE_FILE_NOT_FOUND:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILE_NOT_FOUND:
                 $message = sprintf('Failed to import file with id#%s - file does not exist', $dataSourceEntryId);
                 break;
             default:

@@ -42,7 +42,7 @@ class DataSourceFileFactory
     {
         $filePath = $this->uploadFileDir . $entryPath;
         if (!file_exists($filePath)) {
-            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_FILE_NOT_FOUND);
+            throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILE_NOT_FOUND);
         }
 
         switch ($fileType) {

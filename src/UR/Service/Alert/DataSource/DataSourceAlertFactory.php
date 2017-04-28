@@ -2,6 +2,7 @@
 
 namespace UR\Service\Alert\DataSource;
 
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceInterface;
 
 class DataSourceAlertFactory
@@ -35,16 +36,16 @@ class DataSourceAlertFactory
             }
 
             switch ($alertCode) {
-                case DataReceivedAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD:
+                case AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD:
                     $alertObject = $this->getDataReceivedAlert($jsonAlert, $alertCode, $fileName, $dataSource);
                     break;
 
-                case WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT:
-                case WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT:
-                case WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT:
+                case AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT:
+                case AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT:
+                case AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT:
                     $alertObject = $this->getWrongFormatAlert($jsonAlert, $alertCode, $fileName, $dataSource);
                     break;
-                case NoDataReceivedDailyAlert::ALERT_CODE_NO_DATA_RECEIVED_DAILY:
+                case AlertInterface::ALERT_CODE_DATA_SOURCE_NO_DATA_RECEIVED_DAILY:
                     $alertObject = $this->getNoDataReceivedDailyAlert($jsonAlert, $alertCode, $dataSource);
                     break;
             }

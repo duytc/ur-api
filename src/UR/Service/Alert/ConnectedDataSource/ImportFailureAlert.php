@@ -3,6 +3,7 @@
 namespace UR\Service\Alert\ConnectedDataSource;
 
 
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 
@@ -43,19 +44,19 @@ class ImportFailureAlert extends AbstractConnectedDataSourceAlert
         ];
 
         switch ($this->getAlertCode()) {
-            case self::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_REQUIRED_FAIL:
                 $details[self::COLUMN] = $this->column;
                 break;
-            case self::ALERT_CODE_WRONG_TYPE_MAPPING:
-            case self::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER:
-            case self::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_WRONG_TYPE_MAPPING:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_NUMBER:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE:
                 $details[self::COLUMN] = $this->column;
                 $details[self::CONTENT] = $this->content;
                 break;
-            case self::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL:
-            case self::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND:
-            case self::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND:
-            case self::ALERT_CODE_FILE_NOT_FOUND:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_MAPPING_FAIL:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_HEADER_FOUND:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_DATA_ROW_FOUND:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILE_NOT_FOUND:
                 break;
         }
 

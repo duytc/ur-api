@@ -4,6 +4,7 @@
 namespace UR\Service\DataSource;
 
 
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
@@ -51,9 +52,9 @@ class DataSourceEntryPreviewService implements DataSourceEntryPreviewServiceInte
 
         if (count($columns) < 1) {
             $details = [
-                AbstractConnectedDataSourceAlert::CODE => ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND
+                AbstractConnectedDataSourceAlert::CODE => AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_DATA_ROW_FOUND
             ];
-            throw new PublicImportDataException($details, new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND));
+            throw new PublicImportDataException($details, new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_DATA_ROW_FOUND));
         }
 
         $allRows = $dataSourceFileData->getLimitedRows($limit);

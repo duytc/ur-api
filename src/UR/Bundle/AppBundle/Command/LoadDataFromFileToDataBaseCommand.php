@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
@@ -41,7 +42,7 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $isImportFail = false;
-        $errorCode = DataAddedAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY;
+        $errorCode = AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORTED_SUCCESSFULLY;
         $errorRow = null;
         $errorColumn = null;
         $errorContent = null;
@@ -120,7 +121,7 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
             $importSuccessAlert = $connectedDataSourceAlertFactory->getAlert(
                 $importHistoryEntity->getId(),
                 $connectedDataSource->getAlertSetting(),
-                DataAddedAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY,
+                AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORTED_SUCCESSFULLY,
                 $dataSourceEntry->getFileName(),
                 $connectedDataSource->getDataSource(),
                 $connectedDataSource->getDataSet(),
@@ -158,7 +159,7 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
             $errorColumn = $e->getColumn();
             $errorContent = $e->getContent();
         } catch (\Exception $exception) {
-            $errorCode = ImportFailureAlert::ALERT_CODE_UN_EXPECTED_ERROR;
+            $errorCode = AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_UN_EXPECTED_ERROR;
             $isImportFail = true;
             $message = sprintf('failed to import file "%" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d, message: %s)',
                 $dataSourceEntry->getFileName(),

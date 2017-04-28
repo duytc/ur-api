@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use UR\Behaviors\FileUtilsTrait;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Exception\InvalidArgumentException;
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\ModelInterface;
@@ -141,7 +142,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             // validate file extension before processing upload
             $isExtensionSupport = DataSourceType::isSupportedExtension($file->getClientOriginalExtension());
             if (!$isExtensionSupport) {
-                throw new ImportDataException(WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT);
+                throw new ImportDataException(AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT);
             }
 
             // automatically update data source format if has no entry before
@@ -155,7 +156,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
             $isValidExtension = $this->importService->validateUploadedFile($file, $dataSource);
             if (!$isValidExtension) {
-                throw new ImportDataException(WrongFormatAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT);
+                throw new ImportDataException(AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT);
             }
 
             // save file to upload dir
@@ -210,7 +211,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
             $this->save($dataSourceEntry);
 
             $alert = $this->alertFactory->getAlert(
-                DataReceivedAlert::ALERT_CODE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD,
+                AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD,
                 $originName,
                 $dataSource);
 

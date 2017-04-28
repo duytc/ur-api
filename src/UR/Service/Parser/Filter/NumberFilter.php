@@ -3,6 +3,7 @@
 namespace UR\Service\Parser\Filter;
 
 
+use UR\Model\Core\AlertInterface;
 use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
 
 class NumberFilter extends AbstractFilter implements ColumnFilterInterface
@@ -72,7 +73,7 @@ class NumberFilter extends AbstractFilter implements ColumnFilterInterface
         }
 
         if (!is_numeric($value)) {
-            return ImportFailureAlert::ALERT_CODE_FILTER_ERROR_INVALID_NUMBER;
+            return AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_NUMBER;
         }
 
         if (self::COMPARISON_TYPE_IN === $this->comparisonType) {

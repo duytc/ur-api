@@ -3,6 +3,7 @@
 namespace UR\Service\Alert\ConnectedDataSource;
 
 
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 
@@ -28,7 +29,7 @@ class ConnectedDataSourceAlertFactory
         }
 
         switch ($alertCode) {
-            case DataAddedAlert::ALERT_CODE_DATA_IMPORTED_SUCCESSFULLY:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORTED_SUCCESSFULLY:
                 return $this->getDataLoadedSuccessfulAlert($importId, $alertCode, $jsonAlerts, $fileName, $dataSource, $dataSet);
             default:
                 return $this->getDataLoadedFailureAlert($importId, $alertCode, $jsonAlerts, $fileName, $dataSource, $dataSet, $column, $row, $content);

@@ -4,6 +4,7 @@ namespace UR\Service\Parser;
 
 
 use Exception;
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
@@ -80,11 +81,11 @@ class ParsingFileService
         $dataRow = $dataSourceFileData->getDataRow();
 
         if (!is_array($columnsInFile) || count($columnsInFile) < 1) {
-            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_HEADER_FOUND);
+            throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_HEADER_FOUND);
         }
 
         if ($dataRow < 1) {
-            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_NO_DATA_ROW_FOUND);
+            throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_DATA_ROW_FOUND);
         }
 
         if ($dataSourceFileData instanceof Excel) {
@@ -93,7 +94,7 @@ class ParsingFileService
         }
 
         /* 1. get all row data */
-        if (is_numeric($limit)){
+        if (is_numeric($limit)) {
             $rows = $dataSourceFileData->getLimitedRows($limit);
         } else {
             $rows = $dataSourceFileData->getRows();
@@ -108,7 +109,7 @@ class ParsingFileService
         /* mapping field */
         $this->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $columnsInFile);
         if (count($this->parserConfig->getAllColumnMappings()) === 0) {
-            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_MAPPING_FAIL);
+            throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_MAPPING_FAIL);
         }
 
         $validRequires = true;
@@ -122,7 +123,7 @@ class ParsingFileService
         }
 
         if (!$validRequires) {
-            throw new ImportDataException(ImportFailureAlert::ALERT_CODE_DATA_IMPORT_REQUIRED_FAIL, null, $columnRequire);
+            throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_REQUIRED_FAIL, null, $columnRequire);
         }
 
         //filter config

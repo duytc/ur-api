@@ -12,6 +12,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Handler\HandlerInterface;
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
@@ -266,7 +267,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         if (($filePaths === null || count($filePaths) < 1) && $lastDataSourceEntry === null) {
 
             $result = [
-                AbstractConnectedDataSourceAlert::CODE => AbstractConnectedDataSourceAlert::ALERT_CODE_NO_FILE_PREVIEW,
+                AbstractConnectedDataSourceAlert::CODE => AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_NO_FILE_PREVIEW,
                 AbstractConnectedDataSourceAlert::DETAILS => []
             ];
 

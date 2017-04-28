@@ -49,7 +49,7 @@ class UpdateNextAlertTimeForDataSourceListener
         /**
          * @var NoDataReceivedDailyAlert $alert
          */
-        $alert = $alertFactory->getAlert(NoDataReceivedDailyAlert::ALERT_CODE_NO_DATA_RECEIVED_DAILY, null, $dataSource);
+        $alert = $alertFactory->getAlert(AlertInterface::ALERT_CODE_NO_DATA_RECEIVED_DAILY, null, $dataSource);
 
         if (!$alert instanceof NoDataReceivedDailyAlert) {
             $dataSource->setNextAlertTime(null);

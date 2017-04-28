@@ -9,6 +9,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\DataSourceEntryManager;
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Service\Alert\DataSource\DataSourceAlertFactory;
 use UR\Service\Alert\DataSource\NoDataReceivedDailyAlert;
@@ -55,7 +56,7 @@ class CreateDailyAlertForDataSourceCommand extends ContainerAwareCommand
             /**
              * @var NoDataReceivedDailyAlert $noDataDailyAlert
              */
-            $noDataDailyAlert = $alertFactory->getAlert(NoDataReceivedDailyAlert::ALERT_CODE_NO_DATA_RECEIVED_DAILY, null, $dailyAlertDataSource);
+            $noDataDailyAlert = $alertFactory->getAlert(AlertInterface::ALERT_CODE_DATA_SOURCE_NO_DATA_RECEIVED_DAILY, null, $dailyAlertDataSource);
             $dsNextTime = $dailyAlertDataSource->getNextAlertTime();
 
             $currentDate = new DateTime();
