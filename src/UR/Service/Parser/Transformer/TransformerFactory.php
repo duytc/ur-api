@@ -43,16 +43,7 @@ class TransformerFactory
      */
     public function getTransform(array $jsonTransform)
     {
-        if (!is_array($jsonTransform) && $jsonTransform !== null) {
-            throw new \Exception (sprintf('transform config must be an array'));
-        }
-
-        if (!array_key_exists(ColumnTransformerInterface::TYPE_KEY, $jsonTransform)
-        ) {
-            throw new \Exception (sprintf('parameter "%s" does not exits in transform',
-                ColumnTransformerInterface::TYPE_KEY));
-        }
-
+        $this->validateCommonTransform($jsonTransform);
         /*
          * return type of single transform base on TYPE KEY
          */
@@ -125,8 +116,7 @@ class TransformerFactory
         return new DateFormat(
             $jsonTransform[DateFormat::FIELD_KEY],
             $jsonTransform[DateFormat::FROM_KEY],
-            $jsonTransform[DateFormat::TO_KEY],
-            !array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $jsonTransform) ? false : $jsonTransform[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM]
+            $jsonTransform[DateFormat::TO_KEY]
         );
     }
 
@@ -471,7 +461,7 @@ class TransformerFactory
             return [];
         }
 
-        foreach($augmentationConfig[Augmentation::MAP_FIELDS_KEY] as $mapField) {
+        foreach ($augmentationConfig[Augmentation::MAP_FIELDS_KEY] as $mapField) {
             if (!is_array($mapField)) {
                 return [];
             }
@@ -511,7 +501,7 @@ class TransformerFactory
         }
 
 
-        foreach($subsetGroupConfig[SubsetGroup::MAP_FIELDS_KEY] as $mapField) {
+        foreach ($subsetGroupConfig[SubsetGroup::MAP_FIELDS_KEY] as $mapField) {
             if (!is_array($mapField)) {
                 return [];
             }
@@ -529,5 +519,30 @@ class TransformerFactory
         );
 
         return $subsetTransforms;
+    }
+
+    public function getAugmentationTransform(array $augmentationTransform)
+    {
+        $this->validateCommonTransform($augmentationTransform);
+
+        if ($augmentationTransform[ColumnTransformerInterface::TYPE_KEY] !== CollectionTransformerInterface::AUGMENTATION) {
+            return [];
+        }
+
+        return $this->getAugmentationTransforms($augmentationTransform);
+    }
+
+
+    private function validateCommonTransform($jsonTransform)
+    {
+        if (!is_array($jsonTransform) && $jsonTransform !== null) {
+            throw new \Exception (sprintf('transform config must be an array'));
+        }
+
+        if (!array_key_exists(ColumnTransformerInterface::TYPE_KEY, $jsonTransform)
+        ) {
+            throw new \Exception (sprintf('parameter "%s" does not exits in transform',
+                ColumnTransformerInterface::TYPE_KEY));
+        }
     }
 }

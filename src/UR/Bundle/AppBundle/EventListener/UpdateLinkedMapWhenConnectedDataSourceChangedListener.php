@@ -113,7 +113,7 @@ class UpdateLinkedMapWhenConnectedDataSourceChangedListener
         $result = [];
 
         foreach ($transforms as $transform) {
-            $transformObjects = $this->transformFactory->getTransform($transform);
+            $transformObjects = $this->transformFactory->getAugmentationTransform($transform);
 
             if (!is_array($transformObjects)) {
                 continue;

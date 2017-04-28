@@ -13,10 +13,10 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     const TO_KEY = 'to';
     const IS_CUSTOM_FORMAT_DATE_FROM = 'isCustomFormatDateFrom';
     const DEFAULT_DATE_FORMAT = 'Y-m-d';
+    const FORMAT_KEY = 'format';
 
-    protected $fromDateFormat;
+    protected $fromDateFormats;
     protected $toDateFormat;
-    protected $isCustomFormatDateFrom;
 
     private $supportedDateFormats = [
         'Y-m-d',  // 2016-01-15
@@ -41,12 +41,17 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         'y/m/d',  // 99/01/15
     ];
 
-    public function __construct($field, $fromDateFormat = 'Y-m-d', $toDateFormat = 'Y-m-d', $isCustomFormatDateFrom = false)
+    /**
+     * DateFormat constructor.
+     * @param $field
+     * @param array $fromDateFormats
+     * @param string $toDateFormat
+     */
+    public function __construct($field, array $fromDateFormats, $toDateFormat = 'Y-m-d')
     {
         parent::__construct($field);
-        $this->fromDateFormat = $fromDateFormat;
+        $this->fromDateFormats = $fromDateFormats;
         $this->toDateFormat = $toDateFormat;
-        $this->isCustomFormatDateFrom = $isCustomFormatDateFrom;
     }
 
     /**
@@ -64,15 +69,29 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             return null;
         }
 
-        $fromDateFormat = $this->isCustomFormatDateFrom ? $this->convertCustomFromDateFormat($this->fromDateFormat) : $this->fromDateFormat;
-        $date = DateTime::createFromFormat($fromDateFormat, $value);
+        $resultDate = null;
+        foreach ($this->fromDateFormats as $fromDateFormat) {
+            //get is custom date format for each format
+            $isCustomDateFormat = array_key_exists(self::IS_CUSTOM_FORMAT_DATE_FROM, $fromDateFormat) ? $fromDateFormat[self::IS_CUSTOM_FORMAT_DATE_FROM] : false;
+
+            //get from date format
+            $fromFormat = array_key_exists(self::FORMAT_KEY, $fromDateFormat) ? $fromDateFormat[self::FORMAT_KEY] : null;
+            $fromFormat = $isCustomDateFormat ? $this->convertCustomFromDateFormat($fromFormat) : $fromFormat;
+
+            $date = DateTime::createFromFormat($fromFormat, $value);
+            if (!$date instanceof DateTime) {
+                continue;
+            }
+
+            $resultDate = $date;
+        }
 
         //throw exception when wrong date value or format
-        if (!$date instanceof DateTime) {
+        if (!$resultDate instanceof DateTime) {
             throw new ImportDataException(ImportFailureAlert::ALERT_CODE_TRANSFORM_ERROR_INVALID_DATE, 0, $this->getField());
         }
 
-        return $date->format(self::DEFAULT_DATE_FORMAT);
+        return $resultDate->format(self::DEFAULT_DATE_FORMAT);
     }
 
     /**
@@ -98,9 +117,9 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     /**
      * @return string
      */
-    public function getFromDateFormat()
+    public function getFromDateFormats()
     {
-        return $this->fromDateFormat;
+        return $this->fromDateFormats;
     }
 
     /**
@@ -112,11 +131,11 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     }
 
     /**
-     * @param string $fromDateFormat
+     * @param string $fromDateFormats
      */
-    public function setFromDateFormat(string $fromDateFormat)
+    public function setFromDateFormats(string $fromDateFormats)
     {
-        $this->fromDateFormat = $fromDateFormat;
+        $this->fromDateFormats = $fromDateFormats;
     }
 
     /**
@@ -125,22 +144,6 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     public function setToDateFormat(string $toDateFormat)
     {
         $this->toDateFormat = $toDateFormat;
-    }
-
-    /**
-     * @return boolean
-     */
-    public function isIsCustomFormatDateFrom()
-    {
-        return $this->isCustomFormatDateFrom;
-    }
-
-    /**
-     * @param boolean $isCustomFormatDateFrom
-     */
-    public function setIsCustomFormatDateFrom($isCustomFormatDateFrom)
-    {
-        $this->isCustomFormatDateFrom = $isCustomFormatDateFrom;
     }
 
     /**
@@ -193,7 +196,18 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
      */
     public function validate()
     {
-        if (!$this->isCustomFormatDateFrom && !in_array($this->fromDateFormat, $this->supportedDateFormats)) {
+        $isSupportDateFormat = true;
+        foreach ($this->fromDateFormats as $fromDateFormat) {
+            //check non-custom date formats, if one of them is not supported, throw exception
+            $isCustomDateFormat = array_key_exists(self::IS_CUSTOM_FORMAT_DATE_FROM, $fromDateFormat) ? $fromDateFormat[self::IS_CUSTOM_FORMAT_DATE_FROM] : false;
+            $fromFormat = array_key_exists(self::FORMAT_KEY, $fromDateFormat) ? $fromDateFormat[self::FORMAT_KEY] : null;
+            if ($isCustomDateFormat !== true && !in_array($fromFormat, $this->supportedDateFormats)) {
+                $isSupportDateFormat = false;
+                break;
+            }
+        }
+
+        if (!$isSupportDateFormat) {
             // validate using builtin data formats (when isCustomFormatDateFrom = false)
             throw  new BadRequestHttpException(sprintf('Transform setting error: field "%s" not support from date format', $this->getField()));
         }
