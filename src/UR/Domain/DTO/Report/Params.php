@@ -72,6 +72,17 @@ class Params implements ParamsInterface
     protected $startDate;
     protected $endDate;
     protected $reportViewId;
+    protected $page;
+    protected $limit;
+    protected $searchField;
+    protected $searchKey;
+    protected $orderBy;
+    protected $sortField;
+
+    /**
+     * @var array
+     */
+    protected $searches;
 
     /**
      * @var boolean
@@ -84,6 +95,7 @@ class Params implements ParamsInterface
         $this->fieldTypes = [];
         $this->joinConfigs = [];
         $this->transforms = [];
+        $this->searches = [];
     }
 
     /**
@@ -378,5 +390,131 @@ class Params implements ParamsInterface
     public function setReportViewId($reportViewId)
     {
         $this->reportViewId = $reportViewId;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPage()
+    {
+        return $this->page;
+    }
+
+    /**
+     * @param mixed $page
+     * @return self
+     */
+    public function setPage($page)
+    {
+        $this->page = $page;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLimit()
+    {
+        return $this->limit;
+    }
+
+    /**
+     * @param mixed $limit
+     * @return self
+     */
+    public function setLimit($limit)
+    {
+        $this->limit = $limit;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSearchField()
+    {
+        return $this->searchField;
+    }
+
+    /**
+     * @param mixed $searchField
+     * @return self
+     */
+    public function setSearchField($searchField)
+    {
+        $this->searchField = $searchField;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSearchKey()
+    {
+        return $this->searchKey;
+    }
+
+    /**
+     * @param mixed $searchKey
+     * @return self
+     */
+    public function setSearchKey($searchKey)
+    {
+        $this->searchKey = $searchKey;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getOrderBy()
+    {
+        return $this->orderBy;
+    }
+
+    /**
+     * @param mixed $orderBy
+     * @return self
+     */
+    public function setOrderBy($orderBy)
+    {
+        $this->orderBy = $orderBy;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSortField()
+    {
+        return $this->sortField;
+    }
+
+    /**
+     * @param mixed $sortField
+     * @return self
+     */
+    public function setSortField($sortField)
+    {
+        $this->sortField = $sortField;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getSearches()
+    {
+        return $this->searches;
+    }
+
+    /**
+     * @param array $searches
+     * @return self
+     */
+    public function setSearches($searches)
+    {
+        $this->searches = $searches;
+        return $this;
     }
 }

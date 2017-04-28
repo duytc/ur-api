@@ -62,6 +62,28 @@ interface ReportResultInterface
     public function setTypes($types);
 
     /**
+     * @return mixed
+     */
+    public function getTotalPage();
+
+    /**
+     * @param mixed $totalPage
+     * @return self
+     */
+    public function setTotalPage($totalPage);
+
+    /**
+     * @return int
+     */
+    public function getTotalReport();
+
+    /**
+     * @param int $totalReport
+     * @return self
+     */
+    public function setTotalReport($totalReport);
+
+    /**
      * get array of all elements
      * Note: use this if need to append other elements to reportResult without change its behavior
      * @return mixed

@@ -51,6 +51,14 @@ class ParamsBuilder implements ParamsBuilderInterface
     const USER_DEFINED_DATE_RANGE = 'userDefineDateRange';
     const IS_SHOW_DATA_SET_NAME = 'isShowDataSetName';
     const REPORT_VIEW_ID = 'id';
+    const PAGE_KEY = 'page';
+    const LIMIT_KEY = 'limit';
+    const SEARCH_FIELD_KEY = 'searchField';
+    const SEARCH_VALUE_KEY = 'searchKey';
+    const ORDER_BY_KEY = 'orderBy';
+    const SORT_FIELD_KEY = 'sortField';
+    const SEARCHES = 'searches';
+
 
     /**
      * @inheritdoc
@@ -157,6 +165,34 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setReportViewId($data[self::REPORT_VIEW_ID]);
         }
 
+        if (array_key_exists(self::SEARCH_FIELD_KEY, $data)) {
+            $param->setSearchField($data[self::SEARCH_FIELD_KEY]);
+        }
+
+        if (array_key_exists(self::SEARCH_VALUE_KEY, $data)) {
+            $param->setSearchKey($data[self::SEARCH_VALUE_KEY]);
+        }
+
+        if (array_key_exists(self::ORDER_BY_KEY, $data)) {
+            $param->setOrderBy($data[self::ORDER_BY_KEY]);
+        }
+
+        if (array_key_exists(self::SORT_FIELD_KEY, $data)) {
+            $param->setSortField($data[self::SORT_FIELD_KEY]);
+        }
+
+        if (array_key_exists(self::PAGE_KEY, $data)) {
+            $param->setPage(intval($data[self::PAGE_KEY]));
+        }
+
+        if (array_key_exists(self::LIMIT_KEY, $data)) {
+            $param->setLimit(intval($data[self::LIMIT_KEY]));
+        }
+
+        if (array_key_exists(self::SEARCHES, $data)) {
+            $param->setSearches(json_decode($data[self::SEARCHES], true));
+        }
+        
         return $param;
     }
 

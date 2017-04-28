@@ -536,6 +536,41 @@ class ReportBuilder implements ReportBuilderInterface
             $this->formatReports($reportResult, $formats, $metrics, $dimensions);
         }
 
+        if (is_int($params->getPage())) {
+            if ($params->getPage() == 0) {
+                $params->setPage(1);
+            }
+
+            if (!is_int($params->getLimit()) || $params->getLimit() < 1) {
+                $params->setLimit(10);
+            }
+
+            $reports = $reportResult->getReports();
+
+            if (count($params->getSearches()) > 0) {
+                $reports = $this->filterReports($reports, $params->getSearches(), $reportResult->getTypes());
+            }
+
+            if ($params->getSortField()) {
+                $sortField = $params->getSortField();
+                $sortField = str_replace('"', '', $sortField);
+                $params->setSortField($sortField);
+
+                if (!$params->getOrderBy()) {
+                    $params->setOrderBy('asc');
+                }
+                $reports = $this->sortReports($reports, $params->getSortField(), $params->getOrderBy(), $reportResult->getTypes());
+            }
+
+            $totalRow = count($reports);
+            $offset = ($params->getPage() - 1) * $params->getLimit();
+
+            $reports = array_splice($reports, $offset, $params->getLimit());
+            $reportResult->setReports($reports);
+            $reportResult->setTotalPage(floor($totalRow / $params->getLimit()) + 1);
+            $reportResult->setTotalReport($totalRow);
+        }
+
         /* return report result */
         return $reportResult;
     }
@@ -715,5 +750,143 @@ class ReportBuilder implements ReportBuilderInterface
         $filter->setDateValue($dateValue);
 
         return $filter;
+    }
+
+    /**
+     * @param array $reports
+     * @param array $searches
+     * @param array $types
+     * @return mixed
+     */
+    private function filterReports(array $reports, array $searches, array $types)
+    {
+        foreach ($searches as $searchField => $searchContent) {
+            if (!array_key_exists($searchField, $types)) {
+                continue;
+            }
+            $type = $types[$searchField];
+
+            foreach ($reports as $pos => &$report) {
+                if (!array_key_exists($searchField, $report)) {
+                    continue;
+                }
+                $value = $report[$searchField];
+
+                //Filter number
+                if ($type == FieldType::NUMBER || $type == FieldType::NUMBER) {
+                    $conditions = preg_split('/[\s]+/', $searchContent);
+                    $value = $type == FieldType::NUMBER ? intval($value) : floatval($value);
+                    foreach ($conditions as $condition) {
+                        if (!$this->compareMathCondition($condition, $value)) {
+                            unset($reports[$pos]);
+                            continue;
+                        }
+                    }
+                    continue;
+                }
+
+                //Filter text, date...
+                if ($type == FieldType::TEXT || $type == FieldType::LARGE_TEXT || $type == FieldType::DATE || $type == FieldType::DATETIME) {
+                    $words = explode(" ", $searchContent);
+                    foreach ($words as $word){
+                        $pattern = sprintf('/%s/i', strtolower($word));
+                        if (!preg_match($pattern, strtolower($value))) {
+                            unset($reports[$pos]);
+                            continue;
+                        }
+                    }
+                    continue;
+                }
+            }
+        }
+
+        return $reports;
+    }
+
+    /**
+     * @param array $reports
+     * @param $sortField
+     * @param $orderBy
+     * @param array $types
+     * @return mixed
+     */
+    private function sortReports(array $reports, $sortField, $orderBy, array $types)
+    {
+        $reports = array_values($reports);
+        if (count($reports) < 1) {
+            return $reports;
+        }
+
+        if (!array_key_exists($sortField, $reports[0])) {
+            return $reports;
+        }
+
+        if (!array_key_exists($sortField, $types)) {
+            return $reports;
+        }
+
+        $type = $types[$sortField];
+
+        usort($reports, function ($a, $b) use ($sortField, $orderBy, $type) {
+            $firstValue = $a[$sortField];
+            $secondValue = $b[$sortField];
+
+            switch($type) {
+                case FieldType::NUMBER:
+                    $firstValue = intval($firstValue);
+                    $secondValue = intval($secondValue);
+                    break;
+                case FieldType::DECIMAL:
+                    $firstValue = floatval($firstValue);
+                    $secondValue = floatval($secondValue);
+                    break;
+                case FieldType::DATE:
+                    $firstValue = \DateTime::createFromFormat("Y-m-d", $firstValue);
+                    $secondValue = \DateTime::createFromFormat("Y-m-d", $secondValue);
+                    break;
+                case FieldType::DATETIME:
+                    $firstValue = \DateTime::createFromFormat("Y-m-d H:i:s", $firstValue);
+                    $secondValue = \DateTime::createFromFormat("Y-m-d H:i:s", $secondValue);
+                    break;
+            }
+
+            return $orderBy == 'desc' ? $firstValue > $secondValue : $firstValue < $secondValue;
+        });
+
+        return $reports;
+    }
+
+    /**
+     * @param $condition
+     * @param $value
+     * @return bool
+     */
+    private function compareMathCondition($condition, $value)
+    {
+        if (preg_match('/([^\d]+)(\d+)/', $condition, $matches)) {
+            $compareOperator = $matches[1];
+            $compareValue = $matches[2];
+
+            switch ($compareOperator) {
+                case '=':
+                    return $value == $compareValue;
+                case '==':
+                    return $value == $compareValue;
+                case '>':
+                    return $value > $compareValue;
+                case '>= ':
+                    return $value >= $compareValue;
+                case '<':
+                    return $value < $compareValue;
+                case '<=':
+                    return $value <= $compareValue;
+                case '!':
+                    return $value != $compareValue;
+                case '!=':
+                    return $value != $compareValue;
+            }
+        };
+
+        return true;
     }
 }

@@ -6,7 +6,6 @@ namespace UR\Domain\DTO\Report;
 
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
-use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Service\DTO\Report\WeightedCalculationInterface;
 
@@ -149,4 +148,81 @@ interface ParamsInterface
      * @param mixed $reportViewId
      */
     public function setReportViewId($reportViewId);
+
+    /**
+     * @return mixed
+     */
+    public function getPage();
+
+    /**
+     * @param mixed $page
+     * @return self
+     */
+    public function setPage($page);
+
+    /**
+     * @return mixed
+     */
+    public function getLimit();
+
+    /**
+     * @param mixed $limit
+     * @return self
+     */
+    public function setLimit($limit);
+
+    /**
+     * @return mixed
+     */
+    public function getSearchField();
+
+    /**
+     * @param mixed $searchField
+     * @return self
+     */
+    public function setSearchField($searchField);
+
+    /**
+     * @return mixed
+     */
+    public function getSearchKey();
+
+    /**
+     * @param mixed $searchKey
+     * @return self
+     */
+    public function setSearchKey($searchKey);
+
+    /**
+     * @return mixed
+     */
+    public function getOrderBy();
+
+    /**
+     * @param mixed $orderBy
+     * @return self
+     */
+    public function setOrderBy($orderBy);
+
+    /**
+     * @return mixed
+     */
+    public function getSortField();
+
+    /**
+     * @param mixed $sortField
+     * @return self
+     */
+    public function setSortField($sortField);
+
+    /**
+     * @return array
+     */
+    public function getSearches();
+
+    /**
+     * @param array $searches
+     * @return self
+     */
+    public function setSearches($searches);
 }

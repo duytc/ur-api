@@ -14,6 +14,8 @@ class ReportResult implements ReportResultInterface
     const REPORT_RESULT_COLUMNS = 'columns';
     const REPORT_RESULT_TYPES = 'types';
     const REPORT_RESULT_DATE_RANGE = 'dateRange';
+    const REPORT_RESULT_TOTAL_REPORT = 'totalReport';
+
 
     /**
      * @var array
@@ -45,6 +47,10 @@ class ReportResult implements ReportResultInterface
      */
     protected $dateRange;
 
+    protected $totalPage;
+
+    protected $totalReport;
+
     /**
      * ReportResult constructor.
      * @param array $reports
@@ -54,7 +60,7 @@ class ReportResult implements ReportResultInterface
      * @param array $columns
      * @param array $types
      */
-    public function __construct(array $reports, array $total, array $average, $dateRange, $columns = [], $types = [])
+    public function __construct(array $reports, array $total, array $average, $dateRange, $columns = [], $types = [], $totalReport = 0)
     {
         $this->reports = $reports;
         $this->total = $total;
@@ -62,6 +68,7 @@ class ReportResult implements ReportResultInterface
         $this->columns = $columns;
         $this->types = $types;
         $this->dateRange = $dateRange;
+        $this->totalReport = $totalReport;
     }
 
     /**
@@ -157,6 +164,42 @@ class ReportResult implements ReportResultInterface
     }
 
     /**
+     * @return mixed
+     */
+    public function getTotalPage()
+    {
+        return $this->totalPage;
+    }
+
+    /**
+     * @param mixed $totalPage
+     * @return self
+     */
+    public function setTotalPage($totalPage)
+    {
+        $this->totalPage = $totalPage;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTotalReport()
+    {
+        return $this->totalReport;
+    }
+
+    /**
+     * @param int $totalReport
+     * @return self
+     */
+    public function setTotalReport($totalReport)
+    {
+        $this->totalReport = $totalReport;
+        return $this;
+    }
+
+    /**
      * @inheritdoc
      */
     public function toArray()
@@ -167,7 +210,8 @@ class ReportResult implements ReportResultInterface
             self::REPORT_RESULT_AVERAGE => $this->average,
             self::REPORT_RESULT_COLUMNS => $this->columns,
             self::REPORT_RESULT_TYPES => $this->types,
-            self::REPORT_RESULT_DATE_RANGE => $this->dateRange
+            self::REPORT_RESULT_DATE_RANGE => $this->dateRange,
+            self::REPORT_RESULT_TOTAL_REPORT => $this->totalReport
         ];
     }
 }

@@ -19,6 +19,7 @@ class ReportController extends FOSRestController
      *
      * @Rest\QueryParam(name="reportViewDataSets", nullable=true)
      * @Rest\QueryParam(name="fieldTypes", nullable=true)
+     * @Rest\QueryParam(name="searches", nullable=true)
      * @Rest\QueryParam(name="joinBy", nullable=true)
      * @Rest\QueryParam(name="transforms", nullable=true)
      * @Rest\QueryParam(name="weightedCalculations", nullable=true)
@@ -32,6 +33,12 @@ class ReportController extends FOSRestController
      * @Rest\QueryParam(name="endDate", nullable=true)
      * @Rest\QueryParam(name="isShowDataSetName", nullable=true)
      * @Rest\QueryParam(name="id", nullable=true)
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
      *
      * @ApiDoc(
      *  section = "admin",
@@ -42,6 +49,7 @@ class ReportController extends FOSRestController
      *  parameters={
      *      {"name"="reportViewDataSets", "dataType"="array", "required"=false, "description"="list of data set id to build report"},
      *      {"name"="fieldTypes", "dataType"="array", "required"=false, "description"="list of fields accompanied with their corresponding type"},
+     *      {"name"="searches", "dataType"="array", "required"=false, "description"="list of fields with their filter value"},
      *      {"name"="joinBy", "dataType"="array", "required"=false, "description"="filter descriptor"},
      *      {"name"="transforms", "dataType"="string", "required"=false, "description"="transform descriptor"},
      *      {"name"="weightedCalculations", "dataType"="string", "required"=false, "description"="weighted value calculations descriptor"},
