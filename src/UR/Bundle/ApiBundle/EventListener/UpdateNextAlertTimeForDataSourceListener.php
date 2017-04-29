@@ -6,6 +6,7 @@ namespace UR\Bundle\ApiBundle\EventListener;
 use DateInterval;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Service\Alert\DataSource\DataSourceAlertFactory;
 use UR\Service\Alert\DataSource\NoDataReceivedDailyAlert;
@@ -49,7 +50,7 @@ class UpdateNextAlertTimeForDataSourceListener
         /**
          * @var NoDataReceivedDailyAlert $alert
          */
-        $alert = $alertFactory->getAlert(AlertInterface::ALERT_CODE_NO_DATA_RECEIVED_DAILY, null, $dataSource);
+        $alert = $alertFactory->getAlert(AlertInterface::ALERT_CODE_DATA_SOURCE_NO_DATA_RECEIVED_DAILY, null, $dataSource);
 
         if (!$alert instanceof NoDataReceivedDailyAlert) {
             $dataSource->setNextAlertTime(null);
