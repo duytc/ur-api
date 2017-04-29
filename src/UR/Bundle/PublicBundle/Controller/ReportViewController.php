@@ -23,6 +23,11 @@ class ReportViewController extends FOSRestController
      * @Rest\Get("/reportviews/{id}/sharedReports")
      *
      * @Rest\QueryParam(name="token", nullable=false)
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searches", nullable=true)
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
      *
      * @ApiDoc(
      *    section = "public",
@@ -57,7 +62,8 @@ class ReportViewController extends FOSRestController
         }
 
         $fieldsToBeShared = $sharedKeysConfig[$token]['fields'];
-        $params = $this->getParams($reportView);
+        $paginationParams = $request->query->all();
+        $params = $this->getParams($reportView, $paginationParams);
         if (array_key_exists('dateRange', $sharedKeysConfig[$token]) && !empty($sharedKeysConfig[$token]['dateRange'])) {
             $params->setStartDate($sharedKeysConfig[$token]['dateRange']['startDate']);
             $params->setEndDate($sharedKeysConfig[$token]['dateRange']['endDate']);
@@ -74,6 +80,7 @@ class ReportViewController extends FOSRestController
 
     /**
      * @param ReportViewInterface $reportView
+     * @param array $paginationParams
      * @return ParamsInterface formatted as:
      * {
      *      {"name"="dataSets", "dataType"="array", "required"=false, "description"="list of data set id to build report"},
@@ -90,9 +97,9 @@ class ReportViewController extends FOSRestController
      * }
      * @see UR\Bundle\ReportApiBundle\Controller\ReportController
      */
-    protected function getParams($reportView)
+    protected function getParams($reportView, array $paginationParams)
     {
-        return $this->get('ur.services.report.params_builder')->buildFromReportViewForSharedReport($reportView);
+        return $this->get('ur.services.report.params_builder')->buildFromReportViewForSharedReport($reportView, $paginationParams);
     }
 
     protected function getReportBuilder()

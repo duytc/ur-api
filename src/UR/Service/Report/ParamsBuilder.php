@@ -53,11 +53,9 @@ class ParamsBuilder implements ParamsBuilderInterface
     const REPORT_VIEW_ID = 'id';
     const PAGE_KEY = 'page';
     const LIMIT_KEY = 'limit';
-    const SEARCH_FIELD_KEY = 'searchField';
-    const SEARCH_VALUE_KEY = 'searchKey';
+    const SEARCHES = 'searches';
     const ORDER_BY_KEY = 'orderBy';
     const SORT_FIELD_KEY = 'sortField';
-    const SEARCHES = 'searches';
 
 
     /**
@@ -163,14 +161,6 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if (array_key_exists(self::REPORT_VIEW_ID, $data) && !empty($data[self::REPORT_VIEW_ID])) {
             $param->setReportViewId($data[self::REPORT_VIEW_ID]);
-        }
-
-        if (array_key_exists(self::SEARCH_FIELD_KEY, $data)) {
-            $param->setSearchField($data[self::SEARCH_FIELD_KEY]);
-        }
-
-        if (array_key_exists(self::SEARCH_VALUE_KEY, $data)) {
-            $param->setSearchKey($data[self::SEARCH_VALUE_KEY]);
         }
 
         if (array_key_exists(self::ORDER_BY_KEY, $data)) {
@@ -522,7 +512,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     /**
      * @inheritdoc
      */
-    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView)
+    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $paginationParams)
     {
         $param = new Params();
 
@@ -567,6 +557,26 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if (is_array($reportView->getFormats())) {
             $param->setFormats($this->createFormats($reportView->getFormats()));
+        }
+
+        if (array_key_exists(self::ORDER_BY_KEY, $paginationParams)) {
+            $param->setOrderBy($paginationParams[self::ORDER_BY_KEY]);
+        }
+
+        if (array_key_exists(self::SORT_FIELD_KEY, $paginationParams)) {
+            $param->setSortField($paginationParams[self::SORT_FIELD_KEY]);
+        }
+
+        if (array_key_exists(self::PAGE_KEY, $paginationParams)) {
+            $param->setPage(intval($paginationParams[self::PAGE_KEY]));
+        }
+
+        if (array_key_exists(self::LIMIT_KEY, $paginationParams)) {
+            $param->setLimit(intval($paginationParams[self::LIMIT_KEY]));
+        }
+
+        if (array_key_exists(self::SEARCHES, $paginationParams)) {
+            $param->setSearches(json_decode($paginationParams[self::SEARCHES], true));
         }
 
         return $param;

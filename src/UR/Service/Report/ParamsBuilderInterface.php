@@ -23,7 +23,8 @@ interface ParamsBuilderInterface
 
     /**
      * @param ReportViewInterface $reportView
+     * @param array $paginationParams
      * @return ParamsInterface
      */
-    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView);
+    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $paginationParams);
 }

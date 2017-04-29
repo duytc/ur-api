@@ -19,7 +19,6 @@ class ReportController extends FOSRestController
      *
      * @Rest\QueryParam(name="reportViewDataSets", nullable=true)
      * @Rest\QueryParam(name="fieldTypes", nullable=true)
-     * @Rest\QueryParam(name="searches", nullable=true)
      * @Rest\QueryParam(name="joinBy", nullable=true)
      * @Rest\QueryParam(name="transforms", nullable=true)
      * @Rest\QueryParam(name="weightedCalculations", nullable=true)
@@ -35,8 +34,7 @@ class ReportController extends FOSRestController
      * @Rest\QueryParam(name="id", nullable=true)
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
      * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
-     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
-     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="searches", nullable=true)
      * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
      * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
      *
