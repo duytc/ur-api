@@ -180,7 +180,11 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(self::SEARCHES, $data)) {
-            $param->setSearches($data[self::SEARCHES]);
+            $searches = $data[self::SEARCHES];
+            if (is_string($searches)) {
+                $searches = json_decode($searches, true);
+            }
+            $param->setSearches($searches);
         }
         
         return $param;
@@ -572,7 +576,11 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(self::SEARCHES, $paginationParams)) {
-            $param->setSearches($paginationParams[self::SEARCHES]);
+            $searches = $paginationParams[self::SEARCHES];
+            if (is_string($searches)) {
+                $searches = json_decode($searches, true);
+            }
+            $param->setSearches($searches);
         }
 
         return $param;
