@@ -74,8 +74,6 @@ class Params implements ParamsInterface
     protected $reportViewId;
     protected $page;
     protected $limit;
-    protected $searchField;
-    protected $searchKey;
     protected $orderBy;
     protected $sortField;
 
@@ -425,42 +423,6 @@ class Params implements ParamsInterface
     public function setLimit($limit)
     {
         $this->limit = $limit;
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getSearchField()
-    {
-        return $this->searchField;
-    }
-
-    /**
-     * @param mixed $searchField
-     * @return self
-     */
-    public function setSearchField($searchField)
-    {
-        $this->searchField = $searchField;
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getSearchKey()
-    {
-        return $this->searchKey;
-    }
-
-    /**
-     * @param mixed $searchKey
-     * @return self
-     */
-    public function setSearchKey($searchKey)
-    {
-        $this->searchKey = $searchKey;
         return $this;
     }
 

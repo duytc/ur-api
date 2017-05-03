@@ -1,6 +1,6 @@
 report_api:
     resource: "@ReportApiBundle/Resources/config/routing.yml"
-    prefix:   api/v1/report
+    prefix:   api/v1
 
 ur_admin_api:
     resource: "@URAdminApiBundle/Resources/config/routing.yml"

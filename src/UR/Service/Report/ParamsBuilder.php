@@ -95,7 +95,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
 
             if (!empty($data[self::REPORT_VIEWS_KEY])) {
-                $reportViews = $this->createReportViews(json_decode($data[self::REPORT_VIEWS_KEY], true));
+                $reportViews = $this->createReportViews($data[self::REPORT_VIEWS_KEY]);
                 $param->setReportViews($reportViews);
             }
 
@@ -105,12 +105,12 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         } else {
             if (array_key_exists(self::DATA_SET_KEY, $data) && !empty($data[self::DATA_SET_KEY])) {
-                $dataSets = $this->createDataSets(json_decode($data[self::DATA_SET_KEY], true));
+                $dataSets = $this->createDataSets($data[self::DATA_SET_KEY]);
                 $param->setDataSets($dataSets);
             }
 
             if (array_key_exists(self::JOIN_BY_KEY, $data)) {
-                $joinBy = json_decode($data[self::JOIN_BY_KEY], true);
+                $joinBy = $data[self::JOIN_BY_KEY];
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     throw new InvalidArgumentException('Invalid JSON format in JoinConfigs');
                 }
@@ -122,28 +122,28 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(self::TRANSFORM_KEY, $data) && !empty($data[self::TRANSFORM_KEY])) {
-            $transforms = $this->createTransforms(json_decode($data[self::TRANSFORM_KEY], true));
+            $transforms = $this->createTransforms($data[self::TRANSFORM_KEY]);
             $param->setTransforms($transforms);
         }
 
         if (array_key_exists(self::WEIGHTED_CALCULATION_KEY, $data)) {
-            $calculations = json_decode($data[self::WEIGHTED_CALCULATION_KEY], true);
+            $calculations = $data[self::WEIGHTED_CALCULATION_KEY];
             if (!empty($calculations)) {
                 $param->setWeightedCalculations(new WeightedCalculation($calculations));
             }
         }
 
         if (array_key_exists(self::SHOW_IN_TOTAL_KEY, $data)) {
-            $param->setShowInTotal(json_decode($data[self::SHOW_IN_TOTAL_KEY], true));
+            $param->setShowInTotal($data[self::SHOW_IN_TOTAL_KEY]);
         }
 
         if (array_key_exists(self::FIELD_TYPES_KEY, $data)) {
-            $param->setFieldTypes(json_decode($data[self::FIELD_TYPES_KEY], true));
+            $param->setFieldTypes($data[self::FIELD_TYPES_KEY]);
         }
 
         /* set output formatting */
         if (array_key_exists(self::FORMAT_KEY, $data) && !empty($data[self::FORMAT_KEY])) {
-            $formats = $this->createFormats(json_decode($data[self::FORMAT_KEY], true));
+            $formats = $this->createFormats($data[self::FORMAT_KEY]);
             $param->setFormats($formats);
         }
 
@@ -180,7 +180,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(self::SEARCHES, $data)) {
-            $param->setSearches(json_decode($data[self::SEARCHES], true));
+            $param->setSearches($data[self::SEARCHES]);
         }
         
         return $param;
@@ -215,10 +215,6 @@ class ParamsBuilder implements ParamsBuilderInterface
         $joinedDataSets = [];
         $joinConfigs = [];
         $this->normalizeJoinConfig($data, $dataSets);
-
-//		if ($this->isCircularJoinConfig($data)) {
-//			throw new InvalidArgumentException('Circular join config');
-//		}
 
         foreach ($data as $config) {
             $joinConfig = new JoinConfig();
@@ -576,7 +572,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(self::SEARCHES, $paginationParams)) {
-            $param->setSearches(json_decode($paginationParams[self::SEARCHES], true));
+            $param->setSearches($paginationParams[self::SEARCHES]);
         }
 
         return $param;

@@ -174,28 +174,6 @@ interface ParamsInterface
     /**
      * @return mixed
      */
-    public function getSearchField();
-
-    /**
-     * @param mixed $searchField
-     * @return self
-     */
-    public function setSearchField($searchField);
-
-    /**
-     * @return mixed
-     */
-    public function getSearchKey();
-
-    /**
-     * @param mixed $searchKey
-     * @return self
-     */
-    public function setSearchKey($searchKey);
-
-    /**
-     * @return mixed
-     */
     public function getOrderBy();
 
     /**
