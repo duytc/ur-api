@@ -5,6 +5,7 @@ namespace UR\Service\Report;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\Statement;
 use Doctrine\DBAL\Query\QueryBuilder;
+use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,6 +24,7 @@ use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Entity\Core\DataSet;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
+use UR\Service\DataSet\Synchronizer;
 use UR\Service\StringUtilTrait;
 
 class SqlBuilder implements SqlBuilderInterface
@@ -92,7 +94,8 @@ class SqlBuilder implements SqlBuilderInterface
          */
         $fields = array_keys($dataSetEntity->getAllDimensionMetrics());
         // merge with dimensions, metrics of dataSetDTO because it contains hidden columns such as __date_month, __date_year, ...
-        $fields = array_merge($fields, $dimensions, $metrics);
+        $temporaryFields = $this->getTemporaryFieldsFromDataSetTable($table, array_merge($dimensions, $metrics));
+        $fields = array_merge($fields, $dimensions, $metrics, $temporaryFields);
         $fields = array_values(array_unique($fields));
 
         if (count($tableColumns) < 1) {
@@ -390,7 +393,8 @@ class SqlBuilder implements SqlBuilderInterface
          */
         $fields = array_keys($dataSetEntity->getAllDimensionMetrics());
         // merge with dimensions, metrics of dataSetDTO because it contains hidden columns such as __date_month, __date_year, ...
-        $fields = array_merge($fields, $dimensions, $metrics);
+        $temporaryFields = $this->getTemporaryFieldsFromDataSetTable($table, array_merge($dimensions, $metrics));
+        $fields = array_merge($fields, $dimensions, $metrics, $temporaryFields);
         $fields = array_values(array_unique($fields));
 
         // filter all fields that are not in table's columns
@@ -696,5 +700,27 @@ class SqlBuilder implements SqlBuilderInterface
         $leftCondition = $this->connection->quoteIdentifier(sprintf('%s.%s', $fromAlias, $fromJoinField));
         $rightCondition = $this->connection->quoteIdentifier(sprintf('%s.%s', $toAlias, $toJoinField));
         return sprintf('%s = %s', $leftCondition, $rightCondition);
+    }
+
+    /**
+     * @param Table $table
+     * @param $fields
+     * @return mixed
+     */
+    private function getTemporaryFieldsFromDataSetTable($table, $fields)
+    {
+        $columns = $table->getColumns();
+        $columns = array_filter($columns, function(Column $column){
+            return in_array($column->getType()->getName(), [Type::DATE, Type::DATETIME]);
+        });
+        $temporaryFields = [];
+        /** @var Column $column */
+        foreach ($columns as $column){
+            $temporaryFields[] = Synchronizer::getHiddenColumnDay($column->getName());
+            $temporaryFields[] = Synchronizer::getHiddenColumnMonth($column->getName());
+            $temporaryFields[] = Synchronizer::getHiddenColumnYear($column->getName());
+        }
+
+        return $temporaryFields;
     }
 }

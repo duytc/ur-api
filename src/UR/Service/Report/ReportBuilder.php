@@ -4,6 +4,7 @@ namespace UR\Service\Report;
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface as DataSetDTO;
+use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\DateRange;
 use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Filters\DateFilterInterface;
@@ -17,9 +18,9 @@ use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\InvalidArgumentException;
-use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\DataSet\FieldType;
+use UR\Service\DataSet\Synchronizer;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResult;
 use UR\Service\DTO\Report\ReportResultInterface;
@@ -536,6 +537,47 @@ class ReportBuilder implements ReportBuilderInterface
             $this->formatReports($reportResult, $formats, $metrics, $dimensions);
         }
 
+        $types = $reportResult->getTypes();
+        $temporaryFields = [];
+        foreach ($types as $column => $type) {
+            if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
+                $pos = strpos($column, "_");
+                $fieldPattern = "__" . substr($column, 0, $pos + 1) . "%s" . substr($column, $pos);
+                $temporaryFields[] = sprintf($fieldPattern, "day");
+                $temporaryFields[] = sprintf($fieldPattern, "month");
+                $temporaryFields[] = sprintf($fieldPattern, "year");
+            }
+        }
+
+        $columns = $reportResult->getColumns();
+        if (count($reports) > 0) {
+            $unUsedColumns = array_diff_key($reports[0], $columns);
+            foreach ($unUsedColumns as $field => $name) {
+                $temporaryFields[] = $field;
+            }
+        }
+
+        foreach ($temporaryFields as $temporaryField) {
+            if (array_key_exists($temporaryField, $columns)) {
+                unset($columns[$temporaryField]);
+            }
+
+            if (array_key_exists($temporaryField, $types)) {
+                unset($types[$temporaryField]);
+            }
+        }
+        $reportResult->setColumns($columns);
+        $reportResult->setTypes($types);
+
+        $reports = $reportResult->getReports();
+        $reports = $this->getReportAfterRemoveTemporaryFields($reports, $temporaryFields);
+
+        $smartColumns = $this->getSmartColumns($reportResult->getColumns(), $params->getDataSets(), $reportResult->getTypes());
+        $reportResult->setColumns($smartColumns);
+
+        $reports = $this->getReportAfterApplyDefaultFormat($reports, $reportResult->getColumns(), $reportResult->getTypes());
+        $reportResult->setReports($reports);
+
         if (is_int($params->getPage())) {
             if ($params->getPage() == 0) {
                 $params->setPage(1);
@@ -544,8 +586,6 @@ class ReportBuilder implements ReportBuilderInterface
             if (!is_int($params->getLimit()) || $params->getLimit() < 1) {
                 $params->setLimit(10);
             }
-
-            $reports = $reportResult->getReports();
 
             if (count($params->getSearches()) > 0) {
                 $reports = $this->filterReports($reports, $params->getSearches(), $reportResult->getTypes());
@@ -788,7 +828,7 @@ class ReportBuilder implements ReportBuilderInterface
                 //Filter text, date...
                 if ($type == FieldType::TEXT || $type == FieldType::LARGE_TEXT || $type == FieldType::DATE || $type == FieldType::DATETIME) {
                     $words = explode(" ", $searchContent);
-                    foreach ($words as $word){
+                    foreach ($words as $word) {
                         $pattern = sprintf('/%s/i', strtolower($word));
                         if (!preg_match($pattern, strtolower($value))) {
                             unset($reports[$pos]);
@@ -831,7 +871,7 @@ class ReportBuilder implements ReportBuilderInterface
             $firstValue = $a[$sortField];
             $secondValue = $b[$sortField];
 
-            switch($type) {
+            switch ($type) {
                 case FieldType::NUMBER:
                     $firstValue = intval($firstValue);
                     $secondValue = intval($secondValue);
@@ -888,5 +928,130 @@ class ReportBuilder implements ReportBuilderInterface
         };
 
         return true;
+    }
+
+    /**
+     * @param $columns
+     * @param DataSetInterface[] $dataSets
+     * @param $types
+     * @return mixed
+     */
+    private function getSmartColumns($columns, $dataSets, $types)
+    {
+        $dimensions = [];
+        $metrics = [];
+
+        /**
+         * Get dimensions and metrics with suffix dataSet id,
+         * Example text_1 mean in dataSet 1 have column text
+         */
+        foreach ($dataSets as $dataSet) {
+            $dimensions = array_merge($dimensions, array_map(function ($item) use ($dataSet) {
+                /** @var DataSetInterface $dataSet */
+                return sprintf('%s_%d', $item, $dataSet->getDataSetId());
+            }, $dataSet->getDimensions()));
+
+            $metrics = array_merge($metrics, array_map(function ($item) use ($dataSet) {
+                /** @var DataSetInterface $dataSet */
+                return sprintf('%s_%d', $item, $dataSet->getDataSetId());
+            }, $dataSet->getMetrics()));
+        }
+
+        $calculatedFields = array_diff_key($columns, array_flip(array_merge($dimensions, $metrics)));
+
+        $dateDimensions = array_filter($dimensions, function ($dimension) use ($types) {
+            return array_key_exists($dimension, $types) && ($types[$dimension] == FieldType::DATE || $types[$dimension] == FieldType::DATE);
+        });
+        $alphabetDimensions = array_diff($dimensions, $dateDimensions);
+        asort($alphabetDimensions);
+        $alphabetDimensions = array_values($alphabetDimensions);
+
+        $dateMetrics = array_filter($metrics, function ($metric) use ($types) {
+            return array_key_exists($metric, $types) && ($types[$metric] == FieldType::DATE || $types[$metric] == FieldType::DATE);
+        });
+        $alphabetMetrics = array_diff($metrics, $dateMetrics);
+        asort($alphabetMetrics);
+        $alphabetMetrics = array_values($alphabetMetrics);
+
+        /**
+         * Order
+         *      - dimensions first
+         *          - date, datetime
+         *          - sort the remaining alphabetically
+         *      - metrics
+         *          - date, datetime
+         *          - sort the remaining alphabetically
+         */
+        $smartColumns = [];
+        foreach ($dateDimensions as $dimension) {
+            if (array_key_exists($dimension, $columns)) {
+                $smartColumns[$dimension] = $columns[$dimension];
+            }
+        }
+
+        foreach ($alphabetDimensions as $dimension) {
+            if (array_key_exists($dimension, $columns)) {
+                $smartColumns[$dimension] = $columns[$dimension];
+            }
+        }
+
+        foreach ($dateMetrics as $metric) {
+            if (array_key_exists($metric, $columns)) {
+                $smartColumns[$metric] = $columns[$metric];
+            }
+        }
+
+        foreach ($alphabetMetrics as $metric) {
+            if (array_key_exists($metric, $columns)) {
+                $smartColumns[$metric] = $columns[$metric];
+            }
+        }
+
+        $smartColumns = array_merge($smartColumns, $calculatedFields);
+
+        return $smartColumns;
+    }
+
+    /**
+     * @param $reports
+     * @param $columns
+     * @param $types
+     * @return mixed;
+     */
+    private function getReportAfterApplyDefaultFormat($reports, $columns, $types)
+    {
+        $decimalFields = [];
+        foreach ($columns as $key => $column) {
+            if (array_key_exists($key, $types) && $types[$key] == FieldType::DECIMAL) {
+                $decimalFields[$key] = $column;
+            }
+        }
+        foreach ($reports as &$report) {
+            foreach ($decimalFields as $decimalField => $name) {
+                if (!array_key_exists($decimalField, $report)) {
+                    continue;
+                }
+                $report[$decimalField] = number_format($report[$decimalField], 4, ".", "");
+            }
+        }
+        return $reports;
+    }
+
+    /**
+     * @param $reports
+     * @param $removeColumns
+     * @return mixed;
+     */
+    private function getReportAfterRemoveTemporaryFields($reports, $removeColumns)
+    {
+        foreach ($reports as &$report) {
+            foreach ($removeColumns as $removeColumn) {
+                if (!array_key_exists($removeColumn, $report)) {
+                    continue;
+                }
+                unset($report[$removeColumn]);
+            }
+        }
+        return $reports;
     }
 }
