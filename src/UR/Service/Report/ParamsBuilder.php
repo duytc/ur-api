@@ -148,11 +148,11 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(self::START_DATE, $data) && !empty($data[self::START_DATE])) {
-            $param->setStartDate($data[self::START_DATE]);
+            $param->setStartDate(new \DateTime($data[self::START_DATE]));
         }
 
         if (array_key_exists(self::END_DATE, $data) && !empty($data[self::END_DATE])) {
-            $param->setEndDate($data[self::END_DATE]);
+            $param->setEndDate(new \DateTime($data[self::END_DATE]));
         }
 
         if (array_key_exists(self::IS_SHOW_DATA_SET_NAME, $data) && !empty($data[self::IS_SHOW_DATA_SET_NAME])) {

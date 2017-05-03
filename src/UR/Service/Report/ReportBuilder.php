@@ -320,7 +320,7 @@ class ReportBuilder implements ReportBuilderInterface
             }
         }
 
-        if (!empty($startDate) && !empty($endDate)) {
+        if ($startDate instanceof \DateTime && $endDate instanceof \DateTime) {
             foreach ($dataSets as $dataSet) {
                 $this->overrideDateTypeFilterForDataSet($dataSet, $startDate, $endDate);
             }
@@ -369,7 +369,7 @@ class ReportBuilder implements ReportBuilderInterface
      * @param $endDate
      * @return DataSetDTO
      */
-    protected function overrideDateTypeFilterForDataSet(DataSetDTO &$dataSet, $startDate, $endDate)
+    protected function overrideDateTypeFilterForDataSet(DataSetDTO &$dataSet, \DateTime $startDate, \DateTime $endDate)
     {
         $filters = $dataSet->getFilters();
 
@@ -381,8 +381,8 @@ class ReportBuilder implements ReportBuilderInterface
 
             if ($filter->isUserDefine()) {
                 $filter->setDateValue(array(
-                    DateFilter::DATE_VALUE_FILTER_START_DATE_KEY => $startDate,
-                    DateFilter::DATE_VALUE_FILTER_END_DATE_KEY => $endDate
+                    DateFilter::DATE_VALUE_FILTER_START_DATE_KEY => $startDate->format('Y-m-d'),
+                    DateFilter::DATE_VALUE_FILTER_END_DATE_KEY => $endDate->format('Y-m-d')
                 ));
             }
         }
