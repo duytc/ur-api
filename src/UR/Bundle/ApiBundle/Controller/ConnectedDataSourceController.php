@@ -19,6 +19,7 @@ use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\Import\AutoImportDataInterface;
+use UR\Service\Import\PublicImportDataException;
 
 /**
  * @Rest\RouteResource("ConnectedDataSource")
@@ -258,6 +259,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
      * @param ConnectedDataSourceInterface $tempConnectedDataSource
      * @param $filePaths
      * @return mixed
+     * @throws PublicImportDataException
      */
     private function handleDryRun(ConnectedDataSourceInterface $tempConnectedDataSource, $filePaths)
     {
@@ -271,8 +273,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
                 AbstractConnectedDataSourceAlert::DETAILS => []
             ];
 
-            $message = json_encode($result);
-            throw new BadRequestHttpException($message);
+            throw new PublicImportDataException($result, new BadRequestHttpException(json_encode($result)));
         }
 
         // call auto import for dry run only

@@ -2,9 +2,11 @@
 
 namespace UR\Service\Parser;
 
+use UR\Service\Import\PublicImportDataException;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
+use UR\Service\PublicSimpleException;
 
 class ParserConfig
 {
@@ -25,7 +27,7 @@ class ParserConfig
     public function addColumn($fromColumn, $toColumn = null)
     {
         if (empty($fromColumn)) {
-            throw new \InvalidArgumentException('column names cannot be empty');
+            throw new PublicSimpleException('column names cannot be empty');
         }
 
         if (empty($toColumn)) {
@@ -33,11 +35,11 @@ class ParserConfig
         }
 
         if (!preg_match('#[_a-z]+#i', $toColumn)) {
-            throw new \InvalidArgumentException('column names can only contain alpha characters and underscores');
+            throw new PublicSimpleException('column names can only contain alpha characters and underscores');
         }
 
         if (in_array($fromColumn, $this->columnMapping, true)) {
-            throw new \InvalidArgumentException(sprintf('The column "%s" is already mapped. Column mapping must be unique', $fromColumn));
+            throw new PublicSimpleException(sprintf('The column "%s" is already mapped. Column mapping must be unique', $fromColumn));
         }
 
         if (array_key_exists($toColumn, $this->columnMapping)) {

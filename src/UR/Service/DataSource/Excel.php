@@ -190,9 +190,19 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         $objPHPExcel = $this->getPhpExcelObj($this->filePath, $chunkSize, $beginRowsReadRange);
         $this->sheet = $objPHPExcel->getActiveSheet();
 
-        $columns = range('A', $this->numOfColumns);
+        $columns = [];
+        foreach ($this->excelColumnRange('A', $this->numOfColumns) as $value) {
+            $columns[] = $value;
+        }
         $highestRow = $this->sheet->getHighestDataRow();
-        $columnsHeaders = array_combine($columns, $this->ogiHeaders);
+
+        $columnsHeaders = [];
+        try {
+            $columnsHeaders = array_combine($columns, $this->ogiHeaders);
+        } catch (\Exception $e){
+
+        }
+
         $columnsHeaders = array_filter($columnsHeaders, function ($value) {
             return (!is_null($value) && !empty($value)) || $value === '0';
         });
@@ -221,5 +231,12 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         $objPHPExcel->disconnectWorksheets();
         unset($objPHPExcel, $this->sheet);
         return $chunkRows;
+    }
+
+    private function excelColumnRange($lower, $upper) {
+        ++$upper;
+        for ($i = $lower; $i !== $upper; ++$i) {
+            yield $i;
+        }
     }
 }
