@@ -5,7 +5,7 @@ namespace UR\Service\DataSource;
 
 use Liuggio\ExcelBundle\Factory;
 use Symfony\Component\Config\Definition\Exception\Exception;
-use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
+use UR\Model\Core\AlertInterface;
 use UR\Service\Import\ImportDataException;
 
 class DataSourceFileFactory
