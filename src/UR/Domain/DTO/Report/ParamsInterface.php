@@ -203,4 +203,37 @@ interface ParamsInterface
      * @return self
      */
     public function setSearches($searches);
+
+    /**
+     * @return array
+     */
+    public function getUserDefinedDimensions();
+
+    /**
+     * @param array $userDefinedDimensions
+     * @return self
+     */
+    public function setUserDefinedDimensions($userDefinedDimensions);
+
+    /**
+     * @return boolean
+     */
+    public function isNeedToGroup();
+
+    /**
+     * @param boolean $needToGroup
+     * @return self
+     */
+    public function setNeedToGroup($needToGroup);
+
+    /**
+     * @return array
+     */
+    public function getUserDefinedMetrics();
+
+    /**
+     * @param array $userDefinedMetrics
+     * @return self
+     */
+    public function setUserDefinedMetrics($userDefinedMetrics);
 }

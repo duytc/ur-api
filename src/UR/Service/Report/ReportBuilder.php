@@ -14,13 +14,13 @@ use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\ReportViews\ReportViewInterface as ReportViewDTO;
+use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\DataSet\FieldType;
-use UR\Service\DataSet\Synchronizer;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResult;
 use UR\Service\DTO\Report\ReportResultInterface;
@@ -437,6 +437,14 @@ class ReportBuilder implements ReportBuilderInterface
 
         $reportCollection->setRows($reports);
 
+        if (!empty($params->getUserDefinedDimensions()) && $params->isNeedToGroup()) {
+            $groupTransform = new GroupByTransform(
+                $params->getUserDefinedDimensions()
+            );
+
+            $reportCollection = $groupTransform->transform($reportCollection, $metrics, $dimensions, []);
+        }
+
         /* group reports */
         /** @var ReportResultInterface $reportResult */
         $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $params->getIsShowDataSetName(), $isSingleDataSet);
@@ -572,44 +580,85 @@ class ReportBuilder implements ReportBuilderInterface
         $reports = $reportResult->getReports();
         $reports = $this->getReportAfterRemoveTemporaryFields($reports, $temporaryFields);
 
-        $smartColumns = $this->getSmartColumns($reportResult->getColumns(), $params->getDataSets(), $reportResult->getTypes());
+        if (!empty($params->getUserDefinedDimensions())) {
+            $newDimensions = $params->getUserDefinedDimensions();
+            $newMetrics = $params->getUserDefinedMetrics();
+            $newColumns = array_merge($newDimensions, $newMetrics);
+            $fieldsToRemove = array_diff(array_keys($reportResult->getColumns()), $newColumns);
+            $reports = $this->getReportAfterRemoveTemporaryFields($reports, $fieldsToRemove);
+            $types = $reportResult->getTypes();
+            foreach ($types as $k => $v) {
+                if (in_array($k, $fieldsToRemove)) {
+                    unset($types[$k]);
+                }
+            }
+
+            $reportResult->setTypes($types);
+            $oldColumns = $reportResult->getColumns();
+            foreach ($oldColumns as $k => $v) {
+                if (in_array($k, $newColumns)) {
+                    continue;
+                }
+
+                unset($oldColumns[$k]);
+            }
+            $reportResult->setColumns($oldColumns);
+            $totalFields = $reportResult->getTotal();
+            foreach ($totalFields as $k => $v) {
+                if (in_array($k, $newColumns)) {
+                    continue;
+                }
+
+                unset($totalFields[$k]);
+            }
+            $reportResult->setTotal($totalFields);
+
+            $averageFields = $reportResult->getAverage();
+            foreach ($averageFields as $k => $v) {
+                if (in_array($k, $newColumns)) {
+                    continue;
+                }
+
+                unset($averageFields[$k]);
+            }
+            $reportResult->setAverage($averageFields);
+        }
+
+        $smartColumns = $this->getSmartColumns($reportResult->getColumns(), $params, $reportResult->getTypes());
         $reportResult->setColumns($smartColumns);
 
         $reports = $this->getReportAfterApplyDefaultFormat($reports, $reportResult->getColumns(), $reportResult->getTypes());
         $reportResult->setReports($reports);
 
-        if (is_int($params->getPage())) {
-            if ($params->getPage() == 0) {
-                $params->setPage(1);
-            }
+        if (count($params->getSearches()) > 0) {
+            $reports = $this->filterReports($reports, $params->getSearches(), $reportResult->getTypes());
+        }
 
+        if ($params->getSortField()) {
+            $sortField = $params->getSortField();
+            $sortField = str_replace('"', '', $sortField);
+            $params->setSortField($sortField);
+
+            if (!$params->getOrderBy()) {
+                $params->setOrderBy('asc');
+            }
+            $reports = $this->sortReports($reports, $params->getSortField(), $params->getOrderBy(), $reportResult->getTypes());
+        }
+
+        $totalRow = count($reports);
+
+        if (is_int($params->getPage())) {
             if (!is_int($params->getLimit()) || $params->getLimit() < 1) {
                 $params->setLimit(10);
             }
-
-            if (count($params->getSearches()) > 0) {
-                $reports = $this->filterReports($reports, $params->getSearches(), $reportResult->getTypes());
-            }
-
-            if ($params->getSortField()) {
-                $sortField = $params->getSortField();
-                $sortField = str_replace('"', '', $sortField);
-                $params->setSortField($sortField);
-
-                if (!$params->getOrderBy()) {
-                    $params->setOrderBy('asc');
-                }
-                $reports = $this->sortReports($reports, $params->getSortField(), $params->getOrderBy(), $reportResult->getTypes());
-            }
-
-            $totalRow = count($reports);
             $offset = ($params->getPage() - 1) * $params->getLimit();
-
             $reports = array_splice($reports, $offset, $params->getLimit());
-            $reportResult->setReports($reports);
             $reportResult->setTotalPage(floor($totalRow / $params->getLimit()) + 1);
-            $reportResult->setTotalReport($totalRow);
         }
+
+        $reportResult->setReports($reports);
+        $reportResult->setTotalReport($totalRow);
+
 
         /* return report result */
         return $reportResult;
@@ -932,11 +981,11 @@ class ReportBuilder implements ReportBuilderInterface
 
     /**
      * @param $columns
-     * @param DataSetInterface[] $dataSets
+     * @param ParamsInterface $params
      * @param $types
      * @return mixed
      */
-    private function getSmartColumns($columns, $dataSets, $types)
+    private function getSmartColumns($columns, $params, $types)
     {
         $dimensions = [];
         $metrics = [];
@@ -945,6 +994,7 @@ class ReportBuilder implements ReportBuilderInterface
          * Get dimensions and metrics with suffix dataSet id,
          * Example text_1 mean in dataSet 1 have column text
          */
+        $dataSets = $params->getDataSets();
         foreach ($dataSets as $dataSet) {
             $dimensions = array_merge($dimensions, array_map(function ($item) use ($dataSet) {
                 /** @var DataSetInterface $dataSet */
@@ -983,6 +1033,34 @@ class ReportBuilder implements ReportBuilderInterface
          *          - sort the remaining alphabetically
          */
         $smartColumns = [];
+
+        $reportViewAlias = 'report_view_alias';
+        if (array_key_exists($reportViewAlias, $columns)) {
+            $smartColumns[$reportViewAlias] = $columns[$reportViewAlias];
+            if ($params->getUserDefinedDimensions() != null && array_key_exists($reportViewAlias, $params->getUserDefinedDimensions() )){
+                unset($params->getUserDefinedDimensions()[$reportViewAlias]);
+            }
+            if ($params->getUserDefinedMetrics() != null && array_key_exists($reportViewAlias, $params->getUserDefinedMetrics() )){
+                unset($params->getUserDefinedMetrics()[$reportViewAlias]);
+            }
+        }
+
+        if ($params->getUserDefinedDimensions() != null){
+            foreach ($params->getUserDefinedDimensions() as $dimension) {
+                if (array_key_exists($dimension, $columns)) {
+                    $smartColumns[$dimension] = $columns[$dimension];
+                }
+            }
+        }
+
+        if ($params->getUserDefinedMetrics() != null){
+            foreach ($params->getUserDefinedMetrics() as $metric) {
+                if (array_key_exists($metric, $columns)) {
+                    $smartColumns[$metric] = $columns[$metric];
+                }
+            }
+        }
+
         foreach ($dateDimensions as $dimension) {
             if (array_key_exists($dimension, $columns)) {
                 $smartColumns[$dimension] = $columns[$dimension];
@@ -1031,7 +1109,13 @@ class ReportBuilder implements ReportBuilderInterface
                 if (!array_key_exists($decimalField, $report)) {
                     continue;
                 }
-                $report[$decimalField] = number_format($report[$decimalField], 4, ".", "");
+                if (strpos($report[$decimalField], '$') != false) {
+                    continue;
+                }
+                if (strpos($report[$decimalField], '%') != false) {
+                    continue;
+                }
+                $report[$decimalField] = number_format((float)$report[$decimalField], 4, ".", "");
             }
         }
         return $reports;

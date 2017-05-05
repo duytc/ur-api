@@ -19,7 +19,8 @@ class ReportViewMultiViewFormType extends AbstractRoleSpecificFormType
             ->add('filters')
             ->add('subView')
             ->add('dimensions')
-            ->add('metrics');
+            ->add('metrics')
+            ->add('enableCustomDimensionMetric');
 
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,

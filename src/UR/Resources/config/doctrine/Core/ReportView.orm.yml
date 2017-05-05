@@ -71,6 +71,11 @@ UR\Entity\Core\ReportView:
             gedmo:
                 timestampable:
                     on: create
+        enableCustomDimensionMetric:
+            type: boolean
+            nullable: false
+            options:
+                default: true
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

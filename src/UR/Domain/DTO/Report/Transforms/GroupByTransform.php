@@ -35,7 +35,7 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 	 * @param array $metrics
 	 * @param array $dimensions
 	 * @param $outputJoinField
-	 * @return mixed
+	 * @return Collection
 	 */
 	public function transform(Collection $collection, array &$metrics, array &$dimensions, array $outputJoinField)
 	{

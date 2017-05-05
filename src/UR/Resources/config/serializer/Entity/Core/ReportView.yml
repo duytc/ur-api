@@ -74,4 +74,8 @@ UR\Entity\Core\ReportView:
         lastRun:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        enableCustomDimensionMetric:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
+
 

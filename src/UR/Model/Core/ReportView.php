@@ -127,6 +127,11 @@ class ReportView implements ReportViewInterface
     protected $lastRun;
 
     /**
+     * @var bool
+     */
+    protected $enableCustomDimensionMetric;
+
+    /**
      * @return mixed
      */
     public function getShared()
@@ -500,6 +505,23 @@ class ReportView implements ReportViewInterface
     public function setLastRun($lastRun)
     {
         $this->lastRun = $lastRun;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isEnableCustomDimensionMetric()
+    {
+        return $this->enableCustomDimensionMetric;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setEnableCustomDimensionMetric($enableCustomDimensionMetric)
+    {
+        $this->enableCustomDimensionMetric = $enableCustomDimensionMetric;
         return $this;
     }
 }

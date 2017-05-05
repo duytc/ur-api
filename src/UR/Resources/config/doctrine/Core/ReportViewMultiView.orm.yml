@@ -22,6 +22,11 @@ UR\Entity\Core\ReportViewMultiView:
         metrics:
             type: json_array
             nullable: true
+        enableCustomDimensionMetric:
+            type: boolean
+            nullable: false
+            options:
+                default: true
     manyToOne:
         reportView:
             targetEntity: UR\Entity\Core\ReportView

@@ -37,6 +37,11 @@ class ReportViewMultiView implements ReportViewMultiViewInterface
     protected $metrics;
 
     /**
+     * @var bool
+     */
+    protected $enableCustomDimensionMetric;
+
+    /**
      * @inheritdoc
      */
     public function getId()
@@ -131,6 +136,23 @@ class ReportViewMultiView implements ReportViewMultiViewInterface
     public function setMetrics(array  $metrics)
     {
         $this->metrics = $metrics;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isEnableCustomDimensionMetric()
+    {
+        return $this->enableCustomDimensionMetric;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setEnableCustomDimensionMetric($enableCustomDimensionMetric)
+    {
+        $this->enableCustomDimensionMetric = $enableCustomDimensionMetric;
         return $this;
     }
 }

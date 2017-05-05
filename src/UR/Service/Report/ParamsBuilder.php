@@ -49,6 +49,9 @@ class ParamsBuilder implements ParamsBuilderInterface
     const START_DATE = 'startDate';
     const END_DATE = 'endDate';
     const USER_DEFINED_DATE_RANGE = 'userDefineDateRange';
+    const USER_DEFINED_DIMENSIONS = 'userDefineDimensions';
+    const USER_DEFINED_METRICS = 'userDefineMetrics';
+    const NEED_TO_GROUP = 'needToGroup';
     const IS_SHOW_DATA_SET_NAME = 'isShowDataSetName';
     const REPORT_VIEW_ID = 'id';
     const PAGE_KEY = 'page';
@@ -186,7 +189,19 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
             $param->setSearches($searches);
         }
-        
+
+        if (array_key_exists(self::USER_DEFINED_DIMENSIONS, $data)) {
+            $param->setUserDefinedDimensions($data[self::USER_DEFINED_DIMENSIONS]);
+        }
+
+        if (array_key_exists(self::USER_DEFINED_METRICS, $data)) {
+            $param->setUserDefinedMetrics($data[self::USER_DEFINED_METRICS]);
+        }
+
+        if (array_key_exists(self::NEED_TO_GROUP, $data)) {
+            $param->setNeedToGroup(filter_var($data[self::NEED_TO_GROUP], FILTER_VALIDATE_BOOLEAN));
+        }
+
         return $param;
     }
 
@@ -581,6 +596,18 @@ class ParamsBuilder implements ParamsBuilderInterface
                 $searches = json_decode($searches, true);
             }
             $param->setSearches($searches);
+        }
+
+        if (array_key_exists(self::USER_DEFINED_DIMENSIONS, $paginationParams)) {
+            $param->setUserDefinedDimensions($paginationParams[self::USER_DEFINED_DIMENSIONS]);
+        }
+
+        if (array_key_exists(self::USER_DEFINED_METRICS, $paginationParams)) {
+            $param->setUserDefinedMetrics($paginationParams[self::USER_DEFINED_METRICS]);
+        }
+
+        if (array_key_exists(self::NEED_TO_GROUP, $paginationParams)) {
+            $param->setNeedToGroup(filter_var($paginationParams[self::NEED_TO_GROUP], FILTER_VALIDATE_BOOLEAN));
         }
 
         return $param;

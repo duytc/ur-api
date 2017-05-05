@@ -13,4 +13,5 @@ class ReportViewMultiView extends ReportViewMultiViewModel
     protected $subView;
     protected $dimensions;
     protected $metrics;
+    protected $enableCustomDimensionMetric;
 }

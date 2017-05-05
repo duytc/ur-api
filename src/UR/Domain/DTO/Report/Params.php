@@ -86,6 +86,20 @@ class Params implements ParamsInterface
      * @var boolean
      */
     protected $isShowDataSetName;
+    /**
+     * @var array
+     */
+    protected $userDefinedDimensions;
+
+    /**
+     * @var array
+     */
+    protected $userDefinedMetrics;
+
+    /**
+     * @var bool
+     */
+    protected $needToGroup;
 
     function __construct()
     {
@@ -477,6 +491,60 @@ class Params implements ParamsInterface
     public function setSearches($searches)
     {
         $this->searches = $searches;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getUserDefinedDimensions()
+    {
+        return $this->userDefinedDimensions;
+    }
+
+    /**
+     * @param array $userDefinedDimensions
+     * @return self
+     */
+    public function setUserDefinedDimensions($userDefinedDimensions)
+    {
+        $this->userDefinedDimensions = $userDefinedDimensions;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isNeedToGroup()
+    {
+        return $this->needToGroup;
+    }
+
+    /**
+     * @param boolean $needToGroup
+     * @return self
+     */
+    public function setNeedToGroup($needToGroup)
+    {
+        $this->needToGroup = $needToGroup;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getUserDefinedMetrics()
+    {
+        return $this->userDefinedMetrics;
+    }
+
+    /**
+     * @param array $userDefinedMetrics
+     * @return self
+     */
+    public function setUserDefinedMetrics($userDefinedMetrics)
+    {
+        $this->userDefinedMetrics = $userDefinedMetrics;
         return $this;
     }
 }

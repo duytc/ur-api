@@ -3,3 +3,7 @@ report_api_homepage:
     defaults: { _controller: ReportApiBundle:Report:report }
     methods: [POST]
 
+report_api_download:
+    path:     /reportview/download
+    defaults: { _controller: ReportApiBundle:Report:download }
+    methods: [POST]

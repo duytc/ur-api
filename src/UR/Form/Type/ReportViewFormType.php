@@ -46,7 +46,8 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             ->add('formats')
             ->add('fieldTypes')
             ->add('subReportsIncluded')
-            ->add('isShowDataSetName');
+            ->add('isShowDataSetName')
+            ->add('enableCustomDimensionMetric');
 
         $builder
             ->add('reportViewMultiViews', 'collection', array(

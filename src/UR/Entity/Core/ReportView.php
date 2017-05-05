@@ -28,6 +28,7 @@ class ReportView extends ReportViewModel
     protected $isShowDataSetName;
     protected $lastActivity;
     protected $lastRun;
+    protected $enableCustomDimensionMetric;
 
     /**
      * @inheritdoc
