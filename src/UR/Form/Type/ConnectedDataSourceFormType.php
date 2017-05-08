@@ -13,7 +13,8 @@ use UR\Form\Behaviors\ValidateConnectedDataSourceTrait;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 
-class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
+class
+ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
 {
     use ValidateConnectedDataSourceTrait;
     const IS_DRY_RUN = 'isDryRun';
@@ -24,6 +25,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
         $builder
             ->add('name')
             ->add('connectedDataSourceId', null, ['mapped' => false])
+            ->add('dataSourceEntryId', null, ['mapped' => false])
             ->add('dataSet')
             ->add('dataSource')
             ->add('mapFields')
@@ -33,8 +35,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
             ->add('alertSetting')
             ->add('replayData')
             ->add('temporaryFields')
-            ->add(self::IS_DRY_RUN, null, ['mapped' => false])
-            ->add('filePaths', null, ['mapped' => false]);
+            ->add(self::IS_DRY_RUN, null, ['mapped' => false]);
 
         $builder->addEventListener(
         /**

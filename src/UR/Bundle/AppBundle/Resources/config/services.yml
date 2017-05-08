@@ -17,7 +17,7 @@ services:
         arguments:
             - @service_container
         tags:
-            - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postPersist }
             - { name: doctrine.event_listener, event: postFlush }
 
     ur_app.event_listener.re_import_when_connected_data_source_changed_listener:
@@ -42,3 +42,12 @@ services:
         tags:
             - { name: doctrine.event_listener, event: postUpdate }
             - { name: doctrine.event_listener, event: postPersist }
+
+    ur_app.event_listener.update_detected_fields_and_data_source_entry_total_row_listener:
+        class: UR\Bundle\AppBundle\EventListener\UpdateDetectedFieldsAndDataSourceEntryTotalRowListener
+        arguments:
+            - @ur.worker.manager
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: postRemove }
+            - { name: doctrine.event_listener, event: postFlush }

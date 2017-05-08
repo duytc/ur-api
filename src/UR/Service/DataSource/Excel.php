@@ -147,7 +147,18 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getTotalRows()
     {
-        return count($this->getRows());
+        $beginRowsReadRange = $this->dataRow;
+        $totalRow = 0;
+        for ($startRow = $this->dataRow; $startRow <= self::MAX_ROW_XLS; $startRow += $this->chunkSize) {
+            $highestRow = $this->countRows($beginRowsReadRange, $this->chunkSize);
+            if ($highestRow < 1) {
+                break;
+            }
+
+            $totalRow += $highestRow;
+        }
+
+        return $totalRow;
     }
 
     public function getDataRow()
@@ -199,7 +210,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         $columnsHeaders = [];
         try {
             $columnsHeaders = array_combine($columns, $this->ogiHeaders);
-        } catch (\Exception $e){
+        } catch (\Exception $e) {
 
         }
 
@@ -233,10 +244,22 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         return $chunkRows;
     }
 
-    private function excelColumnRange($lower, $upper) {
+    private function excelColumnRange($lower, $upper)
+    {
         ++$upper;
         for ($i = $lower; $i !== $upper; ++$i) {
             yield $i;
         }
+    }
+
+    private function countRows(&$startRow, $chunkSize)
+    {
+        $objPHPExcel = $this->getPhpExcelObj($this->filePath, $chunkSize, $startRow);
+        $sheet = $objPHPExcel->getActiveSheet();
+        $highestRow = $sheet->getHighestDataRow() - $startRow + 1;
+        $startRow += $chunkSize;
+        $objPHPExcel->disconnectWorksheets();
+        unset($objPHPExcel, $sheet);
+        return $highestRow;
     }
 }

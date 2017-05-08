@@ -16,6 +16,7 @@ class DataSourceEntry extends DataSourceEntryModel
     protected $metaData;
     protected $receivedVia;
     protected $hashFile;
+    protected $totalRow;
 
     /**
      * @var DataSourceInterface

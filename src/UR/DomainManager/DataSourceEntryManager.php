@@ -19,7 +19,6 @@ use UR\Repository\Core\DataSourceEntryRepositoryInterface;
 use UR\Service\Alert\DataSource\AbstractDataSourceAlert;
 use UR\Service\Alert\DataSource\DataReceivedAlert;
 use UR\Service\Alert\DataSource\DataSourceAlertFactory;
-use UR\Service\Alert\DataSource\WrongFormatAlert;
 use UR\Service\DataSource\DataSourceType;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Import\ImportService;
@@ -33,8 +32,6 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     protected $om;
     /** @var DataSourceEntryRepositoryInterface */
     protected $repository;
-    /** @var string */
-    private $uploadFileDir;
     /** @var Manager */
     private $workerManager;
     /** @var ImportService */
@@ -42,12 +39,11 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     /** @var DataSourceAlertFactory */
     private $alertFactory;
 
-    public function __construct(ObjectManager $om, DataSourceEntryRepositoryInterface $repository, Manager $workerManager, $uploadFileDir, ImportService $importService)
+    public function __construct(ObjectManager $om, DataSourceEntryRepositoryInterface $repository, Manager $workerManager, ImportService $importService)
     {
         $this->om = $om;
         $this->repository = $repository;
         $this->workerManager = $workerManager;
-        $this->uploadFileDir = $uploadFileDir;
         $this->importService = $importService;
         $this->alertFactory = new DataSourceAlertFactory();
     }
@@ -82,17 +78,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
 
         // remove
         $this->om->remove($dataSourceEntry);
-
-        // update detected fields (update count of detected fields)
-        $newFields = $this->importService->getNewFieldsFromFiles($dataSourceEntry->getPath(), $dataSourceEntry->getDataSource());
-        $detectedFields = $this->importService->detectFieldsForDataSource($newFields, $dataSourceEntry->getDataSource()->getDetectedFields(), ImportService::ACTION_DELETE);
-        $dataSourceEntry->getDataSource()->setDetectedFields($detectedFields);
         $this->om->flush();
-
-        // delete the entry file
-        if (file_exists($this->uploadFileDir . $dataSourceEntry->getPath())) {
-            unlink($this->uploadFileDir . $dataSourceEntry->getPath());
-        }
     }
 
     /**
@@ -200,14 +186,9 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 ->setReceivedVia($receivedVia)
                 ->setFileName($originName)
                 ->setHashFile($hash)
-                ->setMetaData($metadata);
+                ->setMetaData($metadata)
+                ->setDataSource($dataSource);
 
-            // update detected fields (update count of detected fields)
-            $newFields = $this->importService->getNewFieldsFromFiles($dataSourceEntry->getPath(), $dataSource);
-            $detectedFields = $this->importService->detectFieldsForDataSource($newFields, $dataSource->getDetectedFields(), ImportService::ACTION_UPLOAD);
-            $dataSource->setDetectedFields($detectedFields);
-
-            $dataSourceEntry->setDataSource($dataSource);
             $this->save($dataSourceEntry);
 
             $alert = $this->alertFactory->getAlert(

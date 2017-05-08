@@ -48,6 +48,7 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
 
         $delimiters = null === $delimiters ? self::$SUPPORTED_DELIMITERS : $delimiters;
         $this->setDelimiters($delimiters);
+        $this->detectColumns();
     }
 
     /**
@@ -124,6 +125,15 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
             return $this->convertEncodingToASCII($this->headers);
         }
 
+        return [];
+    }
+
+    public function detectColumns()
+    {
+        if (is_array($this->headers)) {
+            return $this->convertEncodingToASCII($this->headers);
+        }
+
         $max = 0;
         $all_rows = [];
         $i = 0;
@@ -189,7 +199,6 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
             return [];
         }
 
-        return $this->convertEncodingToASCII($this->headers);
     }
 
     /**
@@ -218,7 +227,7 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getTotalRows()
     {
-        return count($this->fetchData());
+        return count($this->getRows());
     }
 
     private function fetchData()

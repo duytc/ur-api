@@ -25,3 +25,6 @@ UR\Entity\Core\DataSourceEntry:
         receivedVia:
             expose: true
             groups: [dataSourceEntry.detail, dataSourceEntry.summary]
+        totalRow:
+            expose: true
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary]

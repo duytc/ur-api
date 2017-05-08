@@ -125,7 +125,8 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
      */
     public function postDryRunAction(Request $request)
     {
-        $filePaths = $request->request->get('filePaths', null);
+        /* file for previewing data (using path of uploaded file or existing data source entry)*/
+        $pathOrDataSourceEntryId = $request->request->get('dataSourceEntryId', null);
 
         // temporary create connected data source entity (not save to database)
         // do this because the new connected data source (not yet save) may be difference from old connected data source in database
@@ -133,7 +134,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         /** @var ConnectedDataSourceInterface $tempConnectedDataSource */
         $tempConnectedDataSource = $postResult->getData();
 
-        return $this->handleDryRun($tempConnectedDataSource, $filePaths);
+        return $this->handleDryRun($tempConnectedDataSource, $pathOrDataSourceEntryId);
     }
 
     /**
@@ -257,17 +258,23 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
 
     /**
      * @param ConnectedDataSourceInterface $tempConnectedDataSource
-     * @param $filePaths
+     * @param $pathOrDataSourceEntryId
      * @return mixed
      * @throws PublicImportDataException
      */
-    private function handleDryRun(ConnectedDataSourceInterface $tempConnectedDataSource, $filePaths)
+    private function handleDryRun(ConnectedDataSourceInterface $tempConnectedDataSource, $pathOrDataSourceEntryId)
     {
         $dataSourceEntryManager = $this->get('ur.repository.data_source_entry');
-        $lastDataSourceEntry = $dataSourceEntryManager->getLastDataSourceEntryForConnectedDataSource($tempConnectedDataSource->getDataSource());
+        $selectedEntry = null;
 
-        if (($filePaths === null || count($filePaths) < 1) && $lastDataSourceEntry === null) {
+        if (is_numeric($pathOrDataSourceEntryId)) {
+            $selectedEntry = $dataSourceEntryManager->find($pathOrDataSourceEntryId);
+        } else if (!empty($pathOrDataSourceEntryId)) {
+            $selectedEntry = new DataSourceEntry();
+            $selectedEntry->setPath($pathOrDataSourceEntryId);
+        }
 
+        if ($selectedEntry === null) {
             $result = [
                 AbstractConnectedDataSourceAlert::CODE => AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_NO_FILE_PREVIEW,
                 AbstractConnectedDataSourceAlert::DETAILS => []
@@ -280,13 +287,6 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         /** @var AutoImportDataInterface $autoImportService */
         $autoImportService = $this->get('ur.worker.workers.auto_import_data');
 
-        if (is_array($filePaths) && count($filePaths) > 0) {// check if connected data source is creating new
-            $dataSourceEntry = new DataSourceEntry();
-            $dataSourceEntry->setPath($filePaths[0]);
-        } else {// use last entry
-            $dataSourceEntry = $lastDataSourceEntry;
-        }
-
-        return $autoImportService->createDryRunImportData($tempConnectedDataSource, $dataSourceEntry);
+        return $autoImportService->createDryRunImportData($tempConnectedDataSource, $selectedEntry);
     }
 }

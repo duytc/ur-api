@@ -116,4 +116,16 @@ interface DataSourceEntryInterface extends ModelInterface
      * @return self
      */
     public function setHashFile($hashFile);
+
+
+    /**
+     * @return mixed
+     */
+    public function getTotalRow();
+
+    /**
+     * @param mixed $totalRow
+     * @return self
+     */
+    public function setTotalRow($totalRow);
 }

@@ -25,7 +25,6 @@ services:
             - @doctrine.orm.entity_manager
             - @ur.repository.data_source_entry
             - @ur.worker.manager
-            - %upload_file_dir%
             - @ur.service.import
 
     ur.form.type.data_source_entry:

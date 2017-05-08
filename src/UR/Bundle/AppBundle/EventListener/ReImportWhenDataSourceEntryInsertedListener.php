@@ -3,7 +3,7 @@
 namespace UR\Bundle\AppBundle\EventListener;
 
 
-use Doctrine\ORM\Event\OnFlushEventArgs;
+use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -33,16 +33,16 @@ class ReImportWhenDataSourceEntryInsertedListener
         $this->container = $container;
     }
 
-    public function onFlush(OnFlushEventArgs $args)
+    public function postPersist(LifecycleEventArgs $args)
     {
-        $em = $args->getEntityManager();
-        $uow = $em->getUnitOfWork();
+        /** @var DataSourceEntryInterface $dataSourceEntry */
+        $dataSourceEntry = $args->getEntity();
 
-        $this->insertedEntities = array_merge($this->insertedEntities, $uow->getScheduledEntityInsertions());
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+            return;
+        }
 
-        $this->insertedEntities = array_filter($this->insertedEntities, function ($entity) {
-            return $entity instanceof DataSourceEntryInterface;
-        });
+        $this->insertedEntities[] = $dataSourceEntry;
     }
 
     public function postFlush(PostFlushEventArgs $args)

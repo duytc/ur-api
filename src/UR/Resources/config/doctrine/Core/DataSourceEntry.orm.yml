@@ -32,6 +32,11 @@ UR\Entity\Core\DataSourceEntry:
             type: string
         hashFile:
             type: string
+        totalRow:
+            type: integer
+            options:
+                default: 0
+            nullable: false
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

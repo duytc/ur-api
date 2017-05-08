@@ -57,7 +57,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $qb = $dataSourceEntryRepository->getDataSourceEntriesForUserQuery($publisher, $this->getParams());
 
         $params = array_merge($request->query->all(), $request->attributes->all());
-        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+        if (!isset($params['page'])) {
             return $qb->getQuery()->getResult();
         } else {
             return $this->getPagination($qb, $request);

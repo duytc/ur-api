@@ -13,6 +13,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $metaData;
     protected $receivedVia;
     protected $hashFile;
+    protected $totalRow;
     private $isDryRun = false;
 
     /**
@@ -24,6 +25,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     {
         $this->isValid = false;
         $this->isActive = true;
+        $this->totalRow = 0;
     }
 
     /**
@@ -224,5 +226,22 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setIsDryRun(bool $isDryRun)
     {
         $this->isDryRun = $isDryRun;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getTotalRow()
+    {
+        return $this->totalRow;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setTotalRow($totalRow)
+    {
+        $this->totalRow = $totalRow;
+        return $this;
     }
 }

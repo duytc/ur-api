@@ -26,6 +26,8 @@ class ImportService
      */
     private $fileFactory;
 
+    private $file;
+
     /**
      * ImportService constructor.
      * @param $uploadRootDir
@@ -54,7 +56,6 @@ class ImportService
 
         $keys = $files->keys();
         $currentFields = $dataSource->getDetectedFields();
-        $name = '';
 
         foreach ($keys as $key) {
             /**@var UploadedFile $file */
@@ -78,16 +79,17 @@ class ImportService
 
             $convertResult = $this->convertToUtf8($filePath, $this->kernelRootDir);
             if ($convertResult) {
-                $newFields = $this->getNewFieldsFromFiles($dirItem . '/' . $name, $dataSource);
+                $dataSourceFile = $this->getDataSourceFile($dataSource->getFormat(), $dirItem . '/' . $name);
+                $newFields = $this->getNewFieldsFromFiles($dataSourceFile);
                 if (count($newFields) < 1) {
                     throw new \Exception(sprintf('Cannot detect header of File %s', $origin_name));
                 }
 
                 $currentFields = $this->detectFieldsForDataSource($newFields, $currentFields, self::ACTION_UPLOAD);
             }
-        }
 
-        return ['fields' => $currentFields, 'filePath' => $dirItem . '/' . $name];
+            return ['fields' => $currentFields, 'filePath' => $dirItem . '/' . $name, 'fileName' => $origin_name];
+        }
     }
 
     /**
@@ -124,20 +126,15 @@ class ImportService
     /**
      * get New Fields From Files
      *
-     * @param string $inputFile
-     * @param DataSourceInterface $dataSource
+     * @param \UR\Service\DataSource\DataSourceInterface $file
      * @return array
      */
-    public function getNewFieldsFromFiles($inputFile, DataSourceInterface $dataSource)
+    public function getNewFieldsFromFiles(\UR\Service\DataSource\DataSourceInterface $file)
     {
-        /**@var \UR\Service\DataSource\DataSourceInterface $file */
-        $file = $this->fileFactory->getFile($dataSource->getFormat(), $inputFile);
-
         $newFields = [];
         $columns = $file->getColumns();
         if ($columns === null) {
             return [];
-
         }
 
         $newFields = array_merge($newFields, $columns);
@@ -195,5 +192,16 @@ class ImportService
     public function getKernelRootDir()
     {
         return $this->kernelRootDir;
+    }
+
+    /**
+     * @param $format
+     * @param $entryPath
+     * @return \UR\Service\DataSource\DataSourceInterface
+     */
+    public function getDataSourceFile($format, $entryPath)
+    {
+        /**@var \UR\Service\DataSource\DataSourceInterface $file */
+        return $this->fileFactory->getFile($format, $entryPath);
     }
 }

@@ -87,6 +87,24 @@ class Manager
         $this->queueTask('truncateDataSetTable', $params);
     }
 
+    public function updateDetectedFieldsAndTotalRowWhenEntryInserted($entryId)
+    {
+        $params = new StdClass;
+        $params->entryId = $entryId;
+
+        $this->queueTask('updateDetectedFieldsAndTotalRowWhenEntryInserted', $params);
+    }
+
+    public function updateDetectedFieldsWhenEntryDeleted($format, $path, $dataSourceId)
+    {
+        $params = new StdClass;
+        $params->format = $format;
+        $params->path = $path;
+        $params->dataSourceId = $dataSourceId;
+
+        $this->queueTask('updateDetectedFieldsWhenEntryDeleted', $params);
+    }
+
     /**
      * @param string $task
      * @param stdClass $params

@@ -246,3 +246,12 @@ services:
             - '%kernel.debug%'
             - %log_file_dir%
             - %data_set_job_temp_file_dir%
+
+    ur.worker.workers.update_detected_fields_and_data_source_entry_total_row:
+        class: UR\Worker\Workers\UpdateDetectedFieldsAndDataSourceEntryTotalRow
+        arguments:
+            - @logger
+            - @ur.domain_manager.data_source_entry
+            - @ur.domain_manager.data_source
+            - @ur.service.import
+            - %upload_file_dir%
