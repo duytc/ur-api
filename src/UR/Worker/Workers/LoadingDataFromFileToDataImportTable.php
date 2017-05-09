@@ -22,7 +22,7 @@ class LoadingDataFromFileToDataImportTable
 {
     const PHP_BIN = 'php app/console';
 // in prod would probably be a symfony console command with args
-    const RUN_COMMAND = 'ur:data-set:load-file';
+    const RUN_COMMAND = 'ur:internal:data-set:load-file';
 
     /**
      * @var ImportHistoryManagerInterface

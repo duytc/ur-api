@@ -29,7 +29,7 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('ur:data-set:load-file')
+            ->setName('ur:internal:data-set:load-file')
             ->addArgument('connectedDataSourceId', InputArgument::REQUIRED, 'Connected data source id')
             ->addArgument('dataSourceEntryId', InputArgument::REQUIRED, 'Data source entry id')
             ->addArgument('importId', InputArgument::OPTIONAL, 'Import history id. It will be created automatically if not provided')

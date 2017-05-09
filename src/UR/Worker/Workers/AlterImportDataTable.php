@@ -15,7 +15,7 @@ class AlterImportDataTable
 {
     const TEMP_FILE_NAME = 'alter_table_config';
     const LOG_FILE_NAME = 'alter_table_log';
-    const RUN_COMMAND = 'ur:alter:import:data:table';
+    const RUN_COMMAND = 'ur:internal:data-import-table:alter';
 
     /**
      * @var DataSetImportJobManagerInterface

@@ -26,7 +26,7 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('ur:alter:import:data:table')
+            ->setName('ur:internal:data-import-table:alter')
             ->addArgument('alterTableConfigFile', InputOption::VALUE_REQUIRED, 'alterTableConfigFile')
             ->setDescription('Alter data import table');
     }

@@ -34,7 +34,7 @@ class MigrateMultiFormatDateConnectedDataSourceCommand extends ContainerAwareCom
     protected function configure()
     {
         $this
-            ->setName('ur:migrate:connected:data:source:multi:date:transform')
+            ->setName('ur:migrate:connected-data-source:multi-date-transform')
             ->setDescription('Migrate connected data source multi date transform');
     }
 
