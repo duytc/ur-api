@@ -105,6 +105,13 @@ class Manager
         $this->queueTask('updateDetectedFieldsWhenEntryDeleted', $params);
     }
 
+    public function fixWindowLineFeed($filePath)
+    {
+        $params = new StdClass;
+        $params->filePath = $filePath;
+        $this->queueTask('fixWindowLineFeed', $params);
+    }
+
     /**
      * @param string $task
      * @param stdClass $params

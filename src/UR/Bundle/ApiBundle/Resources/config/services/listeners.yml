@@ -55,6 +55,14 @@ services:
             - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: postFlush }
 
+    ur_api.event_listener.data_source_entry_listener:
+        class: UR\Bundle\ApiBundle\EventListener\DataSourceEntryListener
+        arguments:
+            - '@ur.worker.manager'
+            - '%upload_file_dir%'
+        tags:
+            - { name: doctrine.event_listener, event: postPersist}
+
     ur_api.event_listener.update_format_outputs_for_multiple_view_report_listener:
         class: UR\Bundle\ApiBundle\EventListener\UpdateFormatOutputsForMultipleViewReportListener
         arguments:

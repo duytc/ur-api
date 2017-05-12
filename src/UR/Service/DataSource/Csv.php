@@ -41,9 +41,6 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     public function __construct($filePath, $delimiters = null)
     {
         // todo validate $filePath
-
-        $this->fixWindowLineFeedCLRF($filePath);
-
         $this->csv = Reader::createFromPath($filePath, 'r');
 
         $delimiters = null === $delimiters ? self::$SUPPORTED_DELIMITERS : $delimiters;
@@ -257,19 +254,5 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     public function getDataRow()
     {
         return $this->dataRow;
-    }
-
-    private function fixWindowLineFeedCLRF($filePath)
-    {
-        $originalContent = file_get_contents($filePath);
-
-        if (strpos($originalContent, '\n')) {
-            return;
-        }
-
-        $fixCLRFContent = str_replace("\r", "\n", $originalContent);
-        file_put_contents($filePath, $fixCLRFContent);
-
-        return;
     }
 }

@@ -255,3 +255,8 @@ services:
             - @ur.domain_manager.data_source
             - @ur.service.import
             - %upload_file_dir%
+
+    ur.worker.workers.csv_fix_window_line_feed:
+        class: UR\Worker\Workers\CSVFixWindowLineFeed
+        arguments:
+            - @logger

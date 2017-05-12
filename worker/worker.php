@@ -36,7 +36,8 @@ $availableWorkers = [
     $container->get('ur.worker.workers.synchronize_user_worker'),
     $container->get('ur.worker.workers.alter_import_data_table'),
     $container->get('ur.worker.workers.truncate_import_data_table'),
-    $container->get('ur.worker.workers.update_detected_fields_and_data_source_entry_total_row')
+    $container->get('ur.worker.workers.update_detected_fields_and_data_source_entry_total_row'),
+    $container->get('ur.worker.workers.csv_fix_window_line_feed')
 ];
 
 $workerPool = new \UR\Worker\Pool($availableWorkers);
