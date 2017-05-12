@@ -402,23 +402,12 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * @param $id
      *
      * @return mixed
-     * @throws \Exception
      */
     public function postTruncateAction($id)
     {
-        $dataSet = $this->one($id);
+        $this->get('ur.worker.manager')->truncateDataSet($id);
 
-        if (!$dataSet instanceof DataSetInterface) {
-            throw new \Exception(sprintf('Data Set %d does not exist', $id));
-        }
-
-        $importHistoryManager = $this->get('ur.domain_manager.import_history');
-        $importHistories = $importHistoryManager->getImportedHistoryByDataSet($dataSet);
-
-        $loadingDataService = $this->get('ur.service.loading_data_service');
-        $loadingDataService->undoImport($importHistories);
-
-        return '';
+        return true;
     }
 
     /**

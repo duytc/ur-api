@@ -143,12 +143,20 @@ services:
     ur.worker.workers.alter_import_data_table:
         class: UR\Worker\Workers\AlterImportDataTable
         arguments:
-            - @ur.service.command
-            - @leezy.pheanstalk
-            - @logger
-            - @ur.domain_manager.data_set_import_job
-            - %ur.command.alter_data_set_table.timeout%
-            - %ur.worker.delay_time_before_job_become_ready%
+            - '@ur.service.command'
+            - '@leezy.pheanstalk'
+            - '@logger'
+            - '@ur.domain_manager.data_set_import_job'
+            - '%ur.command.alter_data_set_table.timeout%'
+            - '%ur.worker.delay_time_before_job_become_ready%'
+
+    ur.worker.workers.truncate_data_set:
+        class: UR\Worker\Workers\TruncateDataSetWorker
+        arguments:
+            - '@ur.service.loading_data_service'
+            - '@ur.domain_manager.import_history'
+            - '@ur.domain_manager.data_set'
+            - '@logger'
 
     ur.worker.workers.truncate_import_data_table:
         class: UR\Worker\Workers\TruncateImportDataTable
