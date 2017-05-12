@@ -64,13 +64,7 @@ class ExtractPattern implements CollectionTransformerInterface
         $this->isCaseInsensitive = $isCaseInsensitive;
         $this->isMultiLine = $isMultiLine;
         $this->pattern = $pattern;
-        if ($isCaseInsensitive) {
-            $this->pattern .= self::CASE_INSENSITIVE;
-        }
 
-        if ($isMultiLine) {
-            $this->pattern .= self::MULTI_LINE;
-        }
 
         $this->replacementValue = $replacementValue;
     }
@@ -87,7 +81,7 @@ class ExtractPattern implements CollectionTransformerInterface
         $columns = $collection->getColumns();
         $types = $collection->getTypes();
 
-        if (!$this->isOverride) {
+        if (!$this->isOverride && !in_array($this->targetField, $columns)) {
             $columns[] = $this->targetField;
         }
 
@@ -112,8 +106,15 @@ class ExtractPattern implements CollectionTransformerInterface
 
     private function getRegexValue($str)
     {
+        if ((substr($this->pattern, 0, 1) === self::START_REGEX_SPECIAL)
+        ) {
+            return null;
+        }
+
+        $regexExpression = $this->addPrefixAndSuffixToPatter();
+
         try {
-            $matched = @preg_match($this->pattern, $str, $matches);
+            $matched = @preg_match($regexExpression, $str, $matches);
             if ($matched < 1) {
                 return null;
             }
@@ -124,7 +125,7 @@ class ExtractPattern implements CollectionTransformerInterface
                 return preg_replace('/\[([0-9])\]/', '$$1', $matches[0]);
             }, $this->replacementValue);
 
-            return preg_replace($this->pattern, $this->replacementValue, $str);
+            return preg_replace($regexExpression, $this->replacementValue, $str);
         } catch (Exception $exception) {
             return null;
         }
@@ -197,5 +198,33 @@ class ExtractPattern implements CollectionTransformerInterface
     public function validate()
     {
         // TODO: Implement validate() method.
+    }
+
+    private function addPrefixAndSuffixToPatter()
+    {
+        $regexExpression = sprintf("/%s/", $this->pattern);
+
+        if ($this->isCaseInsensitive) {
+            $regexExpression .= self::CASE_INSENSITIVE;
+        }
+
+        if ($this->isMultiLine) {
+            $regexExpression .= self::MULTI_LINE;
+        }
+
+        return $regexExpression;
+    }
+
+    public function getJsonTransformFieldsConfig()
+    {
+        $transformFields = [];
+        $transformFields[self::FIELD_KEY] = $this->field;
+        $transformFields[self::IS_OVERRIDE_KEY] = $this->isOverride;
+        $transformFields[self::TARGET_FIELD_KEY] = $this->targetField;
+        $transformFields[self::REG_EXPRESSION_KEY] = $this->pattern;
+        $transformFields[self::REPLACEMENT_VALUE_KEY] = $this->replacementValue;
+        $transformFields[self::IS_REG_EXPRESSION_MULTI_LINE_KEY] = $this->isMultiLine;
+        $transformFields[self::IS_REG_EXPRESSION_CASE_INSENSITIVE_KEY] = $this->isCaseInsensitive;
+        return $transformFields;
     }
 }

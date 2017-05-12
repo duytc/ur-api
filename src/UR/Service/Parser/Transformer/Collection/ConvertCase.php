@@ -8,7 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
-class ConvertCase implements CollectionTransformerInterface
+class ConvertCase implements CollectionTransformerInterface, CollectionTransformerJsonConfigInterface
 {
     const LOWER_CASE_CONVERT = 'lowerCase';
     const UPPER_CASE_CONVERT = 'upperCase';
@@ -120,5 +120,47 @@ class ConvertCase implements CollectionTransformerInterface
     public function getTargetField()
     {
         return $this->targetField;
+    }
+
+    /**
+     * @return string
+     */
+    public function getField(): string
+    {
+        return $this->field;
+    }
+
+    /**
+     * @return string
+     */
+    public function getConvertType(): string
+    {
+        return $this->convertType;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isIsOverride(): bool
+    {
+        return $this->isOverride;
+    }
+
+    /**
+     * @param string $field
+     */
+    public function setField(string $field)
+    {
+        $this->field = $field;
+    }
+
+    public function getJsonTransformFieldsConfig()
+    {
+        $transformFields = [];
+        $transformFields[self::FIELD_KEY] = $this->field;
+        $transformFields[self::IS_OVERRIDE_KEY] = $this->isOverride;
+        $transformFields[self::TARGET_FIELD_KEY] = $this->targetField;
+        $transformFields[self::TYPE_KEY] = $this->convertType;
+        return $transformFields;
     }
 }

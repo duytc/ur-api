@@ -3,6 +3,8 @@
 namespace UR\Service\Import;
 
 
+use UR\Model\Core\ConnectedDataSourceInterface;
+
 class ImportDataException extends \Exception
 {
     private $alertCode;
@@ -23,7 +25,7 @@ class ImportDataException extends \Exception
         parent::__construct($message);
         $this->alertCode = $alertCode;
         $this->row = $row;
-        $this->column = $column;
+        $this->removeAllPrefix($column);
         $this->content = $content;
     }
 
@@ -65,5 +67,11 @@ class ImportDataException extends \Exception
     public function setContent($content)
     {
         $this->content = $content;
+    }
+
+    private function removeAllPrefix($column)
+    {
+        $column = str_replace(ConnectedDataSourceInterface::PREFIX_FILE_FIELD, '', $column);
+        $this->column = str_replace(ConnectedDataSourceInterface::PREFIX_TEMP_FIELD, '', $column);
     }
 }

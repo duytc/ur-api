@@ -4,8 +4,10 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use Exception;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use UR\Service\DataSet\FieldType;
+use UR\Service\Parser\ReformatDataService;
 
-class AddCalculatedField extends AbstractAddField
+class AddCalculatedField extends AbstractAddField implements CollectionTransformerJsonConfigInterface
 {
     const EXPRESSION_KEY = 'expression';
     const DEFAULT_VALUES_KEY = 'defaultValues';
@@ -52,6 +54,8 @@ class AddCalculatedField extends AbstractAddField
     /** @var ExpressionLanguage */
     protected $expressionLanguage;
 
+    private $reformatDataService;
+
     /**
      * AddCalculatedField constructor.
      * @param string $column
@@ -69,6 +73,7 @@ class AddCalculatedField extends AbstractAddField
         } else $this->defaultValues = [];
 
         $this->expressionLanguage = new ExpressionLanguage();
+        $this->reformatDataService = new ReformatDataService();
     }
 
     /**
@@ -77,7 +82,7 @@ class AddCalculatedField extends AbstractAddField
     protected function getValue(array $row)
     {
         try {
-            $defaultValue = $this->getDefaultValueByValidCondition($row, $isMatched);
+            $defaultValue = $this->getDefaultValueByInputFieldCondition($row, $isMatched);
             if ($isMatched === true) {
                 return $defaultValue;
             }
@@ -102,11 +107,7 @@ class AddCalculatedField extends AbstractAddField
             $result = NULL;
         }
 
-        if (in_array($result, self::$INVALID_VALUES)) {
-            return $this->getDefaultValueByInvalidCondition($result);
-        }
-
-        return $result;
+        return $this->getDefaultValueByCalculatedFieldCondition($result);
     }
 
     /**
@@ -153,7 +154,7 @@ class AddCalculatedField extends AbstractAddField
      * @param bool $isMatched
      * @return null
      */
-    private function getDefaultValueByValidCondition(array $row, &$isMatched)
+    private function getDefaultValueByInputFieldCondition(array $row, &$isMatched)
     {
         if (!is_array($this->defaultValues)) {
             $isMatched = false;
@@ -165,13 +166,20 @@ class AddCalculatedField extends AbstractAddField
             $conditionComparator = $defaultValueConfig[self::CONDITION_COMPARATOR_KEY];
             $conditionValue = $defaultValueConfig[self::CONDITION_VALUE_KEY];
             $defaultValue = $defaultValueConfig[self::DEFAULT_VALUE_KEY];
-            if ((in_array($conditionValue, self::$INVALID_VALUES) && $conditionComparator == self::CONDITION_FIELD_CALCULATED_VALUE) || !array_key_exists($conditionField, $row)) {
+            // TODO: should remove check in_array($conditionValue, self::$INVALID_VALUES) ????
+            // this related to case compare calculatedValue with simple value, not is invalid
+            // or related to case compare field from file or data set is invalid
+            if ($conditionField == self::CONDITION_FIELD_CALCULATED_VALUE || !array_key_exists($conditionField, $row)) {
                 continue;
             }
+
+            // TODO: add filter isInvalid for field from file or data set ????
 
             $valueForCompare = $row[$conditionField];
 
             // FIRST MATCH, FIRST SERVE. PLEASE MIND THE ORDER
+
+            $valueForCompare = $this->reformatDataService->reformatData($valueForCompare, FieldType::NUMBER);
             $isMatched = $this->matchCondition($valueForCompare, $conditionComparator, $conditionValue);
             if ($isMatched) {
                 return $defaultValue;
@@ -185,7 +193,7 @@ class AddCalculatedField extends AbstractAddField
      * @param $value
      * @return mixed
      */
-    private function getDefaultValueByInvalidCondition($value)
+    private function getDefaultValueByCalculatedFieldCondition($value)
     {
         if (!is_array($this->defaultValues)) {
             return $value;
@@ -194,8 +202,15 @@ class AddCalculatedField extends AbstractAddField
         foreach ($this->defaultValues as $defaultValueConfig) {
             $conditionComparator = $defaultValueConfig[self::CONDITION_COMPARATOR_KEY];
             $conditionValue = $defaultValueConfig[self::CONDITION_VALUE_KEY];
-            if ($conditionComparator == self::CONDITION_COMPARISON_VALUE_IS_INVALID && $conditionValue == $value) {
-                return $defaultValueConfig[self::DEFAULT_VALUE_KEY];
+            $conditionField = $defaultValueConfig[self::CONDITION_FIELD_KEY];
+            $defaultValue = $defaultValueConfig[self::DEFAULT_VALUE_KEY];
+            if ($conditionField != self::CONDITION_FIELD_CALCULATED_VALUE) {
+                continue;
+            }
+
+            $isMatched = $this->matchCondition($value, $conditionComparator, $conditionValue);
+            if ($isMatched) {
+                return $defaultValue;
             }
         }
 
@@ -214,7 +229,7 @@ class AddCalculatedField extends AbstractAddField
     {
         switch ($conditionComparator) {
             case self::CONDITION_COMPARISON_VALUE_IN:
-                return in_array($value, $conditionValue);
+                return in_array(strval($value), $conditionValue);
 
             case self::CONDITION_COMPARISON_VALUE_NOT_IN:
                 return !in_array($value, $conditionValue);
@@ -226,16 +241,19 @@ class AddCalculatedField extends AbstractAddField
                 return $value <= $conditionValue;
 
             case self::CONDITION_COMPARISON_VALUE_EQUAL:
-                return $value == $conditionValue;
+                return strval($value) == $conditionValue;
 
             case self::CONDITION_COMPARISON_VALUE_NOT_EQUAL:
-                return $value != $conditionValue;
+                return strval($value) != $conditionValue;
 
             case self::CONDITION_COMPARISON_VALUE_GREATER:
                 return $value > $conditionValue;
 
             case self::CONDITION_COMPARISON_VALUE_GREATER_OR_EQUAL:
                 return $value >= $conditionValue;
+
+            case self::CONDITION_COMPARISON_VALUE_IS_INVALID:
+                return in_array($value, self::$INVALID_VALUES);
         }
 
         // default not match
@@ -288,5 +306,62 @@ class AddCalculatedField extends AbstractAddField
         }
 
         return true;
+    }
+
+    /**
+     * @return string
+     */
+    public function getExpression(): string
+    {
+        return $this->expression;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDefaultValues()
+    {
+        return $this->defaultValues;
+    }
+
+    /**
+     * @return string
+     */
+    public function getColumn(): string
+    {
+        return $this->column;
+    }
+
+    /**
+     * @param string $column
+     */
+    public function setColumn(string $column)
+    {
+        $this->column = $column;
+    }
+
+    /**
+     * @param string $expression
+     */
+    public function setExpression(string $expression)
+    {
+        $this->expression = $expression;
+    }
+
+    /**
+     * @param array|null $defaultValues
+     */
+    public function setDefaultValues($defaultValues)
+    {
+        $this->defaultValues = $defaultValues;
+    }
+
+    public function getJsonTransformFieldsConfig()
+    {
+        $transformFields = [];
+        $transformFields[self::FIELD_KEY] = $this->column;
+        $transformFields[self::DEFAULT_VALUES_KEY] = $this->defaultValues;
+        $transformFields[self::EXPRESSION_KEY] = $this->expression;
+        return $transformFields;
     }
 }

@@ -68,7 +68,7 @@ class Augmentation implements CollectionTransformerInterface
     /**
      * Augmentation constructor.
      * @param int $mapDataSet
-     * @param string $mapCondition
+     * @param array $mapCondition
      * @param array $mapFields
      * @param bool $dropUnmatched
      * @param array $customCondition

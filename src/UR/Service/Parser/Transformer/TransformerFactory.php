@@ -219,8 +219,29 @@ class TransformerFactory
             return null;
         }
 
-        $arrSortBy[] = $config;
-        return new SortByColumns($arrSortBy);
+        $ascendingFields = [];
+        $descendingFields = [];
+        foreach ($config as $item) {
+            if (!is_array($item)) {
+                return null;
+            }
+
+            if (!array_key_exists(SortByColumns::NAMES, $item)
+                || !array_key_exists(SortByColumns::DIRECTION, $item)
+            ) {
+                return null;
+            }
+
+            if ($item[SortByColumns::DIRECTION] === SortByColumns::ASC) {
+                $ascendingFields = $item[SortByColumns::NAMES];
+            }
+
+            if ($item[SortByColumns::DIRECTION] === SortByColumns::DESC) {
+                $descendingFields = $item[SortByColumns::NAMES];
+            }
+        }
+
+        return new SortByColumns($ascendingFields, $descendingFields);
     }
 
     /**
@@ -346,12 +367,7 @@ class TransformerFactory
             }
 
             $regexExpression = trim($extractPatternConfig[ExtractPattern::REG_EXPRESSION_KEY]);
-            if ((substr($regexExpression, 0, 1) === ExtractPattern::START_REGEX_SPECIAL)
-            ) {
-                continue;
-            }
 
-            $regexExpression = sprintf("/%s/", $regexExpression);
             $extractPatternTransforms[] = new ExtractPattern(
                 $extractPatternConfig[ExtractPattern::FIELD_KEY],
                 $regexExpression,

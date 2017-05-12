@@ -6,9 +6,8 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
-use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
-use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 
 class SubsetGroup implements CollectionTransformerInterface
 {
@@ -46,9 +45,10 @@ class SubsetGroup implements CollectionTransformerInterface
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
         $mappedFields = array_flip($connectedDataSource->getMapFields());
+        $allFields = $connectedDataSource->getDataSet()->getAllDimensionMetrics();
         foreach ($rows as $row) {
             $dataColumns = array_keys($row);
-            foreach($this->groupFields as &$groupField) {
+            foreach ($this->groupFields as &$groupField) {
                 if (!in_array($groupField, $dataColumns)) {
                     if (!array_key_exists($groupField, $mappedFields)) {
                         return $collection;
@@ -61,7 +61,7 @@ class SubsetGroup implements CollectionTransformerInterface
             break;
         }
 
-        foreach($this->mapFields as $mapField) {
+        foreach ($this->mapFields as $mapField) {
             $field = $mapField[self::DATA_SOURCE_SIDE];
             if (in_array($field, $columns)) {
                 continue;
@@ -75,7 +75,7 @@ class SubsetGroup implements CollectionTransformerInterface
         $subsetRows = $groupByTransform->transform($collection)->getRows();
         $subsetKeys = [];
 
-        foreach($subsetRows as $row) {
+        foreach ($subsetRows as $row) {
             $subsetKeys[] = $this->getJoinKey($this->groupFields, $row);
         }
 
@@ -89,8 +89,11 @@ class SubsetGroup implements CollectionTransformerInterface
             }
 
             $subsetRow = $subsetRows[$joinKey];
-            foreach($this->mapFields as $mapField) {
-                $row[$mapField[self::DATA_SOURCE_SIDE]] = $subsetRow[$mapField[self::GROUP_DATA_SET_SIDE]];
+            foreach ($this->mapFields as $mapField) {
+                $leftSide = $mapField[self::DATA_SOURCE_SIDE];
+                $rightSide = $mapField[self::GROUP_DATA_SET_SIDE];
+                $isNumber = array_key_exists($leftSide, $allFields) && $allFields[$leftSide] == FieldType::NUMBER;
+                $row[$leftSide] = $isNumber ? round($subsetRow[$rightSide]) : $subsetRow[$rightSide];
             }
         }
 
@@ -105,7 +108,7 @@ class SubsetGroup implements CollectionTransformerInterface
         $data = [];
 
         // need to guarantee column order is the same or key hash will be different
-        foreach($columns as $column) {
+        foreach ($columns as $column) {
             if (isset($row[$column])) {
                 $data[] = $row[$column];
             }

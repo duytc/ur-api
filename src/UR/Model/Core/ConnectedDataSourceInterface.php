@@ -8,6 +8,8 @@ interface ConnectedDataSourceInterface extends ModelInterface
 {
 
     const LINKED_TYPE_AUGMENTATION = 'augmentation';
+    const PREFIX_TEMP_FIELD = '__$$TEMP$$';
+    const PREFIX_FILE_FIELD = '__$$FILE$$';
 
     /**
      * @param $id

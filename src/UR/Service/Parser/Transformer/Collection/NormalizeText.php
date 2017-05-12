@@ -8,7 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
-class NormalizeText implements CollectionTransformerInterface
+class NormalizeText implements CollectionTransformerInterface, CollectionTransformerJsonConfigInterface
 {
     const IS_OVERRIDE_KEY = 'isOverride';
     const TARGET_FIELD_KEY = 'targetField';
@@ -156,5 +156,97 @@ class NormalizeText implements CollectionTransformerInterface
     public function getTargetField()
     {
         return $this->targetField;
+    }
+
+    /**
+     * @return string
+     */
+    public function getField(): string
+    {
+        return $this->field;
+    }
+
+    /**
+     * @param string $field
+     */
+    public function setField(string $field)
+    {
+        $this->field = $field;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isIsOverride(): bool
+    {
+        return $this->isOverride;
+    }
+
+    /**
+     * @param boolean $isOverride
+     */
+    public function setIsOverride(bool $isOverride)
+    {
+        $this->isOverride = $isOverride;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isNumbersRemoved(): bool
+    {
+        return $this->numbersRemoved;
+    }
+
+    /**
+     * @param boolean $numbersRemoved
+     */
+    public function setNumbersRemoved(bool $numbersRemoved)
+    {
+        $this->numbersRemoved = $numbersRemoved;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isAlphabetCharacterRemoved(): bool
+    {
+        return $this->alphabetCharacterRemoved;
+    }
+
+    /**
+     * @param boolean $alphabetCharacterRemoved
+     */
+    public function setAlphabetCharacterRemoved(bool $alphabetCharacterRemoved)
+    {
+        $this->alphabetCharacterRemoved = $alphabetCharacterRemoved;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isDashesRemoved(): bool
+    {
+        return $this->dashesRemoved;
+    }
+
+    /**
+     * @param boolean $dashesRemoved
+     */
+    public function setDashesRemoved(bool $dashesRemoved)
+    {
+        $this->dashesRemoved = $dashesRemoved;
+    }
+
+    public function getJsonTransformFieldsConfig()
+    {
+        $transformFields = [];
+        $transformFields[self::FIELD_KEY] = $this->field;
+        $transformFields[self::IS_OVERRIDE_KEY] = $this->isOverride;
+        $transformFields[self::TARGET_FIELD_KEY] = $this->targetField;
+        $transformFields[self::NUMBER_REMOVED_KEY] = $this->numbersRemoved;
+        $transformFields[self::ALPHABET_CHARACTER_REMOVED_KEY] = $this->alphabetCharacterRemoved;
+        $transformFields[self::DASHES_REMOVED_KEY] = $this->dashesRemoved;
+        return $transformFields;
     }
 }

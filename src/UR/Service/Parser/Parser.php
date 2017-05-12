@@ -29,6 +29,8 @@ class Parser implements ParserInterface
     /** @var EntityManagerInterface */
     protected $em;
 
+    private $reformatDataService;
+
     /**
      * Parser constructor.
      * @param EventDispatcherInterface $eventDispatcher
@@ -38,6 +40,7 @@ class Parser implements ParserInterface
     {
         $this->eventDispatcher = $eventDispatcher;
         $this->em = $em;
+        $this->reformatDataService = new ReformatDataService();
     }
 
     /**
@@ -52,7 +55,7 @@ class Parser implements ParserInterface
         $columnsMapping = $parserConfig->getAllColumnMappings();
         $columnFromMap = array_flip($parserConfig->getAllColumnMappings());
 
-        $fileCols = array_map("strtolower", $fileCols);
+//        $fileCols = array_map("strtolower", $fileCols);
         $fileCols = array_map("trim", $fileCols);
 
         $columns = array_intersect($fileCols, $parserConfig->getAllColumnMappings());
@@ -123,7 +126,7 @@ class Parser implements ParserInterface
                     continue;
                 }
 
-                $row[$fileColumn] = $this->reformatFileData($row, $fileColumn, $type);
+                $row[$fileColumn] = $this->reformatDataService->reformatData($row[$fileColumn], $type);
             }
 
             $isValidFilter = $this->doFilter($parserConfig, $fileCols, $row);
@@ -132,12 +135,6 @@ class Parser implements ParserInterface
                 unset($rows[$cur_row]);
                 continue;
             }
-        }
-
-        //overwrite duplicate
-        if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
-            $mappedDimensions = array_intersect_key($columnsMapping, $connectedDataSource->getDataSet()->getDimensions());
-            $rows = $this->overrideDuplicate($rows, array_flip($mappedDimensions));
         }
 
         // TODO: may dispatch event after filtering data
@@ -174,6 +171,13 @@ class Parser implements ParserInterface
             } else {
                 $collection = $transform->transform($collection);
             }
+        }
+
+        //overwrite duplicate
+        if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
+            $mappedDimensions = array_intersect_key($columnsMapping, $connectedDataSource->getDataSet()->getDimensions());
+            $overwroteRows = $this->overrideDuplicate($collection->getRows(), array_flip($mappedDimensions));
+            $collection->setRows($overwroteRows);
         }
 
         $collection = $this->removeTemporaryFields($collection, $connectedDataSource);
@@ -297,89 +301,6 @@ class Parser implements ParserInterface
         $collection->setTypes($types);
 
         return $collection;
-    }
-
-    /**
-     * @param array $row
-     * @param $fileColumn
-     * @param string $type
-     * @return mixed|null
-     * @internal param int $cur_row
-     */
-    private function reformatFileData(array $row, $fileColumn, $type)
-    {
-        $cellValue = $row[$fileColumn];
-
-        switch ($type) {
-            case FieldType::DECIMAL:
-            case FieldType::NUMBER:
-                $cellValue = preg_replace('/[^\d.-]+/', '', $cellValue);
-
-                // advance process on dash character
-                // if dash is at first position => negative flag
-                // else => remove dash
-                $firstNegativePosition = strpos($cellValue, '-');
-                if ($firstNegativePosition === 0) {
-                    $afterFirstNegative = substr($cellValue, 1);
-                    $afterFirstNegative = preg_replace('/\-{1,}/', '', $afterFirstNegative);
-                    $cellValue = '-' . $afterFirstNegative;
-                } else if ($firstNegativePosition > 0) {
-                    $cellValue = preg_replace('/\-{1,}/', '', $cellValue);
-                }
-
-                // advance process on dot character
-                // if dash is at first position => append 0
-                // else => remove dot
-                $firstDotPosition = strpos($cellValue, '.');
-                if ($firstDotPosition !== false) {
-                    $first = substr($cellValue, 0, $firstDotPosition);
-                    if (!is_numeric($first)) {
-                        $first = '0';
-                    }
-
-                    $second = substr($cellValue, $firstDotPosition + 1);
-                    $second = preg_replace('/\.{1,}/', '', $second);
-                    $cellValue = $first . '.' . $second;
-                }
-
-                if (!is_numeric($cellValue)) {
-                    $cellValue = null;
-                }
-
-                break;
-
-            case FieldType::DATE:
-            case FieldType::DATETIME:
-                // the cellValue may be a DateTime instance if file type is excel. The object is return by excel reader library
-                if ($cellValue instanceof \DateTime) {
-                    break;
-                }
-
-                // make sure date value contain number,
-                // else the value is invalid, then we return 'null' for the date transformer removes entire row due to date null
-                // e.g:
-                // "1/21/17" is valid, "Jan 21 17" is valid,
-                // "Jan abc21 17" is valid (but when date transformer creates date, it will be invalid),
-                // "total" is invalid date, so we return null, then date transformer remove entire row contains this date
-                if (!preg_match('/[\d]+/', $cellValue)) {
-                    $cellValue = null;
-                }
-
-                break;
-
-            case FieldType::TEXT:
-            case FieldType::LARGE_TEXT:
-                if ($cellValue === '') {
-                    return null; // treat empty string as null value
-                }
-
-                break;
-
-            default:
-                break;
-        }
-
-        return $cellValue;
     }
 
     /**

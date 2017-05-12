@@ -76,6 +76,9 @@ class MigrateMultiFormatDateConnectedDataSourceCommand extends ContainerAwareCom
              */
             $transforms = $connectedDataSource->getTransforms();
 
+            if ($connectedDataSource->getTransforms() === null)
+                continue;
+
             /*
              *  migrate to new format:
              * [

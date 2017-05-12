@@ -6,15 +6,19 @@ use Doctrine\ORM\EntityManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
-class SortByColumns implements CollectionTransformerInterface
+class SortByColumns implements CollectionTransformerInterface, CollectionTransformerJsonConfigInterface
 {
     const DIRECTION = 'direction';
     const NAMES = 'names';
-    protected $sortByColumns;
+    const ASC = 'asc';
+    const DESC = 'desc';
+    protected $ascendingFields;
+    protected $descendingFields;
 
-    public function __construct(array $sortByColumns)
+    public function __construct(array $ascendingFields, array $descendingFields)
     {
-        $this->sortByColumns = $sortByColumns;
+        $this->ascendingFields = $ascendingFields;
+        $this->descendingFields = $descendingFields;
     }
 
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
@@ -24,46 +28,22 @@ class SortByColumns implements CollectionTransformerInterface
             return $collection;
         }
 
-        for ($i = 0; $i < count($this->sortByColumns); $i++) {
-            for ($j = 0; $j < count($this->sortByColumns[$i]); $j++) {
-
-                switch ($this->sortByColumns[$i][$j][self::DIRECTION]) {
-                    case 'asc':
-                        $this->sortByColumns[$i][$j][self::DIRECTION] = SORT_ASC;
-                        break;
-                    case 'desc':
-                        $this->sortByColumns[$i][$j][self::DIRECTION] = SORT_DESC;
-                        break;
-                }
-            }
-        }
-
-        $rows = $this->array_sort_by_column($rows, $this->sortByColumns);
+        $rows = $this->array_sort_by_column($rows);
 
         return new Collection($collection->getColumns(), $rows, $collection->getTypes());
     }
 
-    public function array_sort_by_column(&$arr, $cols)
+    public function array_sort_by_column(&$arr)
     {
-        $sort_name = array();
-        $sort_direction = array();
-
-        for ($i = 0; $i < count($cols); $i++) {
-            for ($j = 0; $j < count($cols[$i]); $j++) {
-                foreach ($cols[$i][$j][self::NAMES] as $name) {
-                    $sort_direction[] = $cols[$i][$j][self::DIRECTION];
-                    $sort_name[] = $name;
-                }
-            }
-        }
-
         $params = array();
         $params[] = $arr;
-        $sortCriteria = array();
-        for ($i = 0; $i < count($sort_name); $i++) {
-            $params[] = $sort_name[$i];
-            $params[] = $sort_direction[$i];
-            $sortCriteria[$sort_name[$i]][] = $sort_direction[$i];
+        $sortCriteria = [];
+        foreach ($this->ascendingFields as $ascendingField) {
+            $sortCriteria[$ascendingField] = [SORT_ASC];
+        }
+
+        foreach ($this->descendingFields as $descendingField) {
+            $sortCriteria[$descendingField] = [SORT_DESC];
         }
 
         return $this->multiSort($arr, $sortCriteria, false);
@@ -120,5 +100,49 @@ class SortByColumns implements CollectionTransformerInterface
     public function validate()
     {
         // TODO: Implement validate() method.
+    }
+
+    public function getJsonTransformFieldsConfig()
+    {
+        $transformFields = [];
+        $ascending[self::NAMES] = $this->ascendingFields;
+        $ascending[self::DIRECTION] = self::ASC;
+        $descending[self::NAMES] = $this->descendingFields;
+        $descending[self::DIRECTION] = self::DESC;
+        $transformFields[] = $ascending;
+        $transformFields[] = $descending;
+        return $transformFields;
+    }
+
+    /**
+     * @return array
+     */
+    public function getAscendingFields(): array
+    {
+        return $this->ascendingFields;
+    }
+
+    /**
+     * @param array $ascendingFields
+     */
+    public function setAscendingFields(array $ascendingFields)
+    {
+        $this->ascendingFields = $ascendingFields;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDescendingFields(): array
+    {
+        return $this->descendingFields;
+    }
+
+    /**
+     * @param array $descendingFields
+     */
+    public function setDescendingFields(array $descendingFields)
+    {
+        $this->descendingFields = $descendingFields;
     }
 }

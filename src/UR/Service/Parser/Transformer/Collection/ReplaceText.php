@@ -6,7 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
-class ReplaceText implements CollectionTransformerInterface
+class ReplaceText implements CollectionTransformerInterface, CollectionTransformerJsonConfigInterface
 {
     const SEARCH_FOR_KEY = 'searchFor';
     const POSITION_KEY = 'position';
@@ -244,9 +244,20 @@ class ReplaceText implements CollectionTransformerInterface
         $this->isOverride = $isOverride;
     }
 
-
     public function validate()
     {
         // TODO: Implement validate() method.
+    }
+
+    public function getJsonTransformFieldsConfig()
+    {
+        $transformFields = [];
+        $transformFields[self::FIELD_KEY] = $this->field;
+        $transformFields[self::IS_OVERRIDE_KEY] = $this->isOverride;
+        $transformFields[self::TARGET_FIELD_KEY] = $this->targetField;
+        $transformFields[self::POSITION_KEY] = $this->position;
+        $transformFields[self::REPLACE_WITH_KEY] = $this->replaceWith;
+        $transformFields[self::SEARCH_FOR_KEY] = $this->searchFor;
+        return $transformFields;
     }
 }

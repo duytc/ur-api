@@ -94,7 +94,11 @@ class GroupByColumns implements CollectionTransformerInterface
                         $isSumField = array_key_exists($sumField, $types) && ($types[$sumField] == FieldType::NUMBER || $types[$sumField] == FieldType::DECIMAL);
 
                         if ($isSumField) {
-                            $result[$key][$sumField] += $element[$sumField];
+                            if ($result[$key][$sumField] === null && $element[$sumField] === null) {
+                                $result[$key][$sumField] = null;
+                            } else {
+                                $result[$key][$sumField] += $element[$sumField];
+                            }
                         } else {
                             $arr[$key][$sumField][] = $element[$sumField];
                             $x = $arr[$key][$sumField][0];
@@ -111,5 +115,13 @@ class GroupByColumns implements CollectionTransformerInterface
     public function validate()
     {
         // TODO: Implement validate() method.
+    }
+
+    /**
+     * @return array
+     */
+    public function getGroupByColumns(): array
+    {
+        return $this->groupByColumns;
     }
 }

@@ -5,7 +5,7 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use UR\Service\DataSet\FieldType;
 
-class AddField extends AbstractAddField
+class AddField extends AbstractAddField implements CollectionTransformerJsonConfigInterface
 {
     const VALUE_KEY = 'value';
 
@@ -113,5 +113,21 @@ class AddField extends AbstractAddField
     public function validate()
     {
         // TODO: Implement validate() method.
+    }
+
+    /**
+     * @param null $value
+     */
+    public function setValue($value)
+    {
+        $this->value = $value;
+    }
+
+    public function getJsonTransformFieldsConfig()
+    {
+        $transformFields = [];
+        $transformFields[self::FIELD_KEY] = $this->column;
+        $transformFields[self::VALUE_KEY] = $this->value;
+        return $transformFields;
     }
 }

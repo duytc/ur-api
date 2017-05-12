@@ -3,6 +3,7 @@
 namespace UR\Service\Parser\Filter;
 
 
+use UR\Model\Core\AlertInterface;
 use UR\Service\Import\ImportDataException;
 
 class DateFilter extends AbstractFilter implements ColumnFilterInterface
@@ -41,7 +42,7 @@ class DateFilter extends AbstractFilter implements ColumnFilterInterface
         $date = \DateTime::createFromFormat($this->format, $value);
 
         if (!$date) {
-            return false;
+            throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_DATE, 0, $this->getField());
         }
 
         if ($date <= $this->endDate && $date >= $this->startDate) {
