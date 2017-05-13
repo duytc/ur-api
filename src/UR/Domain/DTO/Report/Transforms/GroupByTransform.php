@@ -141,4 +141,14 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 	{
 		return $this->fields;
 	}
+
+	/**
+	 * @param array $fields
+	 * @return self
+	 */
+	public function setFields($fields)
+	{
+		$this->fields = $fields;
+		return $this;
+	}
 }

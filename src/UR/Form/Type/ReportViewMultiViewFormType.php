@@ -29,6 +29,11 @@ class ReportViewMultiViewFormType extends AbstractRoleSpecificFormType
                 $reportViewMultiView = $event->getData();
                 $form = $event->getForm();
 
+                $enableCustomDimensionMetric = $reportViewMultiView->isEnableCustomDimensionMetric();
+                if (!$enableCustomDimensionMetric) {
+                    $reportViewMultiView->setEnableCustomDimensionMetric(false);
+                }
+
                 $this->validateFilters($form, $reportViewMultiView->getFilters());
 
                 $this->validateDimensions($form, $reportViewMultiView->getDimensions());

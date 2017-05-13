@@ -413,6 +413,40 @@ class ReportBuilder implements ReportBuilderInterface
     {
         /* transform data */
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
+        if (!empty($params->getUserDefinedDimensions()) && $params->isNeedToGroup()) {
+            if (count($transforms) > 0) {
+                $groupByTransforms = array_filter($transforms, function ($transform) {
+                    return $transform instanceof GroupByTransform;
+                });
+
+                if (count($groupByTransforms) < 1) {
+                    $transforms[] = new GroupByTransform(
+                        $params->getUserDefinedDimensions()
+                    );
+                } else {
+                    foreach ($groupByTransforms as &$groupByTransform) {
+                        $allDimensionMetrics = array_merge($params->getUserDefinedDimensions(), $params->getUserDefinedMetrics());
+
+                        /** @var GroupByTransform $groupByTransform */
+                        $transformFields = $groupByTransform->getFields();
+                        $transformFields = array_filter($transformFields, function ($field) use ($allDimensionMetrics) {
+                            return in_array($field, $allDimensionMetrics);
+                        });
+
+                        if (count($transformFields) < 1) {
+                            $transformFields = $params->getUserDefinedDimensions();
+                        }
+
+                        $groupByTransform->setFields(array_unique($transformFields));
+                    }
+                }
+            } else {
+                $transforms[] = new GroupByTransform(
+                    $params->getUserDefinedDimensions()
+                );
+            }
+        }
+
         $this->transformReports($reportCollection, $transforms, $metrics, $dimensions, $outputJoinField);
 
         /* build columns that will be showed in total */
@@ -436,14 +470,6 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         $reportCollection->setRows($reports);
-
-        if (!empty($params->getUserDefinedDimensions()) && $params->isNeedToGroup()) {
-            $groupTransform = new GroupByTransform(
-                $params->getUserDefinedDimensions()
-            );
-
-            $reportCollection = $groupTransform->transform($reportCollection, $metrics, $dimensions, []);
-        }
 
         /* group reports */
         /** @var ReportResultInterface $reportResult */
@@ -1007,20 +1033,30 @@ class ReportBuilder implements ReportBuilderInterface
             }, $dataSet->getMetrics()));
         }
 
+        if ($params->getUserDefinedDimensions() != null) {
+            $dimensions = array_unique(array_merge($dimensions, $params->getUserDefinedDimensions()));
+        }
+
+        if ($params->getUserDefinedMetrics() != null) {
+            $metrics = array_unique(array_merge($metrics, $params->getUserDefinedMetrics()));
+        }
+
         $calculatedFields = array_diff_key($columns, array_flip(array_merge($dimensions, $metrics)));
 
         $dateDimensions = array_filter($dimensions, function ($dimension) use ($types) {
-            return array_key_exists($dimension, $types) && ($types[$dimension] == FieldType::DATE || $types[$dimension] == FieldType::DATE);
+            return array_key_exists($dimension, $types) && ($types[$dimension] == FieldType::DATE || $types[$dimension] == FieldType::DATETIME);
         });
+        uasort($dateDimensions, array($this, 'compareFieldsWithOutDataSetId'));
+
         $alphabetDimensions = array_diff($dimensions, $dateDimensions);
-        asort($alphabetDimensions);
+        uasort($alphabetDimensions, array($this, 'compareFieldsWithOutDataSetId'));
         $alphabetDimensions = array_values($alphabetDimensions);
 
         $dateMetrics = array_filter($metrics, function ($metric) use ($types) {
             return array_key_exists($metric, $types) && ($types[$metric] == FieldType::DATE || $types[$metric] == FieldType::DATE);
         });
         $alphabetMetrics = array_diff($metrics, $dateMetrics);
-        asort($alphabetMetrics);
+        uasort($alphabetMetrics, array($this, 'compareFieldsWithOutDataSetId'));
         $alphabetMetrics = array_values($alphabetMetrics);
 
         /**
@@ -1037,27 +1073,11 @@ class ReportBuilder implements ReportBuilderInterface
         $reportViewAlias = 'report_view_alias';
         if (array_key_exists($reportViewAlias, $columns)) {
             $smartColumns[$reportViewAlias] = $columns[$reportViewAlias];
-            if ($params->getUserDefinedDimensions() != null && array_key_exists($reportViewAlias, $params->getUserDefinedDimensions() )){
+            if ($params->getUserDefinedDimensions() != null && array_key_exists($reportViewAlias, $params->getUserDefinedDimensions())) {
                 unset($params->getUserDefinedDimensions()[$reportViewAlias]);
             }
-            if ($params->getUserDefinedMetrics() != null && array_key_exists($reportViewAlias, $params->getUserDefinedMetrics() )){
+            if ($params->getUserDefinedMetrics() != null && array_key_exists($reportViewAlias, $params->getUserDefinedMetrics())) {
                 unset($params->getUserDefinedMetrics()[$reportViewAlias]);
-            }
-        }
-
-        if ($params->getUserDefinedDimensions() != null){
-            foreach ($params->getUserDefinedDimensions() as $dimension) {
-                if (array_key_exists($dimension, $columns)) {
-                    $smartColumns[$dimension] = $columns[$dimension];
-                }
-            }
-        }
-
-        if ($params->getUserDefinedMetrics() != null){
-            foreach ($params->getUserDefinedMetrics() as $metric) {
-                if (array_key_exists($metric, $columns)) {
-                    $smartColumns[$metric] = $columns[$metric];
-                }
             }
         }
 
@@ -1137,5 +1157,51 @@ class ReportBuilder implements ReportBuilderInterface
             }
         }
         return $reports;
+    }
+
+    /**
+     * @param $first
+     * @param $second
+     * @return int
+     */
+    private function compareFieldsWithOutDataSetId($first, $second)
+    {
+        $firstField = null;
+        $firstDataSet = null;
+        $secondField = null;
+        $secondDataSet = null;
+
+        if (preg_match('/([a-zA-Z0-9 ]*)(_)([0-9]*)/', $first, $matches)) {
+            $firstField = $matches[1];
+            $firstDataSet = $matches[3];
+        }
+
+        if (preg_match('/([a-zA-Z0-9 ]*)(_)([0-9]*)/', $second, $matches)) {
+            $secondField = $matches[1];
+            $secondDataSet = $matches[3];
+        }
+
+        if ($firstField == null || $secondField == null) {
+            return $this->compare($first, $second);
+        }
+
+        if ($this->compare($firstField, $secondField) != 0) {
+            return $this->compare($firstField, $secondField);
+        }
+
+        return $this->compare($firstDataSet, $secondDataSet);
+    }
+
+    /**
+     * @param $first
+     * @param $second
+     * @return int
+     */
+    private function compare($first, $second)
+    {
+        if ($first == $second) {
+            return 0;
+        }
+        return ($first < $second) ? -1 : 1;
     }
 }

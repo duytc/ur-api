@@ -132,6 +132,11 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
                     $reportView->setAlias($reportView->getName());
                 }
 
+                $enableCustomDimensionMetric = $reportView->isEnableCustomDimensionMetric();
+                if (!$enableCustomDimensionMetric) {
+                    $reportView->setEnableCustomDimensionMetric(false);
+                }
+
                 $reportViewDataSets = $reportView->getReportViewDataSets();
 
                 /**
