@@ -4,6 +4,7 @@ namespace UR\Bundle\ApiBundle\Controller;
 
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
+use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Form\FormTypeInterface;
@@ -11,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use UR\DomainManager\ImportHistoryManagerInterface;
+use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
@@ -353,6 +355,28 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         }
 
         return $this->delete($id);
+    }
+
+    /**
+     * @Rest\Post("/datasourceentries/delete")
+     * @param Request $request
+     * @return Response
+     */
+    public function deleteMultipleEntriesAction(Request $request)
+    {
+        $entries = $request->request->get('entries', null);
+        if (empty($entries) || !is_array($entries)) {
+            throw new InvalidArgumentException('"entries" should be an array of data source entry\'s id');
+        }
+
+        foreach ($entries as $entry) {
+            $entry = $this->one($entry);
+            $this->getHandler()->delete($entry);
+        }
+
+        $view = $this->view(null, Codes::HTTP_NO_CONTENT);
+
+        return $this->handleView($view);
     }
 
     /**
