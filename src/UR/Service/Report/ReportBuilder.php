@@ -9,6 +9,7 @@ use UR\Domain\DTO\Report\DateRange;
 use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Filters\DateFilterInterface;
 use UR\Domain\DTO\Report\Filters\FilterInterface;
+use UR\Domain\DTO\Report\Formats\ColumnPositionFormatInterface;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
@@ -564,13 +565,6 @@ class ReportBuilder implements ReportBuilderInterface
         // do filter
         $this->filterNonSelectedFieldsFromReports($reportResult, $nonSelectedFields);
 
-        /* format data if need */
-        if ($isNeedFormatReport) {
-            /** @var FormatInterface[] $formats */
-            $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
-            $this->formatReports($reportResult, $formats, $metrics, $dimensions);
-        }
-
         $types = $reportResult->getTypes();
         $temporaryFields = [];
         foreach ($types as $column => $type) {
@@ -603,15 +597,14 @@ class ReportBuilder implements ReportBuilderInterface
         $reportResult->setColumns($columns);
         $reportResult->setTypes($types);
 
-        $reports = $reportResult->getReports();
-        $reports = $this->getReportAfterRemoveTemporaryFields($reports, $temporaryFields);
+        $reportResult = $this->getReportAfterRemoveTemporaryFields($reportResult, $temporaryFields);
 
         if (!empty($params->getUserDefinedDimensions())) {
             $newDimensions = $params->getUserDefinedDimensions();
             $newMetrics = $params->getUserDefinedMetrics();
             $newColumns = array_merge($newDimensions, $newMetrics);
             $fieldsToRemove = array_diff(array_keys($reportResult->getColumns()), $newColumns);
-            $reports = $this->getReportAfterRemoveTemporaryFields($reports, $fieldsToRemove);
+            $reportResult = $this->getReportAfterRemoveTemporaryFields($reportResult, $fieldsToRemove);
             $types = $reportResult->getTypes();
             foreach ($types as $k => $v) {
                 if (in_array($k, $fieldsToRemove)) {
@@ -653,11 +646,10 @@ class ReportBuilder implements ReportBuilderInterface
         $smartColumns = $this->getSmartColumns($reportResult->getColumns(), $params, $reportResult->getTypes());
         $reportResult->setColumns($smartColumns);
 
-        $reports = $this->getReportAfterApplyDefaultFormat($reports, $reportResult->getColumns(), $reportResult->getTypes());
-        $reportResult->setReports($reports);
+        $reportResult = $this->getReportAfterApplyDefaultFormat($reportResult, $reportResult->getColumns(), $params);
 
         if (count($params->getSearches()) > 0) {
-            $reports = $this->filterReports($reports, $params->getSearches(), $reportResult->getTypes());
+            $reportResult = $this->filterReports($reportResult, $params->getSearches());
         }
 
         if ($params->getSortField()) {
@@ -668,11 +660,12 @@ class ReportBuilder implements ReportBuilderInterface
             if (!$params->getOrderBy()) {
                 $params->setOrderBy('asc');
             }
-            $reports = $this->sortReports($reports, $params->getSortField(), $params->getOrderBy(), $reportResult->getTypes());
+            $reportResult = $this->sortReports($reportResult, $params->getSortField(), $params->getOrderBy());
         }
 
-        $totalRow = count($reports);
+        $totalRow = count($reportResult->getReports());
 
+        $reports = $reportResult->getReports();
         if (is_int($params->getPage())) {
             if (!is_int($params->getLimit()) || $params->getLimit() < 1) {
                 $params->setLimit(10);
@@ -685,6 +678,12 @@ class ReportBuilder implements ReportBuilderInterface
         $reportResult->setReports($reports);
         $reportResult->setTotalReport($totalRow);
 
+        /* format data if need */
+        if ($isNeedFormatReport) {
+            /** @var FormatInterface[] $formats */
+            $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
+            $this->formatReports($reportResult, $formats, $metrics, $dimensions);
+        }
 
         /* return report result */
         return $reportResult;
@@ -772,6 +771,10 @@ class ReportBuilder implements ReportBuilderInterface
 
         foreach ($formats as $format) {
             if (!($format instanceof FormatInterface)) {
+                continue;
+            }
+
+            if ($format instanceof ColumnPositionFormatInterface) {
                 continue;
             }
 
@@ -868,13 +871,15 @@ class ReportBuilder implements ReportBuilderInterface
     }
 
     /**
-     * @param array $reports
+     * @param ReportResultInterface $reportResult
      * @param array $searches
-     * @param array $types
-     * @return mixed
+     * @return ReportResultInterface
      */
-    private function filterReports(array $reports, array $searches, array $types)
+    private function filterReports(ReportResultInterface $reportResult, array $searches)
     {
+        $reports = $reportResult->getReports();
+        $types = $reportResult->getTypes();
+
         foreach ($searches as $searchField => $searchContent) {
             if (!array_key_exists($searchField, $types)) {
                 continue;
@@ -904,8 +909,10 @@ class ReportBuilder implements ReportBuilderInterface
                 if ($type == FieldType::TEXT || $type == FieldType::LARGE_TEXT || $type == FieldType::DATE || $type == FieldType::DATETIME) {
                     $words = explode(" ", $searchContent);
                     foreach ($words as $word) {
-                        $pattern = sprintf('/%s/i', strtolower($word));
-                        if (!preg_match($pattern, strtolower($value))) {
+                        if (empty($word)) {
+                            continue;
+                        }
+                        if (strpos(strtolower($value), strtolower($word)) === false) {
                             unset($reports[$pos]);
                             continue;
                         }
@@ -915,19 +922,21 @@ class ReportBuilder implements ReportBuilderInterface
             }
         }
 
-        return $reports;
+        $reportResult->setReports($reports);
+        return $reportResult;
     }
 
     /**
-     * @param array $reports
+     * @param ReportResultInterface $reportResult
      * @param $sortField
      * @param $orderBy
-     * @param array $types
      * @return mixed
      */
-    private function sortReports(array $reports, $sortField, $orderBy, array $types)
+    private function sortReports($reportResult, $sortField, $orderBy)
     {
-        $reports = array_values($reports);
+        $reports = array_values($reportResult->getReports());
+        $types = $reportResult->getTypes();
+
         if (count($reports) < 1) {
             return $reports;
         }
@@ -946,6 +955,14 @@ class ReportBuilder implements ReportBuilderInterface
             $firstValue = $a[$sortField];
             $secondValue = $b[$sortField];
 
+            if ($firstValue == null) {
+                return 1;
+            }
+
+            if ($secondValue == null) {
+                return -1;
+            }
+            
             switch ($type) {
                 case FieldType::NUMBER:
                     $firstValue = intval($firstValue);
@@ -965,10 +982,12 @@ class ReportBuilder implements ReportBuilderInterface
                     break;
             }
 
-            return $orderBy == 'desc' ? $firstValue > $secondValue : $firstValue < $secondValue;
+            return $orderBy == 'desc' ? ($firstValue < $secondValue) : ($firstValue > $secondValue);
         });
 
-        return $reports;
+        $reportResult->setReports($reports);
+
+        return $reportResult;
     }
 
     /**
@@ -980,7 +999,7 @@ class ReportBuilder implements ReportBuilderInterface
     {
         if (preg_match('/([^\d]+)([0-9\.]+)/', $condition, $matches)) {
             $compareOperator = $matches[1];
-            $compareValue = $matches[2];
+            $compareValue = (float)$matches[2];
 
             switch ($compareOperator) {
                 case '=':
@@ -1000,7 +1019,12 @@ class ReportBuilder implements ReportBuilderInterface
                 case '!=':
                     return $value != $compareValue;
             }
-        };
+        } else {
+            if (empty($condition)) {
+                return true;
+            }
+            return (float)$condition == $value;
+        }
 
         return true;
     }
@@ -1042,6 +1066,23 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         $calculatedFields = array_diff_key($columns, array_flip(array_merge($dimensions, $metrics)));
+        $metrics = array_merge($metrics, array_flip($calculatedFields));
+
+        $columnsPositionFormatFields = [];
+        $formats = $params->getFormats();
+        if (is_array($formats)) {
+            $formats = array_filter($params->getFormats(), function ($format) {
+                return $format instanceof ColumnPositionFormatInterface;
+            });
+            foreach ($formats as $format) {
+                /** @var ColumnPositionFormatInterface $format */
+                $columnsPositionFormatFields = array_merge($columnsPositionFormatFields, $format->getFields());
+            }
+        }
+        uasort($columnsPositionFormatFields, array($this, 'compareFieldsWithOutDataSetId'));
+
+        $dimensions = array_diff($dimensions, $columnsPositionFormatFields);
+        $metrics = array_diff($metrics, $columnsPositionFormatFields);
 
         $dateDimensions = array_filter($dimensions, function ($dimension) use ($types) {
             return array_key_exists($dimension, $types) && ($types[$dimension] == FieldType::DATE || $types[$dimension] == FieldType::DATETIME);
@@ -1081,6 +1122,12 @@ class ReportBuilder implements ReportBuilderInterface
             }
         }
 
+        foreach ($columnsPositionFormatFields as $field) {
+            if (array_key_exists($field, $columns)) {
+                $smartColumns[$field] = $columns[$field];
+            }
+        }
+
         foreach ($dateDimensions as $dimension) {
             if (array_key_exists($dimension, $columns)) {
                 $smartColumns[$dimension] = $columns[$dimension];
@@ -1105,25 +1152,45 @@ class ReportBuilder implements ReportBuilderInterface
             }
         }
 
-        $smartColumns = array_merge($smartColumns, $calculatedFields);
-
         return $smartColumns;
     }
 
     /**
-     * @param $reports
+     * @param ReportResultInterface $reportResult
      * @param $columns
-     * @param $types
-     * @return mixed;
+     * @param ParamsInterface $params
+     * @return mixed ;
      */
-    private function getReportAfterApplyDefaultFormat($reports, $columns, $types)
+    private function getReportAfterApplyDefaultFormat($reportResult, $columns, $params)
     {
+        $reports = $reportResult->getReports();
+        $types = $reportResult->getTypes();
+
         $decimalFields = [];
         foreach ($columns as $key => $column) {
             if (array_key_exists($key, $types) && $types[$key] == FieldType::DECIMAL) {
                 $decimalFields[$key] = $column;
             }
         }
+
+        $formatFields = [];
+        $formats = $params->getFormats();
+        if (is_array($formats)) {
+            foreach ($formats as $format) {
+                $formatFields = array_merge($formatFields, $format->getFields());
+            }
+        }
+
+        foreach ($formatFields as $formatField) {
+            if (array_key_exists($formatField, $decimalFields)) {
+                unset ($decimalFields[$formatField]);
+            }
+        }
+
+        if (count($decimalFields) < 1) {
+            return $reportResult;
+        }
+
         foreach ($reports as &$report) {
             foreach ($decimalFields as $decimalField => $name) {
                 if (!array_key_exists($decimalField, $report)) {
@@ -1135,19 +1202,25 @@ class ReportBuilder implements ReportBuilderInterface
                 if (strpos($report[$decimalField], '%') != false) {
                     continue;
                 }
+                if ($report[$decimalField] == null) {
+                    continue;
+                }
                 $report[$decimalField] = number_format((float)$report[$decimalField], 4, ".", "");
             }
         }
-        return $reports;
+
+        $reportResult->setReports($reports);
+        return $reportResult;
     }
 
     /**
-     * @param $reports
+     * @param ReportResultInterface $reportResult
      * @param $removeColumns
      * @return mixed;
      */
-    private function getReportAfterRemoveTemporaryFields($reports, $removeColumns)
+    private function getReportAfterRemoveTemporaryFields($reportResult, $removeColumns)
     {
+        $reports = $reportResult->getReports();
         foreach ($reports as &$report) {
             foreach ($removeColumns as $removeColumn) {
                 if (!array_key_exists($removeColumn, $report)) {
@@ -1156,7 +1229,9 @@ class ReportBuilder implements ReportBuilderInterface
                 unset($report[$removeColumn]);
             }
         }
-        return $reports;
+
+        $reportResult->setReports($reports);
+        return $reportResult;
     }
 
     /**
@@ -1171,12 +1246,12 @@ class ReportBuilder implements ReportBuilderInterface
         $secondField = null;
         $secondDataSet = null;
 
-        if (preg_match('/([a-zA-Z0-9 ]*)(_)([0-9]*)/', $first, $matches)) {
+        if (preg_match('/([a-zA-Z0-9 _]*)(_)([0-9]+)/', $first, $matches)) {
             $firstField = $matches[1];
             $firstDataSet = $matches[3];
         }
 
-        if (preg_match('/([a-zA-Z0-9 ]*)(_)([0-9]*)/', $second, $matches)) {
+        if (preg_match('/([a-zA-Z0-9 _]*)(_)([0-9]+)/', $second, $matches)) {
             $secondField = $matches[1];
             $secondDataSet = $matches[3];
         }
