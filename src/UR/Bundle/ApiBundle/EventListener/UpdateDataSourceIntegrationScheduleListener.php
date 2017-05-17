@@ -104,7 +104,8 @@ class UpdateDataSourceIntegrationScheduleListener
          */
         $checkValue = $scheduleSetting[$checkType];
 
-        $now = new \DateTime();
+        $utcTimeZone = new \DateTimeZone('UTC');
+        $now = new \DateTime('now', $utcTimeZone);
 
         switch ($checkType) {
             case DataSourceIntegration::SCHEDULE_CHECKED_CHECK_EVERY:
@@ -129,11 +130,16 @@ class UpdateDataSourceIntegrationScheduleListener
                     $hour = $checkAtItem[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_HOUR];
                     $minute = $checkAtItem[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_MINUTES];
 
-                    $nextExecuteAt = clone $now;
+                    $nextExecuteAt = new \DateTime('now', new \DateTimeZone($timeZone));
                     $nextExecuteAt->setTime($hour, $minute);
-                    $nextExecuteAtByTimeZone = clone $nextExecuteAt;
-                    $nextExecuteAtByTimeZone->setTimezone(new \DateTimeZone($timeZone));
-                    $nextExecuteAt->setTime($nextExecuteAtByTimeZone->format('H'), $nextExecuteAt->format('i'));
+                    // normalize to UTC
+                    $nextExecuteAt->setTimezone($utcTimeZone);
+
+//                    $nextExecuteAt = clone $now;
+//                    $nextExecuteAt->setTime($hour, $minute);
+//                    $nextExecuteAtByTimeZone = clone $nextExecuteAt;
+//                    $nextExecuteAtByTimeZone->setTimezone(new \DateTimeZone($timeZone));
+//                    $nextExecuteAt->setTime($nextExecuteAtByTimeZone->format('H'), $nextExecuteAt->format('i'));
 
                     $newDataSourceIntegrationSchedules[] = ((new DataSourceIntegrationSchedule())
                         ->setUuid($checkAtItem[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID])

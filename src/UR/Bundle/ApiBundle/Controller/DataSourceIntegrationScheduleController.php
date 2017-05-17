@@ -154,7 +154,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
         $executedAt = $dataSourceIntegrationSchedule->getExecutedAt();
         $scheduleType = $dataSourceIntegrationSchedule->getScheduleType();
         $scheduleSetting = $dataSourceIntegrationSchedule->getDataSourceIntegration()->getSchedule();
-        $now = new \DateTime();
+        $now = new \DateTime('now', new \DateTimeZone('UTC'));
 
         switch ($scheduleType) {
             case DataSourceIntegration::SCHEDULE_CHECKED_CHECK_EVERY:
