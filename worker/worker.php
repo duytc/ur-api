@@ -43,16 +43,6 @@ $availableWorkers = [
 
 $workerPool = new \UR\Worker\Pool($availableWorkers);
 
-function stdErr($text)
-{
-    file_put_contents('php://stderr', trim($text) . "\n", FILE_APPEND);
-}
-
-function stdOut($text)
-{
-    file_put_contents('php://stdout', trim($text) . "\n", FILE_APPEND);
-}
-
 while (true) {
     if (time() > ($startTime + WORKER_TIME_LIMIT)) {
 // exit worker gracefully, supervisord will restart it
@@ -68,7 +58,7 @@ while (true) {
     $rawPayload = $job->getData();
     $payload = json_decode($rawPayload);
     if (!$payload) {
-        stdErr(sprintf('Received an invalid payload %s', $rawPayload));
+        $logger->error(sprintf('Received an invalid payload %s', $rawPayload));
         $queue->bury($job);
         continue;
     }
@@ -76,16 +66,16 @@ while (true) {
     $params = $payload->params;
     $worker = $workerPool->findWorker($task);
     if (!$worker) {
-        stdErr(sprintf('The task "%s" is unknown', $task));
+        $logger->error(sprintf('The task "%s" is unknown', $task));
         $queue->bury($job);
         continue;
     }
     if (!$params instanceof stdclass) {
-        stdErr(sprintf('The task parameters are not valid', $task));
+        $logger->error(sprintf('The task parameters are not valid', $task));
         $queue->bury($job);
         continue;
     }
-    stdOut(sprintf('[%s] Received job %s (ID: %s) with payload %s', (new DateTime())->format('Y-m-d H:i:s'), $task, $job->getId(), $rawPayload));
+    $logger->notice(sprintf('[%s] Received job %s (ID: %s) with payload %s', (new DateTime())->format('Y-m-d H:i:s'), $task, $job->getId(), $rawPayload));
     try {
         if ($task == 'loadingDataFromFileToDataImportTable' || $task == 'alterDataSetTable' || $task == 'truncateDataSetTable') {
             $worker->$task($params, $job, TUBE_NAME);
@@ -93,11 +83,11 @@ while (true) {
             $worker->$task($params); // dynamic method call
         }
 
-        stdOut(sprintf('Job %s (ID: %s) with payload %s has been completed', $task, $job->getId(), $rawPayload));
+        $logger->notice(sprintf('Job %s (ID: %s) with payload %s has been completed', $task, $job->getId(), $rawPayload));
         $queue->delete($job);
 // task finished successfully
     } catch (Exception $e) {
-        stdOut(
+        $logger->warning(
             sprintf(
                 'Job %s (ID: %s) with payload %s failed with an exception: %s',
                 $task,
