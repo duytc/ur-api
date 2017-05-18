@@ -88,8 +88,12 @@ class ReportController extends FOSRestController
         // CSV Data
         foreach ($reportResult->getReports() as $report) {
             $line = [];
-            foreach ($reportResult->getColumns() as $key => $value){
-                $line[] = $report[$key];
+            foreach ($reportResult->getColumns() as $key => $value) {
+                if (array_key_exists($key, $report)) {
+                    $line[] = $report[$key];
+                } else {
+                    $line[] = null;
+                }
             }
             fputcsv($fh, $line);
         }

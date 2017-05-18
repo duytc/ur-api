@@ -29,6 +29,10 @@ trait CalculateRatiosTrait
      */
     protected function getPercentage($numerator, $denominator)
     {
+        if ($numerator == null || $denominator == null || $denominator == 0) {
+            return null;
+        }
+
         $ratio = $this->getRatio($numerator, $denominator);
 
         if (null == $ratio) {

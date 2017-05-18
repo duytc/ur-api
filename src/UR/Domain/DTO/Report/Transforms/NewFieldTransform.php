@@ -25,7 +25,8 @@ abstract class NewFieldTransform extends AbstractTransform implements TransformI
      * @param Collection $collection
      * @param array $metrics
      * @param array $dimensions
-     * @param null $outputJoinField
+     * @param array $outputJoinField
+     * @return mixed
      */
     public function transform(Collection $collection, array &$metrics, array &$dimensions, array $outputJoinField)
     {
@@ -42,5 +43,41 @@ abstract class NewFieldTransform extends AbstractTransform implements TransformI
             $collection->setColumns($columns);
             $collection->setTypes($types);
         }
+    }
+
+    /**
+     * @return string
+     */
+    public function getFieldName()
+    {
+        return $this->fieldName;
+    }
+
+    /**
+     * @param string $fieldName
+     * @return self
+     */
+    public function setFieldName($fieldName)
+    {
+        $this->fieldName = $fieldName;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * @param string $type
+     * @return self
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+        return $this;
     }
 }
