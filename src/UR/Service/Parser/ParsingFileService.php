@@ -95,7 +95,7 @@ class ParsingFileService
         }
 
         /* 1. get all row data */
-        if (is_numeric($limit)) {
+        if (is_numeric($limit) && $limit > 0) {
             $rows = $dataSourceFileData->getLimitedRows($limit);
         } else {
             $rows = $dataSourceFileData->getRows();

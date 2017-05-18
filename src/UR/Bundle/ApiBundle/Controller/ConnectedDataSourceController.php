@@ -127,6 +127,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     {
         /* file for previewing data (using path of uploaded file or existing data source entry)*/
         $pathOrDataSourceEntryId = $request->request->get('dataSourceEntryId', null);
+        $limitRows = $request->request->get('limit', null);
 
         // temporary create connected data source entity (not save to database)
         // do this because the new connected data source (not yet save) may be difference from old connected data source in database
@@ -134,7 +135,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         /** @var ConnectedDataSourceInterface $tempConnectedDataSource */
         $tempConnectedDataSource = $postResult->getData();
 
-        return $this->handleDryRun($tempConnectedDataSource, $pathOrDataSourceEntryId);
+        return $this->handleDryRun($tempConnectedDataSource, $pathOrDataSourceEntryId, $limitRows);
     }
 
     /**
@@ -262,7 +263,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
      * @return mixed
      * @throws PublicImportDataException
      */
-    private function handleDryRun(ConnectedDataSourceInterface $tempConnectedDataSource, $pathOrDataSourceEntryId)
+    private function handleDryRun(ConnectedDataSourceInterface $tempConnectedDataSource, $pathOrDataSourceEntryId, $limitRows)
     {
         $dataSourceEntryManager = $this->get('ur.repository.data_source_entry');
         $selectedEntry = null;
@@ -287,6 +288,6 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         /** @var AutoImportDataInterface $autoImportService */
         $autoImportService = $this->get('ur.worker.workers.auto_import_data');
 
-        return $autoImportService->createDryRunImportData($tempConnectedDataSource, $selectedEntry);
+        return $autoImportService->createDryRunImportData($tempConnectedDataSource, $selectedEntry, $limitRows);
     }
 }

@@ -23,18 +23,12 @@ class AutoImportData implements AutoImportDataInterface
      */
     private $parsingFileService;
 
-    /**
-     * @var integer
-     */
-    private $maxDryRunSize;
-
     private $logger;
 
-    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, $maxDryRunSize, Logger $logger)
+    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, Logger $logger)
     {
         $this->parsingFileService = $parsingFileService;
         $this->importer = $importer;
-        $this->maxDryRunSize = $maxDryRunSize;
         $this->logger = $logger;
     }
 
@@ -54,10 +48,10 @@ class AutoImportData implements AutoImportDataInterface
     /**
      * @inheritdoc
      */
-    public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry)
+    public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, $limitRows)
     {
         try {
-            $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, $this->maxDryRunSize);
+            $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, $limitRows);
 
             $this->parsingFileService->addTransformColumnAfterParsing($connectedDataSource->getTransforms());
             $rows = $this->parsingFileService->formatColumnsTransformsAfterParser($collection->getRows());

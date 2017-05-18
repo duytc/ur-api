@@ -26,6 +26,7 @@ ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
             ->add('name')
             ->add('connectedDataSourceId', null, ['mapped' => false])
             ->add('dataSourceEntryId', null, ['mapped' => false])
+            ->add('limit', null, ['mapped' => false])
             ->add('dataSet')
             ->add('dataSource')
             ->add('mapFields')

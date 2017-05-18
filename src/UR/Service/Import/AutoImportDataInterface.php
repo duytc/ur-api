@@ -19,7 +19,8 @@ interface AutoImportDataInterface
     /**
      * @param ConnectedDataSourceInterface $connectedDataSources
      * @param DataSourceEntryInterface $dataSourceEntry
+     * @param $limitRows
      * @return mixed
      */
-    public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSources, DataSourceEntryInterface $dataSourceEntry);
+    public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSources, DataSourceEntryInterface $dataSourceEntry, $limitRows);
 }
