@@ -938,15 +938,15 @@ class ReportBuilder implements ReportBuilderInterface
         $types = $reportResult->getTypes();
 
         if (count($reports) < 1) {
-            return $reports;
+            return $reportResult;
         }
 
         if (!array_key_exists($sortField, $reports[0])) {
-            return $reports;
+            return $reportResult;
         }
 
         if (!array_key_exists($sortField, $types)) {
-            return $reports;
+            return $reportResult;
         }
 
         $type = $types[$sortField];
@@ -955,12 +955,16 @@ class ReportBuilder implements ReportBuilderInterface
             $firstValue = $a[$sortField];
             $secondValue = $b[$sortField];
 
+            if ($firstValue == null && $secondValue == null) {
+                return 0;
+            }
+
             if ($firstValue == null) {
-                return 1;
+                return $orderBy == 'desc' ? 1 : -1;
             }
 
             if ($secondValue == null) {
-                return -1;
+                return $orderBy == 'desc' ? -1 : 1;
             }
             
             switch ($type) {
