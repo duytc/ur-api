@@ -73,6 +73,8 @@ class ReformatDataService
 
             case FieldType::TEXT:
             case FieldType::LARGE_TEXT:
+                $cellValue = trim($cellValue);
+
                 if ($cellValue === '') {
                     return null; // treat empty string as null value
                 }
