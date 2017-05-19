@@ -93,8 +93,8 @@ class UpdateTransformationsForMultipleViewReportListener
 				}
 			}
 
-			$multipleReportView->setTransforms($transformations);
-			$multipleReportView->setFormats($formats);
+			$multipleReportView->setTransforms(array_values($transformations));
+			$multipleReportView->setFormats(array_values($formats));
 
 			$this->updateMultipleReportViews[] = $multipleReportView;
 		}

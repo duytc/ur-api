@@ -137,7 +137,7 @@ class DataSetChangeListener
             }
         }
 
-		return $transforms;
+		return array_values($transforms);
 	}
 
 
@@ -153,7 +153,7 @@ class DataSetChangeListener
             }
         }
 
-		return $formats;
+		return array_values($formats);
 	}
 
     protected function refreshJoinConfigsForSingleReportView(ReportViewInterface $reportView, array $allDimensionsMetrics)
