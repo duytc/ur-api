@@ -16,6 +16,9 @@ services:
             - '@ur.domain_manager.report_view'
             - '@ur.services.report.params_builder'
             - '@ur.domain_manager.data_set'
+            - '@ur.services.report.report_filter'
+            - '@ur.services.report.report_formatter'
+            - '@ur.services.report.report_sorter'
 
     ur.services.report.sql_builder:
         class: UR\Service\Report\SqlBuilder
@@ -32,5 +35,14 @@ services:
         class: UR\Service\Report\CloneReportView
         arguments:
             - '@ur.domain_manager.report_view'
+
+    ur.services.report.report_filter:
+        class: UR\Service\Report\ReportViewFilter
+
+    ur.services.report.report_formatter:
+        class: UR\Service\Report\ReportViewFormatter
+
+    ur.services.report.report_sorter:
+        class: UR\Service\Report\ReportViewSorter
 
 

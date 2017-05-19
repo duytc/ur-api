@@ -14,6 +14,15 @@ use UR\Service\DTO\Report\WeightedCalculationInterface;
 class Params implements ParamsInterface
 {
     /**
+     * @var array
+     */
+    protected $dimensions;
+
+    /**
+     * @var array
+     */
+    protected $metrics;
+    /**
      * @var  DataSetInterface[]
      */
     protected $dataSets;
@@ -545,6 +554,40 @@ class Params implements ParamsInterface
     public function setUserDefinedMetrics($userDefinedMetrics)
     {
         $this->userDefinedMetrics = $userDefinedMetrics;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDimensions()
+    {
+        return $this->dimensions;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setDimensions($dimensions)
+    {
+        $this->dimensions = $dimensions;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMetrics()
+    {
+        return $this->metrics;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setMetrics($metrics)
+    {
+        $this->metrics = $metrics;
         return $this;
     }
 }

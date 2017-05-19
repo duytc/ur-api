@@ -59,6 +59,8 @@ class ParamsBuilder implements ParamsBuilderInterface
     const SEARCHES = 'searches';
     const ORDER_BY_KEY = 'orderBy';
     const SORT_FIELD_KEY = 'sortField';
+    const DIMENSIONS_KEY = 'dimensions';
+    const METRICS_KEY = 'metrics';
 
 
     /**
@@ -75,6 +77,14 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         $param->setMultiView($multiView);
         $param->setSubReportIncluded(false);
+
+        if (array_key_exists(self::DIMENSIONS_KEY, $data)) {
+            $param->setDimensions($data[self::DIMENSIONS_KEY]);
+        }
+
+        if (array_key_exists(self::METRICS_KEY, $data)) {
+            $param->setMetrics($data[self::METRICS_KEY]);
+        }
 
         /*
          * VERY IMPORTANT:

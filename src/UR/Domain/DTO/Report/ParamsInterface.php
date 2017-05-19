@@ -236,4 +236,26 @@ interface ParamsInterface
      * @return self
      */
     public function setUserDefinedMetrics($userDefinedMetrics);
+
+    /**
+     * @return array
+     */
+    public function getDimensions();
+
+    /**
+     * @param array $dimensions
+     * @return self
+     */
+    public function setDimensions($dimensions);
+
+    /**
+     * @return array
+     */
+    public function getMetrics();
+
+    /**
+     * @param array $metrics
+     * @return self
+     */
+    public function setMetrics($metrics);
 }
