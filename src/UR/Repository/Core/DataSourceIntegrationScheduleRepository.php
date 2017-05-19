@@ -15,11 +15,24 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
     {
         $currentDate = new \DateTime();
 
-        $qb = $this->createQueryBuilder('dis')
+        $qb = $this->createQueryBuilder('dis');
+        $qb
             ->join('dis.dataSourceIntegration', 'dsi')
-            ->where('dis.executedAt <= :currentDate')
+            ->andWhere(
+                $qb->expr()->orX(
+                    // check by executeAt:
+                    $qb->expr()->lte('dis.executedAt', ':currentDate'), // 'dis.executedAt <= :currentDate',
+                    // check by backfill
+                    $qb->expr()->andX(
+                        $qb->expr()->eq('dsi.backFill', ':isBackfill'), // 'dsi.backFill = :isBackfill'
+                        $qb->expr()->eq('dsi.backFillExecuted', ':isBackfillExecuted') // 'dsi.backFillExecuted = :isBackfillExecuted'
+                    )
+                )
+            )
             ->andWhere('dsi.active = :dataSourceActive')
             ->setParameter('currentDate', $currentDate)
+            ->setParameter('isBackfill', true)
+            ->setParameter('isBackfillExecuted', false)
             ->setParameter('dataSourceActive', true);
 
         return $qb->getQuery()->getResult();
