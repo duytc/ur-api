@@ -78,6 +78,7 @@ class ParsingFileService
         $dataSourceFileData = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $dataSourceEntry->getPath());
 
         $columnsInFile = $dataSourceFileData->getColumns();
+        $columnsInFile = array_map("trim", $columnsInFile);
 
         $dataRow = $dataSourceFileData->getDataRow();
 
