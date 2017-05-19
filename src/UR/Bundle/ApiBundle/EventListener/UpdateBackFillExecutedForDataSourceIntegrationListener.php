@@ -31,7 +31,7 @@ class UpdateBackFillExecutedForDataSourceIntegrationListener
         }
 
         // update all dataSourceIntegrationSchedules
-        $dataSourceIntegration = $this->updateBackFillExecutedDataSourceIntegration($dataSourceIntegration);
+        $dataSourceIntegration = $this->updateBackFillForDataSourceIntegration($dataSourceIntegration);
 
         // add to $updateDataSourceIntegrations
         $this->updateDataSourceIntegrations[] = $dataSourceIntegration;
@@ -62,7 +62,7 @@ class UpdateBackFillExecutedForDataSourceIntegrationListener
      * @param DataSourceIntegrationInterface $dataSourceIntegration
      * @return DataSourceIntegrationInterface
      */
-    private function updateBackFillExecutedDataSourceIntegration(DataSourceIntegrationInterface $dataSourceIntegration)
+    private function updateBackFillForDataSourceIntegration(DataSourceIntegrationInterface $dataSourceIntegration)
     {
         $isBackFillForce = $dataSourceIntegration->isBackFillForce();
         if ($isBackFillForce) {
