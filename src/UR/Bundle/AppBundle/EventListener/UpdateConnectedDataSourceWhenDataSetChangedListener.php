@@ -4,7 +4,7 @@ namespace UR\Bundle\AppBundle\EventListener;
 
 
 use Doctrine\ORM\Event\LifecycleEventArgs;
-use Symfony\Component\Config\Definition\Exception\Exception;
+use \Exception;
 use UR\Entity\Core\LinkedMapDataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;

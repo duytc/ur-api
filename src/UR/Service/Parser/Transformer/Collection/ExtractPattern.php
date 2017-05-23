@@ -3,7 +3,7 @@
 namespace UR\Service\Parser\Transformer\Collection;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Config\Definition\Exception\Exception;
+use \Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 

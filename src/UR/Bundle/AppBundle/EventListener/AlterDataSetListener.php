@@ -5,7 +5,7 @@ namespace UR\Bundle\AppBundle\EventListener;
 
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
-use Symfony\Component\Config\Definition\Exception\Exception;
+use \Exception;
 use UR\Model\Core\DataSetImportJob;
 use UR\Model\Core\DataSetInterface;
 use UR\Worker\Manager;

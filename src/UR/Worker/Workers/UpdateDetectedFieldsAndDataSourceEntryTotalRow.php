@@ -4,7 +4,7 @@ namespace UR\Worker\Workers;
 
 use Monolog\Logger;
 use stdClass;
-use Symfony\Component\Config\Definition\Exception\Exception;
+use Exception;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
 use UR\Model\Core\DataSourceEntryInterface;

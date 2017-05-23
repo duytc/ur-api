@@ -2,7 +2,7 @@
 
 namespace UR\Service\Parser\Transformer\Column;
 
-use Symfony\Component\Config\Definition\Exception\Exception;
+use \Exception;
 
 class NumberFormat extends AbstractCommonColumnTransform implements ColumnTransformerInterface
 {
