@@ -36,6 +36,7 @@ UR\Entity\Core\DataSourceIntegration:
         backFillStartDate:
             expose: true
             groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
+            type: DateTime<'Y-m-d'>
         backFillExecuted:
             expose: true
             groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
