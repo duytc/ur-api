@@ -9,6 +9,7 @@ use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Service\Import\ImportDataException;
 use UR\Service\Import\ImportService;
 
 class UpdateDetectedFieldsAndDataSourceEntryTotalRow
@@ -97,10 +98,16 @@ class UpdateDetectedFieldsAndDataSourceEntryTotalRow
         try {
             $dataSourceFile = $this->importService->getDataSourceFile($format, $path);
             $newFields = $this->importService->getNewFieldsFromFiles($dataSourceFile);
-            $detectedFields = $this->importService->detectFieldsForDataSource($newFields, $dataSource->getDetectedFields(), ImportService::ACTION_DELETE);
+            $detectedFields = $this->importService->detectFieldsForDataSource(
+                $newFields,
+                $dataSource->getDetectedFields(),
+                ImportService::ACTION_DELETE
+            );
 
             $dataSource->setDetectedFields($detectedFields);
             $this->dataSourceManager->save($dataSource);
+        } catch (ImportDataException $e) {
+            $this->logger->error(sprintf('Error occurred: %s', $e->getAlertCode()));
         } catch (Exception $exception) {
             $this->logger->error($exception->getMessage());
         }
