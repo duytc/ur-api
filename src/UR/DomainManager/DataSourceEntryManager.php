@@ -251,4 +251,12 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
         $importedFiles = $this->repository->getImportedFileByHash($dataSource, $hash);
         return is_array($importedFiles) && count($importedFiles) > 0;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByDataSource($dataSource, $limit = null, $offset = null)
+    {
+        return $this->repository->getDataSourceEntriesForDataSource($dataSource, $limit, $offset);
+    }
 }

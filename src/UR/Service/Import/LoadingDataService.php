@@ -91,6 +91,10 @@ class LoadingDataService
         foreach ($importHistories as $importHistory) {
             // replay augmentation
             $dataSourceEntry = $importHistory->getDataSourceEntry();
+
+            if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+                continue;
+            }
             foreach ($dataSourceEntry->getDataSource()->getConnectedDataSources() as $connectedDataSource) {
                 $this->doLoadDataFromEntryToDataBaseForAugmentation($connectedDataSource);
             }

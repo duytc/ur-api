@@ -223,4 +223,25 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
 
         return $qb->getQuery()->getOneOrNullResult();
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceEntriesForDataSource($dataSource, $limit, $offset)
+    {
+        $dataSourceId = $dataSource->getId();
+
+        $qb = $this->createQueryBuilder('dse')
+            ->where('dse.dataSource = :dataSourceId')
+            ->setParameter('dataSourceId', $dataSourceId, Type::INTEGER);
+
+        if (is_int($limit)) {
+            $qb->setMaxResults($limit);
+        }
+        if (is_int($offset)) {
+            $qb->setFirstResult($offset);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }

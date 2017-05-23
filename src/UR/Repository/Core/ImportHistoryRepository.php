@@ -146,6 +146,9 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         $conn = $this->_em->getConnection();
         /**@var ImportHistoryInterface $importHistory */
         foreach ($importHistories as $importHistory) {
+            if (!$importHistory instanceof ImportHistoryInterface) {
+                continue;
+            }
             $tableName = sprintf(Synchronizer::DATA_IMPORT_TABLE_NAME_PREFIX_TEMPLATE, $importHistory->getDataSet()->getId());
             $query = sprintf('DELETE FROM %s WHERE %s = ?', $conn->quoteIdentifier($tableName), $conn->quoteIdentifier('__import_id'));
             $stmt = $conn->prepare($query);

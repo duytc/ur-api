@@ -106,6 +106,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      *
      * @return mixed
      * @throws NotFoundHttpException when the resource does not exist
+     * @throws PublicSimpleException
      */
     public function downloadFileAction($id)
     {
@@ -113,6 +114,10 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
 
         /**@var DataSourceEntryInterface $dataSourceEntry */
         $dataSourceEntry = $dataSourceEntryManager->find($id);
+
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+            throw new PublicSimpleException('Can not download entry file');
+        }
 
         $filePath = $this->checkFileExist($dataSourceEntry);
         $response = new Response();
