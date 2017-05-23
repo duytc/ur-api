@@ -187,6 +187,18 @@ class ReportViewFormatter implements ReportViewFormatterInterface
             });
         }
 
+        if (!is_array($dimensions)) {
+            $dimensions = [];
+        }
+
+        if (!is_array($metrics)) {
+            $metrics = [];
+        }
+
+        if (!is_array($columnsPositionFormatFields)) {
+            $columnsPositionFormatFields = [];
+        }
+
         $dimensions = array_diff($dimensions, $columnsPositionFormatFields);
         $metrics = array_diff($metrics, array_flip($columnsPositionFormatFields));
 
@@ -218,8 +230,8 @@ class ReportViewFormatter implements ReportViewFormatterInterface
         $smartColumns = [];
 
         $reportViewAlias = 'report_view_alias';
-        if (array_key_exists($reportViewAlias, $columns)) {
-            $smartColumns[$reportViewAlias] = $columns[$reportViewAlias];
+        if ($params->isMultiView()) {
+            $smartColumns[$reportViewAlias] = "Report View Alias";
             if ($params->getUserDefinedDimensions() != null && array_key_exists($reportViewAlias, $params->getUserDefinedDimensions())) {
                 unset($params->getUserDefinedDimensions()[$reportViewAlias]);
             }

@@ -540,6 +540,8 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $paginationParams)
     {
         $param = new Params();
+        $param->setDimensions($reportView->getDimensions());
+        $param->setMetrics($reportView->getMetrics());
 
         /*
          * VERY IMPORTANT: build report param same as above buildFromArray() function
