@@ -3,7 +3,7 @@
 namespace UR\Form\Behaviors;
 
 
-use Symfony\Component\Config\Definition\Exception\Exception;
+use \Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\FieldType;

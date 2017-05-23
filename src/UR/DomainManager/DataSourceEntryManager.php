@@ -5,7 +5,7 @@ namespace UR\DomainManager;
 use DateTime;
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
-use Symfony\Component\Config\Definition\Exception\Exception;
+use \Exception;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use UR\Behaviors\FileUtilsTrait;
 use UR\Entity\Core\DataSourceEntry;
