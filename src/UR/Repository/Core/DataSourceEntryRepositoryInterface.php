@@ -73,4 +73,12 @@ interface DataSourceEntryRepositoryInterface extends ObjectRepository
      * @return DataSourceEntryInterface|null
      */
     public function getLatestDataSourceEntryForDataSource(DataSourceInterface $dataSource);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param $limit
+     * @param $offset
+     * @return mixed
+     */
+    public function getDataSourceEntriesForDataSource($dataSource, $limit, $offset);
 }

@@ -10,10 +10,12 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Service\Parser\Transformer\Column\NumberFormat;
 use UR\Service\Parser\Transformer\TransformerFactory;
+use UR\Service\PublicSimpleException;
 
 /**
  * @Rest\RouteResource("importhistory")
@@ -151,6 +153,7 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
      *
      * @return mixed
      * @throws NotFoundHttpException when the resource does not exist
+     * @throws PublicSimpleException
      */
     public function undoImportedHistoryAction($id)
     {
@@ -199,7 +202,11 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
         $connDataSources = $importHistory->getDataSet()->getConnectedDataSources();
         $connDataSource = null;
         foreach ($connDataSources as $item) {
-            if ($item->getDataSource()->getId() === $importHistory->getDataSourceEntry()->getDataSource()->getId()) {
+            $dataSourceEntry = $importHistory->getDataSourceEntry();
+            if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+                break;
+            }
+            if ($item->getDataSource()->getId() === $dataSourceEntry->getDataSource()->getId()) {
                 $connDataSource = $item;
                 break;
             }

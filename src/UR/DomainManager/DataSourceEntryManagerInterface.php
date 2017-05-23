@@ -36,4 +36,12 @@ interface DataSourceEntryManagerInterface extends ManagerInterface
      * @return mixed
      */
     public function getDataSourceEntryToday(DataSourceInterface $dataSource, DateTime $dsNextTime);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param null $limit
+     * @param null $offset
+     * @return mixed
+     */
+    public function findByDataSource($dataSource, $limit = null, $offset = null);
 }
