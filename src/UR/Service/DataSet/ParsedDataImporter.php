@@ -3,13 +3,10 @@ namespace UR\Service\DataSet;
 
 use DateTime;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Comparator;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use UR\Bundle\ApiBundle\Behaviors\UpdateDataSetTotalRowTrait;
-use UR\Entity\Core\DataSet;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DTO\Collection;
@@ -101,6 +98,7 @@ class ParsedDataImporter
             $isOverwriteData = $connectedDataSource->getDataSet()->getAllowOverwriteExistingData();
             $insert_values = array();
             $columns[DataSetInterface::DATA_SOURCE_ID_COLUMN] = DataSetInterface::DATA_SOURCE_ID_COLUMN;
+            $columns[DataSetInterface::CONNECTED_DATA_SOURCE_ID_COLUMN] = DataSetInterface::CONNECTED_DATA_SOURCE_ID_COLUMN;
             $columns[DataSetInterface::IMPORT_ID_COLUMN] = DataSetInterface::IMPORT_ID_COLUMN;
             $columns[DataSetInterface::UNIQUE_ID_COLUMN] = DataSetInterface::UNIQUE_ID_COLUMN;
             $question_marks = [];
@@ -115,6 +113,7 @@ class ParsedDataImporter
                 $uniqueKeys = array_intersect_key($row, $dimensions);
                 $uniqueId = md5(implode(":", $uniqueKeys));
                 $row[DataSetInterface::DATA_SOURCE_ID_COLUMN] = $connectedDataSource->getDataSource()->getId();
+                $row[DataSetInterface::CONNECTED_DATA_SOURCE_ID_COLUMN] = $connectedDataSource->getId();
                 $row[DataSetInterface::IMPORT_ID_COLUMN] = $importId;
                 $row[DataSetInterface::UNIQUE_ID_COLUMN] = $uniqueId;
                 //update
@@ -156,7 +155,10 @@ class ParsedDataImporter
             $this->lockingDatabaseTable->unLockTable();
 
             //update total rows of data set
-            $this->updateTotalRow($connectedDataSource->getDataSet()->getId());
+            $this->updateDataSetTotalRow($connectedDataSource->getDataSet()->getId());
+
+            //update total rows of connected data source
+            $this->updateConnectedDataSourceTotalRow($connectedDataSource->getDataSet());
 
             return true;
         } catch (Exception $exception) {

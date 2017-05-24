@@ -16,6 +16,7 @@ class DataSet implements DataSetInterface
     protected $allowOverwriteExistingData;
     protected $_actions = [];
     protected $lastActivity;
+    protected $jobExpirationDate;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -299,6 +300,23 @@ class DataSet implements DataSetInterface
     public function setLastActivity($lastActivity)
     {
         $this->lastActivity = $lastActivity;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getJobExpirationDate()
+    {
+        return $this->jobExpirationDate;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setJobExpirationDate($jobExpirationDate)
+    {
+        $this->jobExpirationDate = $jobExpirationDate;
         return $this;
     }
 }

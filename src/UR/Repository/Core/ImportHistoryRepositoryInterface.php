@@ -5,6 +5,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
@@ -66,4 +67,13 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function deleteImportedData($importHistories);
+
+    public function deleteImportHistoryByDataSet(DataSetInterface $dataSet);
+
+    /**
+     * @param $importHistories
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return mixed
+     */
+    public function deletePreviousImports($importHistories, ConnectedDataSourceInterface $connectedDataSource);
 }

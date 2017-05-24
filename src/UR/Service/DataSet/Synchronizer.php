@@ -84,6 +84,7 @@ class Synchronizer
         $dataSetImportTable->addColumn(DataSetInterface::ID_COLUMN, Type::INTEGER, array('autoincrement' => true, 'unsigned' => true));
         $dataSetImportTable->setPrimaryKey(array(DataSetInterface::ID_COLUMN));
         $dataSetImportTable->addColumn(DataSetInterface::DATA_SOURCE_ID_COLUMN, Type::INTEGER, array('unsigned' => true, 'notnull' => true));
+        $dataSetImportTable->addColumn(DataSetInterface::CONNECTED_DATA_SOURCE_ID_COLUMN, Type::INTEGER, array('unsigned' => true, 'notnull' => true));
         $dataSetImportTable->addColumn(DataSetInterface::IMPORT_ID_COLUMN, Type::INTEGER, array('unsigned' => true, 'notnull' => true));
         $dataSetImportTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, Type::STRING, array('notnull' => true, "length" => Synchronizer::FIELD_LENGTH_COLUMN_UNIQUE_ID, "fixed" => true)); // CHAR instead of VARCHAR
         $dataSetImportTable->addColumn(DataSetInterface::OVERWRITE_DATE, FieldType::DATETIME, array('notnull' => false, 'default' => null));

@@ -63,7 +63,7 @@ class AlterDataSetListener
         if (array_key_exists('rename', $actions)) {
             $renameFields = $actions['rename'];
         }
-        
+
         $newDimensions = [];
         $newMetrics = [];
         $updateDimensions = [];
@@ -132,6 +132,7 @@ class AlterDataSetListener
             // create job to alter data set table
             $dataSetImportJob = DataSetImportJob::createEmptyDataSetImportJob(
                 $dataSet,
+                null,
                 sprintf('alter data set "%s"', $dataSet->getName()),
                 DataSetImportJob::JOB_TYPE_ALTER,
                 $jobData);

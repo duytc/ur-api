@@ -9,6 +9,7 @@ interface DataSetInterface extends ModelInterface
 {
     const ID_COLUMN = '__id';
     const DATA_SOURCE_ID_COLUMN = '__data_source_id';
+    const CONNECTED_DATA_SOURCE_ID_COLUMN = '__connected_data_source_id';
     const IMPORT_ID_COLUMN = '__import_id';
     const UNIQUE_ID_COLUMN = '__unique_id';
     const OVERWRITE_DATE = '__overwrite_date';
@@ -150,4 +151,15 @@ interface DataSetInterface extends ModelInterface
      * @return self
      */
     public function setLastActivity($lastActivity);
+
+    /**
+     * @return mixed
+     */
+    public function getJobExpirationDate();
+
+    /**
+     * @param mixed $jobExpirationDate
+     * @return self
+     */
+    public function setJobExpirationDate($jobExpirationDate);
 }

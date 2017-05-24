@@ -64,7 +64,7 @@ class TruncateDataSetWorker
         }
 
         $importHistories = $this->importHistoryManager->getImportedHistoryByDataSet($dataSet);
-        $this->loadingDataService->undoImport($importHistories);
+        $this->loadingDataService->reloadDataAugmentationWhenUndo($importHistories);
 
         return true;
     }

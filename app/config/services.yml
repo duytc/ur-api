@@ -166,6 +166,8 @@ services:
             - @logger
             - %ur.worker.delay_time_before_job_become_ready%
             - @ur.domain_manager.data_set_import_job
+            - @ur.domain_manager.import_history
+            - @ur.service.loading_data_service
 
     ur.service.alert.process_alert:
         class: UR\Service\Alert\ProcessAlert
@@ -244,6 +246,7 @@ services:
             - @ur.domain_manager.data_set_import_job
             - @ur.repository.import_history
             - @ur.repository.linked_map_data_set
+            - @ur.domain_manager.data_set
 
     ur.service.command:
         class: UR\Service\Command\CommandService

@@ -127,9 +127,9 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     /**
      * @inheritdoc
      */
-    public function deletePreviousImports($importHistories)
+    public function deletePreviousImports($importHistories, ConnectedDataSourceInterface $connectedDataSource)
     {
-        $this->repository->deleteImportedData($importHistories);
+        $this->repository->deletePreviousImports($importHistories, $connectedDataSource);
     }
 
     /**
@@ -142,5 +142,19 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
         $importHistoryEntity->setDataSet($connectedDataSource->getDataSet());
         $this->save($importHistoryEntity);
         return $importHistoryEntity;
+    }
+
+    public function deleteImportHistoryByDataSet(DataSetInterface $dataSet)
+    {
+        return $this->repository->deleteImportHistoryByDataSet($dataSet);
+    }
+
+    /**
+     * @param ImportHistoryInterface[] $importHistories
+     * @return mixed
+     */
+    public function deleteImportedData($importHistories)
+    {
+        return $this->repository->deleteImportedData($importHistories);
     }
 }

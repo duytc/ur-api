@@ -90,16 +90,4 @@ class DataSetImportJobManager implements DataSetImportJobManagerInterface
     {
         return $this->repository->getExecuteImportJobByJobId($jobId);
     }
-
-    /**
-     * @inheritdoc
-     */
-    public function createNewDataSetImportJob(DataSetInterface $dataSet, $jobName, array $jobData)
-    {
-        $dataSetImportJob = DataSetImportJob::createEmptyDataSetImportJob($dataSet, $jobName, DataSetImportJob::JOB_TYPE_IMPORT, $jobData);
-
-        $this->save($dataSetImportJob);
-
-        return $dataSetImportJob;
-    }
 }

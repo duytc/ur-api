@@ -3,8 +3,12 @@
 namespace UR\Service\Parser\Filter;
 
 
+use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Model\Core\AlertInterface;
 use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
+use UR\Service\DataSet\FieldType;
+use UR\Service\Import\ImportDataException;
+use UR\Service\Parser\ReformatDataService;
 
 class NumberFilter extends AbstractFilter implements ColumnFilterInterface
 {
@@ -42,6 +46,8 @@ class NumberFilter extends AbstractFilter implements ColumnFilterInterface
     /** @var string|array due to comparisonType */
     protected $comparisonValue;
 
+    private $reformatDataService;
+
     /**
      * NumberFilter constructor.
      * @param $field
@@ -53,6 +59,7 @@ class NumberFilter extends AbstractFilter implements ColumnFilterInterface
         parent::__construct($field);
         $this->comparisonType = $comparisonType;
         $this->comparisonValue = $comparisonValue;
+        $this->reformatDataService = new ReformatDataService();
     }
 
     /**
@@ -68,12 +75,10 @@ class NumberFilter extends AbstractFilter implements ColumnFilterInterface
             return $value == null;
         }
 
+        $value = $this->reformatDataService->reformatData($value, FieldType::NUMBER);
+
         if ($value === null || $value === "") {
             return false;
-        }
-
-        if (!is_numeric($value)) {
-            return AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_NUMBER;
         }
 
         if (self::COMPARISON_TYPE_IN === $this->comparisonType) {

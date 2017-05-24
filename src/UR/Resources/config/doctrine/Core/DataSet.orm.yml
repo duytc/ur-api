@@ -36,6 +36,9 @@ UR\Entity\Core\DataSet:
             options:
                 default: 0
             nullable: false
+        jobExpirationDate:
+            type: datetime
+            nullable: true
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

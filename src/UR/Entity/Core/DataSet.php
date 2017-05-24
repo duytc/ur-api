@@ -17,6 +17,7 @@ class DataSet extends DataSetModel
     protected $totalRow;
     protected $allowOverwriteExistingData;
     protected $lastActivity;
+    protected $jobExpirationDate;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -30,6 +31,8 @@ class DataSet extends DataSetModel
      * @var LinkedMapDataSetInterface[]
      */
     protected $linkedMapDataSets;
+
+    protected $dataSetImportJobs;
 
     /**
      * @inheritdoc

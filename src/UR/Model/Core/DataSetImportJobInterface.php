@@ -6,6 +6,9 @@ use UR\Model\ModelInterface;
 
 interface DataSetImportJobInterface extends ModelInterface
 {
+    const CONNECTED_DATA_SOURCE_ID = 'connectedDataSourceId';
+    const DATA_SOURCE_ENTRY_ID = 'dataSourceEntryIds';
+
     /**
      * @return int
      */
@@ -89,4 +92,15 @@ interface DataSetImportJobInterface extends ModelInterface
      * @return self
      */
     public function setWaitFor($waitFor);
+
+    /**
+     * @return ConnectedDataSourceInterface
+     */
+    public function getConnectedDataSource();
+
+    /**
+     * @param mixed $connectedDataSource
+     * @return self
+     */
+    public function setConnectedDataSource($connectedDataSource);
 }

@@ -47,6 +47,11 @@ UR\Entity\Core\DataSource:
             gedmo:
                 timestampable:
                     on: create
+        numOfFiles:
+            type: integer
+            options:
+                default: 0
+            nullable: false
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

@@ -171,4 +171,15 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setLastActivity($lastActivity);
+
+    /**
+     * @return mixed
+     */
+    public function getNumOfFiles();
+
+    /**
+     * @param mixed $numOfFiles
+     * @return self
+     */
+    public function setNumOfFiles($numOfFiles);
 }

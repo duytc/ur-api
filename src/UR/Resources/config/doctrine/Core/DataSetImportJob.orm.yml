@@ -31,3 +31,6 @@ UR\Entity\Core\DataSetImportJob:
     manyToOne:
         dataSet:
             targetEntity: UR\Entity\Core\DataSet
+        connectedDataSource:
+            targetEntity: UR\Entity\Core\ConnectedDataSource
+            nullable: true

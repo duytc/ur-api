@@ -6,6 +6,7 @@ use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
 use UR\Bundle\ApiBundle\Behaviors\UpdateDataSetTotalRowTrait;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
@@ -108,7 +109,11 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
      */
     public function getImportedHistoryByDataSet(DataSetInterface $dataSet)
     {
-        $qb = $this->createQueryBuilder('ih')->where('ih.dataSet=:dataSet')->setParameter('dataSet', $dataSet);
+        $qb = $this->createQueryBuilder('ih')
+            ->distinct()
+            ->where('ih.dataSet=:dataSet')
+            ->setParameter('dataSet', $dataSet);
+
         return $qb->getQuery()->getResult();
     }
 
@@ -157,7 +162,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
             $this->_em->remove($importHistory);
 
             //update total rows of data set
-            $this->updateTotalRow($importHistory->getDataSet()->getId());
+            $this->updateDataSetTotalRow($importHistory->getDataSet()->getId());
         }
 
         $this->_em->flush();
@@ -270,5 +275,34 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         }
 
         return $qb;
+    }
+
+    public function deleteImportHistoryByDataSet(DataSetInterface $dataSet)
+    {
+        $conn = $this->_em->getConnection();
+        $query = sprintf('DELETE FROM core_import_history WHERE data_set_id = ?');
+        $stmt = $conn->prepare($query);
+        $stmt->bindValue(1, $dataSet->getId());
+        return $stmt->execute();
+    }
+
+    public function deletePreviousImports($importHistories, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $conn = $this->_em->getConnection();
+        /**@var ImportHistoryInterface $importHistory */
+        foreach ($importHistories as $importHistory) {
+            $tableName = sprintf(Synchronizer::DATA_IMPORT_TABLE_NAME_PREFIX_TEMPLATE, $importHistory->getDataSet()->getId());
+            $query = sprintf('DELETE FROM %s WHERE %s = ?', $conn->quoteIdentifier($tableName), $conn->quoteIdentifier('__import_id'));
+            $stmt = $conn->prepare($query);
+            $stmt->bindValue(1, $importHistory->getId());
+            $stmt->execute();
+            $this->_em->remove($importHistory);
+
+            //update total rows of data set
+            $this->updateDataSetTotalRow($importHistory->getDataSet()->getId());
+        }
+
+        $this->_em->flush();
+        $conn->close();
     }
 }

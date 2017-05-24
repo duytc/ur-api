@@ -105,6 +105,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         $newConnectedDataSource = clone $connectedDataSource;
         $newConnectedDataSource->setId(null);
         $newConnectedDataSource->setReplayData(false); //explicitly set to FALSE to avoid automatically inserting new data
+        $newConnectedDataSource->setTotalRow(0);
 
         if (empty($name)) {
             $name = $connectedDataSource->getDataSource()->getName();
@@ -147,6 +148,9 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     {
         /** @var ConnectedDataSourceInterface $connectedDataSource */
         $connectedDataSource = $this->one($id);
+        $connectedDataSourceManager = $this->get('ur.domain_manager.connected_data_source');
+        $connectedDataSource->setJobExpirationDate(new \DateTime());
+        $connectedDataSourceManager->save($connectedDataSource);
 
         $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
         $entryIds = array_map(function (DataSourceEntryInterface $entry) {

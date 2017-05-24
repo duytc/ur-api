@@ -5,6 +5,7 @@ namespace UR\Model\Core;
 class DataSetImportJob implements DataSetImportJobInterface
 {
     const JOB_TYPE_IMPORT = 'import';
+    const JOB_TYPE_TRUNCATE = 'truncate';
     const JOB_TYPE_ALTER = 'alter';
     /**
      * @var int
@@ -30,6 +31,8 @@ class DataSetImportJob implements DataSetImportJobInterface
     protected $waitFor;
 
     protected $createdDate;
+
+    protected $connectedDataSource;
 
     /**
      * @inheritdoc
@@ -131,18 +134,20 @@ class DataSetImportJob implements DataSetImportJobInterface
 
     /**
      * @param DataSetInterface $dataSet
+     * @param ConnectedDataSourceInterface|null $connectedDataSource
      * @param $jobName
      * @param $jobType
      * @param array $jobData
      * @param $waitFor
      * @return DataSetImportJobInterface
      */
-    public static function createEmptyDataSetImportJob(DataSetInterface $dataSet, $jobName, $jobType, array $jobData, $waitFor = null)
+    public static function createEmptyDataSetImportJob(DataSetInterface $dataSet, $connectedDataSource, $jobName, $jobType, array $jobData, $waitFor = null)
     {
         $jobId = bin2hex(random_bytes(20));
         $dataSetImportJob = (new \UR\Entity\Core\DataSetImportJob())
             ->setJobName($jobName)
             ->setDataSet($dataSet)
+            ->setConnectedDataSource($connectedDataSource)
             ->setJobType($jobType)
             ->setJobData($jobData)
             ->setWaitFor($waitFor)
@@ -182,6 +187,23 @@ class DataSetImportJob implements DataSetImportJobInterface
     public function setWaitFor($waitFor)
     {
         $this->waitFor = $waitFor;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getConnectedDataSource()
+    {
+        return $this->connectedDataSource;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setConnectedDataSource($connectedDataSource)
+    {
+        $this->connectedDataSource = $connectedDataSource;
         return $this;
     }
 }

@@ -19,12 +19,4 @@ interface DataSetImportJobManagerInterface extends ManagerInterface
      * @return mixed
      */
     public function getExecuteImportJobByJobId($jobId);
-
-    /**
-     * @param DataSetInterface $dataSet
-     * @param string $jobName
-     * @param array $jobData
-     * @return DataSetImportJobInterface
-     */
-    public function createNewDataSetImportJob(DataSetInterface $dataSet, $jobName, array $jobData);
 }

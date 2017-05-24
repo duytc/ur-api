@@ -145,43 +145,23 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         $dataSet = $this->one($id);
         $connectedDataSources = $dataSet->getConnectedDataSources();
         $loadingDataService = $this->get('ur.service.loading_data_service');
+        $dataSet->setJobExpirationDate(new \DateTime());
+        $dataSetManager = $this->get('ur.domain_manager.data_set');
+        $dataSetManager->save($dataSet);
 
-        $entryIds = [];
-
+        /* get all entries from connected data sources */
         foreach ($connectedDataSources as $connectedDataSource) {
             if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
                 continue;
             }
 
             $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
-            $entryIds = array_merge($entryIds, array_map(function (DataSourceEntryInterface $entry) {
+            $entryIds = array_map(function (DataSourceEntryInterface $entry) {
                 return $entry->getId();
-            }, $entries->toArray()));
-        }
+            }, $entries->toArray());
+            sort($entryIds);
 
-        sort($entryIds);
-
-        $flags = [];
-        foreach ($connectedDataSources as $connectedDataSource) {
-            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-                continue;
-            }
-            $dataSource = $connectedDataSource->getDataSource();
-            if (!$dataSource instanceof DataSourceInterface) {
-                continue;
-            }
-            foreach ($dataSource->getDataSourceEntries() as $dataSourceEntry) {
-                if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
-                    continue;
-                }
-                $flags[$dataSourceEntry->getId()] = $connectedDataSource;
-            }
-
-        }
-
-        foreach ($entryIds as $entryId) {
-            $connectedDataSource = $flags[$entryId];
-            $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, [$entryId]);
+            $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
         }
 
         /**
@@ -190,7 +170,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         $importJobs = $dataSet->getDataSetImportJobs();
         $pendingLoads = 0;
         foreach ($importJobs as $importJob) {
-            if($importJob->getJobType() !== DataSetImportJob::JOB_TYPE_IMPORT) {
+            if ($importJob->getJobType() !== DataSetImportJob::JOB_TYPE_IMPORT) {
                 continue;
             }
 
@@ -405,7 +385,32 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      */
     public function postTruncateAction($id)
     {
-        $this->get('ur.worker.manager')->truncateDataSet($id);
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $this->one($id);
+        $jobData = [
+            'dataSetId' => $dataSet->getId()
+        ];
+
+        $dataSet->setJobExpirationDate(new \DateTime());
+        $dataSetManager = $this->get('ur.domain_manager.data_set');
+        $dataSetManager->save($dataSet);
+
+        $dataSetImportJobEntity = DataSetImportJob::createEmptyDataSetImportJob(
+            $dataSet,
+            null,
+            sprintf('truncate data set "%s"', $dataSet->getName()),
+            DataSetImportJob::JOB_TYPE_TRUNCATE,
+            $jobData
+        );
+
+        $dataSetImportJobManager = $this->get('ur.domain_manager.data_set_import_job');
+        $dataSetImportJobManager->save($dataSetImportJobEntity);
+        $this->get('ur.worker.manager')->truncateDataSetTable($id, $dataSetImportJobEntity->getJobId());
+        $loadingDataService = $this->get('ur.service.loading_data_service');
+
+        foreach ($dataSet->getConnectedDataSources() as $connectedDataSource) {
+            $loadingDataService->doLoadDataFromEntryToDataBaseForAugmentation($connectedDataSource);
+        }
 
         return true;
     }

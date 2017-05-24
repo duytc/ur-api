@@ -12,6 +12,7 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $requires;
     protected $alertSetting;
     protected $lastActivity;
+    protected $jobExpirationDate;
     /*
      * this variable to know which linked type, currently we only have augmentation linked type
      * re import data base on linked type when connected data source has augmentation transform
@@ -30,6 +31,16 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
      * @var LinkedMapDataSetInterface[]
      */
     protected $linkedMapDataSets;
+
+    /**
+     * @var DataSetImportJobInterface[]
+     */
+    protected $dataSetImportJobs;
+
+    /**
+     * @var int
+     */
+    protected $totalRow;
 
     /**
      * @return boolean
@@ -61,6 +72,7 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
 
     public function __construct()
     {
+        $this->totalRow = 0;
     }
 
     /**
@@ -291,10 +303,61 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     }
 
     /**
-     * @param mixed $_linkedType
+     * @inheritdoc
      */
     public function setLinkedType($_linkedType)
     {
         $this->__linkedType = $_linkedType;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getTotalRow()
+    {
+        return $this->totalRow;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setTotalRow(int $totalRow)
+    {
+        $this->totalRow = $totalRow;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getJobExpirationDate()
+    {
+        return $this->jobExpirationDate;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setJobExpirationDate($jobExpirationDate)
+    {
+        $this->jobExpirationDate = $jobExpirationDate;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSetImportJobs(): array
+    {
+        return $this->dataSetImportJobs;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setDataSetImportJobs(array $dataSetImportJobs)
+    {
+        $this->dataSetImportJobs = $dataSetImportJobs;
+        return $this;
     }
 }

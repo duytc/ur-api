@@ -31,3 +31,6 @@ UR\Entity\Core\DataSet:
         totalRow:
             expose: true
             groups: [dataset.summary]
+        dataSetImportJobs:
+            expose: true
+            groups: [dataset.detail, dataset.summary, dataset.edit]

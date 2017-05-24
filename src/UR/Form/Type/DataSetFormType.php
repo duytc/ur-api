@@ -42,10 +42,13 @@ class DataSetFormType extends AbstractRoleSpecificFormType
             ->add('metrics')
             ->add('allowOverwriteExistingData')
             ->add('connectedDataSources', CollectionType::class, array(
-//                'mapped' => true,
                 'type' => new ConnectedDataSourceFormType(),
                 'allow_add' => true,
-//                'by_reference' => false,
+                'allow_delete' => true,
+            ))
+            ->add('dataSetImportJobs', CollectionType::class, array(
+                'mapped' => false,
+                'allow_add' => true,
                 'allow_delete' => true,
             ))
             ->add('actions', null, array('mapped' => false));
@@ -83,7 +86,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
 
                 $this->validateDimensions($dimensions);
 
-                if (!$this->validateMetrics($metrics));
+                if (!$this->validateMetrics($metrics)) ;
 
                 if (!$this->validateDimensionsMetricsDuplication($dimensions, $metrics)) {
                     $form->get('metrics')->addError(new FormError('dimensions and metrics should be array and their names should not be the same'));

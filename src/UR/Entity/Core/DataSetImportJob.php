@@ -10,6 +10,7 @@ class DataSetImportJob extends DataSetImportJobModel
 {
     protected $id;
     protected $dataSet;
+    protected $connectedDataSource;
     protected $jobId;
     protected $jobName;
     protected $jobData;

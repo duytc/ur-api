@@ -2,6 +2,7 @@
 
 namespace UR\Repository\Core;
 
+use Blameable\Fixture\Document\Type;
 use Doctrine\ORM\EntityRepository;
 
 class DataSetImportJobRepository extends EntityRepository implements DataSetImportJobRepositoryInterface
@@ -27,8 +28,8 @@ class DataSetImportJobRepository extends EntityRepository implements DataSetImpo
     public function getExecuteImportJobByJobId($jobId)
     {
         $qb = $this->createQueryBuilder('dij')
-            ->where('dij.job=:job')
-            ->setParameter('job', $jobId);
+            ->where('dij.jobId=:jobId')
+            ->setParameter('jobId', $jobId);
 
         return $qb->getQuery()->getSingleResult();
     }

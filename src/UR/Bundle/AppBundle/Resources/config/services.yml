@@ -51,3 +51,11 @@ services:
             - { name: doctrine.event_listener, event: postPersist }
             - { name: doctrine.event_listener, event: postRemove }
             - { name: doctrine.event_listener, event: postFlush }
+
+    ur_app.event_listener.update_num_of_files_on_data_source_listener:
+        class: UR\Bundle\AppBundle\EventListener\UpdateNumOfFileWhenDataSourceEntryInsertedOrDeletedListener
+        arguments:
+            - @service_container
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: preRemove }

@@ -5,17 +5,15 @@ namespace UR\Bundle\AppBundle\Command;
 
 use Symfony\Bridge\Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use \Exception;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\DataSourceEntryManagerInterface;
-use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
-use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\StringUtilTrait;
 
-class MigrateTotalRowDataSourceEntryCommand extends ContainerAwareCommand
+class MigrateNumOfFileDataSourceCommand extends ContainerAwareCommand
 {
     use StringUtilTrait;
 
@@ -27,12 +25,7 @@ class MigrateTotalRowDataSourceEntryCommand extends ContainerAwareCommand
     /**
      * @var DataSourceEntryManagerInterface
      */
-    private $dataSourceEntryManager;
-
-    /**
-     * @var DataSourceFileFactory
-     */
-    private $dataSourceFileFactory;
+    private $dataSourceManager;
 
     /**
      * @inheritdoc
@@ -40,8 +33,8 @@ class MigrateTotalRowDataSourceEntryCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('ur:migrate:data-source-entry:total-row')
-            ->setDescription('Migrate total row for data source entry');
+            ->setName('ur:migrate:data-source:num-of-file')
+            ->setDescription('Migrate num of file for data source');
     }
 
     /**
@@ -52,53 +45,50 @@ class MigrateTotalRowDataSourceEntryCommand extends ContainerAwareCommand
         /** @var ContainerInterface $container */
         $container = $this->getContainer();
         $this->logger = $container->get('logger');
-        $this->dataSourceEntryManager = $container->get('ur.domain_manager.data_source_entry');
-        $this->dataSourceFileFactory = $container->get('ur.service.file_factory');
+        $this->dataSourceManager = $container->get('ur.domain_manager.data_source');
 
         //get all data source entry
-        $dataSourceEntries = $this->dataSourceEntryManager->all();
+        $dataSources = $this->dataSourceManager->all();
 
-        $output->writeln(sprintf('migrating %d data source entry total row', count($dataSourceEntries)));
+        $output->writeln(sprintf('migrating %d data source num of file', count($dataSources)));
 
         // migrate connected data source multi date transforms
-        $migratedAlertsCount = $this->migrateEntryTotalRow($output, $dataSourceEntries);
+        $migratedAlertsCount = $this->migrateDataSourceNumOfFile($output, $dataSources);
 
-        $output->writeln(sprintf('command run successfully: %d data source entry.', $migratedAlertsCount));
+        $output->writeln(sprintf('command run successfully: %d data source.', $migratedAlertsCount));
     }
 
     /**
      * update total row
      *
      * @param OutputInterface $output
-     * @param array|DataSourceEntryInterface[] $dataSourceEntries
+     * @param array|DataSourceInterface[] $dataSources
      * @return int migrated integrations count
      */
-    private function migrateEntryTotalRow(OutputInterface $output, array $dataSourceEntries)
+    private function migrateDataSourceNumOfFile(OutputInterface $output, array $dataSources)
     {
         $migratedCount = 0;
 
-        foreach ($dataSourceEntries as $dataSourceEntry) {
+        foreach ($dataSources as $dataSource) {
             /*
              * from: 0
              */
-            $totalRow = $dataSourceEntry->getTotalRow();
+            $numOfFile = $dataSource->getNumOfFiles();
 
             /*
              *  migrate to update total row of file
              */
 
-            if ($totalRow < 1) {
+            if ($numOfFile < 1) {
                 try {
-                    $dataSource = $dataSourceEntry->getDataSource();
 
                     if (!$dataSource instanceof DataSourceInterface) {
                         continue;
                     }
 
-                    $dataSourceFile = $this->dataSourceFileFactory->getFile($dataSource->getFormat(), $dataSourceEntry->getPath());
-                    $totalRow = $dataSourceFile->getTotalRows();
-                    $dataSourceEntry->setTotalRow($totalRow);
-                    $this->dataSourceEntryManager->save($dataSourceEntry);
+                    $numOfFile = count($dataSource->getDataSourceEntries());
+                    $dataSource->setNumOfFiles($numOfFile);
+                    $this->dataSourceManager->save($dataSource);
                     $migratedCount++;
                 } catch (Exception $exception) {
                     $this->logger->error($exception->getMessage());

@@ -8,7 +8,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use UR\Bundle\ApiBundle\Behaviors\UpdateDataSetTotalRowTrait;
 use UR\Model\Core\DataSetInterface;
 
-class RefreshDataSetsTotalRowCommand extends ContainerAwareCommand
+class RefreshConnectedDataSourcesTotalRowCommand extends ContainerAwareCommand
 {
     use UpdateDataSetTotalRowTrait;
 
@@ -22,8 +22,8 @@ class RefreshDataSetsTotalRowCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('ur:data-set:refresh-total-row')
-            ->setDescription('Refresh total row for all data sets');
+            ->setName('ur:connected-data-source:refresh-total-row')
+            ->setDescription('Refresh total row for all connected data source');
     }
 
     /**
@@ -35,16 +35,16 @@ class RefreshDataSetsTotalRowCommand extends ContainerAwareCommand
 
         $dataSets = $dataSetManager->all();
         $count = 0;
-        foreach($dataSets as $dataSet) {
+        foreach ($dataSets as $dataSet) {
             if (!$dataSet instanceof DataSetInterface) {
                 continue;
             }
 
-            $this->updateDataSetTotalRow($dataSet->getId());
+            $this->updateConnectedDataSourceTotalRow($dataSet);
             $count++;
         }
 
-        $output->writeln(sprintf('%d data sets get updated', $count));
+        $output->writeln(sprintf('command run successfully', $count));
     }
 
     protected function getEntityManager()

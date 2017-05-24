@@ -86,7 +86,16 @@ class LoadingDataFromFileToDataImportTable
         try {
             /**@var DataSetImportJobInterface $exeCuteJob */
             $exeCuteJob = $this->dataSetImportJobManager->getExecuteImportJobByDataSetId($dataSetId);
+            $dataSetExpirationDate = $exeCuteJob->getDataSet()->getJobExpirationDate();
+            $connectedDataSourceExpirationDate = $exeCuteJob->getConnectedDataSource()->getJobExpirationDate();
 
+            if (($exeCuteJob->getCreatedDate() < $dataSetExpirationDate || $exeCuteJob->getCreatedDate() < $connectedDataSourceExpirationDate)
+                && $importJobId == $exeCuteJob->getJobId()
+            ) {
+                $this->logger->notice(sprintf('Ignore job (ID: %s) because of expiration', $job->getId()));
+                $this->dataSetImportJobManager->delete($exeCuteJob);
+                return;
+            }
         } catch (\Exception $exception) {
             /*job not found*/
             return;
@@ -119,6 +128,7 @@ class LoadingDataFromFileToDataImportTable
         $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
         if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
             $this->logger->warning(sprintf('Data Source Entry %d not found (may be deleted before)', $dataSourceEntryId));
+            $this->dataSetImportJobManager->delete($exeCuteJob);
             return;
         }
 

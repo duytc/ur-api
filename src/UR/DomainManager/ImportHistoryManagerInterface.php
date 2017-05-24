@@ -49,9 +49,18 @@ interface ImportHistoryManagerInterface extends ManagerInterface
 
     /**
      * @param ImportHistoryInterface[] $importHistories
+     * @param ConnectedDataSourceInterface $connectedDataSource
      * @return mixed
      */
-    public function deletePreviousImports($importHistories);
+    public function deletePreviousImports($importHistories, ConnectedDataSourceInterface $connectedDataSource);
+
+    /**
+     * @param ImportHistoryInterface[] $importHistories
+     * @return mixed
+     */
+    public function deleteImportedData($importHistories);
+
+    public function deleteImportHistoryByDataSet(DataSetInterface $dataSet);
 
     /**
      * @param DataSourceEntryInterface $dataSourceEntry

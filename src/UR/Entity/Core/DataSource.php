@@ -21,6 +21,7 @@ class DataSource extends DataSourceModel
     protected $nextAlertTime;
     protected $useIntegration;
     protected $lastActivity;
+    protected $numOfFiles;
 
     /** @var UserEntityInterface */
     protected $publisher;

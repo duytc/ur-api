@@ -18,6 +18,7 @@ class DataSource implements DataSourceInterface
     protected $nextAlertTime;
     protected $useIntegration; // bool, true if use integration
     protected $lastActivity;
+    protected $numOfFiles;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -40,6 +41,7 @@ class DataSource implements DataSourceInterface
     public function __construct()
     {
         $this->enable = true;
+        $this->numOfFiles = 0;
     }
 
     /**
@@ -305,6 +307,23 @@ class DataSource implements DataSourceInterface
     public function setLastActivity($lastActivity)
     {
         $this->lastActivity = $lastActivity;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getNumOfFiles()
+    {
+        return $this->numOfFiles;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setNumOfFiles($numOfFiles)
+    {
+        $this->numOfFiles = $numOfFiles;
         return $this;
     }
 }

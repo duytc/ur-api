@@ -37,3 +37,6 @@ UR\Entity\Core\ConnectedDataSource:
         lastActivity:
             expose: true
             groups: [connectedDataSource.detail, connectedDataSource.summary]
+        totalRow:
+            expose: true
+            groups: [connectedDataSource.detail, connectedDataSource.summary]
