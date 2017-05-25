@@ -118,19 +118,7 @@ class ParsingFileService
             throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_MAPPING_FAIL);
         }
 
-        $validRequires = true;
-        $columnRequire = '';
-        foreach ($connectedDataSource->getRequires() as $require) {
-            if (!array_key_exists($require, $this->parserConfig->getAllColumnMappings())) {
-                $columnRequire = $require;
-                $validRequires = false;
-                break;
-            }
-        }
-
-        if (!$validRequires) {
-            throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_REQUIRED_FAIL, null, $columnRequire);
-        }
+        $this->validateMissingRequiresColumns($connectedDataSource);
 
         //filter config
         $this->createFilterConfigForConnectedDataSource($connectedDataSource, $this->parserConfig);
@@ -474,6 +462,30 @@ class ParsingFileService
     {
         foreach ($columns as &$column) {
             $column = ConnectedDataSourceInterface::PREFIX_FILE_FIELD . $column;
+        }
+    }
+
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @throws ImportDataException
+     */
+    private function validateMissingRequiresColumns($connectedDataSource)
+    {
+        $mapFields = $connectedDataSource->getMapFields();
+        $requireFields = $connectedDataSource->getRequires();
+
+        if (!is_array($mapFields)) {
+            throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_WRONG_TYPE_MAPPING, null, null);
+        }
+
+        if (!is_array($requireFields)) {
+            $requireFields = [];
+        }
+
+        foreach ($requireFields as $require) {
+            if (!in_array($require, $mapFields)) {
+                throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_REQUIRED_FAIL, null, $require);
+            }
         }
     }
 }
