@@ -279,7 +279,7 @@ class RemoveDataSourceEntryCommand extends ContainerAwareCommand
             $this->logger->info(sprintf('Delete import history %s on dataSource entry %s',
                 $importHistory->getId(),
                 $dataSourceEntry->getId()));
-            $this->importHistoryManager->deletePreviousImports([$importHistory]);
+            $this->importHistoryManager->deleteImportedData([$importHistory]);
             $this->importHistoryManager->delete($importHistory);
         }
     }
