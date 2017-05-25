@@ -2,6 +2,7 @@
 
 namespace UR\Entity\Core;
 
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistory as ImportHistoryModel;
@@ -16,6 +17,11 @@ class ImportHistory extends ImportHistoryModel
      * @var DataSetInterface
      */
     protected $dataSet;
+
+    /**
+     * @var ConnectedDataSourceInterface
+     */
+    protected $connectedDataSource;
 
     /**
      * @var DataSourceEntryInterface

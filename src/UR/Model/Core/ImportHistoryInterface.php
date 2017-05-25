@@ -45,4 +45,15 @@ interface ImportHistoryInterface extends ModelInterface
      * @param DataSourceEntryInterface $dataSourceEntry
      */
     public function setDataSourceEntry($dataSourceEntry);
+
+    /**
+     * @return ConnectedDataSourceInterface|null
+     */
+    public function getConnectedDataSource();
+
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return self
+     */
+    public function setConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource);
 }

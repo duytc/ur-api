@@ -111,6 +111,10 @@ class ParsedDataImporter
 
                 $this->insertMonthYearAt($dateColumns, $row);
                 $uniqueKeys = array_intersect_key($row, $dimensions);
+                $uniqueKeys = array_filter($uniqueKeys, function ($value) {
+                    return $value !== null;
+                });
+
                 $uniqueId = md5(implode(":", $uniqueKeys));
                 $row[DataSetInterface::DATA_SOURCE_ID_COLUMN] = $connectedDataSource->getDataSource()->getId();
                 $row[DataSetInterface::CONNECTED_DATA_SOURCE_ID_COLUMN] = $connectedDataSource->getId();

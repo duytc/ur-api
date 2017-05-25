@@ -111,9 +111,9 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     /**
      * @inheritdoc
      */
-    public function getImportHistoryByDataSourceEntry(DataSourceEntryInterface $dataSourceEntry, DataSetInterface $dataSet, ImportHistoryInterface $importHistory)
+    public function getImportHistoryByDataSourceEntryAndConnectedDataSource(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource, ImportHistoryInterface $importHistory)
     {
-        return $this->repository->getImportHistoryByDataSourceEntry($dataSourceEntry, $dataSet, $importHistory);
+        return $this->repository->getImportHistoryByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource, $importHistory);
     }
 
     /**
@@ -140,6 +140,7 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
         $importHistoryEntity = new ImportHistory();
         $importHistoryEntity->setDataSourceEntry($dataSourceEntry);
         $importHistoryEntity->setDataSet($connectedDataSource->getDataSet());
+        $importHistoryEntity->setConnectedDataSource($connectedDataSource);
         $this->save($importHistoryEntity);
         return $importHistoryEntity;
     }

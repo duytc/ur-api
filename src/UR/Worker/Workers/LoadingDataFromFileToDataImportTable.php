@@ -13,6 +13,7 @@ use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Exception\SqlLockTableException;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Model\Core\DataSetImportJob;
 use UR\Model\Core\DataSetImportJobInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Command\CommandService;
@@ -86,6 +87,11 @@ class LoadingDataFromFileToDataImportTable
         try {
             /**@var DataSetImportJobInterface $exeCuteJob */
             $exeCuteJob = $this->dataSetImportJobManager->getExecuteImportJobByDataSetId($dataSetId);
+            if ($exeCuteJob->getJobType() != DataSetImportJob::JOB_TYPE_IMPORT) {
+                $this->putJobBackToQueue($dataSetId, $tube, $job);
+                return;
+            }
+
             $dataSetExpirationDate = $exeCuteJob->getDataSet()->getJobExpirationDate();
             $connectedDataSourceExpirationDate = $exeCuteJob->getConnectedDataSource()->getJobExpirationDate();
 
@@ -115,14 +121,12 @@ class LoadingDataFromFileToDataImportTable
          * very important: must set TTR (time to run) when putting back to tube
          */
         if ($exeCuteJob->getJobId() !== $importJobId || $parentExecuteJob !== null) {
-            $this->logger->notice(sprintf('DataSet with id %d is busy, putted job back into the queue', $dataSetId));
-            $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay, Manager::EXECUTION_TIME_THRESHOLD);
+            $this->putJobBackToQueue($dataSetId, $tube, $job);
             return;
         }
 
         $dataSourceEntryId = $params->entryId;
         $connectedDataSourceId = $params->connectedDataSourceId;
-
 
         /**@var DataSourceEntryInterface $dataSourceEntry */
         $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
@@ -164,8 +168,7 @@ class LoadingDataFromFileToDataImportTable
                 }
             );
         } catch (SqlLockTableException $exception) {
-            $this->logger->warning('Table is locked. Putting job back into the queue');
-            $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay, Manager::EXECUTION_TIME_THRESHOLD);
+            $this->putJobBackToQueue($dataSetId, $tube, $job);
         } catch (\Exception $e) {
             // top level log is very clean. This is the supervisor log but it provides the name of the specific file for more debugging
             // if the admin wants to know more about the failure, they have the exact log file
@@ -179,5 +182,11 @@ class LoadingDataFromFileToDataImportTable
         }
 
         $this->dataSetImportJobManager->delete($exeCuteJob);
+    }
+
+    private function putJobBackToQueue($dataSetId, $tube, Pheanstalk_Job $job)
+    {
+        $this->logger->notice(sprintf('DataSet with id %d is busy, putted job back into the queue', $dataSetId));
+        $this->queue->putInTube($tube, $job->getData(), PheanstalkProxyInterface::DEFAULT_PRIORITY, $this->jobDelay, Manager::EXECUTION_TIME_THRESHOLD);
     }
 }

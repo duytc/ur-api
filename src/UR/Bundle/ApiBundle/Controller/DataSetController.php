@@ -149,19 +149,47 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         $dataSetManager = $this->get('ur.domain_manager.data_set');
         $dataSetManager->save($dataSet);
 
-        /* get all entries from connected data sources */
+        $allEntries = [];
+
         foreach ($connectedDataSources as $connectedDataSource) {
             if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
                 continue;
             }
-
+            /**
+             * @var DataSourceEntryInterface[] $entries
+             */
             $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
-            $entryIds = array_map(function (DataSourceEntryInterface $entry) {
-                return $entry->getId();
-            }, $entries->toArray());
-            sort($entryIds);
+            foreach ($entries as $entry) {
+                $allEntries[$entry->getId()] = $entry;
+            }
+        }
 
-            $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
+        /**
+         * @var DataSourceEntryInterface[] $allEntries
+         */
+        usort($allEntries, function (DataSourceEntryInterface $a, DataSourceEntryInterface $b) {
+            if ($a->getId() == $b->getId()) {
+                return 0;
+            }
+            return ($a->getId() < $b->getId()) ? -1 : 1;
+        });
+
+        foreach ($allEntries as $entry) {
+            foreach ($connectedDataSources as $connectedDataSource) {
+                if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+                    continue;
+                }
+                $dataSource = $connectedDataSource->getDataSource();
+                if (!$dataSource instanceof DataSourceInterface) {
+                    continue;
+                }
+
+                if ($entry->getDataSource()->getId() !== $dataSource->getId()) {
+                    continue;
+                }
+
+                $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, [$entry->getId()]);
+            }
         }
 
         /**

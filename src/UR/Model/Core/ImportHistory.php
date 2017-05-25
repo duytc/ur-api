@@ -14,6 +14,11 @@ class ImportHistory implements ImportHistoryInterface
     protected $dataSet;
 
     /**
+     * @var ConnectedDataSourceInterface
+     */
+    protected $connectedDataSource;
+
+    /**
      * @var DataSourceEntryInterface
      */
     protected $dataSourceEntry;
@@ -93,5 +98,22 @@ class ImportHistory implements ImportHistoryInterface
     public function setDataSourceEntry($dataSourceEntry)
     {
         $this->dataSourceEntry = $dataSourceEntry;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getConnectedDataSource()
+    {
+        return $this->connectedDataSource;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $this->connectedDataSource = $connectedDataSource;
+        return $this;
     }
 }

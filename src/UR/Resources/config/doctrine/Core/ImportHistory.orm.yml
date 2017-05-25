@@ -29,3 +29,9 @@ UR\Entity\Core\ImportHistory:
                 name: data_set_id
                 referencedColumnName: id
                 onDelete: CASCADE
+        connectedDataSource:
+            targetEntity: UR\Entity\Core\ConnectedDataSource
+            joinColumn:
+                name: connected_data_source_id
+                referencedColumnName: id
+                onDelete: CASCADE

@@ -136,8 +136,8 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
 
 //             delete all previous import histories that have same data source entry id and data set
 //             get import histories by data source entry and data set
-//            $importHistories = $importHistoryManager->getImportHistoryByDataSourceEntry($dataSourceEntry, $connectedDataSource->getDataSet(), $importHistoryEntity);
-//            $importHistoryManager->deletePreviousImports($importHistories, $connectedDataSource);
+            $importHistories = $importHistoryManager->getImportHistoryByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource, $importHistoryEntity);
+            $importHistoryManager->deleteImportedData($importHistories);
 
             $logger->notice(
                 sprintf('success importing file "%s" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d)',

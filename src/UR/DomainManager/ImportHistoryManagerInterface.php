@@ -21,11 +21,11 @@ interface ImportHistoryManagerInterface extends ManagerInterface
 
     /**
      * @param DataSourceEntryInterface $dataSourceEntry
-     * @param DataSetInterface $dataSet
+     * @param ConnectedDataSourceInterface $connectedDataSource
      * @param ImportHistoryInterface $importHistory
      * @return mixed
      */
-    public function getImportHistoryByDataSourceEntry(DataSourceEntryInterface $dataSourceEntry, DataSetInterface $dataSet, ImportHistoryInterface $importHistory);
+    public function getImportHistoryByDataSourceEntryAndConnectedDataSource(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource, ImportHistoryInterface $importHistory);
 
     /**
      * @param DataSourceEntryInterface $dataSourceEntry
