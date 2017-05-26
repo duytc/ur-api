@@ -9,6 +9,7 @@ use Leezy\PheanstalkBundle\Proxy\PheanstalkProxyInterface;
 use Monolog\Logger;
 use Pheanstalk_Job;
 use stdClass;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use UR\Bundle\ApiBundle\Behaviors\UpdateDataSetTotalRowTrait;
 use UR\DomainManager\DataSetImportJobManagerInterface;
 use UR\DomainManager\DataSetManagerInterface;
@@ -120,7 +121,7 @@ class TruncateImportDataTable
 
             // check if table not existed
             if (!$dataTable) {
-                return;
+                throw New Exception(sprintf('table with data set id :  dose not exist', $dataSetId));
             }
 
             $truncateSQL = sprintf("TRUNCATE %s", $dataTable->getName());
@@ -141,8 +142,7 @@ class TruncateImportDataTable
 //            $this->loadingDataService->reloadDataAugmentationWhenUndo($reloadImportHistories);
             $this->logger->notice(sprintf('Truncate data set %s with table name %s', $dataSetId, $dataTable->getName()));
         } catch (\Exception $e) {
-            $this->logger->error($e->getMessage());
-            $this->logger->notice('error while truncate table');
+            $this->logger->error(sprintf('error occur: %s', $e->getMessage()));
         }
 
         $this->dataSetImportJobManager->delete($exeCuteJob);

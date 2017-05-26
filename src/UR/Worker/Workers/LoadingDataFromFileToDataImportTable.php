@@ -131,16 +131,13 @@ class LoadingDataFromFileToDataImportTable
         /**@var DataSourceEntryInterface $dataSourceEntry */
         $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
         if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
-            $this->logger->warning(sprintf('Data Source Entry %d not found (may be deleted before)', $dataSourceEntryId));
-            $this->dataSetImportJobManager->delete($exeCuteJob);
-            return;
+            throw new \Exception(sprintf('error occur: Data Source Entry %d not found (may be deleted before)', $dataSourceEntryId));
         }
 
         /**@var ConnectedDataSourceInterface $connectedDataSource */
         $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
         if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-            $this->logger->warning(sprintf('Connected Data Source %d not found (may be deleted before)', $connectedDataSourceId));
-            return;
+            throw new \Exception(sprintf('error occur: Connected Data Source %d not found (may be deleted before)', $connectedDataSourceId));
         }
 
         /* creating import history */

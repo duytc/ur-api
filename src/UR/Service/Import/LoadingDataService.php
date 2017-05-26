@@ -8,6 +8,7 @@ use UR\DomainManager\DataSetManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetImportJob;
 use UR\Model\Core\DataSetImportJobInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\Core\LinkedMapDataSetInterface;
@@ -156,6 +157,30 @@ class LoadingDataService
 
                     $this->workerManager->loadingDataFromFileToDataImportTable($linkedMapDataSet->getConnectedDataSource()->getId(), $dsEntry->getId(), $linkedMapDataSet->getConnectedDataSource()->getDataSet()->getId(), $dataSetImportJobEntity->getJobId());
                 }
+            }
+        }
+    }
+
+    public function truncateDataImportTable(DataSetInterface $dataSet, $isLoadAugmentation = true)
+    {
+        $jobData = [
+            'dataSetId' => $dataSet->getId()
+        ];
+
+        $dataSetImportJobEntity = DataSetImportJob::createEmptyDataSetImportJob(
+            $dataSet,
+            null,
+            sprintf('truncate data set "%s"', $dataSet->getName()),
+            DataSetImportJob::JOB_TYPE_TRUNCATE,
+            $jobData
+        );
+
+        $this->dataSetImportJobManager->save($dataSetImportJobEntity);
+        $this->workerManager->truncateDataSetTable($dataSet->getId(), $dataSetImportJobEntity->getJobId());
+
+        if ($isLoadAugmentation) {
+            foreach ($dataSet->getConnectedDataSources() as $connectedDataSource) {
+                $this->doLoadDataFromEntryToDataBaseForAugmentation($connectedDataSource);
             }
         }
     }

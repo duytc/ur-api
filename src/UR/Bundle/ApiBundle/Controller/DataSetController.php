@@ -415,30 +415,13 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     {
         /** @var DataSetInterface $dataSet */
         $dataSet = $this->one($id);
-        $jobData = [
-            'dataSetId' => $dataSet->getId()
-        ];
 
         $dataSet->setJobExpirationDate(new \DateTime());
         $dataSetManager = $this->get('ur.domain_manager.data_set');
         $dataSetManager->save($dataSet);
 
-        $dataSetImportJobEntity = DataSetImportJob::createEmptyDataSetImportJob(
-            $dataSet,
-            null,
-            sprintf('truncate data set "%s"', $dataSet->getName()),
-            DataSetImportJob::JOB_TYPE_TRUNCATE,
-            $jobData
-        );
-
-        $dataSetImportJobManager = $this->get('ur.domain_manager.data_set_import_job');
-        $dataSetImportJobManager->save($dataSetImportJobEntity);
-        $this->get('ur.worker.manager')->truncateDataSetTable($id, $dataSetImportJobEntity->getJobId());
         $loadingDataService = $this->get('ur.service.loading_data_service');
-
-        foreach ($dataSet->getConnectedDataSources() as $connectedDataSource) {
-            $loadingDataService->doLoadDataFromEntryToDataBaseForAugmentation($connectedDataSource);
-        }
+        $loadingDataService->truncateDataImportTable($dataSet);
 
         return true;
     }
