@@ -17,4 +17,10 @@ interface DataSetImportJobRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getExecuteImportJobByJobId($jobId);
+
+    /**
+     * @param int $dataSetId
+     * @return mixed
+     */
+    public function getAllExecuteImportJobsByDataSetId($dataSetId);
 }

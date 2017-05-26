@@ -27,6 +27,14 @@ class UpdateLastActivityForDataSetWhenDataSetChanged
             return;
         }
 
+        $em = $args->getEntityManager();
+        $uow = $em->getUnitOfWork();
+        $changedFields = $uow->getEntityChangeSet($dataSet);
+
+        if (count($changedFields) == 1 && array_key_exists('numOfPendingLoad', $changedFields)) {
+            return;
+        }
+
         $dataSet->setLastActivity(new DateTime());
     }
 
@@ -36,6 +44,14 @@ class UpdateLastActivityForDataSetWhenDataSetChanged
         $dataSet = $args->getEntity();
 
         if (!$dataSet instanceof DataSetInterface) {
+            return;
+        }
+
+        $em = $args->getEntityManager();
+        $uow = $em->getUnitOfWork();
+        $changedFields = $uow->getEntityChangeSet($dataSet);
+
+        if (count($changedFields) == 1 && array_key_exists('numOfPendingLoad', $changedFields)) {
             return;
         }
 

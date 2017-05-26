@@ -226,6 +226,9 @@ services:
             - @doctrine.orm.entity_manager
             - %ur_batch_size%
 
+    ur.service.data_set.update_num_of_pending_load:
+        class: UR\Service\DataSet\UpdateNumOfPendingLoad
+
     ur.service.file_factory:
         class: UR\Service\DataSource\DataSourceFileFactory
         arguments:

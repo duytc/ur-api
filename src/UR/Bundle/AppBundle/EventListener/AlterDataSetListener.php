@@ -39,6 +39,7 @@ class AlterDataSetListener
      * handle event postUpdate to detect all data sets changed
      *
      * @param LifecycleEventArgs $args
+     * @throws Exception
      */
     public function postUpdate(LifecycleEventArgs $args)
     {
@@ -53,6 +54,10 @@ class AlterDataSetListener
         $changedFields = $uow->getEntityChangeSet($dataSet);
 
         if (!array_key_exists('dimensions', $changedFields) && !array_key_exists('metrics', $changedFields)) {
+            return;
+        }
+
+        if (count($changedFields) == 1 && array_key_exists('numOfPendingLoad', $changedFields)) {
             return;
         }
 

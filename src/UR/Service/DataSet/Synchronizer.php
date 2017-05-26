@@ -4,10 +4,12 @@ namespace UR\Service\DataSet;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
+use Doctrine\DBAL\Schema\TableDiff;
 use Doctrine\DBAL\Types\Type;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DTO\DataImportTable\ColumnIndex;
@@ -548,5 +550,46 @@ class Synchronizer
             $columnName,
             $columnType
         );
+    }
+
+    /**
+     * @param $tableName
+     * @param $addColumn
+     * @param $type
+     * @param $option
+     * @throws DBALException
+     */
+    public function createColumnNumOfPendingLoad($tableName, $addColumn, $type, $option)
+    {
+        $dataSetTable = $this->getTable($tableName);
+
+        if ($dataSetTable instanceof Table) {
+            if (!$dataSetTable->hasColumn($addColumn)) {
+                $addColumn = new Column($addColumn, $type, $option);
+                $tableDiff = new TableDiff($tableName, [$addColumn]);
+                $addColumnSqls = $this->conn->getDatabasePlatform()->getAlterTableSQL($tableDiff);
+                try {
+                    foreach ($addColumnSqls as $addColumnsSql) {
+                        $this->conn->exec($addColumnsSql);
+                    }
+                } catch (\Exception $e) {
+
+                }
+            }
+        }
+    }
+
+    /**
+     * @param $tableName
+     * @return Table|false
+     */
+    public function getTable($tableName)
+    {
+        $sm = $this->conn->getSchemaManager();
+
+        if (!$sm->tablesExist([$tableName])) {
+            return false;
+        }
+        return $sm->listTableDetails($tableName);
     }
 }

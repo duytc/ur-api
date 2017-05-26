@@ -17,6 +17,7 @@ class DataSet implements DataSetInterface
     protected $_actions = [];
     protected $lastActivity;
     protected $jobExpirationDate;
+    protected $numOfPendingLoad;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -317,6 +318,23 @@ class DataSet implements DataSetInterface
     public function setJobExpirationDate($jobExpirationDate)
     {
         $this->jobExpirationDate = $jobExpirationDate;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getNumOfPendingLoad()
+    {
+        return $this->numOfPendingLoad;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setNumOfPendingLoad($numOfPendingLoad)
+    {
+        $this->numOfPendingLoad = $numOfPendingLoad;
         return $this;
     }
 }

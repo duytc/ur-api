@@ -58,6 +58,10 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
             return;
         }
 
+        if (count($changedFields) == 1 && array_key_exists('numOfPendingLoad', $changedFields)) {
+            return;
+        }
+
         /* detect changed metrics, dimensions */
         $renameFields = [];
         $actions = $dataSet->getActions() === null ? [] : $dataSet->getActions();

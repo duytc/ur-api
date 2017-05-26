@@ -34,3 +34,6 @@ UR\Entity\Core\DataSet:
         dataSetImportJobs:
             expose: true
             groups: [dataset.detail, dataset.summary, dataset.edit]
+        numOfPendingLoad:
+            expose: true
+            groups: [dataset.summary]

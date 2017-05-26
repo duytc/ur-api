@@ -162,4 +162,15 @@ interface DataSetInterface extends ModelInterface
      * @return self
      */
     public function setJobExpirationDate($jobExpirationDate);
+
+    /**
+     * @return mixed
+     */
+    public function getNumOfPendingLoad();
+
+    /**
+     * @param mixed $numOfPendingLoad
+     * @return self
+     */
+    public function setNumOfPendingLoad($numOfPendingLoad);
 }

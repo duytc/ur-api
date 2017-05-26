@@ -39,6 +39,10 @@ class DataSetChangeListener
 			return;
 		}
 
+		if (count($args->getEntityChangeSet()) == 1 && $args->hasChangedField('numOfPendingLoad')) {
+			return;
+		}
+
 		if ($args->hasChangedField('dimensions') || $args->hasChangedField('metrics')) {
 			$this->changedDataSets[] = $entity;
 		}
