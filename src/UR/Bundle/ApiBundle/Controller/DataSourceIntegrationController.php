@@ -14,6 +14,8 @@ use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSourceIntegrationInterface;
+use UR\Model\Core\Integration;
+use UR\Service\PublicSimpleException;
 
 /**
  * @Rest\RouteResource("datasourceintegration")
@@ -74,6 +76,78 @@ class DataSourceIntegrationController extends RestControllerAbstract implements 
     public function getAction($id)
     {
         return $this->one($id);
+    }
+
+    /**
+     * Get password of datasource integration
+     *
+     * @Rest\Get("/datasourceintegrations/{id}/showvalue", requirements={"id" = "\d+"})
+     *
+     * @Rest\View(serializerGroups={"datasource.password"})
+     *
+     * @Rest\QueryParam(name="param", requirements="\d+", nullable=true, description="param need to show, example password")
+     *
+     * @ApiDoc(
+     *  section = "Data Source Integration",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     * @param Request $request
+     *
+     * @return string
+     * @throws PublicSimpleException
+     */
+    public function cgetIntegrationParamAction($id, Request $request)
+    {
+        $requestParams = array_merge($request->query->all(), $request->attributes->all());
+        if (!array_key_exists('param', $requestParams)) {
+            throw new PublicSimpleException('Missing param to show');
+        }
+
+        $field = $requestParams['param'];
+
+        /** @var DataSourceIntegrationInterface $dataSourceIntegration */
+        $dataSourceIntegration = $this->one($id);
+
+        if (!$dataSourceIntegration instanceof DataSourceIntegrationInterface) {
+            throw new PublicSimpleException('Can not find any data source integration given by id');
+        }
+
+        /** Filter param have field need to show */
+        $params = $dataSourceIntegration->getOriginalParams();
+        if (!is_array($params)) {
+            throw new PublicSimpleException('This data source integration do not have any param');
+        }
+
+        $filterBlocks = array_filter($params, function ($param) use ($field) {
+            return $param[Integration::PARAM_KEY_KEY] == $field;
+        });
+
+        if (!is_array($filterBlocks)) {
+            throw new PublicSimpleException('This data source do not have ' . $field . ' param');
+        }
+        $showParam = array_values($filterBlocks)[0];
+
+        /** Decode param if is secure and return */
+        if (array_key_exists(Integration::PARAM_KEY_VALUE, $showParam)) {
+            $showValue = $showParam[Integration::PARAM_KEY_VALUE];
+
+            if (array_key_exists(Integration::PARAM_KEY_TYPE, $showParam)) {
+                $type = $showParam[Integration::PARAM_KEY_TYPE];
+
+                if ($type == Integration::PARAM_TYPE_SECURE) {
+                    return base64_decode($showValue);
+                }
+            }
+
+            return $showValue;
+        }
+
+        return '';
     }
 
     /**

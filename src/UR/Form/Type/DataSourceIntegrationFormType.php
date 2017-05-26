@@ -18,6 +18,7 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
+            ->add('id')
             ->add('dataSource')
             ->add('integration')
             ->add('params')

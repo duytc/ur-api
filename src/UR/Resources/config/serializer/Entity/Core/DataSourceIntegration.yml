@@ -12,7 +12,7 @@ UR\Entity\Core\DataSourceIntegration:
     properties:
         id:
             expose: true
-            groups: [dataSourceIntegration.bySchedule]
+            groups: [dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
         dataSource:
             expose: true
             groups: [dataSourceIntegration.detail, dataSourceIntegration.bySchedule]
