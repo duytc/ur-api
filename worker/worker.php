@@ -1,10 +1,25 @@
 <?php
+
+// needed for handling signals
+declare(ticks = 1);
+
+$pid = getmypid();
+$requestStop = false;
+
+// when TERM signal is sent to this process, we gracefully shutdown after current job is finished processing
+// when KILL signal is sent (i.e ctrl-c) we stop immediately
+// You can test this by calling "kill -TERM PID" where PID is the PID of this process, the process will end after the current job
+pcntl_signal(SIGTERM, function () use (&$requestStop, $pid, &$logger) {
+    $logger->notice(sprintf("Worker PID %d has received a request to stop gracefully", $pid));
+    $requestStop = true; // set reference value to true to stop worker loop after current job
+});
+
 // exit successfully after this time, supervisord will then restart
 // this is to prevent any memory leaks from running PHP for a long time
-use Monolog\Handler\StreamHandler;
 const WORKER_TIME_LIMIT = 10800; // 3 hours
 const TUBE_NAME = 'ur-api-worker';
-const RESERVE_TIMEOUT = 3600;
+const RESERVE_TIMEOUT = 10; // seconds
+
 // Set the start time
 $startTime = time();
 $loader = require_once __DIR__ . '/../app/autoload.php';
@@ -25,7 +40,9 @@ $kernel->boot();
 $container = $kernel->getContainer();
 
 $logger = $container->get('logger');
-$logger->pushHandler(new StreamHandler("php://stderr", \Monolog\Logger::DEBUG));
+$logHandler = new \Monolog\Handler\StreamHandler("php://stderr", \Monolog\Logger::DEBUG);
+$logHandler->setFormatter(new \Monolog\Formatter\LineFormatter(null, null, false, true));
+$logger->pushHandler($logHandler);
 
 $entityManager = $container->get('doctrine.orm.entity_manager');
 $queue = $container->get("leezy.pheanstalk");
@@ -43,9 +60,17 @@ $availableWorkers = [
 
 $workerPool = new \UR\Worker\Pool($availableWorkers);
 
+$logger->notice(sprintf("Worker PID %d has started", $pid));
+
 while (true) {
+    if ($requestStop) {
+        // exit worker gracefully, supervisord will restart it
+        $logger->notice(sprintf("Worker PID %d is stopping by user request", $pid));
+        break;
+    }
     if (time() > ($startTime + WORKER_TIME_LIMIT)) {
-// exit worker gracefully, supervisord will restart it
+        // exit worker gracefully, supervisord will restart it
+        $logger->notice(sprintf("Worker PID %d is stopping because time limit has been exceeded", $pid));
         break;
     }
     $job = $queue->watch(TUBE_NAME)
