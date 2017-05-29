@@ -32,6 +32,9 @@ UR\Entity\Core\DataSourceIntegration:
         backFillStartDate:
             type: date
             nullable: true
+        backFillEndDate:
+            type: date
+            nullable: true
         backFillExecuted:
             type: boolean
             option:

@@ -120,6 +120,17 @@ interface DataSourceIntegrationInterface extends ModelInterface
     public function setBackFillStartDate($backFillStartDate);
 
     /**
+     * @return \DateTime|null
+     */
+    public function getBackFillEndDate();
+
+    /**
+     * @param \DateTime|null $backFillEndDate
+     * @return self
+     */
+    public function setBackFillEndDate($backFillEndDate);
+
+    /**
      * @return boolean
      */
     public function isBackFillExecuted();

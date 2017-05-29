@@ -44,6 +44,8 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     protected $backFill;
     /** @var \DateTime|null */
     protected $backFillStartDate;
+    /** @var \DateTime|null */
+    protected $backFillEndDate;
     /** @var bool */
     protected $backFillExecuted;
     /** @var bool */
@@ -65,6 +67,7 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
         // back fill feature
         $this->backFill = false;
         $this->backFillStartDate = null;
+        $this->backFillEndDate = null;
         $this->backFillExecuted = false;
         $this->backFillForce = false;
     }
@@ -293,6 +296,23 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
         return $this;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getBackFillEndDate()
+    {
+        return $this->backFillEndDate;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setBackFillEndDate($backFillEndDate)
+    {
+        $this->backFillEndDate = $backFillEndDate;
+
+        return $this;
+    }
     /**
      * @inheritdoc
      */

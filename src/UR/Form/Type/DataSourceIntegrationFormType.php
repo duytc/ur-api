@@ -29,6 +29,10 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
                 // render as a single text box
                 'widget' => 'single_text',
             ))
+            ->add('backFillEndDate', DateType::class, array(
+                // render as a single text box
+                'widget' => 'single_text',
+            ))
             ->add('backFillExecuted')
             ->add('backFillForce')
             ->add('active');
@@ -171,6 +175,8 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
             $form->get('backFillStartDate')->addError(new FormError('missing backFillStartDate when backFill is enabled'));
             return false;
         }
+
+        // allow backfill endDate null
 
         if ($dataSourceIntegration->isBackFillForce() && !$dataSourceIntegration->isBackFillExecuted()) {
             $form->get('backFillForce')->addError(new FormError('backFillForce can not be enabled when backFillExecute is disabled'));

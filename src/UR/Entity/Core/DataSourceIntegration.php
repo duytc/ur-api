@@ -19,6 +19,7 @@ class DataSourceIntegration extends DataSourceIntegrationModel
     // back fill feature
     protected $backFill;
     protected $backFillStartDate;
+    protected $backFillEndDate;
     protected $backFillExecuted;
     protected $backFillForce;
 
