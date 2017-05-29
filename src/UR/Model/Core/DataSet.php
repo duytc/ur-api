@@ -45,6 +45,7 @@ class DataSet implements DataSetInterface
     public function __construct()
     {
         $this->totalRow = 0;
+        $this->numOfPendingLoad = 0;
     }
 
     /**
