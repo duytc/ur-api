@@ -44,7 +44,7 @@ class NoDataReceivedDailyAlert extends AbstractDataSourceAlert
 
     public function getNextAlertTime()
     {
-        $currentDate = new DateTime($this->alertTimeZone);
+        $currentDate = new DateTime('now', new \DateTimeZone($this->alertTimeZone));
 
         /*
          * setup alert time
