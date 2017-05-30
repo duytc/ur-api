@@ -138,7 +138,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
 
     public function getLimitedRows($limit = 100)
     {
-        $beginRowsReadRange = $this->dataRow + 2;
+        $beginRowsReadRange = $this->dataRow;
         return $this->getChunkRows($beginRowsReadRange, $limit);
     }
 

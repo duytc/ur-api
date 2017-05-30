@@ -13,6 +13,8 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     const TO_KEY = 'to';
     const IS_CUSTOM_FORMAT_DATE_FROM = 'isCustomFormatDateFrom';
     const DEFAULT_DATE_FORMAT = 'Y-m-d';
+    const DEFAULT_DATETIME_FORMAT = 'Y-m-d H:i:s';
+
     const FORMAT_KEY = 'format';
 
     protected $fromDateFormats;
@@ -39,6 +41,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         'm/d/y',  // 01/15/99
         'y-m-d',  // 99-01-15
         'y/m/d',  // 99/01/15
+        'Y-m-d H:i:s',
     ];
 
     /**
@@ -60,7 +63,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     public function transform($value)
     {
         if ($value instanceof DateTime) {
-            return $value->format(self::DEFAULT_DATE_FORMAT);
+            return $value->format(self::DEFAULT_DATETIME_FORMAT);
         }
 
         $value = trim($value);
@@ -91,7 +94,13 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE, 0, $this->getField());
         }
 
-        return $resultDate->format(self::DEFAULT_DATE_FORMAT);
+        switch ($this->getToDateFormat()) {
+            case self::DEFAULT_DATETIME_FORMAT:
+                return $resultDate->format(self::DEFAULT_DATETIME_FORMAT);
+            default:
+                return $resultDate->format(self::DEFAULT_DATE_FORMAT);
+        }
+
     }
 
     /**
@@ -106,7 +115,10 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         }
 
         $date = DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $value);
-
+        if (!$date instanceof DateTime) {
+            $date = DateTime::createFromFormat(self::DEFAULT_DATETIME_FORMAT, $value);
+        }
+        
         if ($value === '0000-00-00' || !$date instanceof DateTime) {
             return null;
         }
