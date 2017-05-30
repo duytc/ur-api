@@ -9,7 +9,9 @@ use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Validator\Constraints\DateTime;
 use UR\DomainManager\DataSourceIntegrationManagerInterface;
+use UR\Entity\Core\DataSourceIntegrationBackfillHistory;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
@@ -203,6 +205,19 @@ class DataSourceIntegrationController extends RestControllerAbstract implements 
         /** @var DataSourceIntegrationManagerInterface $dsiManager */
         $dsiManager = $this->get('ur.domain_manager.data_source_integration');
         $dsiManager->save($dataSourceIntegration);
+
+        // create backfill history when backfill_executed is executed
+        $now = new \DateTime('now', new \DateTimeZone('UTC'));
+
+        $backfillHistory = (new DataSourceIntegrationBackfillHistory())
+            ->setDataSourceIntegration($dataSourceIntegration)
+            ->setLastExecutedAt($now)
+            ->setBackFillStartDate($dataSourceIntegration->getBackFillStartDate())
+            ->setBackFillEndDate($dataSourceIntegration->getBackFillEndDate());
+
+        /** @var DataSourceIntegrationManagerInterface $dsiManager */
+        $dsiManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
+        $dsiManager->save($backfillHistory);
 
         return $this->view(true, Codes::HTTP_OK);
     }

@@ -62,3 +62,8 @@ api_report_view:
     type: rest
     resource: UR\Bundle\ApiBundle\Controller\ReportViewController
     name_prefix:  api_1_
+
+api_data_source_integration_backfill_history:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\DataSourceIntegrationBackfillHistoryController
+    name_prefix:  api_1_

@@ -3,6 +3,7 @@ imports:
     - { resource: services/service.datasource.yml }
     - { resource: services/service.data-source-entry.yml }
     - { resource: services/service.data-source-integration.yml }
+    - { resource: services/service.data-source-integration-backfill-history.yml }
     - { resource: services/service.data-source-integration-schedule.yml }
     - { resource: services/service.integration.yml }
     - { resource: services/service.integration-publisher.yml }

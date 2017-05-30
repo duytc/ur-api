@@ -1,0 +1,26 @@
+UR\Entity\Core\DataSourceIntegrationBackfillHistory:
+    type: entity
+    table: core_data_source_integration_backfill_history
+    repositoryClass: UR\Repository\Core\DataSourceIntegrationBackfillHistoryRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        lastExecutedAt:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+
+        # back fill feature
+        backFillStartDate:
+            type: date
+            nullable: true
+        backFillEndDate:
+                    type: date
+                    nullable: true
+    manyToOne:
+        dataSourceIntegration:
+            targetEntity: UR\Entity\Core\DataSourceIntegration

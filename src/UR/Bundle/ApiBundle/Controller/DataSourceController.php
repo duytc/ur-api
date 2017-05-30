@@ -953,4 +953,31 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             if (!is_dir($dir .= "/$part")) mkdir($dir);
         file_put_contents("$dir/$file", $contents);
     }
+
+    /**
+     * Get all backfill histories for a single data source by the given id
+     *
+     * @Rest\Get("/datasources/{id}/backfillhistories", requirements={"id" = "\d+"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @param int $id the resource id
+     * @return array
+     */
+    public function getDataSourceBackfillHistoriesAction(Request $request, $id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+        $dataSourceIntegrationBackfillHistoryRepository = $this->get('ur.repository.data_source_integration_backfill_history');
+
+        return $dataSourceIntegrationBackfillHistoryRepository->getBackfillHistoriesByDataSourceId($dataSource);
+    }
+
 }
