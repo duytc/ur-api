@@ -28,7 +28,7 @@ class MigrateImportTableChangeTextTypeCommand extends ContainerAwareCommand
     {
         $this
             ->setName('ur:migrate:import-table:change-text-type')
-            ->setDescription('Add column __unique_id for data import table if not exist');
+            ->setDescription('Change text type from "multiLineText" to "largeText" for all data sets and data import tables. Change uniqueId type to char(32)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
