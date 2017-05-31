@@ -250,7 +250,7 @@ class DisableEnableAlertInBulkCommand extends ContainerAwareCommand
         $publisherId = $input->getOption(self::PUBLISHER_ID);
         if ($publisherId) {
             $publisher = $this->publisherManager->find($publisherId);
-            if (!$publisher instanceof PublisherInterface) {
+            if (!$publisher instanceof PublisherInterface || !$this->isNumeric($publisherId)) {
                 $message = 'Can not find publisher with id ' . $publisherId;
                 $output->writeln($message);
                 return false;
@@ -260,7 +260,7 @@ class DisableEnableAlertInBulkCommand extends ContainerAwareCommand
         $dataSetId = $input->getOption(self::DATA_SET_ID);
         if ($dataSetId) {
             $dataSet = $this->dataSetManager->find($dataSetId);
-            if (!$dataSet instanceof DataSetInterface) {
+            if (!$dataSet instanceof DataSetInterface || !$this->isNumeric($dataSetId)) {
                 $message = 'Can not find data set with id ' . $dataSetId;
                 $output->writeln($message);
                 return false;
@@ -270,8 +270,24 @@ class DisableEnableAlertInBulkCommand extends ContainerAwareCommand
         $dataSourceId = $input->getOption(self::DATA_SOURCE_ID);
         if ($dataSourceId) {
             $dataSource = $this->dataSourceManager->find($dataSourceId);
-            if (!$dataSource instanceof DataSetInterface) {
+            if (!$dataSource instanceof DataSourceInterface || !$this->isNumeric($dataSourceId)) {
                 $message = 'Can not find data source with id ' . $dataSourceId;
+                $output->writeln($message);
+                return false;
+            }
+        }
+
+        if ($input->getOption(self::ENABLE_NEW_FILES)) {
+            if (!$this->isValidateYesNo($input->getOption(self::ENABLE_NEW_FILES))) {
+                $message = 'Use yes or no for option ' . self::ENABLE_NEW_FILES;
+                $output->writeln($message);
+                return false;
+            }
+        }
+
+        if ($input->getOption(self::ENABLE_ERRORS)) {
+            if (!$this->isValidateYesNo($input->getOption(self::ENABLE_ERRORS))) {
+                $message = 'Use yes or no for option ' . self::ENABLE_ERRORS;
                 $output->writeln($message);
                 return false;
             }
@@ -314,5 +330,27 @@ class DisableEnableAlertInBulkCommand extends ContainerAwareCommand
         }
 
         return false;
+    }
+
+    /**
+     * @param $text
+     * @return bool
+     */
+    private function isValidateYesNo($text)
+    {
+        $text = strtolower(trim($text));
+        if ($text == 'y' || $text == 'yes' || $text == 'n' || $text == 'no') {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param $text
+     * @return int
+     */
+    private function isNumeric($text)
+    {
+        return preg_match('/^[0-9]+$/', $text);
     }
 }
