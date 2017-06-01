@@ -7,12 +7,12 @@ use UR\Model\Core\DataSourceInterface;
 
 abstract class AbstractDataSourceAlert implements DataSourceAlertInterface
 {
+    /** @var String */
     protected $alertCode;
+    /** @var String */
     protected $fileName;
+    /** @var DataSourceInterface */
     protected $dataSource;
-    protected $alertTimeZone;
-    protected $alertHour;
-    protected $alertMinutes;
 
     /**
      * AbstractDataSourceAlert constructor.
@@ -28,10 +28,34 @@ abstract class AbstractDataSourceAlert implements DataSourceAlertInterface
     }
 
     /**
-     * @return mixed
+     * @inheritdoc
      */
     public function getAlertCode()
     {
         return $this->alertCode;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFileName()
+    {
+        return $this->fileName;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSource()
+    {
+        return $this->dataSource;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceId()
+    {
+        return ($this->dataSource instanceof DataSourceInterface) ? $this->dataSource->getId() : null;
     }
 }

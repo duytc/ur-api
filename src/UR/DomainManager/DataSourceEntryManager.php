@@ -197,7 +197,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $dataSource);
 
             if ($alert instanceof DataReceivedAlert) {
-                $this->workerManager->processAlert($alert->getAlertCode(), $publisherId, $alert->getDetails());
+                $this->workerManager->processAlert($alert->getAlertCode(), $publisherId, $alert->getDetails(), $alert->getDataSourceId());
             }
 
         } catch (ImportDataException $exception) {
@@ -208,7 +208,7 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
                 $dataSource);
 
             if ($alert instanceof AbstractDataSourceAlert) {
-                $this->workerManager->processAlert($alert->getAlertCode(), $publisherId, $alert->getDetails());
+                $this->workerManager->processAlert($alert->getAlertCode(), $publisherId, $alert->getDetails(), $alert->getDataSourceId());
             }
 
             throw new Exception(sprintf('Cannot upload file because the file is in the wrong format. Data sources can only have one type of file and format.', $originName));

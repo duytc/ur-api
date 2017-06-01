@@ -48,13 +48,15 @@ class Manager
      * @param int $code
      * @param int $publisherId
      * @param array $details
+     * @param null|int $dataSourceId optional
      */
-    public function processAlert($code, $publisherId, $details)
+    public function processAlert($code, $publisherId, $details, $dataSourceId = null)
     {
         $params = new stdClass;
         $params->code = $code;
         $params->publisherId = $publisherId;
         $params->details = $details;
+        $params->dataSourceId = $dataSourceId;
 
         $this->queueTask('processAlert', $params);
     }

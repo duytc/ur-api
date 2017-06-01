@@ -25,3 +25,5 @@ UR\Entity\Core\Alert:
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
+        dataSource:
+            targetEntity: UR\Entity\Core\DataSource

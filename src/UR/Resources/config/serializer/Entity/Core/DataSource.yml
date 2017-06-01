@@ -3,13 +3,13 @@ UR\Entity\Core\DataSource:
     properties:
         id:
             expose: true
-            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.importhistory, datasource.dataset]
+            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.importhistory, datasource.dataset, datasource.viewAlert]
         publisher:
             expose: true
             groups: [datasource.detail, datasource.summary, datasource.edit, datasource.dataset]
         name:
             expose: true
-            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.importhistory, datasource.dataset]
+            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.importhistory, datasource.dataset, datasource.viewAlert]
         format:
             expose: true
             groups: [datasource.detail, datasource.summary, datasource.edit]

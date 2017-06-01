@@ -3,6 +3,7 @@
 namespace UR\Repository\Core;
 
 use Doctrine\ORM\EntityRepository;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -10,6 +11,7 @@ use UR\Model\User\Role\UserRoleInterface;
 class AlertRepository extends EntityRepository implements AlertRepositoryInterface
 {
     protected $SORT_FIELDS = ['id' => 'id', 'createdDate' => 'createdDate', 'title' => 'code'];
+
     public function getAlertsForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null)
     {
         $qb = $this->createQueryBuilder('a')
@@ -21,6 +23,7 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
         if (is_int($limit)) {
             $qb->setMaxResults($limit);
         }
+
         if (is_int($offset)) {
             $qb->setFirstResult($offset);
         }
@@ -56,6 +59,7 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
                 ->orWhere($qb->expr()->like('SUBSTRING(a.createdDate, 0, 10)', ':date'))
                 ->setParameter('date', $searchLike);
         }
+
         if (is_string($param->getSortField()) &&
             is_string($param->getSortDirection()) &&
             in_array($param->getSortDirection(), ['asc', 'desc', 'ASC', 'DESC']) &&
@@ -65,16 +69,73 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
                 case 'id':
                     $qb->addOrderBy('a.' . $param->getSortField(), $param->getSortDirection());
                     break;
+
                 case 'createdDate':
                     $qb->addOrderBy('a.' . $param->getSortField(), $param->getSortDirection());
                     break;
+
                 case 'title':
                     $qb->addOrderBy('a.' . $this->SORT_FIELDS['title'], $param->getSortDirection());
                     break;
+
                 default:
                     break;
             }
+        } else {
+            $qb->addOrderBy('a.createdDate', 'desc');
         }
+
+        return $qb;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getAlertsByDataSourceQuery(DataSourceInterface $dataSource, PagerParam $param)
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->join('a.dataSource', 'ds')
+            ->where('a.dataSource = :dataSource')
+            ->andWhere('ds.enable = :enable')
+            ->setParameter('dataSource', $dataSource)
+            ->setParameter('enable', true);
+
+        if (is_string($param->getSearchKey())) {
+            $searchLike = sprintf('%%%s%%', $param->getSearchKey());
+            $qb
+                ->andWhere($qb->expr()->orX(
+                    $qb->expr()->like('ds.name', ':searchKey'),
+                    $qb->expr()->like('a.id', ':searchKey'),
+                    $qb->expr()->like('a.code', ':searchKey')
+                ))
+                ->setParameter('searchKey', $searchLike);
+        }
+
+        if (is_string($param->getSortField()) &&
+            is_string($param->getSortDirection()) &&
+            in_array($param->getSortDirection(), ['asc', 'desc', 'ASC', 'DESC']) &&
+            in_array($param->getSortField(), $this->SORT_FIELDS)
+        ) {
+            switch ($param->getSortField()) {
+                case 'id':
+                    $qb->addOrderBy('a.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+
+                case 'createdDate':
+                    $qb->addOrderBy('a.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+
+                case 'title':
+                    $qb->addOrderBy('a.' . $this->SORT_FIELDS['title'], $param->getSortDirection());
+                    break;
+
+                default:
+                    break;
+            }
+        } else {
+            $qb->addOrderBy('a.createdDate', 'desc');
+        }
+
         return $qb;
     }
 

@@ -8,10 +8,15 @@ use UR\Model\Core\DataSourceInterface;
 
 abstract class AbstractConnectedDataSourceAlert implements ConnectedDataSourceAlertInterface
 {
+    /** @var int */
     protected $alertCode;
+    /** @var string */
     protected $fileName;
+    /** @var DataSourceInterface */
     protected $dataSource;
+    /** @var DataSetInterface */
     protected $dataSet;
+    /** @var int */
     protected $importId;
 
     /**
@@ -31,13 +36,51 @@ abstract class AbstractConnectedDataSourceAlert implements ConnectedDataSourceAl
         $this->dataSet = $dataSet;
     }
 
-    public abstract function getDetails();
-
     /**
-     * @return mixed
+     * @inheritdoc
      */
     public function getAlertCode()
     {
         return $this->alertCode;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFileName()
+    {
+        return $this->fileName;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSource()
+    {
+        return $this->dataSource;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSourceId()
+    {
+        return ($this->dataSource instanceof DataSourceInterface) ? $this->dataSource->getId() : null;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSet()
+    {
+        return $this->dataSet;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getImportId()
+    {
+        return $this->importId;
     }
 }

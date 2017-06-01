@@ -31,7 +31,8 @@ class AlertWorker implements AlertWorkerInterface
         $code = $inputAlert->code;
         $publisherId = $inputAlert->publisherId;
         $details = $inputAlert->details;
+        $dataSourceId = $inputAlert->dataSourceId;
 
-        $this->alert->createAlert($code, $publisherId, $details);
+        $this->alert->createAlert($code, $publisherId, $details, $dataSourceId);
     }
 }

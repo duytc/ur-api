@@ -131,7 +131,7 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
             );
 
             if ($importSuccessAlert !== null) {
-                $workerManager->processAlert($importSuccessAlert->getAlertCode(), $publisherId, $importSuccessAlert->getDetails());
+                $workerManager->processAlert($importSuccessAlert->getAlertCode(), $publisherId, $importSuccessAlert->getDetails(), $importSuccessAlert->getDataSourceId());
             }
 
 //             delete all previous import histories that have same data source entry id and data set
@@ -189,7 +189,7 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
             $importHistoryManager->delete($importHistoryEntity);
 
             if ($failureAlert != null) {
-                $workerManager->processAlert($errorCode, $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails());
+                $workerManager->processAlert($errorCode, $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails(), $failureAlert->getDataSourceId());
             }
         }
 

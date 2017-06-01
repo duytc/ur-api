@@ -183,6 +183,48 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
+     * Get all alerts for a single data source by the given id
+     *
+     * @Rest\Get("/datasources/{id}/alerts", requirements={"id" = "\d+"})
+     *
+     * @Rest\View(serializerGroups={"alert.detail", "user.summary", "datasource.viewAlert"})
+     *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @param int $id the resource id
+     * @return DataSourceEntryInterface
+     */
+    public function getAlertsForDataSourceAction(Request $request, $id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+        $alertRepository = $this->get('ur.repository.alert');
+        $qb = $alertRepository->getAlertsByDataSourceQuery($dataSource, $this->getParams());
+
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['page'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
+    }
+
+    /**
      * Generate API token for DataSource
      *
      * @Rest\Get("/datasources/{id}/apikey" )

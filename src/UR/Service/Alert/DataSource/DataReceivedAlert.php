@@ -18,6 +18,9 @@ class DataReceivedAlert extends AbstractDataSourceAlert
         parent::__construct($alertCode, $fileName, $dataSource);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getDetails()
     {
         return [

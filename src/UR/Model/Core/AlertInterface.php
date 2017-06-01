@@ -93,6 +93,18 @@ interface AlertInterface extends ModelInterface
 
     /**
      * @param mixed $detail
+     * return self
      */
     public function setDetail($detail);
+
+    /**
+     * @return null|DataSourceInterface
+     */
+    public function getDataSource();
+
+    /**
+     * @param null|DataSourceInterface $dataSource
+     * return self
+     */
+    public function setDataSource($dataSource);
 }

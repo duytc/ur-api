@@ -20,6 +20,9 @@ class DataAddedAlert extends AbstractConnectedDataSourceAlert
         parent::__construct($importId, $alertCode, $fileName, $dataSource, $dataSet);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getDetails()
     {
         return [

@@ -2,7 +2,10 @@
 
 namespace UR\Service\Alert\DataSource;
 
-interface DataSourceAlertInterface
+use UR\Model\Core\DataSourceInterface;
+use UR\Service\Alert\AlertDTOInterface;
+
+interface DataSourceAlertInterface extends AlertDTOInterface
 {
     const ALERT_WRONG_FORMAT_KEY = 'wrongFormat';
     const ALERT_DATA_RECEIVED_KEY = 'dataReceived';
@@ -13,12 +16,30 @@ interface DataSourceAlertInterface
     const ALERT_MINUTE_KEY = 'alertMinutes';
     const ALERT_ACTIVE_KEY = 'active';
     const ALERT_DETAIL_KEY = 'detail';
-    const MESSAGE = 'message';
-    const DETAILS = 'detail';
-    const DATA_SOURCE_ID = 'dataSourceId';
-    const DATA_SOURCE_NAME= 'dataSourceName';
-    const FILE_NAME= 'fileName';
-    const DATE= 'date';
+    const DATE = 'date';
 
+    /**
+     * @return mixed
+     */
     public function getDetails();
+
+    /**
+     * @return mixed
+     */
+    public function getAlertCode();
+
+    /**
+     * @return mixed
+     */
+    public function getFileName();
+
+    /**
+     * @return null|DataSourceInterface
+     */
+    public function getDataSource();
+
+    /**
+     * @return null|int
+     */
+    public function getDataSourceId();
 }

@@ -5,45 +5,54 @@ namespace UR\Service\Alert;
 
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\DomainManager\AlertManagerInterface;
+use UR\DomainManager\DataSourceManagerInterface;
 use UR\Entity\Core\Alert;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\PublisherInterface;
 
 class ProcessAlert implements ProcessAlertInterface
 {
-
-    const FILE_NAME = 'fileName';
-    const DATA_SOURCE_NAME = 'dataSourceName';
-    const DATA_SOURCE_ID = 'dataSourceId';
-    const FORMAT_FILE = 'formatFile';
-    const DATA_SET_NAME = 'dataSetName';
-    const DATA_SET_ID = 'dataSetId';
-    const IMPORT_ID = 'importId';
-    const ENTRY_ID = 'entryId';
-    const ERROR = 'error';
-
+    /** @var AlertManagerInterface */
     protected $alertManager;
+    /** @var PublisherManagerInterface */
     protected $publisherManager;
+    /** @var DataSourceManagerInterface */
+    protected $dataSourceManager;
 
-    public function __construct(AlertManagerInterface $alertManager, PublisherManagerInterface $publisherManager)
+    public function __construct(AlertManagerInterface $alertManager, PublisherManagerInterface $publisherManager, DataSourceManagerInterface $dataSourceManager)
     {
         $this->alertManager = $alertManager;
         $this->publisherManager = $publisherManager;
+        $this->dataSourceManager = $dataSourceManager;
     }
 
     /**
      * @inheritdoc
      */
-    public function createAlert($alertCode, $publisherId, $details)
+    public function createAlert($alertCode, $publisherId, $details, $dataSourceId = null)
     {
         $publisher = $this->publisherManager->findPublisher($publisherId);
         if (!$publisher instanceof PublisherInterface) {
             throw new \Exception(sprintf('Not found that publisher %s', $publisherId));
         }
 
+        if (null !== $dataSourceId) {
+            /** @var null|DataSourceInterface $dataSource */
+            $dataSource = $this->dataSourceManager->find($dataSourceId);
+            if ($dataSource instanceof DataSourceInterface) {
+                if ($dataSource->getPublisherId() !== $publisherId) {
+                    $dataSource = null; // make sure correct permission on data source for publisher
+                }
+            }
+        } else {
+            $dataSource = null;
+        }
+
         $alert = new Alert();
         $alert->setCode($alertCode);
         $alert->setPublisher($publisher);
         $alert->setDetail($details);
+        $alert->setDataSource($dataSource);
 
         $this->alertManager->save($alert);
     }

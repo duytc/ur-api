@@ -61,7 +61,7 @@ interface DataSetInterface extends ModelInterface
     public function setCreatedDate($createdDate);
 
     /**
-     * @return IntegrationInterface[]
+     * @return null|int
      */
     public function getPublisherId();
 

@@ -19,3 +19,6 @@ UR\Entity\Core\Alert:
         publisher:
             expose: true
             groups: [alert.detail, alert.summary]
+        dataSource:
+            expose: true
+            groups: [alert.detail, alert.summary]

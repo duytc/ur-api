@@ -16,6 +16,9 @@ class WrongFormatAlert extends AbstractDataSourceAlert
         parent::__construct($alertCode, $fileName, $dataSourceName);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getDetails()
     {
         return [

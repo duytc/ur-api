@@ -21,7 +21,8 @@ class AlertFormType extends AbstractRoleSpecificFormType
         $builder
             ->add('code')
             ->add('detail')
-            ->add('isRead');
+            ->add('isRead')
+            ->add('dataSource');
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(

@@ -9,8 +9,11 @@ use UR\Model\Core\DataSourceInterface;
 
 class ImportFailureAlert extends AbstractConnectedDataSourceAlert
 {
+    /** @var mixed */
     private $content;
+    /** @var int */
     private $column;
+    /** @var int */
     private $row;
 
     /**
@@ -32,6 +35,9 @@ class ImportFailureAlert extends AbstractConnectedDataSourceAlert
         $this->content = $content;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getDetails()
     {
         $details = [
@@ -47,12 +53,14 @@ class ImportFailureAlert extends AbstractConnectedDataSourceAlert
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_REQUIRED_FAIL:
                 $details[self::COLUMN] = $this->column;
                 break;
+
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_WRONG_TYPE_MAPPING:
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_NUMBER:
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE:
                 $details[self::COLUMN] = $this->column;
                 $details[self::CONTENT] = $this->content;
                 break;
+
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_MAPPING_FAIL:
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_HEADER_FOUND:
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_DATA_ROW_FOUND:

@@ -26,7 +26,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     /**
      * Get all alerts
      *
-     * @Rest\View(serializerGroups={"alert.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"alert.detail", "user.summary", "datasource.viewAlert"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
@@ -65,7 +65,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     /**
      * Get a single alert group for the given id
      *
-     * @Rest\View(serializerGroups={"alert.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"alert.detail", "user.summary", "datasource.viewAlert"})
      *
      * @ApiDoc(
      *  section = "Alert",

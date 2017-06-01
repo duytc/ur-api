@@ -45,6 +45,11 @@ class Alert implements AlertInterface
      */
     protected $publisher;
 
+    /**
+     * @var DataSourceInterface
+     */
+    protected $dataSource;
+
     public function __construct()
     {
         $this->isRead = false;
@@ -146,5 +151,25 @@ class Alert implements AlertInterface
     public function setDetail($detail)
     {
         $this->detail = $detail;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSource()
+    {
+        return $this->dataSource;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setDataSource($dataSource)
+    {
+        $this->dataSource = $dataSource;
+
+        return $this;
     }
 }

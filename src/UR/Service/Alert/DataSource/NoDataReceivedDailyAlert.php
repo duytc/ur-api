@@ -9,6 +9,13 @@ use UR\Model\Core\DataSourceInterface;
 
 class NoDataReceivedDailyAlert extends AbstractDataSourceAlert
 {
+    /** @var String */
+    protected $alertTimeZone;
+    /** @var int */
+    protected $alertHour;
+    /** @var int */
+    protected $alertMinutes;
+
     /**
      * NoDataReceivedDailyAlert constructor.
      * @param $alertCode
@@ -19,12 +26,16 @@ class NoDataReceivedDailyAlert extends AbstractDataSourceAlert
      */
     public function __construct($alertCode, DataSourceInterface $dataSource, $alertTimeZone, $alertHour, $alertMinutes)
     {
-        parent::__construct($alertCode, null, $dataSource);
+        parent::__construct($alertCode, $fileName = null, $dataSource);
+
         $this->alertTimeZone = $alertTimeZone;
         $this->alertHour = $alertHour;
         $this->alertMinutes = $alertMinutes;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getDetails()
     {
         return [
@@ -32,14 +43,6 @@ class NoDataReceivedDailyAlert extends AbstractDataSourceAlert
             self::DATA_SOURCE_NAME => $this->dataSource->getName(),
             self::DATE => sprintf(date("Y-m-d"))
         ];
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getDataSource()
-    {
-        return $this->dataSource;
     }
 
     public function getNextAlertTime()
