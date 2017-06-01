@@ -5,6 +5,7 @@ namespace UR\Service\Parser\Transformer\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Service\DTO\Collection;
 use UR\Service\Report\SqlBuilder;
 
@@ -96,6 +97,7 @@ class Augmentation implements CollectionTransformerInterface
         $qb = $conn->createQueryBuilder();
         $tableName = sprintf(SqlBuilder::DATA_SET_TABLE_NAME_TEMPLATE, $this->mapDataSet);
         $qb->from($conn->quoteIdentifier($tableName))->select('*');
+        $qb->where(sprintf('%s IS NULL', DataSetInterface::OVERWRITE_DATE));
 
         if (is_array($this->customCondition)) {
             $mappedFields = [];
