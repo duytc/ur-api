@@ -11,6 +11,7 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
@@ -27,6 +28,8 @@ use UR\Service\PublicSimpleException;
  */
 class DataSourceEntryController extends RestControllerAbstract implements ClassResourceInterface
 {
+    use GetEntityFromIdTrait;
+
     /**
      * Get all data source entries
      *
@@ -53,10 +56,10 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
      */
     public function cgetAction(Request $request)
     {
-        $publisher = $this->getUser();
+        $user = $this->getUserDueToQueryParamPublisher($request, 'publisher');
 
         $dataSourceEntryRepository = $this->get('ur.repository.data_source_entry');
-        $qb = $dataSourceEntryRepository->getDataSourceEntriesForUserQuery($publisher, $this->getParams());
+        $qb = $dataSourceEntryRepository->getDataSourceEntriesForUserQuery($user, $this->getParams());
 
         $params = array_merge($request->query->all(), $request->attributes->all());
         if (!isset($params['page'])) {

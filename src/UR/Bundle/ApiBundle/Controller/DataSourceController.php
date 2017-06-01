@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
@@ -23,6 +24,7 @@ use UR\Model\Core\DataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\IntegrationInterface;
+use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
 
 /**
@@ -30,6 +32,8 @@ use UR\Model\User\Role\PublisherInterface;
  */
 class DataSourceController extends RestControllerAbstract implements ClassResourceInterface
 {
+    use GetEntityFromIdTrait;
+
     /**
      * Get all data sources
      *
@@ -56,10 +60,10 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      */
     public function cgetAction(Request $request)
     {
-        $publisher = $this->getUser();
+        $user = $this->getUserDueToQueryParamPublisher($request, 'publisher');
 
         $dataSourceRepository = $this->get('ur.repository.data_source');
-        $qb = $dataSourceRepository->getDataSourcesForUserQuery($publisher, $this->getParams());
+        $qb = $dataSourceRepository->getDataSourcesForUserQuery($user, $this->getParams());
 
         $params = array_merge($request->query->all(), $request->attributes->all());
         if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {

@@ -7,6 +7,7 @@ use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
@@ -22,6 +23,8 @@ use UR\Service\PublicSimpleException;
  */
 class ImportHistoryController extends RestControllerAbstract implements ClassResourceInterface
 {
+    use GetEntityFromIdTrait;
+
     /**
      * Get all import history
      *
@@ -48,10 +51,10 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
      */
     public function cgetAction(Request $request)
     {
-        $publisher = $this->getUser();
+        $user = $this->getUserDueToQueryParamPublisher($request, 'publisher');
 
         $importHistoryRepository = $this->get('ur.repository.import_history');
-        $qb = $importHistoryRepository->getImportHistoriesForUserPaginationQuery($publisher, $this->getParams());
+        $qb = $importHistoryRepository->getImportHistoriesForUserPaginationQuery($user, $this->getParams());
 
         $params = array_merge($request->query->all(), $request->attributes->all());
         if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {

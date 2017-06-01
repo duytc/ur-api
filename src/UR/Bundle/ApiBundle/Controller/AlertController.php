@@ -8,16 +8,21 @@ use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\AlertInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\User\Role\AdminInterface;
+use UR\Model\User\Role\PublisherInterface;
 
 /**
  * @Rest\RouteResource("Alert")
  */
 class AlertController extends RestControllerAbstract implements ClassResourceInterface
 {
+    use GetEntityFromIdTrait;
+
     /**
      * Get all alerts
      *
@@ -44,10 +49,10 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      */
     public function cgetAction(Request $request)
     {
-        $publisher = $this->getUser();
+        $user = $this->getUserDueToQueryParamPublisher($request, 'publisher');
 
         $alertRepository = $this->get('ur.repository.alert');
-        $qb = $alertRepository->getAlertsForUserQuery($publisher, $this->getParams());
+        $qb = $alertRepository->getAlertsForUserQuery($user, $this->getParams());
 
         $params = array_merge($request->query->all(), $request->attributes->all());
         if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {

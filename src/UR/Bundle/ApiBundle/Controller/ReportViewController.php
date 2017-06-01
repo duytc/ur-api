@@ -2,7 +2,6 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
-use Doctrine\Common\Collections\ArrayCollection;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
@@ -11,12 +10,12 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\RuntimeException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
-use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 
 /**
@@ -24,6 +23,8 @@ use UR\Model\Core\ReportViewInterface;
  */
 class ReportViewController extends RestControllerAbstract implements ClassResourceInterface
 {
+    use GetEntityFromIdTrait;
+
     const TOKEN = 'token';
     const FIELDS = 'fields';
 
@@ -55,7 +56,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      */
     public function cgetAction(Request $request)
     {
-        $publisher = $this->getUser();
+        $user = $this->getUserDueToQueryParamPublisher($request, 'publisher');
 
         $multiView = $request->query->get('multiView', null);
         if (!is_null($multiView) && $multiView !== 'true' && $multiView !== 'false') {
@@ -63,7 +64,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         }
 
         $reportViewManager = $this->get('ur.domain_manager.report_view');
-        $qb = $reportViewManager->getReportViewsForUserPaginationQuery($publisher, $this->getParams(), $multiView);
+        $qb = $reportViewManager->getReportViewsForUserPaginationQuery($user, $this->getParams(), $multiView);
 
         $params = array_merge($request->query->all(), $request->attributes->all());
         if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {

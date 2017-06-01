@@ -8,6 +8,7 @@ use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
@@ -18,14 +19,14 @@ use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
-use UR\Model\User\Role\AdminInterface;
-use UR\Model\User\Role\PublisherInterface;
 
 /**
  * @Rest\RouteResource("DataSet")
  */
 class DataSetController extends RestControllerAbstract implements ClassResourceInterface
 {
+    use GetEntityFromIdTrait;
+
     /**
      * Get all data sets
      *
@@ -54,7 +55,6 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      */
     public function cgetAction(Request $request)
     {
-        $publisher = $this->getUser();
         $params = array_merge($request->query->all(), $request->attributes->all());
         $dataSetRepository = $this->get('ur.repository.data_set');
         $hasConnectedDataSource = $request->query->get('hasConnectedDataSource', null);
@@ -67,19 +67,9 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
             throw new \Exception(sprintf('hasConnectedDataSource is not valid', $hasConnectedDataSource));
         }
 
-        if ($publisher instanceof AdminInterface) {
-            if (isset($params['publisher'])) {
-                $publisherId = filter_var($params['publisher'], FILTER_VALIDATE_INT);
-                $user = $this->get('ur_user.domain_manager.publisher')->find($publisherId);
-                if (!$user instanceof PublisherInterface) {
-                    throw new InvalidArgumentException(sprintf('publisher %d does not exist', $publisherId));
-                }
+        $user = $this->getUserDueToQueryParamPublisher($request, 'publisher');
 
-                $publisher = $user;
-            }
-        }
-
-        $qb = $dataSetRepository->getDataSetsForUserPaginationQuery($publisher, $this->getParams(), $hasConnectedDataSource);
+        $qb = $dataSetRepository->getDataSetsForUserPaginationQuery($user, $this->getParams(), $hasConnectedDataSource);
 
         if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
             return $qb->getQuery()->getResult();
