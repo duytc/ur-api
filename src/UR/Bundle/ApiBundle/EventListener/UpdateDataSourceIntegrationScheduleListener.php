@@ -8,14 +8,19 @@ use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Entity\Core\DataSourceIntegrationSchedule;
 use UR\Model\Core\DataSourceIntegration;
 use UR\Model\Core\DataSourceIntegrationInterface;
+use UR\Service\DateTime\DateTimeUtil;
 
 class UpdateDataSourceIntegrationScheduleListener
 {
     /** @var array|DataSourceIntegrationInterface[] */
     private $updateDataSourceIntegrations = [];
 
-    public function __construct()
+    /** @var  DateTimeUtil */
+    private $dateTimeUtil;
+
+    public function __construct(DateTimeUtil $dateTimeUtil)
     {
+        $this->dateTimeUtil = $dateTimeUtil;
     }
 
     /**
@@ -42,7 +47,9 @@ class UpdateDataSourceIntegrationScheduleListener
     public function preUpdate(PreUpdateEventArgs $args)
     {
         // only do encrypt if params changed
-        if (!$args->hasChangedField('schedule')) {
+        if ($args->hasChangedField('schedule') || $args->hasChangedField('lastExecutedAt')) {
+            // Continue
+        } else {
             return;
         }
 
@@ -85,33 +92,20 @@ class UpdateDataSourceIntegrationScheduleListener
      */
     private function updateDataSourceIntegrationSchedule(DataSourceIntegrationInterface $dataSourceIntegration)
     {
-        // TODO: write function validate and get schedule element... in DataSourceIntegration model from it's schedule setting
-
         // update uuid to schedule setting, TODO: move to new listener
         $scheduleSetting = $dataSourceIntegration->getSchedule();
         $scheduleSetting = $this->organizeScheduleSetting($scheduleSetting);
 
         // update to dataSourceIntegration
         $dataSourceIntegration->setSchedule($scheduleSetting);
+        $lastExecuted = $dataSourceIntegration->getLastExecutedAt();
 
         $checkType = $scheduleSetting[DataSourceIntegration::SCHEDULE_KEY_CHECKED];
-
-        /*
-         * [
-         *    { timeZone: "UTC", hour: 3, minute: 4 },
-         *    ...
-         * ]
-         */
         $checkValue = $scheduleSetting[$checkType];
-
-        $utcTimeZone = new \DateTimeZone('UTC');
-        $now = new \DateTime('now', $utcTimeZone);
 
         switch ($checkType) {
             case DataSourceIntegration::SCHEDULE_CHECKED_CHECK_EVERY:
-                $dateInterval = new \DateInterval(sprintf('PT%dH', $checkValue[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_HOUR])); // e.g PT2H = period time 2 hours
-                $nextExecuteAt = clone $now;
-                $nextExecuteAt = $nextExecuteAt->add($dateInterval);
+                $nextExecuteAt = $this->dateTimeUtil->getNextExecutedByCheckEvery($lastExecuted, $checkValue);
                 $newDataSourceIntegrationSchedules = [
                     (new DataSourceIntegrationSchedule())
                         ->setUuid($checkValue[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID])
@@ -126,21 +120,7 @@ class UpdateDataSourceIntegrationScheduleListener
                 $newDataSourceIntegrationSchedules = [];
 
                 foreach ($checkValue as $checkAtItem) {
-                    $timeZone = $checkAtItem[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_TIME_ZONE];
-                    $hour = $checkAtItem[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_HOUR];
-                    $minute = $checkAtItem[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_MINUTES];
-
-                    $nextExecuteAt = new \DateTime('now', new \DateTimeZone($timeZone));
-                    $nextExecuteAt->setTime($hour, $minute);
-                    // normalize to UTC
-                    $nextExecuteAt->setTimezone($utcTimeZone);
-
-//                    $nextExecuteAt = clone $now;
-//                    $nextExecuteAt->setTime($hour, $minute);
-//                    $nextExecuteAtByTimeZone = clone $nextExecuteAt;
-//                    $nextExecuteAtByTimeZone->setTimezone(new \DateTimeZone($timeZone));
-//                    $nextExecuteAt->setTime($nextExecuteAtByTimeZone->format('H'), $nextExecuteAt->format('i'));
-
+                    $nextExecuteAt = $this->dateTimeUtil->getNextExecutedByCheckAt($lastExecuted, $checkAtItem);
                     $newDataSourceIntegrationSchedules[] = ((new DataSourceIntegrationSchedule())
                         ->setUuid($checkAtItem[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID])
                         ->setExecutedAt($nextExecuteAt)

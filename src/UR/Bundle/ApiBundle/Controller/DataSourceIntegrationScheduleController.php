@@ -147,43 +147,16 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
     {
         $id = $request->request->get('id', null);
         $dataSourceIntegrationSchedule = $this->one($id);
-        if (!($dataSourceIntegrationSchedule instanceof DataSourceIntegrationScheduleInterface)) {
+        if (!$dataSourceIntegrationSchedule instanceof DataSourceIntegrationScheduleInterface) {
             throw new NotFoundHttpException('Not found that Data Source Integration Schedule');
         }
+        $dataSourceIntegrationManager = $this->get('ur.domain_manager.data_source_integration');
 
-        $executedAt = $dataSourceIntegrationSchedule->getExecutedAt();
-        $scheduleType = $dataSourceIntegrationSchedule->getScheduleType();
-        $scheduleSetting = $dataSourceIntegrationSchedule->getDataSourceIntegration()->getSchedule();
-        $now = new \DateTime('now', new \DateTimeZone('UTC'));
+        $dataSourceIntegration = $dataSourceIntegrationSchedule->getDataSourceIntegration();
+        $dataSourceIntegration = $dataSourceIntegrationManager->find($dataSourceIntegration->getId());
+        $dataSourceIntegration->setLastExecutedAt(date_create('now'));
 
-        switch ($scheduleType) {
-            case DataSourceIntegration::SCHEDULE_CHECKED_CHECK_EVERY:
-                $scheduleHours = $scheduleSetting[DataSourceIntegration::SCHEDULE_KEY_CHECK_EVERY][DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_HOUR];
-                // increase hours from now
-                $executedAt = clone $now;
-                $executedAt->add(new \DateInterval(sprintf('PT%dH', $scheduleHours))); // increase n hours
-
-                break;
-
-            case DataSourceIntegration::SCHEDULE_CHECKED_CHECK_AT:
-                $hour = $executedAt->format('H');
-                $minute = $executedAt->format('i');
-
-                $executedAt = clone $now;
-                $executedAt->add(new \DateInterval(sprintf('P1D'))); // increase 1 day
-
-                // keep exactly hour:min
-                $executedAt->setTime($hour, $minute);
-
-                break;
-
-            default:
-                break;
-        }
-
-        /** @var DataSourceIntegrationScheduleManagerInterface $dsisManager */
-        $dsisManager = $this->get('ur.domain_manager.data_source_integration_schedule');
-        $dsisManager->updateExecuteAt($dataSourceIntegrationSchedule, $executedAt);
+        $dataSourceIntegrationManager->save($dataSourceIntegration);
 
         return $this->view(true, Codes::HTTP_OK);
     }

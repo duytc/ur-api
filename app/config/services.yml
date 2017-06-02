@@ -274,3 +274,6 @@ services:
         class: UR\Worker\Workers\CSVFixWindowLineFeed
         arguments:
             - @logger
+
+    ur.service.date_time.date_time_util:
+        class: UR\Service\DateTime\DateTimeUtil
