@@ -203,7 +203,7 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getRows()
     {
-        return $this->fetchData();
+        return $this->removeNonUtf8Characters($this->fetchData());
     }
 
     /**
@@ -216,7 +216,7 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
             $this->csv->setLimit($limit);
         }
 
-        return $this->fetchData();
+        return $this->removeNonUtf8Characters($this->fetchData());
     }
 
     /**

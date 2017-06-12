@@ -133,13 +133,13 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
             $this->rows = array_merge($this->rows, $chunkRows);
         }
 
-        return $this->rows;
+        return $this->removeNonUtf8Characters($this->rows);
     }
 
     public function getLimitedRows($limit = 100)
     {
         $beginRowsReadRange = $this->dataRow;
-        return $this->getChunkRows($beginRowsReadRange, $limit);
+        return $this->removeNonUtf8Characters($this->getChunkRows($beginRowsReadRange, $limit));
     }
 
     /**

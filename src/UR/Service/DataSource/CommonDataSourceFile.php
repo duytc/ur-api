@@ -71,4 +71,32 @@ Abstract class CommonDataSourceFile
 
         return $header;
     }
+
+    /**
+     * @param $rows
+     * @return mixed
+     */
+    protected function removeNonUtf8Characters($rows)
+    {
+        json_encode($rows);
+        if (json_last_error() != JSON_ERROR_UTF8) {
+            return $rows;
+        }
+
+        foreach ($rows as &$row) {
+            json_encode($row);
+            if (json_last_error() != JSON_ERROR_UTF8) {
+                continue;
+            }
+
+            foreach ($row as &$cell) {
+                json_encode($cell);
+                if (json_last_error() != JSON_ERROR_UTF8) {
+                    continue;
+                }
+                $cell = mb_convert_encoding($cell, 'UTF-8', 'UTF-8');
+            }
+        }
+        return $rows;
+    }
 }

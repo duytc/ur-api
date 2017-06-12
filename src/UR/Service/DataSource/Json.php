@@ -95,7 +95,7 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
             $item = $row;
         }
 
-        return $this->rows;
+        return $this->removeNonUtf8Characters($this->rows);
     }
 
     /**
@@ -137,7 +137,7 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
         $this->getRows();
 
         if (is_numeric($limit)) {
-            return array_slice($this->rows, 0, $limit);
+            return $this->removeNonUtf8Characters(array_slice($this->rows, 0, $limit));
         }
     }
 

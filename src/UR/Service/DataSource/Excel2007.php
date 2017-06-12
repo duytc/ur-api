@@ -130,7 +130,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
             }
         }
 
-        return $this->rows;
+        return $this->removeNonUtf8Characters($this->rows);
     }
 
     public function getDataRow()
@@ -158,7 +158,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         $limitedRows = [];
 
         if (!is_numeric($limit)) {
-            return $this->getRows();
+            return $this->removeNonUtf8Characters($this->getRows());
         }
 
         $curRow = 1;
@@ -184,7 +184,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
             }
         }
 
-        return $limitedRows;
+        return $this->removeNonUtf8Characters($limitedRows);
     }
 
     /**
