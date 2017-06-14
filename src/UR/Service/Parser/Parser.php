@@ -16,6 +16,7 @@ use UR\Service\Import\ImportDataException;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
 use UR\Service\Parser\Transformer\Collection\Augmentation;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
+use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Service\Parser\Transformer\Collection\SubsetGroup;
@@ -102,41 +103,6 @@ class Parser implements ParserInterface
 
         $rows = $preFilterEvent->getRows();
 
-        $cur_row = -1;
-        foreach ($rows as &$row) {
-            $cur_row++;
-            if (!is_array($row)) {
-                unset($rows[$cur_row]);
-                continue;
-            }
-
-            $isMapped = count(array_diff_key(array_flip($fileCols), $row));
-            if ($isMapped > 0 && count($fileCols) === count($row)) {
-                $row = array_combine($fileCols, $row);
-            }
-
-            foreach ($dataSetColumns as $dsColumn => $type) {
-                if (!array_key_exists($dsColumn, $columnsMapping)) {
-                    continue;
-                }
-
-                $fileColumn = $columnsMapping[$dsColumn];
-
-                if (!array_key_exists($fileColumn, $row)) {
-                    continue;
-                }
-
-                $row[$fileColumn] = $this->reformatDataService->reformatData($row[$fileColumn], $type);
-            }
-
-            $isValidFilter = $this->doFilter($parserConfig, $fileCols, $row);
-
-            if (!$isValidFilter) {
-                unset($rows[$cur_row]);
-                continue;
-            }
-        }
-
         // TODO: may dispatch event after filtering data
         $collection = new Collection($columns, $rows, $types);
 
@@ -163,11 +129,22 @@ class Parser implements ParserInterface
         $collection = $preTransformCollectionEvent->getCollection();
         $collection = $this->addTemporaryFields($collection, $connectedDataSource);
 
+        $fromDateFormat = [];
+        foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
+            foreach ($transforms as $transform) {
+                if ($transform instanceof DateFormat) {
+                    $fromDateFormat[$column] = array('formats' => $transform->getFromDateFormats(), 'timezone' => $transform->getTimezone());
+                }
+            }
+        }
+
+        $mapFields = $connectedDataSource->getMapFields();
+
         // transform collection
         foreach ($allFieldsTransforms as $transform) {
             /** @var CollectionTransformerInterface $transform */
-            if ($transform instanceof Augmentation || $transform instanceof SubsetGroup) {
-                $collection = $transform->transform($collection, $this->em, $connectedDataSource);
+            if ($transform instanceof Augmentation || $transform instanceof SubsetGroup || $transform instanceof GroupByColumns) {
+                $collection = $transform->transform($collection, $this->em, $connectedDataSource, $fromDateFormat, $mapFields);
             } else {
                 $collection = $transform->transform($collection);
             }
@@ -434,6 +411,47 @@ class Parser implements ParserInterface
 
         $rows = array_values($duplicateRows);
 
+        return $rows;
+    }
+
+    public function combineRowsWithColumns(array $fileCols, array $rows, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource) {
+
+        $columnsMapping = $parserConfig->getAllColumnMappings();
+        $cur_row = -1;
+        foreach ($rows as &$row) {
+            $cur_row++;
+            if (!is_array($row)) {
+                unset($rows[$cur_row]);
+                continue;
+            }
+
+            $isMapped = count(array_diff_key(array_flip($fileCols), $row));
+            if ($isMapped > 0 && count($fileCols) === count($row)) {
+                $row = array_combine($fileCols, $row);
+            }
+
+            $dataSetColumns = array_merge($connectedDataSource->getDataSet()->getDimensions(), $connectedDataSource->getDataSet()->getMetrics());
+            foreach ($dataSetColumns as $dsColumn => $type) {
+                if (!array_key_exists($dsColumn, $columnsMapping)) {
+                    continue;
+                }
+
+                $fileColumn = $columnsMapping[$dsColumn];
+
+                if (!array_key_exists($fileColumn, $row)) {
+                    continue;
+                }
+
+                $row[$fileColumn] = $this->reformatDataService->reformatData($row[$fileColumn], $type);
+            }
+
+            $isValidFilter = $this->doFilter($parserConfig, $fileCols, $row);
+
+            if (!$isValidFilter) {
+                unset($rows[$cur_row]);
+                continue;
+            }
+        }
         return $rows;
     }
 }

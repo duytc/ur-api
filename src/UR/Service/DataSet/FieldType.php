@@ -56,7 +56,14 @@ final class FieldType
             case FieldType::DATE:
                 return DateTime::createFromFormat('Y-m-d', $originalValue);
             case FieldType::DATETIME:
-                return DateTime::createFromFormat('Y-m-d H:i:s', $originalValue);
+                $dateTime = DateTime::createFromFormat('Y-m-d H:i:s', $originalValue);
+                if (!$dateTime) {
+                    $dateTime = DateTime::createFromFormat('Y-m-d H:i', $originalValue);
+                }
+                if (!$dateTime) {
+                    $dateTime = DateTime::createFromFormat('Y-m-d H', $originalValue);
+                }
+                return $dateTime;
             case FieldType::NUMBER:
                 return is_numeric($originalValue) ? round($originalValue) : null;
             case FieldType::DECIMAL:

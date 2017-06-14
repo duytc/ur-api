@@ -113,9 +113,11 @@ class TransformerFactory
                 DateFormat::TO_KEY));
         }
 
+        $timezone = array_key_exists(DateFormat::TIMEZONE_KEY, $jsonTransform) ? $jsonTransform[DateFormat::TIMEZONE_KEY] : DateFormat::DEFAULT_TIMEZONE;
         return new DateFormat(
             $jsonTransform[DateFormat::FIELD_KEY],
             $jsonTransform[DateFormat::FROM_KEY],
+            $timezone,
             $jsonTransform[DateFormat::TO_KEY]
         );
     }
@@ -152,7 +154,8 @@ class TransformerFactory
 
         switch ($jsonTransform[CollectionTransformerInterface::TYPE_KEY]) {
             case CollectionTransformerInterface::GROUP_BY:
-                $transformObject = $this->getGroupByTransform($config);
+                $timezone = array_key_exists(GroupByColumns::TIMEZONE_KEY, $jsonTransform) ? $jsonTransform[GroupByColumns::TIMEZONE_KEY] : GroupByColumns::DEFAULT_TIMEZONE;
+                $transformObject = $this->getGroupByTransform($config, $timezone);
                 break;
 
             case CollectionTransformerInterface::SORT_BY:
@@ -198,15 +201,16 @@ class TransformerFactory
 
     /**
      * @param array $config
+     * @param $timezone
      * @return GroupByColumns
      */
-    private function getGroupByTransform(array $config)
+    private function getGroupByTransform(array $config, $timezone)
     {
         if (!is_array($config)) {
             return null;
         }
 
-        return new GroupByColumns($config);
+        return new GroupByColumns($config, $timezone);
     }
 
     /**

@@ -4,24 +4,29 @@ namespace UR\Service\Parser\Transformer\Column;
 
 use DateTime;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Model\Core\AlertInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\Import\ImportDataException;
+use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 
 class DateFormat extends AbstractCommonColumnTransform implements ColumnTransformerInterface
 {
+    const DEFAULT_TIMEZONE = 'UTC';
     const FROM_KEY = 'from';
     const TO_KEY = 'to';
     const IS_CUSTOM_FORMAT_DATE_FROM = 'isCustomFormatDateFrom';
     const DEFAULT_DATE_FORMAT = 'Y-m-d';
     const DEFAULT_DATETIME_FORMAT = 'Y-m-d H:i:s';
+    const TIMEZONE_KEY = 'timezone';
 
     const FORMAT_KEY = 'format';
 
     protected $fromDateFormats;
     protected $toDateFormat;
-
-    private $supportedDateFormats = [
-        'Y-m-d',  // 2016-01-15
+    protected $timezone;
+    const SUPPORTED_DATE_FORMATS = [
+        self::DEFAULT_DATE_FORMAT,  // 2016-01-15
         'Y/m/d',  // 2016/01/15
         'm-d-Y',  // 01-15-2016
         'm/d/Y',  // 01/15/2016
@@ -41,20 +46,24 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         'm/d/y',  // 01/15/99
         'y-m-d',  // 99-01-15
         'y/m/d',  // 99/01/15
-        'Y-m-d H:i:s',
+        'Y-m-d H:i',
+        self::DEFAULT_DATETIME_FORMAT,
+        'Y-m-d H:i:s T',
     ];
 
     /**
      * DateFormat constructor.
      * @param $field
      * @param array $fromDateFormats
+     * @param string $timezone
      * @param string $toDateFormat
      */
-    public function __construct($field, array $fromDateFormats, $toDateFormat = 'Y-m-d')
+    public function __construct($field, array $fromDateFormats, $timezone = self::DEFAULT_TIMEZONE, $toDateFormat = self::DEFAULT_DATE_FORMAT)
     {
         parent::__construct($field);
         $this->fromDateFormats = $fromDateFormats;
         $this->toDateFormat = $toDateFormat;
+        $this->timezone = $timezone;
     }
 
     /**
@@ -63,7 +72,12 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     public function transform($value)
     {
         if ($value instanceof DateTime) {
-            return $value->format(self::DEFAULT_DATETIME_FORMAT);
+            return $value->format($this->toDateFormat);
+        }
+
+        $date = DateTime::createFromFormat('Y-m-d H:i:s T', $value);
+        if ($date instanceof DateTime) {
+            return $date->format($this->toDateFormat);
         }
 
         $value = trim($value);
@@ -79,13 +93,15 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
 
             //get from date format
             $fromFormat = array_key_exists(self::FORMAT_KEY, $fromDateFormat) ? $fromDateFormat[self::FORMAT_KEY] : null;
-            $fromFormat = $isCustomDateFormat ? $this->convertCustomFromDateFormat($fromFormat) : $fromFormat;
+            $fromFormat = $isCustomDateFormat ? self::convertCustomFromDateFormat($fromFormat) : $fromFormat;
 
-            $date = DateTime::createFromFormat($fromFormat, $value);
+            $date = DateTime::createFromFormat($fromFormat, $value, new \DateTimeZone($this->timezone));
+
             if (!$date instanceof DateTime) {
                 continue;
             }
 
+            $date->setTimezone(new \DateTimeZone(self::DEFAULT_TIMEZONE));
             $resultDate = $date;
         }
 
@@ -100,7 +116,6 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             default:
                 return $resultDate->format(self::DEFAULT_DATE_FORMAT);
         }
-
     }
 
     /**
@@ -118,7 +133,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         if (!$date instanceof DateTime) {
             $date = DateTime::createFromFormat(self::DEFAULT_DATETIME_FORMAT, $value);
         }
-        
+
         if ($value === '0000-00-00' || !$date instanceof DateTime) {
             return null;
         }
@@ -159,6 +174,24 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     }
 
     /**
+     * @return string
+     */
+    public function getTimezone()
+    {
+        return $this->timezone;
+    }
+
+    /**
+     * @param string $timezone
+     * @return self
+     */
+    public function setTimezone($timezone)
+    {
+        $this->timezone = $timezone;
+        return $this;
+    }
+
+    /**
      * convert FromDateFormat To PHP format
      * e.g:
      * - YYYY.MM.DD => Y.m.d
@@ -169,7 +202,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
      * @param string $dateFormat
      * @return string|bool false if dateFormat is not a string
      */
-    private function convertCustomFromDateFormat($dateFormat)
+    public static function convertCustomFromDateFormat($dateFormat)
     {
         if (!is_string($dateFormat)) {
             return false;
@@ -213,7 +246,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             //check non-custom date formats, if one of them is not supported, throw exception
             $isCustomDateFormat = array_key_exists(self::IS_CUSTOM_FORMAT_DATE_FROM, $fromDateFormat) ? $fromDateFormat[self::IS_CUSTOM_FORMAT_DATE_FROM] : false;
             $fromFormat = array_key_exists(self::FORMAT_KEY, $fromDateFormat) ? $fromDateFormat[self::FORMAT_KEY] : null;
-            if ($isCustomDateFormat !== true && !in_array($fromFormat, $this->supportedDateFormats)) {
+            if ($isCustomDateFormat !== true && !in_array($fromFormat, self::SUPPORTED_DATE_FORMATS)) {
                 $isSupportDateFormat = false;
                 break;
             }
@@ -224,8 +257,119 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             throw  new BadRequestHttpException(sprintf('Transform setting error: field "%s" not support from date format', $this->getField()));
         }
 
-        if (!in_array($this->toDateFormat, $this->supportedDateFormats)) {
+        if (!in_array($this->toDateFormat, self::SUPPORTED_DATE_FORMATS)) {
             throw  new BadRequestHttpException(sprintf('Transform setting error: field "%s" not support to date format', $this->getField()));
         }
+    }
+
+    /**
+     * @param $value
+     * @param $column
+     * @param $connectedDataSource
+     * @return string
+     */
+    public static function getDateFromDateTime($value, $column = null, $connectedDataSource = null)
+    {
+        $timeZone = self::getTimeZoneOfDateField($column, $connectedDataSource);
+        foreach (self::SUPPORTED_DATE_FORMATS as $format) {
+            $dateTime = date_create_from_format($format, $value, new \DateTimeZone($timeZone));
+            if ($dateTime) {
+                $dateTime->setTimezone(new \DateTimeZone(self::DEFAULT_TIMEZONE));
+                return $dateTime->format(self::DEFAULT_DATE_FORMAT);
+            }
+        }
+
+        /** For user provided datetime format */
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            return '';
+        }
+
+        $mapFields = $connectedDataSource->getMapFields();
+        if (!array_key_exists($column, $mapFields)) {
+            return '';
+        }
+        $field = $mapFields[$column];
+
+        $transforms = $connectedDataSource->getTransforms();
+        foreach ($transforms as $transform) {
+            if (!array_key_exists(CollectionTransformerInterface::TYPE_KEY, $transform)) {
+                continue;
+            }
+            if ($transform[CollectionTransformerInterface::TYPE_KEY] != ColumnTransformerInterface::DATE_FORMAT) {
+                continue;
+            }
+
+            if (!array_key_exists(CollectionTransformerInterface::FIELD_KEY, $transform)) {
+                continue;
+            }
+            if ($transform[CollectionTransformerInterface::FIELD_KEY] != $field) {
+                continue;
+            }
+
+            if (!array_key_exists(self::FROM_KEY, $transform)) {
+                continue;
+            }
+
+            if (array_key_exists(GroupByTransform::TIMEZONE_KEY, $transform)) {
+                $timeZone = $transform[GroupByTransform::TIMEZONE_KEY];
+            } else {
+                $timeZone = self::DEFAULT_TIMEZONE;
+            }
+
+            $fromFormats = $transform[self::FROM_KEY];
+
+            foreach ($fromFormats as $fromFormat) {
+                if (!array_key_exists(self::FORMAT_KEY, $fromFormat)) {
+                    continue;
+                }
+                $format = self::convertCustomFromDateFormat($fromFormat[self::FORMAT_KEY]);
+                $dateTime = date_create_from_format($format, $value, new \DateTimeZone($timeZone));
+                if ($dateTime) {
+                    $dateTime->setTimezone(new \DateTimeZone(self::DEFAULT_TIMEZONE));
+                    return $dateTime->format(self::DEFAULT_DATE_FORMAT);
+                }
+            }
+        }
+        return '';
+    }
+
+    public static function getTimeZoneOfDateField($column = null, $connectedDataSource = null)
+    {
+        /** For user provided datetime format */
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            return self::DEFAULT_TIMEZONE;
+        }
+
+        $mapFields = $connectedDataSource->getMapFields();
+        if (!array_key_exists($column, $mapFields)) {
+            return self::DEFAULT_TIMEZONE;
+        }
+        $field = $mapFields[$column];
+
+        $transforms = $connectedDataSource->getTransforms();
+        foreach ($transforms as $transform) {
+            if (!array_key_exists(CollectionTransformerInterface::TYPE_KEY, $transform)) {
+                continue;
+            }
+            if ($transform[CollectionTransformerInterface::TYPE_KEY] != ColumnTransformerInterface::DATE_FORMAT) {
+                continue;
+            }
+
+            if (!array_key_exists(CollectionTransformerInterface::FIELD_KEY, $transform)) {
+                continue;
+            }
+            if ($transform[CollectionTransformerInterface::FIELD_KEY] != $field) {
+                continue;
+            }
+
+            if (!array_key_exists(self::FROM_KEY, $transform)) {
+                continue;
+            }
+
+            if (array_key_exists(GroupByTransform::TIMEZONE_KEY, $transform)) {
+                return $transform[GroupByTransform::TIMEZONE_KEY];
+            }
+        }
+        return self::DEFAULT_TIMEZONE;
     }
 }

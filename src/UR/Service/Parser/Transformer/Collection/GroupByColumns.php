@@ -3,20 +3,27 @@
 namespace UR\Service\Parser\Transformer\Collection;
 
 use Doctrine\ORM\EntityManagerInterface;
+use UR\Exception\RuntimeException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class GroupByColumns implements CollectionTransformerInterface
 {
-    protected $groupByColumns;
+    const TIMEZONE_KEY = 'timezone';
+    const DEFAULT_TIMEZONE = 'UTC';
 
-    public function __construct(array $groupByColumns)
+    protected $groupByColumns;
+    protected $timezone;
+
+    public function __construct(array $config, $timezone = self::DEFAULT_TIMEZONE)
     {
-        $this->groupByColumns = $groupByColumns;
+        $this->groupByColumns = $config;
+        $this->timezone = $timezone;
     }
 
-    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
         $rows = array_values($collection->getRows());
         $types = $collection->getTypes();
@@ -36,7 +43,7 @@ class GroupByColumns implements CollectionTransformerInterface
         $sumFieldKeys = array_diff($columns, $groupColumnKeys);
 
         if (!empty($groupColumnKeys)) {
-            $rows = self::group($rows, $types, $groupColumnKeys, $sumFieldKeys);
+            $rows = self::group($rows, $types, $groupColumnKeys, $sumFieldKeys, $fromDateFormats, $mapFields);
         }
 
         return new Collection($collection->getColumns(), $rows);
@@ -49,11 +56,12 @@ class GroupByColumns implements CollectionTransformerInterface
      * @param array $types
      * @param array $groupFields array of grouping fields
      * @param array $sumFields array of summing fields
-     * @param string $separator
+     * @param array $fromDateFormats
+     * @param array $mapFields
      *
      * @return array
      */
-    public static function group(array $array, array $types, array $groupFields, array $sumFields = array(), $separator = ',')
+    public function group(array $array, array $types, array $groupFields, array $sumFields = array(), $fromDateFormats = [], $mapFields = [])
     {
         $result = [];
 
@@ -68,6 +76,13 @@ class GroupByColumns implements CollectionTransformerInterface
             $newElement = [];
             foreach ($groupFields as $groupField) {
                 if (array_key_exists($groupField, $element)) {
+                    if (array_key_exists($groupField, $types) && $types[$groupField] == FieldType::DATETIME) {
+                        $normalizedDate = $this->normalizeTimezone($element[$groupField], $groupField, $fromDateFormats, $mapFields, $fromDateFormat);
+                        $newElement[$groupField] = $normalizedDate->setTime(0,0)->format('Y-m-d H:i:s T');
+                        $key .= $normalizedDate->format('Y-m-d');
+                        continue;
+                    }
+
                     $key .= is_array($element[$groupField]) ? json_encode($element[$groupField], JSON_UNESCAPED_UNICODE) : $element[$groupField];
                     $newElement[$groupField] = $element[$groupField];
                 }
@@ -123,5 +138,43 @@ class GroupByColumns implements CollectionTransformerInterface
     public function getGroupByColumns(): array
     {
         return $this->groupByColumns;
+    }
+
+    /**
+     * @param $value
+     * @param $groupField
+     * @param $fromDateFormats
+     * @param $mapFields
+     * @param $dateFormat
+     * @return \DateTime
+     */
+    private function normalizeTimezone($value, $groupField, $fromDateFormats, $mapFields, &$dateFormat)
+    {
+        $dateFormats = [];
+        $timezone = 'UTC';
+
+        if (!isset($mapFields[$groupField])) {
+            throw new RuntimeException(sprintf('Missing map field for %s', $groupField));
+        }
+
+        foreach ($fromDateFormats as $column => $formats) {
+            if ($column == $mapFields[$groupField]) {
+                $dateFormats = $formats['formats'];
+                $timezone = $formats['timezone'];
+                break;
+            }
+        }
+
+        foreach ($dateFormats as $format) {
+            $dateFormat = DateFormat::convertCustomFromDateFormat($format['format']);
+            $date = \DateTime::createFromFormat($dateFormat, $value, new \DateTimeZone($timezone));
+            if (!$date instanceof \DateTime) {
+                continue;
+            }
+
+            return $date->setTimezone(new \DateTimeZone(self::DEFAULT_TIMEZONE));
+        }
+
+        throw new RuntimeException('not found any invalid date format');
     }
 }

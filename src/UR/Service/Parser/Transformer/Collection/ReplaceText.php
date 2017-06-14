@@ -57,7 +57,7 @@ class ReplaceText implements CollectionTransformerInterface, CollectionTransform
         $this->isOverride = $isOverride;
     }
 
-    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
         $rows = $collection->getRows();
         $columns = $collection->getColumns();

@@ -422,7 +422,8 @@ class ParamsBuilder implements ParamsBuilderInterface
                     break;
 
                 case TransformInterface::GROUP_TRANSFORM:
-                    $transformObjects[] = new GroupByTransform($transform[TransformInterface::FIELDS_TRANSFORM]);
+                    $timezone = array_key_exists(GroupByTransform::TIMEZONE_KEY, $transform) ? $transform[GroupByTransform::TIMEZONE_KEY] : GroupByTransform::DEFAULT_TIMEZONE;
+                    $transformObjects[] = new GroupByTransform($transform[TransformInterface::FIELDS_TRANSFORM], $timezone);
                     break;
 
                 case TransformInterface::COMPARISON_PERCENT_TRANSFORM:

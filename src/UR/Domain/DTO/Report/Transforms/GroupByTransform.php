@@ -2,6 +2,7 @@
 
 namespace UR\Domain\DTO\Report\Transforms;
 
+use UR\Exception\RuntimeException;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
 use UR\Service\StringUtilTrait;
@@ -10,18 +11,23 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 {
 	use StringUtilTrait;
 	const TRANSFORMS_TYPE = 'groupBy';
+	const TIMEZONE_KEY = 'timezone';
 	const FIELDS_KEY = 'fields';
+	const DEFAULT_TIMEZONE = 'UTC';
 
 	/**
 	 * @var array
 	 */
 	protected $fields;
 
-	function __construct(array $data)
+	protected $timezone;
+
+	function __construct(array $data, $timezone = self::DEFAULT_TIMEZONE)
 	{
 		parent::__construct();
 
 		$this->fields = $data;
+		$this->timezone = $timezone;
 	}
 
 	public function addField($field)
@@ -115,14 +121,17 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 			}
 		}
 
-		foreach ($rows as $report) {
+		foreach ($rows as &$report) {
 			$key = '';
 			foreach ($groupingFields as $groupField) {
-//                if (!in_array($groupField, $dimensions)) {
-//                    throw new InvalidArgumentException(sprintf('%s is not a dimensions', $groupField));
-//                }
-
 				if (array_key_exists($groupField, $report)) {
+					if ($collection->getTypeOf($groupField) == FieldType::DATETIME) {
+						$normalizedDate = $this->normalizeTimezone($report[$groupField]);
+						$report[$groupField] = $normalizedDate->format('Y-m-d H:i:s');
+						$key .= $normalizedDate->format('Y-m-d');
+						continue;
+					}
+
 					$key .= is_array($report[$groupField]) ? json_encode($report[$groupField], JSON_UNESCAPED_UNICODE) : $report[$groupField];
 				}
 			}
@@ -132,6 +141,28 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 		}
 
 		return $groupedArray;
+	}
+
+	/**
+	 * @param $value
+	 * @return \DateTime
+     */
+	private function normalizeTimezone($value)
+	{
+		$date = \DateTime::createFromFormat('Y-m-d H:i:s', $value, new \DateTimeZone(self::DEFAULT_TIMEZONE));
+
+		if ($date instanceof \DateTime) {
+			$date->setTimezone(new \DateTimeZone($this->timezone));
+			return $date->setTime(0,0);
+		}
+
+		$date = new \DateTime($value, new \DateTimeZone($this->timezone));
+
+		if (!$date instanceof \DateTime) {
+			return $date->setTime(0, 0);
+		}
+
+		throw new RuntimeException('not found any invalid date format');
 	}
 
 	/**

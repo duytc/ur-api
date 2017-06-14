@@ -84,7 +84,7 @@ class Augmentation implements CollectionTransformerInterface
         $this->dropUnmatched = $dropUnmatched;
     }
 
-    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
         $rows = $collection->getRows();
         $columns = $collection->getColumns();

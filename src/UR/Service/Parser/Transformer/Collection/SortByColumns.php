@@ -21,7 +21,7 @@ class SortByColumns implements CollectionTransformerInterface, CollectionTransfo
         $this->descendingFields = $descendingFields;
     }
 
-    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
         $rows = $collection->getRows();
         if (count($rows) < 1) {

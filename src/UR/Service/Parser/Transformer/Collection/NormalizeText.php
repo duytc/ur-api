@@ -65,7 +65,7 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
     }
 
 
-    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
         $rows = $collection->getRows();
         $columns = $collection->getColumns();

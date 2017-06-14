@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class SubsetGroup implements CollectionTransformerInterface
 {
@@ -40,7 +41,7 @@ class SubsetGroup implements CollectionTransformerInterface
     }
 
 
-    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null)
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
@@ -72,17 +73,17 @@ class SubsetGroup implements CollectionTransformerInterface
 
         // create subset
         $groupByTransform = new GroupByColumns($this->groupFields);
-        $subsetRows = $groupByTransform->transform($collection)->getRows();
+        $subsetRows = $groupByTransform->transform($collection, $em, $connectedDataSource, $fromDateFormats, $connectedDataSource->getMapFields())->getRows();
         $subsetKeys = [];
 
         foreach ($subsetRows as $row) {
-            $subsetKeys[] = $this->getJoinKey($this->groupFields, $row);
+            $subsetKeys[] = $this->getJoinKey($this->groupFields, $row, $connectedDataSource);
         }
 
         $subsetRows = array_combine($subsetKeys, $subsetRows);
 
         foreach ($rows as &$row) {
-            $joinKey = $this->getJoinKey($this->groupFields, $row);
+            $joinKey = $this->getJoinKey($this->groupFields, $row, $connectedDataSource);
 
             if (!isset($subsetRows[$joinKey])) {
                 continue;
@@ -103,14 +104,25 @@ class SubsetGroup implements CollectionTransformerInterface
         return $collection;
     }
 
-    protected function getJoinKey(array $columns, array $row)
+    /**
+     * @param array $columns
+     * @param array $row
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return string
+     */
+    protected function getJoinKey(array $columns, array $row, $connectedDataSource)
     {
         $data = [];
 
         // need to guarantee column order is the same or key hash will be different
         foreach ($columns as $column) {
+            $fieldType = $this->getFieldType($column, $connectedDataSource);
             if (isset($row[$column])) {
-                $data[] = $row[$column];
+                if ($fieldType == FieldType::DATETIME) {
+                    $data[] = DateFormat::getDateFromDateTime($row[$column], $column, $connectedDataSource);
+                } else {
+                    $data[] = $row[$column];
+                }
             }
         }
 
@@ -153,5 +165,31 @@ class SubsetGroup implements CollectionTransformerInterface
     public function getMapFields()
     {
         return $this->mapFields;
+    }
+
+    /**
+     * @param $fieldFromFile
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return string
+     */
+    private function getFieldType($fieldFromFile, $connectedDataSource)
+    {
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            return null;
+        }
+
+        $mapFields = $connectedDataSource->getMapFields();
+        if (!array_key_exists($fieldFromFile, $mapFields)) {
+            return null;
+        }
+
+        $field = $mapFields[$fieldFromFile];
+        $dataSet = $connectedDataSource->getDataSet();
+        $allFields = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+
+        if (!array_key_exists($field, $allFields)) {
+            return null;
+        }
+        return $allFields[$field];
     }
 }

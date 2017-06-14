@@ -120,6 +120,12 @@ class ParsingFileService
 
         $this->validateMissingRequiresColumns($connectedDataSource);
 
+        $rows = $this->parser->combineRowsWithColumns($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
+
+        $rows = $this->removeRowsNotMapRequiresFields($rows, $connectedDataSource);
+
+        $rows = $this->removeNullDateTimeRows($rows, $connectedDataSource);
+
         //filter config
         $this->createFilterConfigForConnectedDataSource($connectedDataSource, $this->parserConfig);
 
@@ -487,5 +493,118 @@ class ParsingFileService
                 throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_REQUIRED_FAIL, null, $require);
             }
         }
+    }
+
+    /**
+     * @param mixed $rows
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return mixed
+     */
+    private function removeRowsNotMapRequiresFields($rows, $connectedDataSource)
+    {
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $requireFields = $connectedDataSource->getRequires();
+        if (!is_array($requireFields)) {
+            return $rows;
+        }
+
+        $requireFields = array_values($requireFields);
+
+        if (empty($requireFields)) {
+            return $rows;
+        }
+
+        $mapFields = array_flip($connectedDataSource->getMapFields());
+        $dataSet = $connectedDataSource->getDataSet();
+        $types = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+
+        foreach ($requireFields as $requireField) {
+            if (!array_key_exists($requireField, $mapFields)) {
+                continue;
+            }
+            $type = $types[$requireField];
+            $fieldInFile = $mapFields[$requireField];
+
+            foreach ($rows as $index => &$row) {
+                if (!array_key_exists($fieldInFile, $row)) {
+                    continue;
+                }
+                $value = FieldType::convertValue($row[$fieldInFile], $type);
+
+                if ($type == FieldType::TEXT || $type == FieldType::LARGE_TEXT || $type == FieldType::DATE || $type == FieldType::DATETIME) {
+                    if (empty($value)) {
+                        unset($rows[$index]);
+                    }
+                    continue;
+                }
+
+                if ($type == FieldType::NUMBER || $type == FieldType::DECIMAL) {
+                    if ($value == null) {
+                        unset($rows[$index]);
+                    }
+                    continue;
+                }
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param $rows
+     * @param $connectedDataSource
+     * @return array
+     */
+    private function removeNullDateTimeRows($rows, $connectedDataSource)
+    {
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            return $rows;
+        }
+
+        $dataSet = $connectedDataSource->getDataSet();
+        $types = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+        $dateTimeTypes = array_filter($types, function ($type) {
+            return $type == FieldType::DATE || $type == FieldType::DATETIME;
+        });
+
+        if (empty($dateTimeTypes)) {
+            return $rows;
+        }
+
+        /** Get field in files as $$FILE$$date, $$FILE$$revenue...*/
+        $mapFields = $connectedDataSource->getMapFields();
+        $fieldInFiles = [];
+        foreach ($dateTimeTypes as $field => $type) {
+            if (in_array($field, $mapFields)) {
+                foreach ($mapFields as $fieldInFile => $fieldInDataSet) {
+                    if ($field == $fieldInDataSet) {
+                        $fieldInFiles[] = $fieldInFile;
+                    }
+                }
+            }
+        }
+
+        /** Remove row if have invalid date, datetime value*/
+        foreach ($rows as $key => &$row) {
+            foreach ($fieldInFiles as $fieldInFile) {
+                if (!array_key_exists($fieldInFile, $row)) {
+                    continue;
+                }
+                $value = $row[$fieldInFile];
+                $value = DateFormat::getDateFromDateTime($value, $fieldInFile, $connectedDataSource);
+                if (empty($value)) {
+                    unset($rows[$key]);
+                    continue;
+                }
+            }
+        }
+        return array_values($rows);
     }
 }

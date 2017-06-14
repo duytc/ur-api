@@ -40,5 +40,5 @@ interface CollectionTransformerInterface extends TransformerInterface
     const TRANSFORM_PRIORITY_CONVERT_CASE = 70;
     const TRANSFORM_PRIORITY_NORMALIZE_TEXT = 70;
 
-    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null);
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = []);
 }

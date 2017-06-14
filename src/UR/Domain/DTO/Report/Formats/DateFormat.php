@@ -104,6 +104,9 @@ class DateFormat extends AbstractFormat implements DateFormatInterface
         try {
             $date = date_create_from_format('Y-m-d', $fieldValue);
             if (!$date instanceof DateTime) {
+                $date = date_create_from_format('Y-m-d H:i:s', $fieldValue);
+            }
+            if (!$date instanceof DateTime) {
                 throw new \Exception(sprintf('System can not create date from value: %s', $fieldValue));
             }
 
