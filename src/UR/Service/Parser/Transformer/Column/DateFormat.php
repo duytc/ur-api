@@ -63,7 +63,12 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         parent::__construct($field);
         $this->fromDateFormats = $fromDateFormats;
         $this->toDateFormat = $toDateFormat;
-        $this->timezone = $timezone;
+
+        if (empty($timezone)) {
+            $this->timezone = self::DEFAULT_TIMEZONE;
+        } else {
+            $this->timezone = $timezone;
+        }
     }
 
     /**
@@ -316,7 +321,9 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
 
             if (array_key_exists(GroupByTransform::TIMEZONE_KEY, $transform)) {
                 $timeZone = $transform[GroupByTransform::TIMEZONE_KEY];
-            } else {
+            }
+
+            if (empty($timeZone)) {
                 $timeZone = self::DEFAULT_TIMEZONE;
             }
 
