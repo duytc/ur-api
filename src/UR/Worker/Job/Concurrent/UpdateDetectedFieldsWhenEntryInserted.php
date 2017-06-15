@@ -4,7 +4,7 @@ namespace UR\Worker\Job\Concurrent;
 
 use Exception;
 use Monolog\Logger;
-use Pubvantage\Worker\Job\JobInterface;
+use Pubvantage\Worker\Job\LockableJobInterface;
 use Pubvantage\Worker\JobParams;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
@@ -13,11 +13,12 @@ use UR\Model\Core\DataSourceInterface;
 use UR\Service\DataSource\DataSourceType;
 use UR\Service\Import\ImportService;
 
-class UpdateDetectedFieldsWhenEntryInserted implements JobInterface
+class UpdateDetectedFieldsWhenEntryInserted implements LockableJobInterface
 {
     const JOB_NAME = 'updateDetectedFieldsWhenEntryInserted';
 
     const PARAM_KEY_ENTRY_ID = 'entryId';
+    const PARAM_KEY_DATA_SOURCE_ID = 'data_source_id';
 
     /**
      * @var Logger $logger
@@ -55,6 +56,11 @@ class UpdateDetectedFieldsWhenEntryInserted implements JobInterface
     public function getName(): string
     {
         return self::JOB_NAME;
+    }
+
+    public function getLockKey(JobParams $params): string
+    {
+        return sprintf('ur-data-source-%d', $params->getRequiredParam(self::PARAM_KEY_DATA_SOURCE_ID));
     }
 
     /**

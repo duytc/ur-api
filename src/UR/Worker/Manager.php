@@ -205,12 +205,14 @@ class Manager
 
     /**
      * @param int $entryId
+     * @param int $dataSourceId
      */
-    public function updateDetectedFieldsWhenEntryInserted($entryId)
+    public function updateDetectedFieldsWhenEntryInserted($entryId, $dataSourceId)
     {
         $jobData = [
             'task' => UpdateDetectedFieldsWhenEntryInserted::JOB_NAME,
-            UpdateDetectedFieldsWhenEntryInserted::PARAM_KEY_ENTRY_ID => $entryId
+            UpdateDetectedFieldsWhenEntryInserted::PARAM_KEY_ENTRY_ID => $entryId,
+            UpdateDetectedFieldsWhenEntryInserted::PARAM_KEY_DATA_SOURCE_ID => $dataSourceId
         ];
 
         // concurrent job, we do not care what order it is processed in

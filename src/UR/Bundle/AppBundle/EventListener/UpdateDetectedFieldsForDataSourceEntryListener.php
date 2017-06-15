@@ -82,9 +82,12 @@ class UpdateDetectedFieldsForDataSourceEntryListener
             $em->persist($dataSourceEntry);
         }
 
-        $dataSourceEntryIds = array_map(function ($dataSourceEntry) {
+        $dataSourceEntriesToBeDetectedFields = array_map(function ($dataSourceEntry) {
             /** @var DataSourceEntryInterface $dataSourceEntry */
-            return $dataSourceEntry->getId();
+            return [
+                'dataSourceEntryId' => $dataSourceEntry->getId(),
+                'dataSourceId' => $dataSourceEntry->getDataSource()->getId()
+            ];
         }, $this->insertedEntities);
 
         // reset for new onFlush event
@@ -94,8 +97,8 @@ class UpdateDetectedFieldsForDataSourceEntryListener
         // flush changes
         $em->flush();
 
-        foreach ($dataSourceEntryIds as $dataSourceEntryId) {
-            $this->workerManager->updateDetectedFieldsWhenEntryInserted($dataSourceEntryId);
+        foreach ($dataSourceEntriesToBeDetectedFields as $dataSourceEntryToBeDetectedFields) {
+            $this->workerManager->updateDetectedFieldsWhenEntryInserted($dataSourceEntryToBeDetectedFields['dataSourceEntryId'], $dataSourceEntryToBeDetectedFields['dataSourceId']);
         }
     }
 }

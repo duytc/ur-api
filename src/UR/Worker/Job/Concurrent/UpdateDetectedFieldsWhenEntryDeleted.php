@@ -5,14 +5,14 @@ namespace UR\Worker\Job\Concurrent;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Monolog\Logger;
-use Pubvantage\Worker\Job\JobInterface;
+use Pubvantage\Worker\Job\LockableJobInterface;
 use Pubvantage\Worker\JobParams;
 use UR\DomainManager\DataSourceManagerInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Import\ImportService;
 
-class UpdateDetectedFieldsWhenEntryDeleted implements JobInterface
+class UpdateDetectedFieldsWhenEntryDeleted implements LockableJobInterface
 {
     const JOB_NAME = 'updateDetectedFieldsWhenEntryDeleted';
 
@@ -56,6 +56,11 @@ class UpdateDetectedFieldsWhenEntryDeleted implements JobInterface
     public function getName(): string
     {
         return self::JOB_NAME;
+    }
+
+    public function getLockKey(JobParams $params): string
+    {
+        return sprintf('ur-data-source-%d', $params->getRequiredParam(self::PARAM_KEY_DATA_SOURCE_ID));
     }
 
     /**
