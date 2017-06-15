@@ -271,6 +271,10 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     public static function getDateFromDateTime($value, $column = null, $connectedDataSource = null)
     {
         $timeZone = self::getTimeZoneOfDateField($column, $connectedDataSource);
+        if (empty($timeZone)) {
+            $timeZone = DateFormat::DEFAULT_TIMEZONE;
+        }
+
         foreach (self::SUPPORTED_DATE_FORMATS as $format) {
             $dateTime = date_create_from_format($format, $value, new \DateTimeZone($timeZone));
             if ($dateTime) {
