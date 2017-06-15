@@ -46,7 +46,7 @@ class GroupByColumns implements CollectionTransformerInterface
             $rows = self::group($rows, $types, $groupColumnKeys, $sumFieldKeys, $fromDateFormats, $mapFields);
         }
 
-        return new Collection($collection->getColumns(), $rows);
+        return new Collection($collection->getColumns(), $rows, $types);
     }
 
     /**
@@ -76,6 +76,11 @@ class GroupByColumns implements CollectionTransformerInterface
             $newElement = [];
             foreach ($groupFields as $groupField) {
                 if (array_key_exists($groupField, $element)) {
+                    if ($element[$groupField] == null) {
+                        $key = null;
+                        continue;
+                    }
+
                     if (array_key_exists($groupField, $types) && $types[$groupField] == FieldType::DATETIME) {
                         $normalizedDate = $this->normalizeTimezone($element[$groupField], $groupField, $fromDateFormats, $mapFields, $fromDateFormat);
                         $newElement[$groupField] = $normalizedDate->setTime(0,0)->format('Y-m-d H:i:s T');
@@ -87,6 +92,11 @@ class GroupByColumns implements CollectionTransformerInterface
                     $newElement[$groupField] = $element[$groupField];
                 }
             }
+
+            if ($key == null) {
+                continue;
+            }
+
             $key = md5($key);
 
             //add fields
