@@ -2,7 +2,6 @@
 
 namespace UR\Model\Core;
 
-use Doctrine\Common\Collections\Collection;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\UserEntityInterface;
 
@@ -16,7 +15,6 @@ class DataSet implements DataSetInterface
     protected $allowOverwriteExistingData;
     protected $_actions = [];
     protected $lastActivity;
-    protected $numOfPendingLoad;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -39,7 +37,6 @@ class DataSet implements DataSetInterface
     public function __construct()
     {
         $this->totalRow = 0;
-        $this->numOfPendingLoad = 0;
     }
 
     /**
@@ -263,23 +260,6 @@ class DataSet implements DataSetInterface
     public function setLastActivity($lastActivity)
     {
         $this->lastActivity = $lastActivity;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getNumOfPendingLoad()
-    {
-        return $this->numOfPendingLoad;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setNumOfPendingLoad($numOfPendingLoad)
-    {
-        $this->numOfPendingLoad = $numOfPendingLoad;
         return $this;
     }
 }

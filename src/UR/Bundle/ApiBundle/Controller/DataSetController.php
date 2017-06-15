@@ -5,8 +5,11 @@ namespace UR\Bundle\ApiBundle\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
+use Pubvantage\Worker\JobCounterInterface;
+use Pubvantage\Worker\Scheduler\DataSetJobScheduler;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Exception\InvalidArgumentException;
@@ -96,6 +99,52 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     public function getAction($id)
     {
         return $this->one($id);
+    }
+
+    /**
+     * Get a pending jobs for data sets
+     *
+     * @Rest\Get("/datasets/pendingjobs")
+     * @Rest\QueryParam(name="ids", nullable=false, description="data set ids")
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return array
+     *
+     */
+    public function getPendingJobsAction(Request $request)
+    {
+        $dataSetIdsString = $request->query->get('ids', null);
+        if (empty($dataSetIdsString)) {
+            throw new BadRequestHttpException('Invalid ids, expected array');
+        }
+
+        $dataSetIds = explode(',', $dataSetIdsString);
+
+        /** @var JobCounterInterface $jobCounter */
+        $jobCounter = $this->get('ur.pubvantage.worker.job_counter');
+        $pendingJobs = [];
+
+        foreach ($dataSetIds as $dataSetId) {
+            $dataSet = $this->one($dataSetId);
+            if (!$dataSet instanceof DataSetInterface) {
+                continue;
+            }
+
+            $key = DataSetJobScheduler::getDataSetTubeName($dataSetId);
+            $pendingJob = $jobCounter->getPendingJobCount($key);
+
+            $pendingJobs[$dataSetId] = $pendingJob;
+        }
+
+        return $pendingJobs;
     }
 
     /**

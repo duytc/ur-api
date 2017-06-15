@@ -31,7 +31,7 @@ class UpdateLastActivityForDataSetWhenDataSetChanged
         $uow = $em->getUnitOfWork();
         $changedFields = $uow->getEntityChangeSet($dataSet);
 
-        if (count($changedFields) == 1 && array_key_exists('numOfPendingLoad', $changedFields)) {
+        if (count($changedFields) == 1) {
             return;
         }
 
@@ -49,11 +49,6 @@ class UpdateLastActivityForDataSetWhenDataSetChanged
 
         $em = $args->getEntityManager();
         $uow = $em->getUnitOfWork();
-        $changedFields = $uow->getEntityChangeSet($dataSet);
-
-        if (count($changedFields) == 1 && array_key_exists('numOfPendingLoad', $changedFields)) {
-            return;
-        }
 
         $dataSet->setLastActivity(new DateTime());
     }

@@ -147,15 +147,4 @@ interface DataSetInterface extends ModelInterface
      * @return self
      */
     public function setLastActivity($lastActivity);
-
-    /**
-     * @return mixed
-     */
-    public function getNumOfPendingLoad();
-
-    /**
-     * @param mixed $numOfPendingLoad
-     * @return self
-     */
-    public function setNumOfPendingLoad($numOfPendingLoad);
 }

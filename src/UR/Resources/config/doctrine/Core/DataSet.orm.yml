@@ -36,11 +36,6 @@ UR\Entity\Core\DataSet:
             options:
                 default: 0
             nullable: false
-        numOfPendingLoad:
-            type: integer
-            options:
-                default: 0
-            nullable: false
 
     manyToOne:
         publisher:

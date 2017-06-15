@@ -31,6 +31,3 @@ UR\Entity\Core\DataSet:
         totalRow:
             expose: true
             groups: [dataset.summary]
-        numOfPendingLoad:
-            expose: true
-            groups: [dataset.summary]
