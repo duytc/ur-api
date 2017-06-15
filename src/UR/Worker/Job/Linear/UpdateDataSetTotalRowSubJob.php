@@ -15,8 +15,6 @@ class UpdateDataSetTotalRowSubJob implements SubJobInterface, ExpirableJobInterf
 
     const DATA_SET_ID = 'data_set_id';
 
-    const RUN_COMMAND = 'ur:internal:data-set:update-total-row';
-
     /**
      * @var LoggerInterface
      */
