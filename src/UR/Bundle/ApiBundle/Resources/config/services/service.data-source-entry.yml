@@ -24,8 +24,6 @@ services:
         arguments:
             - @doctrine.orm.entity_manager
             - @ur.repository.data_source_entry
-            - @ur.worker.manager
-            - @ur.service.import
 
     ur.form.type.data_source_entry:
         class: %ur.form.type.data_source_entry.class%

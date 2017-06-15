@@ -14,12 +14,10 @@ use UR\DomainManager\ConnectedDataSourceManagerInterface;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
-use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\User\Role\PublisherInterface;
-use UR\Service\Import\LoadingDataService;
 
 class RemoveDataSourceEntryCommand extends ContainerAwareCommand
 {
@@ -50,9 +48,6 @@ class RemoveDataSourceEntryCommand extends ContainerAwareCommand
 
     /** @var EntityManagerInterface */
     private $em;
-
-    /** @var  LoadingDataService */
-    private $loadingDataService;
 
     /** @var  ConnectedDataSourceManagerInterface */
     private $connectedDataSourceManager;
@@ -87,7 +82,6 @@ class RemoveDataSourceEntryCommand extends ContainerAwareCommand
         $this->importHistoryManager = $container->get('ur.domain_manager.import_history');
         $this->uploadFileDir = $container->getParameter('upload_file_dir');
         $this->em = $container->get('doctrine.orm.entity_manager');
-        $this->loadingDataService = $container->get('ur.service.loading_data_service');
         $this->connectedDataSourceManager = $container->get('ur.domain_manager.connected_data_source');
 
         if (!$this->isValidInput($input, $output)) {
@@ -131,8 +125,6 @@ class RemoveDataSourceEntryCommand extends ContainerAwareCommand
             $output->writeln('Delete success dataSource entry ' . $dataSourceEntry->getId());
             $this->dataSourceEntryManager->delete($dataSourceEntry);
         }
-
-        $this->doLoadDataFromEntryToDataBaseForAugmentation(array_unique($connectedDataSources, SORT_REGULAR));
 
         $output->writeln('Command run successfully...');
     }
@@ -309,20 +301,5 @@ class RemoveDataSourceEntryCommand extends ContainerAwareCommand
         $filePath = $dataSourceEntry->getPath();
         $realFilePath = sprintf('%s%s', $this->uploadFileDir, $filePath);
         return $realFilePath;
-    }
-
-    /**
-     * @param ConnectedDataSourceInterface[] $connectedDataSources
-     */
-    private function doLoadDataFromEntryToDataBaseForAugmentation($connectedDataSources)
-    {
-        foreach ($connectedDataSources as $connectedDataSource) {
-            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-                continue;
-            }
-            $message = sprintf('Create worker job do load data from entry to dataBase for Augmentation, connect id: %s, dataSet id: %s', $connectedDataSource->getId(), $connectedDataSource->getDataSet()->getId());
-            $this->logger->info($message);
-            $this->loadingDataService->doLoadDataFromEntryToDataBaseForAugmentation($connectedDataSource);
-        }
     }
 }

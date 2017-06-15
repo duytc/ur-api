@@ -16,7 +16,6 @@ class DataSet implements DataSetInterface
     protected $allowOverwriteExistingData;
     protected $_actions = [];
     protected $lastActivity;
-    protected $jobExpirationDate;
     protected $numOfPendingLoad;
 
     /** @var UserEntityInterface */
@@ -36,11 +35,6 @@ class DataSet implements DataSetInterface
      * @var LinkedMapDataSetInterface[]
      */
     protected $linkedMapDataSets;
-
-    /**
-     * @var DataSetImportJobInterface[]
-     */
-    protected $dataSetImportJobs;
 
     public function __construct()
     {
@@ -238,14 +232,6 @@ class DataSet implements DataSetInterface
     }
 
     /**
-     * @inheritdoc
-     */
-    public function getDataSetImportJobs()
-    {
-        return $this->dataSetImportJobs;
-    }
-
-    /**
      * @return int
      */
     public function getTotalRow()
@@ -266,31 +252,6 @@ class DataSet implements DataSetInterface
     /**
      * @inheritdoc
      */
-    public function setDataSetImportJobs(array $dataSetImportJobs)
-    {
-        $this->dataSetImportJobs = $dataSetImportJobs;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function addDataSetImportJobs(DataSetImportJobInterface $dataSetImportJob)
-    {
-        if ($this->dataSetImportJobs instanceof Collection) {
-            $this->dataSetImportJobs = $this->dataSetImportJobs->toArray();
-        }
-
-        if (!is_array($this->dataSetImportJobs)) {
-            $this->dataSetImportJobs = [];
-        }
-
-        $this->dataSetImportJobs[] = $dataSetImportJob;
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function getLastActivity()
     {
         return $this->lastActivity;
@@ -302,23 +263,6 @@ class DataSet implements DataSetInterface
     public function setLastActivity($lastActivity)
     {
         $this->lastActivity = $lastActivity;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getJobExpirationDate()
-    {
-        return $this->jobExpirationDate;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setJobExpirationDate($jobExpirationDate)
-    {
-        $this->jobExpirationDate = $jobExpirationDate;
         return $this;
     }
 

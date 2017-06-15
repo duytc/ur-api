@@ -13,6 +13,7 @@ interface DataSetInterface extends ModelInterface
     const IMPORT_ID_COLUMN = '__import_id';
     const UNIQUE_ID_COLUMN = '__unique_id';
     const OVERWRITE_DATE = '__overwrite_date';
+    const ENTRY_DATE_COLUMN = '__entry_date';
     const UNIQUE_HASH_INX = 'unique_hash_idx';
 
     /**
@@ -126,20 +127,15 @@ interface DataSetInterface extends ModelInterface
     public function setLinkedMapDataSets(array $linkedMapDataSets);
 
     /**
-     * @return array
+     * @return int
      */
-    public function getDataSetImportJobs();
+    public function getTotalRow();
 
     /**
-     * @param array $dataSetImportJobs
+     * @param int $totalRow
      * @return self
      */
-    public function setDataSetImportJobs(array $dataSetImportJobs);
-
-    /**
-     * @param DataSetImportJobInterface $dataSetImportJob
-     */
-    public function addDataSetImportJobs(DataSetImportJobInterface $dataSetImportJob);
+    public function setTotalRow($totalRow);
 
     /**
      * @return mixed
@@ -151,17 +147,6 @@ interface DataSetInterface extends ModelInterface
      * @return self
      */
     public function setLastActivity($lastActivity);
-
-    /**
-     * @return mixed
-     */
-    public function getJobExpirationDate();
-
-    /**
-     * @param mixed $jobExpirationDate
-     * @return self
-     */
-    public function setJobExpirationDate($jobExpirationDate);
 
     /**
      * @return mixed

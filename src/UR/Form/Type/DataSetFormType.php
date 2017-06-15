@@ -46,11 +46,6 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                 'allow_add' => true,
                 'allow_delete' => true,
             ))
-            ->add('dataSetImportJobs', CollectionType::class, array(
-                'mapped' => false,
-                'allow_add' => true,
-                'allow_delete' => true,
-            ))
             ->add('actions', null, array('mapped' => false));
 
         if ($this->userRole instanceof AdminInterface) {

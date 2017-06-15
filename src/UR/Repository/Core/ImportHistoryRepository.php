@@ -5,7 +5,6 @@ namespace UR\Repository\Core;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
-use UR\Bundle\ApiBundle\Behaviors\UpdateDataSetTotalRowTrait;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -18,7 +17,6 @@ use UR\Service\DataSet\Synchronizer;
 
 class ImportHistoryRepository extends EntityRepository implements ImportHistoryRepositoryInterface
 {
-    use UpdateDataSetTotalRowTrait;
     protected $SORT_FIELDS = ['id' => 'id', 'dataSet' => 'dataSet', 'dataSource' => 'dataSource'];
 
     /**
@@ -161,8 +159,8 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
             $stmt->execute();
             $this->_em->remove($importHistory);
 
-            //update total rows of data set
-            $this->updateDataSetTotalRow($importHistory->getDataSet()->getId());
+            //TODO UPDATE TOTAL ROW
+//            $this->updateDataSetTotalRow($importHistory->getDataSet()->getId());
         }
 
         $this->_em->flush();
@@ -286,6 +284,19 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         return $stmt->execute();
     }
 
+    public function deleteImportHistoriesByIds(array $importHistoryIds)
+    {
+        if (count($importHistoryIds) < 1) {
+            return 0;
+        }
+
+        $conn = $this->_em->getConnection();
+        $query = sprintf('DELETE FROM core_import_history WHERE id IN (?)');
+        $stmt = $conn->prepare($query);
+        $stmt->bindValue(1, implode(',', $importHistoryIds));
+        return $stmt->execute();
+    }
+
     public function deletePreviousImports($importHistories, ConnectedDataSourceInterface $connectedDataSource)
     {
         $conn = $this->_em->getConnection();
@@ -298,8 +309,8 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
             $stmt->execute();
             $this->_em->remove($importHistory);
 
-            //update total rows of data set
-            $this->updateDataSetTotalRow($importHistory->getDataSet()->getId());
+            //TODO update total rows of data set
+//            $this->updateDataSetTotalRow($importHistory->getDataSet()->getId());
         }
 
         $this->_em->flush();

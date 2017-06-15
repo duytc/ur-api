@@ -2,7 +2,7 @@
 
 namespace UR\Service\Import;
 
-
+use SplFileObject;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use UR\Behaviors\FileUtilsTrait;
@@ -25,8 +25,6 @@ class ImportService
      * @var DataSourceFileFactory
      */
     private $fileFactory;
-
-    private $file;
 
     /**
      * ImportService constructor.
@@ -102,6 +100,12 @@ class ImportService
     public function validateUploadedFile(UploadedFile $file, DataSourceInterface $dataSource)
     {
         $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($file->getClientOriginalExtension());
+
+        // allow smart-change type if have no entry before
+        // e.g if no entry before and current csv => switch to excel if new entry is an excel file
+        if (count($dataSource->getDataSourceEntries()) < 1) {
+            return true;
+        }
 
         return $dataSource->getFormat() == $dataSourceTypeExtension;
     }
@@ -203,5 +207,29 @@ class ImportService
     {
         /**@var \UR\Service\DataSource\DataSourceInterface $file */
         return $this->fileFactory->getFile($format, $entryPath);
+    }
+
+    public function fixCSVLineFeed($filePath)
+    {
+
+        $copyPath = $filePath . 'copy' . time();
+        try {
+            rename($filePath, $copyPath);
+
+            $file = fopen($filePath, 'w');
+
+            foreach (new SplFileObject($copyPath) as $lineNumber => $lineContent) {
+                $fixCLRFContent = str_replace("\r", "\n", $lineContent);
+                fwrite($file, $fixCLRFContent);
+            }
+
+            fclose($file);
+        } catch (\Exception $exception) {
+            throw new \Exception(sprintf('Cannot fix window line feed for This file with path: %s', $filePath));
+        }
+
+        if (is_file($copyPath)) {
+            unlink($copyPath);
+        }
     }
 }

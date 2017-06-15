@@ -22,11 +22,10 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     protected $repository;
     protected $workerManager;
 
-    public function __construct(ObjectManager $om, ImportHistoryRepositoryInterface $repository, Manager $workerManager)
+    public function __construct(ObjectManager $om, ImportHistoryRepositoryInterface $repository)
     {
         $this->om = $om;
         $this->repository = $repository;
-        $this->workerManager = $workerManager;
     }
 
     /**
@@ -116,20 +115,17 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
         return $this->repository->getImportHistoryByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource, $importHistory);
     }
 
+    public function deleteImportHistoriesByIds(array $importHistoryIds)
+    {
+        return $this->repository->deleteImportHistoriesByIds($importHistoryIds);
+    }
+
     /**
      * @inheritdoc
      */
     public function getImportHistoryByDataSourceEntryWithoutDataSet(DataSourceEntryInterface $dataSourceEntry)
     {
         return $this->repository->getImportHistoryByDataSourceEntryWithoutDataSet($dataSourceEntry);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function deletePreviousImports($importHistories, ConnectedDataSourceInterface $connectedDataSource)
-    {
-        $this->repository->deletePreviousImports($importHistories, $connectedDataSource);
     }
 
     /**

@@ -5,11 +5,9 @@ namespace UR\Bundle\AppBundle\EventListener;
 
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
-use UR\Model\Core\DataSourceInterface;
 use UR\Model\ModelInterface;
-use UR\Service\Import\LoadingDataService;
+use UR\Worker\Manager;
 
 /**
  * Class ConnectedDataSourceChangeListener
@@ -25,12 +23,12 @@ class ReImportWhenDataSourceEntryInsertedListener
      */
     protected $insertedEntities = [];
 
-    /** @var ContainerInterface $container */
-    private $container;
+    /** @var Manager $workerManager */
+    private $workerManager;
 
-    function __construct(ContainerInterface $container)
+    function __construct(Manager $workerManager)
     {
-        $this->container = $container;
+        $this->workerManager = $workerManager;
     }
 
     public function postPersist(LifecycleEventArgs $args)
@@ -51,31 +49,20 @@ class ReImportWhenDataSourceEntryInsertedListener
             return;
         }
 
-        $entryIds = [];
         foreach ($this->insertedEntities as $entity) {
             if (!$entity instanceof DataSourceEntryInterface) {
                 continue;
             }
 
             if ($entity->getDataSource()->getEnable()) {
-                $entryIds[] = $entity->getId();
                 $dataSource = $entity->getDataSource();
+                foreach ($dataSource->getConnectedDataSources() as $connectedDataSource) {
+                    $this->workerManager->loadingDataSourceEntriesToDataSetTable($connectedDataSource->getId(), [$entity->getId()], $connectedDataSource->getDataSet()->getId());
+                }
             }
         }
 
         // reset for new onFlush event
         $this->insertedEntities = [];
-
-        if (count($entryIds) > 0) {
-            /** @var LoadingDataService */
-            $loadingDataService = $this->container->get('ur.service.loading_data_service');
-
-            /**
-             * @var  DataSourceInterface $dataSource
-             */
-            foreach ($dataSource->getConnectedDataSources() as $connectedDataSource) {
-                $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
-            }
-        }
     }
 }

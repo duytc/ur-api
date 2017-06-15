@@ -12,7 +12,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
-use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -20,7 +19,6 @@ use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use UR\Model\Core\DataSourceInterface;
-use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\PublicSimpleException;
 
 /**
@@ -346,21 +344,21 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
             throw new \Exception(sprintf('Data Source Entry %d does not exist', $id));
         }
-
-        /** @var ImportHistoryManagerInterface $importHistoryManager */
-        $importHistoryManager = $this->get('ur.domain_manager.import_history');
-        $importHistories = $importHistoryManager->getImportHistoryByDataSourceEntryWithoutDataSet($dataSourceEntry);
-
-        $dataSets = array_map(function ($importHistory) {
-            /**@var ImportHistoryInterface $importHistory */
-            return $importHistory->getDataSet()->getName();
-        }, $importHistories);
-
-        $dataSets = array_values(array_unique($dataSets));
-
-        if (count($dataSets) > 0) {
-            throw new PublicSimpleException(sprintf('Loaded data cannot be deleted. If you wish to continue, you must unload the file "%s" from all data sets', $dataSourceEntry->getFileName()));
-        }
+//
+//        /** @var ImportHistoryManagerInterface $importHistoryManager */
+//        $importHistoryManager = $this->get('ur.domain_manager.import_history');
+//        $importHistories = $importHistoryManager->getImportHistoryByDataSourceEntryWithoutDataSet($dataSourceEntry);
+//
+//        $dataSets = array_map(function ($importHistory) {
+//            /**@var ImportHistoryInterface $importHistory */
+//            return $importHistory->getDataSet()->getId();
+//        }, $importHistories);
+//
+//        $dataSets = array_values(array_unique($dataSets));
+//
+//        if (count($dataSets) > 0) {
+//            throw new PublicSimpleException(sprintf('Loaded data cannot be deleted. If you wish to continue, you must unload the file "%s" from all data sets', $dataSourceEntry->getFileName()));
+//        }
 
         return $this->delete($id);
     }
@@ -437,9 +435,10 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
 
         asort($entryIds);
 
-        $loadingDataService = $this->get('ur.service.loading_data_service');
+        $workerManager = $this->get('ur.worker.manager');
         foreach ($dataSource->getConnectedDataSources() as $connectedDataSource) {
-            $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
+            $dataSetId = $connectedDataSource->getDataSet()->getId();
+            $workerManager->loadingDataSourceEntriesToDataSetTable($connectedDataSource->getId(), $entryIds, $dataSetId);
         }
     }
 }

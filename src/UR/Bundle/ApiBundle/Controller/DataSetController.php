@@ -11,14 +11,9 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
-use UR\Model\Core\ConnectedDataSourceInterface;
-use UR\Model\Core\DataSetImportJob;
-use UR\Model\Core\DataSetImportJobInterface;
 use UR\Model\Core\DataSetInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
-use UR\Model\Core\DataSourceEntryInterface;
-use UR\Model\Core\DataSourceInterface;
 
 /**
  * @Rest\RouteResource("DataSet")
@@ -133,69 +128,11 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     {
         /** @var DataSetInterface $dataSet */
         $dataSet = $this->one($id);
-        $connectedDataSources = $dataSet->getConnectedDataSources();
-        $loadingDataService = $this->get('ur.service.loading_data_service');
-        $dataSet->setJobExpirationDate(new \DateTime());
-        $dataSetManager = $this->get('ur.domain_manager.data_set');
-        $dataSetManager->save($dataSet);
 
-        $allEntries = [];
+        $workerManager = $this->get('ur.worker.manager');
+        $workerManager->reloadAllForDataSet($dataSet);
 
-        foreach ($connectedDataSources as $connectedDataSource) {
-            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-                continue;
-            }
-            /**
-             * @var DataSourceEntryInterface[] $entries
-             */
-            $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
-            foreach ($entries as $entry) {
-                $allEntries[$entry->getId()] = $entry;
-            }
-        }
-
-        /**
-         * @var DataSourceEntryInterface[] $allEntries
-         */
-        usort($allEntries, function (DataSourceEntryInterface $a, DataSourceEntryInterface $b) {
-            if ($a->getId() == $b->getId()) {
-                return 0;
-            }
-            return ($a->getId() < $b->getId()) ? -1 : 1;
-        });
-
-        foreach ($allEntries as $entry) {
-            foreach ($connectedDataSources as $connectedDataSource) {
-                if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-                    continue;
-                }
-                $dataSource = $connectedDataSource->getDataSource();
-                if (!$dataSource instanceof DataSourceInterface) {
-                    continue;
-                }
-
-                if ($entry->getDataSource()->getId() !== $dataSource->getId()) {
-                    continue;
-                }
-
-                $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, [$entry->getId()]);
-            }
-        }
-
-        /**
-         * @var DataSetImportJobInterface[] $importJobs
-         */
-        $importJobs = $dataSet->getDataSetImportJobs();
-        $pendingLoads = 0;
-        foreach ($importJobs as $importJob) {
-            if ($importJob->getJobType() !== DataSetImportJob::JOB_TYPE_IMPORT) {
-                continue;
-            }
-
-            $pendingLoads += 1;
-        }
-
-        return ['pendingLoads' => $pendingLoads];
+        return ['pendingLoads' => 0];
     }
 
 
@@ -405,13 +342,8 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     {
         /** @var DataSetInterface $dataSet */
         $dataSet = $this->one($id);
-
-        $dataSet->setJobExpirationDate(new \DateTime());
-        $dataSetManager = $this->get('ur.domain_manager.data_set');
-        $dataSetManager->save($dataSet);
-
-        $loadingDataService = $this->get('ur.service.loading_data_service');
-        $loadingDataService->truncateDataImportTable($dataSet);
+        $workerManager = $this->get('ur.worker.manager');
+        $workerManager->removeAllDataFromDataSet($dataSet->getId());
 
         return true;
     }

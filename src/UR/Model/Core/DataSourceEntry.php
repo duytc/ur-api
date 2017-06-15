@@ -14,6 +14,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $receivedVia;
     protected $hashFile;
     protected $totalRow;
+    protected $fileExtension;
     private $isDryRun = false;
 
     /**
@@ -242,6 +243,23 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setTotalRow($totalRow)
     {
         $this->totalRow = $totalRow;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFileExtension()
+    {
+        return $this->fileExtension;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setFileExtension($fileExtension)
+    {
+        $this->fileExtension = $fileExtension;
         return $this;
     }
 }

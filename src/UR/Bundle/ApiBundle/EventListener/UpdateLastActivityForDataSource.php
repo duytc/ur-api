@@ -27,7 +27,7 @@ class UpdateLastActivityForDataSource
             return;
         }
 
-        $this->dataSources[] = $dataSourceEntry->getDataSource();
+        $this->updateLastActivityForDataSource($dataSourceEntry->getDataSource());
     }
 
     /**
@@ -41,18 +41,20 @@ class UpdateLastActivityForDataSource
 
         $em = $args->getEntityManager();
 
-        $uniqueDataSources = [];
         foreach ($this->dataSources as $dataSource) {
-            $uniqueDataSources[$dataSource->getId()] = $dataSource;
+            $em->persist($dataSource);
         }
 
-        foreach ($uniqueDataSources as $uniqueDataSource) {
-            $uniqueDataSource->setLastActivity(new \DateTime());
-            $em->persist($uniqueDataSource);
-        }
-
+        // clear before flush
         $this->dataSources = [];
 
         $em->flush();
+    }
+
+    private function updateLastActivityForDataSource(DataSourceInterface $dataSource)
+    {
+        $dataSource->setLastActivity(new \DateTime());
+
+        $this->dataSources[] = $dataSource;
     }
 }

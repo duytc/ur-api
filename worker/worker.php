@@ -3,25 +3,9 @@
 // needed for handling signals
 declare(ticks = 1);
 
-$pid = getmypid();
-$requestStop = false;
+use Leezy\PheanstalkBundle\Proxy\PheanstalkProxy;
+use Monolog\Logger;
 
-// when TERM signal is sent to this process, we gracefully shutdown after current job is finished processing
-// when KILL signal is sent (i.e ctrl-c) we stop immediately
-// You can test this by calling "kill -TERM PID" where PID is the PID of this process, the process will end after the current job
-pcntl_signal(SIGTERM, function () use (&$requestStop, $pid, &$logger) {
-    $logger->notice(sprintf("Worker PID %d has received a request to stop gracefully", $pid));
-    $requestStop = true; // set reference value to true to stop worker loop after current job
-});
-
-// exit successfully after this time, supervisord will then restart
-// this is to prevent any memory leaks from running PHP for a long time
-const WORKER_TIME_LIMIT = 10800; // 3 hours
-const TUBE_NAME = 'ur-api-worker';
-const RESERVE_TIMEOUT = 10; // seconds
-
-// Set the start time
-$startTime = time();
 $loader = require_once __DIR__ . '/../app/autoload.php';
 
 require_once __DIR__ . '/../app/AppKernel.php';
@@ -39,90 +23,126 @@ $kernel->boot();
 /** @var \Symfony\Component\DependencyInjection\ContainerInterface $container */
 $container = $kernel->getContainer();
 
-$logger = $container->get('logger');
-$logHandler = new \Monolog\Handler\StreamHandler("php://stderr", \Monolog\Logger::DEBUG);
-$logHandler->setFormatter(new \Monolog\Formatter\LineFormatter(null, null, false, true));
-$logger->pushHandler($logHandler);
+$concurrentTubeName = $container->getParameter('ur.worker.concurrent_tube_name');
+$lockKeyPrefix = $container->getParameter('ur.worker.lock_key_prefix');
+
+$pid = getmypid();
+$requestStop = false;
+
+$appShutdown = function () use (&$requestStop, $pid, &$logger) {
+    $logger->notice(sprintf("Worker PID %d has received a request to stop gracefully", $pid));
+    $requestStop = true; // set reference value to true to stop worker loop after current job
+};
+
+// when TERM signal is sent to this process, we gracefully shutdown after current job is finished processing
+// when KILL signal is sent (i.e ctrl-c) we stop immediately
+// You can test this by calling "kill -TERM PID" where PID is the PID of this process, the process will end after the current job
+pcntl_signal(SIGINT, $appShutdown);
+pcntl_signal(SIGTERM, $appShutdown);
+
+const RESERVE_TIMEOUT = 5; // seconds
+const RELEASE_JOB_DELAY_SECONDS = 5;
+const JOB_LOCK_TTL = 3 * (60 * 60 * 1000); // 3 hour expiry time for lock
 
 $entityManager = $container->get('doctrine.orm.entity_manager');
-$queue = $container->get("leezy.pheanstalk");
-// only tasks listed here are able to run
-$availableWorkers = [
-    $container->get('ur.worker.workers.re_import_new_entry_received'),
-    $container->get('ur.worker.workers.alert_worker'),
-    $container->get('ur.worker.workers.synchronize_user_worker'),
-    $container->get('ur.worker.workers.alter_import_data_table'),
-    $container->get('ur.worker.workers.truncate_import_data_table'),
-    $container->get('ur.worker.workers.update_detected_fields_and_data_source_entry_total_row'),
-    $container->get('ur.worker.workers.csv_fix_window_line_feed'),
-    $container->get('ur.worker.workers.truncate_data_set'),
-];
 
-$workerPool = new \UR\Worker\Pool($availableWorkers);
+/** @var Logger $logger */
+$logger = $container->get('logger');
+$logHandler = new \Monolog\Handler\StreamHandler("php://stderr", Logger::DEBUG);
+$logHandler->setFormatter(new \Monolog\Formatter\LineFormatter(null, null, false, true));
+$logHandler->pushProcessor(new \Monolog\Processor\TagProcessor([
+    'PID' => $pid
+]));
+$logger->pushHandler($logHandler);
+
+
+$beanstalk = $container->get('leezy.pheanstalk');
+
+$redis = $container->get('ur.redis.app_cache');
+
+$redLock = new Pubvantage\RedLock([$redis]);
+
+$concurrentJobScheduler = $container->get('ur.worker.scheduler.concurrent_job_scheduler');
+$linearJobScheduler = $container->get('ur.worker.scheduler.linear_job_scheduler');
+$dataSetJobScheduler = $container->get('ur.worker.scheduler.data_set_job_scheduler');
+
+// this worker pool is not watched by this main worker process
+$linearWorkerPool = $container->get('ur.worker.job.linear.worker_pool');
+
+$concurrentWorkerPool = $container->get('ur.worker.job.concurrent.worker_pool');
 
 $logger->notice(sprintf("Worker PID %d has started", $pid));
 
-while (true) {
+$newJobArrived = true;
+while (1) {
     if ($requestStop) {
         // exit worker gracefully, supervisord will restart it
         $logger->notice(sprintf("Worker PID %d is stopping by user request", $pid));
         break;
     }
-    if (time() > ($startTime + WORKER_TIME_LIMIT)) {
-        // exit worker gracefully, supervisord will restart it
-        $logger->notice(sprintf("Worker PID %d is stopping because time limit has been exceeded", $pid));
-        break;
+
+    // prevent duplicate logs being printed while waiting
+    if ($newJobArrived) {
+        $logger->debug('Waiting for job to process');
     }
-    $job = $queue->watch(TUBE_NAME)
+
+    $newJobArrived = false;
+
+    $job = $beanstalk->watch($concurrentTubeName)
         ->ignore('default')
         ->reserve(RESERVE_TIMEOUT);
+
     if (!$job) {
         continue;
     }
-    $worker = null; // important to reset the worker every loop
-    $rawPayload = $job->getData();
-    $payload = json_decode($rawPayload);
-    if (!$payload) {
-        $logger->error(sprintf('Received an invalid payload %s', $rawPayload));
-        $queue->bury($job);
-        continue;
-    }
-    $task = $payload->task;
-    $params = $payload->params;
-    $worker = $workerPool->findWorker($task);
-    if (!$worker) {
-        $logger->error(sprintf('The task "%s" is unknown', $task));
-        $queue->bury($job);
-        continue;
-    }
-    if (!$params instanceof stdclass) {
-        $logger->error(sprintf('The task parameters are not valid', $task));
-        $queue->bury($job);
-        continue;
-    }
-    $logger->notice(sprintf('[%s] Received job %s (ID: %s) with payload %s', (new DateTime())->format('Y-m-d H:i:s'), $task, $job->getId(), $rawPayload));
+
+    $newJobArrived = true;
+
+    $rawJobData = $job->getData();
+
+    $jobLock = false;
+
     try {
-        if ($task == 'loadingDataFromFileToDataImportTable' || $task == 'alterDataSetTable' || $task == 'truncateDataSetTable') {
-            $worker->$task($params, $job, TUBE_NAME);
-        } else {
-            $worker->$task($params); // dynamic method call
+        $jobParams = new \Pubvantage\Worker\JobParams(json_decode($rawJobData, true));
+        $task = $jobParams->getRequiredParam('task');
+
+        $logger->notice(sprintf('Received job %s (ID: %s) with params %s', $task, $job->getId(), $rawJobData));
+
+        $jobWorker = $concurrentWorkerPool->findJob($task);
+
+        if (!$jobWorker) {
+            $logger->error(sprintf('The task "%s" is unknown', $task));
+            $beanstalk->bury($job);
+            continue;
         }
 
-        $logger->notice(sprintf('Job %s (ID: %s) with payload %s has been completed', $task, $job->getId(), $rawPayload));
-        $queue->delete($job);
-// task finished successfully
+        if ($jobWorker instanceof \Pubvantage\Worker\Job\LockableJobInterface) {
+            $jobLock = $redLock->lock($lockKeyPrefix . $jobWorker->getLockKey($jobParams), JOB_LOCK_TTL, [
+                'pid' => $pid
+            ]);
+
+            if ($jobLock === false) {
+                $logger->debug(sprintf('Cannot acquire job lock. Job %s (ID: %s) will be retried later', $job->getId(), $rawJobData));
+                $beanstalk->release($job, PheanstalkProxy::DEFAULT_PRIORITY, RELEASE_JOB_DELAY_SECONDS);
+                continue;
+            }
+        }
+
+        $jobWorker->run($jobParams);
+        $beanstalk->delete($job);
+
+        $logger->notice(sprintf('Job %s (ID: %s) with params %s has been completed', $task, $job->getId(), $rawJobData));
     } catch (Exception $e) {
-        $logger->warning(
-            sprintf(
-                'Job %s (ID: %s) with payload %s failed with an exception: %s',
-                $task,
-                $job->getId(),
-                $rawPayload,
-                $e->getMessage()
-            )
-        );
-        $queue->bury($job);
+        $logger->warning(sprintf('Job (ID: %s) with params %s failed', $job->getId(), $rawJobData));
+        $logger->warning($e);
+        $beanstalk->bury($job);
+    } finally {
+        // always release lock if it is set
+        if (is_array($jobLock)) {
+            $redLock->unlock($jobLock);
+        }
+
+        $entityManager->clear();
+        gc_collect_cycles();
     }
-    $entityManager->clear();
-    gc_collect_cycles();
 }

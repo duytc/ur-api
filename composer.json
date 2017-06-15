@@ -34,7 +34,7 @@
         "gfreeau/custom-validation-path-bundle": "dev-master",
         "nelmio/cors-bundle": "~1.0",
         "stof/doctrine-extensions-bundle": "~1.1@dev",
-        "leezy/pheanstalk-bundle": "~2.4",
+        "leezy/pheanstalk-bundle": "~3.2",
 
         "ramsey/uuid": "^3.0",
         "data-dog/pager-bundle": "^0.2.4",

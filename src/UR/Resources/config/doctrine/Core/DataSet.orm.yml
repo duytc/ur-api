@@ -36,9 +36,6 @@ UR\Entity\Core\DataSet:
             options:
                 default: 0
             nullable: false
-        jobExpirationDate:
-            type: datetime
-            nullable: true
         numOfPendingLoad:
             type: integer
             options:
@@ -60,10 +57,4 @@ UR\Entity\Core\DataSet:
             targetEntity: UR\Entity\Core\LinkedMapDataSet
             cascade: ['persist', 'detach', 'remove']
             mappedBy: mapDataSet
-            orphanRemoval: true
-
-        dataSetImportJobs:
-            targetEntity: UR\Entity\Core\DataSetImportJob
-            cascade: ['persist', 'detach', 'remove']
-            mappedBy: dataSet
             orphanRemoval: true

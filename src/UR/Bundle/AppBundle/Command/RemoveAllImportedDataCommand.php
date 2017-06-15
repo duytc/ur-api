@@ -10,11 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
-use UR\Entity\Core\DataSetImportJob;
-use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Model\Core\DataSourceEntryInterface;
-use UR\Model\Core\DataSourceInterface;
 use UR\Service\StringUtilTrait;
 
 class RemoveAllImportedDataCommand extends ContainerAwareCommand
@@ -53,7 +49,7 @@ class RemoveAllImportedDataCommand extends ContainerAwareCommand
 
         /** @var ImportHistoryManagerInterface $importHistoryManager */
         $dataSetManager = $container->get('ur.domain_manager.data_set');
-        $loadingDataService = $container->get('ur.service.loading_data_service');
+        $workerManager = $container->get('ur.worker.manager');
 
         $dataSets = [];
         if ($isAllPublisherOption) {
@@ -87,9 +83,7 @@ class RemoveAllImportedDataCommand extends ContainerAwareCommand
 
         /** @var DataSetInterface[] $dataSets */
         foreach ($dataSets as $dataSet) {
-            $dataSet->setJobExpirationDate(new \DateTime());
-            $dataSetManager->save($dataSet);
-            $loadingDataService->truncateDataImportTable($dataSet, false);
+            $workerManager->removeAllDataFromDataSet($dataSet->getId());
         }
 
         $this->logger->notice(sprintf('removing all imported data of %s data sets', count($dataSets)));

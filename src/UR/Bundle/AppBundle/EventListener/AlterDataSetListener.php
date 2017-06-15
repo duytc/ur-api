@@ -6,7 +6,6 @@ namespace UR\Bundle\AppBundle\EventListener;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use \Exception;
-use UR\Model\Core\DataSetImportJob;
 use UR\Model\Core\DataSetInterface;
 use UR\Worker\Manager;
 
@@ -128,35 +127,18 @@ class AlterDataSetListener
             $updateFields = $changedEntity[self::UPDATED_FIELDS_KEY];
             $deletedFields = $changedEntity[self::DELETED_FIELDS_KEY];
 
-            $jobData = [
-                self::NEW_FIELDS_KEY => $newFields,
-                self::UPDATED_FIELDS_KEY => $updateFields,
-                self::DELETED_FIELDS_KEY => $deletedFields
-            ];
-
-            // create job to alter data set table
-            $dataSetImportJob = DataSetImportJob::createEmptyDataSetImportJob(
-                $dataSet,
-                null,
-                sprintf('alter data set "%s"', $dataSet->getName()),
-                DataSetImportJob::JOB_TYPE_ALTER,
-                $jobData);
-            $em->persist($dataSetImportJob);
-
             // add to list
             $alterDataSetJobDescriptions[] = [
                 'dataSetId' => $dataSet->getId(),
                 'newFields' => $newFields,
                 'updateFields' => $updateFields,
-                'deletedFields' => $deletedFields,
-                'dataSetImportJobId' => $dataSetImportJob->getJobId()
+                'deletedFields' => $deletedFields
             ];
         }
 
         // reset for new onFlush event
         $this->changedEntities = [];
 
-        // persist all dataSetImportJobs before creating alter data set jobs
         $em->flush();
 
         // connected data source change too
@@ -169,9 +151,8 @@ class AlterDataSetListener
             $newFields = $alterDataSetJobDescription['newFields'];
             $updateFields = $alterDataSetJobDescription['updateFields'];
             $deletedFields = $alterDataSetJobDescription['deletedFields'];
-            $dataSetImportJobId = $alterDataSetJobDescription['dataSetImportJobId'];
 
-            $this->workerManager->alterDataSetTable($dataSetId, $newFields, $updateFields, $deletedFields, $dataSetImportJobId);
+            $this->workerManager->alterDataSetTable($dataSetId, $newFields, $updateFields, $deletedFields);
         }
     }
 

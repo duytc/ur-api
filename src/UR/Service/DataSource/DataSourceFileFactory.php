@@ -36,6 +36,7 @@ class DataSourceFileFactory
      * @param string $fileType
      * @param $entryPath
      * @return Csv|Excel|Excel2007|Json|JsonNewFormat
+     * @throws Exception
      * @throws ImportDataException
      */
     public function getFile($fileType, $entryPath)

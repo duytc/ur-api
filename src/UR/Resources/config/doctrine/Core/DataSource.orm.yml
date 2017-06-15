@@ -72,3 +72,8 @@ UR\Entity\Core\DataSource:
             targetEntity: UR\Entity\Core\ConnectedDataSource
             cascade: ['persist', 'detach', 'remove']
             mappedBy: dataSource
+
+        alerts:
+            targetEntity: UR\Entity\Core\Alert
+            cascade: ['detach', 'remove']
+            mappedBy: dataSource

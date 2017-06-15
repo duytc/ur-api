@@ -2,6 +2,7 @@
 
 namespace UR\Entity\Core;
 
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSource as DataSourceModel;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -40,6 +41,11 @@ class DataSource extends DataSourceModel
      * @var ConnectedDataSourceInterface[]
      */
     protected $connectedDataSources;
+
+    /**
+     * @var AlertInterface[]
+     */
+    protected $alerts;
 
     /**
      * @inheritdoc

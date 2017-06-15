@@ -128,4 +128,15 @@ interface DataSourceEntryInterface extends ModelInterface
      * @return self
      */
     public function setTotalRow($totalRow);
+
+    /**
+     * @return string
+     */
+    public function getFileExtension();
+
+    /**
+     * @param string $fileExtension
+     * @return self
+     */
+    public function setFileExtension($fileExtension);
 }

@@ -53,7 +53,6 @@ class ReloadAllImportedDataCommand extends ContainerAwareCommand
         /** @var ImportHistoryManagerInterface $importHistoryManager */
         $dataSetManager = $container->get('ur.domain_manager.data_set');
 
-
         $dataSets = [];
         if ($isAllPublisherOption) {
             $dataSets = $dataSetManager->all();
@@ -85,70 +84,14 @@ class ReloadAllImportedDataCommand extends ContainerAwareCommand
             }
         }
 
-        $loadingDataService = $container->get('ur.service.loading_data_service');
+        $workerManager = $container->get('ur.worker.manager');
         /** @var DataSetInterface[] $dataSets */
         $this->logger->notice(sprintf('reloading %s data sets', count($dataSets)));
         $numOfDataSetReloaded = 0;
-        $numOfEntriesReloaded = 0;
         foreach ($dataSets as $dataSet) {
-            $isDataSetReload = false;
-            $connectedDataSources = $dataSet->getConnectedDataSources();
-            $dataSet->setJobExpirationDate(new \DateTime());
-            $dataSetManager->save($dataSet);
 
-            $allEntries = [];
-
-            foreach ($connectedDataSources as $connectedDataSource) {
-                if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-                    continue;
-                }
-                /**
-                 * @var DataSourceEntryInterface[] $entries
-                 */
-                $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
-                foreach ($entries as $entry) {
-                    $allEntries[$entry->getId()] = $entry;
-                }
-            }
-
-            /**
-             * @var DataSourceEntryInterface[] $allEntries
-             */
-            usort($allEntries, function (DataSourceEntryInterface $a, DataSourceEntryInterface $b) {
-                if ($a->getId() == $b->getId()) {
-                    return 0;
-                }
-                return ($a->getId() < $b->getId()) ? -1 : 1;
-            });
-
-            foreach ($allEntries as $entry) {
-                $isReload = false;
-                foreach ($connectedDataSources as $connectedDataSource) {
-                    if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-                        continue;
-                    }
-                    $dataSource = $connectedDataSource->getDataSource();
-                    if (!$dataSource instanceof DataSourceInterface) {
-                        continue;
-                    }
-
-                    if ($entry->getDataSource()->getId() !== $dataSource->getId()) {
-                        continue;
-                    }
-
-                    $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, [$entry->getId()]);
-                    $isReload = true;
-                }
-
-                if ($isReload) {
-                    $numOfEntriesReloaded++;
-                    $isDataSetReload = true;
-                }
-            }
-
-            if ($isDataSetReload) {
-                $numOfDataSetReloaded++;
-            }
+            $workerManager->reloadAllForDataSet($dataSet);
+            $numOfDataSetReloaded++;
         }
 
         $this->logger->notice(sprintf('%s data sets are reloading', $numOfDataSetReloaded));

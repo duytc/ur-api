@@ -113,61 +113,256 @@ services:
         tags:
             - { name: monolog.processor, method: processRecord }
 
+    # new worker design ----------------------------------------------------------------------------------
+
+    ur.redis.app_cache:
+        class: Redis
+        calls:
+            - [connect, ["%ur.redis.app_cache.host%","%ur.redis.app_cache.port%"]]
+
+    ur.worker.scheduler.concurrent_job_scheduler:
+        class: Pubvantage\Worker\Scheduler\ConcurrentJobScheduler
+        arguments:
+            - @leezy.pheanstalk
+            - "%ur.worker.concurrent_tube_name%"
+
+    ur.worker.scheduler.linear_job_scheduler:
+        class: Pubvantage\Worker\Scheduler\LinearJobScheduler
+        arguments:
+            - @leezy.pheanstalk
+            - @ur.redis.app_cache
+            - @ur.worker.scheduler.concurrent_job_scheduler
+            - "%ur.worker.process_linear_job_name%"
+            - "%ur.worker.linear_job_priority_key_prefix%"
+            - @ur.pubvantage.worker.job_expirer
+
+    ur.pubvantage.worker.job_counter:
+        class: Pubvantage\Worker\JobCounter
+        arguments:
+            - @ur.redis.app_cache
+            - "%ur.worker.pending_job_count_key_prefix%"
+
+    ur.pubvantage.worker.job_expirer:
+        class: Pubvantage\Worker\JobExpirer
+        arguments:
+            - @ur.redis.app_cache
+            - "%ur.worker.expire_linear_job_prefix%"
+
+    ur.worker.scheduler.data_set_job_scheduler:
+        class: Pubvantage\Worker\Scheduler\DataSetJobScheduler
+        arguments:
+            - @ur.worker.scheduler.linear_job_scheduler
+            - @ur.pubvantage.worker.job_counter
+
     ur.worker.manager:
         class: UR\Worker\Manager
         arguments:
             - @ur.service.date_util
+            - @ur.redis.app_cache
             - @leezy.pheanstalk
+            - @ur.worker.scheduler.concurrent_job_scheduler
+            - @ur.worker.scheduler.linear_job_scheduler
+            - @ur.worker.scheduler.data_set_job_scheduler
 
-    ur.worker.workers.auto_import_data:
-        class: UR\Service\Import\AutoImportData
-        arguments:
-            - @ur.service.parsing_file_service
-            - @ur.service.data_set.importer
-            - @logger
+    ### linear worker pool
 
-    ur.worker.workers.re_import_new_entry_received:
-        class: UR\Worker\Workers\LoadingDataFromFileToDataImportTable
+    ur.worker.job.linear.reload_data_set:
+        class: UR\Worker\Job\Linear\ReloadDataSet
         arguments:
-            - @ur.service.command
-            - @logger
+            - @ur.worker.scheduler.data_set_job_scheduler
+            - @monolog.logger
+            - @ur.domain_manager.data_set
+            - @ur.repository.connected_data_source
+
+    ur.worker.job.linear.reload_connected_data_source:
+        class: UR\Worker\Job\Linear\ReloadConnectedDataSource
+        arguments:
+            - @ur.worker.scheduler.data_set_job_scheduler
+            - @monolog.logger
+            - @ur.domain_manager.connected_data_source
+
+    ur.worker.job.linear.remove_all_data_from_connected_data_source:
+        class: UR\Worker\Job\Linear\RemoveAllDataFromConnectedDataSource
+        arguments:
+            - @ur.worker.scheduler.data_set_job_scheduler
+            - @monolog.logger
+
+    ur.worker.job.linear.remove_data_from_connected_data_source_sub_job:
+        class: UR\Worker\Job\Linear\RemoveDataFromConnectedDataSourceSubJob
+        arguments:
+            - @monolog.logger
+            - @doctrine.orm.entity_manager
+
+    ur.worker.job.linear.load_files_into_data_set:
+        class: UR\Worker\Job\Linear\LoadFilesIntoDataSet
+        arguments:
+            - @ur.worker.scheduler.data_set_job_scheduler
+            - @monolog.logger
+
+    ur.worker.job.linear.load_file_into_data_set_sub_job:
+        class: UR\Worker\Job\Linear\LoadFileIntoDataSetSubJob
+        arguments:
+            - @monolog.logger
             - @ur.domain_manager.data_source_entry
             - @ur.domain_manager.connected_data_source
-            - @leezy.pheanstalk
             - @ur.domain_manager.import_history
-            - @ur.domain_manager.data_set_import_job
-            - %ur.command.load_data_to_database.timeout%
-            - %ur.worker.delay_time_before_job_become_ready%
+            - @ur.service.import_history_service
+            - @ur.service.auto_import_data
+            - @ur.worker.manager
+            - @ur.service.import.do_log
+            - @doctrine.orm.entity_manager
 
-    ur.worker.workers.alter_import_data_table:
-        class: UR\Worker\Workers\AlterImportDataTable
+    ur.worker.job.linear.undo_import_histories:
+        class: UR\Worker\Job\Linear\UndoImportHistories
         arguments:
-            - '@ur.service.command'
-            - '@leezy.pheanstalk'
-            - '@logger'
-            - '@ur.domain_manager.data_set_import_job'
-            - '%ur.command.alter_data_set_table.timeout%'
-            - '%ur.worker.delay_time_before_job_become_ready%'
+            - @ur.worker.scheduler.data_set_job_scheduler
+            - @monolog.logger
 
-    ur.worker.workers.truncate_data_set:
-        class: UR\Worker\Workers\TruncateDataSetWorker
+    ur.worker.job.linear.undo_import_history_sub_job:
+        class: UR\Worker\Job\Linear\UndoImportHistorySubJob
         arguments:
-            - '@ur.service.loading_data_service'
-            - '@ur.domain_manager.import_history'
-            - '@ur.domain_manager.data_set'
-            - '@logger'
+            - @monolog.logger
+            - @ur.service.import_history_service
 
-    ur.worker.workers.truncate_import_data_table:
-        class: UR\Worker\Workers\TruncateImportDataTable
+    ur.worker.job.linear.remove_all_data_from_data_set:
+        class: UR\Worker\Job\Linear\RemoveAllDataFromDataSet
         arguments:
+            - @ur.worker.scheduler.data_set_job_scheduler
+            - @monolog.logger
+            - @ur.domain_manager.data_set
+
+    ur.worker.job.linear.truncate_data_set_sub_job:
+        class: UR\Worker\Job\Linear\TruncateDataSetSubJob
+        arguments:
+            - @monolog.logger
             - @ur.domain_manager.data_set
             - @doctrine.orm.entity_manager
-            - @leezy.pheanstalk
-            - @logger
-            - %ur.worker.delay_time_before_job_become_ready%
-            - @ur.domain_manager.data_set_import_job
             - @ur.domain_manager.import_history
-            - @ur.service.loading_data_service
+
+    ur.worker.job.linear.alter_data_set_sub_job:
+        class: UR\Worker\Job\Linear\AlterDataSetTableSubJob
+        arguments:
+            - @monolog.logger
+            - @ur.domain_manager.data_set
+            - @doctrine.orm.entity_manager
+
+    ur.worker.job.linear.update_overwrite_date_in_data_set_sub_job:
+        class: UR\Worker\Job\Linear\UpdateOverwriteDateInDataSetSubJob
+        arguments:
+            - @monolog.logger
+            - @doctrine.orm.entity_manager
+            - @ur.domain_manager.data_set
+
+    ur.worker.job.linear.update_connected_data_source_total_row_sub_job:
+        class: UR\Worker\Job\Linear\UpdateConnectedDataSourceTotalRowSubJob
+        arguments:
+            - @monolog.logger
+            - @ur.service.data_set.update_total_row
+            - @ur.domain_manager.connected_data_source
+
+    ur.worker.job.linear.update_all_connected_data_sources_total_row_for_data_set_sub_job:
+        class: UR\Worker\Job\Linear\UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob
+        arguments:
+            - @monolog.logger
+            - @ur.service.data_set.update_total_row
+
+    ur.worker.job.linear.update_data_set_total_row_sub_job:
+        class: UR\Worker\Job\Linear\UpdateDataSetTotalRowSubJob
+        arguments:
+            - @monolog.logger
+            - @ur.service.data_set.update_total_row
+
+    ur.worker.job.linear.worker_pool:
+        class: Pubvantage\Worker\JobWorkerPool
+        arguments:
+            -
+                - @ur.worker.job.linear.reload_data_set
+                - @ur.worker.job.linear.reload_connected_data_source
+                - @ur.worker.job.linear.remove_all_data_from_connected_data_source
+                - @ur.worker.job.linear.remove_data_from_connected_data_source_sub_job
+                - @ur.worker.job.linear.load_files_into_data_set
+                - @ur.worker.job.linear.load_file_into_data_set_sub_job
+                - @ur.worker.job.linear.undo_import_histories
+                - @ur.worker.job.linear.undo_import_history_sub_job
+                - @ur.worker.job.linear.remove_all_data_from_data_set
+                - @ur.worker.job.linear.truncate_data_set_sub_job
+                - @ur.worker.job.linear.alter_data_set_sub_job
+                - @ur.worker.job.linear.update_overwrite_date_in_data_set_sub_job
+                - @ur.worker.job.linear.update_connected_data_source_total_row_sub_job
+                - @ur.worker.job.linear.update_all_connected_data_sources_total_row_for_data_set_sub_job
+                - @ur.worker.job.linear.update_data_set_total_row_sub_job
+    ### end of linear worker pool
+
+    ### concurrence worker pool
+    ur.worker.job.concurrent.process_linear_job:
+        class: UR\Worker\Job\Concurrent\ProcessLinearJob
+        arguments:
+            - @ur.worker.job.linear.worker_pool
+            - @ur.pubvantage.worker.job_counter
+            - @ur.pubvantage.worker.job_expirer
+            - @doctrine.orm.entity_manager
+            - @monolog.logger
+
+
+    ur.worker.job.concurrent.process_alert:
+        class: UR\Worker\Job\Concurrent\ProcessAlert
+        arguments:
+            - @monolog.logger
+            - @ur.service.alert.process_alert
+            - @doctrine.orm.entity_manager
+
+    ur.worker.job.concurrent.synchronize_user:
+        class: UR\Worker\Job\Concurrent\SynchronizeUser
+        arguments:
+            - @ur.service.synchronize_user_service
+
+    ur.worker.job.concurrent.update_detected_fields_when_entry_inserted:
+        class: UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted
+        arguments:
+            - @monolog.logger
+            - @ur.domain_manager.data_source
+            - @ur.domain_manager.data_source_entry
+            - @ur.service.import
+            - "%upload_file_dir%"
+
+    ur.worker.job.concurrent.update_total_row_when_entry_inserted:
+        class: UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted
+        arguments:
+            - @monolog.logger
+            - @ur.domain_manager.data_source
+            - @ur.domain_manager.data_source_entry
+            - @ur.service.import
+            - "%upload_file_dir%"
+            - @doctrine.orm.entity_manager
+
+    ur.worker.job.concurrent.update_detected_fields_when_entry_deleted:
+        class: UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted
+        arguments:
+            - @monolog.logger
+            - @ur.domain_manager.data_source
+            - @ur.service.import
+            - "%upload_file_dir%"
+            - @doctrine.orm.entity_manager
+
+    ur.worker.job.concurrent.fix_csv_line_feed:
+        class: UR\Worker\Job\Concurrent\FixCSVLineFeed
+        arguments:
+            - @monolog.logger
+
+    ur.worker.job.concurrent.worker_pool:
+        class: Pubvantage\Worker\JobWorkerPool
+        arguments:
+            -
+                - @ur.worker.job.concurrent.process_linear_job
+                - @ur.worker.job.concurrent.process_alert
+                - @ur.worker.job.concurrent.synchronize_user
+                - @ur.worker.job.concurrent.update_detected_fields_when_entry_inserted
+                - @ur.worker.job.concurrent.update_total_row_when_entry_inserted
+                - @ur.worker.job.concurrent.update_detected_fields_when_entry_deleted
+                - @ur.worker.job.concurrent.fix_csv_line_feed
+    ### end of concurrence worker pool
+
+    # end of new worker design ---------------------------------------------------------------------------
 
     ur.service.alert.process_alert:
         class: UR\Service\Alert\ProcessAlert
@@ -175,16 +370,6 @@ services:
             - @ur.domain_manager.alert
             - @ur_user.domain_manager.publisher
             - @ur.domain_manager.data_source
-
-    ur.worker.workers.alert_worker:
-        class: UR\Worker\Workers\AlertWorker
-        arguments:
-            - @ur.service.alert.process_alert
-
-    ur.worker.workers.synchronize_user_worker:
-        class: UR\Worker\Workers\SynchronizeUserWorker
-        arguments:
-            - @ur.service.synchronize_user_service
 
     ur.service.datasource.regenerate_email:
         class: UR\Bundle\ApiBundle\Service\DataSource\RegenerateUrEmail
@@ -196,6 +381,14 @@ services:
         class: UR\Bundle\ApiBundle\Service\DataSource\RegenerateUrApiKey
         arguments:
             - @ur.domain_manager.data_source
+
+    ur.service.data_source.upload_file_service:
+        class: UR\Bundle\ApiBundle\Service\DataSource\UploadFileService
+        arguments:
+            - @ur.domain_manager.data_source
+            - @ur.domain_manager.data_source_entry
+            - @ur.service.import
+            - @ur.worker.manager
 
     ur.service.import.do_log:
         class: UR\Service\Import\ImportDataLogger
@@ -215,6 +408,11 @@ services:
             - %kernel.root_dir%
             - @ur.service.file_factory
 
+    ur.service.import_history_service:
+            class: UR\Service\Import\ImportHistoryService
+            arguments:
+                - @doctrine.orm.entity_manager
+
     ur.service.parsing_file_service:
         class: UR\Service\Parser\ParsingFileService
         arguments:
@@ -226,6 +424,14 @@ services:
         arguments:
             - @doctrine.orm.entity_manager
             - %ur_batch_size%
+
+    ur.service.data_set.update_total_row:
+        class: UR\Service\DataSet\UpdateDataSetTotalRowService
+        arguments:
+            - @monolog.logger
+            - @doctrine.orm.entity_manager
+            - @ur.domain_manager.data_set
+            - @ur.domain_manager.connected_data_source
 
     ur.service.data_set.update_num_of_pending_load:
         class: UR\Service\DataSet\UpdateNumOfPendingLoad
@@ -243,14 +449,12 @@ services:
             - '@ur.service.file_factory'
             - '%max_excel_file_size%'
 
-    ur.service.loading_data_service:
-        class: UR\Service\Import\LoadingDataService
+    ur.service.auto_import_data:
+        class: UR\Service\Import\AutoImportData
         arguments:
-            - @ur.worker.manager
-            - @ur.domain_manager.data_set_import_job
-            - @ur.repository.import_history
-            - @ur.repository.linked_map_data_set
-            - @ur.domain_manager.data_set
+            - @ur.service.parsing_file_service
+            - @ur.service.data_set.importer
+            - @monolog.logger
 
     ur.service.command:
         class: UR\Service\Command\CommandService
@@ -260,20 +464,6 @@ services:
             - '%kernel.debug%'
             - %log_file_dir%
             - %data_set_job_temp_file_dir%
-
-    ur.worker.workers.update_detected_fields_and_data_source_entry_total_row:
-        class: UR\Worker\Workers\UpdateDetectedFieldsAndDataSourceEntryTotalRow
-        arguments:
-            - @logger
-            - @ur.domain_manager.data_source_entry
-            - @ur.domain_manager.data_source
-            - @ur.service.import
-            - %upload_file_dir%
-
-    ur.worker.workers.csv_fix_window_line_feed:
-        class: UR\Worker\Workers\CSVFixWindowLineFeed
-        arguments:
-            - @logger
 
     ur.service.date_time.date_time_util:
         class: UR\Service\DateTime\DateTimeUtil

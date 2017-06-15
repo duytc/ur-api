@@ -6,14 +6,12 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
-use UR\Bundle\ApiBundle\Behaviors\UpdateDataSetTotalRowTrait;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DTO\Collection;
 
 class ParsedDataImporter
 {
-    use UpdateDataSetTotalRowTrait;
     /**
      * @var Connection
      */
@@ -29,12 +27,11 @@ class ParsedDataImporter
         DataSetInterface::DATA_SOURCE_ID_COLUMN,
         DataSetInterface::IMPORT_ID_COLUMN,
         DataSetInterface::UNIQUE_ID_COLUMN,
-        DataSetInterface::OVERWRITE_DATE
+        DataSetInterface::OVERWRITE_DATE,
+        DataSetInterface::ENTRY_DATE_COLUMN
     ];
 
     private $preparedInsertCount;
-
-    private $lockingDatabaseTable;
 
     /**
      * ParsedDataImporter constructor.
@@ -46,7 +43,6 @@ class ParsedDataImporter
         $this->batchSize = $batchSize;
         $this->em = $em;
         $this->conn = $em->getConnection();
-        $this->lockingDatabaseTable = new LockingDatabaseTable($this->conn);
     }
 
     /**
@@ -56,7 +52,7 @@ class ParsedDataImporter
      * @return bool
      * @throws Exception
      */
-    public function importParsedDataFromFileToDatabase(Collection $collection, $importId, ConnectedDataSourceInterface $connectedDataSource)
+    public function importParsedDataFromFileToDatabase(Collection $collection, $importId, ConnectedDataSourceInterface $connectedDataSource, DateTime $entryDate)
     {
         $dataSetSynchronizer = new Synchronizer($this->conn, new Comparator());
 
@@ -65,8 +61,6 @@ class ParsedDataImporter
         $tableName = $table->getName();
 
         try {
-            $this->lockingDatabaseTable->lockTable($tableName);
-
             $dimensions = $connectedDataSource->getDataSet()->getDimensions();
             $metrics = $connectedDataSource->getDataSet()->getMetrics();
             $rows = $collection->getRows();
@@ -95,12 +89,12 @@ class ParsedDataImporter
                 return true;
             }
 
-            $isOverwriteData = $connectedDataSource->getDataSet()->getAllowOverwriteExistingData();
             $insert_values = array();
             $columns[DataSetInterface::DATA_SOURCE_ID_COLUMN] = DataSetInterface::DATA_SOURCE_ID_COLUMN;
             $columns[DataSetInterface::CONNECTED_DATA_SOURCE_ID_COLUMN] = DataSetInterface::CONNECTED_DATA_SOURCE_ID_COLUMN;
             $columns[DataSetInterface::IMPORT_ID_COLUMN] = DataSetInterface::IMPORT_ID_COLUMN;
             $columns[DataSetInterface::UNIQUE_ID_COLUMN] = DataSetInterface::UNIQUE_ID_COLUMN;
+            $columns[DataSetInterface::ENTRY_DATE_COLUMN] = DataSetInterface::ENTRY_DATE_COLUMN;
             $question_marks = [];
             $uniqueIds = [];
             $this->preparedInsertCount = 0;
@@ -120,6 +114,7 @@ class ParsedDataImporter
                 $row[DataSetInterface::CONNECTED_DATA_SOURCE_ID_COLUMN] = $connectedDataSource->getId();
                 $row[DataSetInterface::IMPORT_ID_COLUMN] = $importId;
                 $row[DataSetInterface::UNIQUE_ID_COLUMN] = $uniqueId;
+                $row[DataSetInterface::ENTRY_DATE_COLUMN] = $entryDate->format('Y-m-d H:i:sP');
                 //update
                 $uniqueIds[] = $uniqueId;
                 $question_marks[] = '(' . $this->placeholders('?', sizeof($row)) . ')';
@@ -127,13 +122,6 @@ class ParsedDataImporter
                 $this->preparedInsertCount++;
                 if ($this->preparedInsertCount === $this->batchSize) {
                     $this->conn->beginTransaction();
-
-                    //update __overwrite_date if duplicate data
-                    if ($isOverwriteData) {
-                        $this->executeUpdate($tableName, $uniqueIds);
-                        $uniqueIds = [];
-                    }
-
                     $this->executeInsert($tableName, $columns, $question_marks, $insert_values);
 
                     //commit update and insert
@@ -146,29 +134,19 @@ class ParsedDataImporter
 
             if ($this->preparedInsertCount > 0 && is_array($columns) && is_array($question_marks)) {
                 $this->conn->beginTransaction();
-                if ($isOverwriteData) {
-                    $this->executeUpdate($tableName, $uniqueIds);
-                }
-
                 $this->executeInsert($tableName, $columns, $question_marks, $insert_values);
 
                 //commit update and insert
                 $this->conn->commit();
             }
 
-            $this->lockingDatabaseTable->unLockTable();
-
-            //update total rows of data set
-            $this->updateDataSetTotalRow($connectedDataSource->getDataSet()->getId());
-
-            //update total rows of connected data source
-            $this->updateConnectedDataSourceTotalRow($connectedDataSource->getDataSet());
-
             return true;
         } catch (Exception $exception) {
             $this->conn->rollBack();
-            $this->lockingDatabaseTable->unLockTable();
             throw new Exception($exception->getMessage(), $exception->getCode(), $exception);
+        } finally {
+            $this->em->clear();
+            gc_collect_cycles();
         }
     }
 
@@ -228,20 +206,6 @@ class ParsedDataImporter
         $insertSql = sprintf("INSERT INTO %s (`%s`) VALUES %s", $tableName, implode("`,`", $columns), implode(',', $question_marks));
         $stmt = $this->conn->prepare($insertSql);
         $stmt->execute($insert_values);
-    }
-
-    /**
-     * @param $tableName
-     * @param array $uniqueIds
-     */
-    private function executeUpdate($tableName, array $uniqueIds)
-    {
-        $where = sprintf("%s IN ('%s') AND %s IS NULL", DataSetInterface::UNIQUE_ID_COLUMN, implode("','", $uniqueIds), DataSetInterface::OVERWRITE_DATE);
-        $set = sprintf("%s = :%s", DataSetInterface::OVERWRITE_DATE, DataSetInterface::OVERWRITE_DATE);
-        $updateSql = sprintf("UPDATE %s SET %s WHERE %s", $tableName, $set, $where);
-        $qb = $this->conn->prepare($updateSql);
-        $qb->bindValue(DataSetInterface::OVERWRITE_DATE, date('Y-m-d H:i:sP'));
-        $qb->execute();
     }
 
     protected function getEntityManager()

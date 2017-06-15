@@ -12,7 +12,6 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $requires;
     protected $alertSetting;
     protected $lastActivity;
-    protected $jobExpirationDate;
     /*
      * this variable to know which linked type, currently we only have augmentation linked type
      * re import data base on linked type when connected data source has augmentation transform
@@ -31,11 +30,6 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
      * @var LinkedMapDataSetInterface[]
      */
     protected $linkedMapDataSets;
-
-    /**
-     * @var DataSetImportJobInterface[]
-     */
-    protected $dataSetImportJobs;
 
     /**
      * @var int
@@ -324,40 +318,6 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setTotalRow(int $totalRow)
     {
         $this->totalRow = $totalRow;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getJobExpirationDate()
-    {
-        return $this->jobExpirationDate;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setJobExpirationDate($jobExpirationDate)
-    {
-        $this->jobExpirationDate = $jobExpirationDate;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getDataSetImportJobs(): array
-    {
-        return $this->dataSetImportJobs;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setDataSetImportJobs(array $dataSetImportJobs)
-    {
-        $this->dataSetImportJobs = $dataSetImportJobs;
         return $this;
     }
 }

@@ -15,6 +15,7 @@ use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\Synchronizer;
 use UR\Service\StringUtilTrait;
+use UR\Worker\Job\Linear\AlterDataSetTableSubJob;
 
 class AlterImportDataTableCommand extends ContainerAwareCommand
 {
@@ -44,7 +45,7 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
         }
 
         $rawConfig = json_decode(file_get_contents($configFile), true);
-        $dataSetId = $rawConfig['dataSetId'];
+        $dataSetId = $rawConfig[AlterDataSetTableSubJob::DATA_SET_ID];
 
         $dataSetManager = $this->getContainer()->get('ur.domain_manager.data_set');
         /**
@@ -67,9 +68,9 @@ class AlterImportDataTableCommand extends ContainerAwareCommand
             throw new \Exception(sprintf('Cannot find Data Set with id: %s', $dataSetId));
         }
 
-        $deletedColumns = $rawConfig['deletedColumns'];
-        $updateColumns = $rawConfig['updateColumns'];
-        $newColumns = $rawConfig['newColumns'];
+        $deletedColumns = $rawConfig[AlterDataSetTableSubJob::DELETED_FIELDS];
+        $updateColumns = $rawConfig[AlterDataSetTableSubJob::UPDATE_FIELDS];
+        $newColumns = $rawConfig[AlterDataSetTableSubJob::NEW_FIELDS];
 
         $dataSetSynchronizer = new Synchronizer($conn, new Comparator());;
         $dataTable = $dataSetSynchronizer->getDataSetImportTable($dataSet->getId());

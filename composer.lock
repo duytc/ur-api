@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "1b16ffca641ffef9e229bbc6f11fa943",
-    "content-hash": "203153dae1127fa5d9d3155d895c1397",
+    "hash": "853cb3d5f929a63251e2eda96f0da667",
+    "content-hash": "17b95bb568d91ebf09e4cc5f202302c9",
     "packages": [
         {
             "name": "behat/transliterator",
@@ -1167,7 +1167,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSUserBundle/zipball/2e0243e9e8a3ca0dab753fc5f2e79b4b3093ac9a",
+                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSUserBundle/zipball/7abb0ff366c404f2c2b34fd264693071148351a2",
                 "reference": "7abb0ff366c404f2c2b34fd264693071148351a2",
                 "shasum": ""
             },
@@ -1843,37 +1843,38 @@
         },
         {
             "name": "leezy/pheanstalk-bundle",
-            "version": "2.5.0",
-            "target-dir": "Leezy/PheanstalkBundle",
+            "version": "3.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/armetiz/LeezyPheanstalkBundle.git",
-                "reference": "d4dbd9753c4c0cc04168694e8de6120949faa063"
+                "reference": "76c69a6e906f5fc324205102a211150e996d9ff3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/armetiz/LeezyPheanstalkBundle/zipball/d4dbd9753c4c0cc04168694e8de6120949faa063",
-                "reference": "d4dbd9753c4c0cc04168694e8de6120949faa063",
+                "url": "https://api.github.com/repos/armetiz/LeezyPheanstalkBundle/zipball/76c69a6e906f5fc324205102a211150e996d9ff3",
+                "reference": "76c69a6e906f5fc324205102a211150e996d9ff3",
                 "shasum": ""
             },
             "require": {
-                "pda/pheanstalk": ">=2.1.0,<3.0-dev",
-                "symfony/console": "~2.0",
-                "symfony/framework-bundle": ">=2.0",
-                "symfony/monolog-bridge": ">=2.0"
+                "pda/pheanstalk": "~3.0",
+                "php": ">=5.5.9",
+                "psr/log": "~1.0",
+                "symfony/console": "~2.5|~3.0",
+                "symfony/framework-bundle": "~2.5|~3.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "3.7.*"
+                "phpunit/phpunit": "~4.0",
+                "phpunit/phpunit-mock-objects": "2.3.0"
             },
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.x-dev"
+                    "dev-master": "3.x-dev"
                 }
             },
             "autoload": {
-                "psr-0": {
-                    "Leezy\\PheanstalkBundle": ""
+                "psr-4": {
+                    "Leezy\\PheanstalkBundle\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1898,7 +1899,7 @@
                 "queueing",
                 "symfony"
             ],
-            "time": "2015-03-17 10:37:13"
+            "time": "2016-08-12 07:08:28"
         },
         {
             "name": "lexik/jwt-authentication-bundle",
@@ -2475,25 +2476,33 @@
         },
         {
             "name": "pda/pheanstalk",
-            "version": "v2.1.1",
+            "version": "v3.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pda/pheanstalk.git",
-                "reference": "672eb5cc9049d61e4eb68d30f0f33de65a947e6b"
+                "reference": "430e77c551479aad0c6ada0450ee844cf656a18b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pda/pheanstalk/zipball/672eb5cc9049d61e4eb68d30f0f33de65a947e6b",
-                "reference": "672eb5cc9049d61e4eb68d30f0f33de65a947e6b",
+                "url": "https://api.github.com/repos/pda/pheanstalk/zipball/430e77c551479aad0c6ada0450ee844cf656a18b",
+                "reference": "430e77c551479aad0c6ada0450ee844cf656a18b",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.0"
             },
+            "require-dev": {
+                "phpunit/phpunit": "~4.0"
+            },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "3.0-dev"
+                }
+            },
             "autoload": {
-                "psr-0": {
-                    "Pheanstalk": "classes/"
+                "psr-4": {
+                    "Pheanstalk\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -2513,7 +2522,7 @@
             "keywords": [
                 "beanstalkd"
             ],
-            "time": "2014-12-02 22:44:56"
+            "time": "2015-08-07 21:42:41"
         },
         {
             "name": "phpcollection/phpcollection",
@@ -2764,16 +2773,16 @@
         },
         {
             "name": "psr/log",
-            "version": "1.0.1",
+            "version": "1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/log.git",
-                "reference": "5277094ed527a1c4477177d102fe4c53551953e0"
+                "reference": "4ebe3a8bf773a19edfe0a84b6585ba3d401b724d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/log/zipball/5277094ed527a1c4477177d102fe4c53551953e0",
-                "reference": "5277094ed527a1c4477177d102fe4c53551953e0",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/4ebe3a8bf773a19edfe0a84b6585ba3d401b724d",
+                "reference": "4ebe3a8bf773a19edfe0a84b6585ba3d401b724d",
                 "shasum": ""
             },
             "require": {
@@ -2807,7 +2816,7 @@
                 "psr",
                 "psr-3"
             ],
-            "time": "2016-09-19 16:02:08"
+            "time": "2016-10-10 12:19:37"
         },
         {
             "name": "ramsey/uuid",
@@ -4472,12 +4481,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/DoctrineFixturesBundle.git",
-                "reference": "fb060e289a2996e21869c261a983c0f8450132f6"
+                "reference": "561fb64d1d3b47673bdb13a0ac76f0003cf0eeef"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/DoctrineFixturesBundle/zipball/fb060e289a2996e21869c261a983c0f8450132f6",
-                "reference": "fb060e289a2996e21869c261a983c0f8450132f6",
+                "url": "https://api.github.com/repos/doctrine/DoctrineFixturesBundle/zipball/561fb64d1d3b47673bdb13a0ac76f0003cf0eeef",
+                "reference": "561fb64d1d3b47673bdb13a0ac76f0003cf0eeef",
                 "shasum": ""
             },
             "require": {
@@ -4521,7 +4530,7 @@
                 "Fixture",
                 "persistence"
             ],
-            "time": "2016-10-13 13:56:07"
+            "time": "2017-05-23 11:55:00"
         },
         {
             "name": "liip/functional-test-bundle",
@@ -4533,7 +4542,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/liip/LiipFunctionalTestBundle/zipball/a92dab0a48a5e92877b1546c336b298662f041c1",
+                "url": "https://api.github.com/repos/liip/LiipFunctionalTestBundle/zipball/9ce4e7f1948e559d986141b57f913bb83fcc9734",
                 "reference": "9ce4e7f1948e559d986141b57f913bb83fcc9734",
                 "shasum": ""
             },

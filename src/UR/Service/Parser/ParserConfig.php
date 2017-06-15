@@ -2,10 +2,9 @@
 
 namespace UR\Service\Parser;
 
-use UR\Service\Import\PublicImportDataException;
 use UR\Service\Parser\Filter\ColumnFilterInterface;
-use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
+use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\PublicSimpleException;
 
 class ParserConfig
@@ -23,6 +22,17 @@ class ParserConfig
      * @var CollectionTransformerInterface[]
      */
     protected $collectionTransforms = [];
+
+    /**
+     * ParserConfig constructor.
+     */
+    public function __construct()
+    {
+        $this->columnMapping = [];
+        $this->columnFilters = [];
+        $this->columnTransforms = [];
+        $this->collectionTransforms = [];
+    }
 
     public function addColumn($fromColumn, $toColumn = null)
     {
@@ -127,7 +137,7 @@ class ParserConfig
     /**
      * @return CollectionTransformerInterface[]
      */
-    public function     getCollectionTransforms()
+    public function getCollectionTransforms()
     {
         return $this->collectionTransforms;
     }

@@ -43,9 +43,6 @@ UR\Entity\Core\ConnectedDataSource:
             options:
                 default: 0
             nullable: false
-        jobExpirationDate:
-            type: datetime
-            nullable: true
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource
@@ -61,9 +58,4 @@ UR\Entity\Core\ConnectedDataSource:
             targetEntity: UR\Entity\Core\LinkedMapDataSet
             cascade: ['persist', 'detach', 'remove']
             mappedBy: connectedDataSource
-            orphanRemoval: true
-        dataSetImportJobs:
-            targetEntity: UR\Entity\Core\DataSetImportJob
-            cascade: ['persist', 'detach', 'remove']
-            mappedBy: dataSet
             orphanRemoval: true

@@ -56,6 +56,11 @@ class ImportDataLogger
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_NUMBER:
                 $message = sprintf('Failed to import file with id#%s - FILTER ERROR: Wrong number format at row [%s] - column [%s]', $dataSourceEntryId, $row, $column);
                 break;
+
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_DATE:
+                $message = sprintf('Failed to import file with id#%s - FILTER ERROR: Wrong date format at row [%s] - column [%s]', $dataSourceEntryId, $row, $column);
+                break;
+
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE:
                 $message = sprintf('Failed to import file with id#%s - TRANSFORM ERROR: Wrong date format at row [%s] - column [%s] ', $dataSourceEntryId, $row, $column);
                 break;

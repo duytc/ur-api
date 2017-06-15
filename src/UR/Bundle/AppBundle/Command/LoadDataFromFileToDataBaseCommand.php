@@ -4,8 +4,8 @@ namespace UR\Bundle\AppBundle\Command;
 
 use Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Model\Core\AlertInterface;
@@ -13,8 +13,6 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertFactory;
-use UR\Service\Alert\ConnectedDataSource\DataAddedAlert;
-use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Import\ImportDataLogger;
 use UR\Service\StringUtilTrait;
@@ -60,8 +58,9 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
 
         $dataSourceEntryManager = $container->get('ur.domain_manager.data_source_entry');
         $connectedDataSourceManager = $container->get('ur.domain_manager.connected_data_source');
-        $autoImport = $container->get('ur.worker.workers.auto_import_data');
+        $autoImport = $container->get('ur.service.auto_import_data');
         $importHistoryManager = $container->get('ur.domain_manager.import_history');
+        $importHistoryService = $container->get('ur.service.import_history_service');
         $workerManager = $container->get('ur.worker.manager');
         $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
 
@@ -137,7 +136,13 @@ class LoadDataFromFileToDataBaseCommand extends ContainerAwareCommand
 //             delete all previous import histories that have same data source entry id and data set
 //             get import histories by data source entry and data set
             $importHistories = $importHistoryManager->getImportHistoryByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource, $importHistoryEntity);
-            $importHistoryManager->deleteImportedData($importHistories);
+
+            $importHistoryIds = array_map(function (ImportHistoryInterface $importHistory) {
+                return $importHistory->getId();
+            }, $importHistories);
+
+            $importHistoryManager->deleteImportHistoriesByIds($importHistoryIds);
+            $importHistoryService->deleteImportedDataByImportHistories($importHistoryIds, $connectedDataSource->getDataSet()->getId());
 
             $logger->notice(
                 sprintf('success importing file "%s" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d)',

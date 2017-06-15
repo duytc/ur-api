@@ -16,7 +16,6 @@ use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
-use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\Import\AutoImportDataInterface;
 use UR\Service\Import\PublicImportDataException;
@@ -148,17 +147,9 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     {
         /** @var ConnectedDataSourceInterface $connectedDataSource */
         $connectedDataSource = $this->one($id);
-        $connectedDataSourceManager = $this->get('ur.domain_manager.connected_data_source');
-        $connectedDataSource->setJobExpirationDate(new \DateTime());
-        $connectedDataSourceManager->save($connectedDataSource);
+        $manager = $this->get('ur.worker.manager');
 
-        $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
-        $entryIds = array_map(function (DataSourceEntryInterface $entry) {
-            return $entry->getId();
-        }, $entries->toArray());
-
-        $loadingDataService = $this->get('ur.service.loading_data_service');
-        $loadingDataService->doLoadDataFromEntryToDataBase($connectedDataSource, $entryIds);
+        $manager->reloadAllForConnectedDataSource($connectedDataSource);
 
         return true;
     }
@@ -232,7 +223,23 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
      */
     public function deleteAction($id)
     {
-        return $this->delete($id);
+        $connectedDataSource = $this->one($id);
+
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            throw new NotFoundHttpException(
+                sprintf("The connected data source with ID '%s' was not found or you do not have access", $id)
+            );
+        }
+
+        $connectedDataSourceId = $connectedDataSource->getId();
+        $dataSetId = $connectedDataSource->getDataSet()->getId();
+        $this->delete($id);
+
+        $this->get('ur.worker.manager')->removeAllDataFromConnectedDataSource($connectedDataSourceId, $dataSetId);
+
+        $view = $this->view(null, Codes::HTTP_NO_CONTENT);
+
+        return $this->handleView($view);
     }
 
     /**
@@ -290,7 +297,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
 
         // call auto import for dry run only
         /** @var AutoImportDataInterface $autoImportService */
-        $autoImportService = $this->get('ur.worker.workers.auto_import_data');
+        $autoImportService = $this->get('ur.service.auto_import_data');
 
         return $autoImportService->createDryRunImportData($tempConnectedDataSource, $selectedEntry, $limitRows);
     }

@@ -6,12 +6,11 @@ namespace UR\Bundle\AppBundle\EventListener;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\ModelInterface;
-use UR\Service\Import\LoadingDataService;
 use UR\Service\Parser\Transformer\TransformerFactory;
+use UR\Worker\Manager;
 
 /**
  * Class ConnectedDataSourceChangeListener
@@ -27,14 +26,14 @@ class ReImportWhenConnectedDataSourceChangedListener
      */
     protected $insertedOrChangedEntities = [];
 
-    /** @var ContainerInterface $container */
-    private $container;
+    /** @var Manager $workerManager */
+    private $workerManager;
 
     private $transformFactory;
 
-    function __construct(ContainerInterface $container)
+    function __construct(Manager $workerManager)
     {
-        $this->container = $container;
+        $this->workerManager = $workerManager;
         $this->transformFactory = new TransformerFactory();
     }
 
@@ -52,33 +51,33 @@ class ReImportWhenConnectedDataSourceChangedListener
 
         $this->insertedOrChangedEntities[] = $connectedDataSource;
     }
-
-    /**
-     * @param LifecycleEventArgs $args
-     */
+//
+//    /**
+//     * @param LifecycleEventArgs $args
+//     */
     public function postUpdate(LifecycleEventArgs $args)
     {
-        $connectedDataSource = $args->getEntity();
-
-        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-            return;
-        }
-
-        // TODO: filter all ConnectedDataSources changed on need-listen fields
-        $em = $args->getEntityManager();
-        $uow = $em->getUnitOfWork();
-        $changedFields = $uow->getEntityChangeSet($connectedDataSource);
-
-        // only re-import on need fields
-        if (!array_key_exists('requires', $changedFields)
-            && !array_key_exists('mapFields', $changedFields)
-            && !array_key_exists('filters', $changedFields)
-            && !array_key_exists('transforms', $changedFields)
-        ) {
-            return;
-        }
-
-        $this->insertedOrChangedEntities[] = $connectedDataSource;
+//        $connectedDataSource = $args->getEntity();
+//
+//        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+//            return;
+//        }
+//
+//        // TODO: filter all ConnectedDataSources changed on need-listen fields
+//        $em = $args->getEntityManager();
+//        $uow = $em->getUnitOfWork();
+//        $changedFields = $uow->getEntityChangeSet($connectedDataSource);
+//
+//        // only re-import on need fields
+//        if (!array_key_exists('requires', $changedFields)
+//            && !array_key_exists('mapFields', $changedFields)
+//            && !array_key_exists('filters', $changedFields)
+//            && !array_key_exists('transforms', $changedFields)
+//        ) {
+//            return;
+//        }
+//
+//        $this->insertedOrChangedEntities[] = $connectedDataSource;
     }
 
     /**
@@ -126,11 +125,9 @@ class ReImportWhenConnectedDataSourceChangedListener
         // reset for new onFlush event
         $this->insertedOrChangedEntities = [];
 
-        /** @var LoadingDataService */
-        $loadingDataService = $this->container->get('ur.service.loading_data_service');
-
+//          TODO REMOVE WHEN STABLE
         foreach ($loadingConfigs as $loadingConfig) {
-            $loadingDataService->doLoadDataFromEntryToDataBase($loadingConfig['connectedDataSource'], $loadingConfig['entryIds']);
+            $this->workerManager->reloadAllForConnectedDataSource($loadingConfig['connectedDataSource']);
         }
     }
 }

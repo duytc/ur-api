@@ -170,25 +170,4 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @return self
      */
     public function setTotalRow(int $totalRow);
-
-    /**
-     * @return mixed
-     */
-    public function getJobExpirationDate();
-
-    /**
-     * @param mixed $jobExpirationDate
-     * @return $this
-     */
-    public function setJobExpirationDate($jobExpirationDate);
-
-    /**
-     * @return DataSetImportJobInterface[]
-     */
-    public function getDataSetImportJobs();
-    /**
-     * @param DataSetImportJobInterface[] $dataSetImportJobs
-     * @return self
-     */
-    public function setDataSetImportJobs(array $dataSetImportJobs);
 }

@@ -162,12 +162,12 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
     {
         /**@var ImportHistoryInterface $importHistory */
         $importHistory = $this->one($id);
+        $dataSetId = $importHistory->getDataSet()->getId();
 
-        $loadingDataService = $this->get('ur.service.loading_data_service');
-        // delete
-        $importHistoryRepository = $this->get('ur.repository.import_history');
-        $importHistoryRepository->deleteImportedData([$importHistory]);
-        $loadingDataService->reloadDataAugmentationWhenUndo([$importHistory]);
+        $workerManager = $this->get('ur.worker.manager');
+        $workerManager->undoImportHistories([$importHistory->getId()], $dataSetId);
+
+        $this->delete($id);
     }
 
     /**

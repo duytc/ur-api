@@ -56,6 +56,7 @@ class ImportFailureAlert extends AbstractConnectedDataSourceAlert
 
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_WRONG_TYPE_MAPPING:
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_NUMBER:
+            case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_DATE:
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE:
                 $details[self::COLUMN] = $this->column;
                 $details[self::CONTENT] = $this->content;

@@ -16,8 +16,6 @@ use UR\Service\Import\ImportDataException;
 use UR\Service\Metadata\DataSourceEntryMetadataFactory;
 use UR\Service\Metadata\Email\EmailMetadata;
 use UR\Service\Metadata\MetadataInterface;
-use UR\Service\Parser\Filter\ColumnFilterInterface;
-use UR\Service\Parser\Filter\DateFilter;
 use UR\Service\Parser\Filter\FilterFactory;
 use UR\Service\Parser\Transformer\Collection\AddField;
 use UR\Service\Parser\Transformer\Collection\Augmentation;
@@ -132,7 +130,9 @@ class ParsingFileService
         //transform config
         $this->createTransformConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $dataSourceEntry);
 
-        return $this->parser->parse($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
+        $collections = $this->parser->parse($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
+        $this->parserConfig = new ParserConfig();
+        return $collections;
     }
 
     /**

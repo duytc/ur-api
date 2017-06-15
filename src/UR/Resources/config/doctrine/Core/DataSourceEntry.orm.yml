@@ -37,6 +37,9 @@ UR\Entity\Core\DataSourceEntry:
             options:
                 default: 0
             nullable: false
+        fileExtension:
+            type: string
+            length: 20
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

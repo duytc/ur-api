@@ -43,7 +43,7 @@ class AutoImportData implements AutoImportDataInterface
 
         /* import data to database */
         $this->logger->notice(sprintf('begin loading file "%s" data to database "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
-        $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource);
+        $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
     }
 
     /**
@@ -105,7 +105,7 @@ class AutoImportData implements AutoImportDataInterface
         $collection = $this->parsingFileService->doParser($dataSourceEntry, $connectedDataSource, $limit);
         $this->logger->notice('parsing file completed');
         $rows = $collection->getRows();
-        
+
         return $this->parsingFileService->setDataOfColumnsNotMappedToNull($rows, $allFields);
     }
 }

@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
-use UR\DomainManager\DataSourceEntryManagerInterface;
+use UR\Bundle\ApiBundle\Service\DataSource\UploadFileService;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\DataSourceEntry;
@@ -24,7 +24,6 @@ use UR\Model\Core\DataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\IntegrationInterface;
-use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
 
 /**
@@ -560,10 +559,10 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
 
         $metadata = null;
         $rawMetadata = $request->request->get('metadata', null);
-        if (null !== $rawMetadata){
+        if (null !== $rawMetadata) {
             $metadata = json_decode($rawMetadata, true);
         }
-        
+
         return $this->processUploadedFiles($dataSource, $fileBag, $via = DataSourceEntry::RECEIVED_VIA_UPLOAD, true, $metadata);
     }
 
@@ -819,8 +818,8 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $dirItem = '/' . $dataSource->getPublisherId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
         $uploadPath = $uploadRootDir . $dirItem;
 
-        /** @var DataSourceEntryManagerInterface $dataSourceEntryManager */
-        $dataSourceEntryManager = $this->get('ur.domain_manager.data_source_entry');
+        /** @var UploadFileService $uploadFileService */
+        $uploadFileService = $this->get('ur.service.data_source.upload_file_service');
 
         $result = [];
 
@@ -832,7 +831,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             }
 
             try {
-                $oneResult = $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via, $alsoMoveFile, $metadata);
+                $oneResult = $uploadFileService->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via, $alsoMoveFile, $metadata);
 
                 $result[] = $oneResult;
             } catch (Exception $e) {
@@ -982,8 +981,8 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $this->file_force_contents(substr($uploadPath, 1) . $name, $data);
 
         $file = new UploadedFile($uploadPath . $name, $name);
-        $dataSourceEntryManager = $this->container->get('ur.domain_manager.data_source_entry');
-        return $dataSourceEntryManager->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $sourceParam, false);
+        $uploadFileService = $this->container->get('ur.service.data_source.upload_file_service');
+        return $uploadFileService->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $sourceParam, false);
     }
 
     /**

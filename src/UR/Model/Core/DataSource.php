@@ -2,6 +2,8 @@
 
 namespace UR\Model\Core;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\UserEntityInterface;
 
@@ -188,6 +190,28 @@ class DataSource implements DataSourceInterface
     public function setDataSourceEntries($dataSourceEntries)
     {
         $this->dataSourceEntries = $dataSourceEntries;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function addDataSourceEntry(DataSourceEntryInterface $dataSourceEntries)
+    {
+        // if array
+        if (is_array($this->dataSourceEntries)) {
+            $this->dataSourceEntries[] = $dataSourceEntries;
+
+            return $this;
+        }
+
+        // else => use collection
+        if (!$this->dataSourceEntries instanceof Collection) {
+            $this->dataSourceEntries = new ArrayCollection();
+        }
+
+        $this->dataSourceEntries->add($dataSourceEntries);
+
         return $this;
     }
 
