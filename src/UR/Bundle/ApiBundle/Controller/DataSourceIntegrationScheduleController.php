@@ -10,10 +10,11 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceIntegrationScheduleManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
+use UR\Entity\Core\DataSourceIntegrationSchedule;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
-use UR\Model\Core\DataSourceIntegration;
+use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
 
@@ -92,8 +93,27 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
     {
         /** @var DataSourceIntegrationScheduleManagerInterface $dsisManager */
         $dsisManager = $this->get('ur.domain_manager.data_source_integration_schedule');
+        $normalSchedules = $dsisManager->findToBeExecuted();
 
-        return $dsisManager->findToBeExecuted();
+        $backFillHistoryManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
+        $notExecutedBackFills = $backFillHistoryManager->findByBackFillNotExecuted();
+
+        $backFillSchedules = array_map(function ($backFillHistory) {
+            if ($backFillHistory instanceof DataSourceIntegrationBackfillHistoryInterface) {
+                /** Clone to make sure old value from history (startDate & endDate) not save to data source integration in database */
+                $dataSourceIntegration = clone $backFillHistory->getDataSourceIntegration();
+
+                $dataSourceIntegration->setBackFillForce(true);
+                $dataSourceIntegration->setBackFillStartDate($backFillHistory->getBackFillStartDate());
+                $dataSourceIntegration->setBackFillEndDate($backFillHistory->getBackFillEndDate());
+
+                $schedule =  new DataSourceIntegrationSchedule();
+                $schedule->setDataSourceIntegration($dataSourceIntegration);
+                return $schedule;
+            }
+        }, $notExecutedBackFills);
+
+        return array_merge($normalSchedules, $backFillSchedules);
     }
 
     /**

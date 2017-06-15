@@ -1004,6 +1004,8 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *
      * @Rest\Get("/datasources/{id}/backfillhistories", requirements={"id" = "\d+"})
      *
+     * @Rest\View(serializerGroups={"dataSourceIntegrationBackfillHistory.summary", "dataSourceIntegration.backfillhistory", "integration.backfillhistory"})
+     *
      * @ApiDoc(
      *  section = "Data Source",
      *  resource = true,

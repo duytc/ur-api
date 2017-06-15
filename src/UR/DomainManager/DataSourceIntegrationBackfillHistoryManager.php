@@ -80,4 +80,12 @@ class DataSourceIntegrationBackfillHistoryManager implements DataSourceIntegrati
     {
         return $this->repository->findByDataSourceIntegration($dataSourceIntegration);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByBackFillNotExecuted()
+    {
+        return $this->repository->findByBackFillNotExecuted();
+    }
 }

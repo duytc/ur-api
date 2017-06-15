@@ -18,7 +18,7 @@ UR\Entity\Core\DataSourceIntegration:
             groups: [dataSourceIntegration.detail, dataSourceIntegration.bySchedule]
         integration:
             expose: true
-            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule, dataSourceIntegration.backfillhistory]
         # notice: we want return params without secure value in params, so we must use getParams() instead of directly access $params
         #params:
         #    expose: true
@@ -38,9 +38,9 @@ UR\Entity\Core\DataSourceIntegration:
             groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
             type: DateTime<'Y-m-d'>
         backFillEndDate:
-                    expose: true
-                    groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
-                    type: DateTime<'Y-m-d'>
+            expose: true
+            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
+            type: DateTime<'Y-m-d'>
         backFillExecuted:
             expose: true
             groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]

@@ -6,7 +6,7 @@ UR\Entity\Core\Integration:
             groups: [integration.detail, integration.summary]
         name:
             expose: true
-            groups: [integration.detail, integration.summary]
+            groups: [integration.detail, integration.summary, integration.backfillhistory]
         canonicalName:
             expose: true
             groups: [integration.detail]

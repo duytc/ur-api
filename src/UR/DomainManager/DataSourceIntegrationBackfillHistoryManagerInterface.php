@@ -11,4 +11,9 @@ interface DataSourceIntegrationBackfillHistoryManagerInterface extends ManagerIn
      * @return array|DataSourceIntegrationBackfillHistoryInterface[]
      */
     public function findByDataSourceIntegration($dataSourceIntegrationId);
+
+    /**
+     * @return array|DataSourceIntegrationBackfillHistoryInterface[]
+     */
+    public function findByBackFillNotExecuted();
 }

@@ -35,4 +35,15 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
 
         return $qb->getQuery()->getResult();
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByBackFillNotExecuted()
+    {
+        $qb = $this->createQueryBuilder('dibh')
+            ->where('dibh.lastExecutedAt is null');
+
+        return $qb->getQuery()->getResult();
+    }
 }

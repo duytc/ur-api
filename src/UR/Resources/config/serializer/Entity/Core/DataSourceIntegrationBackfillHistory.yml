@@ -7,18 +7,18 @@ UR\Entity\Core\DataSourceIntegrationBackfillHistory:
             groups: [dataSourceIntegrationBackfillHistory.summary]
         dataSourceIntegration:
             expose: true
-            groups: [dataSourceIntegrationBackfillHistory.detail]
+            groups: [dataSourceIntegrationBackfillHistory.summary]
 
         # back fill feature
         lastExecutedAt:
-                    expose: true
-                    groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]
-                    type: DateTime<'Y-m-d H:i:s'>
+            expose: true
+            groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]
+            type: DateTime<'Y-m-d H:i:s'>
         backFillStartDate:
             expose: true
             groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]
             type: DateTime<'Y-m-d'>
         backFillEndDate:
-                    expose: true
-                    groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]
-                    type: DateTime<'Y-m-d'>
+            expose: true
+            groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]
+            type: DateTime<'Y-m-d'>
