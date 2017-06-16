@@ -124,16 +124,22 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 		foreach ($rows as &$report) {
 			$key = '';
 			foreach ($groupingFields as $groupField) {
-				if (array_key_exists($groupField, $report)) {
-					if ($collection->getTypeOf($groupField) == FieldType::DATETIME) {
-						$normalizedDate = $this->normalizeTimezone($report[$groupField]);
-						$report[$groupField] = $normalizedDate->format('Y-m-d H:i:s');
-						$key .= $normalizedDate->format('Y-m-d');
-						continue;
-					}
-
-					$key .= is_array($report[$groupField]) ? json_encode($report[$groupField], JSON_UNESCAPED_UNICODE) : $report[$groupField];
+				if (!array_key_exists($groupField, $report)) {
+					continue;
 				}
+
+				if (empty($report[$groupField])) {
+					continue;
+				}
+
+				if ($collection->getTypeOf($groupField) == FieldType::DATETIME) {
+					$normalizedDate = $this->normalizeTimezone($report[$groupField]);
+					$report[$groupField] = $normalizedDate->format('Y-m-d H:i:s');
+					$key .= $normalizedDate->format('Y-m-d');
+					continue;
+				}
+
+				$key .= is_array($report[$groupField]) ? json_encode($report[$groupField], JSON_UNESCAPED_UNICODE) : $report[$groupField];
 			}
 
 			$key = md5($key);
