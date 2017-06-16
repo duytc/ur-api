@@ -18,6 +18,7 @@ use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
 use UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted;
 use UR\Worker\Job\Linear\AlterDataSetTableSubJob;
+use UR\Worker\Job\Linear\DeleteConnectedDataSource;
 use UR\Worker\Job\Linear\LoadFilesIntoDataSet;
 use UR\Worker\Job\Linear\ReloadConnectedDataSource;
 use UR\Worker\Job\Linear\ReloadDataSet;
@@ -123,6 +124,20 @@ class Manager
         ];
 
         $this->dataSetJobScheduler->addJob($removeDataFromConnectedDataSource, $dataSetId);
+    }
+
+    /**
+     * @param $connectedDataSourceId
+     * @param $dataSetId
+     */
+    public function deleteConnectedDataSource($connectedDataSourceId, $dataSetId)
+    {
+        $deleteConnectedDataSource = [
+            'task' => DeleteConnectedDataSource::JOB_NAME,
+            DeleteConnectedDataSource::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
+        ];
+
+        $this->dataSetJobScheduler->addJob($deleteConnectedDataSource, $dataSetId);
     }
 
     /**

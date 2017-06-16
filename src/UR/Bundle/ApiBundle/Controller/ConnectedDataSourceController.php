@@ -155,6 +155,35 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     }
 
     /**
+     * Remove All data from connected data source
+     *
+     * @Rest\Post("connecteddatasources/{id}/removealldatas", requirements={"id" = "\d+"})
+     *
+     * @ApiDoc(
+     *  section = "DataSet",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param $id
+     *
+     * @return mixed
+     */
+    public function postRemoveAllDataAction($id)
+    {
+        /** @var ConnectedDataSourceInterface $connectedDataSource */
+        $connectedDataSource = $this->one($id);
+        $manager = $this->get('ur.worker.manager');
+
+        $manager->removeAllDataFromConnectedDataSource($connectedDataSource->getId(), $connectedDataSource->getDataSet()->getId());
+
+        return true;
+    }
+
+    /**
      * Update an existing connectedDataSource from the submitted data or create a new ad network
      *
      * @ApiDoc(
@@ -235,7 +264,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         $dataSetId = $connectedDataSource->getDataSet()->getId();
         $this->delete($id);
 
-        $this->get('ur.worker.manager')->removeAllDataFromConnectedDataSource($connectedDataSourceId, $dataSetId);
+        $this->get('ur.worker.manager')->deleteConnectedDataSource($connectedDataSourceId, $dataSetId);
 
         $view = $this->view(null, Codes::HTTP_NO_CONTENT);
 

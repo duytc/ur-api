@@ -187,6 +187,12 @@ services:
             - @ur.worker.scheduler.data_set_job_scheduler
             - @monolog.logger
 
+    ur.worker.job.linear.delete_connected_data_source:
+        class: UR\Worker\Job\Linear\DeleteConnectedDataSource
+        arguments:
+            - @ur.worker.scheduler.data_set_job_scheduler
+            - @monolog.logger
+
     ur.worker.job.linear.remove_data_from_connected_data_source_sub_job:
         class: UR\Worker\Job\Linear\RemoveDataFromConnectedDataSourceSubJob
         arguments:
@@ -280,6 +286,7 @@ services:
                 - @ur.worker.job.linear.reload_data_set
                 - @ur.worker.job.linear.reload_connected_data_source
                 - @ur.worker.job.linear.remove_all_data_from_connected_data_source
+                - @ur.worker.job.linear.delete_connected_data_source
                 - @ur.worker.job.linear.remove_data_from_connected_data_source_sub_job
                 - @ur.worker.job.linear.load_files_into_data_set
                 - @ur.worker.job.linear.load_file_into_data_set_sub_job

@@ -7,9 +7,9 @@ use Pubvantage\Worker\JobParams;
 use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 
-class RemoveAllDataFromConnectedDataSource implements SplittableJobInterface
+class DeleteConnectedDataSource implements SplittableJobInterface
 {
-    const JOB_NAME = 'removeAllDataFromConnectedDataSource';
+    const JOB_NAME = 'deleteConnectedDataSource';
 
     const DATA_SET_ID = 'data_set_id';
     const CONNECTED_DATA_SOURCE_ID = 'connected_data_source_id';
@@ -55,10 +55,6 @@ class RemoveAllDataFromConnectedDataSource implements SplittableJobInterface
 
         $this->scheduler->addJob([
             'task' => UpdateDataSetTotalRowSubJob::JOB_NAME
-        ], $dataSetId, $params);
-
-        $this->scheduler->addJob([
-            'task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME
         ], $dataSetId, $params);
     }
 }
