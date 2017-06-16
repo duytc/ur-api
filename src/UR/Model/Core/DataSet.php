@@ -2,6 +2,7 @@
 
 namespace UR\Model\Core;
 
+use Doctrine\Common\Collections\Collection;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\UserEntityInterface;
 
