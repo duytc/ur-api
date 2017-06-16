@@ -123,6 +123,10 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
                         $this->setMissingColumnValueToNull(array_keys($missingColumns), $row);
                     }
 
+                    foreach ($row as &$value) {
+                        $value = $this->normalizeScientificValue($value);
+                    }
+
                     $this->rows[$curRow - 1] = $row;
                 }
 
@@ -171,6 +175,10 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
                     if (count($row) !== count($this->headers)) {
                         $missingColumns = array_diff_key($this->headers, $row);
                         $this->setMissingColumnValueToNull(array_keys($missingColumns), $row);
+                    }
+
+                    foreach ($row as &$value) {
+                        $value = $this->normalizeScientificValue($value);
                     }
 
                     $limitedRows[$curRow - 1] = $row;

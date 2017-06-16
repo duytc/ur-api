@@ -226,12 +226,12 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
                 if (\PHPExcel_Shared_Date::isDateTime($cell)) {
                     foreach ($this->fromDateFormats as $field => $format) {
                         if ($header === $field) {
-                            $rowData[] = date($format, \PHPExcel_Shared_Date::ExcelToPHP($cell->getValue()));
+                            $rowData[] = date($format, \PHPExcel_Shared_Date::ExcelToPHP($this->normalizeScientificValue($cell->getValue())));
                         }
                     }
 
                 } else {
-                    $rowData[] = $cell->getValue();
+                    $rowData[] =  $this->normalizeScientificValue($cell->getValue());
                 }
             }
 

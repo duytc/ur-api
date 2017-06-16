@@ -3,8 +3,12 @@
 namespace UR\Service\DataSource;
 
 
+use UR\Util\ScientificValueTrait;
+
 Abstract class CommonDataSourceFile
 {
+    use ScientificValueTrait;
+    
     protected function removeInvalidColumns(array $arr)
     {
         foreach ($arr as $key => $value) {
