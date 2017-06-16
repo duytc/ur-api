@@ -69,7 +69,7 @@ class UpdateDetectedFieldsForDataSourceEntryListener
             // so that, make sure the data source is existed before do other actions
 
             $dataSource = $dataSourceEntry->getDataSource();
-            if (!$dataSource instanceof DataSourceInterface) {
+            if (empty($dataSource->getId())) {
                 continue;
             }
 

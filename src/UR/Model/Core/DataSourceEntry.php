@@ -22,6 +22,8 @@ class DataSourceEntry implements DataSourceEntryInterface
      */
     protected $dataSource;
 
+    protected $importHistories;
+
     public function __construct()
     {
         $this->isValid = false;
@@ -260,6 +262,23 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setFileExtension($fileExtension)
     {
         $this->fileExtension = $fileExtension;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getImportHistories()
+    {
+        return $this->importHistories;
+    }
+
+    /**
+     * @inheritdocs
+     */
+    public function setImportHistories($importHistories)
+    {
+        $this->importHistories = $importHistories;
         return $this;
     }
 }

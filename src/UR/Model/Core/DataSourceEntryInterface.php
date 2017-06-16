@@ -139,4 +139,15 @@ interface DataSourceEntryInterface extends ModelInterface
      * @return self
      */
     public function setFileExtension($fileExtension);
+
+    /**
+     * @return mixed
+     * @return self
+     */
+    public function getImportHistories();
+
+    /**
+     * @param mixed $importHistories
+     */
+    public function setImportHistories($importHistories);
 }

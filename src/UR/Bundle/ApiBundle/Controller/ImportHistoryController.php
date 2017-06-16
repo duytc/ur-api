@@ -160,13 +160,6 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
      */
     public function undoImportedHistoryAction($id)
     {
-        /**@var ImportHistoryInterface $importHistory */
-        $importHistory = $this->one($id);
-        $dataSetId = $importHistory->getDataSet()->getId();
-
-        $workerManager = $this->get('ur.worker.manager');
-        $workerManager->undoImportHistories([$importHistory->getId()], $dataSetId);
-
         $this->delete($id);
     }
 

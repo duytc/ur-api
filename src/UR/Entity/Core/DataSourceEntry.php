@@ -4,6 +4,7 @@ namespace UR\Entity\Core;
 
 use UR\Model\Core\DataSourceEntry as DataSourceEntryModel;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\ImportHistoryInterface;
 
 class DataSourceEntry extends DataSourceEntryModel
 {
@@ -23,6 +24,11 @@ class DataSourceEntry extends DataSourceEntryModel
      * @var DataSourceInterface
      */
     protected $dataSource;
+
+    /**
+     * @var ImportHistoryInterface[]
+     */
+    protected $importHistories;
 
     /**
      * @inheritdoc

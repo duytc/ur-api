@@ -73,7 +73,7 @@ services:
             - { name: doctrine.event_listener, event: postFlush }
 
     ur_app.event_listener.create_job_delete_data_when_entry_deleted:
-        class: UR\Bundle\AppBundle\EventListener\CreateJobsDeleteDataFromImportTableWhenEntryDeleted
+        class: UR\Bundle\AppBundle\EventListener\CreateJobsDeleteDataFromImportTableWhenImportHistoriesDeleted
         arguments:
             - @ur.worker.manager
         tags:
