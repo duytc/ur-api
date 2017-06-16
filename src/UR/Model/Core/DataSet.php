@@ -34,9 +34,14 @@ class DataSet implements DataSetInterface
      */
     protected $linkedMapDataSets;
 
+    protected $noConnectedDataSourceChanges;
+    protected $noChanges;
+
     public function __construct()
     {
         $this->totalRow = 0;
+        $this->noChanges = 0;
+        $this->noConnectedDataSourceChanges = 0;
     }
 
     /**
@@ -261,5 +266,117 @@ class DataSet implements DataSetInterface
     {
         $this->lastActivity = $lastActivity;
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getNoConnectedDataSourceChanges()
+    {
+        return $this->noConnectedDataSourceChanges;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setNoConnectedDataSourceChanges($noConnectedDataSourceChanges)
+    {
+        $this->noConnectedDataSourceChanges = $noConnectedDataSourceChanges;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getNoChanges()
+    {
+        return $this->noChanges;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setNoChanges($noChanges)
+    {
+        $this->noChanges = $noChanges;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function increaseNoChanges($noChanges = 1)
+    {
+        $this->noChanges += $noChanges;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function decreaseNoChanges($noChanges = 1)
+    {
+        // avoid negative remaining value
+        $this->noChanges = ($this->noChanges > $noChanges) ? ($this->noChanges - $noChanges) : 0;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function increaseNoConnectedDataSourceChanges($noChanges = 1)
+    {
+        $this->noConnectedDataSourceChanges += $noChanges;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function decreaseNoConnectedDataSourceChanges($noChanges = 1)
+    {
+        // avoid negative remaining value
+        $this->noConnectedDataSourceChanges = ($this->noConnectedDataSourceChanges > $noChanges) ? ($this->noConnectedDataSourceChanges - $noChanges) : 0;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasNonUpToDateMappedDataSets()
+    {
+        if (!$this->connectedDataSources instanceof Collection && !is_array($this->connectedDataSources)) {
+            return false;
+        }
+
+        foreach ($this->connectedDataSources as $connectedDataSource) {
+            if ($this->hasNonUpToDateMappedDataSetsByConnectedDataSource($connectedDataSource)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasNonUpToDateMappedDataSetsByConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $linkedMapDataSets = $connectedDataSource->getLinkedMapDataSets();
+        if (!$this->linkedMapDataSets instanceof Collection && !is_array($this->linkedMapDataSets)) {
+            return false;
+        }
+
+        foreach ($linkedMapDataSets as $linkedMapDataSet) {
+            $mapDataSet = $linkedMapDataSet->getMapDataSet();
+            if ($mapDataSet->getNoChanges() > 0 || $mapDataSet->getNoConnectedDataSourceChanges() > 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

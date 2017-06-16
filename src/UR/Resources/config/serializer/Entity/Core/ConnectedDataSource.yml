@@ -40,3 +40,6 @@ UR\Entity\Core\ConnectedDataSource:
         totalRow:
             expose: true
             groups: [connectedDataSource.detail, connectedDataSource.summary]
+        noChanges:
+            expose: true
+            groups: [connectedDataSource.summary]

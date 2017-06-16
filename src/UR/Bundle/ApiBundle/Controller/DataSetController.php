@@ -178,6 +178,11 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         /** @var DataSetInterface $dataSet */
         $dataSet = $this->one($id);
 
+        // check if this is augmentation data set and still has a non-up-to-date mapped data set
+        if ($dataSet->hasNonUpToDateMappedDataSets()) {
+            throw new BadRequestHttpException('There are some non-up-to-date mapped data sets relate to this data set. Please reload them before this data set.');
+        }
+
         $workerManager = $this->get('ur.worker.manager');
         $workerManager->reloadAllForDataSet($dataSet);
 

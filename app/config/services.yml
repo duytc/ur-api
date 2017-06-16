@@ -253,6 +253,18 @@ services:
             - @ur.domain_manager.data_set
             - @doctrine.orm.entity_manager
 
+    ur.worker.job.linear.update_data_set_reload_completed:
+        class: UR\Worker\Job\Linear\UpdateDataSetReloadCompleted
+        arguments:
+            - @monolog.logger
+            - @event_dispatcher
+
+    ur.worker.job.linear.update_connected_data_source_reload_completed:
+        class: UR\Worker\Job\Linear\UpdateConnectedDataSourceReloadCompleted
+        arguments:
+            - @monolog.logger
+            - @event_dispatcher
+
     ur.worker.job.linear.update_overwrite_date_in_data_set_sub_job:
         class: UR\Worker\Job\Linear\UpdateOverwriteDateInDataSetSubJob
         arguments:
@@ -299,6 +311,8 @@ services:
                 - @ur.worker.job.linear.update_connected_data_source_total_row_sub_job
                 - @ur.worker.job.linear.update_all_connected_data_sources_total_row_for_data_set_sub_job
                 - @ur.worker.job.linear.update_data_set_total_row_sub_job
+                - @ur.worker.job.linear.update_data_set_reload_completed
+                - @ur.worker.job.linear.update_connected_data_source_reload_completed
     ### end of linear worker pool
 
     ### concurrence worker pool

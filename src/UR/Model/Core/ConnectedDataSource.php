@@ -35,7 +35,7 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
      * @var int
      */
     protected $totalRow;
-
+    protected $noChanges;
     /**
      * @return boolean
      */
@@ -67,6 +67,7 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function __construct()
     {
         $this->totalRow = 0;
+        $this->noChanges = 0;
     }
 
     /**
@@ -318,6 +319,33 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function setTotalRow(int $totalRow)
     {
         $this->totalRow = $totalRow;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getNoChanges()
+    {
+        return $this->noChanges;
+    }
+
+    /**
+     * @param int $noChanges
+     * @return self
+     */
+    public function setNoChanges($noChanges)
+    {
+        $this->noChanges = $noChanges;
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function increaseNoChanges()
+    {
+        ++$this->noChanges;
         return $this;
     }
 }

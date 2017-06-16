@@ -170,4 +170,20 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @return self
      */
     public function setTotalRow(int $totalRow);
+
+    /**
+     * @return int
+     */
+    public function getNoChanges();
+
+    /**
+     * @param int $noChanges
+     * @return self
+     */
+    public function setNoChanges($noChanges);
+
+    /**
+     * @return $this
+     */
+    public function increaseNoChanges();
 }

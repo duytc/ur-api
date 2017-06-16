@@ -31,3 +31,9 @@ UR\Entity\Core\DataSet:
         totalRow:
             expose: true
             groups: [dataset.summary]
+        noChanges:
+            expose: true
+            groups: [dataset.summary]
+        noConnectedDataSourceChanges:
+            expose: true
+            groups: [dataset.summary]

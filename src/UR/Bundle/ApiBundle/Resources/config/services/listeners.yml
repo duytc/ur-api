@@ -1,3 +1,7 @@
+parameters:
+    ur.event.data_set_reload_completed: ur.event.data_set_reload_completed
+    ur.event.connected_data_source_reload_completed: ur.event.connected_data_source_reload_completed
+
 services:
     ur_api.event_listener.update_metrics_and_dimensions_for_report_view_listener:
         class: UR\Bundle\ApiBundle\EventListener\UpdateMetricsAndDimensionsForReportViewListener
@@ -54,6 +58,28 @@ services:
         tags:
             - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.count_number_of_changes_when_data_set_change_listener:
+        class: UR\Bundle\ApiBundle\EventListener\CountNumberOfChangesWhenDataSetChangeListener
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
+
+    ur_api.event_listener.count_number_of_changes_when_connected_data_source_change_listener:
+        class: UR\Bundle\ApiBundle\EventListener\CountNumberOfChangesWhenConnectedDataSourceChangeListener
+        tags:
+            - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: preRemove }
+            - { name: doctrine.event_listener, event: onFlush }
+
+    ur_api.event_listener.reset_number_of_changes_listener:
+        class: UR\Bundle\ApiBundle\EventListener\ResetNumberOfChangesListener
+        arguments:
+            - '@doctrine.orm.entity_manager'
+            - '@logger'
+        tags:
+            - { name: kernel.event_listener, event: ur.event.data_set_reload_completed, method: onDataSetReloadCompleted }
+            - { name: kernel.event_listener, event: ur.event.connected_data_source_reload_completed, method: onConnectedDataSourceReloadCompleted }
 
     ur_api.event_listener.update_format_outputs_for_multiple_view_report_listener:
         class: UR\Bundle\ApiBundle\EventListener\UpdateFormatOutputsForMultipleViewReportListener

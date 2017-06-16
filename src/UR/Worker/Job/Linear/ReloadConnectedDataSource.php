@@ -93,5 +93,11 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
                 'task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME
             ], $dataSetId, $params);
         }
+
+        // update connected data source that it is reload completed
+        $this->scheduler->addJob([
+            'task' => UpdateConnectedDataSourceReloadCompleted::JOB_NAME,
+            UpdateConnectedDataSourceReloadCompleted::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
+        ], $dataSetId, $params);
     }
 }

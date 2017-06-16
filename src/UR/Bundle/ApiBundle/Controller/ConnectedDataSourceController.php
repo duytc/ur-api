@@ -112,7 +112,13 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
 
         $newConnectedDataSource->setName($name);
 
+        // update number of changes
+        $newConnectedDataSource->setNoChanges(1);
         $this->get('ur.domain_manager.connected_data_source')->save($newConnectedDataSource);
+
+        $dataSet = $newConnectedDataSource->getDataSet();
+        $dataSet->increaseNoConnectedDataSourceChanges();
+        $this->get('ur.domain_manager.data_set')->save($dataSet);
 
         return $this->view(null, Codes::HTTP_CREATED);
     }
@@ -148,6 +154,12 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         /** @var ConnectedDataSourceInterface $connectedDataSource */
         $connectedDataSource = $this->one($id);
         $manager = $this->get('ur.worker.manager');
+
+        // check if this is augmentation data set and still has a non-up-to-date mapped data set
+        $dataSet = $connectedDataSource->getDataSet();
+        if ($dataSet->hasNonUpToDateMappedDataSetsByConnectedDataSource($connectedDataSource)) {
+            throw new BadRequestHttpException('There are some non-up-to-date mapped data sets relate to the data set of this connected data source. Please reload them before this connected data source.');
+        }
 
         $manager->reloadAllForConnectedDataSource($connectedDataSource);
 

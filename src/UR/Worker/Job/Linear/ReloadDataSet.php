@@ -105,6 +105,12 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
                     LoadFileIntoDataSetSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId(),
                 ];
             }
+
+            // update connected data source that it is reload completed
+            $this->scheduler->addJob([
+                'task' => UpdateConnectedDataSourceReloadCompleted::JOB_NAME,
+                UpdateConnectedDataSourceReloadCompleted::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId()
+            ], $dataSetId, $params);
         }
 
         if (count($jobs) > 0) {
@@ -122,6 +128,11 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
 
             $this->scheduler->addJob([
                 'task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME
+            ], $dataSetId, $params);
+
+            // update data set that it is reload completed
+            $this->scheduler->addJob([
+                'task' => UpdateDataSetReloadCompleted::JOB_NAME
             ], $dataSetId, $params);
         }
     }

@@ -147,4 +147,65 @@ interface DataSetInterface extends ModelInterface
      * @return self
      */
     public function setLastActivity($lastActivity);
+
+    /**
+     * @return int
+     */
+    public function getNoConnectedDataSourceChanges();
+
+    /**
+     * @param int $noConnectedDataSourceChanges
+     * @return self
+     */
+    public function setNoConnectedDataSourceChanges($noConnectedDataSourceChanges);
+
+    /**
+     * @return int
+     */
+    public function getNoChanges();
+
+    /**
+     * @param int $noChanges
+     * @return self
+     */
+    public function setNoChanges($noChanges);
+
+    /**
+     * @param int $noChanges
+     * @return $this
+     */
+    public function increaseNoChanges($noChanges = 1);
+
+    /**
+     * decrease NoChanges, minimum value is always 0
+     *
+     * @param int $noChanges
+     * @return $this
+     */
+    public function decreaseNoChanges($noChanges = 1);
+
+    /**
+     * @param int $noChanges
+     * @return $this
+     */
+    public function increaseNoConnectedDataSourceChanges($noChanges = 1);
+
+    /**
+     * decrease NoConnectedDataSourceChanges, minimum value is always 0
+     *
+     * @param int $noChanges
+     * @return $this
+     */
+    public function decreaseNoConnectedDataSourceChanges($noChanges = 1);
+
+    /**
+     * @return boolean
+     */
+    public function hasNonUpToDateMappedDataSets();
+
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return bool
+     */
+    public function hasNonUpToDateMappedDataSetsByConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource);
 }
