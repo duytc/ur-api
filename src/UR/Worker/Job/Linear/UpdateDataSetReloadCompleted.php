@@ -24,7 +24,7 @@ class UpdateDataSetReloadCompleted implements JobInterface
      */
     private $eventDispatcher;
 
-    public function __construct(LoggerInterface $logger, EventDispatcher $eventDispatcher)
+    public function __construct(LoggerInterface $logger, $eventDispatcher)
     {
         $this->logger = $logger;
         $this->eventDispatcher = $eventDispatcher;
