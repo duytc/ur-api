@@ -9,6 +9,7 @@ use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
+use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 
 class DateFormat extends AbstractCommonColumnTransform implements ColumnTransformerInterface
 {
@@ -25,6 +26,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     protected $fromDateFormats;
     protected $toDateFormat;
     protected $timezone;
+
     const SUPPORTED_DATE_FORMATS = [
         self::DEFAULT_DATE_FORMAT,  // 2016-01-15
         'Y/m/d',  // 2016/01/15
@@ -48,7 +50,10 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         'y/m/d',  // 99/01/15
         'Y-m-d H:i',
         self::DEFAULT_DATETIME_FORMAT,
-        'Y-m-d H:i:s T',
+        'Y-m-d H:i:s T', // 2017-06-12 20:00:00 GMT+0000
+        'Y-m-d H:i:s e', // 2017-06-12 20:00:00 +00:00
+        'Y-m-d H:i:s O', // 2017-06-12 20:00:00 +0000
+        'Y-m-d H:i:s P'  // 2017-06-12 20:00:00 +00:00
     ];
 
     /**
@@ -80,11 +85,11 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             return $value->format($this->toDateFormat);
         }
 
-        $date = DateTime::createFromFormat('Y-m-d H:i:s T', $value);
+        $date = DateTime::createFromFormat(GroupByColumns::TEMPORARY_DATE_FORMAT, $value);
         if ($date instanceof DateTime) {
             return $date->format($this->toDateFormat);
         }
-
+        
         $value = trim($value);
 
         if ($value === null || $value === "") {
@@ -106,6 +111,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
                 continue;
             }
 
+            $date->setTimezone(new \DateTimeZone($this->timezone));
             $date->setTimezone(new \DateTimeZone(self::DEFAULT_TIMEZONE));
             $resultDate = $date;
         }

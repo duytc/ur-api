@@ -47,18 +47,20 @@ class RemoveAllDataFromConnectedDataSource implements SplittableJobInterface
         // do create all linear jobs for each files
         $dataSetId = (int)$params->getRequiredParam(self::DATA_SET_ID);
         $connectedDataSourceId = (int)$params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
+        $jobs = [];
 
-        $this->scheduler->addJob([
+        //add jobs remove data from data import table by connected data source
+        $jobs[] = [
             'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
             self::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
-        ], $dataSetId, $params);
+        ];
 
-        $this->scheduler->addJob([
-            'task' => UpdateDataSetTotalRowSubJob::JOB_NAME
-        ], $dataSetId, $params);
+        //update total rows for data set and connected data source
+        $jobs = array_merge($jobs, [
+            ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+            ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+        ]);
 
-        $this->scheduler->addJob([
-            'task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME
-        ], $dataSetId, $params);
+        $this->scheduler->addJob($jobs, $dataSetId, $params);
     }
 }

@@ -107,33 +107,24 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
             }
 
             // update connected data source that it is reload completed
-            $this->scheduler->addJob([
+            $jobs[] = [
                 'task' => UpdateConnectedDataSourceReloadCompleted::JOB_NAME,
                 UpdateConnectedDataSourceReloadCompleted::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId()
-            ], $dataSetId, $params);
+            ];
         }
 
         if (count($jobs) > 0) {
-            $this->scheduler->addJob($jobs, $dataSetId, $params);
-
-            // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
-            // this will save a lot of execution time
-            $this->scheduler->addJob([
-                'task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME
-            ], $dataSetId, $params);
-
-            $this->scheduler->addJob([
-                'task' => UpdateDataSetTotalRowSubJob::JOB_NAME
-            ], $dataSetId, $params);
-
-            $this->scheduler->addJob([
-                'task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME
-            ], $dataSetId, $params);
-
-            // update data set that it is reload completed
-            $this->scheduler->addJob([
-                'task' => UpdateDataSetReloadCompleted::JOB_NAME
-            ], $dataSetId, $params);
+            $jobs = array_merge($jobs, [
+                ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
+                ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+                ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+            ]);
         }
+
+        $jobs[] = ['task' => UpdateDataSetReloadCompleted::JOB_NAME];
+
+        // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
+        // this will save a lot of execution time
+        $this->scheduler->addJob($jobs, $dataSetId, $params);
     }
 }

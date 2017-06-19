@@ -49,12 +49,11 @@ class DeleteConnectedDataSource implements SplittableJobInterface
         $connectedDataSourceId = (int)$params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
 
         $this->scheduler->addJob([
-            'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
-            self::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
-        ], $dataSetId, $params);
-
-        $this->scheduler->addJob([
-            'task' => UpdateDataSetTotalRowSubJob::JOB_NAME
+            [
+                'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
+                self::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
+            ],
+            ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME]
         ], $dataSetId, $params);
     }
 }

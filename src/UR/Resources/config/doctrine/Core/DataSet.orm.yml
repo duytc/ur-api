@@ -36,12 +36,12 @@ UR\Entity\Core\DataSet:
             options:
                 default: 0
             nullable: false
-        noChanges:
+        numChanges:
             type: integer
             options:
                 default: 0
             nullable: true
-        noConnectedDataSourceChanges:
+        numConnectedDataSourceChanges:
             type: integer
             options:
                 default: 0

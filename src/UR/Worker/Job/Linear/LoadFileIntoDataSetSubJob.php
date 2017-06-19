@@ -196,7 +196,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
             $this->logger->error($message);
         } finally {
 
-            $this->logger->notice('-----------------------------------------------------------------------------------------------------');
+            $this->logger->notice('----------------------------LOADING COMPLETED-------------------------------------------------------------');
 
             if ($isImportFail && $importHistoryEntity instanceof ImportHistoryInterface) {
                 $failureAlert = $connectedDataSourceAlertFactory->getAlert(
@@ -211,7 +211,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
                 );
 
                 /*delete import history when fail*/
-                $this->importHistoryManager->delete($importHistoryEntity);
+                $this->importHistoryManager->deleteImportHistoriesByIds([$importHistoryEntity->getId()]);
 
                 if ($failureAlert != null) {
                     $this->workerManager->processAlert($errorCode, $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails(), $failureAlert->getDataSourceId());

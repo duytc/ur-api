@@ -73,10 +73,8 @@ class ResetNumberOfChangesListener
         }
 
         $dataSet
-            ->setNoChanges(0)
-            ->setNoConnectedDataSourceChanges(0);
-
-        // TODO: also reset all noChanges of connected data sources of this data set???
+            ->setNumChanges(0)
+            ->setNumConnectedDataSourceChanges(0);
 
         $this->em->merge($dataSet);
         $this->em->flush();
@@ -96,17 +94,17 @@ class ResetNumberOfChangesListener
         }
 
         // update the connected data source and its data set
-        $oldConnectedDataSourceNoChanges = $connectedDataSource->getNoChanges();
+        $oldConnectedDataSourceNumChanges = $connectedDataSource->getNumChanges();
 
-        $connectedDataSource->setNoChanges(0);
+        $connectedDataSource->setNumChanges(0);
         $this->em->merge($connectedDataSource);
 
         $dataSet = $connectedDataSource->getDataSet();
-        $dataSet->decreaseNoConnectedDataSourceChanges($oldConnectedDataSourceNoChanges);
+        $dataSet->decreaseNumConnectedDataSourceChanges($oldConnectedDataSourceNumChanges);
 
-        if ($dataSet->getNoConnectedDataSourceChanges() === 0) {
-            // also reset data set noChanges when all connected data source have no changes
-            $dataSet->setNoChanges(0);
+        if ($dataSet->getNumConnectedDataSourceChanges() === 0) {
+            // also reset data set numChanges when all connected data source have no changes
+            $dataSet->setNumChanges(0);
         }
 
         $this->em->merge($dataSet);
@@ -127,11 +125,11 @@ class ResetNumberOfChangesListener
                 continue;
             }
 
-            $relatedConnectedDataSource->increaseNoChanges();
+            $relatedConnectedDataSource->increaseNumChanges();
             $this->em->merge($relatedConnectedDataSource);
 
             $relatedDataSet = $relatedConnectedDataSource->getDataSet();
-            $relatedDataSet->increaseNoConnectedDataSourceChanges();
+            $relatedDataSet->increaseNumConnectedDataSourceChanges();
             $this->em->merge($relatedDataSet);
         }
 

@@ -55,15 +55,9 @@ class RemoveAllDataFromDataSet implements JobInterface
         }
 
         $this->scheduler->addJob([
-            'task' => TruncateDataSetSubJob::JOB_NAME,
-        ], $dataSetId, $params);
-
-        $this->scheduler->addJob([
-            'task' => UpdateDataSetTotalRowSubJob::JOB_NAME
-        ], $dataSetId, $params);
-
-        $this->scheduler->addJob([
-            'task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME
+            ['task' => TruncateDataSetSubJob::JOB_NAME],
+            ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+            ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
         ], $dataSetId, $params);
     }
 }

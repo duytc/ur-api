@@ -14,6 +14,7 @@ class DataSet implements DataSetInterface
     protected $metrics;
     protected $createdDate;
     protected $allowOverwriteExistingData;
+    /** $_actions is internal use only */
     protected $_actions = [];
     protected $lastActivity;
 
@@ -35,14 +36,20 @@ class DataSet implements DataSetInterface
      */
     protected $linkedMapDataSets;
 
-    protected $noConnectedDataSourceChanges;
-    protected $noChanges;
+    /**
+     * @var int
+     */
+    protected $numConnectedDataSourceChanges;
+    /**
+     * @var int
+     */
+    protected $numChanges;
 
     public function __construct()
     {
         $this->totalRow = 0;
-        $this->noChanges = 0;
-        $this->noConnectedDataSourceChanges = 0;
+        $this->numChanges = 0;
+        $this->numConnectedDataSourceChanges = 0;
     }
 
     /**
@@ -272,53 +279,53 @@ class DataSet implements DataSetInterface
     /**
      * @inheritdoc
      */
-    public function getNoConnectedDataSourceChanges()
+    public function getNumConnectedDataSourceChanges()
     {
-        return $this->noConnectedDataSourceChanges;
+        return $this->numConnectedDataSourceChanges;
     }
 
     /**
      * @inheritdoc
      */
-    public function setNoConnectedDataSourceChanges($noConnectedDataSourceChanges)
+    public function setNumConnectedDataSourceChanges($numConnectedDataSourceChanges)
     {
-        $this->noConnectedDataSourceChanges = $noConnectedDataSourceChanges;
+        $this->numConnectedDataSourceChanges = $numConnectedDataSourceChanges;
         return $this;
     }
 
     /**
      * @inheritdoc
      */
-    public function getNoChanges()
+    public function getNumChanges()
     {
-        return $this->noChanges;
+        return $this->numChanges;
     }
 
     /**
      * @inheritdoc
      */
-    public function setNoChanges($noChanges)
+    public function setNumChanges($numChanges)
     {
-        $this->noChanges = $noChanges;
+        $this->numChanges = $numChanges;
         return $this;
     }
 
     /**
      * @inheritdoc
      */
-    public function increaseNoChanges($noChanges = 1)
+    public function increaseNumChanges($numChanges = 1)
     {
-        $this->noChanges += $noChanges;
+        $this->numChanges += $numChanges;
         return $this;
     }
 
     /**
      * @inheritdoc
      */
-    public function decreaseNoChanges($noChanges = 1)
+    public function decreaseNumChanges($numChanges = 1)
     {
         // avoid negative remaining value
-        $this->noChanges = ($this->noChanges > $noChanges) ? ($this->noChanges - $noChanges) : 0;
+        $this->numChanges = ($this->numChanges > $numChanges) ? ($this->numChanges - $numChanges) : 0;
 
         return $this;
     }
@@ -326,19 +333,19 @@ class DataSet implements DataSetInterface
     /**
      * @inheritdoc
      */
-    public function increaseNoConnectedDataSourceChanges($noChanges = 1)
+    public function increaseNumConnectedDataSourceChanges($numChanges = 1)
     {
-        $this->noConnectedDataSourceChanges += $noChanges;
+        $this->numConnectedDataSourceChanges += $numChanges;
         return $this;
     }
 
     /**
      * @inheritdoc
      */
-    public function decreaseNoConnectedDataSourceChanges($noChanges = 1)
+    public function decreaseNumConnectedDataSourceChanges($numChanges = 1)
     {
         // avoid negative remaining value
-        $this->noConnectedDataSourceChanges = ($this->noConnectedDataSourceChanges > $noChanges) ? ($this->noConnectedDataSourceChanges - $noChanges) : 0;
+        $this->numConnectedDataSourceChanges = ($this->numConnectedDataSourceChanges > $numChanges) ? ($this->numConnectedDataSourceChanges - $numChanges) : 0;
 
         return $this;
     }
@@ -373,7 +380,7 @@ class DataSet implements DataSetInterface
 
         foreach ($linkedMapDataSets as $linkedMapDataSet) {
             $mapDataSet = $linkedMapDataSet->getMapDataSet();
-            if ($mapDataSet->getNoChanges() > 0 || $mapDataSet->getNoConnectedDataSourceChanges() > 0) {
+            if ($mapDataSet->getNumChanges() > 0 || $mapDataSet->getNumConnectedDataSourceChanges() > 0) {
                 return true;
             }
         }

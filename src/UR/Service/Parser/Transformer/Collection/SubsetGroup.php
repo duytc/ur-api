@@ -119,6 +119,12 @@ class SubsetGroup implements CollectionTransformerInterface
             $fieldType = $this->getFieldType($column, $connectedDataSource);
             if (isset($row[$column])) {
                 if ($fieldType == FieldType::DATETIME) {
+                    $date = \DateTime::createFromFormat(GroupByColumns::TEMPORARY_DATE_FORMAT, $row[$column]);
+                    if ($date instanceof \DateTime) {
+                        $data[] = $date->format(DateFormat::DEFAULT_DATE_FORMAT);
+                        continue;
+                    }
+                    
                     $data[] = DateFormat::getDateFromDateTime($row[$column], $column, $connectedDataSource);
                 } else {
                     $data[] = $row[$column];

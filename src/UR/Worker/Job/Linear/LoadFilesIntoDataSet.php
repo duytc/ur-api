@@ -54,7 +54,6 @@ class LoadFilesIntoDataSet implements SplittableJobInterface
         }
 
         $jobs = [];
-
         foreach ($entryIds as $entryId) {
             $jobs[] = [
                 'task' => LoadFileIntoDataSetSubJob::JOB_NAME,
@@ -64,21 +63,15 @@ class LoadFilesIntoDataSet implements SplittableJobInterface
         }
 
         if (count($jobs) > 0) {
-            $this->scheduler->addJob($jobs, $dataSetId, $params);
+            $jobs = array_merge($jobs, [
+                ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
+                ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+                ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+            ]);
 
             // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
             // this will save a lot of execution time
-            $this->scheduler->addJob([
-                'task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME
-            ], $dataSetId, $params);
-
-            $this->scheduler->addJob([
-                'task' => UpdateDataSetTotalRowSubJob::JOB_NAME
-            ], $dataSetId, $params);
-
-            $this->scheduler->addJob([
-                'task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME
-            ], $dataSetId, $params);
+            $this->scheduler->addJob($jobs, $dataSetId, $params);
         }
     }
 }

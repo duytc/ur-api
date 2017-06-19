@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use Doctrine\Common\Collections\Collection;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
@@ -14,6 +15,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
@@ -128,20 +130,14 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
 
         $dataSetIds = explode(',', $dataSetIdsString);
 
-        /** @var JobCounterInterface $jobCounter */
-        $jobCounter = $this->get('ur.pubvantage.worker.job_counter');
         $pendingJobs = [];
-
         foreach ($dataSetIds as $dataSetId) {
             $dataSet = $this->one($dataSetId);
             if (!$dataSet instanceof DataSetInterface) {
                 continue;
             }
 
-            $key = DataSetJobScheduler::getDataSetTubeName($dataSetId);
-            $pendingJob = $jobCounter->getPendingJobCount($key);
-
-            $pendingJobs[$dataSetId] = $pendingJob;
+            $pendingJobs[$dataSetId] = $this->getPendingJobsForDataSet($dataSet);
         }
 
         return $pendingJobs;
@@ -186,7 +182,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         $workerManager = $this->get('ur.worker.manager');
         $workerManager->reloadAllForDataSet($dataSet);
 
-        return ['pendingLoads' => 0];
+        return ['pendingLoads' => $this->getPendingLoadFilesForDataSet($dataSet)];
     }
 
 
@@ -449,5 +445,43 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.data_set');
+    }
+
+    /**
+     * Get a pending jobs for data sets
+     *
+     * @param DataSetInterface $dataSet
+     * @return int
+     */
+    private function getPendingJobsForDataSet(DataSetInterface $dataSet)
+    {
+        /** @var JobCounterInterface $jobCounter */
+        $jobCounter = $this->get('ur.pubvantage.worker.job_counter');
+
+        $key = DataSetJobScheduler::getDataSetTubeName($dataSet->getId());
+        $pendingJob = $jobCounter->getPendingJobCount($key);
+
+        return $pendingJob;
+    }
+
+    /**
+     * Get a pending load files for data sets
+     *
+     * @param DataSetInterface $dataSet
+     * @return int
+     */
+    private function getPendingLoadFilesForDataSet(DataSetInterface $dataSet)
+    {
+        $pendingLoadFiles = 0;
+
+        /** @var Collection|ConnectedDataSourceInterface[] $connectedDataSources */
+        $connectedDataSources = $dataSet->getConnectedDataSources();
+        foreach ($connectedDataSources as $connectedDataSource) {
+            $dataSource = $connectedDataSource->getDataSource();
+
+            $pendingLoadFiles += $dataSource->getNumOfFiles();
+        }
+
+        return $pendingLoadFiles;
     }
 }

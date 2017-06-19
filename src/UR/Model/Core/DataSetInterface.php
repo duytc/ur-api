@@ -151,52 +151,52 @@ interface DataSetInterface extends ModelInterface
     /**
      * @return int
      */
-    public function getNoConnectedDataSourceChanges();
+    public function getNumConnectedDataSourceChanges();
 
     /**
      * @param int $noConnectedDataSourceChanges
      * @return self
      */
-    public function setNoConnectedDataSourceChanges($noConnectedDataSourceChanges);
+    public function setNumConnectedDataSourceChanges($noConnectedDataSourceChanges);
 
     /**
      * @return int
      */
-    public function getNoChanges();
+    public function getNumChanges();
 
     /**
-     * @param int $noChanges
+     * @param int $numChanges
      * @return self
      */
-    public function setNoChanges($noChanges);
+    public function setNumChanges($numChanges);
 
     /**
-     * @param int $noChanges
+     * @param int $numChanges
      * @return $this
      */
-    public function increaseNoChanges($noChanges = 1);
+    public function increaseNumChanges($numChanges = 1);
 
     /**
-     * decrease NoChanges, minimum value is always 0
+     * decrease NumChanges, minimum value is always 0
      *
-     * @param int $noChanges
+     * @param int $numChanges
      * @return $this
      */
-    public function decreaseNoChanges($noChanges = 1);
+    public function decreaseNumChanges($numChanges = 1);
 
     /**
-     * @param int $noChanges
+     * @param int $numChanges
      * @return $this
      */
-    public function increaseNoConnectedDataSourceChanges($noChanges = 1);
+    public function increaseNumConnectedDataSourceChanges($numChanges = 1);
 
     /**
      * decrease NoConnectedDataSourceChanges, minimum value is always 0
      *
-     * @param int $noChanges
+     * @param int $numChanges
      * @return $this
      */
-    public function decreaseNoConnectedDataSourceChanges($noChanges = 1);
+    public function decreaseNumConnectedDataSourceChanges($numChanges = 1);
 
     /**
      * @return boolean

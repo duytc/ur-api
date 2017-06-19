@@ -61,12 +61,19 @@ class ReportViewController extends FOSRestController
             throw new BadRequestHttpException('Invalid token');
         }
 
-        $fieldsToBeShared = $sharedKeysConfig[$token]['fields'];
+        $config = $sharedKeysConfig[$token];
+
+        $fieldsToBeShared = $config['fields'];
         $paginationParams = $request->query->all();
         $params = $this->getParams($reportView, $paginationParams);
-        if (array_key_exists('dateRange', $sharedKeysConfig[$token]) && !empty($sharedKeysConfig[$token]['dateRange'])) {
-            $params->setStartDate(new \DateTime($sharedKeysConfig[$token]['dateRange']['startDate']));
-            $params->setEndDate(new \DateTime($sharedKeysConfig[$token]['dateRange']['endDate']));
+        if (
+            array_key_exists('dateRange', $config) &&
+            !empty($config['dateRange']) &&
+            !empty($config['dateRange']['startDate']) &&
+            !empty($config['dateRange']['endDate'])
+        ) {
+            $params->setStartDate(new \DateTime($config['dateRange']['startDate']));
+            $params->setEndDate(new \DateTime($config['dateRange']['endDate']));
         }
         $reportResult = $this->getReportBuilder()->getShareableReport($params, $fieldsToBeShared);
         $report = $reportResult->toArray();

@@ -19,7 +19,7 @@ class CountNumberOfChangesWhenDataSetChangeListener
         }
 
         if ($args->hasChangedField('dimensions') || $args->hasChangedField('metrics')) {
-            $dataSet->increaseNoChanges();
+            $dataSet->increaseNumChanges();
         }
     }
 }

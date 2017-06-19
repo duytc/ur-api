@@ -57,9 +57,6 @@ class ParsingFileService
     {
         $this->parser = $parser;
         $this->fileFactory = $fileFactory;
-        $this->transformerFactory = new TransformerFactory();
-        $this->parserConfig = new ParserConfig();
-        $this->dataSourceEntryMetadataFactory = new DataSourceEntryMetadataFactory();
     }
 
     /**
@@ -131,7 +128,7 @@ class ParsingFileService
         $this->createTransformConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $dataSourceEntry);
 
         $collections = $this->parser->parse($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
-        $this->parserConfig = new ParserConfig();
+
         return $collections;
     }
 
@@ -489,7 +486,7 @@ class ParsingFileService
         }
 
         foreach ($requireFields as $require) {
-            if (!in_array($require, $mapFields)) {
+            if (!array_key_exists($require, $this->parserConfig->getAllColumnMappings())) {
                 throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_REQUIRED_FAIL, null, $require);
             }
         }
@@ -606,5 +603,12 @@ class ParsingFileService
             }
         }
         return array_values($rows);
+    }
+
+    public function resetInjectParams()
+    {
+        $this->parserConfig = new ParserConfig();
+        $this->transformerFactory = new TransformerFactory();
+        $this->dataSourceEntryMetadataFactory = new DataSourceEntryMetadataFactory();
     }
 }

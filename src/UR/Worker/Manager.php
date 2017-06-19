@@ -31,10 +31,6 @@ use UR\Worker\Job\Linear\UpdateOverwriteDateInDataSetSubJob;
 
 class Manager
 {
-    const CONCURRENT_TUBE_NAME = 'ur-api-worker';
-    const EXECUTION_TIME_THRESHOLD = 3600;
-    const LINEAR_JOB_PRIORITY_KEY_PREFIX = 'ur_linear_job_next_priority_tube_'; // make configurable in parameters.
-
     /** @var DateUtilInterface */
     protected $dateUtil;
 
@@ -53,8 +49,6 @@ class Manager
     /** @var ConcurrentJobSchedulerInterface */
     protected $concurrentJobScheduler;
 
-    protected $queue;
-
     public function __construct(DateUtilInterface $dateUtil,
                                 Redis $redis,
                                 PheanstalkProxy $beanstalk,
@@ -63,7 +57,6 @@ class Manager
                                 DataSetJobScheduler $dataSetJobScheduler)
     {
         $this->dateUtil = $dateUtil;
-        $this->queue = null; // TODO: remove
         $this->redis = $redis;
         $this->beanstalk = $beanstalk;
         $this->concurrentJobScheduler = $concurrentJobScheduler;

@@ -31,8 +31,9 @@ class DataSet extends DataSetModel
      */
     protected $linkedMapDataSets;
 
-    protected $noConnectedDataSourceChanges;
-    protected $noChanges;
+    protected $numConnectedDataSourceChanges;
+    protected $numChanges;
+
     /**
      * @inheritdoc
      *

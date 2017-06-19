@@ -6,7 +6,6 @@ use UR\Model\ModelInterface;
 
 interface ConnectedDataSourceInterface extends ModelInterface
 {
-
     const LINKED_TYPE_AUGMENTATION = 'augmentation';
     const PREFIX_TEMP_FIELD = '__$$TEMP$$';
     const PREFIX_FILE_FIELD = '__$$FILE$$';
@@ -174,16 +173,16 @@ interface ConnectedDataSourceInterface extends ModelInterface
     /**
      * @return int
      */
-    public function getNoChanges();
+    public function getNumChanges();
 
     /**
-     * @param int $noChanges
+     * @param int $numChanges
      * @return self
      */
-    public function setNoChanges($noChanges);
+    public function setNumChanges($numChanges);
 
     /**
      * @return $this
      */
-    public function increaseNoChanges();
+    public function increaseNumChanges();
 }

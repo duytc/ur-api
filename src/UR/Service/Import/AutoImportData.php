@@ -102,6 +102,7 @@ class AutoImportData implements AutoImportDataInterface
          * parsing data
          */
         $this->logger->notice(sprintf('begin parsing file "%s"', $dataSourceEntry->getFileName()));
+        $this->parsingFileService->resetInjectParams();
         $collection = $this->parsingFileService->doParser($dataSourceEntry, $connectedDataSource, $limit);
         $this->logger->notice('parsing file completed');
         $rows = $collection->getRows();
@@ -139,7 +140,7 @@ class AutoImportData implements AutoImportDataInterface
                 continue;
             }
             $type = $types[$requireField];
-            
+
             foreach ($rows as $index => &$row) {
                 if (!array_key_exists($requireField, $row)) {
                     continue;

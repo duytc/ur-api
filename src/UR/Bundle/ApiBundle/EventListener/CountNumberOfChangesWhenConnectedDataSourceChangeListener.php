@@ -28,7 +28,7 @@ class CountNumberOfChangesWhenConnectedDataSourceChangeListener
             return;
         }
 
-        // only increase connected data source noChanges on creating if enable replayData
+        // only increase connected data source numChanges on creating if enable replayData
         if (!$connectedDataSource->isReplayData()) {
             $this->changingConnectedDataSources[] = $connectedDataSource;
         }
@@ -79,13 +79,13 @@ class CountNumberOfChangesWhenConnectedDataSourceChangeListener
         // handle changed connectedDataSources
         /** @var ConnectedDataSourceInterface $changingConnectedDataSource */
         foreach ($this->changingConnectedDataSources as $changingConnectedDataSource) {
-            $changingConnectedDataSource->increaseNoChanges();
+            $changingConnectedDataSource->increaseNumChanges();
             $md = $em->getClassMetadata(ConnectedDataSource::class);
             $uow->recomputeSingleEntityChangeSet($md, $changingConnectedDataSource);
 
             /** @var DataSetInterface $dataSet */
             $dataSet = $changingConnectedDataSource->getDataSet();
-            $dataSet->increaseNoConnectedDataSourceChanges(); // increase by 1
+            $dataSet->increaseNumConnectedDataSourceChanges(); // increase by 1
 
             $md = $em->getClassMetadata(DataSet::class);
             $uow->recomputeSingleEntityChangeSet($md, $dataSet);
@@ -98,11 +98,11 @@ class CountNumberOfChangesWhenConnectedDataSourceChangeListener
         foreach ($this->deletingConnectedDataSources as $deletingConnectedDataSource) {
             /** @var DataSetInterface $dataSet */
             $dataSet = $deletingConnectedDataSource->getDataSet();
-            $dataSet->decreaseNoConnectedDataSourceChanges($deletingConnectedDataSource->getNoChanges()); // decrease by current deleting connected data source changes
+            $dataSet->decreaseNumConnectedDataSourceChanges($deletingConnectedDataSource->getNumChanges()); // decrease by current deleting connected data source changes
 
-            if ($dataSet->getNoConnectedDataSourceChanges() === 0) {
-                // also reset data set noChanges when all connected data source have no changes
-                $dataSet->setNoChanges(0);
+            if ($dataSet->getNumConnectedDataSourceChanges() === 0) {
+                // also reset data set numChanges when all connected data source have no changes
+                $dataSet->setNumChanges(0);
             }
 
             $md = $em->getClassMetadata(DataSet::class);

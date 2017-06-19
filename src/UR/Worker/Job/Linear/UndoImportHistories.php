@@ -51,17 +51,17 @@ class UndoImportHistories implements SplittableJobInterface
             return;
         }
 
-        $this->scheduler->addJob([
+        $jobs = [];
+        $jobs[] = [
             'task' => UndoImportHistorySubJob::JOB_NAME,
             UndoImportHistorySubJob::IMPORT_HISTORY_IDS => $importHistoryIds
-        ], $dataSetId, $params);
+        ];
 
-        $this->scheduler->addJob([
-            'task' => UpdateDataSetTotalRowSubJob::JOB_NAME
-        ], $dataSetId, $params);
+        $jobs = array_merge($jobs, [
+            ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+            ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+        ]);
 
-        $this->scheduler->addJob([
-            'task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME
-        ], $dataSetId, $params);
+        $this->scheduler->addJob($jobs, $dataSetId, $params);
     }
 }

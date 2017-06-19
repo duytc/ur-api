@@ -12,6 +12,7 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $requires;
     protected $alertSetting;
     protected $lastActivity;
+    
     /*
      * this variable to know which linked type, currently we only have augmentation linked type
      * re import data base on linked type when connected data source has augmentation transform
@@ -35,7 +36,11 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
      * @var int
      */
     protected $totalRow;
-    protected $noChanges;
+    /**
+     * @var int
+     */
+    protected $numChanges;
+
     /**
      * @return boolean
      */
@@ -67,7 +72,7 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function __construct()
     {
         $this->totalRow = 0;
-        $this->noChanges = 0;
+        $this->numChanges = 0;
     }
 
     /**
@@ -325,27 +330,27 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     /**
      * @return int
      */
-    public function getNoChanges()
+    public function getNumChanges()
     {
-        return $this->noChanges;
+        return $this->numChanges;
     }
 
     /**
-     * @param int $noChanges
+     * @param int $numChanges
      * @return self
      */
-    public function setNoChanges($noChanges)
+    public function setNumChanges($numChanges)
     {
-        $this->noChanges = $noChanges;
+        $this->numChanges = $numChanges;
         return $this;
     }
 
     /**
      * @return $this
      */
-    public function increaseNoChanges()
+    public function increaseNumChanges()
     {
-        ++$this->noChanges;
+        ++$this->numChanges;
         return $this;
     }
 }

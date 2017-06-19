@@ -113,11 +113,11 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         $newConnectedDataSource->setName($name);
 
         // update number of changes
-        $newConnectedDataSource->setNoChanges(1);
+        $newConnectedDataSource->setNumChanges(1);
         $this->get('ur.domain_manager.connected_data_source')->save($newConnectedDataSource);
 
         $dataSet = $newConnectedDataSource->getDataSet();
-        $dataSet->increaseNoConnectedDataSourceChanges();
+        $dataSet->increaseNumConnectedDataSourceChanges();
         $this->get('ur.domain_manager.data_set')->save($dataSet);
 
         return $this->view(null, Codes::HTTP_CREATED);
