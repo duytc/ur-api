@@ -50,7 +50,7 @@ parameters:
 
     ur.worker.process_linear_job_name: 'processLinearJob'
     ur.worker.concurrent_tube_name: 'ur-api-worker'
-    ur.worker.lock_key_prefix: 'ur_lock_worker_'
-    ur.worker.linear_job_priority_key_prefix: 'ur_linear_job_next_priority_tube_'
+    ur.worker.lock_key_prefix: 'ur:lock_worker_'
+    ur.worker.linear_job_priority_key_prefix: 'ur:linear_job_next_priority_tube_'
     ur.worker.pending_job_count_key_prefix: 'ur:pending_job_count_'
     ur.worker.expire_linear_job_prefix: 'ur:linear_tube_expire_job_'
