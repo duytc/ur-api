@@ -380,10 +380,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
 
-        /* get final reports */
-        $isSingleDataSet = count($dataSets) < 2;
-
-        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $data[SqlBuilder::DATE_RANGE_KEY], $isSingleDataSet, $outputJoinFields, $isNeedFormatReport);
+        return $this->getFinalReports($collection, $params, $metrics, $dimensions, $data[SqlBuilder::DATE_RANGE_KEY], $outputJoinFields, $isNeedFormatReport);
     }
 
     /**
@@ -427,12 +424,11 @@ class ReportBuilder implements ReportBuilderInterface
      * @param array $metrics
      * @param array $dimensions
      * @param $dateRanges
-     * @param bool $isSingleDataSet
      * @param $outputJoinField
      * @param bool $isNeedFormatReport
      * @return mixed
      */
-    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $dateRanges, $isSingleDataSet = false, array $outputJoinField = [], $isNeedFormatReport = true)
+    private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $dateRanges, array $outputJoinField = [], $isNeedFormatReport = true)
     {
         /* transform data */
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
@@ -496,7 +492,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         /* group reports */
         /** @var ReportResultInterface $reportResult */
-        $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $params->getIsShowDataSetName(), $isSingleDataSet);
+        $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $params->getIsShowDataSetName());
 
         /*update column after group */
         /* $firstReport = ($reportResult->getReports())[0];

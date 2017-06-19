@@ -9,7 +9,7 @@ use UR\Model\Core\DataSetInterface;
 
 trait ColumnUtilTrait
 {
-    public function convertColumn($column, $isShowDataSetName, $singleDataSet = false)
+    public function convertColumn($column, $isShowDataSetName)
     {
         $lastOccur = strrchr($column, "_");
         $dataSetId = str_replace("_", "", $lastOccur);
@@ -30,11 +30,7 @@ trait ColumnUtilTrait
             return sprintf('%s %d', $column, $dataSetId);
         }
 
-        if ($singleDataSet === false) {
-            return sprintf("%s (%s)", $column, $dataSet->getName());
-        }
-
-        return $column;
+        return sprintf("%s (%s)", $column, $dataSet->getName());
     }
 
     /**

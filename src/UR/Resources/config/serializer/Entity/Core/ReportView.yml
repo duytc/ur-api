@@ -77,5 +77,8 @@ UR\Entity\Core\ReportView:
         enableCustomDimensionMetric:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        isShowDataSetName:
+            expose: true
+            groups: [report_view.detail, report_view.summary]
 
 
