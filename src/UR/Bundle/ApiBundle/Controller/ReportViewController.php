@@ -12,6 +12,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\DomainManager\ReportViewManagerInterface;
+use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
@@ -100,10 +101,45 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     /**
      * Generate shareable link for ReportView
      *
+     * @Rest\Post("/reportviews/{id}/shareablelink" )
+     *
+     *
+     * @ApiDoc(
+     *  section = "Report View",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  },
+     *  parameters={
+     *      {"name"="fields", "dataType"="string", "required"=false, "description"="fields to be showed in sharedReport, must match dimensions, metrics fields in ReportView"}
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @param int $id the resource id
+     * @return string
+     */
+    public function createShareableLinkAction(Request $request, $id)
+    {
+        /** @var ReportViewInterface $reportView */
+        $reportView = $this->one($id);
+
+        $fieldsToBeShared = $request->request->get('fields', '[]');
+        if (!is_array($fieldsToBeShared)) {
+            throw new InvalidArgumentException('expect "fields" to be an array');
+        }
+        
+        $dateRange = $request->request->get('dateRange', null);
+
+        return $this->getShareableLink($reportView, $fieldsToBeShared, $dateRange);
+    }
+
+    /**
+     * get shareable link for ReportView from given token
+     *
      * @Rest\Get("/reportviews/{id}/shareablelink" )
      *
-     * @Rest\QueryParam(name="fields", nullable=false, description="fields to be showed in sharedReport, must match dimensions, metrics fields in ReportView")
-     * @Rest\QueryParam(name="dateRange", nullable=true, description="custom date range")
+     * @Rest\QueryParam(name="token", nullable=false, description="the existing token of a shareable link")
      *
      * @ApiDoc(
      *  section = "Report View",
@@ -122,18 +158,30 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      */
     public function getShareableLinkAction(Request $request, $id)
     {
+        $token = $request->query->get('token', null);
         /** @var ReportViewInterface $reportView */
         $reportView = $this->one($id);
+        $configs = $reportView->getSharedKeysConfig();
+        if (is_array($configs) && count($configs) > 0) {
+            foreach ($configs as $key => $config) {
+                if ($token == $key) {
+                    $sharedReportViewLinkTemplate = $this->container->getParameter('shared_report_view_link');
+                    if (strpos($sharedReportViewLinkTemplate, '$$REPORT_VIEW_ID$$') < 0 || strpos($sharedReportViewLinkTemplate, '$$SHARED_KEY$$') < 0) {
+                        throw new RuntimeException('Missing server parameter key $$REPORT_VIEW_ID$$ or $$SHARED_KEY$$');
+                    }
 
-        $fieldsToBeShared = $request->query->get('fields', '[]');
-        $dateRange = $request->query->get('dateRange', null);
-        $fieldsToBeShared = json_decode($fieldsToBeShared);
-        $dateRange = json_decode($dateRange, true);
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($fieldsToBeShared)) {
-            throw new BadRequestHttpException('expected "fields" param is array that match fields in ReportView');
+                    $sharedLink = $sharedReportViewLinkTemplate;
+                    $sharedLink = str_replace('$$REPORT_VIEW_ID$$', $reportView->getId(), $sharedLink);
+                    $sharedLink = str_replace('$$SHARED_KEY$$', $token, $sharedLink);
+
+                    return $sharedLink;
+                }
+            }
+
+            throw new NotFoundHttpException('Invalid token');
         }
 
-        return $this->getShareableLink($reportView, $fieldsToBeShared, $dateRange);
+        throw new NotFoundHttpException('Invalid token');
     }
 
     /**
