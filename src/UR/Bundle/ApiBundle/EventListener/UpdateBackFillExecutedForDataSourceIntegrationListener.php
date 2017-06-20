@@ -2,8 +2,11 @@
 
 namespace UR\Bundle\ApiBundle\EventListener;
 
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
+use UR\Entity\Core\DataSourceIntegrationBackfillHistory;
 use UR\Model\Core\DataSourceIntegrationInterface;
 
 class UpdateBackFillExecutedForDataSourceIntegrationListener
@@ -11,8 +14,29 @@ class UpdateBackFillExecutedForDataSourceIntegrationListener
     /** @var array|DataSourceIntegrationInterface[] */
     private $updateDataSourceIntegrations = [];
 
+    /** @var  EntityManager */
+    protected $em;
+
     public function __construct()
     {
+    }
+
+    /**
+     * handle event postPersist one dataset, this auto create empty data import table with name __data_import_{dataSetId}
+     *
+     * @param LifecycleEventArgs $args
+     */
+    public function postPersist(LifecycleEventArgs $args)
+    {
+        $entity = $args->getEntity();
+        $this->em = $args->getEntityManager();
+
+        if (!$entity instanceof DataSourceIntegrationInterface) {
+            return;
+        }
+        if ($entity->isBackFill() && $entity->getBackFillStartDate()) {
+            $this->createBackFillHistoryWhenCreateDataSourceIntegration($entity);
+        }
     }
 
     /**
@@ -20,21 +44,20 @@ class UpdateBackFillExecutedForDataSourceIntegrationListener
      */
     public function preUpdate(PreUpdateEventArgs $args)
     {
-        // only do encrypt if params changed
-        if (!$args->hasChangedField('backFillForce')) {
-            return;
-        }
+        $this->em = $args->getEntityManager();
 
         $dataSourceIntegration = $args->getEntity();
         if (!$dataSourceIntegration instanceof DataSourceIntegrationInterface) {
             return;
         }
-
-        // update all dataSourceIntegrationSchedules
-        $dataSourceIntegration = $this->updateBackFillForDataSourceIntegration($dataSourceIntegration);
+        // create backfill history when has the change on Data Source Integration
+        if ($args->hasChangedField('backFillStartDate') || $args->hasChangedField('backFillEndDate')) {
+            $this->updateDataSourceIntegrations[] = $this->createBackFillHistoryForDataSourceIntegration($dataSourceIntegration);
+        }
 
         // add to $updateDataSourceIntegrations
         $this->updateDataSourceIntegrations[] = $dataSourceIntegration;
+
     }
 
     /**
@@ -62,17 +85,27 @@ class UpdateBackFillExecutedForDataSourceIntegrationListener
      * @param DataSourceIntegrationInterface $dataSourceIntegration
      * @return DataSourceIntegrationInterface
      */
-    private function updateBackFillForDataSourceIntegration(DataSourceIntegrationInterface $dataSourceIntegration)
+    private function createBackFillHistoryForDataSourceIntegration(DataSourceIntegrationInterface $dataSourceIntegration)
     {
-        $isBackFillForce = $dataSourceIntegration->isBackFillForce();
-        if ($isBackFillForce) {
-            // clear backFill execute
-            $dataSourceIntegration->setBackFillExecuted(false);
+        $backfillHistory = (new DataSourceIntegrationBackfillHistory())
+            ->setDataSourceIntegration($dataSourceIntegration)
+            ->setBackFillStartDate($dataSourceIntegration->getBackFillStartDate())
+            ->setBackFillEndDate($dataSourceIntegration->getBackFillEndDate());
 
-            // clear backFill force
-            $dataSourceIntegration->setBackFillForce(false);
-        }
+        return $backfillHistory;
+    }
 
-        return $dataSourceIntegration;
+    /**
+     * @param DataSourceIntegrationInterface $dataSourceIntegration
+     * @return DataSourceIntegrationInterface
+     */
+    private function createBackFillHistoryWhenCreateDataSourceIntegration(DataSourceIntegrationInterface $dataSourceIntegration)
+    {
+        $backfillHistory = (new DataSourceIntegrationBackfillHistory())
+            ->setDataSourceIntegration($dataSourceIntegration)
+            ->setBackFillStartDate($dataSourceIntegration->getBackFillStartDate())
+            ->setBackFillEndDate($dataSourceIntegration->getBackFillEndDate());
+
+        $this->em->persist($backfillHistory);
     }
 }

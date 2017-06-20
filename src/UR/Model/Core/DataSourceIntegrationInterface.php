@@ -131,28 +131,6 @@ interface DataSourceIntegrationInterface extends ModelInterface
     public function setBackFillEndDate($backFillEndDate);
 
     /**
-     * @return boolean
-     */
-    public function isBackFillExecuted();
-
-    /**
-     * @param boolean $backFillExecuted
-     * @return self
-     */
-    public function setBackFillExecuted($backFillExecuted);
-
-    /**
-     * @return boolean
-     */
-    public function isBackFillForce();
-
-    /**
-     * @param boolean $backFillForce
-     * @return self
-     */
-    public function setBackFillForce($backFillForce);
-
-    /**
      * @return array|Collection|DataSourceIntegrationScheduleInterface[]
      */
     public function getDataSourceIntegrationSchedules();

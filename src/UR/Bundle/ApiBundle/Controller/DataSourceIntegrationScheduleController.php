@@ -103,7 +103,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
                 /** Clone to make sure old value from history (startDate & endDate) not save to data source integration in database */
                 $dataSourceIntegration = clone $backFillHistory->getDataSourceIntegration();
 
-                $dataSourceIntegration->setBackFillForce(true);
+                $dataSourceIntegration->setBackFill(true);
                 $dataSourceIntegration->setBackFillStartDate($backFillHistory->getBackFillStartDate());
                 $dataSourceIntegration->setBackFillEndDate($backFillHistory->getBackFillEndDate());
 

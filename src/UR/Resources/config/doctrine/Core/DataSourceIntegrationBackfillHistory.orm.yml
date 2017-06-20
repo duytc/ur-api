@@ -10,17 +10,15 @@ UR\Entity\Core\DataSourceIntegrationBackfillHistory:
     fields:
         lastExecutedAt:
             type: datetime
-            gedmo:
-                timestampable:
-                    on: create
+            nullable: true
 
         # back fill feature
         backFillStartDate:
             type: date
             nullable: true
         backFillEndDate:
-                    type: date
-                    nullable: true
+            type: date
+            nullable: true
     manyToOne:
         dataSourceIntegration:
             targetEntity: UR\Entity\Core\DataSourceIntegration

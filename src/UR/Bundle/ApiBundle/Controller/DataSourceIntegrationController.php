@@ -10,11 +10,14 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Validator\Constraints\DateTime;
+use UR\DomainManager\DataSourceIntegrationBackfillHistoryManager;
+use UR\DomainManager\DataSourceIntegrationBackfillHistoryManagerInterface;
 use UR\DomainManager\DataSourceIntegrationManagerInterface;
 use UR\Entity\Core\DataSourceIntegrationBackfillHistory;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\Integration;
 use UR\Service\PublicSimpleException;
@@ -194,30 +197,39 @@ class DataSourceIntegrationController extends RestControllerAbstract implements 
     public function postUpdateBackFillExecutedAction(Request $request)
     {
         $id = $request->request->get('id', null);
+        $backFillStartDate = $request->request->get('backFillStartDate', null);
+        $backFillEndDate = $request->request->get('backFillEndDate', null);
 
         $dataSourceIntegration = $this->one($id);
         if (!($dataSourceIntegration instanceof DataSourceIntegrationInterface)) {
             throw new NotFoundHttpException('Not found that data source integration');
         }
 
-        // update backFill Executed
-        $dataSourceIntegration->setBackFillExecuted(true);
-        /** @var DataSourceIntegrationManagerInterface $dsiManager */
-        $dsiManager = $this->get('ur.domain_manager.data_source_integration');
-        $dsiManager->save($dataSourceIntegration);
+        // update backfill history when backfill_executed is executed
+        $backFillStartDate = date_create($backFillStartDate);
+        if (!empty($backFillEndDate)) {
+            $backFillEndDate = date_create($backFillEndDate);
+        }
 
-        // create backfill history when backfill_executed is executed
+        if (!$backFillStartDate instanceof \DateTime) {
+            return $this->view(true, Codes::HTTP_OK);
+        }
+
         $now = new \DateTime('now', new \DateTimeZone('UTC'));
 
-        $backfillHistory = (new DataSourceIntegrationBackfillHistory())
-            ->setDataSourceIntegration($dataSourceIntegration)
-            ->setLastExecutedAt($now)
-            ->setBackFillStartDate($dataSourceIntegration->getBackFillStartDate())
-            ->setBackFillEndDate($dataSourceIntegration->getBackFillEndDate());
+        /** @var DataSourceIntegrationBackfillHistoryManagerInterface $dsiManager */
+        $dsibhManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
 
-        /** @var DataSourceIntegrationManagerInterface $dsiManager */
-        $dsiManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
-        $dsiManager->save($backfillHistory);
+        $currentHistories = $dsibhManager->findHistoryByStartDateEndDate($backFillStartDate, $backFillEndDate, $dataSourceIntegration);
+        foreach ($currentHistories as $currentHistory) {
+            if (!$currentHistory instanceof DataSourceIntegrationBackfillHistoryInterface) {
+                continue;
+            }
+            if (!$currentHistory->getLastExecutedAt()) {
+                $currentHistory->setLastExecutedAt($now);
+                $dsibhManager->save($currentHistory);
+            }
+        }
 
         return $this->view(true, Codes::HTTP_OK);
     }

@@ -88,4 +88,12 @@ class DataSourceIntegrationBackfillHistoryManager implements DataSourceIntegrati
     {
         return $this->repository->findByBackFillNotExecuted();
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function findHistoryByStartDateEndDate($startDate, $endDate, $dataSourceIntegration)
+    {
+        return $this->repository->findHistoryByStartDateEndDate($startDate, $endDate, $dataSourceIntegration);
+    }
 }

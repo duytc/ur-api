@@ -175,24 +175,7 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
             $form->get('backFillStartDate')->addError(new FormError('missing backFillStartDate when backFill is enabled'));
             return false;
         }
-
-        // allow backfill endDate null
-
-        if ($dataSourceIntegration->isBackFillForce() && !$dataSourceIntegration->isBackFillExecuted()) {
-            $form->get('backFillForce')->addError(new FormError('backFillForce can not be enabled when backFillExecute is disabled'));
-            return false;
-        }
-
-        if ($dataSourceIntegration->isBackFillForce() && !$dataSourceIntegration->isBackFill()) {
-            $form->get('backFillForce')->addError(new FormError('backFillForce can not be enabled when backFill is disabled'));
-            return false;
-        }
-
-        if (null == $dataSourceIntegration->getBackFillStartDate() && $dataSourceIntegration->isBackFillForce()) {
-            $form->get('backFillStartDate')->addError(new FormError('missing backFillStartDate when backFillForce is enabled'));
-            return false;
-        }
-
+        
         return true;
     }
 }

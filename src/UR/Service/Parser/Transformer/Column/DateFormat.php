@@ -389,4 +389,20 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         }
         return self::DEFAULT_TIMEZONE;
     }
+
+    /**
+     * @param $value
+     * @return DateTime
+     */
+    public function getDateFromText($value)
+    {
+        foreach (self::SUPPORTED_DATE_FORMATS as $format) {
+            $date = date_create_from_format($format, $value);
+            if ($date instanceof DateTime) {
+                return $date;
+            }
+        }
+
+        return null;
+    }
 }

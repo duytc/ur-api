@@ -3,6 +3,7 @@
 namespace UR\Repository\Core;
 
 use Doctrine\ORM\EntityRepository;
+use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
 
@@ -20,7 +21,7 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
             ->join('dis.dataSourceIntegration', 'dsi')
             ->andWhere(
                 $qb->expr()->orX(
-                    // check by executeAt:
+                // check by executeAt:
                     $qb->expr()->lte('dis.executedAt', ':currentDate') // 'dis.executedAt <= :currentDate',
                 )
             )
@@ -28,7 +29,23 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
             ->setParameter('currentDate', $currentDate)
             ->setParameter('dataSourceActive', true);
 
-        return $qb->getQuery()->getResult();
+        $schedules = $qb->getQuery()->getResult();
+
+        foreach ($schedules as $key => &$schedule) {
+            if (!$schedule instanceof DataSourceIntegrationScheduleInterface) {
+                continue;
+            }
+            $datSourceIntegration = $schedule->getDataSourceIntegration();
+
+            if (!$datSourceIntegration instanceof DataSourceIntegrationInterface) {
+                continue;
+            }
+
+            $datSourceIntegration->setBackFill(false);
+            $schedule->setDataSourceIntegration($datSourceIntegration);
+        }
+
+        return $schedules;
     }
 
     /**
