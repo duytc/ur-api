@@ -4,7 +4,6 @@ namespace UR\Bundle\PublicBundle\Controller;
 
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Controller\FOSRestController;
-use FOS\RestBundle\View\View;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -21,6 +20,7 @@ class ReportViewController extends FOSRestController
      * Get shared report
      *
      * @Rest\Get("/reportviews/{id}/sharedReports")
+     * @Rest\View(serializerGroups={"report_view.share", "report_view_multi_view.share", "report_view_data_set.share"})
      *
      * @Rest\QueryParam(name="token", nullable=false)
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
@@ -78,10 +78,7 @@ class ReportViewController extends FOSRestController
         $reportResult = $this->getReportBuilder()->getShareableReport($params, $fieldsToBeShared);
         $report = $reportResult->toArray();
 
-        // important: append element "reportView" to reportResult, only for sharedReport
-        // because sharedReport can not communicate to api to get reportView
         $report['reportView'] = $reportView;
-
         return $report;
     }
 

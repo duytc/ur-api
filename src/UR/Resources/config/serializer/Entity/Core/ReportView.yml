@@ -9,13 +9,13 @@ UR\Entity\Core\ReportView:
             groups: [report_view.detail, report_view.summary]
         name:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         alias:
             expose: true
             groups: [report_view.detail, report_view.summary]
         joinBy:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         transforms:
             expose: true
             groups: [report_view.detail, report_view.summary]
@@ -42,7 +42,7 @@ UR\Entity\Core\ReportView:
             groups: [report_view.detail, report_view.summary]
         multiView:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         publisher:
             expose: true
             groups: [report_view.detail, report_view.summary]
@@ -52,16 +52,16 @@ UR\Entity\Core\ReportView:
             type: DateTime<'Y-m-d'>
         formats:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         fieldTypes:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         reportViewDataSets:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         reportViewMultiViews:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         subReportsIncluded:
             expose: true
             groups: [report_view.detail, report_view.summary]

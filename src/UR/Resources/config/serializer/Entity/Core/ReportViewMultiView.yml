@@ -9,10 +9,10 @@ UR\Entity\Core\ReportViewMultiView:
             groups: [report_view_multi_view.detail, report_view_multi_view.summary]
         dimensions:
             expose: true
-            groups: [report_view_multi_view.detail, report_view_multi_view.summary]
+            groups: [report_view_multi_view.detail, report_view_multi_view.summary, report_view_multi_view.share]
         metrics:
             expose: true
-            groups: [report_view_multi_view.detail, report_view_multi_view.summary]
+            groups: [report_view_multi_view.detail, report_view_multi_view.summary, report_view_multi_view.share]
 #        reportView:
 #            expose: true
 #            groups: [report_view_multi_view.detail, report_view_multi_view.summary]
