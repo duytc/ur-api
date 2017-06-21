@@ -144,8 +144,12 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
                 $this->csv->stripBom(true);
                 $all_rows = $this->csv->fetchAll();
 
+                $numOfRows = count($all_rows);
                 if (is_array($all_rows) && count($all_rows) > 0) {
                     for ($x = 0; $x < self::DETECT_HEADER_ROWS; $x++) {
+                        if ($x >= $numOfRows) {
+                            break;
+                        }
                         // check the 20 first rows is array and has at least 2 columns
                         $firstRow = $all_rows[$x];
                         if (is_array($firstRow) && count($firstRow) > 1) {

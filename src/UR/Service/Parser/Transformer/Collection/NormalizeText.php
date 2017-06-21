@@ -13,8 +13,8 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
     const IS_OVERRIDE_KEY = 'isOverride';
     const TARGET_FIELD_KEY = 'targetField';
     const NUMBER_REMOVED_KEY = 'numberRemoved';
-    const ALPHABET_CHARACTER_REMOVED_KEY = 'alphabetCharacterRemoved';
-    const DASHES_REMOVED_KEY = 'dashesRemoved';
+    const NON_ALPHA_NUMERIC_REMOVED_KEY = 'alphabetCharacterRemoved';
+    const WHITE_SPACE_REMOVED_KEY = 'dashesRemoved';
 
     /**
      * @var string
@@ -100,28 +100,21 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
             return null;
         }
 
-        $total = $this->numbersRemoved + ($this->alphabetCharacterRemoved << 1) + ($this->dashesRemoved << 2);
-        switch ($total) {
-            case 0:
-                return preg_replace('/[^-a-z0-9]/i', '', $row[$this->field]);
-            case 1:
-                return preg_replace('/[^-a-z]/i', '', $row[$this->field]);
-            case 2:
-                return preg_replace('/[^-0-9]/i', '', $row[$this->field]);
-            case 3:
-                return preg_replace('/[^-]/i', '', $row[$this->field]);
-            case 4:
-                return preg_replace('/[^a-z0-9]/i', '', $row[$this->field]);
-            case 5:
-                return preg_replace('/[^a-z]/i', '', $row[$this->field]);
-            case 6:
-                return preg_replace('/[^0-9]/i', '', $row[$this->field]);
-            case 7:
-                $temp = preg_replace('/[^-a-z0-9]/i', '', $row[$this->field]);
-                return preg_replace('/[-a-z0-9]/i', '', $temp);
-            default:
-                return $row[$this->field];
+        $result = $row[$this->field];
+
+        if ($this->numbersRemoved) {
+            $result = preg_replace('/[0-9]/', '', $result);
         }
+
+        if ($this->dashesRemoved) {
+            $result = preg_replace('/\s*/', '', $result);
+        }
+
+        if ($this->alphabetCharacterRemoved) {
+            $result = preg_replace('/[^a-z0-9]/', '', $result);
+        }
+
+        return $result;
     }
 
 
@@ -245,8 +238,8 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
         $transformFields[self::IS_OVERRIDE_KEY] = $this->isOverride;
         $transformFields[self::TARGET_FIELD_KEY] = $this->targetField;
         $transformFields[self::NUMBER_REMOVED_KEY] = $this->numbersRemoved;
-        $transformFields[self::ALPHABET_CHARACTER_REMOVED_KEY] = $this->alphabetCharacterRemoved;
-        $transformFields[self::DASHES_REMOVED_KEY] = $this->dashesRemoved;
+        $transformFields[self::NON_ALPHA_NUMERIC_REMOVED_KEY] = $this->alphabetCharacterRemoved;
+        $transformFields[self::WHITE_SPACE_REMOVED_KEY] = $this->dashesRemoved;
         return $transformFields;
     }
 }

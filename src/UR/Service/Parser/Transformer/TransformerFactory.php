@@ -446,8 +446,8 @@ class TransformerFactory
                 $isOverride,
                 $normalizeTextConfig[NormalizeText::TARGET_FIELD_KEY],
                 array_key_exists(NormalizeText::NUMBER_REMOVED_KEY, $normalizeTextConfig) ? filter_var($normalizeTextConfig[NormalizeText::NUMBER_REMOVED_KEY], FILTER_VALIDATE_BOOLEAN) : false,
-                array_key_exists(NormalizeText::ALPHABET_CHARACTER_REMOVED_KEY, $normalizeTextConfig) ? filter_var($normalizeTextConfig[NormalizeText::ALPHABET_CHARACTER_REMOVED_KEY], FILTER_VALIDATE_BOOLEAN) : false,
-                array_key_exists(NormalizeText::DASHES_REMOVED_KEY, $normalizeTextConfig) ? filter_var($normalizeTextConfig[NormalizeText::DASHES_REMOVED_KEY], FILTER_VALIDATE_BOOLEAN) : false
+                array_key_exists(NormalizeText::NON_ALPHA_NUMERIC_REMOVED_KEY, $normalizeTextConfig) ? filter_var($normalizeTextConfig[NormalizeText::NON_ALPHA_NUMERIC_REMOVED_KEY], FILTER_VALIDATE_BOOLEAN) : false,
+                array_key_exists(NormalizeText::WHITE_SPACE_REMOVED_KEY, $normalizeTextConfig) ? filter_var($normalizeTextConfig[NormalizeText::WHITE_SPACE_REMOVED_KEY], FILTER_VALIDATE_BOOLEAN) : false
             );
         }
 
