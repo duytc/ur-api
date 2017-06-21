@@ -7,6 +7,7 @@ use UR\Domain\DTO\Report\Formats\CurrencyFormatInterface;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
+use UR\Domain\DTO\Report\ReportViews\ReportView;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Report\ReportResultInterface;
 
@@ -139,6 +140,20 @@ class ReportViewFormatter implements ReportViewFormatterInterface
         } elseif ($params->isMultiView()) {
             $dimensions = $params->getDimensions();
             $metrics = $params->getMetrics();
+
+            if (empty($dimensions) && empty($metrics)) {
+                $dimensions = [];
+                $metrics = [];
+                $reportViews = $params->getReportViews();
+
+                foreach ($reportViews as $reportView) {
+                    if (!$reportView instanceof ReportView) {
+                        continue;
+                    }
+                    $dimensions = array_merge($dimensions, $reportView->getDimensions());
+                    $metrics = array_merge($metrics, $reportView->getMetrics());
+                }
+            }
         } else {
             foreach ($dataSets as $dataSet) {
                 $dimensions = array_merge($dimensions, array_map(function ($item) use ($dataSet) {
