@@ -44,6 +44,9 @@ class ParsingFileService
      */
     private $transformerFactory;
 
+    /**
+     * @var DataSourceEntryMetadataFactory
+     */
     private $dataSourceEntryMetadataFactory;
 
     private $fileFactory;
@@ -115,14 +118,14 @@ class ParsingFileService
 
         $this->validateMissingRequiresColumns($connectedDataSource);
 
-        $rows = $this->parser->combineRowsWithColumns($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
-
-        $rows = $this->removeRowsNotMapRequiresFields($rows, $connectedDataSource);
-
-        $rows = $this->removeNullDateTimeRows($rows, $connectedDataSource);
-
         //filter config
         $this->createFilterConfigForConnectedDataSource($connectedDataSource, $this->parserConfig);
+
+        $rows = $this->parser->combineRowsWithColumns($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
+
+        $rows = $this->removeInvalidRowsDependOnRequiredFields($rows, $connectedDataSource);
+
+        $rows = $this->removeNullDateTimeRows($rows, $connectedDataSource);
 
         //transform config
         $this->createTransformConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $dataSourceEntry);
@@ -497,7 +500,7 @@ class ParsingFileService
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @return mixed
      */
-    private function removeRowsNotMapRequiresFields($rows, $connectedDataSource)
+    private function removeInvalidRowsDependOnRequiredFields($rows, $connectedDataSource)
     {
         if (!is_array($rows)) {
             return [];
