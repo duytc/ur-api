@@ -31,6 +31,7 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
         $qb = $this->createQueryBuilder('dibh')
             ->join('dibh.dataSourceIntegration', 'di')
             ->where('di.dataSource = :dataSource')
+            ->orderBy('dibh.lastExecutedAt', 'asc')
             ->setParameter('dataSource', $dataSource);
 
         return $qb->getQuery()->getResult();
@@ -42,7 +43,13 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
     public function findByBackFillNotExecuted()
     {
         $qb = $this->createQueryBuilder('dibh')
-            ->where('dibh.lastExecutedAt is null');
+            ->join('dibh.dataSourceIntegration', 'di')
+            ->join('di.dataSource', 'ds')
+            ->where('dibh.lastExecutedAt is null')
+            ->andWhere('ds.enable = true')
+            ->andWhere('di.backFill = true')
+            ->andWhere('dibh.isRunning LIKE :isRunning')
+            ->setParameter('isRunning', false);
 
         return $qb->getQuery()->getResult();
     }

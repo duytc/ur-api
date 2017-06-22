@@ -2,13 +2,10 @@
 
 namespace UR\Model\Core;
 
-use Doctrine\Common\Collections\Collection;
 use UR\Model\ModelInterface;
-use UR\Model\Core\DataSourceIntegrationInterface;
 
 interface DataSourceIntegrationBackfillHistoryInterface extends ModelInterface
 {
-
     /**
      * @return DataSourceIntegrationInterface
      */
@@ -16,10 +13,10 @@ interface DataSourceIntegrationBackfillHistoryInterface extends ModelInterface
     public function getDataSourceIntegration();
 
     /**
-     * @param DatasourceIntegrationInterface $datasourceintegration
+     * @param DatasourceIntegrationInterface $dataSourceIntegration
      * @return self
      */
-    public function setDataSourceIntegration(DataSourceIntegrationInterface $datasourceintegration);
+    public function setDataSourceIntegration(DataSourceIntegrationInterface $dataSourceIntegration);
 
     /**
      * @return mixed
@@ -53,4 +50,14 @@ interface DataSourceIntegrationBackfillHistoryInterface extends ModelInterface
      */
     public function setBackFillEndDate($backFillEndDate);
 
+    /**
+     * @return mixed
+     */
+    public function getIsRunning();
+
+    /**
+     * @param mixed $status
+     * @return self
+     */
+    public function setIsRunning($status);
 }

@@ -22,3 +22,6 @@ UR\Entity\Core\DataSourceIntegrationBackfillHistory:
             expose: true
             groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]
             type: DateTime<'Y-m-d'>
+        isRunning:
+            expose: true
+            groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]

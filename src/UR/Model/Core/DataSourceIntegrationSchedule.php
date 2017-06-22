@@ -14,6 +14,9 @@ class DataSourceIntegrationSchedule implements DataSourceIntegrationScheduleInte
     /** @var DataSourceIntegrationInterface */
     protected $dataSourceIntegration;
 
+    /** @var  bool */
+    protected $isRunning;
+
     public function __construct()
     {
     }
@@ -91,6 +94,24 @@ class DataSourceIntegrationSchedule implements DataSourceIntegrationScheduleInte
     public function setDataSourceIntegration(DataSourceIntegrationInterface $dataSourceIntegration)
     {
         $this->dataSourceIntegration = $dataSourceIntegration;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getIsRunning()
+    {
+        return $this->isRunning;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setIsRunning($isRunning)
+    {
+        $this->isRunning = $isRunning;
+
         return $this;
     }
 }

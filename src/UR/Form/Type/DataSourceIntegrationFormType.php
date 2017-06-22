@@ -171,11 +171,30 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
      */
     private function validateBackFillSetting(DataSourceIntegrationInterface $dataSourceIntegration, FormInterface $form)
     {
-        if ($dataSourceIntegration->isBackFill() && null == $dataSourceIntegration->getBackFillStartDate()) {
+        if (!$dataSourceIntegration->isBackFill()) {
+            return true;
+        }
+
+        if (null == $dataSourceIntegration->getBackFillStartDate()) {
             $form->get('backFillStartDate')->addError(new FormError('missing backFillStartDate when backFill is enabled'));
             return false;
         }
-        
+
+        if ($dataSourceIntegration->getBackFillStartDate() > date_create()) {
+            $form->get('backFillStartDate')->addError(new FormError('backFillStartDate can not greater than today'));
+            return false;
+        }
+
+        if ($dataSourceIntegration->getBackFillEndDate() != null && $dataSourceIntegration->getBackFillEndDate() > date_create()) {
+            $form->get('backFillEndDate')->addError(new FormError('backFillEndDate can not greater than today'));
+            return false;
+        }
+
+        if ($dataSourceIntegration->getBackFillStartDate() > $dataSourceIntegration->getBackFillEndDate()) {
+            $form->get('backFillStartDate')->addError(new FormError('backFillStartDate can not greater than backFillEndDate'));
+            return false;
+        }
+
         return true;
     }
 }

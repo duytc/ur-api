@@ -11,6 +11,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\DataSource;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
@@ -78,6 +79,12 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
                 if (!$this->validateIntegration($dataSource)) {
                     $form->get('dataSourceIntegrations')->addError(new FormError('integration is not yet enabled for this user'));
                     return;
+                }
+
+                // check if form "dataSourceIntegrations" has error
+                if (!$form->get('dataSourceIntegrations')->isValid()) {
+                    // TODO: UI should know the exactly errors of dataSourceIntegrations instead of return error here
+                    throw new BadRequestHttpException('integration is not valid, please check the backfill config');
                 }
 
                 // re-mapping dataSource - dataSourceIntegrations by cascade persist

@@ -110,6 +110,7 @@ class UpdateDataSourceIntegrationScheduleListener
                     (new DataSourceIntegrationSchedule())
                         ->setUuid($checkValue[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID])
                         ->setExecutedAt($nextExecuteAt)
+                        ->setIsRunning(false)
                         ->setScheduleType($checkType)
                         ->setDataSourceIntegration($dataSourceIntegration)
                 ];
@@ -124,6 +125,7 @@ class UpdateDataSourceIntegrationScheduleListener
                     $newDataSourceIntegrationSchedules[] = ((new DataSourceIntegrationSchedule())
                         ->setUuid($checkAtItem[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID])
                         ->setExecutedAt($nextExecuteAt)
+                        ->setIsRunning(false)
                         ->setScheduleType($checkType)
                         ->setDataSourceIntegration($dataSourceIntegration));
                 }

@@ -19,6 +19,7 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
         $qb = $this->createQueryBuilder('dis');
         $qb
             ->join('dis.dataSourceIntegration', 'dsi')
+            ->join('dsi.dataSource', 'ds')
             ->andWhere(
                 $qb->expr()->orX(
                 // check by executeAt:
@@ -26,8 +27,12 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
                 )
             )
             ->andWhere('dsi.active = :dataSourceActive')
+            ->andWhere('dis.isRunning = :isRunning')
+            ->andWhere('ds.enable = :enable')
             ->setParameter('currentDate', $currentDate)
-            ->setParameter('dataSourceActive', true);
+            ->setParameter('dataSourceActive', true)
+            ->setParameter('enable', true)
+            ->setParameter('isRunning', false);
 
         $schedules = $qb->getQuery()->getResult();
 

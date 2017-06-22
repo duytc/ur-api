@@ -19,6 +19,10 @@ UR\Entity\Core\DataSourceIntegrationSchedule:
         scheduleType:
             type: string
             nullable: false
+        isRunning:
+            type: boolean
+            option:
+                default: false
     manyToOne:
         dataSourceIntegration:
             targetEntity: UR\Entity\Core\DataSourceIntegration

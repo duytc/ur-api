@@ -14,7 +14,8 @@ class DataSourceIntegrationScheduleFormType extends AbstractRoleSpecificFormType
             ->add('dataSourceIntegration')
             ->add('uuid')
             ->add('executedAt')
-            ->add('scheduleType');
+            ->add('scheduleType')
+            ->add('isRunning');
     }
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)

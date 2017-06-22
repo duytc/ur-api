@@ -97,6 +97,7 @@ class DataSourceIntegrationScheduleManager implements DataSourceIntegrationSched
     {
         /**@var DataSourceIntegrationScheduleInterface $dataSourceIntegrationSchedule */
         $dataSourceIntegrationSchedule->setExecutedAt($executedAt);
+        $dataSourceIntegrationSchedule->setIsRunning(false);
         $this->save($dataSourceIntegrationSchedule);
     }
 }

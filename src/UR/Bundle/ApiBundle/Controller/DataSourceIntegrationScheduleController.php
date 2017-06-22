@@ -98,7 +98,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
         $backFillHistoryManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
         $notExecutedBackFills = $backFillHistoryManager->findByBackFillNotExecuted();
 
-        $backFillSchedules = array_map(function ($backFillHistory) {
+        $backFillSchedules = array_map(function ($backFillHistory) use ($backFillHistoryManager) {
             if ($backFillHistory instanceof DataSourceIntegrationBackfillHistoryInterface) {
                 /** Clone to make sure old value from history (startDate & endDate) not save to data source integration in database */
                 $dataSourceIntegration = clone $backFillHistory->getDataSourceIntegration();
@@ -170,6 +170,11 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
         if (!$dataSourceIntegrationSchedule instanceof DataSourceIntegrationScheduleInterface) {
             throw new NotFoundHttpException('Not found that Data Source Integration Schedule');
         }
+
+        $scheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
+        $dataSourceIntegrationSchedule->setIsRunning(false);
+        $scheduleManager->save($dataSourceIntegrationSchedule);
+
         $dataSourceIntegrationManager = $this->get('ur.domain_manager.data_source_integration');
 
         $dataSourceIntegration = $dataSourceIntegrationSchedule->getDataSourceIntegration();
@@ -177,6 +182,41 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
         $dataSourceIntegration->setLastExecutedAt(date_create('now'));
 
         $dataSourceIntegrationManager->save($dataSourceIntegration);
+
+        return $this->view(true, Codes::HTTP_OK);
+    }
+
+    /**
+     * update executeAt time
+     *
+     * @Rest\Post("/datasourceintegrationschedules/isrunning")
+     *
+     * @Rest\View(serializerGroups={"dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.detail", "integration.detail", "user.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return \UR\Model\Core\DataSourceIntegrationInterface[]
+     */
+    public function postUpdateIsRunningAction(Request $request)
+    {
+        $id = $request->request->get('id', null);
+        $isRunning = $request->request->get('isRunning', null);
+
+        $scheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
+        $dataSourceIntegrationSchedule = $this->one($id);
+        if (!$dataSourceIntegrationSchedule instanceof DataSourceIntegrationScheduleInterface) {
+            throw new NotFoundHttpException('Not found that Data Source Integration Schedule');
+        }
+
+        $dataSourceIntegrationSchedule->setIsRunning($isRunning);
+        $scheduleManager->save($dataSourceIntegrationSchedule);
 
         return $this->view(true, Codes::HTTP_OK);
     }

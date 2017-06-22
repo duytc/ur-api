@@ -18,6 +18,8 @@ class DataSourceIntegrationBackfillHistory extends DataSourceIntegrationBackfill
     /** @var DataSourceIntegrationInterface[] */
     protected $dataSourceIntegration;
 
+    protected $isRunning;
+
     /**
      * @inheritdoc
      *

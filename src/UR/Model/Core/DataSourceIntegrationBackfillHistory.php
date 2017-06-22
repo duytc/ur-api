@@ -2,8 +2,6 @@
 
 namespace UR\Model\Core;
 
-use Doctrine\Common\Collections\Collection;
-
 class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackfillHistoryInterface
 {
     protected $id;
@@ -20,13 +18,16 @@ class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackf
     /** @var DataSourceIntegrationInterface */
     protected $dataSourceIntegration;
 
+    /** @var */
+    protected $isRunning;
+
     public function __construct()
     {
-
         // back fill feature
         $this->backFillStartDate = null;
         $this->backFillEndDate = null;
-
+        $this->lastExecutedAt = null;
+        $this->isRunning = false;
     }
 
     /**
@@ -69,7 +70,6 @@ class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackf
     public function setLastExecutedAt($lastExecutedAt)
     {
         $this->lastExecutedAt = $lastExecutedAt;
-
         return $this;
     }
 
@@ -109,4 +109,21 @@ class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackf
         return $this;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getIsRunning()
+    {
+        return $this->isRunning;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setIsRunning($isRunning)
+    {
+        $this->isRunning = $isRunning;
+
+        return $this;
+    }
 }

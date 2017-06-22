@@ -49,4 +49,15 @@ interface DataSourceIntegrationScheduleInterface extends ModelInterface
      * @return self
      */
     public function setDataSourceIntegration(DataSourceIntegrationInterface $dataSourceIntegration);
+
+    /**
+     * @return bool
+     */
+    public function getIsRunning();
+
+    /**
+     * @param bool $isRunning
+     * @return self
+     */
+    public function setIsRunning($isRunning);
 }

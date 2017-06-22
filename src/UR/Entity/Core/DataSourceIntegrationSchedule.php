@@ -16,6 +16,8 @@ class DataSourceIntegrationSchedule extends DataSourceIntegrationScheduleModel
     /** @var DataSourceIntegrationInterface */
     protected $dataSourceIntegration;
 
+    protected $isRunning;
+
     /**
      * @inheritdoc
      *
