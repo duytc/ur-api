@@ -2,6 +2,8 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
+use DateTime;
+use DateTimeZone;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\AlertInterface;
@@ -86,7 +88,7 @@ class GroupByColumns implements CollectionTransformerInterface
 
                     if (array_key_exists($groupField, $types) && $types[$groupField] == FieldType::DATETIME) {
                         $normalizedDate = $this->normalizeTimezone($element[$groupField], $groupField, $fromDateFormats, $mapFields, $fromDateFormat);
-                        $newElement[$groupField] = $normalizedDate->setTime(0,0)->format(self::TEMPORARY_DATE_FORMAT);
+                        $newElement[$groupField] = $normalizedDate->setTime(0, 0)->format(self::TEMPORARY_DATE_FORMAT);
                         $key .= $normalizedDate->format('Y-m-d');
                         continue;
                     }
@@ -159,7 +161,8 @@ class GroupByColumns implements CollectionTransformerInterface
      * @param $fromDateFormats
      * @param $mapFields
      * @param $dateFormat
-     * @return \DateTime
+     * @return DateTime
+     * @throws ImportDataException
      */
     private function normalizeTimezone($value, $groupField, $fromDateFormats, $mapFields, &$dateFormat)
     {
@@ -182,16 +185,18 @@ class GroupByColumns implements CollectionTransformerInterface
             $dateFormat = $format[DateFormat::FORMAT_KEY];
 
             if (array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $format) && $format[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM]) {
-                $dateFormat = DateFormat::convertCustomFromDateFormat($dateFormat);
+                $dateFormat = DateFormat::convertCustomFromDateFormatToPHPDateFormat($dateFormat);
+            } else {
+                $dateFormat = DateFormat::convertDateFormatFullToPHPDateFormat($dateFormat);
             }
 
-            $date = \DateTime::createFromFormat($dateFormat, $value, new \DateTimeZone($timezone));
-            if (!$date instanceof \DateTime) {
+            $date = DateTime::createFromFormat($dateFormat, $value, new DateTimeZone($timezone));
+            if (!$date instanceof DateTime) {
                 continue;
             }
 
-            $date->setTimezone(new \DateTimeZone($timezone));
-            return $date->setTimezone(new \DateTimeZone(self::DEFAULT_TIMEZONE));
+            $date->setTimezone(new DateTimeZone($timezone));
+            return $date->setTimezone(new DateTimeZone(self::DEFAULT_TIMEZONE));
         }
 
         throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE, 0, $groupField);

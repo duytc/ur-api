@@ -17,43 +17,62 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     const FROM_KEY = 'from';
     const TO_KEY = 'to';
     const IS_CUSTOM_FORMAT_DATE_FROM = 'isCustomFormatDateFrom';
-    const DEFAULT_DATE_FORMAT = 'Y-m-d';
-    const DEFAULT_DATETIME_FORMAT = 'Y-m-d H:i:s';
+    const DEFAULT_DATE_FORMAT = 'Y-m-d'; // in PHP
+    const DEFAULT_DATETIME_FORMAT = 'Y-m-d H:i:s'; // in PHP
+    const DEFAULT_DATE_FORMAT_FULL = 'YYYY-MM-DD'; // full text
+    const DEFAULT_DATETIME_FORMAT_FULL = 'YYYY-MM-DD HH:mm:ss'; // full text
     const TIMEZONE_KEY = 'timezone';
 
     const FORMAT_KEY = 'format';
+
+    /**
+     * full date format regex
+     * The full date format may be YYYY/MM/DD, YYYY-MM-DD HH:mm:ss, ...
+     */
+    const FULL_DATE_FORMAT_REGEX = '/^([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})[\-,\.,\/,_\s]*([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})[\-,\.,\/,_\s]*([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})*(([T]{1}|[H]{2,2}|[m]{2,2}|[s]{2,2})|[\\-,\.,\/,_:\s])*((e?)|(O?)|(P?)|(T?))?$/';
 
     protected $fromDateFormats;
     protected $toDateFormat;
     protected $timezone;
 
+    /**
+     * supported date formats as [ key => value ],
+     * key is submitted value from UI, and value is real php date format
+     */
     const SUPPORTED_DATE_FORMATS = [
-        self::DEFAULT_DATE_FORMAT,  // 2016-01-15
-        'Y/m/d',  // 2016/01/15
-        'm-d-Y',  // 01-15-2016
-        'm/d/Y',  // 01/15/2016
-        'd-m-Y',  // 15/01/2016
-        'd/m/Y',  // 15/01/2016
-        'Y-M-d',  // 2016-Mar-01
-        'Y/M/d',  // 2016/Mar/01
-        'M-d-Y',  // Mar-01-2016
-        'M/d/Y',  // Mar/01/2016
-        'd-M-Y',  // 01-Mar-2016
-        'd/M/Y',  // 01/Mar/2016
-        'M d, Y', // Mar 01,2016
-        'Y, M d', // 2016, Mar 01
-        'd-m-y',  // 15-01-99
-        'd/m/y',  // 15/01/99
-        'm-d-y',  // 01-15-99
-        'm/d/y',  // 01/15/99
-        'y-m-d',  // 99-01-15
-        'y/m/d',  // 99/01/15
-        'Y-m-d H:i',
-        self::DEFAULT_DATETIME_FORMAT,
-        'Y-m-d H:i:s T', // 2017-06-12 20:00:00 GMT+0000
-        'Y-m-d H:i:s e', // 2017-06-12 20:00:00 +00:00
-        'Y-m-d H:i:s O', // 2017-06-12 20:00:00 +0000
-        'Y-m-d H:i:s P'  // 2017-06-12 20:00:00 +00:00
+        // Support 4 digit years
+        self::DEFAULT_DATE_FORMAT_FULL => self::DEFAULT_DATE_FORMAT,  // 2016-01-15
+        'YYYY/MM/DD' => 'Y/m/d',  // 2016/01/15
+        'MM-DD-YYYY' => 'm-d-Y',  // 01-15-2016
+        'MM/DD/YYYY' => 'm/d/Y',  // 01/15/2016
+        'DD-MM-YYYY' => 'd-m-Y',  // 15/01/2016
+        'DD/MM/YYYY' => 'd/m/Y',  // 15/01/2016
+        'YYYY-MMM-DD' => 'Y-M-d',  // 2016-Mar-01
+        'YYYY/MMM/DD' => 'Y/M/d',  // 2016/Mar/01
+        'MMM-DD-YYYY' => 'M-d-Y',  // Mar-01-2016
+        'MMM/DD/YYYY' => 'M/d/Y',  // Mar/01/2016
+        'DD-MMM-YYYY' => 'd-M-Y',  // 01-Mar-2016
+        'DD/MMM/YYYY' => 'd/M/Y',  // 01/Mar/2016
+        'MMM DD, YYYY' => 'M d, Y', // Mar 01,2016
+        'YYYY, MMM DD' => 'Y, M d', // 2016, Mar 01
+
+        // Support 2 digit years
+        'MM/DD/YY' => 'm/d/y',  // 01/15/99
+        'MM-DD-YY' => 'm-d-y',  // 01-15-99
+        'DD/MM/YY' => 'd/m/y',  // 15/01/99
+        'DD-MM-YY' => 'd-m-y',  // 15-01-99
+        'YY/MM/DD' => 'y/m/d',  // 99/01/15
+        'YY-MM-DD' => 'y-m-d',  // 99-01-15
+
+        // Support time
+        self::DEFAULT_DATETIME_FORMAT_FULL => self::DEFAULT_DATETIME_FORMAT,
+        'YYYY-MM-DD HH:mm' => 'Y-m-d H:i',
+
+        // Support time with timezone
+        'YYYY-MM-DD HH:mm:ss T' => 'Y-m-d H:i:s T', // 2017-06-12 20:00:00 GMT+0000
+        'YYYY-MM-DD HH:mm:ss e' => 'Y-m-d H:i:s e', // 2017-06-12 20:00:00 +00:00
+        'YYYY-MM-DD HH:mm:ss O' => 'Y-m-d H:i:s O', // 2017-06-12 20:00:00 +0000
+        'YYYY-MM-DD HH:mm:ss P' => 'Y-m-d H:i:s P'  // 2017-06-12 20:00:00 +00:00
     ];
 
     /**
@@ -82,14 +101,14 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     public function transform($value)
     {
         if ($value instanceof DateTime) {
-            return $value->format($this->toDateFormat);
+            return $value->format($this->getToDateFormatInPHPFormat());
         }
 
         $date = DateTime::createFromFormat(GroupByColumns::TEMPORARY_DATE_FORMAT, $value);
         if ($date instanceof DateTime) {
-            return $date->format($this->toDateFormat);
+            return $date->format($this->getToDateFormatInPHPFormat());
         }
-        
+
         $value = trim($value);
 
         if ($value === null || $value === "") {
@@ -98,12 +117,13 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
 
         $resultDate = null;
         foreach ($this->fromDateFormats as $fromDateFormat) {
-            //get is custom date format for each format
-            $isCustomDateFormat = array_key_exists(self::IS_CUSTOM_FORMAT_DATE_FROM, $fromDateFormat) ? $fromDateFormat[self::IS_CUSTOM_FORMAT_DATE_FROM] : false;
-
             //get from date format
             $fromFormat = array_key_exists(self::FORMAT_KEY, $fromDateFormat) ? $fromDateFormat[self::FORMAT_KEY] : null;
-            $fromFormat = $isCustomDateFormat ? self::convertCustomFromDateFormat($fromFormat) : $fromFormat;
+            if (array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $fromDateFormat) && $fromDateFormat[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM]) {
+                $fromFormat = self::convertCustomFromDateFormatToPHPDateFormat($fromFormat);
+            } else {
+                $fromFormat = self::convertCustomFromDateFormatToPHPDateFormat($fromFormat);
+            }
 
             $date = DateTime::createFromFormat($fromFormat, $value, new \DateTimeZone($this->timezone));
 
@@ -122,7 +142,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         }
 
         switch ($this->getToDateFormat()) {
-            case self::DEFAULT_DATETIME_FORMAT:
+            case self::DEFAULT_DATETIME_FORMAT_FULL:
                 return $resultDate->format(self::DEFAULT_DATETIME_FORMAT);
             default:
                 return $resultDate->format(self::DEFAULT_DATE_FORMAT);
@@ -137,7 +157,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     public function transformFromDatabaseToClient($value)
     {
         if ($value instanceof DateTime) {
-            return $value->format($this->toDateFormat);
+            return $value->format($this->getToDateFormatInPHPFormat());
         }
 
         $date = DateTime::createFromFormat(self::DEFAULT_DATE_FORMAT, $value);
@@ -149,7 +169,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             return null;
         }
 
-        return $date->format($this->toDateFormat);
+        return $date->format($this->getToDateFormatInPHPFormat());
     }
 
     /**
@@ -169,15 +189,23 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     }
 
     /**
-     * @param string $fromDateFormats
+     * @return string
      */
-    public function setFromDateFormats(string $fromDateFormats)
+    public function getToDateFormatInPHPFormat()
+    {
+        return self::convertDateFormatFullToPHPDateFormat($this->toDateFormat);
+    }
+
+    /**
+     * @param array $fromDateFormats, such as [isCustomFormatDateFrom => true/false, format => '...'] where format is full text such as YYYY/MM/DD, ... , not PHP format (Y/m/d, ...)
+     */
+    public function setFromDateFormats(array $fromDateFormats)
     {
         $this->fromDateFormats = $fromDateFormats;
     }
 
     /**
-     * @param string $toDateFormat
+     * @param string $toDateFormat is full text such as YYYY/MM/DD, ... , not PHP format (Y/m/d, ...)
      */
     public function setToDateFormat(string $toDateFormat)
     {
@@ -203,26 +231,24 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     }
 
     /**
-     * convert FromDateFormat To PHP format
+     * convert custome DateFormat To PHP format
      * e.g:
-     * - YYYY.MM.DD => Y.m.d
-     * - YYYY.MM.DDD => Y.m.D
-     * - YYYY.MMM.DD => Y.M.d
+     * - YYYY MM, DD => Y m, d
+     * - YYYY--MM--DDD => Y--m--D
+     * - YYYY/MMM, DD => Y/M, d
      * - ...
      *
      * @param string $dateFormat
      * @return string|bool false if dateFormat is not a string
      */
-    public static function convertCustomFromDateFormat($dateFormat)
+    public static function convertCustomFromDateFormatToPHPDateFormat($dateFormat)
     {
         if (!is_string($dateFormat)) {
             return false;
         }
 
-        // validate format: allow YY, YYYY, M, MM, MMM, MMMM, D, DD, and special characters . , - _ / <space>.
-        // E.g YYYY.MMM.D is for 2017.02.1; YYYY MMMM, DD is for 2017 February, 19
-        $dateFormatRegex = '/^([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})[\-,\.,\/,_\s]*([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})[\-,\.,\/,_\s]*([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})((\\\[A-Za-z]|\s)(.*))?$/';
-        if (preg_match($dateFormatRegex, $dateFormat, $matches) !== 1) {
+        // validate format
+        if (!self::validateCustomFullDateFormat($dateFormat)) {
             return false;
         }
 
@@ -244,7 +270,37 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             $convertedDateFormat = str_replace('D', 'j', $convertedDateFormat); // 1 character without leading zeros
         }
 
+        // replacing HH:mm:ss to H:i:s
+        $convertedDateFormat = str_replace('HH', 'H', $convertedDateFormat); // hour
+        $convertedDateFormat = str_replace('mm', 'i', $convertedDateFormat); // min
+        $convertedDateFormat = str_replace('ss', 's', $convertedDateFormat); // sec
+
         return $convertedDateFormat;
+    }
+
+    /**
+     * convert full DateFormat To PHP format
+     * e.g:
+     * - YYYY.MM.DD => Y.m.d
+     * - YYYY.MM.DDD => Y.m.D
+     * - YYYY.MMM.DD => Y.M.d
+     * - ...
+     *
+     * @param string $dateFormat
+     * @return string|bool false if dateFormat is not a string
+     */
+    public static function convertDateFormatFullToPHPDateFormat($dateFormat)
+    {
+        if (!is_string($dateFormat)) {
+            return false;
+        }
+
+        // validate if supported format
+        if (!array_key_exists($dateFormat, self::SUPPORTED_DATE_FORMATS)) {
+            return false;
+        }
+
+        return self::SUPPORTED_DATE_FORMATS[$dateFormat];
     }
 
     /**
@@ -257,7 +313,13 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             //check non-custom date formats, if one of them is not supported, throw exception
             $isCustomDateFormat = array_key_exists(self::IS_CUSTOM_FORMAT_DATE_FROM, $fromDateFormat) ? $fromDateFormat[self::IS_CUSTOM_FORMAT_DATE_FROM] : false;
             $fromFormat = array_key_exists(self::FORMAT_KEY, $fromDateFormat) ? $fromDateFormat[self::FORMAT_KEY] : null;
-            if ($isCustomDateFormat !== true && !in_array($fromFormat, self::SUPPORTED_DATE_FORMATS)) {
+
+            if (!$isCustomDateFormat && !array_key_exists($fromFormat, self::SUPPORTED_DATE_FORMATS)) {
+                $isSupportDateFormat = false;
+                break;
+            }
+
+            if ($isCustomDateFormat && !self::validateCustomFullDateFormat($fromFormat)) {
                 $isSupportDateFormat = false;
                 break;
             }
@@ -268,7 +330,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             throw  new BadRequestHttpException(sprintf('Transform setting error: field "%s" not support from date format', $this->getField()));
         }
 
-        if (!in_array($this->toDateFormat, self::SUPPORTED_DATE_FORMATS)) {
+        if (!array_key_exists($this->toDateFormat, self::SUPPORTED_DATE_FORMATS)) {
             throw  new BadRequestHttpException(sprintf('Transform setting error: field "%s" not support to date format', $this->getField()));
         }
     }
@@ -339,7 +401,13 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
                 if (!array_key_exists(self::FORMAT_KEY, $fromFormat)) {
                     continue;
                 }
-                $format = self::convertCustomFromDateFormat($fromFormat[self::FORMAT_KEY]);
+
+                if (array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $fromFormat) && $fromFormat[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM]) {
+                    $format = self::convertCustomFromDateFormatToPHPDateFormat($fromFormat[self::FORMAT_KEY]);
+                } else {
+                    $format = self::convertDateFormatFullToPHPDateFormat($fromFormat[self::FORMAT_KEY]);
+                }
+
                 $dateTime = date_create_from_format($format, $value, new \DateTimeZone($timeZone));
                 if ($dateTime) {
                     $dateTime->setTimezone(new \DateTimeZone(self::DEFAULT_TIMEZONE));
@@ -404,5 +472,17 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         }
 
         return null;
+    }
+
+    /**
+     * validate format: allow YY, YYYY, M, MM, MMM, MMMM, D, DD, e, O, P, T and special characters . , - _ / <space>.
+     * E.g YYYY.MMM.D is for 2017.02.1; YYYY MMMM, DD is for 2017 February, 19
+     *
+     * @param $customFullDateFormat
+     * @return bool
+     */
+    public static function validateCustomFullDateFormat($customFullDateFormat)
+    {
+        return preg_match(self::FULL_DATE_FORMAT_REGEX, $customFullDateFormat, $matches) === 1;
     }
 }

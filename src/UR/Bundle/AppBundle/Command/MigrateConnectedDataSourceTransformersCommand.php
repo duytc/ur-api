@@ -12,9 +12,16 @@ use UR\DomainManager\ConnectedDataSourceManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
+use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class MigrateConnectedDataSourceTransformersCommand extends ContainerAwareCommand
 {
+    const VERSION_MIGRATE_TRANSFORMS_CALCULATED_FIELD_WITH_DEFAULT_VALUE = 1;
+    const VERSION_MIGRATE_TRANSFORMS_DATE_FORMAT_FULL_TEXT = 2;
+
+    static $CURRENT_VERSION = self::VERSION_MIGRATE_TRANSFORMS_DATE_FORMAT_FULL_TEXT;
+
     /**
      * @var Logger
      */
@@ -48,8 +55,21 @@ class MigrateConnectedDataSourceTransformersCommand extends ContainerAwareComman
 
         $output->writeln(sprintf('updating %d connected data source transformers to latest format', count($connectedDataSources)));
 
-        // migrate connected data source transformers
-        $migratedAlertsCount = $this->migrateConnectedDataSourceTransformers($output, $connectedDataSources);
+        $migratedAlertsCount = 0;
+
+        switch (self::$CURRENT_VERSION) {
+            case self::VERSION_MIGRATE_TRANSFORMS_CALCULATED_FIELD_WITH_DEFAULT_VALUE:
+                // migrate connected data source transformers to support calculated field transform with default value
+                $migratedAlertsCount = $this->migrateTransformersCalculatedFieldWithDefaultValue($output, $connectedDataSources);
+
+                break;
+
+            case self::VERSION_MIGRATE_TRANSFORMS_DATE_FORMAT_FULL_TEXT:
+                // migrate connected data source transformers to support datetime transform with full text
+                $migratedAlertsCount = $this->migrateTransformersDateTimeFullText($output, $connectedDataSources);
+
+                break;
+        }
 
         $output->writeln(sprintf('command run successfully: %d connected data sources updated.', $migratedAlertsCount));
     }
@@ -61,7 +81,7 @@ class MigrateConnectedDataSourceTransformersCommand extends ContainerAwareComman
      * @param array|ConnectedDataSourceInterface[] $connectedDataSources
      * @return int migrated integrations count
      */
-    private function migrateConnectedDataSourceTransformers(OutputInterface $output, array $connectedDataSources)
+    private function migrateTransformersCalculatedFieldWithDefaultValue(OutputInterface $output, array $connectedDataSources)
     {
         $migratedCount = 0;
 
@@ -147,6 +167,151 @@ class MigrateConnectedDataSourceTransformersCommand extends ContainerAwareComman
 
                 // important: set again for oldTransformer
                 $oldTransformer[CollectionTransformerInterface::FIELDS_KEY] = $oldCalculatedFieldTransformers;
+            }
+
+            if ($hasChanged) {
+                $migratedCount++;
+                $connectedDataSource->setTransforms($oldTransformers);
+                $this->connectedDataSourceManager->save($connectedDataSource);
+            }
+        }
+
+        return $migratedCount;
+    }
+
+    /**
+     * migrate Transformers DateTime with Full Text
+     *
+     * @param OutputInterface $output
+     * @param array|ConnectedDataSourceInterface[] $connectedDataSources
+     * @return int migrated integrations count
+     */
+    private function migrateTransformersDateTimeFullText(OutputInterface $output, array $connectedDataSources)
+    {
+        $migratedCount = 0;
+
+        $supportedDateFormat = DateFormat::SUPPORTED_DATE_FORMATS;
+        $supportedDateFormatFlipped = array_flip($supportedDateFormat);
+
+        foreach ($connectedDataSources as $connectedDataSource) {
+            // sure is ConnectedDataSourceInterface
+            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+                continue;
+            }
+
+            /*
+             * from old format: Y-m-d, Y/m/d, Y/m/d H:i:s, ...
+             */
+            $oldTransformers = $connectedDataSource->getTransforms();
+            if (!is_array($oldTransformers)) {
+                continue;
+            }
+
+            /*
+             * migrate to new format: YYYY-MM-DD, YYYY/MM/DD, YYYY/MM/DD HH:mm:ss, ...
+             */
+            $hasChanged = false;
+
+            foreach ($oldTransformers as &$oldTransformer) {
+                if (!array_key_exists(ColumnTransformerInterface::FIELD_KEY, $oldTransformer)
+                    || !array_key_exists(ColumnTransformerInterface::TYPE_KEY, $oldTransformer)
+                    || $oldTransformer[ColumnTransformerInterface::TYPE_KEY] !== ColumnTransformerInterface::DATE_FORMAT
+                    || !array_key_exists(DateFormat::FROM_KEY, $oldTransformer)
+                    || !array_key_exists(DateFormat::TO_KEY, $oldTransformer)
+                ) {
+                    continue; // only for date format
+                }
+
+                /*
+                 * {
+                 *    "field":"timestamp_hour",
+                 *    "type":"date",
+                 *    "to":"Y-m-d H:i:s",
+                 *    "openStatus":true,
+                 *    "from":[
+                 *       {
+                 *          "isCustomFormatDateFrom":false,
+                 *          "format":"Y-m-d H:i:s P"
+                 *       }
+                 *    ],
+                 *    "timezone":"UTC"
+                 * },
+                 */
+
+                // from date format
+                $fromDateFormatConfigs = $oldTransformer[DateFormat::FROM_KEY];
+                if (!is_array($fromDateFormatConfigs)) {
+                    continue;
+                }
+
+                foreach ($fromDateFormatConfigs as &$fromDateFormatConfig) {
+                    if (!array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $fromDateFormatConfig)
+                        || !array_key_exists(DateFormat::FORMAT_KEY, $fromDateFormatConfig)
+                    ) {
+                        continue; // only for date format
+                    }
+
+                    $hasChanged = true;
+
+                    $isCustomFormatDateFrom = $fromDateFormatConfig[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM];
+                    $fromDateFormat = $fromDateFormatConfig[DateFormat::FORMAT_KEY];
+
+                    if ($isCustomFormatDateFrom) {
+                        // important: keep replacing MMMM before MMM, MMM before MM, MM before M and so on...
+                        //// Y => YYYY
+                        if (strpos($fromDateFormat, 'YY') === false) { // need check if YY (also YYYY) existing
+                            $fromDateFormat = str_replace('Y', 'YYYY', $fromDateFormat); // 4 digits
+                        }
+                        //// y => YY
+                        $fromDateFormat = str_replace('y', 'YY', $fromDateFormat); // 2 digits
+
+                        //// F => MMMM
+                        $fromDateFormat = str_replace('F', 'MMMM', $fromDateFormat); // full name
+                        //// M => MMM
+                        if (strpos($fromDateFormat, 'MM') === false) { // need check if MM (also MMM, MMMM) existing
+                            $fromDateFormat = str_replace('M', 'MMM', $fromDateFormat); // 3 characters
+                        }
+                        //// m => MM
+                        $fromDateFormat = str_replace('mm', '$$MM$$', $fromDateFormat); // temporarily
+                        $fromDateFormat = str_replace('m', 'MM', $fromDateFormat); // 2 characters
+                        $fromDateFormat = str_replace('$$MM$$', 'mm', $fromDateFormat); // temporarily
+                        //// n => M
+                        $fromDateFormat = str_replace('n', 'M', $fromDateFormat); // 1 character without leading zeros
+
+                        //// d => DD
+                        $fromDateFormat = str_replace('d', 'DD', $fromDateFormat); // 2 characters
+                        //// j => D
+                        $fromDateFormat = str_replace('j', 'D', $fromDateFormat); // 1 character without leading zeros
+
+                        // replacing HH:mm:ss to H:i:s
+                        //// H => HH
+                        if (strpos($fromDateFormat, 'HH') === false) { // need check if HH existing
+                            $fromDateFormat = str_replace('H', 'HH', $fromDateFormat); // hour
+                        }
+                        //// i => mm
+                        $fromDateFormat = str_replace('i', 'mm', $fromDateFormat); // min
+                        //// s => ss
+                        if (strpos($fromDateFormat, 'ss') === false) { // need check if ss existing
+                            $fromDateFormat = str_replace('s', 'ss', $fromDateFormat); // sec
+                        }
+                    } else {
+                        if (array_key_exists($fromDateFormat, $supportedDateFormatFlipped)) {
+                            $fromDateFormat = $supportedDateFormatFlipped[$fromDateFormat];
+                        }
+                    }
+
+                    $fromDateFormatConfig[DateFormat::FORMAT_KEY] = $fromDateFormat;
+                }
+
+                // to date format
+                $toDateFormat = $oldTransformer[DateFormat::TO_KEY];
+                if (array_key_exists($toDateFormat, $supportedDateFormatFlipped)) {
+                    $toDateFormat = $supportedDateFormatFlipped[$toDateFormat];
+                }
+
+                // important: set again for oldTransformer
+                $oldTransformer[DateFormat::FROM_KEY] = $fromDateFormatConfigs;
+                $oldTransformer[DateFormat::TO_KEY] = $toDateFormat;
             }
 
             if ($hasChanged) {
