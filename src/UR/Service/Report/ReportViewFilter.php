@@ -78,7 +78,7 @@ class ReportViewFilter implements ReportViewFilterInterface
                     return $value == $compareValue;
                 case '>':
                     return $value > $compareValue;
-                case '>= ':
+                case '>=':
                     return $value >= $compareValue;
                 case '<':
                     return $value < $compareValue;
