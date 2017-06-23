@@ -284,6 +284,15 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         return $stmt->execute();
     }
 
+    public function deleteImportHistoryByConnectedDataSource($connectedDataSourceId)
+    {
+        $conn = $this->_em->getConnection();
+        $query = sprintf('DELETE FROM core_import_history WHERE connected_data_source_id = ?');
+        $stmt = $conn->prepare($query);
+        $stmt->bindValue(1, $connectedDataSourceId);
+        return $stmt->execute();
+    }
+
     public function deleteImportHistoriesByIds(array $importHistoryIds)
     {
         if (count($importHistoryIds) < 1) {
@@ -291,9 +300,8 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         }
 
         $conn = $this->_em->getConnection();
-        $query = sprintf('DELETE FROM core_import_history WHERE id IN (?)');
+        $query = sprintf('DELETE FROM core_import_history WHERE id IN (%s)', implode(',', $importHistoryIds));
         $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, implode(',', $importHistoryIds));
         return $stmt->execute();
     }
 

@@ -163,9 +163,8 @@ class UpdateOverwriteDateInDataSetSubJob implements SubJobInterface, ExpirableJo
         );
 
         $createTempTableSql = sprintf("CREATE TEMPORARY TABLE concurrency_example_overwrite (%s) %s;", $index, $select);
-//        $createTempTableSql2 = sprintf("CREATE TEMPORARY TABLE concurrency_example_overwrite (%s) %s;", $index, $query);
 
-        $updateWhere = sprintf("%s IS null AND (%s, %s, %s) NOT IN (SELECT %s, %s, %s FROM concurrency_example_overwrite)",
+        $updateToNullWhere = sprintf("%s IS NOT null AND (%s, %s, %s) IN (SELECT %s, %s, %s FROM concurrency_example_overwrite)",
             DataSetInterface::OVERWRITE_DATE,
             DataSetInterface::UNIQUE_ID_COLUMN,
             DataSetInterface::ENTRY_DATE_COLUMN,
@@ -175,15 +174,30 @@ class UpdateOverwriteDateInDataSetSubJob implements SubJobInterface, ExpirableJo
             DataSetInterface::IMPORT_ID_COLUMN
         );
 
-        $updateSql = sprintf(" UPDATE %s set %s = now() where %s",
-            $tableName,
+        $updateToCurrentWhere = sprintf("%s IS null AND (%s, %s, %s) NOT IN (SELECT %s, %s, %s FROM concurrency_example_overwrite)",
             DataSetInterface::OVERWRITE_DATE,
-            $updateWhere
+            DataSetInterface::UNIQUE_ID_COLUMN,
+            DataSetInterface::ENTRY_DATE_COLUMN,
+            DataSetInterface::IMPORT_ID_COLUMN,
+            DataSetInterface::UNIQUE_ID_COLUMN,
+            DataSetInterface::ENTRY_DATE_COLUMN,
+            DataSetInterface::IMPORT_ID_COLUMN
         );
 
-        $updateOverwriteSql = sprintf("%s %s", $createTempTableSql, $updateSql);
+        $setOverwriteDateToNull = sprintf(" UPDATE %s set %s = NULL where %s;",
+            $tableName,
+            DataSetInterface::OVERWRITE_DATE,
+            $updateToNullWhere
+        );
+
+        $setOverwriteDateToCurrent = sprintf(" UPDATE %s set %s = now() where %s;",
+            $tableName,
+            DataSetInterface::OVERWRITE_DATE,
+            $updateToCurrentWhere
+        );
+
+        $updateOverwriteSql = sprintf("%s %s %s", $createTempTableSql, $setOverwriteDateToCurrent, $setOverwriteDateToNull);
         $qb = $connection->prepare($updateOverwriteSql);
-        $qb->bindValue(DataSetInterface::OVERWRITE_DATE, date('Y-m-d H:i:sP'));
         $qb->execute();
     }
 }

@@ -198,6 +198,7 @@ services:
         arguments:
             - @monolog.logger
             - @doctrine.orm.entity_manager
+            - @ur.domain_manager.import_history
 
     ur.worker.job.linear.load_files_into_data_set:
         class: UR\Worker\Job\Linear\LoadFilesIntoDataSet

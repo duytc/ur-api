@@ -84,13 +84,7 @@ class TruncateDataSetSubJob implements SubJobInterface
             $truncateSQL = sprintf("TRUNCATE %s", $dataTable->getName());
             $this->conn->exec($truncateSQL);
 
-            $importHistories = $this->importHistoryManager->getImportedHistoryByDataSet($dataSet);
-
-            $importHistoryIds = array_map(function (ImportHistoryInterface $importHistory) {
-                return $importHistory->getId();
-            }, $importHistories);
-
-            $this->importHistoryManager->deleteImportHistoriesByIds($importHistoryIds);
+            $this->importHistoryManager->deleteImportHistoryByDataSet($dataSet);
 
             $this->logger->notice(sprintf('Truncate data set %s with table name %s', $dataSetId, $dataTable->getName()));
         } catch (\Exception $e) {

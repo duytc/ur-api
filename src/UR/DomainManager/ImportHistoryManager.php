@@ -146,6 +146,11 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
         return $this->repository->deleteImportHistoryByDataSet($dataSet);
     }
 
+    public function deleteImportHistoryByConnectedDataSource($connectedDataSourceId)
+    {
+        return $this->repository->deleteImportHistoryByConnectedDataSource($connectedDataSourceId);
+    }
+
     /**
      * @param ImportHistoryInterface[] $importHistories
      * @return mixed

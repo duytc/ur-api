@@ -79,4 +79,6 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function deletePreviousImports($importHistories, ConnectedDataSourceInterface $connectedDataSource);
+
+    public function deleteImportHistoryByConnectedDataSource($connectedDataSourceId);
 }

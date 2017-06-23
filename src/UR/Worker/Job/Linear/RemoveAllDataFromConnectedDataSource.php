@@ -57,6 +57,7 @@ class RemoveAllDataFromConnectedDataSource implements SplittableJobInterface
 
         //update total rows for data set and connected data source
         $jobs = array_merge($jobs, [
+            ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
             ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
         ]);

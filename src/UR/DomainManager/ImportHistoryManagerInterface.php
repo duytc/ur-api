@@ -55,6 +55,8 @@ interface ImportHistoryManagerInterface extends ManagerInterface
 
     public function deleteImportHistoryByDataSet(DataSetInterface $dataSet);
 
+    public function deleteImportHistoryByConnectedDataSource($connectedDataSourceId);
+
     public function deleteImportHistoriesByIds(array $importHistoryIds);
 
     /**

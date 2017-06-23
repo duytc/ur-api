@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\JobParams;
+use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\Synchronizer;
 
@@ -30,11 +31,17 @@ class RemoveDataFromConnectedDataSourceSubJob implements SubJobInterface
      */
     private $logger;
 
-    public function __construct(LoggerInterface $logger, EntityManagerInterface $em)
+    /**
+     * @var ImportHistoryManagerInterface
+     */
+    protected $importHistoryManager;
+
+    public function __construct(LoggerInterface $logger, EntityManagerInterface $em, ImportHistoryManagerInterface $importHistoryManager)
     {
         $this->logger = $logger;
         $this->em = $em;
         $this->conn = $em->getConnection();
+        $this->importHistoryManager = $importHistoryManager;
     }
 
     /**
@@ -64,6 +71,7 @@ class RemoveDataFromConnectedDataSourceSubJob implements SubJobInterface
             $this->logger->notice(sprintf('deleting data from %s with Connected data source (ID:%s)', $dataTable->getName(), $connectedDataSourceId));
             $this->conn->beginTransaction();
             $this->deleteDataByConnectedDataSourceId($dataTable->getName(), $this->conn, $connectedDataSourceId);
+            $this->importHistoryManager->deleteImportHistoryByConnectedDataSource($connectedDataSourceId);
             $this->conn->commit();
             $this->conn->close();
             $this->logger->notice('success delete data from data set');
