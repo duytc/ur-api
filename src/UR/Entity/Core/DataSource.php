@@ -23,7 +23,14 @@ class DataSource extends DataSourceModel
     protected $useIntegration;
     protected $lastActivity;
     protected $numOfFiles;
-
+    protected $missingDate;
+    protected $dateRange;
+    protected $dateRangeBroken;
+    protected $dateRangeDetectionEnabled;
+    protected $dateFields;
+    protected $dateFormats;
+    protected $detectedStartDate;
+    protected $detectedEndDate;
     /** @var UserEntityInterface */
     protected $publisher;
 

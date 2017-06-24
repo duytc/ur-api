@@ -2,6 +2,7 @@
 
 namespace UR\Model\Core;
 
+use DateTime;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 
@@ -188,4 +189,92 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setNumOfFiles($numOfFiles);
+
+    /**
+     * @return array
+     */
+    public function getMissingDate();
+
+    /**
+     * @param array $missingDate
+     * @return self
+     */
+    public function setMissingDate($missingDate);
+
+    /**
+     * @return boolean
+     */
+    public function isDateRangeBroken();
+
+    /**
+     * @param boolean $dateRangeBroken
+     * @return self
+     */
+    public function setDateRangeBroken($dateRangeBroken);
+
+    /**
+     * @return boolean
+     */
+    public function isDateRangeDetectionEnabled();
+
+    /**
+     * @param boolean $dateRangeDetectionEnabled
+     * @return self
+     */
+    public function setDateRangeDetectionEnabled($dateRangeDetectionEnabled);
+
+    /**
+     * @return mixed
+     */
+    public function getDateFields();
+
+    /**
+     * @param mixed $dateFields
+     * @return self
+     */
+    public function setDateFields($dateFields);
+
+    /**
+     * @return mixed
+     */
+    public function getDateFormats();
+
+    /**
+     * @param mixed $dateFormats
+     * @return self
+     */
+    public function setDateFormats($dateFormats);
+
+    /**
+     * @return mixed
+     */
+    public function getDetectedStartDate();
+
+    /**
+     * @param mixed $detectedStartDate
+     * @return self
+     */
+    public function setDetectedStartDate($detectedStartDate);
+
+    /**
+     * @return mixed
+     */
+    public function getDetectedEndDate();
+
+    /**
+     * @param mixed $detectedEndDate
+     * @return self
+     */
+    public function setDetectedEndDate($detectedEndDate);
+
+    /**
+     * @return array
+     */
+    public function getDateRange();
+
+    /**
+     * @param array $dateRange
+     * @return self
+     */
+    public function setDateRange($dateRange);
 }

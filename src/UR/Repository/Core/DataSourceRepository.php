@@ -195,4 +195,16 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
 
         return $qb->getQuery()->getResult();
     }
+
+    public function getBrokenDateRangeDataSourceForDataSets(array $dataSetIds)
+    {
+        $qb = $this->createQueryBuilder('dts');
+
+        return $qb->join('dts.connectedDataSources', 'cnt')
+            ->join('cnt.dataSet', 'ds')
+            ->where('dts.dateRangeDetectionEnabled = 1')
+            ->andWhere($qb->expr()->in('ds.id', $dataSetIds))
+            ->getQuery()
+            ->getResult();
+    }
 }

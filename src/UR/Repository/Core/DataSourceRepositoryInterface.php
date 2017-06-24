@@ -73,4 +73,10 @@ interface DataSourceRepositoryInterface extends ObjectRepository
      * @return DataSourceInterface[]
      */
     public function getDataSourcesHasDailyAlert();
+
+    /**
+     * @param array $dataSetIds
+     * @return mixed
+     */
+    public function getBrokenDateRangeDataSourceForDataSets(array $dataSetIds);
 }

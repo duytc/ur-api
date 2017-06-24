@@ -2,6 +2,8 @@
 
 namespace UR\Model\Core;
 
+use DateTime;
+
 class DataSourceEntry implements DataSourceEntryInterface
 {
     protected $id;
@@ -16,7 +18,10 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $totalRow;
     protected $fileExtension;
     private $isDryRun = false;
-
+    /**
+     * @var array
+     */
+    protected $dates;
     /**
      * @var DataSourceInterface
      */
@@ -24,11 +29,35 @@ class DataSourceEntry implements DataSourceEntryInterface
 
     protected $importHistories;
 
+    /**
+     * @var array
+     */
+    protected $missingDate;
+
+    /**
+     * @var DateTime
+     */
+    protected $startDate;
+
+    /**
+     * @var DateTime
+     */
+    protected $endDate;
+
+    /**
+     * @var bool
+     */
+    protected $dateRangeBroken;
+
+
+
     public function __construct()
     {
         $this->isValid = false;
         $this->isActive = true;
+        $this->dateRangeBroken = false;
         $this->totalRow = 0;
+        $this->missingDate = [];
     }
 
     /**
@@ -279,6 +308,96 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setImportHistories($importHistories)
     {
         $this->importHistories = $importHistories;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMissingDate()
+    {
+        return $this->missingDate;
+    }
+
+    /**
+     * @param array $missingDate
+     * @return self
+     */
+    public function setMissingDate($missingDate)
+    {
+        $this->missingDate = $missingDate;
+        return $this;
+    }
+
+    /**
+     * @return DateTime
+     */
+    public function getStartDate()
+    {
+        return $this->startDate;
+    }
+
+    /**
+     * @param DateTime $startDate
+     * @return self
+     */
+    public function setStartDate($startDate)
+    {
+        $this->startDate = $startDate;
+        return $this;
+    }
+
+    /**
+     * @return DateTime
+     */
+    public function getEndDate()
+    {
+        return $this->endDate;
+    }
+
+    /**
+     * @param DateTime $endDate
+     * @return self
+     */
+    public function setEndDate($endDate)
+    {
+        $this->endDate = $endDate;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isDateRangeBroken()
+    {
+        return $this->dateRangeBroken;
+    }
+
+    /**
+     * @param boolean $dateRangeBroken
+     * @return self
+     */
+    public function setDateRangeBroken($dateRangeBroken)
+    {
+        $this->dateRangeBroken = $dateRangeBroken;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDates()
+    {
+        return $this->dates;
+    }
+
+    /**
+     * @param array $dates
+     * @return self
+     */
+    public function setDates($dates)
+    {
+        $this->dates = $dates;
         return $this;
     }
 }

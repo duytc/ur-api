@@ -17,6 +17,8 @@ use UR\Worker\Job\Concurrent\ProcessAlert;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
 use UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted;
+use UR\Worker\Job\Concurrent\DetectDateRangeForDataSource;
+use UR\Worker\Job\Concurrent\DetectDateRangeForDataSourceEntry;
 use UR\Worker\Job\Linear\AlterDataSetTableSubJob;
 use UR\Worker\Job\Linear\DeleteConnectedDataSource;
 use UR\Worker\Job\Linear\LoadFilesIntoDataSet;
@@ -253,6 +255,36 @@ class Manager
             UpdateDetectedFieldsWhenEntryDeleted::PARAM_KEY_FORMAT => $format,
             UpdateDetectedFieldsWhenEntryDeleted::PARAM_KEY_PATH => $path,
             UpdateDetectedFieldsWhenEntryDeleted::PARAM_KEY_DATA_SOURCE_ID => $dataSourceId
+        ];
+
+        // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    /**
+     * @param $dataSourceId
+     * @param $entryId
+     */
+    public function updateDateRangeForDataSourceEntry($dataSourceId, $entryId)
+    {
+        $jobData = [
+            'task' => DetectDateRangeForDataSourceEntry::JOB_NAME,
+            DetectDateRangeForDataSourceEntry::DATA_SOURCE_ID => $dataSourceId,
+            DetectDateRangeForDataSourceEntry::ENTRY_ID => $entryId,
+        ];
+
+        // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    /**
+     * @param int $dataSourceId
+     */
+    public function updateDateRangeForDataSource($dataSourceId)
+    {
+        $jobData = [
+            'task' => DetectDateRangeForDataSource::JOB_NAME,
+            DetectDateRangeForDataSource::DATA_SOURCE_ID => $dataSourceId,
         ];
 
         // concurrent job, we do not care what order it is processed in

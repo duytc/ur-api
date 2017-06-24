@@ -2,6 +2,7 @@
 
 namespace UR\Model\Core;
 
+use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use UR\Model\User\Role\PublisherInterface;
@@ -21,6 +22,26 @@ class DataSource implements DataSourceInterface
     protected $useIntegration; // bool, true if use integration
     protected $lastActivity;
     protected $numOfFiles;
+    protected $dateFields;
+    protected $dateFormats;
+    protected $detectedStartDate;
+    protected $detectedEndDate;
+    /**
+     * @var array
+     */
+    protected $dateRange;
+    /**
+     * @var array
+     */
+    protected $missingDate;
+    /**
+     * @var bool
+     */
+    protected $dateRangeBroken;
+    /**
+     * @var bool
+     */
+    protected $dateRangeDetectionEnabled;
 
     /** @var UserEntityInterface */
     protected $publisher;
@@ -44,6 +65,7 @@ class DataSource implements DataSourceInterface
     {
         $this->enable = true;
         $this->numOfFiles = 0;
+        $this->missingDate = [];
     }
 
     /**
@@ -348,6 +370,150 @@ class DataSource implements DataSourceInterface
     public function setNumOfFiles($numOfFiles)
     {
         $this->numOfFiles = $numOfFiles;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMissingDate()
+    {
+        return $this->missingDate;
+    }
+
+    /**
+     * @param array $missingDate
+     * @return self
+     */
+    public function setMissingDate($missingDate)
+    {
+        $this->missingDate = $missingDate;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isDateRangeBroken()
+    {
+        return $this->dateRangeBroken;
+    }
+
+    /**
+     * @param boolean $dateRangeBroken
+     * @return self
+     */
+    public function setDateRangeBroken($dateRangeBroken)
+    {
+        $this->dateRangeBroken = $dateRangeBroken;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isDateRangeDetectionEnabled()
+    {
+        return $this->dateRangeDetectionEnabled;
+    }
+
+    /**
+     * @param boolean $dateRangeDetectionEnabled
+     * @return self
+     */
+    public function setDateRangeDetectionEnabled($dateRangeDetectionEnabled)
+    {
+        $this->dateRangeDetectionEnabled = $dateRangeDetectionEnabled;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDateFields()
+    {
+        return $this->dateFields;
+    }
+
+    /**
+     * @param mixed $dateFields
+     * @return self
+     */
+    public function setDateFields($dateFields)
+    {
+        $this->dateFields = $dateFields;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDateFormats()
+    {
+        return $this->dateFormats;
+    }
+
+    /**
+     * @param mixed $dateFormats
+     * @return self
+     */
+    public function setDateFormats($dateFormats)
+    {
+        $this->dateFormats = $dateFormats;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDetectedStartDate()
+    {
+        return $this->detectedStartDate;
+    }
+
+    /**
+     * @param mixed $detectedStartDate
+     * @return self
+     */
+    public function setDetectedStartDate($detectedStartDate)
+    {
+        $this->detectedStartDate = $detectedStartDate;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDetectedEndDate()
+    {
+        return $this->detectedEndDate;
+    }
+
+    /**
+     * @param mixed $detectedEndDate
+     * @return self
+     */
+    public function setDetectedEndDate($detectedEndDate)
+    {
+        $this->detectedEndDate = $detectedEndDate;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDateRange()
+    {
+        return $this->dateRange;
+    }
+
+    /**
+     * @param array $dateRange
+     * @return self
+     */
+    public function setDateRange($dateRange)
+    {
+        $this->dateRange = $dateRange;
         return $this;
     }
 }

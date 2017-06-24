@@ -206,6 +206,18 @@ services:
             - @ur.worker.scheduler.data_set_job_scheduler
             - @monolog.logger
 
+    ur.worker.job.concurrent.detect_mising_date_range_for_entry_subjob:
+        class: UR\Worker\Job\Concurrent\DetectDateRangeForDataSourceEntry
+        arguments:
+            - '@logger'
+            - '@ur.service.date_time.date_range_service'
+
+    ur.worker.job.concurrent.detect_mising_date_range_for_data_source_subjob:
+        class: UR\Worker\Job\Concurrent\DetectDateRangeForDataSource
+        arguments:
+            - '@logger'
+            - '@ur.service.date_time.date_range_service'
+
     ur.worker.job.linear.load_file_into_data_set_sub_job:
         class: UR\Worker\Job\Linear\LoadFileIntoDataSetSubJob
         arguments:
@@ -383,6 +395,9 @@ services:
                 - @ur.worker.job.concurrent.update_total_row_when_entry_inserted
                 - @ur.worker.job.concurrent.update_detected_fields_when_entry_deleted
                 - @ur.worker.job.concurrent.fix_csv_line_feed
+                - @ur.worker.job.concurrent.detect_mising_date_range_for_data_source_subjob
+                - @ur.worker.job.concurrent.detect_mising_date_range_for_entry_subjob
+
     ### end of concurrence worker pool
 
     # end of new worker design ---------------------------------------------------------------------------
@@ -487,3 +502,11 @@ services:
 
     ur.service.date_time.date_time_util:
         class: UR\Service\DateTime\DateTimeUtil
+
+    ur.service.date_time.date_range_service:
+        class: UR\Service\DateTime\DateRangeService
+        arguments:
+            - '@ur.domain_manager.data_source'
+            - '@ur.domain_manager.data_source_entry'
+            - '@ur.service.file_factory'
+            - '@logger'

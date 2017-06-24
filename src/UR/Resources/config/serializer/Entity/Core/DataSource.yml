@@ -3,13 +3,13 @@ UR\Entity\Core\DataSource:
     properties:
         id:
             expose: true
-            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.importhistory, datasource.dataset, datasource.viewAlert]
+            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.importhistory, datasource.dataset, datasource.viewAlert, datasource.missingdate]
         publisher:
             expose: true
             groups: [datasource.detail, datasource.summary, datasource.edit, datasource.dataset]
         name:
             expose: true
-            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.importhistory, datasource.dataset, datasource.viewAlert]
+            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.importhistory, datasource.dataset, datasource.viewAlert, datasource.missingdate]
         format:
             expose: true
             groups: [datasource.detail, datasource.summary, datasource.edit]
@@ -30,7 +30,7 @@ UR\Entity\Core\DataSource:
             groups: [datasource.apikey]
         dataSourceEntries:
             expose: true
-            groups: [datasource.detail]
+            groups: [datasource.detail, datasource.missingdate]
         enable:
             expose: true
             groups: [datasource.detail, datasource.summary, datasource.edit]
@@ -43,3 +43,21 @@ UR\Entity\Core\DataSource:
         numOfFiles:
             expose: true
             groups: [datasource.detail, datasource.summary]
+        dateRange:
+            expose: true
+            groups: [datasource.detail, datasource.summary, datasource.edit]
+        dateRangeBroken:
+            expose: true
+            groups: [datasource.detail, datasource.summary, datasource.missingdate, datasource.edit]
+        missingDate:
+            expose: true
+            groups: [datasource.detail, datasource.summary, datasource.missingdate, datasource.edit]
+        dateRangeDetectionEnabled:
+            expose: true
+            groups: [datasource.detail, datasource.summary, datasource.edit]
+        dateFields:
+            expose: true
+            groups: [datasource.detail, datasource.edit]
+        dateFormats:
+            expose: true
+            groups: [datasource.detail, datasource.edit]

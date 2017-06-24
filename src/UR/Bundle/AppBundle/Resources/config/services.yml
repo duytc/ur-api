@@ -66,6 +66,23 @@ services:
             - { name: doctrine.event_listener, event: postPersist }
             - { name: doctrine.event_listener, event: preRemove }
 
+    ur_app.event_listener.update_date_range_for_data_source_listener:
+        class: UR\Bundle\AppBundle\EventListener\UpdateDateRangeForDataSourceListener
+        arguments:
+            - @ur.worker.manager
+        tags:
+            - { name: doctrine.event_listener, event: postUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
+
+    ur_app.event_listener.update_date_range_for_data_source_entry_listener:
+        class: UR\Bundle\AppBundle\EventListener\UpdateDateRangeForDataSourceEntryListener
+        arguments:
+            - @ur.worker.manager
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: postFlush }
+            - { name: doctrine.event_listener, event: postRemove }
+
     ur_app.event_listener.auto_switch_format_for_data_source_listener:
         class: UR\Bundle\AppBundle\EventListener\AutoSwitchFormatForDataSourceListener
         tags:

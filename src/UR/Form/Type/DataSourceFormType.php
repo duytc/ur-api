@@ -52,7 +52,12 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
                 'allow_add' => true,
                 'allow_delete' => true,
             ))
-            ->add('useIntegration');
+            ->add('useIntegration')
+            ->add('dateRangeDetectionEnabled')
+            ->add('dateFields')
+            ->add('dateFormats')
+            ->add('dateRange')
+        ;
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(

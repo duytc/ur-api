@@ -20,4 +20,6 @@ interface ReportViewDataSetRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getByDataSet(DataSetInterface $dataSet);
+
+    public function getDataSetsForReportViews(array $reportViewIds);
 }

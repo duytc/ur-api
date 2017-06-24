@@ -52,6 +52,34 @@ UR\Entity\Core\DataSource:
             options:
                 default: 0
             nullable: false
+        dateRange:
+            type: json_array
+            nullable: true
+        missingDate:
+            type: json_array
+            nullable: true
+        dateRangeBroken:
+            type: boolean
+            nullable: true
+            options:
+                default: false
+        dateRangeDetectionEnabled:
+            type: boolean
+            nullable: true
+            options:
+                default: false
+        dateFields:
+            type: json_array
+            nullable: true
+        dateFormats:
+            type: json_array
+            nullable: true
+        detectedStartDate:
+            type: date
+            nullable: true
+        detectedEndDate:
+            type: date
+            nullable: true
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

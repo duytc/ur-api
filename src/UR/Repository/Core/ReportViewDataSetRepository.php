@@ -25,4 +25,13 @@ class ReportViewDataSetRepository extends EntityRepository implements ReportView
             ->getQuery()
             ->getResult();
     }
+
+    public function getDataSetsForReportViews(array $reportViewIds)
+    {
+        $qb = $this->createQueryBuilder('rvd');
+        return $qb->join('rvd.reportView', 'rv')
+            ->where($qb->expr()->in('rv.id', $reportViewIds))
+            ->getQuery()
+            ->getResult();
+    }
 }

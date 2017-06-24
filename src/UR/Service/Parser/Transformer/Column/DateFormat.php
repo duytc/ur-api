@@ -459,10 +459,39 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     }
 
     /**
+     * @param $formatArray
+     * @return bool|string
+     */
+    public static function getDateFormatFromArray($formatArray)
+    {
+        if (!is_array($formatArray)) {
+            return self::DEFAULT_DATETIME_FORMAT;
+        }
+
+        if (!array_key_exists(self::FORMAT_KEY, $formatArray)) {
+            return self::DEFAULT_DATETIME_FORMAT;
+        }
+
+        $format = $formatArray[self::FORMAT_KEY];
+
+        if (!array_key_exists('isCustomFormatDate', $formatArray)) {
+            return $format;
+        }
+
+        $isCustomDateFormat = $formatArray['isCustomFormatDate'];
+
+        if ($isCustomDateFormat) {
+            $format = self::convertCustomFromDateFormatToPHPDateFormat($format);
+        }
+
+        return $format;
+    }
+
+    /**
      * @param $value
      * @return DateTime
      */
-    public function getDateFromText($value)
+    public static function getDateFromText($value)
     {
         foreach (self::SUPPORTED_DATE_FORMATS as $format) {
             $date = date_create_from_format($format, $value);

@@ -8,7 +8,6 @@ use FOS\RestBundle\View\View;
 use \Exception;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\DomainManager\ReportViewManagerInterface;
@@ -17,6 +16,7 @@ use UR\Exception\RuntimeException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 
 /**
@@ -73,6 +73,42 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         } else {
             return $this->getPagination($qb, $request);
         }
+    }
+
+
+
+    /**
+     * @Rest\View(serializerGroups={"datasource.missingdate", "dataSourceIntegration.summary", "user.summary", "dataSourceEntry.missingdate"})
+     *
+     * @Rest\QueryParam(name="dataSets", nullable=true, description="the publisher id")
+     * @Rest\QueryParam(name="reportViews", nullable=true, description="the page to get")
+     * @param Request $request
+     * @return mixed
+     */
+    public function cgetDatasourcesAction(Request $request)
+    {
+        $dataSetIds = $request->query->get('dataSets', null);
+        $reportViewIds = $request->query->get('reportViews', null);
+
+        if ($dataSetIds == null && $reportViewIds == null) {
+            throw new NotFoundHttpException('either "dataSets" or "reportViews" is empty');
+        }
+
+        if (is_string($dataSetIds) && !empty($dataSetIds)) {
+            $ids = explode(',', $dataSetIds);
+            return $this->get('ur.repository.data_source')->getBrokenDateRangeDataSourceForDataSets($ids);
+        }
+
+        if (is_string($reportViewIds) && !empty($reportViewIds)) {
+            $ids = explode(',', $reportViewIds);
+            $dataSets = $this->get('ur.repository.report_view_data_set')->getDataSetsForReportViews($ids);
+            $ids = array_map(function(ReportViewDataSetInterface $reportViewDataSet) {
+                return $reportViewDataSet->getDataSet()->getId();
+            }, $dataSets);
+            return $this->get('ur.repository.data_source')->getBrokenDateRangeDataSourceForDataSets($ids);
+        }
+
+        throw new NotFoundHttpException('either "dataSets" or "reportViews" is invalid');
     }
 
     /**
@@ -391,7 +427,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         return $this->container->get('ur_api.handler.report_view');
     }
 
-    /**
+    /**	
      * get shareableLink for reportView, support selecting $fields To Be Shared
      *
      * @param ReportViewInterface $reportView

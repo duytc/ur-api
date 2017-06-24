@@ -150,4 +150,59 @@ interface DataSourceEntryInterface extends ModelInterface
      * @param mixed $importHistories
      */
     public function setImportHistories($importHistories);
+
+    /**
+     * @return array
+     */
+    public function getMissingDate();
+
+    /**
+     * @param array $missingDate
+     * @return self
+     */
+    public function setMissingDate($missingDate);
+
+    /**
+     * @return DateTime
+     */
+    public function getStartDate();
+
+    /**
+     * @param DateTime $startDate
+     * @return self
+     */
+    public function setStartDate($startDate);
+
+    /**
+     * @return DateTime
+     */
+    public function getEndDate();
+
+    /**
+     * @param DateTime $endDate
+     * @return self
+     */
+    public function setEndDate($endDate);
+
+    /**
+     * @return boolean
+     */
+    public function isDateRangeBroken();
+
+    /**
+     * @param boolean $dateRangeBroken
+     * @return self
+     */
+    public function setDateRangeBroken($dateRangeBroken);
+
+    /**
+     * @return array
+     */
+    public function getDates();
+
+    /**
+     * @param array $dates
+     * @return self
+     */
+    public function setDates($dates);
 }

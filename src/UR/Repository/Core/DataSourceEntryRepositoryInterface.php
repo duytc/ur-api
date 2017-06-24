@@ -81,4 +81,10 @@ interface DataSourceEntryRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getDataSourceEntriesForDataSource($dataSource, $limit, $offset);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @return mixed
+     */
+    public function getDataSourceEntriesForDataSourceOrderByStartDate(DataSourceInterface $dataSource);
 }

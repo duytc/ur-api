@@ -15,7 +15,7 @@ UR\Entity\Core\DataSourceEntry:
             groups: [dataSourceEntry.detail]
         fileName:
             expose: true
-            groups: [dataSourceEntry.detail, dataSourceEntry.summary]
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary, dataSourceEntry.missingdate]
         metaData:
             expose: true
             groups: [dataSourceEntry.detail, dataSourceEntry.summary]
@@ -28,3 +28,17 @@ UR\Entity\Core\DataSourceEntry:
         totalRow:
             expose: true
             groups: [dataSourceEntry.detail, dataSourceEntry.summary]
+        startDate:
+            expose: true
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary]
+            type: DateTime<'Y-m-d'>
+        endDate:
+            expose: true
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary]
+            type: DateTime<'Y-m-d'>
+        dateRangeBroken:
+            expose: true
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary, dataSourceEntry.missingdate]
+        missingDate:
+            expose: true
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary, dataSourceEntry.missingdate]

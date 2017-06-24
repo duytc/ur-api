@@ -40,6 +40,23 @@ UR\Entity\Core\DataSourceEntry:
         fileExtension:
             type: string
             length: 20
+        startDate:
+            type: date
+            nullable: true
+        endDate:
+            type: date
+            nullable: true
+        missingDate:
+            type: json_array
+            nullable: true
+        dateRangeBroken:
+            type: boolean
+            nullable: true
+            options:
+                default: false
+        dates:
+            type: json_array
+            nullable: true
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource
@@ -48,8 +65,3 @@ UR\Entity\Core\DataSourceEntry:
                 name: data_source_id
                 referencedColumnName: id
                 onDelete: CASCADE
-    oneToMany:
-        importHistories:
-            targetEntity: UR\Entity\Core\ImportHistory
-            cascade: ['persist', 'detach', 'remove']
-            mappedBy: dataSourceEntry

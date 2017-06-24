@@ -4,7 +4,6 @@ namespace UR\Entity\Core;
 
 use UR\Model\Core\DataSourceEntry as DataSourceEntryModel;
 use UR\Model\Core\DataSourceInterface;
-use UR\Model\Core\ImportHistoryInterface;
 
 class DataSourceEntry extends DataSourceEntryModel
 {
@@ -19,16 +18,14 @@ class DataSourceEntry extends DataSourceEntryModel
     protected $hashFile;
     protected $totalRow;
     protected $fileExtension;
-
-    /**
-     * @var DataSourceInterface
-     */
     protected $dataSource;
-
-    /**
-     * @var ImportHistoryInterface[]
-     */
     protected $importHistories;
+
+    protected $missingDate;
+    protected $dateRangeBroken;
+    protected $startDate;
+    protected $endDate;
+    protected $dates;
 
     /**
      * @inheritdoc

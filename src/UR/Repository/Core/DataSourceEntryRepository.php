@@ -244,4 +244,18 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
 
         return $qb->getQuery()->getResult();
     }
+
+    public function getDataSourceEntriesForDataSourceOrderByStartDate(DataSourceInterface $dataSource)
+    {
+        if (!$dataSource->isDateRangeDetectionEnabled()) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('dse')
+            ->where('dse.dataSource = :dataSource')
+            ->setParameter('dataSource', $dataSource)
+            ->addOrderBy('dse.endDate', 'asc')
+            ->getQuery()
+            ->getResult();
+    }
 }
