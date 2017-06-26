@@ -105,7 +105,7 @@ services:
     ur_api.event_listener.update_next_execute_at_for_data_source_integration_schedule_listener:
         class: UR\Bundle\ApiBundle\EventListener\UpdateDataSourceIntegrationScheduleListener
         arguments:
-            - '@ur.service.date_time.date_time_util'
+            - '@ur.service.date_time.next_executed_at'
         tags:
             - { name: doctrine.event_listener, event: prePersist }
             - { name: doctrine.event_listener, event: preUpdate }

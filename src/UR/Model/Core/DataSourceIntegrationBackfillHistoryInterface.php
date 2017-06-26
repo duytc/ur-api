@@ -6,6 +6,9 @@ use UR\Model\ModelInterface;
 
 interface DataSourceIntegrationBackfillHistoryInterface extends ModelInterface
 {
+    const FIELD_EXECUTED_AT = 'executedAt';
+    const FIELD_PENDING = 'pending';
+
     /**
      * @return DataSourceIntegrationInterface
      */
@@ -21,12 +24,12 @@ interface DataSourceIntegrationBackfillHistoryInterface extends ModelInterface
     /**
      * @return mixed
      */
-    public function getLastExecutedAt();
+    public function getExecutedAt();
 
     /**
-     * @param mixed $lastExecutedAt
+     * @param mixed $executedAt
      */
-    public function setLastExecutedAt($lastExecutedAt);
+    public function setExecutedAt($executedAt);
 
     /**
      * @return \DateTime|null
@@ -53,11 +56,11 @@ interface DataSourceIntegrationBackfillHistoryInterface extends ModelInterface
     /**
      * @return mixed
      */
-    public function getIsRunning();
+    public function getPending();
 
     /**
      * @param mixed $status
      * @return self
      */
-    public function setIsRunning($status);
+    public function setPending($status);
 }

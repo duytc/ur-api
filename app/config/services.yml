@@ -510,3 +510,8 @@ services:
             - '@ur.domain_manager.data_source_entry'
             - '@ur.service.file_factory'
             - '@logger'
+
+    ur.service.date_time.next_executed_at:
+        class: UR\Service\DateTime\NextExecutedAt
+        arguments:
+            - '@ur.service.date_time.date_time_util'

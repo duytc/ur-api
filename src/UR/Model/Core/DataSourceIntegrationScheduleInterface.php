@@ -6,6 +6,9 @@ use UR\Model\ModelInterface;
 
 interface DataSourceIntegrationScheduleInterface extends ModelInterface
 {
+    const FIELD_EXECUTED_AT = 'executedAt';
+    const FIELD_PENDING = 'pending';
+    
     /**
      * @return mixed
      */
@@ -53,11 +56,11 @@ interface DataSourceIntegrationScheduleInterface extends ModelInterface
     /**
      * @return bool
      */
-    public function getIsRunning();
+    public function getPending();
 
     /**
-     * @param bool $isRunning
+     * @param bool $pending
      * @return self
      */
-    public function setIsRunning($isRunning);
+    public function setPending($pending);
 }

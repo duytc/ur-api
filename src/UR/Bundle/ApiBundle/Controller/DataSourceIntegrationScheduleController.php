@@ -5,18 +5,20 @@ namespace UR\Bundle\ApiBundle\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\Util\Codes;
+use FOS\RestBundle\View\View;
+use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceIntegrationScheduleManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
-use UR\Entity\Core\DataSourceIntegrationSchedule;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\FetcherSchedule;
 
 /**
  * @Rest\RouteResource("datasourceintegrationschedules")
@@ -76,7 +78,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
      *
      * @Rest\Get("/datasourceintegrationschedules/byschedule")
      *
-     * @Rest\View(serializerGroups={"dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.bySchedule", "integration.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"fetcherschedule.detail", "dataSourceIntegrationBackfillHistory.summary", "dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.bySchedule", "integration.detail", "user.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -95,21 +97,22 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
         $dsisManager = $this->get('ur.domain_manager.data_source_integration_schedule');
         $normalSchedules = $dsisManager->findToBeExecuted();
 
+        $normalSchedules = array_map(function ($schedule) {
+            if ($schedule instanceof DataSourceIntegrationScheduleInterface) {
+                $fetcherSchedule = new FetcherSchedule();
+                $fetcherSchedule->setDataSourceIntegrationSchedule($schedule);
+                return $fetcherSchedule;
+            }
+        }, $normalSchedules);
+
         $backFillHistoryManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
         $notExecutedBackFills = $backFillHistoryManager->findByBackFillNotExecuted();
 
         $backFillSchedules = array_map(function ($backFillHistory) use ($backFillHistoryManager) {
             if ($backFillHistory instanceof DataSourceIntegrationBackfillHistoryInterface) {
-                /** Clone to make sure old value from history (startDate & endDate) not save to data source integration in database */
-                $dataSourceIntegration = clone $backFillHistory->getDataSourceIntegration();
-
-                $dataSourceIntegration->setBackFill(true);
-                $dataSourceIntegration->setBackFillStartDate($backFillHistory->getBackFillStartDate());
-                $dataSourceIntegration->setBackFillEndDate($backFillHistory->getBackFillEndDate());
-
-                $schedule =  new DataSourceIntegrationSchedule();
-                $schedule->setDataSourceIntegration($dataSourceIntegration);
-                return $schedule;
+                $fetcherSchedule = new FetcherSchedule();
+                $fetcherSchedule->setBackFillHistory($backFillHistory);
+                return $fetcherSchedule;
             }
         }, $notExecutedBackFills);
 
@@ -121,7 +124,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
      *
      * @Rest\Get("/datasourceintegrationschedules/bydatasource")
      *
-     * @Rest\View(serializerGroups={"dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.bySchedule", "integration.detail", "user.summary"})
+     * @Rest\View(serializerGroups={"fetcherschedule.detail", "dataSourceIntegrationBackfillHistory.summary", "dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.bySchedule", "integration.detail", "user.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -142,83 +145,75 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
         // - this action: use group dataSourceIntegration.bySchedule that return original datasourceintegration params (so value is original value)
         // TODO: move to action cgetAction if can do it
 
-        return $this->findByDataSource($request);
+        $normalSchedules = $this->findByDataSource($request);
+
+        $normalSchedules = array_map(function ($schedule) {
+            if ($schedule instanceof DataSourceIntegrationScheduleInterface) {
+                $fetcherSchedule = new FetcherSchedule();
+                $fetcherSchedule->setDataSourceIntegrationSchedule($schedule);
+                return $fetcherSchedule;
+            }
+        }, $normalSchedules);
+
+
+        return $normalSchedules;
     }
 
     /**
      * update executeAt time
      *
-     * @Rest\Post("/datasourceintegrationschedules/updateexecuteat")
+     * @Rest\Post("/datasourceintegrationschedules/{id}/executed")
      *
      * @Rest\View(serializerGroups={"dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.detail", "integration.detail", "user.summary"})
      *
      * @ApiDoc(
-     *  section = "Data Source",
+     *  section = "Data Source Integration Schedule",
      *  resource = true,
      *  statusCodes = {
      *      200 = "Returned when successful"
      *  }
      * )
      *
+     * @param $id
      * @param Request $request
      * @return \UR\Model\Core\DataSourceIntegrationInterface[]
      */
-    public function postUpdateExecuteAtAction(Request $request)
+    public function postUpdateExecutedAction($id, Request $request)
     {
-        $id = $request->request->get('id', null);
+        /** @var DataSourceIntegrationScheduleInterface $dataSourceIntegrationSchedule */
         $dataSourceIntegrationSchedule = $this->one($id);
-        if (!$dataSourceIntegrationSchedule instanceof DataSourceIntegrationScheduleInterface) {
-            throw new NotFoundHttpException('Not found that Data Source Integration Schedule');
-        }
 
-        $scheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
-        $dataSourceIntegrationSchedule->setIsRunning(false);
-        $scheduleManager->save($dataSourceIntegrationSchedule);
+        $nextExecutedUtil = $this->get('ur.service.date_time.next_executed_at');
+        $dataSourceIntegration = $nextExecutedUtil->updateDataSourceIntegrationSchedule($dataSourceIntegrationSchedule->getDataSourceIntegration(), $this->get('doctrine.orm.entity_manager'));
 
         $dataSourceIntegrationManager = $this->get('ur.domain_manager.data_source_integration');
-
-        $dataSourceIntegration = $dataSourceIntegrationSchedule->getDataSourceIntegration();
-        $dataSourceIntegration = $dataSourceIntegrationManager->find($dataSourceIntegration->getId());
-        $dataSourceIntegration->setLastExecutedAt(date_create('now'));
-
         $dataSourceIntegrationManager->save($dataSourceIntegration);
 
         return $this->view(true, Codes::HTTP_OK);
     }
 
     /**
-     * update executeAt time
-     *
-     * @Rest\Post("/datasourceintegrationschedules/isrunning")
-     *
-     * @Rest\View(serializerGroups={"dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.detail", "integration.detail", "user.summary"})
+     * Update an existing data source integration schedule from the submitted data or create a new data source integration schedule at a specific location
      *
      * @ApiDoc(
-     *  section = "Data Source",
+     *  section = "Data Sources Integration Schedule",
      *  resource = true,
      *  statusCodes = {
-     *      200 = "Returned when successful"
+     *      204 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
      *  }
      * )
      *
-     * @param Request $request
-     * @return \UR\Model\Core\DataSourceIntegrationInterface[]
+     * @param Request $request the request object
+     * @param int $id the resource id
+     *
+     * @return FormTypeInterface|View
+     *
+     * @throws NotFoundHttpException when resource not exist
      */
-    public function postUpdateIsRunningAction(Request $request)
+    public function patchAction(Request $request, $id)
     {
-        $id = $request->request->get('id', null);
-        $isRunning = $request->request->get('isRunning', null);
-
-        $scheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
-        $dataSourceIntegrationSchedule = $this->one($id);
-        if (!$dataSourceIntegrationSchedule instanceof DataSourceIntegrationScheduleInterface) {
-            throw new NotFoundHttpException('Not found that Data Source Integration Schedule');
-        }
-
-        $dataSourceIntegrationSchedule->setIsRunning($isRunning);
-        $scheduleManager->save($dataSourceIntegrationSchedule);
-
-        return $this->view(true, Codes::HTTP_OK);
+        return $this->patch($request, $id);
     }
 
     /**
@@ -278,5 +273,38 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.data_source_integration_schedule');
+    }
+
+    /**
+     * Update Schedule
+     *
+     * @Rest\Post("/datasourceintegrationschedules/{id}/update")
+     *
+     * @ApiDoc(
+     *  section = "Data Source Integration Schedule",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param $id
+     * @param Request $request
+     * @return \UR\Model\Core\DataSourceIntegrationSchedule[]
+     */
+    public function postUpdateAction($id, Request $request)
+    {
+        /** @var DataSourceIntegrationScheduleInterface $dataSourceIntegrationSchedule */
+        $dataSourceIntegrationSchedule = $this->one($id);
+
+        if ($request->request->has(DataSourceIntegrationScheduleInterface::FIELD_PENDING)) {
+            $pending = $request->request->get(DataSourceIntegrationScheduleInterface::FIELD_PENDING);
+            $dataSourceIntegrationSchedule->setPending($pending);
+        }
+
+        $dataSourceIntegrationScheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
+        $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
+
+        return $this->view(true, Codes::HTTP_OK);
     }
 }

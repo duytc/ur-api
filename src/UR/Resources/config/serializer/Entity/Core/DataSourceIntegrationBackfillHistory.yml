@@ -10,7 +10,7 @@ UR\Entity\Core\DataSourceIntegrationBackfillHistory:
             groups: [dataSourceIntegrationBackfillHistory.summary]
 
         # back fill feature
-        lastExecutedAt:
+        executedAt:
             expose: true
             groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]
             type: DateTime<'Y-m-d H:i:s'>
@@ -22,6 +22,6 @@ UR\Entity\Core\DataSourceIntegrationBackfillHistory:
             expose: true
             groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]
             type: DateTime<'Y-m-d'>
-        isRunning:
+        pending:
             expose: true
             groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]

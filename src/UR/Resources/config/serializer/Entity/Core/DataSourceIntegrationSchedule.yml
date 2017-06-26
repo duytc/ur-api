@@ -16,6 +16,6 @@ UR\Entity\Core\DataSourceIntegrationSchedule:
         scheduleType:
             expose: true
             groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.summary, dataSourceIntegrationSchedule.bySchedule]
-        isRunning:
+        pending:
             expose: true
             groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.summary, dataSourceIntegrationSchedule.bySchedule]

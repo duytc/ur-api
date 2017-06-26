@@ -34,8 +34,11 @@ class UpdateBackFillExecutedForDataSourceIntegrationListener
         if (!$entity instanceof DataSourceIntegrationInterface) {
             return;
         }
-        if ($entity->isBackFill() && $entity->getBackFillStartDate()) {
+        if ($entity->getBackFillStartDate()) {
             $this->createBackFillHistoryWhenCreateDataSourceIntegration($entity);
+            $entity->setBackFillStartDate(null);
+            $entity->setBackFillEndDate(null);
+            $this->updateDataSourceIntegrations[] = $entity;
         }
     }
 
@@ -53,6 +56,8 @@ class UpdateBackFillExecutedForDataSourceIntegrationListener
         // create backfill history when has the change on Data Source Integration
         if ($args->hasChangedField('backFillStartDate') || $args->hasChangedField('backFillEndDate')) {
             $this->updateDataSourceIntegrations[] = $this->createBackFillHistoryForDataSourceIntegration($dataSourceIntegration);
+            $dataSourceIntegration->setBackFillStartDate(null);
+            $dataSourceIntegration->setBackFillEndDate(null);
         }
 
         // add to $updateDataSourceIntegrations

@@ -27,12 +27,12 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
                 )
             )
             ->andWhere('dsi.active = :dataSourceActive')
-            ->andWhere('dis.isRunning = :isRunning')
+            ->andWhere('dis.pending = :pending')
             ->andWhere('ds.enable = :enable')
             ->setParameter('currentDate', $currentDate)
             ->setParameter('dataSourceActive', true)
             ->setParameter('enable', true)
-            ->setParameter('isRunning', false);
+            ->setParameter('pending', false);
 
         $schedules = $qb->getQuery()->getResult();
 
@@ -46,7 +46,6 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
                 continue;
             }
 
-            $datSourceIntegration->setBackFill(false);
             $schedule->setDataSourceIntegration($datSourceIntegration);
         }
 

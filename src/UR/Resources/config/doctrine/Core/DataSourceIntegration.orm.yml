@@ -18,31 +18,13 @@ UR\Entity\Core\DataSourceIntegration:
             type: boolean
             option:
                 default: true
-        lastExecutedAt:
-            type: datetime
-            gedmo:
-                timestampable:
-                    on: create
-
         # back fill feature
-        backFill:
-            type: boolean
-            option:
-                default: false
         backFillStartDate:
             type: date
             nullable: true
         backFillEndDate:
             type: date
             nullable: true
-        backFillExecuted:
-            type: boolean
-            option:
-                default: false
-        backFillForce:
-            type: boolean
-            option:
-                default: false
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

@@ -8,7 +8,7 @@ UR\Entity\Core\DataSourceIntegrationBackfillHistory:
             generator:
                 strategy: AUTO
     fields:
-        lastExecutedAt:
+        executedAt:
             type: datetime
             nullable: true
 
@@ -19,7 +19,7 @@ UR\Entity\Core\DataSourceIntegrationBackfillHistory:
         backFillEndDate:
             type: date
             nullable: true
-        isRunning:
+        pending:
             type: boolean
             option:
                 default: false

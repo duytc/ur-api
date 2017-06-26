@@ -19,7 +19,7 @@ UR\Entity\Core\DataSourceIntegrationSchedule:
         scheduleType:
             type: string
             nullable: false
-        isRunning:
+        pending:
             type: boolean
             option:
                 default: false

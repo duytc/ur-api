@@ -7,7 +7,7 @@ class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackf
     protected $id;
 
     /** @var array */
-    protected $lastExecutedAt;
+    protected $executedAt;
 
     // back fill feature
     /** @var \DateTime|null */
@@ -19,15 +19,15 @@ class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackf
     protected $dataSourceIntegration;
 
     /** @var */
-    protected $isRunning;
+    protected $pending;
 
     public function __construct()
     {
         // back fill feature
         $this->backFillStartDate = null;
         $this->backFillEndDate = null;
-        $this->lastExecutedAt = null;
-        $this->isRunning = false;
+        $this->executedAt = null;
+        $this->pending = false;
     }
 
     /**
@@ -59,17 +59,17 @@ class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackf
     /**
      * @inheritdoc
      */
-    public function getLastExecutedAt()
+    public function getExecutedAt()
     {
-        return $this->lastExecutedAt;
+        return $this->executedAt;
     }
 
     /**
      * @inheritdoc
      */
-    public function setLastExecutedAt($lastExecutedAt)
+    public function setExecutedAt($executedAt)
     {
-        $this->lastExecutedAt = $lastExecutedAt;
+        $this->executedAt = $executedAt;
         return $this;
     }
 
@@ -112,17 +112,17 @@ class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackf
     /**
      * @inheritdoc
      */
-    public function getIsRunning()
+    public function getPending()
     {
-        return $this->isRunning;
+        return $this->pending;
     }
 
     /**
      * @inheritdoc
      */
-    public function setIsRunning($isRunning)
+    public function setPending($pending)
     {
-        $this->isRunning = $isRunning;
+        $this->pending = $pending;
 
         return $this;
     }

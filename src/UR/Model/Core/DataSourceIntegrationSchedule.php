@@ -15,7 +15,7 @@ class DataSourceIntegrationSchedule implements DataSourceIntegrationScheduleInte
     protected $dataSourceIntegration;
 
     /** @var  bool */
-    protected $isRunning;
+    protected $pending;
 
     public function __construct()
     {
@@ -100,17 +100,17 @@ class DataSourceIntegrationSchedule implements DataSourceIntegrationScheduleInte
     /**
      * @inheritdoc
      */
-    public function getIsRunning()
+    public function getPending()
     {
-        return $this->isRunning;
+        return $this->pending;
     }
 
     /**
      * @inheritdoc
      */
-    public function setIsRunning($isRunning)
+    public function setPending($pending)
     {
-        $this->isRunning = $isRunning;
+        $this->pending = $pending;
 
         return $this;
     }

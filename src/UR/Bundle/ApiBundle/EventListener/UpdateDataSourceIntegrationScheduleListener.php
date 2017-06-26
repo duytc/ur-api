@@ -2,25 +2,28 @@
 
 namespace UR\Bundle\ApiBundle\EventListener;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Entity\Core\DataSourceIntegrationSchedule;
 use UR\Model\Core\DataSourceIntegration;
 use UR\Model\Core\DataSourceIntegrationInterface;
+use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Service\DateTime\DateTimeUtil;
+use UR\Service\DateTime\NextExecutedAt;
 
 class UpdateDataSourceIntegrationScheduleListener
 {
     /** @var array|DataSourceIntegrationInterface[] */
     private $updateDataSourceIntegrations = [];
 
-    /** @var  DateTimeUtil */
-    private $dateTimeUtil;
+    /** @var NextExecutedAt  */
+    private $nextExecutedAt;
 
-    public function __construct(DateTimeUtil $dateTimeUtil)
+    public function __construct(NextExecutedAt $nextExecutedAt)
     {
-        $this->dateTimeUtil = $dateTimeUtil;
+        $this->nextExecutedAt = $nextExecutedAt;
     }
 
     /**
@@ -28,6 +31,7 @@ class UpdateDataSourceIntegrationScheduleListener
      */
     public function prePersist(LifecycleEventArgs $args)
     {
+        $this->em = $args->getEntityManager();
         $dataSourceIntegration = $args->getEntity();
 
         if (!$dataSourceIntegration instanceof DataSourceIntegrationInterface) {
@@ -35,7 +39,7 @@ class UpdateDataSourceIntegrationScheduleListener
         }
 
         // update all dataSourceIntegrationSchedules
-        $dataSourceIntegration = $this->updateDataSourceIntegrationSchedule($dataSourceIntegration);
+        $dataSourceIntegration = $this->nextExecutedAt->updateDataSourceIntegrationSchedule($dataSourceIntegration, $args->getEntityManager());
 
         // add to $updateDataSourceIntegrations
         $this->updateDataSourceIntegrations[] = $dataSourceIntegration;
@@ -46,8 +50,9 @@ class UpdateDataSourceIntegrationScheduleListener
      */
     public function preUpdate(PreUpdateEventArgs $args)
     {
+        $this->em = $args->getEntityManager();
         // only do encrypt if params changed
-        if ($args->hasChangedField('schedule') || $args->hasChangedField('lastExecutedAt')) {
+        if ($args->hasChangedField('schedule') || $args->hasChangedField('executedAt')) {
             // Continue
         } else {
             return;
@@ -59,7 +64,7 @@ class UpdateDataSourceIntegrationScheduleListener
         }
 
         // update all dataSourceIntegrationSchedules
-        $dataSourceIntegration = $this->updateDataSourceIntegrationSchedule($dataSourceIntegration);
+        $dataSourceIntegration = $this->nextExecutedAt->updateDataSourceIntegrationSchedule($dataSourceIntegration, $args->getEntityManager());
 
         // add to $updateDataSourceIntegrations
         $this->updateDataSourceIntegrations[] = $dataSourceIntegration;
@@ -84,100 +89,5 @@ class UpdateDataSourceIntegrationScheduleListener
 
         // flush changes
         $em->flush();
-    }
-
-    /**
-     * @param DataSourceIntegrationInterface $dataSourceIntegration
-     * @return DataSourceIntegrationInterface
-     */
-    private function updateDataSourceIntegrationSchedule(DataSourceIntegrationInterface $dataSourceIntegration)
-    {
-        // update uuid to schedule setting, TODO: move to new listener
-        $scheduleSetting = $dataSourceIntegration->getSchedule();
-        $scheduleSetting = $this->organizeScheduleSetting($scheduleSetting);
-
-        // update to dataSourceIntegration
-        $dataSourceIntegration->setSchedule($scheduleSetting);
-        $lastExecuted = $dataSourceIntegration->getLastExecutedAt();
-
-        $checkType = $scheduleSetting[DataSourceIntegration::SCHEDULE_KEY_CHECKED];
-        $checkValue = $scheduleSetting[$checkType];
-
-        switch ($checkType) {
-            case DataSourceIntegration::SCHEDULE_CHECKED_CHECK_EVERY:
-                $nextExecuteAt = $this->dateTimeUtil->getNextExecutedByCheckEvery($lastExecuted, $checkValue);
-                $newDataSourceIntegrationSchedules = [
-                    (new DataSourceIntegrationSchedule())
-                        ->setUuid($checkValue[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID])
-                        ->setExecutedAt($nextExecuteAt)
-                        ->setIsRunning(false)
-                        ->setScheduleType($checkType)
-                        ->setDataSourceIntegration($dataSourceIntegration)
-                ];
-
-                break;
-
-            case DataSourceIntegration::SCHEDULE_CHECKED_CHECK_AT:
-                $newDataSourceIntegrationSchedules = [];
-
-                foreach ($checkValue as $checkAtItem) {
-                    $nextExecuteAt = $this->dateTimeUtil->getNextExecutedByCheckAt($lastExecuted, $checkAtItem);
-                    $newDataSourceIntegrationSchedules[] = ((new DataSourceIntegrationSchedule())
-                        ->setUuid($checkAtItem[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID])
-                        ->setExecutedAt($nextExecuteAt)
-                        ->setIsRunning(false)
-                        ->setScheduleType($checkType)
-                        ->setDataSourceIntegration($dataSourceIntegration));
-                }
-
-                break;
-
-            default:
-                // not supported
-                return $dataSourceIntegration;
-        }
-
-        // update, we already have setting cascade persist and orphanRemoval
-        // so that $newDataSourceIntegrationSchedules will be applied for the $dataSourceIntegration
-        $dataSourceIntegration->removeAllDataSourceIntegrationSchedules();
-        $dataSourceIntegration->setDataSourceIntegrationSchedules($newDataSourceIntegrationSchedules);
-
-        return $dataSourceIntegration;
-    }
-
-    /**
-     * @param array $scheduleSetting
-     * @return array
-     */
-    private function organizeScheduleSetting(array $scheduleSetting)
-    {
-        // add Uuid To ScheduleSetting
-        if (array_key_exists(DataSourceIntegration::SCHEDULE_CHECKED_CHECK_EVERY, $scheduleSetting)) {
-            $scheduleCheckEvery = $scheduleSetting[DataSourceIntegration::SCHEDULE_CHECKED_CHECK_EVERY];
-            if (!array_key_exists(DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID, $scheduleCheckEvery)) {
-                $scheduleCheckEvery[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID] = $this->getUUid();
-            }
-            $scheduleSetting[DataSourceIntegration::SCHEDULE_CHECKED_CHECK_EVERY] = $scheduleCheckEvery;
-        }
-
-        if (array_key_exists(DataSourceIntegration::SCHEDULE_CHECKED_CHECK_AT, $scheduleSetting)) {
-            $scheduleCheckAt = $scheduleSetting[DataSourceIntegration::SCHEDULE_CHECKED_CHECK_AT];
-            foreach ($scheduleCheckAt as &$checkAt) {
-                if (!array_key_exists(DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID, $checkAt)) {
-                    $checkAt[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID] = $this->getUUid();
-                }
-            }
-            $scheduleSetting[DataSourceIntegration::SCHEDULE_CHECKED_CHECK_AT] = $scheduleCheckAt;
-        }
-
-        return $scheduleSetting;
-    }
-
-    /**
-     * @return string
-     */
-    private function getUUid()
-    {
-        return bin2hex(random_bytes(18));
     }
 }

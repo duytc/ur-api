@@ -3,6 +3,7 @@
 namespace UR\Repository\Core;
 
 use Doctrine\ORM\EntityRepository;
+use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\DataSourceInterface;
 
@@ -31,10 +32,22 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
         $qb = $this->createQueryBuilder('dibh')
             ->join('dibh.dataSourceIntegration', 'di')
             ->where('di.dataSource = :dataSource')
-            ->orderBy('dibh.lastExecutedAt', 'asc')
+            ->orderBy('dibh.executedAt', 'desc')
             ->setParameter('dataSource', $dataSource);
 
-        return $qb->getQuery()->getResult();
+        $result = $qb->getQuery()->getResult();
+
+        usort($result, function (DataSourceIntegrationBackfillHistoryInterface $a, DataSourceIntegrationBackfillHistoryInterface $b) {
+            if ($a->getExecutedAt() === null) {
+                return -1;
+            }
+
+            if ($b->getExecutedAt() === null) {
+                return 1;
+            }
+        });
+
+        return $result;
     }
 
     /**
@@ -45,11 +58,10 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
         $qb = $this->createQueryBuilder('dibh')
             ->join('dibh.dataSourceIntegration', 'di')
             ->join('di.dataSource', 'ds')
-            ->where('dibh.lastExecutedAt is null')
+            ->where('dibh.executedAt is null')
             ->andWhere('ds.enable = true')
-            ->andWhere('di.backFill = true')
-            ->andWhere('dibh.isRunning LIKE :isRunning')
-            ->setParameter('isRunning', false);
+            ->andWhere('dibh.pending = :pending')
+            ->setParameter('pending', false);
 
         return $qb->getQuery()->getResult();
     }

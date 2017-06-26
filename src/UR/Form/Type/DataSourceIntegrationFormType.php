@@ -24,7 +24,6 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
             ->add('params')
             ->add('schedule')
             // back fill feature
-            ->add('backFill')
             ->add('backFillStartDate', DateType::class, array(
                 // render as a single text box
                 'widget' => 'single_text',
@@ -33,8 +32,6 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
                 // render as a single text box
                 'widget' => 'single_text',
             ))
-            ->add('backFillExecuted')
-            ->add('backFillForce')
             ->add('active');
 
         $builder->addEventListener(
@@ -171,7 +168,7 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
      */
     private function validateBackFillSetting(DataSourceIntegrationInterface $dataSourceIntegration, FormInterface $form)
     {
-        if (!$dataSourceIntegration->isBackFill()) {
+        if ($dataSourceIntegration->getBackFillStartDate() == null && $dataSourceIntegration->getBackFillEndDate() == null) {
             return true;
         }
 

@@ -14,8 +14,6 @@ use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
-use UR\Model\Core\Integration;
-use UR\Service\PublicSimpleException;
 
 /**
  * @Rest\RouteResource("DataSourceIntegrationBackfillHistory")
@@ -98,6 +96,44 @@ class DataSourceIntegrationBackfillHistoryController extends RestControllerAbstr
         return $this->post($request);
     }
 
+    /**
+     * update executeAt time
+     *
+     * @Rest\Post("/datasourceintegrationsbackfillhistories/{id}/update")
+     *
+     * @ApiDoc(
+     *  section = "Data Source Integration Backfill History",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param $id
+     * @param Request $request
+     * @return \UR\Model\Core\DataSourceIntegrationBackfillHistory[]
+     * @internal param Request $request
+     */
+    public function postUpdateAction($id, Request $request)
+    {
+        /** @var DataSourceIntegrationBackfillHistoryInterface $dataSourceIntegrationBackFillHistory */
+        $dataSourceIntegrationBackFillHistory = $this->one($id);
+
+        if ($request->request->has(DataSourceIntegrationBackfillHistoryInterface::FIELD_PENDING)) {
+            $pending = $request->request->get(DataSourceIntegrationBackfillHistoryInterface::FIELD_PENDING);
+            $dataSourceIntegrationBackFillHistory->setPending($pending);
+        }
+
+        if ($request->request->has(DataSourceIntegrationBackfillHistoryInterface::FIELD_EXECUTED_AT)) {
+            $lastExecuteAt = $request->request->get(DataSourceIntegrationBackfillHistoryInterface::FIELD_EXECUTED_AT);
+            $dataSourceIntegrationBackFillHistory->setExecutedAt(date_create($lastExecuteAt));
+        }
+
+        $dataSourceIntegrationBackFillHistoryManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
+        $dataSourceIntegrationBackFillHistoryManager->save($dataSourceIntegrationBackFillHistory);
+
+        return $this->view(true, Codes::HTTP_OK);
+    }
 
     /**
      * Update an existing data source integration backfill history from the submitted data or create a new ad network

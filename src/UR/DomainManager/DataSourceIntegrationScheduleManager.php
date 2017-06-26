@@ -89,15 +89,4 @@ class DataSourceIntegrationScheduleManager implements DataSourceIntegrationSched
     {
         return $this->repository->findByDataSource($dataSource);
     }
-
-    /**
-     * @inheritdoc
-     */
-    public function updateExecuteAt(DataSourceIntegrationScheduleInterface $dataSourceIntegrationSchedule, \DateTime $executedAt)
-    {
-        /**@var DataSourceIntegrationScheduleInterface $dataSourceIntegrationSchedule */
-        $dataSourceIntegrationSchedule->setExecutedAt($executedAt);
-        $dataSourceIntegrationSchedule->setIsRunning(false);
-        $this->save($dataSourceIntegrationSchedule);
-    }
 }

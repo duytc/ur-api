@@ -209,7 +209,6 @@ class BackFillScheduleCommand extends ContainerAwareCommand
 
         /** Listener will auto create instance of back fill history when edit startDate, endDate of data source integration*/
 
-        $dataSourceIntegration->setBackFill(true);
         $dataSourceIntegration->setBackFillStartDate($startDate);
         $dataSourceIntegration->setBackFillEndDate($endDate);
         $this->logger->info(

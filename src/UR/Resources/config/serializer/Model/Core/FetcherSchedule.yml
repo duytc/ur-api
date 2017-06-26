@@ -1,0 +1,12 @@
+UR\Model\Core\FetcherSchedule:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [fetcherschedule.detail, fetcherschedule.summary]
+        backFillHistory:
+            expose: true
+            groups: [fetcherschedule.detail, fetcherschedule.summary]
+        dataSourceIntegrationSchedule:
+            expose: true
+            groups: [fetcherschedule.detail, fetcherschedule.summary]

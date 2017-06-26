@@ -23,7 +23,6 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
         self::SCHEDULE_KEY_CHECK_AT_KEY_HOUR,
         self::SCHEDULE_KEY_CHECK_AT_KEY_MINUTES,
         self::SCHEDULE_KEY_CHECK_AT_KEY_UUID
-
     ];
 
     public static $SUPPORTED_SCHEDULE_CHECKED_TYPES = [
@@ -37,19 +36,11 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     protected $params;
     protected $schedule; // json_string
     protected $active;
-    protected $lastExecutedAt;
 
-    // back fill feature
-    /** @var bool */
-    protected $backFill;
     /** @var \DateTime|null */
     protected $backFillStartDate;
     /** @var \DateTime|null */
     protected $backFillEndDate;
-    /** @var bool */
-    protected $backFillExecuted;
-    /** @var bool */
-    protected $backFillForce;
 
     /** @var DataSourceInterface */
     protected $dataSource;
@@ -65,11 +56,8 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
         $this->active = true;
 
         // back fill feature
-        $this->backFill = false;
         $this->backFillStartDate = null;
         $this->backFillEndDate = null;
-        $this->backFillExecuted = false;
-        $this->backFillForce = false;
     }
 
     /**
@@ -245,42 +233,6 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     /**
      * @inheritdoc
      */
-    public function getLastExecutedAt()
-    {
-        return $this->lastExecutedAt;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setLastExecutedAt($lastExecutedAt)
-    {
-        $this->lastExecutedAt = $lastExecutedAt;
-
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function isBackFill()
-    {
-        return $this->backFill;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setBackFill($backFill)
-    {
-        $this->backFill = $backFill;
-
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function getBackFillStartDate()
     {
         return $this->backFillStartDate;
@@ -310,41 +262,6 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     public function setBackFillEndDate($backFillEndDate)
     {
         $this->backFillEndDate = $backFillEndDate;
-
-        return $this;
-    }
-    /**
-     * @inheritdoc
-     */
-    public function isBackFillExecuted()
-    {
-        return $this->backFillExecuted;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setBackFillExecuted($backFillExecuted)
-    {
-        $this->backFillExecuted = $backFillExecuted;
-
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function isBackFillForce()
-    {
-        return $this->backFillForce;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setBackFillForce($backFillForce)
-    {
-        $this->backFillForce = $backFillForce;
 
         return $this;
     }

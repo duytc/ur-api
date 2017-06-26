@@ -14,7 +14,7 @@ class DataSourceIntegrationBackfillHistoryFormType extends AbstractRoleSpecificF
         $builder
             ->add('id')
             ->add('dataSourceIntegration')
-            ->add('lastExecutedAt')
+            ->add('executedAt')
             // back fill feature
             ->add('backFillStartDate', DateType::class, array(
                 // render as a single text box
@@ -24,7 +24,7 @@ class DataSourceIntegrationBackfillHistoryFormType extends AbstractRoleSpecificF
                 // render as a single text box
                 'widget' => 'single_text',
             ))
-            ->add('isRunning');
+            ->add('pending');
 
     }
 

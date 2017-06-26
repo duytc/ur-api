@@ -88,27 +88,6 @@ interface DataSourceIntegrationInterface extends ModelInterface
     public function setActive($active);
 
     /**
-     * @return mixed
-     */
-    public function getLastExecutedAt();
-
-    /**
-     * @param mixed $lastExecutedAt
-     */
-    public function setLastExecutedAt($lastExecutedAt);
-
-    /**
-     * @return boolean
-     */
-    public function isBackFill();
-
-    /**
-     * @param boolean $backFill
-     * @return self
-     */
-    public function setBackFill($backFill);
-
-    /**
      * @return \DateTime|null
      */
     public function getBackFillStartDate();

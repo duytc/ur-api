@@ -33,6 +33,10 @@ class DateTimeUtil
         $dateInterval = new \DateInterval(sprintf('PT%dH', $hours)); // e.g PT2H = period time 2 hours
         $nextExecuteAt->add($dateInterval);
 
+        while (date_create() > $nextExecuteAt) {
+            $nextExecuteAt->add($dateInterval);
+        }
+
         return $nextExecuteAt;
     }
 
@@ -75,6 +79,11 @@ class DateTimeUtil
 
         /** Reconvert to UTC, our database store only time on UTC*/
         $nextExecuteAt->setTimezone(new \DateTimeZone('UTC'));
+
+        while (date_create() > $nextExecuteAt) {
+            $nextExecuteAt->add($dateInterval);
+        }
+
         return $nextExecuteAt;
     }
 }
