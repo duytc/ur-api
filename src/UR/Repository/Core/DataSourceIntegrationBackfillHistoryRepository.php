@@ -74,25 +74,4 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
 
         return $qb->getQuery()->getResult();
     }
-
-    /**
-     * @inheritdoc
-     */
-    public function findHistoryByStartDateEndDate($startDate, $endDate, $dataSourceIntegrationId)
-    {
-        $qb = $this->createQueryBuilder('dibh')
-            ->where('dibh.dataSourceIntegration = :dataSourceIntegrationId')
-            ->andWhere('dibh.backFillStartDate = :startDate')
-            ->setParameter('dataSourceIntegrationId', $dataSourceIntegrationId)
-            ->setParameter('startDate', $startDate);
-
-        if ($endDate instanceof \DateTime) {
-            $qb->andWhere('dibh.backFillEndDate = :endDate')
-                ->setParameter('endDate', $endDate);
-        } else {
-            $qb->andWhere('dibh.backFillEndDate is null');
-        }
-
-        return $qb->getQuery()->getResult();
-    }
 }
