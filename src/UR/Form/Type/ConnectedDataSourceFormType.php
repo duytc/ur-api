@@ -2,7 +2,6 @@
 
 namespace UR\Form\Type;
 
-use DateTime;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
@@ -13,10 +12,10 @@ use UR\Form\Behaviors\ValidateConnectedDataSourceTrait;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 
-class
-ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
+class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
 {
     use ValidateConnectedDataSourceTrait;
+
     const IS_DRY_RUN = 'isDryRun';
     const FILE_PATHS = 'filePaths';
 
@@ -39,9 +38,6 @@ ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
             ->add(self::IS_DRY_RUN, null, ['mapped' => false]);
 
         $builder->addEventListener(
-        /**
-         * @param FormEvent $event
-         */
             FormEvents::POST_SUBMIT,
             function (FormEvent $event) {
                 /** @var ConnectedDataSourceInterface $connDataSource */

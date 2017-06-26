@@ -184,18 +184,19 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         } catch (\Exception $exception) {
             $errorCode = AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_UN_EXPECTED_ERROR;
             $isImportFail = true;
-            $message = sprintf('failed to import file "%" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d, message: %s)',
-                $dataSourceEntry->getFileName(),
-                $connectedDataSource->getDataSet()->getName(),
-                $dataSourceEntry->getId(),
-                $connectedDataSource->getDataSet()->getId(),
-                $connectedDataSource->getId(),
-                $connectedDataSource->getDataSource()->getId(),
-                $exception->getMessage()
-            );
+            if ($dataSourceEntry instanceof DataSourceEntryInterface) {
+                $message = sprintf('failed to import file "%" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d, message: %s)',
+                    $dataSourceEntry->getFileName(),
+                    $connectedDataSource->getDataSet()->getName(),
+                    $dataSourceEntry->getId(),
+                    $connectedDataSource->getDataSet()->getId(),
+                    $connectedDataSource->getId(),
+                    $connectedDataSource->getDataSource()->getId(),
+                    $exception->getMessage()
+                );
+            }
             $this->logger->error($message);
         } finally {
-
             $this->logger->notice('----------------------------LOADING COMPLETED-------------------------------------------------------------');
 
             if ($isImportFail && $importHistoryEntity instanceof ImportHistoryInterface) {

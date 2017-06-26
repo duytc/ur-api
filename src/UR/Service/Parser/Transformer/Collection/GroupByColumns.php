@@ -93,6 +93,15 @@ class GroupByColumns implements CollectionTransformerInterface
                         continue;
                     }
 
+                    if (array_key_exists($groupField, $types) && $types[$groupField] == FieldType::DATE) {
+                        // normalize date in case of support partial match
+                        // the value may be in date time format but date field is date format, then after formatting date, we set time to 0
+                        $normalizedDate = $this->normalizeDate($element[$groupField], $groupField, $fromDateFormats, $mapFields, $fromDateFormat);
+                        $newElement[$groupField] = $normalizedDate->setTime(0, 0)->format(self::TEMPORARY_DATE_FORMAT);
+                        $key .= $normalizedDate->format('Y-m-d');
+                        continue;
+                    }
+
                     $key .= is_array($element[$groupField]) ? json_encode($element[$groupField], JSON_UNESCAPED_UNICODE) : $element[$groupField];
                     $newElement[$groupField] = $element[$groupField];
                 }
@@ -184,6 +193,12 @@ class GroupByColumns implements CollectionTransformerInterface
         foreach ($dateFormats as $format) {
             $dateFormat = $format[DateFormat::FORMAT_KEY];
 
+            // support partial match value
+            $isPartialMatch = array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM_WITH_PARTIAL_MATCH, $format) ? $format[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM_WITH_PARTIAL_MATCH] : false;
+            if ($isPartialMatch) {
+                $value = DateFormat::getPartialMatchValue($dateFormat, $value);
+            }
+
             if (array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $format) && $format[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM]) {
                 $dateFormat = DateFormat::convertCustomFromDateFormatToPHPDateFormat($dateFormat);
             } else {
@@ -196,6 +211,56 @@ class GroupByColumns implements CollectionTransformerInterface
             }
 
             $date->setTimezone(new DateTimeZone($timezone));
+            return $date->setTimezone(new DateTimeZone(self::DEFAULT_TIMEZONE));
+        }
+
+        throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE, 0, $groupField);
+    }
+
+    /**
+     * @param $value
+     * @param $groupField
+     * @param $fromDateFormats
+     * @param $mapFields
+     * @param $dateFormat
+     * @return DateTime
+     * @throws ImportDataException
+     */
+    private function normalizeDate($value, $groupField, $fromDateFormats, $mapFields, &$dateFormat)
+    {
+        $dateFormats = [];
+
+        if (!isset($mapFields[$groupField])) {
+            throw new RuntimeException(sprintf('Missing map field for %s', $groupField));
+        }
+
+        foreach ($fromDateFormats as $column => $formats) {
+            if ($column == $mapFields[$groupField]) {
+                $dateFormats = $formats['formats'];
+                break;
+            }
+        }
+
+        foreach ($dateFormats as $format) {
+            $dateFormat = $format[DateFormat::FORMAT_KEY];
+
+            // support partial match value
+            $isPartialMatch = array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM_WITH_PARTIAL_MATCH, $format) ? $format[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM_WITH_PARTIAL_MATCH] : false;
+            if ($isPartialMatch) {
+                $value = DateFormat::getPartialMatchValue($dateFormat, $value);
+            }
+
+            if (array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $format) && $format[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM]) {
+                $dateFormat = DateFormat::convertCustomFromDateFormatToPHPDateFormat($dateFormat);
+            } else {
+                $dateFormat = DateFormat::convertDateFormatFullToPHPDateFormat($dateFormat);
+            }
+
+            $date = DateTime::createFromFormat($dateFormat, $value);
+            if (!$date instanceof DateTime) {
+                continue;
+            }
+
             return $date->setTimezone(new DateTimeZone(self::DEFAULT_TIMEZONE));
         }
 

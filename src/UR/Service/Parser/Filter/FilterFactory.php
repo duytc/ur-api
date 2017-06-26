@@ -103,7 +103,11 @@ class FilterFactory
             $filter[DateFilter::FIELD_NAME_FILTER_KEY],
             $filter[DateFilter::START_DATE_FILTER_KEY],
             $filter[DateFilter::END_DATE_FILTER_KEY],
-            $filter[DateFilter::FORMAT_FILTER_KEY]
+            $filter[DateFilter::FORMAT_FILTER_KEY],
+            // support Partial Match,
+            // backward compatibility for old filters that do not have isPartialMatch key
+            // TODO: add migration command is better
+            array_key_exists(DateFilter::IS_PARTIAL_MATCH_KEY, $filter) ? $filter[DateFilter::IS_PARTIAL_MATCH_KEY] : false
         );
     }
 }

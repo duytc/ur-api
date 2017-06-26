@@ -56,6 +56,7 @@ trait ValidateConnectedDataSourceTrait
      * validate Filters of a connectDataSource
      *
      * @param array $connDataSourceFilters
+     * @throws Exception
      */
     public function validateFilters($connDataSourceFilters)
     {
@@ -77,7 +78,7 @@ trait ValidateConnectedDataSourceTrait
      *
      * @param DataSetInterface $dataSet
      * @param ConnectedDataSourceInterface $connDataSource
-     * @throws \Exception
+     * @throws Exception
      */
     public function validateTransforms(DataSetInterface $dataSet, ConnectedDataSourceInterface $connDataSource)
     {

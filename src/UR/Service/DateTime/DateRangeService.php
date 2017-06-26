@@ -19,15 +19,19 @@ use UR\Service\PublicSimpleException;
 
 class DateRangeService implements DateRangeServiceInterface
 {
+    /* data source date format config */
+    const IS_CUSTOM_FORMAT_DATE = 'isCustomFormatDate';
+    const IS_PARTIAL_MATCH = 'isPartialMatch';
+
     const DYNAMIC_DATE_RANGE_TYPE = 'dynamicDateRange';
     const DYNAMIC_END_DATE_TYPE = 'dynamicEndDate';
     const FIXED_DATE_RANGE_TYPE = 'fixedDateRange';
-
 
     const START_DATE_KEY = 'startDate';
     const END_DATE_KEY = 'endDate';
     const DATE_RANGE_TYPE_KEY = 'type';
 
+    /* dynamicDateRange and dynamicEndDate values */
     const THIS_MONTH = 'this month';
     const LAST_MONTH = 'last month';
     const THIS_WEEK = 'this week';
@@ -59,7 +63,7 @@ class DateRangeService implements DateRangeServiceInterface
      * @param Logger $logger
      */
     public function __construct(DataSourceManagerInterface $dataSourceManager, DataSourceEntryManagerInterface $dataSourceEntryManager,
-            DataSourceFileFactory $fileFactory, Logger $logger)
+                                DataSourceFileFactory $fileFactory, Logger $logger)
     {
         $this->dataSourceManager = $dataSourceManager;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
@@ -136,8 +140,7 @@ class DateRangeService implements DateRangeServiceInterface
         $missingDate = $this->calculateMissingDate($dates, $startDate, $endDate);
 
         $dataSource->setMissingDate(array_values($missingDate))
-            ->setDateRangeBroken(!empty($missingDate))
-        ;
+            ->setDateRangeBroken(!empty($missingDate));
 
         $this->dataSourceManager->save($dataSource);
         return true;
@@ -206,8 +209,7 @@ class DateRangeService implements DateRangeServiceInterface
                 ->setStartDate(null)
                 ->setEndDate(null)
                 ->setDateRangeBroken(null)
-                ->setDates($dates)
-            ;
+                ->setDates($dates);
 
             return false;
         }
@@ -222,8 +224,7 @@ class DateRangeService implements DateRangeServiceInterface
         $dataSourceEntry
             ->setStartDate(new DateTime(reset($dates)))
             ->setEndDate(new DateTime(end($dates)))
-            ->setDates($dates)
-        ;
+            ->setDates($dates);
 
         $missingDate = $this->calculateMissingDate($dates, $dataSourceEntry->getStartDate(), $dataSourceEntry->getEndDate());
         $dataSourceEntry->setDateRangeBroken(!empty($missingDate));
@@ -271,9 +272,38 @@ class DateRangeService implements DateRangeServiceInterface
             return null;
         }
 
-        /** Parse date by Custom date formats */
+        /*
+         * Parse date by Custom date formats and partial match
+         * formats:
+         * [
+         *     [
+         *          format: ..., // YYYY-MM-DD, ...
+         *          isCustomDateFormat: true/false,
+         *          isPartialMatch: true/false,
+         *     ]
+         * ]
+         */
         foreach ($formats as $formatArray) {
-            $format = DateFormat::getDateFormatFromArray($formatArray);
+            if (!is_array($formatArray) || !array_key_exists(DateFormat::FORMAT_KEY, $formatArray)) {
+                $format = DateFormat::DEFAULT_DATE_FORMAT_FULL;
+            } else {
+                $format = $formatArray[DateFormat::FORMAT_KEY];
+            }
+
+            // support partial match value
+            $isPartialMatch = array_key_exists(self::IS_PARTIAL_MATCH, $formatArray) ? $formatArray[self::IS_PARTIAL_MATCH] : false;
+            if ($isPartialMatch) {
+                $value = DateFormat::getPartialMatchValue($format, $value);
+            }
+
+            // support custom date format
+            $isCustomDateFormat = array_key_exists(self::IS_CUSTOM_FORMAT_DATE, $formatArray) ? $formatArray[self::IS_CUSTOM_FORMAT_DATE] : false;
+            if ($isCustomDateFormat) {
+                $format = DateFormat::convertCustomFromDateFormatToPHPDateFormat($format);
+            } else {
+                $format = DateFormat::convertDateFormatFullToPHPDateFormat($format);
+            }
+
             $date = date_create_from_format($format, $value);
             if ($date instanceof DateTime) {
                 break;
@@ -299,7 +329,7 @@ class DateRangeService implements DateRangeServiceInterface
         }
 
         if ($dateRange[self::DATE_RANGE_TYPE_KEY] == self::DYNAMIC_DATE_RANGE_TYPE) {
-            switch($dateRange[self::START_DATE_KEY]) {
+            switch ($dateRange[self::START_DATE_KEY]) {
                 case self::THIS_WEEK:
                     return array(
                         self::START_DATE_KEY => DateTime::createFromFormat('Y-m-d', date('Y-m-d', strtotime(self::THIS_WEEK))),
@@ -330,7 +360,7 @@ class DateRangeService implements DateRangeServiceInterface
         }
 
         if ($dateRange[self::DATE_RANGE_TYPE_KEY] == self::DYNAMIC_END_DATE_TYPE) {
-            switch($dateRange[self::END_DATE_KEY]) {
+            switch ($dateRange[self::END_DATE_KEY]) {
                 case self::YESTERDAY:
                     return array(
                         self::START_DATE_KEY => DateTime::createFromFormat('Y-m-d', $dateRange[self::START_DATE_KEY]),

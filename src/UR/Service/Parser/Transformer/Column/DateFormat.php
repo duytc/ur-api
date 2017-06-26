@@ -3,6 +3,7 @@
 namespace UR\Service\Parser\Transformer\Column;
 
 use DateTime;
+use DateTimeZone;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Model\Core\AlertInterface;
@@ -17,6 +18,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     const FROM_KEY = 'from';
     const TO_KEY = 'to';
     const IS_CUSTOM_FORMAT_DATE_FROM = 'isCustomFormatDateFrom';
+    const IS_CUSTOM_FORMAT_DATE_FROM_WITH_PARTIAL_MATCH = 'isPartialMatch';
     const DEFAULT_DATE_FORMAT = 'Y-m-d'; // in PHP
     const DEFAULT_DATETIME_FORMAT = 'Y-m-d H:i:s'; // in PHP
     const DEFAULT_DATE_FORMAT_FULL = 'YYYY-MM-DD'; // full text
@@ -119,20 +121,27 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         foreach ($this->fromDateFormats as $fromDateFormat) {
             //get from date format
             $fromFormat = array_key_exists(self::FORMAT_KEY, $fromDateFormat) ? $fromDateFormat[self::FORMAT_KEY] : null;
+
+            // support partial match value
+            $isPartialMatch = array_key_exists(self::IS_CUSTOM_FORMAT_DATE_FROM_WITH_PARTIAL_MATCH, $fromDateFormat) ? $fromDateFormat[self::IS_CUSTOM_FORMAT_DATE_FROM_WITH_PARTIAL_MATCH] : false;
+            if ($isPartialMatch) {
+                $value = self::getPartialMatchValue($fromFormat, $value);
+            }
+
             if (array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $fromDateFormat) && $fromDateFormat[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM]) {
                 $fromFormat = self::convertCustomFromDateFormatToPHPDateFormat($fromFormat);
             } else {
-                $fromFormat = self::convertCustomFromDateFormatToPHPDateFormat($fromFormat);
+                $fromFormat = self::convertDateFormatFullToPHPDateFormat($fromFormat);
             }
 
-            $date = DateTime::createFromFormat($fromFormat, $value, new \DateTimeZone($this->timezone));
+            $date = DateTime::createFromFormat('!' . $fromFormat, $value, new DateTimeZone($this->timezone)); // auto set time (H,i,s) to 0 if not available
 
             if (!$date instanceof DateTime) {
                 continue;
             }
 
-            $date->setTimezone(new \DateTimeZone($this->timezone));
-            $date->setTimezone(new \DateTimeZone(self::DEFAULT_TIMEZONE));
+            $date->setTimezone(new DateTimeZone($this->timezone));
+            $date->setTimezone(new DateTimeZone(self::DEFAULT_TIMEZONE));
             $resultDate = $date;
         }
 
@@ -197,7 +206,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     }
 
     /**
-     * @param array $fromDateFormats, such as [isCustomFormatDateFrom => true/false, format => '...'] where format is full text such as YYYY/MM/DD, ... , not PHP format (Y/m/d, ...)
+     * @param array $fromDateFormats , such as [isCustomFormatDateFrom => true/false, format => '...'] where format is full text such as YYYY/MM/DD, ... , not PHP format (Y/m/d, ...)
      */
     public function setFromDateFormats(array $fromDateFormats)
     {
@@ -279,6 +288,75 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     }
 
     /**
+     * getPartialMatchValue
+     * e.g:
+     * - dateFormat = YYYY-MM-DD and value = 2017-06-23 14:02:00+0000 => partial match value = 2017-06-23
+     * - dateFormat = YYYY-MM-DD HH:mm:ss and value = 2017-06-23 14:02:00+0000 => partial match value = 2017-06-23 14:02:00
+     *
+     * @param $dateFormat
+     * @param $value
+     * @return mixed|string original value if input invalid, null if not matched, else return the partialMatchedValue
+     */
+    public static function getPartialMatchValue($dateFormat, $value)
+    {
+        if (!is_string($dateFormat) || !is_string($value)) {
+            return $value;
+        }
+
+        $partialMatchedValue = preg_replace('/^(' . self::getPartialMatchPatternFromDateFormat($dateFormat) . ')(.*)$/', '\1', $value);
+
+        return (!$partialMatchedValue) ? null : $partialMatchedValue;
+    }
+
+    /**
+     * get partial match pattern from date format
+     * e.g:
+     * - YYYY-MM-DD HH:mm:ss P => \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+\-]?\d{2}:\d{2}
+     *
+     * @param string $dateFormat
+     * @return string|bool false if dateFormat is not a string
+     */
+    public static function getPartialMatchPatternFromDateFormat($dateFormat)
+    {
+        if (!is_string($dateFormat)) {
+            return false;
+        }
+
+        $convertedPartialMatch = preg_quote($dateFormat, "/"); // these are supported characters in custom format
+
+        // important: keep replacing MMMM before MMM, MMM before MM, MM before M and so on...
+        $convertedPartialMatch = str_replace('YYYY', '\d{4}', $convertedPartialMatch); // 4 digits
+        $convertedPartialMatch = str_replace('YY', '\d{2}', $convertedPartialMatch); // 2 digits
+
+        $convertedPartialMatch = str_replace('MMMM', '[a-zA-Z]{4}', $convertedPartialMatch); // full name
+        $convertedPartialMatch = str_replace('MMM', '[a-zA-Z]{3}', $convertedPartialMatch); // 3 characters
+        $convertedPartialMatch = str_replace('MM', '\d{2}', $convertedPartialMatch); // 2 characters
+        if (strpos($dateFormat, 'MMM') === false) { // need check if MMM is replaced by M before
+            $convertedPartialMatch = str_replace('M', '\d{1}', $convertedPartialMatch); // 1 character without leading zeros
+        }
+
+        $convertedPartialMatch = str_replace('DD', '\d{2}', $convertedPartialMatch); // 2 characters
+        if (strpos($dateFormat, 'DD') === false) { // need check if DD is replaced by D before
+            $convertedPartialMatch = str_replace('D', '\d{1}', $convertedPartialMatch); // 1 character without leading zeros
+        }
+
+        // replacing HH:mm:ss to H:i:s
+        $convertedPartialMatch = str_replace('HH', '\d{2}', $convertedPartialMatch); // hour
+        $convertedPartialMatch = str_replace('mm', '\d{2}', $convertedPartialMatch); // min
+        $convertedPartialMatch = str_replace('ss', '\d{2}', $convertedPartialMatch); // sec
+
+        $convertedPartialMatch = str_replace('e', '\w', $convertedPartialMatch); // PST
+        $convertedPartialMatch = str_replace('O', '[+\-]?\d{4}', $convertedPartialMatch); // +0000
+        $convertedPartialMatch = str_replace('P', '[+\-]?\d{2}:\d{2}', $convertedPartialMatch); // +00:00
+        $convertedPartialMatch = str_replace('T', '\w', $convertedPartialMatch); // GMT
+
+        // trim space at the end
+        $convertedPartialMatch = trim($convertedPartialMatch);
+
+        return $convertedPartialMatch;
+    }
+
+    /**
      * convert full DateFormat To PHP format
      * e.g:
      * - YYYY.MM.DD => Y.m.d
@@ -338,28 +416,29 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
     /**
      * @param $value
      * @param $column
-     * @param $connectedDataSource
+     * @param ConnectedDataSourceInterface $connectedDataSource
      * @return string
      */
-    public static function getDateFromDateTime($value, $column = null, $connectedDataSource = null)
+    public static function getDateFromDateTime($value, $column = null, ConnectedDataSourceInterface $connectedDataSource)
     {
-        $timeZone = self::getTimeZoneOfDateField($column, $connectedDataSource);
-        if (empty($timeZone)) {
-            $timeZone = DateFormat::DEFAULT_TIMEZONE;
-        }
-
-        foreach (self::SUPPORTED_DATE_FORMATS as $format) {
-            $dateTime = date_create_from_format($format, $value, new \DateTimeZone($timeZone));
-            if ($dateTime) {
-                $dateTime->setTimezone(new \DateTimeZone(self::DEFAULT_TIMEZONE));
-                return $dateTime->format(self::DEFAULT_DATE_FORMAT);
-            }
-        }
-
-        /** For user provided datetime format */
-        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-            return '';
-        }
+        // temp lock code, TODO: remove =============================
+//        $timeZone = self::getTimeZoneOfDateField($column, $connectedDataSource);
+//        if (empty($timeZone)) {
+//            $timeZone = DateFormat::DEFAULT_TIMEZONE;
+//        }
+//
+//        // very bad code here. Potential case is Y-m-d and Y-d-m => the date is not know which format is set.
+//        // TODO: important!!! Find other way for this. Use date format from connected data source config
+//        foreach (self::SUPPORTED_DATE_FORMATS as $format) {
+//            $dateTime = DateTime::createFromFormat($format, $value, new \DateTimeZone($timeZone));
+//            if ($dateTime) {
+//                $dateTime->setTimezone(new \DateTimeZone(self::DEFAULT_TIMEZONE));
+//                return $dateTime->format(self::DEFAULT_DATE_FORMAT);
+//            }
+//        }
+//
+//        /** For user provided datetime format */
+        // end of temp lock code, TODO: remove ======================= */
 
         $mapFields = $connectedDataSource->getMapFields();
         if (!array_key_exists($column, $mapFields)) {
@@ -369,30 +448,18 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
 
         $transforms = $connectedDataSource->getTransforms();
         foreach ($transforms as $transform) {
-            if (!array_key_exists(CollectionTransformerInterface::TYPE_KEY, $transform)) {
-                continue;
-            }
-            if ($transform[CollectionTransformerInterface::TYPE_KEY] != ColumnTransformerInterface::DATE_FORMAT) {
-                continue;
-            }
-
-            if (!array_key_exists(CollectionTransformerInterface::FIELD_KEY, $transform)) {
-                continue;
-            }
-            if ($transform[CollectionTransformerInterface::FIELD_KEY] != $field) {
+            if (!array_key_exists(ColumnTransformerInterface::TYPE_KEY, $transform)
+                || $transform[ColumnTransformerInterface::TYPE_KEY] != ColumnTransformerInterface::DATE_FORMAT
+                || !array_key_exists(ColumnTransformerInterface::FIELD_KEY, $transform)
+                || $transform[ColumnTransformerInterface::FIELD_KEY] != $field
+                || !array_key_exists(self::FROM_KEY, $transform)
+            ) {
                 continue;
             }
 
-            if (!array_key_exists(self::FROM_KEY, $transform)) {
-                continue;
-            }
-
-            if (array_key_exists(GroupByTransform::TIMEZONE_KEY, $transform)) {
-                $timeZone = $transform[GroupByTransform::TIMEZONE_KEY];
-            }
-
-            if (empty($timeZone)) {
-                $timeZone = self::DEFAULT_TIMEZONE;
+            $timezone = array_key_exists(self::TIMEZONE_KEY, $transform) ? $transform[self::TIMEZONE_KEY] : self::DEFAULT_TIMEZONE;
+            if (empty($timezone)) {
+                $timezone = self::DEFAULT_TIMEZONE;
             }
 
             $fromFormats = $transform[self::FROM_KEY];
@@ -402,22 +469,39 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
                     continue;
                 }
 
-                if (array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $fromFormat) && $fromFormat[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM]) {
-                    $format = self::convertCustomFromDateFormatToPHPDateFormat($fromFormat[self::FORMAT_KEY]);
-                } else {
-                    $format = self::convertDateFormatFullToPHPDateFormat($fromFormat[self::FORMAT_KEY]);
+                //get from date format
+                $format = array_key_exists(self::FORMAT_KEY, $fromFormat) ? $fromFormat[self::FORMAT_KEY] : null;
+
+                // support partial match value
+                $isPartialMatch = array_key_exists(self::IS_CUSTOM_FORMAT_DATE_FROM_WITH_PARTIAL_MATCH, $fromFormat) ? $fromFormat[self::IS_CUSTOM_FORMAT_DATE_FROM_WITH_PARTIAL_MATCH] : false;
+                if ($isPartialMatch) {
+                    $value = self::getPartialMatchValue($format, $value);
                 }
 
-                $dateTime = date_create_from_format($format, $value, new \DateTimeZone($timeZone));
+                if (array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $fromFormat) && $fromFormat[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM]) {
+                    $format = self::convertCustomFromDateFormatToPHPDateFormat($format);
+                } else {
+                    $format = self::convertDateFormatFullToPHPDateFormat($format);
+                }
+
+                $dateTime = date_create_from_format($format, $value, new DateTimeZone($timezone));
                 if ($dateTime) {
-                    $dateTime->setTimezone(new \DateTimeZone(self::DEFAULT_TIMEZONE));
+                    $dateTime->setTimezone(new DateTimeZone(self::DEFAULT_TIMEZONE));
                     return $dateTime->format(self::DEFAULT_DATE_FORMAT);
                 }
             }
         }
+
         return '';
     }
 
+    /**
+     * TODO: REMOVE. Very bad code!!!
+     *
+     * @param null $column
+     * @param null $connectedDataSource
+     * @return string
+     */
     public static function getTimeZoneOfDateField($column = null, $connectedDataSource = null)
     {
         /** For user provided datetime format */
@@ -433,21 +517,12 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
 
         $transforms = $connectedDataSource->getTransforms();
         foreach ($transforms as $transform) {
-            if (!array_key_exists(CollectionTransformerInterface::TYPE_KEY, $transform)) {
-                continue;
-            }
-            if ($transform[CollectionTransformerInterface::TYPE_KEY] != ColumnTransformerInterface::DATE_FORMAT) {
-                continue;
-            }
-
-            if (!array_key_exists(CollectionTransformerInterface::FIELD_KEY, $transform)) {
-                continue;
-            }
-            if ($transform[CollectionTransformerInterface::FIELD_KEY] != $field) {
-                continue;
-            }
-
-            if (!array_key_exists(self::FROM_KEY, $transform)) {
+            if (!array_key_exists(CollectionTransformerInterface::TYPE_KEY, $transform)
+                || $transform[CollectionTransformerInterface::TYPE_KEY] != ColumnTransformerInterface::DATE_FORMAT
+                || !array_key_exists(CollectionTransformerInterface::FIELD_KEY, $transform)
+                || $transform[CollectionTransformerInterface::FIELD_KEY] != $field
+                || !array_key_exists(self::FROM_KEY, $transform)
+            ) {
                 continue;
             }
 
@@ -455,36 +530,8 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
                 return $transform[GroupByTransform::TIMEZONE_KEY];
             }
         }
+
         return self::DEFAULT_TIMEZONE;
-    }
-
-    /**
-     * @param $formatArray
-     * @return bool|string
-     */
-    public static function getDateFormatFromArray($formatArray)
-    {
-        if (!is_array($formatArray)) {
-            return self::DEFAULT_DATETIME_FORMAT;
-        }
-
-        if (!array_key_exists(self::FORMAT_KEY, $formatArray)) {
-            return self::DEFAULT_DATETIME_FORMAT;
-        }
-
-        $format = $formatArray[self::FORMAT_KEY];
-
-        if (!array_key_exists('isCustomFormatDate', $formatArray)) {
-            return $format;
-        }
-
-        $isCustomDateFormat = $formatArray['isCustomFormatDate'];
-
-        if ($isCustomDateFormat) {
-            $format = self::convertCustomFromDateFormatToPHPDateFormat($format);
-        }
-
-        return $format;
     }
 
     /**

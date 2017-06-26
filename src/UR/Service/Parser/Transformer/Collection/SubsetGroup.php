@@ -4,6 +4,7 @@
 namespace UR\Service\Parser\Transformer\Collection;
 
 
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSet\FieldType;
@@ -110,7 +111,7 @@ class SubsetGroup implements CollectionTransformerInterface
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @return string
      */
-    protected function getJoinKey(array $columns, array $row, $connectedDataSource)
+    protected function getJoinKey(array $columns, array $row, ConnectedDataSourceInterface $connectedDataSource)
     {
         $data = [];
 
@@ -118,9 +119,9 @@ class SubsetGroup implements CollectionTransformerInterface
         foreach ($columns as $column) {
             $fieldType = $this->getFieldType($column, $connectedDataSource);
             if (isset($row[$column])) {
-                if ($fieldType == FieldType::DATETIME) {
-                    $date = \DateTime::createFromFormat(GroupByColumns::TEMPORARY_DATE_FORMAT, $row[$column]);
-                    if ($date instanceof \DateTime) {
+                if ($fieldType == FieldType::DATETIME || $fieldType == FieldType::DATE) { // include format type DATE because now support partial match
+                    $date = DateTime::createFromFormat(GroupByColumns::TEMPORARY_DATE_FORMAT, $row[$column]);
+                    if ($date instanceof DateTime) {
                         $data[] = $date->format(DateFormat::DEFAULT_DATE_FORMAT);
                         continue;
                     }
@@ -178,12 +179,8 @@ class SubsetGroup implements CollectionTransformerInterface
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @return string
      */
-    private function getFieldType($fieldFromFile, $connectedDataSource)
+    private function getFieldType($fieldFromFile, ConnectedDataSourceInterface $connectedDataSource)
     {
-        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-            return null;
-        }
-
         $mapFields = $connectedDataSource->getMapFields();
         if (!array_key_exists($fieldFromFile, $mapFields)) {
             return null;

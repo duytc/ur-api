@@ -105,11 +105,6 @@ class ParsingFileService
 
         $rows = array_values($rows);
 
-//        /* adding hidden column __report_date for files received via integration */
-//        if ($dataSourceEntry->getReceivedVia() === DataSourceEntryInterface::RECEIVED_VIA_INTEGRATION) {
-//            $this->addExtraColumnsAndRowsDataForIntegrationEntry($columnsInFile, $rows, $dataSourceEntryMetadata);
-//        }
-
         /* mapping field */
         $this->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $columnsInFile);
         if (count($this->parserConfig->getAllColumnMappings()) === 0) {
@@ -187,16 +182,6 @@ class ParsingFileService
                 continue;
             }
 
-            // if field is mapped get date format from transform
-//            if ($filter[ColumnFilterInterface::FIELD_TYPE_FILTER_KEY] === FieldType::DATE) {
-//                $mapFields = $connectedDataSource->getMapFields();
-//
-//                if (array_key_exists($filter[ColumnFilterInterface::FIELD_NAME_FILTER_KEY], $mapFields)) {
-//                    $format = $this->getFormatDateFromTransform($connectedDataSource, $mapFields[$filter[ColumnFilterInterface::FIELD_NAME_FILTER_KEY]]);
-//                    $filter[DateFilter::FORMAT_FILTER_KEY] = $format;
-//                }
-//            }
-
             $filterObject = $filterFactory->getFilter($filter);
             if ($filterObject === null) {
                 continue;
@@ -205,23 +190,6 @@ class ParsingFileService
             $filterObject->validate();
             $parserConfig->addFiltersColumn($filterObject->getField(), $filterObject);
         }
-    }
-
-    /**
-     * @param ConnectedDataSourceInterface $connectedDataSource
-     * @param $field
-     * @return null
-     */
-    private function getFormatDateFromTransform(ConnectedDataSourceInterface $connectedDataSource, $field)
-    {
-        $transforms = $connectedDataSource->getTransforms();
-        foreach ($transforms as $transform) {
-            if ($transform[DateFormat::FIELD_KEY] === $field) {
-                return $transform[DateFormat::FROM_KEY];
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -555,10 +523,10 @@ class ParsingFileService
 
     /**
      * @param $rows
-     * @param $connectedDataSource
+     * @param ConnectedDataSourceInterface|null $connectedDataSource
      * @return array
      */
-    private function removeNullDateTimeRows($rows, $connectedDataSource)
+    private function removeNullDateTimeRows($rows, $connectedDataSource = null)
     {
         if (!is_array($rows)) {
             return [];
