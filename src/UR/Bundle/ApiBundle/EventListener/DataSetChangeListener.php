@@ -2,8 +2,10 @@
 
 namespace UR\Bundle\ApiBundle\EventListener;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
+use UR\Bundle\ApiBundle\Behaviors\CalculateMetricsAndDimensionsTrait;
 use UR\Bundle\ApiBundle\Behaviors\UpdateReportViewTrait;
 use UR\Entity\Core\ReportView;
 use UR\Entity\Core\ReportViewDataSet;
@@ -63,7 +65,7 @@ class DataSetChangeListener
             $reportViews = $reportViewRepository->getReportViewThatUseDataSet($dataSet);
 			/** @var ReportViewInterface $reportView */
 			foreach($reportViews as $reportView) {
-				$result = $this->refreshSingleReportView($reportView, $dataSet, $reportViewDataSetRepository);
+				$result = $this->refreshSingleReportView($reportView, $dataSet, $reportViewDataSetRepository, $em);
 
 				$reportView->setDimensions($result[self::DIMENSIONS_KEY]);
 				$reportView->setMetrics($result[self::METRICS_KEY]);
@@ -84,13 +86,17 @@ class DataSetChangeListener
 	 * @param ReportViewInterface $reportView
 	 * @param DataSetInterface $changedDataSet
 	 * @param ReportViewDataSetRepositoryInterface $reportViewDataSetRepository
+	 * @param EntityManagerInterface $em
 	 * @return array
 	 */
-	protected function refreshSingleReportView(ReportViewInterface $reportView, DataSetInterface $changedDataSet, ReportViewDataSetRepositoryInterface $reportViewDataSetRepository)
+	protected function refreshSingleReportView(ReportViewInterface $reportView, DataSetInterface $changedDataSet,
+		   ReportViewDataSetRepositoryInterface $reportViewDataSetRepository, EntityManagerInterface $em)
 	{
 		//calculate metrics
 		$metrics = $this->getMetrics($changedDataSet);
+		$updatedMetrics = $this->removeDimensionMetricSuffix($metrics);
 		$dimensions = $this->getDimensions($changedDataSet);
+		$updatedDimensions = $this->removeDimensionMetricSuffix($dimensions);
 		$fieldTypes = $reportView->getFieldTypes();
 		$reportViewDataSets = $reportViewDataSetRepository->getByReportView($reportView);
 
@@ -98,6 +104,9 @@ class DataSetChangeListener
 		foreach($reportViewDataSets as $reportViewDataSet) {
 			if ($reportViewDataSet->getDataSet()->getId() === $changedDataSet->getId()) {
 				$fieldTypes = $this->getFieldTypes($changedDataSet, $fieldTypes);
+				$reportViewDataSet->setDimensions($updatedDimensions);
+				$reportViewDataSet->setMetrics($updatedMetrics);
+				$em->merge($reportViewDataSet);
 				continue;
 			}
 
@@ -225,5 +234,13 @@ class DataSetChangeListener
 		}
 
 		return $fieldTypes;
+	}
+
+
+	protected function removeDimensionMetricSuffix(array $dimensionOrMetrics)
+	{
+		return array_map(function($dimensionOrMetric) {
+			return preg_replace('/^(.*)_(\d+)$/', '$1', $dimensionOrMetric);
+		},$dimensionOrMetrics);
 	}
 }
