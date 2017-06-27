@@ -106,7 +106,14 @@ class CountNumberOfChangesWhenConnectedDataSourceChangeListener
             }
 
             $md = $em->getClassMetadata(DataSet::class);
-            $uow->recomputeSingleEntityChangeSet($md, $dataSet);
+            try {
+                $uow->recomputeSingleEntityChangeSet($md, $dataSet);
+            } catch (\Exception $e) {
+                // try recompute date set may not done if data set is deleted before.
+                // when data set is already deleted before, this update is not need
+                // $e is ORMInvalidArgumentException If the passed entity is not MANAGED,
+                // or other exception
+            }
         }
 
         $this->deletingConnectedDataSources = [];
