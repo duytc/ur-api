@@ -2,11 +2,12 @@
 
 namespace UR\Service\DateTime;
 
+use DateTimeZone;
 use Doctrine\ORM\EntityManagerInterface;
+use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Entity\Core\DataSourceIntegrationSchedule;
 use UR\Model\Core\DataSourceIntegration;
 use UR\Model\Core\DataSourceIntegrationInterface;
-use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 
 class NextExecutedAt
 {
@@ -39,10 +40,7 @@ class NextExecutedAt
 
         // update to dataSourceIntegration
         $dataSourceIntegration->setSchedule($scheduleSetting);
-        $lastExecuted = $this->getLastExecutedFromDataSourceIntegration($dataSourceIntegration);
-
-        $dateInterval = new \DateInterval(sprintf('PT%dH', 48)); // e.g PT2H = period time 24 hours
-        $lastExecuted->sub($dateInterval);
+        $lastExecuted = date_create('now', new DateTimeZone(GroupByTransform::DEFAULT_TIMEZONE));
 
         $checkType = $scheduleSetting[DataSourceIntegration::SCHEDULE_KEY_CHECKED];
         $checkValue = $scheduleSetting[$checkType];
@@ -123,33 +121,5 @@ class NextExecutedAt
     private function getUUid()
     {
         return bin2hex(random_bytes(18));
-    }
-
-    /**
-     * @param DataSourceIntegrationInterface $dataSourceIntegration
-     * @return \DateTime
-     */
-    private function getLastExecutedFromDataSourceIntegration(DataSourceIntegrationInterface $dataSourceIntegration)
-    {
-        /** Avoid error when create data source with integration */
-        if ($dataSourceIntegration->getId() == null) {
-            return date_create('yesterday');
-        }
-
-        $dataSource = $dataSourceIntegration->getDataSource();
-        $dataSourceIntegrationScheduleRepository = $this->em->getRepository(DataSourceIntegrationSchedule::class);
-        $oldSchedules = $dataSourceIntegrationScheduleRepository->findByDataSource($dataSource);
-
-        foreach ($oldSchedules as $schedule) {
-            if (!$schedule instanceof DataSourceIntegrationScheduleInterface) {
-                continue;
-            }
-
-            if ($schedule->getExecutedAt() instanceof \DateTime) {
-                return $schedule->getExecutedAt();
-            }
-        }
-
-        return date_create();
     }
 }

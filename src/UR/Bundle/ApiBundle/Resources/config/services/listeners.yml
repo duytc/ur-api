@@ -108,7 +108,6 @@ services:
             - '@ur.service.date_time.next_executed_at'
         tags:
             - { name: doctrine.event_listener, event: prePersist }
-            - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: postFlush }
 
     ur_api.event_listener.update_back_fill_executed_for_data_source_integration_listener:

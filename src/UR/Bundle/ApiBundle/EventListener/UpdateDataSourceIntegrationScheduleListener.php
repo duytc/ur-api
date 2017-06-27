@@ -2,15 +2,9 @@
 
 namespace UR\Bundle\ApiBundle\EventListener;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
-use Doctrine\ORM\Event\PreUpdateEventArgs;
-use UR\Entity\Core\DataSourceIntegrationSchedule;
-use UR\Model\Core\DataSourceIntegration;
 use UR\Model\Core\DataSourceIntegrationInterface;
-use UR\Model\Core\DataSourceIntegrationScheduleInterface;
-use UR\Service\DateTime\DateTimeUtil;
 use UR\Service\DateTime\NextExecutedAt;
 
 class UpdateDataSourceIntegrationScheduleListener
@@ -34,31 +28,6 @@ class UpdateDataSourceIntegrationScheduleListener
         $this->em = $args->getEntityManager();
         $dataSourceIntegration = $args->getEntity();
 
-        if (!$dataSourceIntegration instanceof DataSourceIntegrationInterface) {
-            return;
-        }
-
-        // update all dataSourceIntegrationSchedules
-        $dataSourceIntegration = $this->nextExecutedAt->updateDataSourceIntegrationSchedule($dataSourceIntegration, $args->getEntityManager());
-
-        // add to $updateDataSourceIntegrations
-        $this->updateDataSourceIntegrations[] = $dataSourceIntegration;
-    }
-
-    /**
-     * @param PreUpdateEventArgs $args
-     */
-    public function preUpdate(PreUpdateEventArgs $args)
-    {
-        $this->em = $args->getEntityManager();
-        // only do encrypt if params changed
-        if ($args->hasChangedField('schedule') || $args->hasChangedField('executedAt')) {
-            // Continue
-        } else {
-            return;
-        }
-
-        $dataSourceIntegration = $args->getEntity();
         if (!$dataSourceIntegration instanceof DataSourceIntegrationInterface) {
             return;
         }
