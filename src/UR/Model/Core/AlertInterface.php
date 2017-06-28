@@ -35,6 +35,7 @@ interface AlertInterface extends ModelInterface
 
     const ALERT_CODE_BROWSER_AUTOMATION_LOGIN_FAIL = 2001;
     const ALERT_CODE_BROWSER_AUTOMATION_TIME_OUT = 2002;
+    const ALERT_CODE_BROWSER_AUTOMATION_PASSWORD_EXPIRY = 2003;
 
     /**
      * @return mixed
