@@ -23,15 +23,6 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
             ->add('integration')
             ->add('params')
             ->add('schedule')
-            // back fill feature
-            ->add('backFillStartDate', DateType::class, array(
-                // render as a single text box
-                'widget' => 'single_text',
-            ))
-            ->add('backFillEndDate', DateType::class, array(
-                // render as a single text box
-                'widget' => 'single_text',
-            ))
             ->add('active');
 
         $builder->addEventListener(
@@ -50,11 +41,6 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
 
                 if (!$this->validateScheduleSetting($dataSourceIntegration->getSchedule())) {
                     $form->get('schedule')->addError(new FormError('schedule setting invalid'));
-                    return;
-                }
-
-                // validate alert setting if has
-                if ($this->validateBackFillSetting($dataSourceIntegration, $form)) {
                     return;
                 }
             }
@@ -154,42 +140,6 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
         // validate checked vs existing key
         if (!in_array($checked, $schedule)) {
             return false; // required key match for checked value is not existed
-        }
-
-        return true;
-    }
-
-    /**
-     * validateBackFillSetting
-     *
-     * @param DataSourceIntegrationInterface $dataSourceIntegration
-     * @param FormInterface $form
-     * @return bool
-     */
-    private function validateBackFillSetting(DataSourceIntegrationInterface $dataSourceIntegration, FormInterface $form)
-    {
-        if ($dataSourceIntegration->getBackFillStartDate() == null && $dataSourceIntegration->getBackFillEndDate() == null) {
-            return true;
-        }
-
-        if (null == $dataSourceIntegration->getBackFillStartDate()) {
-            $form->get('backFillStartDate')->addError(new FormError('missing backFillStartDate when backFill is enabled'));
-            return false;
-        }
-
-        if ($dataSourceIntegration->getBackFillStartDate() > date_create()) {
-            $form->get('backFillStartDate')->addError(new FormError('backFillStartDate can not greater than today'));
-            return false;
-        }
-
-        if ($dataSourceIntegration->getBackFillEndDate() != null && $dataSourceIntegration->getBackFillEndDate() > date_create()) {
-            $form->get('backFillEndDate')->addError(new FormError('backFillEndDate can not greater than today'));
-            return false;
-        }
-
-        if ($dataSourceIntegration->getBackFillStartDate() > $dataSourceIntegration->getBackFillEndDate()) {
-            $form->get('backFillStartDate')->addError(new FormError('backFillStartDate can not greater than backFillEndDate'));
-            return false;
         }
 
         return true;

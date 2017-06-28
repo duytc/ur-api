@@ -15,10 +15,6 @@ class DataSourceIntegration extends DataSourceIntegrationModel
     protected $schedule;
     protected $active;
 
-    // back fill feature
-    protected $backFillStartDate;
-    protected $backFillEndDate;
-
     /** @var DataSourceInterface */
     protected $dataSource;
 

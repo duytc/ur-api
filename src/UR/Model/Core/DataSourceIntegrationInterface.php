@@ -88,28 +88,6 @@ interface DataSourceIntegrationInterface extends ModelInterface
     public function setActive($active);
 
     /**
-     * @return \DateTime|null
-     */
-    public function getBackFillStartDate();
-
-    /**
-     * @param \DateTime|null $backFillStartDate
-     * @return self
-     */
-    public function setBackFillStartDate($backFillStartDate);
-
-    /**
-     * @return \DateTime|null
-     */
-    public function getBackFillEndDate();
-
-    /**
-     * @param \DateTime|null $backFillEndDate
-     * @return self
-     */
-    public function setBackFillEndDate($backFillEndDate);
-
-    /**
      * @return array|Collection|DataSourceIntegrationScheduleInterface[]
      */
     public function getDataSourceIntegrationSchedules();

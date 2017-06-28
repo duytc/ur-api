@@ -37,11 +37,6 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     protected $schedule; // json_string
     protected $active;
 
-    /** @var \DateTime|null */
-    protected $backFillStartDate;
-    /** @var \DateTime|null */
-    protected $backFillEndDate;
-
     /** @var DataSourceInterface */
     protected $dataSource;
 
@@ -54,10 +49,6 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     public function __construct()
     {
         $this->active = true;
-
-        // back fill feature
-        $this->backFillStartDate = null;
-        $this->backFillEndDate = null;
     }
 
     /**
@@ -226,42 +217,6 @@ class DataSourceIntegration implements DataSourceIntegrationInterface
     public function setActive($active)
     {
         $this->active = $active;
-
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getBackFillStartDate()
-    {
-        return $this->backFillStartDate;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setBackFillStartDate($backFillStartDate)
-    {
-        $this->backFillStartDate = $backFillStartDate;
-
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getBackFillEndDate()
-    {
-        return $this->backFillEndDate;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setBackFillEndDate($backFillEndDate)
-    {
-        $this->backFillEndDate = $backFillEndDate;
 
         return $this;
     }

@@ -12,6 +12,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\DataSourceIntegrationBackfillHistoryManagerInterface;
 use UR\DomainManager\DataSourceIntegrationManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
+use UR\Entity\Core\DataSourceIntegrationBackfillHistory;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
@@ -207,10 +208,11 @@ class BackFillScheduleCommand extends ContainerAwareCommand
             return false;
         }
 
-        /** Listener will auto create instance of back fill history when edit startDate, endDate of data source integration*/
+        $backFillHistory = new DataSourceIntegrationBackfillHistory();
+        $backFillHistory->setDataSourceIntegration($dataSourceIntegration);
+        $backFillHistory->setBackFillStartDate($startDate);
+        $backFillHistory->setBackFillEndDate($endDate);
 
-        $dataSourceIntegration->setBackFillStartDate($startDate);
-        $dataSourceIntegration->setBackFillEndDate($endDate);
         $this->logger->info(
             sprintf('Create new back fill history, data source %s (id = %s), startDate %s, endDate %s',
                 $dataSourceIntegration->getDataSource()->getName(),
@@ -219,7 +221,7 @@ class BackFillScheduleCommand extends ContainerAwareCommand
                 $endDate->format(DateFormat::DEFAULT_DATE_FORMAT)
             ));
 
-        $this->dataSourceIntegrationManager->save($dataSourceIntegration);
+        $this->backFillHistoryManager->save($backFillHistory);
 
         return true;
     }

@@ -29,15 +29,6 @@ UR\Entity\Core\DataSourceIntegration:
         active:
             expose: true
             groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
-        # back fill feature
-        backFillStartDate:
-            expose: true
-            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
-            type: DateTime<'Y-m-d'>
-        backFillEndDate:
-            expose: true
-            groups: [dataSourceIntegration.detail, dataSourceIntegration.summary, dataSourceIntegration.bySchedule]
-            type: DateTime<'Y-m-d'>
         dataSourceIntegrationSchedules:
             expose: true
             groups: [dataSourceIntegration.bySchedule]

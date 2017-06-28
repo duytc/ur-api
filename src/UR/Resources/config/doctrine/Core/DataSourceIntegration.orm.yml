@@ -18,13 +18,6 @@ UR\Entity\Core\DataSourceIntegration:
             type: boolean
             option:
                 default: true
-        # back fill feature
-        backFillStartDate:
-            type: date
-            nullable: true
-        backFillEndDate:
-            type: date
-            nullable: true
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource
