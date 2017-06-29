@@ -64,23 +64,15 @@ class DateTimeUtil
             $minute = 1;
         }
 
-        /** Clone time on UTC */
-        $nextExecuteAt = clone $lastExecuted;
-
-        /** Switch to user timezone, such as EST, CST, PST */
-        $nextExecuteAt->setTimezone(new \DateTimeZone($timeZone));
-
-        /** Add 24 hours to switch tomorrow */
-        $dateInterval = new \DateInterval(sprintf('PT%dH', 24)); // e.g PT2H = period time 24 hours
-        $nextExecuteAt->add($dateInterval);
-
-        /** Set hour, minute from user provided*/
+        $nextExecuteAt = date_create('now', new \DateTimeZone($timeZone));
         $nextExecuteAt->setTime($hour, $minute);
-
+        
         /** Reconvert to UTC, our database store only time on UTC*/
         $nextExecuteAt->setTimezone(new \DateTimeZone('UTC'));
 
-        while (date_create() > $nextExecuteAt) {
+        /** Add 24 hours to switch tomorrow */
+        $dateInterval = new \DateInterval(sprintf('PT%dH', 24)); // e.g PT2H = period time 24 hours
+        while ($nextExecuteAt < $lastExecuted) {
             $nextExecuteAt->add($dateInterval);
         }
 
