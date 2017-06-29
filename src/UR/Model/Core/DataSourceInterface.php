@@ -277,4 +277,26 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setDateRange($dateRange);
+
+    /**
+     * @return boolean
+     */
+    public function isFromMetadata();
+
+    /**
+     * @param boolean $fromMetadata
+     * @return self
+     */
+    public function setFromMetadata($fromMetadata);
+
+    /**
+     * @return string
+     */
+    public function getPattern();
+
+    /**
+     * @param string $pattern
+     * @return self
+     */
+    public function setPattern($pattern);
 }

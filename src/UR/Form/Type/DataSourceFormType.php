@@ -57,6 +57,8 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             ->add('dateFields')
             ->add('dateFormats')
             ->add('dateRange')
+            ->add('fromMetadata')
+            ->add('pattern')
         ;
 
         if ($this->userRole instanceof AdminInterface) {

@@ -27,6 +27,15 @@ class DataSource implements DataSourceInterface
     protected $detectedStartDate;
     protected $detectedEndDate;
     /**
+     * @var bool
+     */
+    protected $fromMetadata;
+
+    /**
+     * @var string
+     */
+    protected $pattern;
+    /**
      * @var array
      */
     protected $dateRange;
@@ -514,6 +523,42 @@ class DataSource implements DataSourceInterface
     public function setDateRange($dateRange)
     {
         $this->dateRange = $dateRange;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isFromMetadata()
+    {
+        return $this->fromMetadata;
+    }
+
+    /**
+     * @param boolean $fromMetadata
+     * @return self
+     */
+    public function setFromMetadata($fromMetadata)
+    {
+        $this->fromMetadata = $fromMetadata;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPattern()
+    {
+        return $this->pattern;
+    }
+
+    /**
+     * @param string $pattern
+     * @return self
+     */
+    public function setPattern($pattern)
+    {
+        $this->pattern = $pattern;
         return $this;
     }
 }

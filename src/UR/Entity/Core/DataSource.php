@@ -31,6 +31,8 @@ class DataSource extends DataSourceModel
     protected $dateFormats;
     protected $detectedStartDate;
     protected $detectedEndDate;
+    protected $fromMetadata;
+    protected $pattern;
     /** @var UserEntityInterface */
     protected $publisher;
 

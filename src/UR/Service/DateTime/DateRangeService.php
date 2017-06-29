@@ -14,11 +14,18 @@ use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Service\DataSource\DataSourceFileFactory;
+use UR\Service\DTO\Collection;
+use UR\Service\Metadata\Email\EmailMetadata;
+use UR\Service\Parser\Transformer\Collection\ExtractPattern;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Service\PublicSimpleException;
 
 class DateRangeService implements DateRangeServiceInterface
 {
+    const PATTERN_KEY  = 'pattern';
+    const REPLACE_VALUE_KEY  = 'value';
+    const FILE_NAME_KEY = 'filename';
+
     /* data source date format config */
     const IS_CUSTOM_FORMAT_DATE = 'isCustomFormatDate';
     const IS_PARTIAL_MATCH = 'isPartialMatch';
@@ -158,7 +165,67 @@ class DateRangeService implements DateRangeServiceInterface
         }
 
         $dataSource = $dataSourceEntry->getDataSource();
+        $dateFields = $dataSource->getDateFields();
         $formats = $dataSource->getDateFormats();
+
+        if (empty($dateFields)) {
+            throw new PublicSimpleException('"date" field should not be empty');
+        }
+
+        if ($dataSource->isFromMetaData()) {
+            $detectedDate = null;
+            $pattern = $dataSource->getPattern();
+            $metaData = $dataSourceEntry->getMetaData();
+            foreach ($dateFields as $dateField) {
+                if ($dateField == self::FILE_NAME_KEY && (!isset($metaData[$dateField]) || empty($metaData[$dateField]))) {
+                    $metaData['filename'] = $dataSourceEntry->getFileName();
+                }
+
+                if (!array_key_exists($dateField, $metaData)) {
+                    $this->logger->warning(sprintf('"%s" does not exist in the meta data'));
+                    continue;
+                }
+
+                if (in_array($dateField, [EmailMetadata::META_DATA_EMAIL_DATE, EmailMetadata::INTEGRATION_META_DATA_REPORT_DATE])) {
+                    $detectedDate = $this->getDate($metaData[$dateField], $formats);
+                    if ($detectedDate instanceof \DateTime) {
+                        break;
+                    }
+                }
+
+                //extract report date based on given pattern
+                $collection = new Collection([],[$metaData]);
+                $transform = new ExtractPattern($dateField, $pattern[self::PATTERN_KEY], null, $isOverride = true, false, false, $pattern[self::REPLACE_VALUE_KEY]);
+                $rows = $transform->transform($collection)->getRows();
+                $row = array_shift($rows);
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $detectedDate = $this->getDate($row[$dateField], $formats);
+                if ($detectedDate instanceof \DateTime) {
+                    break;
+                }
+            }
+
+            if ($detectedDate instanceof \DateTime) {
+                $dataSourceEntry->setMissingDate([])
+                    ->setStartDate($detectedDate)
+                    ->setEndDate($detectedDate)
+                    ->setDateRangeBroken(false)
+                    ->setDates([$detectedDate->format(DateFormat::DEFAULT_DATE_FORMAT)])
+                ;
+
+                $this->dataSourceEntryManager->save($dataSourceEntry);
+                $this->logger->info(sprintf('Entry %s update %s missing dates', $dataSourceEntry->getId(), count($dataSourceEntry->getMissingDate())));
+
+                $this->calculateDateRangeForDataSource($dataSourceEntry->getDataSource()->getId());
+            }
+
+            return true;
+        }
+
+
 
         /** Get missing date from parse file */
         try {
@@ -180,11 +247,6 @@ class DateRangeService implements DateRangeServiceInterface
         }
 
         $dates = [];
-        $dateFields = $dataSource->getDateFields();
-
-        if (empty($dateFields)) {
-            throw new PublicSimpleException('"date" field should not be empty');
-        }
 
         foreach ($rows as &$row) {
             foreach ($dateFields as $dateField) {
