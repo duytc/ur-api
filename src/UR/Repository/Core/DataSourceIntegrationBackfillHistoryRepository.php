@@ -37,17 +37,17 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
 
         $result = $qb->getQuery()->getResult();
 
-        usort($result, function (DataSourceIntegrationBackfillHistoryInterface $a, DataSourceIntegrationBackfillHistoryInterface $b) {
-            if ($a->getExecutedAt() === null) {
-                return -1;
-            }
-
-            if ($b->getExecutedAt() === null) {
-                return 1;
-            }
+        $nullExecutedBackFillHistories = array_filter($result, function ($backFill) {
+            /* @var DataSourceIntegrationBackfillHistoryInterface $backFill */
+            return $backFill->getExecutedAt() == null;
         });
 
-        return $result;
+        $notNullExecutedBackFillHistories = array_filter($result, function ($backFill) {
+            /* @var DataSourceIntegrationBackfillHistoryInterface $backFill */
+            return $backFill->getExecutedAt() != null;
+        });
+
+        return array_merge($nullExecutedBackFillHistories, $notNullExecutedBackFillHistories);
     }
 
     /**
