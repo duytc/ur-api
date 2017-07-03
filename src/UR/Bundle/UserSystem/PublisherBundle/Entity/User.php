@@ -27,6 +27,10 @@ class User extends BaseUser implements PublisherInterface
     protected $settings; //json string represent setting for report bundle
     protected $tagDomain;
     protected $bidders;
+    /**
+     * @var PublisherInterface|null
+     */
+    protected $masterAccount;
 
     /**
      * @var boolean
@@ -340,5 +344,21 @@ class User extends BaseUser implements PublisherInterface
     {
         $this->testAccount = $testAccount;
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMasterAccount()
+    {
+        return $this->masterAccount;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setMasterAccount(PublisherInterface $masterAccount = null)
+    {
+        $this->masterAccount = $masterAccount;
     }
 }

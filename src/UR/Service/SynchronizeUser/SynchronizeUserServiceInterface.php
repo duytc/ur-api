@@ -5,5 +5,10 @@ namespace UR\Service\SynchronizeUser;
 
 interface SynchronizeUserServiceInterface
 {
-    public function synchronizeUser($entity);
+    /**
+     * @param array $entityData
+     * @return mixed
+     * @throws \Doctrine\DBAL\DBALException
+     */
+    public function synchronizeUser(array $entityData);
 }

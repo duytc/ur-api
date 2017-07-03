@@ -3,13 +3,16 @@
 namespace UR\Service\SynchronizeUser;
 
 use Doctrine\ORM\EntityManagerInterface;
+use FOS\UserBundle\Model\UserInterface;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\Bundle\UserSystem\PublisherBundle\Entity\User;
-use UR\Model\User\UserEntityInterface;
+use UR\Model\User\Role\PublisherInterface;
 
 class SynchronizeUserService implements SynchronizeUserServiceInterface
 {
+    /** @var PublisherManagerInterface */
     private $publisherManager;
+    /** @var EntityManagerInterface */
     private $em;
 
     public function __construct(EntityManagerInterface $em, PublisherManagerInterface $publisherManager)
@@ -18,71 +21,82 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
         $this->publisherManager = $publisherManager;
     }
 
-    public function synchronizeUser($entity)
+    /**
+     * @inheritdoc
+     */
+    public function synchronizeUser(array $entityData)
     {
-        $id = $entity['id'];
-        $publisher = $this->publisherManager->findPublisher($id);
-        if (!in_array(User::MODULE_UNIFIED_REPORT, $entity['roles'])) {
-            $entity['enabled'] = false;
+        $id = $entityData['id'];
+        /** @var PublisherInterface|UserInterface $existingPublisher */
+        $existingPublisher = $this->publisherManager->findPublisher($id);
+        if (!in_array(User::MODULE_UNIFIED_REPORT, $entityData['roles'])) {
+            $entityData['enabled'] = false;
         }
 
-        if ($publisher instanceof UserEntityInterface) {
-            $publisher->setBillingRate($this->getUserParams($entity,'billingRate', null));
-            $publisher->setFirstName($this->getUserParams($entity,'firstName', null));
-            $publisher->setLastName($this->getUserParams($entity,'lastName', null));
-            $publisher->setCompany($this->getUserParams($entity,'company', null));
-            $publisher->setPhone($this->getUserParams($entity,'phone', null));
-            $publisher->setCity($this->getUserParams($entity,'city', null));
-            $publisher->setState($this->getUserParams($entity,'state', null));
-            $publisher->setAddress($this->getUserParams($entity,'address', null));
-            $publisher->setPostalCode($this->getUserParams($entity,'postalCode', null));
-            $publisher->setCountry($this->getUserParams($entity,'country', null));
-            $publisher->setSettings($this->getUserParams($entity,'settings', null));
-            $publisher->setTagDomain($this->getUserParams($entity,'tagDomain', null));
-            $publisher->setExchanges($this->getUserParams($entity,'exchanges', null));
-            $publisher->setBidders($this->getUserParams($entity,'bidders', null));
-            $publisher->setEnabledModules($this->getUserParams($entity,'enabledModules', null));
-            $publisher->setUsername($this->getUserParams($entity,'username', null));
-            $publisher->setPassword($this->getUserParams($entity,'password', null));
-            $publisher->setEmail($this->getUserParams($entity,'email', null));
-            $publisher->setEnabled($this->getUserParams($entity,'enabled', null));
+        // support master account for a Publisher
+        $masterAccountId = $this->getUserParams($entityData, 'masterAccount', null);
+        $masterAccount = empty($masterAccountId) ? null : $this->publisherManager->find($masterAccountId);
+        $masterAccount = ($masterAccount instanceof PublisherInterface) ? $masterAccount : null;
+        $entityData['masterAccount'] = $masterAccount;
 
-            $this->publisherManager->save($publisher);
+        if ($existingPublisher instanceof PublisherInterface) {
+            $existingPublisher = $this->mapUserInfo($entityData, $existingPublisher);
+            $this->publisherManager->save($existingPublisher);
         } else {
-            $user = new User();
-            $user->setBillingRate($this->getUserParams($entity,'billingRate', null));
-            $user->setFirstName($this->getUserParams($entity,'firstName', null));
-            $user->setLastName($this->getUserParams($entity,'lastName', null));
-            $user->setCompany($this->getUserParams($entity,'company', null));
-            $user->setPhone($this->getUserParams($entity,'phone', null));
-            $user->setCity($this->getUserParams($entity,'city', null));
-            $user->setState($this->getUserParams($entity,'state', null));
-            $user->setAddress($this->getUserParams($entity,'address', null));
-            $user->setPostalCode($this->getUserParams($entity,'postalCode', null));
-            $user->setCountry($this->getUserParams($entity,'country', null));
-            $user->setSettings($this->getUserParams($entity,'settings', null));
-            $user->setTagDomain($this->getUserParams($entity,'tagDomain', null));
-            $user->setExchanges($this->getUserParams($entity,'exchanges', null));
-            $user->setBidders($this->getUserParams($entity,'bidders', null));
-            $user->setEnabledModules($this->getUserParams($entity,'enabledModules', null));
-            $user->setUsername($this->getUserParams($entity,'username', null));
-            $user->setPassword($this->getUserParams($entity,'password', null));
-            $user->setEmail($this->getUserParams($entity,'email', null));
-            $user->setEnabled($this->getUserParams($entity,'enabled', null));
-
-            $this->publisherManager->save($user);
+            /** @var PublisherInterface|UserInterface $newPublisher */
+            $newPublisher = new User();
+            $newPublisher = $this->mapUserInfo($entityData, $newPublisher);
+            $this->publisherManager->save($newPublisher);
 
             $connection = $this->em->getConnection();
-            $userId = $user->getId();
+            $userId = $newPublisher->getId();
             $statement = $connection->prepare("SET FOREIGN_KEY_CHECKS = 0;"
                 . "UPDATE core_user SET id = " . $id . " WHERE id = " . $userId
                 . ";UPDATE core_user_publisher SET id = " . $id . " WHERE id = " . $userId
-                . ";SET FOREIGN_KEY_CHECKS = 1" );
+                . ";SET FOREIGN_KEY_CHECKS = 1");
             $statement->execute();
         }
     }
 
-    private function getUserParams($userEntity, $key, $default){
+    /**
+     * @param array $userDataFromTagcadeApi
+     * @param PublisherInterface $userInUrAPI
+     * @return PublisherInterface
+     */
+    private function mapUserInfo(array $userDataFromTagcadeApi, PublisherInterface $userInUrAPI)
+    {
+        $userInUrAPI->setBillingRate($this->getUserParams($userDataFromTagcadeApi, 'billingRate', null));
+        $userInUrAPI->setFirstName($this->getUserParams($userDataFromTagcadeApi, 'firstName', null));
+        $userInUrAPI->setLastName($this->getUserParams($userDataFromTagcadeApi, 'lastName', null));
+        $userInUrAPI->setCompany($this->getUserParams($userDataFromTagcadeApi, 'company', null));
+        $userInUrAPI->setPhone($this->getUserParams($userDataFromTagcadeApi, 'phone', null));
+        $userInUrAPI->setCity($this->getUserParams($userDataFromTagcadeApi, 'city', null));
+        $userInUrAPI->setState($this->getUserParams($userDataFromTagcadeApi, 'state', null));
+        $userInUrAPI->setAddress($this->getUserParams($userDataFromTagcadeApi, 'address', null));
+        $userInUrAPI->setPostalCode($this->getUserParams($userDataFromTagcadeApi, 'postalCode', null));
+        $userInUrAPI->setCountry($this->getUserParams($userDataFromTagcadeApi, 'country', null));
+        $userInUrAPI->setSettings($this->getUserParams($userDataFromTagcadeApi, 'settings', null));
+        $userInUrAPI->setTagDomain($this->getUserParams($userDataFromTagcadeApi, 'tagDomain', null));
+        $userInUrAPI->setExchanges($this->getUserParams($userDataFromTagcadeApi, 'exchanges', null));
+        $userInUrAPI->setBidders($this->getUserParams($userDataFromTagcadeApi, 'bidders', null));
+        $userInUrAPI->setEnabledModules($this->getUserParams($userDataFromTagcadeApi, 'enabledModules', null));
+        $userInUrAPI->setUsername($this->getUserParams($userDataFromTagcadeApi, 'username', null));
+        $userInUrAPI->setPassword($this->getUserParams($userDataFromTagcadeApi, 'password', null));
+        $userInUrAPI->setEmail($this->getUserParams($userDataFromTagcadeApi, 'email', null));
+        $userInUrAPI->setEnabled($this->getUserParams($userDataFromTagcadeApi, 'enabled', null));
+        $userInUrAPI->setMasterAccount($this->getUserParams($userDataFromTagcadeApi, 'masterAccount', null));
+
+        return $userInUrAPI;
+    }
+
+    /**
+     * @param array $userEntity
+     * @param $key
+     * @param $default
+     * @return mixed
+     */
+    private function getUserParams(array $userEntity, $key, $default)
+    {
         return array_key_exists($key, $userEntity) ? $userEntity[$key] : $default;
     }
 }

@@ -215,4 +215,15 @@ interface PublisherInterface extends UserRoleInterface
      * @return self
      */
     public function setTestAccount($testAccount);
+
+    /**
+     * @return PublisherInterface|null
+     */
+    public function getMasterAccount();
+
+    /**
+     * @param PublisherInterface|null $masterAccount
+     * @return self
+     */
+    public function setMasterAccount(PublisherInterface $masterAccount = null);
 }
