@@ -4,9 +4,12 @@ namespace UR\Domain\DTO\Report\Transforms;
 
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Service\DTO\Collection;
+use UR\Util\CalculateConditionTrait;
 
 class AddCalculatedFieldTransform extends NewFieldTransform implements TransformInterface
 {
+    use CalculateConditionTrait;
+
     const TRANSFORMS_TYPE = 'addCalculatedField';
     const EXPRESSION_CALCULATED_FIELD = 'expression';
     const DEFAULT_VALUE_CALCULATED_FIELD = 'defaultValues';
@@ -15,17 +18,6 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
     const CONDITION_COMPARATOR_KEY = 'conditionComparator';
     const CONDITION_VALUE_KEY = 'conditionValue';
     const CONDITION_FIELD_CALCULATED_VALUE = '$$CALCULATED_VALUE$$';
-
-    const CONDITION_COMPARISON_VALUE_EQUAL = 'equal';
-    const CONDITION_COMPARISON_VALUE_SMALLER = 'smaller';
-    const CONDITION_COMPARISON_VALUE_SMALLER_OR_EQUAL = 'smaller or equal';
-    const CONDITION_COMPARISON_VALUE_GREATER = 'greater';
-    const CONDITION_COMPARISON_VALUE_GREATER_OR_EQUAL = 'greater or equal';
-    const CONDITION_COMPARISON_VALUE_NOT_EQUAL = 'not equal';
-    const CONDITION_COMPARISON_VALUE_IN = 'in';
-    const CONDITION_COMPARISON_VALUE_NOT_IN = 'not in';
-    const CONDITION_COMPARISON_VALUE_IS_INVALID = 'is invalid';
-    const INVALID_VALUE = NULL;
 
     /**
      * @var string
@@ -76,7 +68,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
             try {
                 $calculatedValue = $this->language->evaluate($expressionForm, ['row' => $row]);
             } catch (\Exception $ex) {
-                $calculatedValue = self::INVALID_VALUE;
+                $calculatedValue = $this->invalidValue;
             }
 
             $value = $this->getDefaultValueByCondition($calculatedValue, $row);
@@ -135,78 +127,6 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
 
         // not condition matched, return the original value
         return $value;
-    }
-
-    /**
-     * do Compare
-     *
-     * @param mixed $value
-     * @param mixed $conditionComparator
-     * @param mixed $conditionValue
-     * @return bool false if not matched
-     */
-    private function matchCondition($value, $conditionComparator, $conditionValue)
-    {
-        switch ($conditionComparator) {
-            case self::CONDITION_COMPARISON_VALUE_IS_INVALID:
-                return $value == self::INVALID_VALUE;
-
-            case self::CONDITION_COMPARISON_VALUE_IN:
-                return in_array($value, $conditionValue);
-
-            case self::CONDITION_COMPARISON_VALUE_NOT_IN:
-                return !in_array($value, $conditionValue);
-
-            case self::CONDITION_COMPARISON_VALUE_SMALLER:
-                return $value < $conditionValue;
-
-            case self::CONDITION_COMPARISON_VALUE_SMALLER_OR_EQUAL:
-                return $value <= $conditionValue;
-
-            case self::CONDITION_COMPARISON_VALUE_EQUAL:
-                return $value == $conditionValue;
-
-            case self::CONDITION_COMPARISON_VALUE_NOT_EQUAL:
-                return $value != $conditionValue;
-
-            case self::CONDITION_COMPARISON_VALUE_GREATER:
-                return $value > $conditionValue;
-
-            case self::CONDITION_COMPARISON_VALUE_GREATER_OR_EQUAL:
-                return $value >= $conditionValue;
-        }
-
-        // default not match
-        return false;
-    }
-
-    /**
-     * Convert expression from: [fie1d_id]-[field2_id]  to row['field_id'] - row['field2_id']
-     * @param $expression
-     * @throws \Exception
-     * @return mixed
-     */
-    protected function convertExpressionForm($expression)
-    {
-        if (is_null($expression)) {
-            throw new \Exception(sprintf('Expression for calculated field can not be null'));
-        }
-
-        $regex = '/\[(.*?)\]/';
-        if (!preg_match_all($regex, $expression, $matches)) {
-            return $expression;
-        };
-
-        $fieldsInBracket = $matches[0];
-        $fields = $matches[1];
-        $newExpressionForm = null;
-
-        foreach ($fields as $index => $field) {
-            $replaceString = sprintf('row[\'%s\']', $field);
-            $expression = str_replace($fieldsInBracket[$index], $replaceString, $expression);
-        }
-
-        return $expression;
     }
 
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
