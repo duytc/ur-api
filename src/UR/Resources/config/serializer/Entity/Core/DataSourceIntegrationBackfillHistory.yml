@@ -13,7 +13,6 @@ UR\Entity\Core\DataSourceIntegrationBackfillHistory:
         executedAt:
             expose: true
             groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]
-            type: DateTime<'Y-m-d H:i:s'>
         backFillStartDate:
             expose: true
             groups: [dataSourceIntegrationBackfillHistory.detail, dataSourceIntegrationBackfillHistory.summary]
