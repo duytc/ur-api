@@ -4,6 +4,7 @@ namespace UR\Repository\Core;
 
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\AlertPagerParam;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -40,13 +41,22 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
     {
         $qb = $this->createQueryBuilderForUser($user);
 
+        // support filter by alert types
+        if ($param instanceof AlertPagerParam && !empty($param->getTypes())) {
+            $types = explode(',',$param->getTypes());
+            $qb
+                ->andWhere('a.type IN (:types)')
+                ->setParameter('types', $types);
+        }
+
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
 
             $orX = $qb->expr()->orX();
             $conditions = array(
                 $qb->expr()->like('a.id', ':searchKey'),
-                $qb->expr()->like('a.code', ':searchKey')
+                $qb->expr()->like('a.code', ':searchKey'),
+                $qb->expr()->like('a.type', ':searchKey')
             );
             $orX->addMultiple($conditions);
 
@@ -100,13 +110,22 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
             ->setParameter('dataSource', $dataSource)
             ->setParameter('enable', true);
 
+        // support filter by alert types
+        if ($param instanceof AlertPagerParam && !empty($param->getTypes())) {
+            $types = explode(',',$param->getTypes());
+            $qb
+                ->andWhere('a.type IN (:types)')
+                ->setParameter('types', $types);
+        }
+
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
             $qb
                 ->andWhere($qb->expr()->orX(
                     $qb->expr()->like('ds.name', ':searchKey'),
                     $qb->expr()->like('a.id', ':searchKey'),
-                    $qb->expr()->like('a.code', ':searchKey')
+                    $qb->expr()->like('a.code', ':searchKey'),
+                    $qb->expr()->like('a.type', ':searchKey')
                 ))
                 ->setParameter('searchKey', $searchLike);
         }

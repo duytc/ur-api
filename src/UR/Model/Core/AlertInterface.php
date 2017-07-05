@@ -37,6 +37,11 @@ interface AlertInterface extends ModelInterface
     const ALERT_CODE_BROWSER_AUTOMATION_TIME_OUT = 2002;
     const ALERT_CODE_BROWSER_AUTOMATION_PASSWORD_EXPIRY = 2003;
 
+    /* const type alert */
+    const ALERT_TYPE_INFO = 'info';
+    const ALERT_TYPE_WARNING = 'warning';
+    const ALERT_TYPE_ERROR = 'error';
+
     const ALERT_CODE_EMAIL_WEB_HOOK_INVALID_EMAIL_SETTING = 2004;
 
     /**
@@ -110,4 +115,15 @@ interface AlertInterface extends ModelInterface
      * return self
      */
     public function setDataSource($dataSource);
+
+    /**
+     * @return mixed
+     */
+    public function getType();
+
+    /**
+     * @param mixed $type
+     * return self
+     */
+    public function setType($type);
 }

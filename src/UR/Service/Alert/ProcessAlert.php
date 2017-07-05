@@ -48,11 +48,15 @@ class ProcessAlert implements ProcessAlertInterface
             $dataSource = null;
         }
 
+        /* add type alert */
+        $type = array_key_exists($alertCode, Alert::$ALERT_CODE_TO_TYPE_MAP) ? Alert::$ALERT_CODE_TO_TYPE_MAP[$alertCode] : Alert::ALERT_TYPE_INFO;
+
         $alert = new Alert();
         $alert->setCode($alertCode);
         $alert->setPublisher($publisher);
         $alert->setDetail($details);
         $alert->setDataSource($dataSource);
+        $alert->setType($type);
 
         $this->alertManager->save($alert);
     }

@@ -18,12 +18,14 @@ use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Bundle\ApiBundle\Service\DataSource\UploadFileService;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
+use UR\Model\AlertPagerParam;
 use UR\Model\Core\DataSourceEntry;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\IntegrationInterface;
+use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 
 /**
@@ -195,6 +197,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
      * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
      * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     * @Rest\QueryParam(name="types", nullable=true, description="the type to get")
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -1027,4 +1030,25 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         return $dataSourceIntegrationBackfillHistoryRepository->getBackfillHistoriesByDataSourceId($dataSource);
     }
 
+    /**
+     * override parent function
+     * @inheritdoc
+     */
+    protected function _createParams(array $params)
+    {
+        // create a params array with all values set to null
+        $defaultParams = array_fill_keys([
+            AlertPagerParam::PARAM_SEARCH_FIELD,
+            AlertPagerParam::PARAM_SEARCH_KEY,
+            AlertPagerParam::PARAM_SORT_FIELD,
+            AlertPagerParam::PARAM_SORT_DIRECTION,
+            AlertPagerParam::PARAM_PUBLISHER_ID,
+            AlertPagerParam::PARAM_FILTER_TYPES
+        ], null);
+
+        $params = array_merge($defaultParams, $params);
+        $publisherId = intval($params[AlertPagerParam::PARAM_PUBLISHER_ID]);
+
+        return new AlertPagerParam($params[PagerParam::PARAM_SEARCH_FIELD], $params[AlertPagerParam::PARAM_SEARCH_KEY], $params[AlertPagerParam::PARAM_SORT_FIELD], $params[AlertPagerParam::PARAM_SORT_DIRECTION], $publisherId, $params[AlertPagerParam::PARAM_FILTER_TYPES]);
+    }
 }

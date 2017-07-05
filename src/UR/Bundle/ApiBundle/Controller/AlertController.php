@@ -10,11 +10,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Handler\HandlerInterface;
+use UR\Model\AlertPagerParam;
 use UR\Model\Core\AlertInterface;
+use UR\Model\PagerParam;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
-use UR\Model\User\Role\AdminInterface;
-use UR\Model\User\Role\PublisherInterface;
 
 /**
  * @Rest\RouteResource("Alert")
@@ -35,6 +35,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
      * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
      * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     * @Rest\QueryParam(name="types", nullable=true, description="the type to get")
      *
      * @ApiDoc(
      *  section = "Alert",
@@ -194,6 +195,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
 
         throw new \Exception("param is not valid");
     }
+
     /**
      * Delete an existing alert
      *
@@ -241,5 +243,27 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.alert');
+    }
+
+    /**
+     * override parent function
+     * @inheritdoc
+     */
+    protected function _createParams(array $params)
+    {
+        // create a params array with all values set to null
+        $defaultParams = array_fill_keys([
+            AlertPagerParam::PARAM_SEARCH_FIELD,
+            AlertPagerParam::PARAM_SEARCH_KEY,
+            AlertPagerParam::PARAM_SORT_FIELD,
+            AlertPagerParam::PARAM_SORT_DIRECTION,
+            AlertPagerParam::PARAM_PUBLISHER_ID,
+            AlertPagerParam::PARAM_FILTER_TYPES
+        ], null);
+
+        $params = array_merge($defaultParams, $params);
+        $publisherId = intval($params[AlertPagerParam::PARAM_PUBLISHER_ID]);
+
+        return new AlertPagerParam($params[PagerParam::PARAM_SEARCH_FIELD], $params[AlertPagerParam::PARAM_SEARCH_KEY], $params[AlertPagerParam::PARAM_SORT_FIELD], $params[AlertPagerParam::PARAM_SORT_DIRECTION], $publisherId, $params[AlertPagerParam::PARAM_FILTER_TYPES]);
     }
 }

@@ -22,7 +22,8 @@ class AlertFormType extends AbstractRoleSpecificFormType
             ->add('code')
             ->add('detail')
             ->add('isRead')
-            ->add('dataSource');
+            ->add('dataSource')
+            ->add('type');
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(
@@ -45,6 +46,10 @@ class AlertFormType extends AbstractRoleSpecificFormType
                 // validate alert details
                 $alertDetails = $alert->getDetail();
                 $this->validateAlertDetails($alertDetails, $form);
+
+                // validate alert type
+                $alertType = $alert->getType();
+                $this->validateAlertType($alertType, $form);
             }
         );
     }
@@ -96,6 +101,25 @@ class AlertFormType extends AbstractRoleSpecificFormType
     {
         if (!is_array($alertDetails)) {
             $form->addError(new FormError('Expect alert details is json_array'));
+            return false;
+        }
+
+        // TODO: validate more...
+
+        return true;
+    }
+
+    /**
+     * validate alert type
+     * @param $alertType
+     * @param FormInterface $form
+     * @return bool
+     */
+    private function validateAlertType($alertType, FormInterface $form)
+    {
+        $alertTypes = [Alert::ALERT_TYPE_ERROR, Alert::ALERT_TYPE_WARNING, Alert::ALERT_TYPE_INFO];
+        if (!in_array($alertType, $alertTypes)) {
+            $form->addError(new FormError('Expect alert type is  in error, warning, info '));
             return false;
         }
 

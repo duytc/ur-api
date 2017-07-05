@@ -22,6 +22,10 @@ UR\Entity\Core\Alert:
             gedmo:
                 timestampable:
                     on: create
+        type:
+            type: string
+            length: 10
+            nullable: true
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

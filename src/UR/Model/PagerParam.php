@@ -11,6 +11,7 @@ class PagerParam
     const PARAM_SORT_FIELD = 'sortField';
     const PARAM_SORT_DIRECTION = 'orderBy';
     const PARAM_PUBLISHER_ID = 'publisherId';
+
     /**
      * @var string
      */

@@ -14,6 +14,7 @@ class Alert extends AlertModel
     protected $isRead;
     protected $detail;
     protected $createdDate;
+    protected $type;
 
     /**
      * @var UserEntityInterface
