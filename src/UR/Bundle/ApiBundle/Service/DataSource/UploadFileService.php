@@ -126,12 +126,8 @@ class UploadFileService
                 throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $originName));
             }
 
-            $hash = sha1_file($filePath);
-            if ($this->dataSourceEntryManager->isFileAlreadyImported($dataSource, $hash)) {
-                throw new Exception(sprintf('File "%s" is already imported', $originName));
-            }
-
             // create new data source entry
+            $hash = sha1_file($filePath);
             $dataSourceEntry = new DataSourceEntry();
             $dataSourceEntry->setPath($dirItem . '/' . $name)
                 ->setIsValid(true)
