@@ -26,6 +26,7 @@ class DataSource implements DataSourceInterface
     protected $dateFormats;
     protected $detectedStartDate;
     protected $detectedEndDate;
+    protected $emailAnchorTexts;
     /**
      * @var bool
      */
@@ -559,6 +560,24 @@ class DataSource implements DataSourceInterface
     public function setPattern($pattern)
     {
         $this->pattern = $pattern;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getEmailAnchorTexts()
+    {
+        return $this->emailAnchorTexts;
+    }
+
+    /**
+     * @param mixed $emailAnchorTexts
+     * @return self
+     */
+    public function setEmailAnchorTexts($emailAnchorTexts)
+    {
+        $this->emailAnchorTexts = $emailAnchorTexts;
         return $this;
     }
 }

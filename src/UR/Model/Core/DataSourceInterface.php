@@ -299,4 +299,15 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setPattern($pattern);
+
+    /**
+     * @return mixed
+     */
+    public function getEmailAnchorTexts();
+
+    /**
+     * @param mixed $emailAnchorTexts
+     * @return self
+     */
+    public function setEmailAnchorTexts($emailAnchorTexts);
 }

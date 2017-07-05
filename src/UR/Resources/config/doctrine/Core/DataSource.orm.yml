@@ -28,6 +28,9 @@ UR\Entity\Core\DataSource:
             length: 150
             nullable: true
             unique: true
+        emailAnchorTexts:
+            type: json_array
+            nullable: true
         enable:
             type: boolean
             options:

@@ -67,3 +67,6 @@ UR\Entity\Core\DataSource:
         pattern:
             expose: true
             groups: [datasource.detail, datasource.edit]
+        emailAnchorTexts:
+            expose: true
+            groups: [datasource.detail, datasource.edit]
