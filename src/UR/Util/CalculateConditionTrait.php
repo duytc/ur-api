@@ -49,9 +49,29 @@ trait CalculateConditionTrait
             case $this->conditionComparisonValueGreaterOrEqual:
                 return $value >= $conditionValue;
             case $this->conditionComparisonValueContain:
-                return false == strpos($value, $conditionValue);
+                if (is_array($conditionValue)) {
+                    foreach($conditionValue as $compare) {
+                        if (strpos($value, $compare) !== false) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                return strpos($value, $conditionValue) !== false;
             case $this->conditionComparisonValueNotContain:
-                return false != strpos($value, $conditionValue);
+                if (is_array($conditionValue)) {
+                    foreach($conditionValue as $compare) {
+                        if (strpos($value, $compare) !== false) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+
+                return strpos($value, $conditionValue) === false;
         }
 
         // default not match
