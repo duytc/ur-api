@@ -37,7 +37,7 @@ class UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob implements SubJobInt
         $dataSetId = $params->getRequiredParam(self::DATA_SET_ID);
 
         if (!is_integer($dataSetId)) {
-            $this->logger->error('data set with ID (%s) not is an Integer when update all connected data source total row', $dataSetId);
+            $this->logger->error(sprintf('data set with ID (%s) not is an Integer when update all connected data source total row', $dataSetId));
             return;
         }
 

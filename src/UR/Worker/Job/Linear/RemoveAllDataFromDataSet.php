@@ -50,7 +50,7 @@ class RemoveAllDataFromDataSet implements JobInterface
         $dataSetId = (int)$params->getRequiredParam(self::DATA_SET_ID);
         $dataSet = $this->dataSetManager->find($dataSetId);
         if (!$dataSet instanceof DataSetInterface) {
-            $this->logger->error('data set with ID (%s) not found when Remove All Data From Data Set', $dataSetId);
+            $this->logger->error(sprintf('data set with ID (%s) not found when Remove All Data From Data Set', $dataSetId));
             return;
         }
 
