@@ -224,7 +224,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
      */
     private function findByDataSource(Request $request)
     {
-        $dataSourceId = $request->query->get('datasource', null);
+        $dataSourceId = $request->query->get('dataSource', null);
         $dataSourceId = filter_var($dataSourceId, FILTER_VALIDATE_INT);
         if (false === $dataSourceId || $dataSourceId < 0) {
             throw new BadRequestHttpException(sprintf('Invalid datasource id %s', $dataSourceId));
