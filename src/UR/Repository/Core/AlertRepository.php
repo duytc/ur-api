@@ -189,4 +189,23 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
 
         return $qb->getQuery()->getResult();
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getAlertsToSendEmailByTypesQuery(PublisherInterface $publisher, array $types)
+    {
+        $qb = $this->createQueryBuilderForUser($publisher)
+            ->andWhere('a.isSent = :sent')
+            ->setParameter('sent', false);
+
+        // support filter by alert types
+        if (!empty($types)) {
+            $qb
+                ->andWhere('a.type IN (:types)')
+                ->setParameter('types', $types);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }

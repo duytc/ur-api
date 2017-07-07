@@ -41,8 +41,8 @@ class Alert implements AlertInterface
     public static $ALERT_CODE_TO_TYPE_MAP = [
         /* Alert for data source */
         AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD =>Alert::ALERT_TYPE_INFO,
-        AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_EMAIL =>Alert::ALERT_TYPE_WARNING,
-        AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_API => Alert::ALERT_TYPE_WARNING,
+        AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_EMAIL =>Alert::ALERT_TYPE_INFO,
+        AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_API => Alert::ALERT_TYPE_INFO,
         AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT => Alert::ALERT_TYPE_ERROR,
         AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_EMAIL_WRONG_FORMAT => Alert::ALERT_TYPE_ERROR,
         AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_API_WRONG_FORMAT => Alert::ALERT_TYPE_ERROR,
@@ -55,11 +55,11 @@ class Alert implements AlertInterface
         AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_NUMBER => Alert::ALERT_TYPE_ERROR,
         AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_DATE => Alert::ALERT_TYPE_ERROR,
         AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE => Alert::ALERT_TYPE_ERROR,
-        AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_HEADER_FOUND => Alert::ALERT_TYPE_WARNING,
+        AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_HEADER_FOUND => Alert::ALERT_TYPE_INFO,
         AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_DATA_ROW_FOUND =>  Alert::ALERT_TYPE_ERROR,
         AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_WRONG_TYPE_MAPPING => Alert::ALERT_TYPE_ERROR,
-        AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILE_NOT_FOUND => Alert::ALERT_TYPE_WARNING,
-        AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_NO_FILE_PREVIEW => Alert::ALERT_TYPE_WARNING,
+        AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILE_NOT_FOUND => Alert::ALERT_TYPE_INFO,
+        AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_NO_FILE_PREVIEW => Alert::ALERT_TYPE_INFO,
         AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_UN_EXPECTED_ERROR => Alert::ALERT_TYPE_ERROR,
 
         AlertInterface::ALERT_CODE_BROWSER_AUTOMATION_LOGIN_FAIL => Alert::ALERT_TYPE_ERROR,
@@ -73,6 +73,8 @@ class Alert implements AlertInterface
     protected $detail;
     protected $createdDate;
     protected $type;
+    /** @var boolean */
+    protected $isSent;
 
     /**
      * @var UserEntityInterface
@@ -221,6 +223,24 @@ class Alert implements AlertInterface
     public function setType($type)
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getIsSent()
+    {
+        return $this->isSent;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setIsSent($isSent)
+    {
+        $this->isSent = $isSent;
 
         return $this;
     }

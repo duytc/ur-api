@@ -126,4 +126,15 @@ interface AlertInterface extends ModelInterface
      * return self
      */
     public function setType($type);
+
+    /**
+     * @return boolean
+     */
+    public function getIsSent();
+
+    /**
+     * @param boolean $isSent
+     * @return self
+     */
+    public function setIsSent($isSent);
 }

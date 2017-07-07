@@ -1,0 +1,11 @@
+{#src/UR/Bundle/AppBundle/Resources/view/Alert/email.html.twig#}
+<h3>Dear {{ publisher_name }}, </h3>
+
+<p>This is email for critical alerts. Details:</p>
+
+{% for alert_detail in alert_details %}
+    <p>{{ alert_detail }}</p>
+{% endfor %}
+
+<p>Regards,</p>
+<p>Pubvantage.</p>

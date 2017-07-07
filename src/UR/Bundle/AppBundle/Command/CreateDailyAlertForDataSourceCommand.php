@@ -67,7 +67,7 @@ class CreateDailyAlertForDataSourceCommand extends ContainerAwareCommand
             $todayDataSourceEntries = $dataSourceEntryManager->getDataSourceEntryToday($dailyAlertDataSource, $dsNextTime);
 
             if (count($todayDataSourceEntries) < 1) {
-                $processAlert->createAlert($noDataDailyAlert->getAlertCode(), $publisher->getId(), $noDataDailyAlert->getDetails());
+                $processAlert->createAlert($noDataDailyAlert->getAlertCode(), $publisher->getId(), $noDataDailyAlert->getDetails(), $noDataDailyAlert->getDataSourceId());
             }
 
             $dailyAlertDataSource->setNextAlertTime(new DateTime('tomorrow'));

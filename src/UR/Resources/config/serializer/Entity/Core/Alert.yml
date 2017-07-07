@@ -25,3 +25,6 @@ UR\Entity\Core\Alert:
         dataSource:
             expose: true
             groups: [alert.detail, alert.summary]
+        isSent:
+            expose: true
+            groups: [alert.detail, alert.summary]
