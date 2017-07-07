@@ -13,7 +13,7 @@ use UR\Model\User\Role\UserRoleInterface;
 
 class DataSourceEntryRepository extends EntityRepository implements DataSourceEntryRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'receivedDate' => 'receivedDate', 'fileName' => 'fileName'];
+    protected $SORT_FIELDS = ['id' => 'id', 'receivedDate' => 'receivedDate', 'fileName' => 'fileName', 'endDate' => 'endDate'];
 
     /**
      * @inheritdoc
@@ -72,17 +72,9 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
             in_array($param->getSortDirection(), ['asc', 'desc', 'ASC', 'DESC']) &&
             in_array($param->getSortField(), $this->SORT_FIELDS)
         ) {
-            switch ($param->getSortField()) {
-                case $this->SORT_FIELDS['id']:
-                    $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
-                    break;
-                case $this->SORT_FIELDS['receivedDate']:
-                    $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
-                    break;
-                default:
-                    break;
-            }
+            $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
         }
+
         return $qb;
     }
 
@@ -117,19 +109,7 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
             in_array($param->getSortDirection(), ['asc', 'desc', 'ASC', 'DESC']) &&
             in_array($param->getSortField(), $this->SORT_FIELDS)
         ) {
-            switch ($param->getSortField()) {
-                case $this->SORT_FIELDS['id']:
-                    $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
-                    break;
-                case $this->SORT_FIELDS['receivedDate']:
-                    $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
-                    break;
-                case $this->SORT_FIELDS['fileName']:
-                    $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
-                    break;
-                default:
-                    break;
-            }
+            $qb->addOrderBy('dse.' . $param->getSortField(), $param->getSortDirection());
         } else {
             $qb->addOrderBy('dse.receivedDate', 'desc');
         }
