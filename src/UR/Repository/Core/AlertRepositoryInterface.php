@@ -8,6 +8,7 @@ use UR\Model\AlertPagerParam;
 use UR\Model\Core\DataSourceInterface;
 use Doctrine\ORM\QueryBuilder;
 use UR\Model\PagerParam;
+use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
 
 interface AlertRepositoryInterface extends ObjectRepository
@@ -25,6 +26,13 @@ interface AlertRepositoryInterface extends ObjectRepository
      * @return QueryBuilder
      */
     public function getAlertsByDataSourceQuery(DataSourceInterface $dataSource, PagerParam $param);
+
+    /**
+     * @param PublisherInterface $publisher
+     * @param array $types
+     * @return array
+     */
+    public function getAlertsToSendEmailByTypesQuery(PublisherInterface $publisher, array $types);
 
     /**
      * @param $ids

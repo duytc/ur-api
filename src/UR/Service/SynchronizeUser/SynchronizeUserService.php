@@ -85,6 +85,7 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
         $userInUrAPI->setEmail($this->getUserParams($userDataFromTagcadeApi, 'email', null));
         $userInUrAPI->setEnabled($this->getUserParams($userDataFromTagcadeApi, 'enabled', null));
         $userInUrAPI->setMasterAccount($this->getUserParams($userDataFromTagcadeApi, 'masterAccount', null));
+        $userInUrAPI->setEmailSendAlert($this->getUserParams($userDataFromTagcadeApi, 'emailSendAlert', null));
 
         return $userInUrAPI;
     }

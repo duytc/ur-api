@@ -19,6 +19,7 @@ UR\Bundle\UserSystem\PublisherBundle\Entity\User:
         - tagDomain
         - exchanges
         - bidders
+        - emailSendAlert
     properties:
         id:
             expose: true
@@ -66,6 +67,9 @@ UR\Bundle\UserSystem\PublisherBundle\Entity\User:
             expose: true
             groups: [user.summary, user.uuid, user.detail]
         bidders:
+            expose: true
+            groups: [user.summary, user.uuid, user.detail]
+        emailSendAlert:
             expose: true
             groups: [user.summary, user.uuid, user.detail]
         uuid:

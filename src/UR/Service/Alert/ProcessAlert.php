@@ -57,6 +57,7 @@ class ProcessAlert implements ProcessAlertInterface
         $alert->setDetail($details);
         $alert->setDataSource($dataSource);
         $alert->setType($type);
+        $alert->setIsSent(false);
 
         $this->alertManager->save($alert);
     }

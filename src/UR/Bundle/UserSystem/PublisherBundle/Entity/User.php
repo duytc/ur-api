@@ -27,6 +27,8 @@ class User extends BaseUser implements PublisherInterface
     protected $settings; //json string represent setting for report bundle
     protected $tagDomain;
     protected $bidders;
+    /** @var  string */
+    protected $emailSendAlert;
     /**
      * @var PublisherInterface|null
      */
@@ -360,5 +362,23 @@ class User extends BaseUser implements PublisherInterface
     public function setMasterAccount(PublisherInterface $masterAccount = null)
     {
         $this->masterAccount = $masterAccount;
+    }
+
+    /**
+     * @return string
+     */
+    public function getEmailSendAlert()
+    {
+        // TODO: Implement getEmailSendAlert() method.
+        return $this->emailSendAlert;
+    }
+
+    /**
+     * @param mixed $emailSendAlert
+     */
+    public function setEmailSendAlert($emailSendAlert)
+    {
+        // TODO: Implement setEmailSendAlert() method.
+        $this->emailSendAlert = $emailSendAlert;
     }
 }

@@ -49,6 +49,9 @@ UR\Bundle\UserSystem\PublisherBundle\Entity\User:
         bidders:
             type: json_array
             nullable: true
+        emailSendAlert:
+            type: string
+            nullable: true
     manyToOne:
         masterAccount:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
