@@ -105,10 +105,7 @@ class Params implements ParamsInterface
      */
     protected $userDefinedMetrics;
 
-    /**
-     * @var bool
-     */
-    protected $needToGroup;
+    protected $customDimensionEnabled;
 
     function __construct()
     {
@@ -522,24 +519,6 @@ class Params implements ParamsInterface
     }
 
     /**
-     * @return boolean
-     */
-    public function isNeedToGroup()
-    {
-        return $this->needToGroup;
-    }
-
-    /**
-     * @param boolean $needToGroup
-     * @return self
-     */
-    public function setNeedToGroup($needToGroup)
-    {
-        $this->needToGroup = $needToGroup;
-        return $this;
-    }
-
-    /**
      * @return array
      */
     public function getUserDefinedMetrics()
@@ -588,6 +567,24 @@ class Params implements ParamsInterface
     public function setMetrics($metrics)
     {
         $this->metrics = $metrics;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCustomDimensionEnabled()
+    {
+        return $this->customDimensionEnabled;
+    }
+
+    /**
+     * @param mixed $customDimensionEnabled
+     * @return self
+     */
+    public function setCustomDimensionEnabled($customDimensionEnabled)
+    {
+        $this->customDimensionEnabled = $customDimensionEnabled;
         return $this;
     }
 }

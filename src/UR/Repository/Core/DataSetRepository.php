@@ -199,4 +199,10 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
         return $qb->getQuery()->getResult();
     }
 
+    public function getDataSetByIds(array $ids)
+    {
+        $qb = $this->createQueryBuilder('ds');
+        return $qb->where($qb->expr()->in('ds.id', $ids))
+            ->getQuery()->getResult();
+    }
 }

@@ -49,4 +49,10 @@ interface DataSetRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getDataSetByName($dataSetName, $limit= null, $offset= null);
+
+    /**
+     * @param array $ids
+     * @return mixed
+     */
+    public function getDataSetByIds(array $ids);
 }

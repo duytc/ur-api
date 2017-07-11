@@ -51,8 +51,8 @@ class ParamsBuilder implements ParamsBuilderInterface
     const USER_DEFINED_DATE_RANGE = 'userDefineDateRange';
     const USER_DEFINED_DIMENSIONS = 'userDefineDimensions';
     const USER_DEFINED_METRICS = 'userDefineMetrics';
-    const NEED_TO_GROUP = 'needToGroup';
     const IS_SHOW_DATA_SET_NAME = 'isShowDataSetName';
+    const CUSTOM_DIMENSION_ENABLED = 'enableCustomDimensionMetric';
     const REPORT_VIEW_ID = 'id';
     const PAGE_KEY = 'page';
     const LIMIT_KEY = 'limit';
@@ -208,8 +208,8 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setUserDefinedMetrics($data[self::USER_DEFINED_METRICS]);
         }
 
-        if (array_key_exists(self::NEED_TO_GROUP, $data)) {
-            $param->setNeedToGroup(filter_var($data[self::NEED_TO_GROUP], FILTER_VALIDATE_BOOLEAN));
+        if (array_key_exists(self::CUSTOM_DIMENSION_ENABLED, $data)) {
+            $param->setCustomDimensionEnabled(filter_var($data[self::CUSTOM_DIMENSION_ENABLED], FILTER_VALIDATE_BOOLEAN));
         }
 
         return $param;
@@ -620,8 +620,8 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setUserDefinedMetrics($paginationParams[self::USER_DEFINED_METRICS]);
         }
 
-        if (array_key_exists(self::NEED_TO_GROUP, $paginationParams)) {
-            $param->setNeedToGroup(filter_var($paginationParams[self::NEED_TO_GROUP], FILTER_VALIDATE_BOOLEAN));
+        if (array_key_exists(self::CUSTOM_DIMENSION_ENABLED, $paginationParams)) {
+            $param->setCustomDimensionEnabled(filter_var($paginationParams[self::CUSTOM_DIMENSION_ENABLED], FILTER_VALIDATE_BOOLEAN));
         }
 
         return $param;

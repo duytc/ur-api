@@ -190,4 +190,14 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
 
         return $qb->getQuery()->getResult();
     }
+
+    public function getReportViewByIds(array $ids)
+    {
+        $qb = $this->createQueryBuilder('rpv');
+        return $qb->where($qb->expr()->in('rpv.id', $ids))
+            ->getQuery()->getResult();
+
+    }
+
+
 }
