@@ -43,7 +43,9 @@ pcntl_signal(SIGTERM, $appShutdown);
 const RESERVE_TIMEOUT = 5; // seconds
 const RELEASE_JOB_DELAY_SECONDS = 5;
 const JOB_LOCK_TTL = 3 * (60 * 60 * 1000); // 3 hour expiry time for lock
-
+const WORKER_TIME_LIMIT = 10800; // 3 hours
+// Set the start time
+$startTime = time();
 $entityManager = $container->get('doctrine.orm.entity_manager');
 
 /** @var Logger $logger */
@@ -78,6 +80,12 @@ while (1) {
     if ($requestStop) {
         // exit worker gracefully, supervisord will restart it
         $logger->notice(sprintf("Worker PID %d is stopping by user request", $pid));
+        break;
+    }
+
+    if (time() > ($startTime + WORKER_TIME_LIMIT)) {
+        // exit worker gracefully, supervisord will restart it
+        $logger->notice(sprintf("Worker PID %d is stopping because time limit has been exceeded", $pid));
         break;
     }
 

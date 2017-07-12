@@ -216,15 +216,15 @@ interface ParamsInterface
     public function setUserDefinedDimensions($userDefinedDimensions);
 
     /**
-     * @return boolean
+     * @return mixed
      */
-    public function isNeedToGroup();
+    public function getCustomDimensionEnabled();
 
     /**
-     * @param boolean $needToGroup
+     * @param mixed $customDimensionEnabled
      * @return self
      */
-    public function setNeedToGroup($needToGroup);
+    public function setCustomDimensionEnabled($customDimensionEnabled);
 
     /**
      * @return array

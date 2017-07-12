@@ -10,14 +10,17 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
+use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
+use UR\Service\ColumnUtilTrait;
 
 /**
  * @Rest\RouteResource("ReportView")
@@ -25,7 +28,7 @@ use UR\Model\Core\ReportViewInterface;
 class ReportViewController extends RestControllerAbstract implements ClassResourceInterface
 {
     use GetEntityFromIdTrait;
-
+    use ColumnUtilTrait;
     const TOKEN = 'token';
     const FIELDS = 'fields';
 
@@ -106,6 +109,82 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
                 return $reportViewDataSet->getDataSet()->getId();
             }, $dataSets);
             return $this->get('ur.repository.data_source')->getBrokenDateRangeDataSourceForDataSets($ids);
+        }
+
+        throw new NotFoundHttpException('either "dataSets" or "reportViews" is invalid');
+    }
+
+    /**
+     * @Rest\View(serializerGroups={"dataset.edit", "report_view.summary"})
+     *
+     * @Rest\QueryParam(name="dataSets", nullable=true, description="the publisher id")
+     * @Rest\QueryParam(name="reportViews", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="showDataSetName", nullable=true, description="the page to get")
+     * @param Request $request
+     * @return mixed
+     */
+    public function cgetDatasetsAction(Request $request)
+    {
+        $dataSetIds = $request->query->get('dataSets', null);
+        $reportViewIds = $request->query->get('reportViews', null);
+        $showDataSetName = $request->query->get('showDataSetName', null);
+        $showDataSetName = filter_var($showDataSetName, FILTER_VALIDATE_BOOLEAN);
+
+        if ($dataSetIds == null && $reportViewIds == null) {
+            throw new NotFoundHttpException('either "dataSets" or "reportViews" is empty');
+        }
+
+        if (is_string($dataSetIds) && !empty($dataSetIds)) {
+            $ids = explode(',', $dataSetIds);
+            $dataSets = $this->get('ur.repository.data_set')->getDataSetByIds($ids);
+            $columns = [];
+            /**
+             * @var DataSetInterface $dataSet
+             */
+            foreach ($dataSets as $dataSet) {
+                foreach ($dataSet->getDimensions() as $dimension => $type) {
+                    if ($showDataSetName) {
+                        $dimension = sprintf('%s_%d', $dimension, $dataSet->getId());
+                    }
+
+                    $columns[$dimension] = $this->convertColumn($dimension, $showDataSetName);
+                }
+
+                foreach ($dataSet->getMetrics() as $metric => $type) {
+                    if ($showDataSetName) {
+                        $metric = sprintf('%s_%d', $metric, $dataSet->getId());
+                    }
+                    $columns[$metric] = $this->convertColumn($metric, $showDataSetName);
+                }
+            }
+
+            return array (
+                'dataSets' => $dataSets,
+                'columns' => $columns
+            );
+        }
+
+        if (is_string($reportViewIds) && !empty($reportViewIds)) {
+            $ids = explode(',', $reportViewIds);
+            $reportViews = $this->get('ur.repository.report_view')->getReportViewByIds($ids);
+            $columns = [];
+            /**
+             * @var ReportViewInterface $reportView
+             */
+            foreach ($reportViews as $reportView) {
+                foreach ($reportView->getDimensions() as $dimension) {
+                    $columns[$dimension] = $this->convertColumn($dimension, $showDataSetName);
+                }
+
+                foreach ($reportView->getMetrics() as $metric) {
+                    $columns[$metric] = $this->convertColumn($metric, $showDataSetName);
+                }
+            }
+
+            return array (
+                'reportViews' => $reportViews,
+                'columns' => $columns
+            );
         }
 
         throw new NotFoundHttpException('either "dataSets" or "reportViews" is invalid');
@@ -451,5 +530,10 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         $sharedLink = str_replace('$$SHARED_KEY$$', $token, $sharedLink);
 
         return $sharedLink;
+    }
+
+    protected function getDataSetManager()
+    {
+        return $this->get('ur.domain_manager.data_set');
     }
 }

@@ -4,7 +4,7 @@ namespace UR\Service\Report;
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface as DataSetDTO;
-use UR\Domain\DTO\Report\DataSets\DataSetInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Domain\DTO\Report\DateRange;
 use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Filters\DateFilterInterface;
@@ -431,8 +431,10 @@ class ReportBuilder implements ReportBuilderInterface
     private function getFinalReports(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions, $dateRanges, array $outputJoinField = [], $isNeedFormatReport = true)
     {
         /* transform data */
+        $userProvidedDimensions = [];
+        $userProvidedMetrics = [];
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        if (!empty($params->getUserDefinedDimensions()) && $params->isNeedToGroup()) {
+        if (!empty($params->getUserDefinedDimensions()) && $params->getCustomDimensionEnabled()) {
             if (count($transforms) > 0) {
                 $groupByTransforms = array_filter($transforms, function ($transform) {
                     return $transform instanceof GroupByTransform;
@@ -464,6 +466,11 @@ class ReportBuilder implements ReportBuilderInterface
                     $params->getUserDefinedDimensions()
                 );
             }
+
+            $userProvidedDimensions = $params->getUserDefinedDimensions();
+            $userProvidedMetrics = $params->getUserDefinedMetrics();
+            $dimensions = array_values(array_unique(array_merge($dimensions, $userProvidedDimensions)));
+            $metrics = array_values(array_unique(array_merge($metrics, $userProvidedMetrics)));
         }
 
         $this->transformReports($reportCollection, $transforms, $metrics, $dimensions, $outputJoinField);
@@ -548,6 +555,7 @@ class ReportBuilder implements ReportBuilderInterface
                 $selectedFields = array_merge($selectedFields, $selectedFieldsTmp);
             }
 
+            $selectedFields = array_unique(array_merge($selectedFields, $userProvidedDimensions, $userProvidedMetrics));
             $nonSelectedFields = array_diff($allDataSetFields, $selectedFields);
         }
 
@@ -577,6 +585,7 @@ class ReportBuilder implements ReportBuilderInterface
                 $selectedFields = array_merge($selectedFields, $selectedFieldsTmp);
             }
 
+            $selectedFields = array_unique(array_merge($selectedFields, $userProvidedDimensions, $userProvidedMetrics));
             $nonSelectedFields = array_diff($allSubReportFields, $selectedFields);
         }
 

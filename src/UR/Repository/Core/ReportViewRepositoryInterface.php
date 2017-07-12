@@ -78,4 +78,6 @@ interface ReportViewRepositoryInterface extends ObjectRepository
      * @return ReportViewInterface[]
      */
     public function getReportMultiViewsByReportView(ReportViewInterface $subReportView);
+
+    public function getReportViewByIds(array $ids);
 }
