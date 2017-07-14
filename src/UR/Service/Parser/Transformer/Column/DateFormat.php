@@ -31,7 +31,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
      * full date format regex
      * The full date format may be YYYY/MM/DD, YYYY-MM-DD HH:mm:ss, ...
      */
-    const FULL_DATE_FORMAT_REGEX = '/^([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})[\-,\.,\/,_\s]*([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})[\-,\.,\/,_\s]*([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})*(([T]{1}|[H]{2,2}|[m]{2,2}|[s]{2,2})|[\\-,\.,\/,_:\s])*((e?)|(O?)|(P?)|(T?))?$/';
+    const FULL_DATE_FORMAT_REGEX = '/^([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})[\-,\.,\/,_\s]*([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})[\-,\.,\/,_\s]*([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})*(([T]{1}|[H]{2,2}|[m]{2,2}|[s]{2,2})|[\\-,\.,\/,_:\s])*((T?))?$/';
 
     protected $fromDateFormats;
     protected $toDateFormat;
@@ -72,9 +72,6 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
 
         // Support time with timezone
         'YYYY-MM-DD HH:mm:ss T' => 'Y-m-d H:i:s T', // 2017-06-12 20:00:00 GMT+0000
-        'YYYY-MM-DD HH:mm:ss e' => 'Y-m-d H:i:s e', // 2017-06-12 20:00:00 +00:00
-        'YYYY-MM-DD HH:mm:ss O' => 'Y-m-d H:i:s O', // 2017-06-12 20:00:00 +0000
-        'YYYY-MM-DD HH:mm:ss P' => 'Y-m-d H:i:s P'  // 2017-06-12 20:00:00 +00:00
     ];
 
     /**
@@ -133,6 +130,8 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             } else {
                 $fromFormat = self::convertDateFormatFullToPHPDateFormat($fromFormat);
             }
+
+            // handle the case: apply T for all text
 
             $date = DateTime::createFromFormat('!' . $fromFormat, $value, new DateTimeZone($this->timezone)); // auto set time (H,i,s) to 0 if not available
 
@@ -345,10 +344,7 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         $convertedPartialMatch = str_replace('mm', '\d{2}', $convertedPartialMatch); // min
         $convertedPartialMatch = str_replace('ss', '\d{2}', $convertedPartialMatch); // sec
 
-        $convertedPartialMatch = str_replace('e', '\w', $convertedPartialMatch); // PST
-        $convertedPartialMatch = str_replace('O', '[+\-]?\d{4}', $convertedPartialMatch); // +0000
-        $convertedPartialMatch = str_replace('P', '[+\-]?\d{2}:\d{2}', $convertedPartialMatch); // +00:00
-        $convertedPartialMatch = str_replace('T', '\w', $convertedPartialMatch); // GMT
+        $convertedPartialMatch = str_replace('T', '[+\-]?\d{4}', $convertedPartialMatch);
 
         // trim space at the end
         $convertedPartialMatch = trim($convertedPartialMatch);
@@ -405,11 +401,11 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
 
         if (!$isSupportDateFormat) {
             // validate using builtin data formats (when isCustomFormatDateFrom = false)
-            throw  new BadRequestHttpException(sprintf('Transform setting error: field "%s" not support from date format', $this->getField()));
+            throw  new BadRequestHttpException(sprintf('Transform setting error: field "%s" not support from date format.', $this->getField()));
         }
 
         if (!array_key_exists($this->toDateFormat, self::SUPPORTED_DATE_FORMATS)) {
-            throw  new BadRequestHttpException(sprintf('Transform setting error: field "%s" not support to date format', $this->getField()));
+            throw  new BadRequestHttpException(sprintf('Transform setting error: field "%s" not support to date format.', $this->getField()));
         }
     }
 

@@ -19,8 +19,9 @@ class MigrateConnectedDataSourceTransformersCommand extends ContainerAwareComman
 {
     const VERSION_MIGRATE_TRANSFORMS_CALCULATED_FIELD_WITH_DEFAULT_VALUE = 1;
     const VERSION_MIGRATE_TRANSFORMS_DATE_FORMAT_FULL_TEXT = 2;
+    const VERSION_MIGRATE_TRANSFORMS_DATE_FORMAT_SMART_TIMEZONE = 3;
 
-    static $CURRENT_VERSION = self::VERSION_MIGRATE_TRANSFORMS_DATE_FORMAT_FULL_TEXT;
+    static $CURRENT_VERSION = self::VERSION_MIGRATE_TRANSFORMS_DATE_FORMAT_SMART_TIMEZONE;
 
     /**
      * @var Logger
@@ -38,7 +39,7 @@ class MigrateConnectedDataSourceTransformersCommand extends ContainerAwareComman
     {
         $this
             ->setName('ur:migrate:connected-data-source:transformers')
-            ->setDescription('Migrate Connected data source transformers to latest format');
+            ->setDescription('Migrate Connected data source transformers to latest format.');
     }
 
     /**
@@ -53,7 +54,7 @@ class MigrateConnectedDataSourceTransformersCommand extends ContainerAwareComman
         $this->connectedDataSourceManager = $container->get('ur.domain_manager.connected_data_source');
         $connectedDataSources = $this->connectedDataSourceManager->all();
 
-        $output->writeln(sprintf('updating %d connected data source transformers to latest format', count($connectedDataSources)));
+        $output->writeln(sprintf('Updating %d connected data source transformers to latest format.', count($connectedDataSources)));
 
         $migratedAlertsCount = 0;
 
@@ -69,9 +70,15 @@ class MigrateConnectedDataSourceTransformersCommand extends ContainerAwareComman
                 $migratedAlertsCount = $this->migrateTransformersDateTimeFullText($output, $connectedDataSources);
 
                 break;
+
+            case self::VERSION_MIGRATE_TRANSFORMS_DATE_FORMAT_SMART_TIMEZONE:
+                // migrate connected data source transformers to support datetime transform with smart timezone
+                $migratedAlertsCount = $this->migrateTransformersDateTimeSmartTimeZone($output, $connectedDataSources);
+
+                break;
         }
 
-        $output->writeln(sprintf('command run successfully: %d connected data sources updated.', $migratedAlertsCount));
+        $output->writeln(sprintf('The command runs successfully: %d connected data sources updated.', $migratedAlertsCount));
     }
 
     /**
@@ -312,6 +319,97 @@ class MigrateConnectedDataSourceTransformersCommand extends ContainerAwareComman
                 // important: set again for oldTransformer
                 $oldTransformer[DateFormat::FROM_KEY] = $fromDateFormatConfigs;
                 $oldTransformer[DateFormat::TO_KEY] = $toDateFormat;
+            }
+
+            if ($hasChanged) {
+                $migratedCount++;
+                $connectedDataSource->setTransforms($oldTransformers);
+                $this->connectedDataSourceManager->save($connectedDataSource);
+            }
+        }
+
+        return $migratedCount;
+    }
+
+    /**
+     * migrate Transformers DateTime Smart TimeZone
+     * use T for all text
+     *
+     * @param OutputInterface $output
+     * @param array|ConnectedDataSourceInterface[] $connectedDataSources
+     * @return int migrated integrations count
+     */
+    private function migrateTransformersDateTimeSmartTimeZone(OutputInterface $output, array $connectedDataSources)
+    {
+        $migratedCount = 0;
+
+        foreach ($connectedDataSources as $connectedDataSource) {
+            // sure is ConnectedDataSourceInterface
+            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+                continue;
+            }
+
+            $oldTransformers = $connectedDataSource->getTransforms();
+            if (!is_array($oldTransformers)) {
+                continue;
+            }
+
+            $hasChanged = false;
+
+            foreach ($oldTransformers as &$oldTransformer) {
+                if (!array_key_exists(ColumnTransformerInterface::FIELD_KEY, $oldTransformer)
+                    || !array_key_exists(ColumnTransformerInterface::TYPE_KEY, $oldTransformer)
+                    || $oldTransformer[ColumnTransformerInterface::TYPE_KEY] !== ColumnTransformerInterface::DATE_FORMAT
+                    || !array_key_exists(DateFormat::FROM_KEY, $oldTransformer)
+                    || !array_key_exists(DateFormat::TO_KEY, $oldTransformer)
+                ) {
+                    continue; // only for date format
+                }
+
+                /*
+                 * {
+                 *    "field":"timestamp_hour",
+                 *    "type":"date",
+                 *    "to":"Y-m-d H:i:s",
+                 *    "openStatus":true,
+                 *    "from":[
+                 *       {
+                 *          "isCustomFormatDateFrom":false,
+                 *          "format":"Y-m-d H:i:s T"
+                 *       }
+                 *    ],
+                 *    "timezone":"UTC"
+                 * },
+                 */
+
+                // from date format
+                $fromDateFormatConfigs = $oldTransformer[DateFormat::FROM_KEY];
+                if (!is_array($fromDateFormatConfigs)) {
+                    continue;
+                }
+
+                foreach ($fromDateFormatConfigs as &$fromDateFormatConfig) {
+                    if (!array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $fromDateFormatConfig)
+                        || !array_key_exists(DateFormat::FORMAT_KEY, $fromDateFormatConfig)
+                    ) {
+                        continue; // only for date format
+                    }
+
+                    $fromDateFormat = $fromDateFormatConfig[DateFormat::FORMAT_KEY];
+                    // Check if $fromDateFormat contains e, O or P, those will be replace with T character
+                    if (false !== strpos($fromDateFormat, 'e') || false !== strpos($fromDateFormat, 'O') || false !== strpos($fromDateFormat, 'P')) {
+                        $fromDateFormat = str_replace('e', 'T', $fromDateFormat);
+                        $fromDateFormat = str_replace('O', 'T', $fromDateFormat);
+                        $fromDateFormat = str_replace('P', 'T', $fromDateFormat);
+
+                        $hasChanged = true;
+                    }
+
+                    $fromDateFormatConfig[DateFormat::FORMAT_KEY] = $fromDateFormat;
+                }
+
+                // important: set the changes for Transformer
+                $oldTransformer[DateFormat::FROM_KEY] = $fromDateFormatConfigs;
             }
 
             if ($hasChanged) {
