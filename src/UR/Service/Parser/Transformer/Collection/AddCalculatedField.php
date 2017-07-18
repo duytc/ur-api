@@ -74,6 +74,16 @@ class AddCalculatedField extends AbstractAddField implements CollectionTransform
 
         $this->expressionLanguage = new ExpressionLanguage();
         $this->reformatDataService = new ReformatDataService();
+
+        $this->expressionLanguage->register('abs', function ($number) {
+            return sprintf('(is_numeric(%1$s) ? abs(%1$s) : %1$s)', $number);
+        }, function ($arguments, $number) {
+            if (!is_numeric($number)) {
+                return $number;
+            }
+
+            return abs($number);
+        });
     }
 
     /**
@@ -86,16 +96,6 @@ class AddCalculatedField extends AbstractAddField implements CollectionTransform
             if ($isMatched === true) {
                 return $defaultValue;
             }
-
-            $this->expressionLanguage->register('abs', function ($number) {
-                return sprintf('(is_numeric(%1$s) ? abs(%1$s) : %1$s)', $number);
-            }, function ($arguments, $number) {
-                if (!is_numeric($number)) {
-                    return $number;
-                }
-
-                return abs($number);
-            });
 
             $expressionForm = $this->convertExpressionForm($this->expression, $row);
             if ($expressionForm === NULL) {
