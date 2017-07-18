@@ -31,3 +31,8 @@ UR\Entity\Core\DataSourceIntegration:
             mappedBy: dataSourceIntegration
             cascade: ['persist', 'detach', 'remove']
             orphanRemoval: true
+        dataSourceIntegrationBackFillHistories:
+            targetEntity: UR\Entity\Core\DataSourceIntegrationBackfillHistory
+            mappedBy: dataSourceIntegration
+            cascade: ['persist', 'detach', 'remove']
+            orphanRemoval: true
