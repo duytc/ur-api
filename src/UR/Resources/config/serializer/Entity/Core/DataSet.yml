@@ -24,7 +24,7 @@ UR\Entity\Core\DataSet:
             groups: [dataset.detail, dataset.summary, dataset.edit]
         connectedDataSources:
             expose: true
-            groups: [dataset.detail, dataset.summary, dataset.edit]
+            groups: [dataset.detail, dataset.summary]
         lastActivity:
             expose: true
             groups: [dataset.detail, dataset.summary]
