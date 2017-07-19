@@ -490,6 +490,8 @@ services:
             - @ur.service.parsing_file_service
             - @ur.service.data_set.importer
             - @monolog.logger
+            - @ur.services.dry_run_report_sorter
+            - @ur.services.dry_run_report_filter
 
     ur.service.command:
         class: UR\Service\Command\CommandService
@@ -515,3 +517,12 @@ services:
         class: UR\Service\DateTime\NextExecutedAt
         arguments:
             - '@ur.service.date_time.date_time_util'
+
+    ur.services.dry_run_params_builder:
+        class: UR\Service\Parser\DryRunParamsBuilder
+
+    ur.services.dry_run_report_sorter:
+        class: UR\Service\Parser\DryRunReportSorter
+
+    ur.services.dry_run_report_filter:
+        class: UR\Service\Parser\DryRunReportFilter

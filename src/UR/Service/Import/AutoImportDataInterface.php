@@ -2,6 +2,7 @@
 
 namespace UR\Service\Import;
 
+use UR\Domain\DTO\ConnectedDataSource\DryRunParamsInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
@@ -19,8 +20,8 @@ interface AutoImportDataInterface
     /**
      * @param ConnectedDataSourceInterface $connectedDataSources
      * @param DataSourceEntryInterface $dataSourceEntry
-     * @param $limitRows
-     * @return mixed
+     * @param DryRunParamsInterface $dryRunParams
+     * @return array
      */
-    public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSources, DataSourceEntryInterface $dataSourceEntry, $limitRows);
+    public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSources, DataSourceEntryInterface $dataSourceEntry, DryRunParamsInterface $dryRunParams);
 }

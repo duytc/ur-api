@@ -10,6 +10,7 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Domain\DTO\ConnectedDataSource\DryRunParamsInterface;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\AlertInterface;
@@ -126,6 +127,14 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     /**
      * @Rest\Post("/connecteddatasources/dryrun")
      *
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     * @Rest\QueryParam(name="limitRows", requirements="\d+", nullable=true, description="maximum report rows (100, 200, 500, 1000, ...)")
+     *
      * @param Request $request
      * @return mixed
      */
@@ -133,7 +142,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     {
         /* file for previewing data (using path of uploaded file or existing data source entry)*/
         $pathOrDataSourceEntryId = $request->request->get('dataSourceEntryId', null);
-        $limitRows = $request->request->get('limit', null);
+        $dryRunParams = $this->get('ur.services.dry_run_params_builder')->buildFromArray($request->request->all());
 
         // temporary create connected data source entity (not save to database)
         // do this because the new connected data source (not yet save) may be difference from old connected data source in database
@@ -141,7 +150,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         /** @var ConnectedDataSourceInterface $tempConnectedDataSource */
         $tempConnectedDataSource = $postResult->getData();
 
-        return $this->handleDryRun($tempConnectedDataSource, $pathOrDataSourceEntryId, $limitRows);
+        return $this->handleDryRun($tempConnectedDataSource, $pathOrDataSourceEntryId, $dryRunParams);
     }
 
     /**
@@ -312,14 +321,14 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     /**
      * @param ConnectedDataSourceInterface $tempConnectedDataSource
      * @param $pathOrDataSourceEntryId
+     * @param DryRunParamsInterface $dryRunParams
      * @return mixed
      * @throws PublicImportDataException
      */
-    private function handleDryRun(ConnectedDataSourceInterface $tempConnectedDataSource, $pathOrDataSourceEntryId, $limitRows)
+    private function handleDryRun(ConnectedDataSourceInterface $tempConnectedDataSource, $pathOrDataSourceEntryId, DryRunParamsInterface $dryRunParams)
     {
         $dataSourceEntryManager = $this->get('ur.repository.data_source_entry');
         $selectedEntry = null;
-
         if (is_numeric($pathOrDataSourceEntryId)) {
             $selectedEntry = $dataSourceEntryManager->find($pathOrDataSourceEntryId);
         } else if (!empty($pathOrDataSourceEntryId)) {
@@ -340,6 +349,6 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         /** @var AutoImportDataInterface $autoImportService */
         $autoImportService = $this->get('ur.service.auto_import_data');
 
-        return $autoImportService->createDryRunImportData($tempConnectedDataSource, $selectedEntry, $limitRows);
+        return $autoImportService->createDryRunImportData($tempConnectedDataSource, $selectedEntry, $dryRunParams);
     }
 }

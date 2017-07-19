@@ -4,16 +4,26 @@ namespace UR\Service\Import;
 
 
 use Monolog\Logger;
+use UR\Domain\DTO\ConnectedDataSource\DryRunParamsInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\ParsedDataImporter;
+use UR\Service\Parser\DryRunReportFilterInterface;
+use UR\Service\Parser\DryRunReportSorterInterface;
 use UR\Service\Parser\ParsingFileService;
 
 class AutoImportData implements AutoImportDataInterface
 {
+    const DATA_REPORTS = 'reports';
+    const DATA_COLUMNS = 'columns';
+    const DATA_TOTAL = 'total';
+    const DATA_AVERAGE = 'average';
+    const DATA_TYPES = 'types';
+    const DATA_RANGE = 'range';
+
     /**
      * @var ParsedDataImporter
      */
@@ -26,11 +36,19 @@ class AutoImportData implements AutoImportDataInterface
 
     private $logger;
 
-    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, Logger $logger)
+    /** @var DryRunReportSorterInterface */
+    private $dryRunReportSorter;
+
+    /** @var DryRunReportFilterInterface */
+    private $dryRunReportFilter;
+
+    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, Logger $logger, DryRunReportSorterInterface $dryRunReportSorter, DryRunReportFilterInterface $dryRunReportFilter)
     {
         $this->parsingFileService = $parsingFileService;
         $this->importer = $importer;
         $this->logger = $logger;
+        $this->dryRunReportSorter = $dryRunReportSorter;
+        $this->dryRunReportFilter = $dryRunReportFilter;
     }
 
     /**
@@ -49,10 +67,10 @@ class AutoImportData implements AutoImportDataInterface
     /**
      * @inheritdoc
      */
-    public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, $limitRows)
+    public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, DryRunParamsInterface $dryRunParams)
     {
         try {
-            $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, $limitRows);
+            $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, $dryRunParams->getLimitRows());
 
             $this->parsingFileService->addTransformColumnAfterParsing($connectedDataSource->getTransforms());
             $rows = $this->parsingFileService->formatColumnsTransformsAfterParser($collection->getRows());
@@ -66,13 +84,38 @@ class AutoImportData implements AutoImportDataInterface
             }
 
             $dataTransferObject = [];
-            $dataTransferObject['reports'] = $rows;
-            $dataTransferObject['columns'] = $columns;
-            $dataTransferObject['total'] = count($rows);
-            $dataTransferObject['average'] = [];
-            $dataTransferObject['types'] = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
-            $dataTransferObject['range'] = null;
+            $dataTransferObject[self::DATA_REPORTS] = $rows;
+            $dataTransferObject[self::DATA_COLUMNS] = $columns;
+            $dataTransferObject[self::DATA_TOTAL] = count($rows);
+            $dataTransferObject[self::DATA_AVERAGE] = [];
+            $dataTransferObject[self::DATA_TYPES] = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+            $dataTransferObject[self::DATA_RANGE] = null;
 
+            // executing sort and filter preview report data
+            if (count($dryRunParams->getSearches()) > 0) {
+                $dataTransferObject = $this->dryRunReportFilter->filterReports($dataTransferObject, $dryRunParams);
+            }
+
+            // TODO: if only parsing Data with limit one time, the report records after filtering may be less than the expected limit
+            // TODO: simple solution: do parsing data again if not reach the limit
+            // TODO: then finally do limit for final reports
+
+            if ($dryRunParams->getSortField()) {
+                $sortField = $dryRunParams->getSortField();
+                $sortField = str_replace('"', '', $sortField);
+                $dryRunParams->setSortField($sortField);
+
+                if (!$dryRunParams->getOrderBy()) {
+                    $dryRunParams->setOrderBy('asc');
+                }
+
+                $dataTransferObject = $this->dryRunReportSorter->sortReports($dataTransferObject, $dryRunParams);
+            }
+
+            /* set total report after filter */
+            $dataTransferObject[self::DATA_TOTAL] = count($dataTransferObject[self::DATA_REPORTS]);
+
+            /* return report result */
             return $dataTransferObject;
         } catch (ImportDataException $e) {
             $details = [

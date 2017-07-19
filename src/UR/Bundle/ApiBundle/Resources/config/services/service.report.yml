@@ -44,5 +44,3 @@ services:
 
     ur.services.report.report_sorter:
         class: UR\Service\Report\ReportViewSorter
-
-
