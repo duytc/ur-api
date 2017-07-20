@@ -2,6 +2,7 @@
 
 namespace UR\Form\Type;
 
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
@@ -12,11 +13,15 @@ use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\DataSet;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\MapBuilderConfigInterface;
 use UR\Model\User\Role\AdminInterface;
 use UR\Service\DataSet\FieldType;
+use UR\Service\StringUtilTrait;
 
 class DataSetFormType extends AbstractRoleSpecificFormType
 {
+    use StringUtilTrait;
+
     static $SUPPORTED_DIMENSION_TYPES = [
         FieldType::DATE,
         FieldType::DATETIME,
@@ -41,6 +46,12 @@ class DataSetFormType extends AbstractRoleSpecificFormType
             ->add('dimensions')
             ->add('metrics')
             ->add('allowOverwriteExistingData')
+            ->add('mapBuilderEnabled')
+            ->add('mapBuilderConfigs', CollectionType::class, array(
+                'type' => new MapBuilderConfigFormType(),
+                'allow_add' => true,
+                'allow_delete' => true,
+            ))
             ->add('connectedDataSources', CollectionType::class, array(
                 'type' => new ConnectedDataSourceFormType(),
                 'allow_add' => true,
@@ -114,6 +125,31 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                 $dataSet->setActions($this->actions);
                 $dataSet->setDimensions($standardDimensions);
                 $dataSet->setMetrics($standardMetrics);
+
+                if (!$dataSet->isMapBuilderEnabled()) {
+                    return;
+                }
+                
+                $mapBuilderConfigs = $dataSet->getMapBuilderConfigs();
+
+                if ($mapBuilderConfigs instanceof Collection) {
+                    $mapBuilderConfigs = $mapBuilderConfigs->toArray();
+                }
+
+                if (count($mapBuilderConfigs) > 1) {
+                    $dataSet->setConnectedDataSources([]);
+                }
+
+                foreach ($mapBuilderConfigs as &$mapBuilderConfig) {
+                    if (!$mapBuilderConfig instanceof MapBuilderConfigInterface) {
+                        continue;
+                    }
+                    $mapBuilderConfig->setDataSet($dataSet);
+                }
+
+                $dataSet->setMapBuilderConfigs($mapBuilderConfigs);
+
+                $this->validateMapBuilderConfigs($mapBuilderConfigs);
             }
         );
     }
@@ -194,15 +230,28 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         return true;
     }
 
-    public function getStandardName($name)
+    /**
+     * @param array $mapBuilderConfigs
+     */
+    private function validateMapBuilderConfigs(array $mapBuilderConfigs)
     {
-        $name = strtolower(trim($name));
+        $isLeft = false;
+        $isRight = false;
 
-        $name = preg_replace("/ +/", "_", $name);
-        $name = preg_replace("/-+/", "_", $name);
-        $name = preg_replace("/[^a-zA-Z0-9]/ ", "_", $name);
-        $name = preg_replace("/_+/ ", "_", $name);
+        foreach ($mapBuilderConfigs as $mapBuilderConfig) {
+            if (!$mapBuilderConfig instanceof MapBuilderConfigInterface) {
+                continue;
+            }
+            if ($mapBuilderConfig->isLeftSide()) {
+                $isLeft = true;
+            }
+            if (!$mapBuilderConfig->isLeftSide()) {
+                $isRight = true;
+            }
+        }
 
-        return $name;
+        if (!$isLeft || !$isRight) {
+            Throw New BadRequestHttpException('Map Builder need at least 1 leftSide and 1 rightSide');
+        }
     }
 }

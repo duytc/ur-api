@@ -11,6 +11,9 @@ class PagerParam
     const PARAM_SORT_FIELD = 'sortField';
     const PARAM_SORT_DIRECTION = 'orderBy';
     const PARAM_PUBLISHER_ID = 'publisherId';
+    const PARAM_PAGE = 'page';
+    const PARAM_LIMIT = 'limit';
+    const PARAM_FILTERS = 'filters';
 
     /**
      * @var string
@@ -34,20 +37,30 @@ class PagerParam
      */
     private $publisherId;
 
+    /** @var  int */
+    private $page;
+
+    /** @var  int */
+    private $limit;
+
     /**
      * @param string $searchField
      * @param string $searchKey
      * @param string $sortField
      * @param string $sortDirection
      * @param int $publisherId
+     * @param int $page
+     * @param int $limit
      */
-    function __construct($searchField = null, $searchKey = null, $sortField = null, $sortDirection = null, $publisherId)
+    function __construct($searchField = null, $searchKey = null, $sortField = null, $sortDirection = null, $publisherId, $page = 1, $limit = 10)
     {
         $this->searchField = $searchField;
         $this->searchKey = $searchKey;
         $this->sortField = $sortField;
         $this->sortDirection = $sortDirection;
         $this->publisherId = $publisherId;
+        $this->page = $page;
+        $this->limit = $limit;
     }
 
     /**
@@ -133,6 +146,44 @@ class PagerParam
     public function setPublisherId($publisherId)
     {
         $this->publisherId = $publisherId;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPage()
+    {
+        return $this->page;
+    }
+
+    /**
+     * @param int $page
+     * @return self
+     */
+    public function setPage($page)
+    {
+        $this->page = $page;
+
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getLimit()
+    {
+        return $this->limit;
+    }
+
+    /**
+     * @param int $limit
+     * @return self
+     */
+    public function setLimit($limit)
+    {
+        $this->limit = $limit;
+
         return $this;
     }
 }

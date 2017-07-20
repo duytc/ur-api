@@ -89,6 +89,9 @@ class Synchronizer
         $dataSetImportTable->addColumn(DataSetInterface::UNIQUE_ID_COLUMN, Type::STRING, array('notnull' => true, "length" => Synchronizer::FIELD_LENGTH_COLUMN_UNIQUE_ID, "fixed" => true)); // CHAR instead of VARCHAR
         $dataSetImportTable->addColumn(DataSetInterface::OVERWRITE_DATE, FieldType::DATETIME, array('notnull' => false, 'default' => null));
         $dataSetImportTable->addColumn(DataSetInterface::ENTRY_DATE_COLUMN, FieldType::DATETIME, array('notnull' => true));
+        $dataSetImportTable->addColumn(DataSetInterface::MAPPING_IS_IGNORED, Type::BOOLEAN, array('notnull' => true, 'default' => false));
+        $dataSetImportTable->addColumn(DataSetInterface::MAPPING_IS_ASSOCIATED, Type::BOOLEAN, array('notnull' => true, 'default' => false));
+        $dataSetImportTable->addColumn(DataSetInterface::MAPPING_IS_LEFT_SIDE, Type::BOOLEAN, array('notnull' => true, 'default' => false));
 
         // add dimensions
         foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
@@ -182,6 +185,23 @@ class Synchronizer
         }
 
         return $sm->listTableDetails($tableName);
+    }
+
+    /**
+     * @param int $id
+     * @return Table|false
+     */
+    public function deleteDataSetImportTable($id)
+    {
+        $sm = $this->conn->getSchemaManager();
+
+        $tableName = self::getDataSetImportTableName($id);
+
+        if (!$sm->tablesExist([$tableName])) {
+            return false;
+        }
+
+        $sm->dropTable($tableName);
     }
 
     /**

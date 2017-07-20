@@ -123,7 +123,8 @@ class UpdateOverwriteDateInDataSetSubJob implements SubJobInterface, ExpirableJo
          */
         $index = sprintf("INDEX idx_1 (%s, %s, %s)", DataSetInterface::UNIQUE_ID_COLUMN, DataSetInterface::ENTRY_DATE_COLUMN, DataSetInterface::IMPORT_ID_COLUMN);
 
-        $rs1Select = sprintf('SELECT %s, %s, %s, %s',
+        $rs1Select = sprintf('SELECT %s, %s, %s, %s, %s',
+            DataSetInterface::ID_COLUMN,
             DataSetInterface::UNIQUE_ID_COLUMN,
             DataSetInterface::ENTRY_DATE_COLUMN,
             DataSetInterface::IMPORT_ID_COLUMN,
@@ -138,7 +139,8 @@ class UpdateOverwriteDateInDataSetSubJob implements SubJobInterface, ExpirableJo
 
         $rs1Query = sprintf('(%s %s) as rs1', $rs1Select, $rs1From);
 
-        $rs2Select = sprintf('SELECT %s, MAX(%s) %s, %s',
+        $rs2Select = sprintf('SELECT %s, %s, MAX(%s) %s, %s',
+            DataSetInterface::ID_COLUMN,
             DataSetInterface::UNIQUE_ID_COLUMN,
             DataSetInterface::ENTRY_DATE_COLUMN,
             DataSetInterface::ENTRY_DATE_COLUMN,
@@ -153,7 +155,8 @@ class UpdateOverwriteDateInDataSetSubJob implements SubJobInterface, ExpirableJo
 
         $rs2Query = sprintf('(%s %s) as rs2', $rs2Select, $rs2From);
 
-        $select = sprintf('SELECT %s, %s, max(%s) %s FROM %s GROUP BY %s',
+        $select = sprintf('SELECT %s, %s, %s, max(%s) %s FROM %s GROUP BY %s',
+            DataSetInterface::ID_COLUMN,
             DataSetInterface::UNIQUE_ID_COLUMN,
             DataSetInterface::ENTRY_DATE_COLUMN,
             DataSetInterface::IMPORT_ID_COLUMN,
@@ -164,21 +167,25 @@ class UpdateOverwriteDateInDataSetSubJob implements SubJobInterface, ExpirableJo
 
         $createTempTableSql = sprintf("CREATE TEMPORARY TABLE concurrency_example_overwrite (%s) %s;", $index, $select);
 
-        $updateToNullWhere = sprintf("%s IS NOT null AND (%s, %s, %s) IN (SELECT %s, %s, %s FROM concurrency_example_overwrite)",
+        $updateToNullWhere = sprintf("%s IS NOT null AND (%s, %s, %s, %s) IN (SELECT %s, %s, %s, %s FROM concurrency_example_overwrite)",
             DataSetInterface::OVERWRITE_DATE,
+            DataSetInterface::ID_COLUMN,
             DataSetInterface::UNIQUE_ID_COLUMN,
             DataSetInterface::ENTRY_DATE_COLUMN,
             DataSetInterface::IMPORT_ID_COLUMN,
+            DataSetInterface::ID_COLUMN,
             DataSetInterface::UNIQUE_ID_COLUMN,
             DataSetInterface::ENTRY_DATE_COLUMN,
             DataSetInterface::IMPORT_ID_COLUMN
         );
 
-        $updateToCurrentWhere = sprintf("%s IS null AND (%s, %s, %s) NOT IN (SELECT %s, %s, %s FROM concurrency_example_overwrite)",
+        $updateToCurrentWhere = sprintf("%s IS null AND (%s, %s, %s, %s) NOT IN (SELECT %s, %s, %s, %s FROM concurrency_example_overwrite)",
             DataSetInterface::OVERWRITE_DATE,
+            DataSetInterface::ID_COLUMN,
             DataSetInterface::UNIQUE_ID_COLUMN,
             DataSetInterface::ENTRY_DATE_COLUMN,
             DataSetInterface::IMPORT_ID_COLUMN,
+            DataSetInterface::ID_COLUMN,
             DataSetInterface::UNIQUE_ID_COLUMN,
             DataSetInterface::ENTRY_DATE_COLUMN,
             DataSetInterface::IMPORT_ID_COLUMN

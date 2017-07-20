@@ -40,10 +40,21 @@ class DataSet implements DataSetInterface
      * @var int
      */
     protected $numConnectedDataSourceChanges;
+
     /**
      * @var int
      */
     protected $numChanges;
+
+    /**
+     * @var bool
+     */
+    protected $mapBuilderEnabled;
+
+    /**
+     * @var MapBuilderConfigInterface[]
+     */
+    protected $mapBuilderConfigs;
 
     public function __construct()
     {
@@ -307,6 +318,42 @@ class DataSet implements DataSetInterface
     public function setNumChanges($numChanges)
     {
         $this->numChanges = $numChanges;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isMapBuilderEnabled()
+    {
+        return $this->mapBuilderEnabled;
+    }
+
+    /**
+     * @param boolean $mapBuilderEnabled
+     * @return self
+     */
+    public function setMapBuilderEnabled($mapBuilderEnabled)
+    {
+        $this->mapBuilderEnabled = $mapBuilderEnabled;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMapBuilderConfigs()
+    {
+        return $this->mapBuilderConfigs;
+    }
+
+    /**
+     * @param array $mapBuilderConfigs
+     * @return self
+     */
+    public function setMapBuilderConfigs($mapBuilderConfigs)
+    {
+        $this->mapBuilderConfigs = $mapBuilderConfigs;
         return $this;
     }
 

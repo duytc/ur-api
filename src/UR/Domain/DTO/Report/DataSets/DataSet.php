@@ -62,11 +62,13 @@ class DataSet implements DataSetInterface
             $this->filters = [];
         }
 
-        if (empty($data[self::FILTERS_KEY])) {
+        if (!is_array($data[self::FILTERS_KEY])) {
             $this->filters = [];
+        } else {
+            $this->filters = $data[self::FILTERS_KEY];
         }
 
-        $this->filters = $this->createFilterObjects($data[self::FILTERS_KEY]);
+        $this->filters = $this->createFilterObjects($this->filters);
     }
 
     /**

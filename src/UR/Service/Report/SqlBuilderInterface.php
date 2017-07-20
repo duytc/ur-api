@@ -12,9 +12,10 @@ interface SqlBuilderInterface
     /**
      * @param DataSetInterface $dataSet
      * @param $overridingFilters
-     * @return Statement
+     * @param string $logicOperator
+     * @return array
      */
-    public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $overridingFilters = null);
+    public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $overridingFilters = null, $logicOperator = SqlBuilder::OPERATOR_AND);
 
     /**
      * @param array $dataSets

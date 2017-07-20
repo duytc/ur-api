@@ -54,9 +54,9 @@ abstract class RestControllerAbstract extends FOSRestController
                 $request->request->all()
             );
 
-                $routeOptions = array(
-                    '_format' => $request->get('_format')
-                );
+            $routeOptions = array(
+                '_format' => $request->get('_format')
+            );
 
             return $this->addRedirectToResource($newEntity, Codes::HTTP_CREATED, $routeOptions);
         } catch (InvalidFormException $exception) {
@@ -203,7 +203,7 @@ abstract class RestControllerAbstract extends FOSRestController
     protected function addRedirectToResource($id, $statusCode, array $routeOptions)
     {
         if (is_array($id)) {
-            
+
         }
 
         if ($id instanceof ModelInterface) {
@@ -248,11 +248,9 @@ abstract class RestControllerAbstract extends FOSRestController
         $toCheckEntities = [];
         if ($entity instanceof ModelInterface) {
             $toCheckEntities[] = $entity;
-        }
-        else if (is_array($entity)) {
+        } else if (is_array($entity)) {
             $toCheckEntities = $entity;
-        }
-        else {
+        } else {
             throw new \InvalidArgumentException('Expect argument to be ModelInterface or array of ModelInterface');
         }
 
@@ -306,12 +304,14 @@ abstract class RestControllerAbstract extends FOSRestController
             PagerParam::PARAM_SEARCH_KEY,
             PagerParam::PARAM_SORT_FIELD,
             PagerParam::PARAM_SORT_DIRECTION,
-            PagerParam::PARAM_PUBLISHER_ID
+            PagerParam::PARAM_PUBLISHER_ID,
+            PagerParam::PARAM_PAGE,
+            PagerParam::PARAM_LIMIT,
         ], null);
 
         $params = array_merge($defaultParams, $params);
         $publisherId = intval($params[PagerParam::PARAM_PUBLISHER_ID]);
-        return new PagerParam($params[PagerParam::PARAM_SEARCH_FIELD], $params[PagerParam::PARAM_SEARCH_KEY], $params[PagerParam::PARAM_SORT_FIELD], $params[PagerParam::PARAM_SORT_DIRECTION], $publisherId);
+        return new PagerParam($params[PagerParam::PARAM_SEARCH_FIELD], $params[PagerParam::PARAM_SEARCH_KEY], $params[PagerParam::PARAM_SORT_FIELD], $params[PagerParam::PARAM_SORT_DIRECTION], $publisherId, $params[PagerParam::PARAM_PAGE], $params[PagerParam::PARAM_LIMIT]);
     }
 
     /**

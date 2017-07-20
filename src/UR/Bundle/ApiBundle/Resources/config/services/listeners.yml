@@ -53,11 +53,49 @@ services:
             - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: postFlush }
 
-    ur_api.event_listener.data_set_change_listener:
-        class: UR\Bundle\ApiBundle\EventListener\DataSetChangeListener
+#    ur_api.event_listener.data_set_change_listener:
+#        class: UR\Bundle\ApiBundle\EventListener\DataSetChangeListener
+#        tags:
+#            - { name: doctrine.event_listener, event: preUpdate }
+#            - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.map_builder_change_listener:
+        class: UR\Bundle\ApiBundle\EventListener\MapBuilderChangeListener
+        arguments:
+            - '@logger'
+            - '@ur.worker.manager'
+            - '@ur.service.augmentation_mapping_service'
         tags:
+            - { name: doctrine.event_listener, event: postPersist }
             - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: preRemove }
+            - { name: doctrine.event_listener, event: onFlush }
             - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.import_history_change_for_map_builder_listener:
+        class: UR\Bundle\ApiBundle\EventListener\ImportHistoryChangeForMapBuilderListener
+        arguments:
+            - '@logger'
+            - '@ur.worker.manager'
+        tags:
+            - { name: doctrine.event_listener, event: preRemove }
+
+    ur_api.event_listener.data_source_entry_change_for_map_builder_listener:
+        class: UR\Bundle\ApiBundle\EventListener\DataSourceEntryChangeForMapBuilderListener
+        arguments:
+            - '@logger'
+            - '@ur.worker.manager'
+        tags:
+            - { name: doctrine.event_listener, event: preRemove }
+
+    ur_api.event_listener.data_set_change_for_map_builder_listener:
+        class: UR\Bundle\ApiBundle\EventListener\DataSetChangeForMapBuilderListener
+        arguments:
+            - '@logger'
+            - '@ur.worker.manager'
+            - '@ur.service.augmentation_mapping_service'
+        tags:
+            - { name: doctrine.event_listener, event: preRemove }
 
     ur_api.event_listener.count_number_of_changes_when_data_set_change_listener:
         class: UR\Bundle\ApiBundle\EventListener\CountNumberOfChangesWhenDataSetChangeListener
@@ -139,3 +177,9 @@ services:
             tags:
                 - { name: doctrine.event_listener, event: prePersist }
                 - { name: doctrine.event_listener, event: preUpdate }
+
+    ur_api.event_listener.delete_data_set_table_listener:
+        class: UR\Bundle\ApiBundle\EventListener\DeleteDataSetTableListener
+        arguments:
+        tags:
+            - { name: doctrine.event_listener, event: preRemove }

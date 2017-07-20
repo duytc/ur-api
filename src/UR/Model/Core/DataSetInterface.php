@@ -15,6 +15,9 @@ interface DataSetInterface extends ModelInterface
     const OVERWRITE_DATE = '__overwrite_date';
     const ENTRY_DATE_COLUMN = '__entry_date';
     const UNIQUE_HASH_INX = 'unique_hash_idx';
+    const MAPPING_IS_LEFT_SIDE = '__is_left_side';
+    const MAPPING_IS_ASSOCIATED = '__is_associated';
+    const MAPPING_IS_IGNORED = '__is_ignored';
 
     /**
      * @param mixed $id
@@ -169,6 +172,28 @@ interface DataSetInterface extends ModelInterface
      * @return self
      */
     public function setNumChanges($numChanges);
+
+    /**
+     * @return boolean
+     */
+    public function isMapBuilderEnabled();
+
+    /**
+     * @param boolean $mapBuilderEnabled
+     * @return self
+     */
+    public function setMapBuilderEnabled($mapBuilderEnabled);
+
+    /**
+     * @return array
+     */
+    public function getMapBuilderConfigs();
+
+    /**
+     * @param array $mapBuilderConfigs
+     * @return self
+     */
+    public function setMapBuilderConfigs($mapBuilderConfigs);
 
     /**
      * @param int $numChanges

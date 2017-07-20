@@ -49,7 +49,7 @@ class ParsedDataImporter
      * @param Collection $collection
      * @param $importId
      * @param ConnectedDataSourceInterface $connectedDataSource
-     * @return bool
+     * @return Collection
      * @throws Exception
      */
     public function importParsedDataFromFileToDatabase(Collection $collection, $importId, ConnectedDataSourceInterface $connectedDataSource, DateTime $entryDate)
@@ -140,7 +140,7 @@ class ParsedDataImporter
                 $this->conn->commit();
             }
 
-            return true;
+            return new Collection($columns, $rows);
         } catch (Exception $exception) {
             $this->conn->rollBack();
             throw new Exception($exception->getMessage(), $exception->getCode(), $exception);

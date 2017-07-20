@@ -3,11 +3,13 @@
 namespace UR\Bundle\ApiBundle\Controller;
 
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Pubvantage\Worker\JobCounterInterface;
 use Pubvantage\Worker\Scheduler\DataSetJobScheduler;
+use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -19,6 +21,7 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Service\PublicSimpleException;
 
 /**
  * @Rest\RouteResource("DataSet")
@@ -83,7 +86,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      *
      * @Rest\Get("/datasets/{id}", requirements={"id" = "\d+"})
      *
-     * @Rest\View(serializerGroups={"dataset.edit", "user.summary", "connectedDataSource.summary", "datasource.summary"})
+     * @Rest\View(serializerGroups={"dataset.edit", "user.summary", "datasource.summary", "map_builder_config.summary"})
      *
      * @ApiDoc(
      *  section = "Data Source",
@@ -144,6 +147,42 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     }
 
     /**
+     * Get all rows of map builder data set
+     *
+     * @Rest\Get("/datasets/{id}/rows", requirements={"id" = "\d+"})
+     *
+     * @Rest\View(serializerGroups={"dataset.summary"})
+     *
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     *
+     * @ApiDoc(
+     *  section = "Data Set",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param $request Request
+     * @param $id integer
+     * @return \UR\Model\Core\DataSetInterface[]
+     * @throws \Exception
+     */
+    public function cgetRowsMapBuilderAction(Request $request, $id)
+    {
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $this->one($id);
+
+        $params = $this->getParams();
+        $filters = json_decode($request->query->get('filters', ''), true);
+
+        return $this->get('ur.service.data_mapping_manager')->getRows($dataSet, $params, $filters);
+    }
+
+    /**
      * Create a data set from the submitted data
      *
      * @ApiDoc(
@@ -161,7 +200,72 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      */
     public function postAction(Request $request)
     {
-        return $this->post($request);
+        $result = $this->post($request);
+
+        return array('id' => $result->getRouteParameters()['id']);
+    }
+
+    /**
+     * @Rest\Post("/datasets/{id}/matching", requirements={"id" = "\d+"})
+     * @Rest\QueryParam(name="leftSide", requirements="\d+", nullable=true, description="left id")
+     * @Rest\QueryParam(array=true, name="rightSide", requirements="\d+", nullable=true, description="list uniques")
+     *
+     * @param $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function postMapTagsAction($id, Request $request)
+    {
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $this->one($id);
+        $matching = [
+            'leftSide' => $request->request->get('leftSide'),
+            'rightSide' => $request->request->get('rightSide')
+        ];
+        $this->get('ur.service.data_mapping_service')->mapTags($dataSet, $matching);
+    }
+
+    /**
+     * @Rest\Post("/datasets/{id}/unmatching", requirements={"id" = "\d+"})
+     * @Rest\QueryParam(name="rowId", requirements="\d+", nullable=true, description="left id")
+     * @Rest\QueryParam(name="__is_left_side", requirements="\d+", nullable=true, description="Is Left Side or Right Side")
+     *
+     * @param $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function postUnMapTagsAction($id, Request $request)
+    {
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $this->one($id);
+        $rowId = $request->request->get('rowId');
+        $isLeftSide = $request->request->get('__is_left_side');
+
+        $this->get('ur.service.data_mapping_service')->unMapTags($dataSet, $rowId, $isLeftSide);
+    }
+
+    /**
+     * @Rest\Post("/datasets/{id}/rows/update", requirements={"id" = "\d+"})
+     * @Rest\QueryParam(name="isIgnore", requirements="\d+", nullable=true, description="field isIgnore")
+     * @Rest\QueryParam(name="rowId", requirements="\d+", nullable=true, description="field isIgnore")
+     *
+     * @param $id
+     * @param Request $request
+     * @return mixed
+     */
+    public function postUpdateRowsAction($id, Request $request)
+    {
+        /** @var DataSetInterface $dataSet */
+        $dataSet = $this->one($id);
+        $rowId = $request->request->get('rowId');
+
+        $params = [];
+
+        if ($request->request->has('isIgnore')) {
+            $params[DataSetInterface::MAPPING_IS_IGNORED] = $request->request->get('isIgnore');
+        }
+
+        $this->get('ur.service.data_mapping_manager')->updateRow($dataSet, $rowId, $params);
     }
 
     /**
@@ -180,7 +284,23 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         }
 
         $workerManager = $this->get('ur.worker.manager');
-        $workerManager->reloadAllForDataSet($dataSet);
+        $dataMappingService = $this->get('ur.service.data_mapping_service');
+
+        if ($dataSet->isMapBuilderEnabled()) {
+            //Check config is correct or not
+            if ($dataMappingService->validateMapBuilderConfigs($dataSet)) {
+                $workerManager->loadFilesIntoDataSetMapBuilder($dataSet->getId());
+            }
+        } else {
+            $workerManager->reloadAllForDataSet($dataSet);
+        }
+
+        /** @var EntityManagerInterface $em */
+        $em = $this->get('doctrine.orm.entity_manager');
+        $augmentationMappingService = $this->get('ur.service.augmentation_mapping_service');
+
+        $augmentationMappingService->noticeChangesInLeftRightMapBuilder($dataSet, $em);
+        $augmentationMappingService->noticeChangesInDataSetMapBuilder($dataSet, $em);
 
         return ['pendingLoads' => $this->getPendingLoadFilesForDataSet($dataSet)];
     }

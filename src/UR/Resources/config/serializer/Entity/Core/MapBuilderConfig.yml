@@ -1,0 +1,24 @@
+UR\Entity\Core\MapBuilderConfig:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [map_builder_config.detail, map_builder_config.summary, map_builder_config.edit]
+        name:
+            expose: true
+            groups: [map_builder_config.detail, map_builder_config.summary, map_builder_config.edit]
+        filters:
+            expose: true
+            groups: [map_builder_config.detail, map_builder_config.summary, map_builder_config.edit]
+        mapFields:
+            expose: true
+            groups: [map_builder_config.detail, map_builder_config.summary, map_builder_config.edit]
+        dataSet:
+            expose: true
+            groups: [map_builder_config.detail, map_builder_config.summary, map_builder_config.edit]
+        mapDataSet:
+            expose: true
+            groups: [map_builder_config.detail, map_builder_config.summary, map_builder_config.edit]
+        leftSide:
+            expose: true
+            groups: [map_builder_config.detail, map_builder_config.summary, map_builder_config.edit]

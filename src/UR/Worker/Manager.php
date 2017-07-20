@@ -19,14 +19,18 @@ use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
 use UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted;
 use UR\Worker\Job\Concurrent\DetectDateRangeForDataSource;
 use UR\Worker\Job\Concurrent\DetectDateRangeForDataSourceEntry;
+use UR\Worker\Job\Linear\AlterDataSetTableJob;
 use UR\Worker\Job\Linear\AlterDataSetTableSubJob;
 use UR\Worker\Job\Linear\DeleteConnectedDataSource;
 use UR\Worker\Job\Linear\LoadFilesIntoDataSet;
+use UR\Worker\Job\Linear\LoadFilesIntoDataSetMapBuilder;
 use UR\Worker\Job\Linear\ReloadConnectedDataSource;
 use UR\Worker\Job\Linear\ReloadDataSet;
 use UR\Worker\Job\Linear\RemoveAllDataFromConnectedDataSource;
 use UR\Worker\Job\Linear\RemoveAllDataFromDataSet;
+use UR\Worker\Job\Linear\TruncateDataSetSubJob;
 use UR\Worker\Job\Linear\UndoImportHistories;
+use UR\Worker\Job\Linear\UpdateDataSetTotalRowSubJob;
 use UR\Worker\Job\Linear\UpdateOverwriteDateInDataSetSubJob;
 
 // responsible for creating background tasks
@@ -162,6 +166,18 @@ class Manager
     }
 
     /**
+     * @param DataSetInterface $dataSet
+     */
+    public function updateTotalRowsForDataSet(DataSetInterface $dataSet)
+    {
+        $updateTotalRow = [
+            'task' => UpdateDataSetTotalRowSubJob::JOB_NAME
+        ];
+
+        $this->dataSetJobScheduler->addJob($updateTotalRow, $dataSet->getId());
+    }
+
+    /**
      * @param int $code
      * @param int $publisherId
      * @param array $details
@@ -190,7 +206,7 @@ class Manager
     public function alterDataSetTable($dataSetId, $newFields, $updateFields, $deletedFields)
     {
         $jobData = [
-            'task' => AlterDataSetTableSubJob::JOB_NAME,
+            'task' => AlterDataSetTableJob::JOB_NAME,
             AlterDataSetTableSubJob::NEW_FIELDS => $newFields,
             AlterDataSetTableSubJob::UPDATE_FIELDS => $updateFields,
             AlterDataSetTableSubJob::DELETED_FIELDS => $deletedFields
@@ -289,5 +305,24 @@ class Manager
 
         // concurrent job, we do not care what order it is processed in
         $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    /**
+     * @param int $dataSetId
+     */
+    public function loadFilesIntoDataSetMapBuilder($dataSetId)
+    {
+        // remove data first
+        $this->dataSetJobScheduler->addJob([
+            'task' => TruncateDataSetSubJob::JOB_NAME
+        ], $dataSetId);
+
+        $jobData = [
+            'task' => LoadFilesIntoDataSetMapBuilder::JOB_NAME,
+            LoadFilesIntoDataSetMapBuilder::DATA_SET_ID => $dataSetId,
+        ];
+
+        // concurrent job, we do not care what order it is processed in
+        $this->dataSetJobScheduler->addJob($jobData, $dataSetId);
     }
 }

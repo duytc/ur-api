@@ -54,6 +54,9 @@ class SqlBuilder implements SqlBuilderInterface
     const JOIN_PARAM_TO_JOIN_FIELD = 'toJoinField';
     const JOIN_PARAM_TO_TABLE_NAME = 'tableName';
 
+    const OPERATOR_AND = 'AND';
+    const OPERATOR_OR = 'OR';
+
     /**
      * @var Connection
      */
@@ -77,7 +80,7 @@ class SqlBuilder implements SqlBuilderInterface
     /**
      * @inheritdoc
      */
-    public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $overridingFilters = null)
+    public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $overridingFilters = null, $logicOperator = self::OPERATOR_AND)
     {
         $metrics = $dataSet->getMetrics();
         $dimensions = $dataSet->getDimensions();
@@ -93,9 +96,10 @@ class SqlBuilder implements SqlBuilderInterface
          * If not, the transformers have no value on none-selected fields, so that produce the null value
          */
         $fields = array_keys($dataSetEntity->getAllDimensionMetrics());
+        $fieldsDataSetReport = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
         // merge with dimensions, metrics of dataSetDTO because it contains hidden columns such as __date_month, __date_year, ...
         $temporaryFields = $this->getTemporaryFieldsFromDataSetTable($table, array_merge($dimensions, $metrics));
-        $fields = array_merge($fields, $dimensions, $metrics, $temporaryFields);
+        $fields = array_merge($fields, $dimensions, $metrics, $temporaryFields, $fieldsDataSetReport);
         $fields = array_values(array_unique($fields));
 
         if (count($tableColumns) < 1) {
@@ -125,7 +129,7 @@ class SqlBuilder implements SqlBuilderInterface
             $qb->where($overwriteDateCondition);
             return array(
                 self::DATE_RANGE_KEY => [],
-                self::STATEMENT_KEY => $qb->execute()
+                self::STATEMENT_KEY => $qb
             );
         }
 
@@ -141,21 +145,25 @@ class SqlBuilder implements SqlBuilderInterface
             }
         }
 
-        if (count($conditions) == 1) {
+        if (count($conditions) == 0) {
             $qb->where($conditions[self::FIRST_ELEMENT]);
             $qb = $this->bindFilterParam($qb, $filters);
 
             return array(
                 self::DATE_RANGE_KEY => $dateRange,
-                self::STATEMENT_KEY => $qb->execute()
+                self::STATEMENT_KEY => $qb
             );
         }
+        //Add filter OVERWRITE DATE = null
 
-        $qb->where(implode(' AND ', $conditions));
+        $where = implode(" $logicOperator ", $conditions);
+        $where = sprintf('%s IS NULL AND (%s)', \UR\Model\Core\DataSetInterface::OVERWRITE_DATE, $where);
+        $qb->where($where);
+
         $qb = $this->bindFilterParam($qb, $filters);
 
         return array(
-            self::STATEMENT_KEY => $qb->execute(),
+            self::STATEMENT_KEY => $qb,
             self::DATE_RANGE_KEY => $dateRange
         );
     }
@@ -182,7 +190,7 @@ class SqlBuilder implements SqlBuilderInterface
             } else if ($filter instanceof TextFilterInterface) {
                 if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN])) {
                     $bindParamName = sprintf(':%s%d', $filter->getFieldName(), $dataSetId ?? 0);
-                    $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::SIMPLE_ARRAY);
+                    $qb->setParameter($bindParamName, $filter->getComparisonValue(), Connection::PARAM_STR_ARRAY);
                 } else {
                     $bindParamName = sprintf(':%s%d', $filter->getFieldName(), $dataSetId ?? 0);
                     $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::STRING);
@@ -190,7 +198,7 @@ class SqlBuilder implements SqlBuilderInterface
             } else if ($filter instanceof NumberFilterInterface) {
                 if (in_array($filter->getComparisonType(), [NumberFilter::COMPARISON_TYPE_IN, NumberFilter::COMPARISON_TYPE_NOT_IN])) {
                     $bindParamName = sprintf(':%s%d', $filter->getFieldName(), $dataSetId ?? 0);
-                    $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::SIMPLE_ARRAY);
+                    $qb->setParameter($bindParamName, $filter->getComparisonValue(), Connection::PARAM_INT_ARRAY);
                 } else {
                     $bindParamName = sprintf(':%s%d', $filter->getFieldName(), $dataSetId ?? 0);
                     $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::INTEGER);
@@ -267,7 +275,11 @@ class SqlBuilder implements SqlBuilderInterface
                 throw new RuntimeException('expect an DataSetInterface object');
             }
 
-            return $this->buildQueryForSingleDataSet($dataSet);
+            $result = $this->buildQueryForSingleDataSet($dataSet);
+            return array (
+                self::DATE_RANGE_KEY => $result[self::DATE_RANGE_KEY],
+                self::STATEMENT_KEY => $result[self::STATEMENT_KEY]->execute()
+            );
         }
 
         if (count($joinConfig) < 1) {
@@ -286,6 +298,9 @@ class SqlBuilder implements SqlBuilderInterface
             $qb = $this->buildSelectQuery($qb, $dataSet, $dataSetIndex, $joinConfig);
             $buildResult = $this->buildFilters($dataSet->getFilters(), sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());
 
+            $overrideDateField = sprintf('%s.%s', sprintf('t%d', $dataSetIndex), \UR\Model\Core\DataSetInterface::OVERWRITE_DATE);
+            $conditions[] = sprintf('%s IS NULL', $overrideDateField);
+            
             $conditions = array_merge($conditions, $buildResult[self::CONDITION_KEY]);
             $dateRange = array_merge($dateRange, $buildResult[self::DATE_RANGE_KEY]);
         }
@@ -470,9 +485,6 @@ class SqlBuilder implements SqlBuilderInterface
 
             $sqlConditions[] = $this->buildSingleFilter($filter, $tableAlias, $dataSetId);
         }
-
-        $overrideDateField = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, \UR\Model\Core\DataSetInterface::OVERWRITE_DATE) : \UR\Model\Core\DataSetInterface::OVERWRITE_DATE;
-        $sqlConditions[] = sprintf('%s IS NULL', $overrideDateField);
 
         return array(
             self::CONDITION_KEY => $sqlConditions,

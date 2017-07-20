@@ -5,10 +5,13 @@ namespace UR\Service\Import;
 
 use Monolog\Logger;
 use UR\Domain\DTO\ConnectedDataSource\DryRunParamsInterface;
+use UR\DomainManager\MapBuilderConfigManager;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
+use UR\Model\Core\MapBuilderConfigInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
+use UR\Service\DataSet\DataMappingService;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\ParsedDataImporter;
 use UR\Service\Parser\DryRunReportFilterInterface;
@@ -42,13 +45,21 @@ class AutoImportData implements AutoImportDataInterface
     /** @var DryRunReportFilterInterface */
     private $dryRunReportFilter;
 
-    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, Logger $logger, DryRunReportSorterInterface $dryRunReportSorter, DryRunReportFilterInterface $dryRunReportFilter)
+    /** @var MapBuilderConfigManager */
+    protected $mapBuilderConfigManager;
+
+    /** @var DataMappingService */
+    protected $dataMappingService;
+
+    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, Logger $logger, DryRunReportSorterInterface $dryRunReportSorter, DryRunReportFilterInterface $dryRunReportFilter, MapBuilderConfigManager $mapBuilderConfigManager, DataMappingService $dataMappingService)
     {
         $this->parsingFileService = $parsingFileService;
         $this->importer = $importer;
         $this->logger = $logger;
         $this->dryRunReportSorter = $dryRunReportSorter;
         $this->dryRunReportFilter = $dryRunReportFilter;
+        $this->mapBuilderConfigManager = $mapBuilderConfigManager;
+        $this->dataMappingService = $dataMappingService;
     }
 
     /**
@@ -61,7 +72,16 @@ class AutoImportData implements AutoImportDataInterface
 
         /* import data to database */
         $this->logger->notice(sprintf('begin loading file "%s" data to database "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
-        $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
+        $collection = $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
+
+        /** Import collection to map builder configs */
+        $dataSet = $connectedDataSource->getDataSet();
+        $mapBuilderConfigs = $this->mapBuilderConfigManager->getByMapDataSet($dataSet);
+
+        foreach ($mapBuilderConfigs as $mapBuilderConfig) {
+            /** @var MapBuilderConfigInterface $mapBuilderConfig */
+            $this->dataMappingService->importDataFromComponentDataSet($mapBuilderConfig, $collection);
+        }
     }
 
     /**

@@ -25,6 +25,12 @@ UR\Entity\Core\DataSet:
         connectedDataSources:
             expose: true
             groups: [dataset.detail, dataset.summary]
+        mapBuilderEnabled:
+            expose: true
+            groups: [dataset.detail, dataset.summary, dataset.edit]
+        mapBuilderConfigs:
+            expose: true
+            groups: [dataset.detail, dataset.summary, dataset.edit]
         lastActivity:
             expose: true
             groups: [dataset.detail, dataset.summary]

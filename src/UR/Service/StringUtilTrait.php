@@ -46,16 +46,6 @@ trait StringUtilTrait
         return $domain;
     }
 
-    protected function normalizeName($name)
-    {
-        $name = strtolower($name);
-
-        $string = str_replace(' ', '-', $name); // Replaces all spaces with hyphens.
-        $string = preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
-
-        return preg_replace('/-+/', '-', $string); // Replaces multiple hyphens with single one.
-    }
-
     public static function generateUuidV4() {
         return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
             // 32 bits for "time_low"
@@ -98,5 +88,17 @@ trait StringUtilTrait
     {
         $lastOccur = strrchr($column, "_");
         return str_replace($lastOccur, "", $column);
+    }
+
+    public function getStandardName($name)
+    {
+        $name = strtolower(trim($name));
+
+        $name = preg_replace("/ +/", "_", $name);
+        $name = preg_replace("/-+/", "_", $name);
+        $name = preg_replace("/[^a-zA-Z0-9]/ ", "_", $name);
+        $name = preg_replace("/_+/ ", "_", $name);
+
+        return $name;
     }
 }

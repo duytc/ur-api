@@ -1,0 +1,29 @@
+UR\Entity\Core\MapBuilderConfig:
+    type: entity
+    table: core_map_builder_config
+    repositoryClass: UR\Repository\Core\MapBuilderConfigRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: 100
+        mapFields:
+            type: json_array
+            nullable: false
+        filters:
+            type: json_array
+            nullable: false
+        leftSide:
+            type: boolean
+            nullable: false
+            options:
+                default: false
+    manyToOne:
+        dataSet:
+            targetEntity: UR\Entity\Core\DataSet
+        mapDataSet:
+            targetEntity: UR\Entity\Core\DataSet

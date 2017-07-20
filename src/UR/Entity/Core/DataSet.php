@@ -5,6 +5,7 @@ namespace UR\Entity\Core;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSet as DataSetModel;
 use UR\Model\Core\LinkedMapDataSetInterface;
+use UR\Model\Core\MapBuilderConfigInterface;
 use UR\Model\User\UserEntityInterface;
 
 class DataSet extends DataSetModel
@@ -33,7 +34,12 @@ class DataSet extends DataSetModel
 
     protected $numConnectedDataSourceChanges;
     protected $numChanges;
+    protected $mapBuilderEnabled;
 
+    /**
+     * @var MapBuilderConfigInterface[]
+     */
+    protected $mapBuilderConfigs;
     /**
      * @inheritdoc
      *

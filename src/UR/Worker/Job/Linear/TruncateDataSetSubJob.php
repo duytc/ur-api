@@ -86,6 +86,10 @@ class TruncateDataSetSubJob implements SubJobInterface
 
             $this->importHistoryManager->deleteImportHistoryByDataSet($dataSet);
 
+            $dataSet->increaseNumChanges();
+            $this->entityManager->persist($dataSet);
+            $this->entityManager->flush();
+
             $this->logger->notice(sprintf('Truncate data set %s with table name %s', $dataSetId, $dataTable->getName()));
         } catch (\Exception $e) {
             $this->logger->error(sprintf('Could not truncate data from data set (ID: %s) error occur: %s', $dataSetId, $e->getMessage()));

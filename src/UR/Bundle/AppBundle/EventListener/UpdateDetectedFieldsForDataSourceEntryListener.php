@@ -94,8 +94,12 @@ class UpdateDetectedFieldsForDataSourceEntryListener
         $this->insertedEntities = [];
         $this->deletedEntities = [];
 
-        // flush changes
-        $em->flush();
+        try {
+            // flush changes
+            $em->flush();
+        } catch (\Exception $e) {
+
+        }
 
         foreach ($dataSourceEntriesToBeDetectedFields as $dataSourceEntryToBeDetectedFields) {
             $this->workerManager->updateDetectedFieldsWhenEntryInserted($dataSourceEntryToBeDetectedFields['dataSourceEntryId'], $dataSourceEntryToBeDetectedFields['dataSourceId']);

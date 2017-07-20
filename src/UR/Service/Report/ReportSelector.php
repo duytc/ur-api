@@ -48,7 +48,11 @@ class ReportSelector implements ReportSelectorInterface
         $dataSets = $params->getDataSets();
 
         if (count($dataSets) < 2) {
-            return $this->sqlBuilder->buildQueryForSingleDataSet($dataSets[0], $overridingFilters);
+            $result = $this->sqlBuilder->buildQueryForSingleDataSet($dataSets[0], $overridingFilters);
+            return array (
+                SqlBuilder::DATE_RANGE_KEY => $result[SqlBuilder::DATE_RANGE_KEY],
+                SqlBuilder::STATEMENT_KEY => $result[SqlBuilder::STATEMENT_KEY]->execute()
+            );
         }
 
         return $this->sqlBuilder->buildQuery($dataSets, $params->getJoinConfigs(), $overridingFilters);
