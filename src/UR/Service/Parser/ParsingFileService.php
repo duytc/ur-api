@@ -537,6 +537,12 @@ class ParsingFileService
         }
 
         $dataSet = $connectedDataSource->getDataSet();
+        /*
+         * $types:
+         * [
+         *      <field_in_data_set>:<type>
+         * ]
+         */
         $types = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
         $dateTimeTypes = array_filter($types, function ($type) {
             return $type == FieldType::DATE || $type == FieldType::DATETIME;
@@ -547,13 +553,19 @@ class ParsingFileService
         }
 
         /** Get field in files as $$FILE$$date, $$FILE$$revenue...*/
+        /*
+         * $mapFields:
+         * [
+         *      _$$FILE$$<field_in_file>:<field_in_data_set>
+         * ]
+         */
         $mapFields = $connectedDataSource->getMapFields();
         $fieldInFiles = [];
         foreach ($dateTimeTypes as $field => $type) {
             if (in_array($field, $mapFields)) {
                 foreach ($mapFields as $fieldInFile => $fieldInDataSet) {
                     if ($field == $fieldInDataSet) {
-                        $fieldInFiles[] = $fieldInFile;
+                        $fieldInFiles[$fieldInFile] = $type;
                     }
                 }
             }
@@ -561,18 +573,22 @@ class ParsingFileService
 
         /** Remove row if have invalid date, datetime value*/
         foreach ($rows as $key => &$row) {
-            foreach ($fieldInFiles as $fieldInFile) {
+            foreach ($fieldInFiles as $fieldInFile => $type) {
                 if (!array_key_exists($fieldInFile, $row)) {
                     continue;
                 }
+
+                if ($type !== FieldType::DATE || $type !== FieldType::DATETIME) {
+                    continue;
+                }
+
                 $value = $row[$fieldInFile];
-                $value = DateFormat::getDateFromDateTime($value, $fieldInFile, $connectedDataSource);
                 if (empty($value)) {
                     unset($rows[$key]);
-                    continue;
                 }
             }
         }
+
         return array_values($rows);
     }
 
