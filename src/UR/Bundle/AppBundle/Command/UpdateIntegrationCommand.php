@@ -45,8 +45,8 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
             ->addOption('enables-users', 'u', InputOption::VALUE_OPTIONAL,
                 'Enable for special users (optional), allow multiple userId separated by comma, e.g. -u "5,10,3"')
             ->addOption('force-update-all-datasources', 'f', InputOption::VALUE_NONE,
-                'Update params to existing datasources-integrations (optional)')
-            ->setDescription('update individual fields of an integration such as display name, params or enabled-users. Notice: require integration cname to identify which integration is being updated.');
+                'Update params to existing datasources-integrations (optional).')
+            ->setDescription('Update individual fields of an integration such as display name, params or enabled-users. Notice: require integration cname to identify which integration is being updated.');
     }
 
     /**
@@ -59,7 +59,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         /** @var Logger $logger */
         $this->logger = $container->get('logger');
 
-        $this->logger->info('starting command...');
+        $this->logger->info('Starting command...');
 
         /* get inputs */
         $cName = $input->getArgument('cname');
@@ -78,7 +78,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         $integration = $integrationManager->findByCanonicalName($cName);
 
         if (!$integration instanceof IntegrationInterface) {
-            $output->writeln(sprintf('Could not found integration with cname %s. Please try other command ur:integration:create to create', $cName));
+            $output->writeln(sprintf('Could not found integration with cname %s. Please try other command ur:integration:create to create.', $cName));
             return 0;
         }
 
@@ -92,7 +92,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
             // validate params
             $paramsString = $input->getOption('parameters');
             if (!empty($paramsString) && !preg_match('/^[a-zA-Z0-9,:;\s-_\/]+$/', $paramsString)) {
-                $output->writeln(sprintf('command run failed: parameter must not be null or empty, or wrong format (a-zA-Z0-9,:; -_/)'));
+                $output->writeln(sprintf('Failed to execute command: parameter must not be null or empty, or wrong format (a-zA-Z0-9,:; -_/)'));
                 return 0;
             }
 
@@ -102,13 +102,13 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
                 $paramNameAndType = explode(':', $param);
 
                 if (count($paramNameAndType) > 3) {
-                    $output->writeln(sprintf('command run failed: invalid param name and type, please use format "name:type:value"'));
+                    $output->writeln(sprintf('Failed to execute command: invalid param name and type, please use format "name:type:value".'));
                     return false;
                 }
                 
                 $paramType = count($paramNameAndType) < 2 ? Integration::PARAM_TYPE_PLAIN_TEXT : $paramNameAndType[1];
                 if (!in_array($paramType, Integration::$SUPPORTED_PARAM_TYPES)) {
-                    $output->writeln(sprintf('command run failed: not supported param type %s', $paramType));
+                    $output->writeln(sprintf('Failed to execute command: do not support param type %s.', $paramType));
                     return 0;
                 }
             }
@@ -123,7 +123,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
 
         /* Update enable-users */
         if ($userIdsString && $isAllPublishers) {
-            $output->writeln(sprintf('command run failed: not allow use both option -u and -a'));
+            $output->writeln(sprintf('Failed to execute command: Do not allow use both option -u and -a.'));
             return 0;
         }
 
@@ -136,7 +136,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         /* finally, save changes for Integration */
         $integrationManager->save($integration);
 
-        $output->writeln(sprintf('command run successfully: %s updated.', 1));
+        $output->writeln(sprintf('Command runs successfully: %s updated.', 1));
 
         return 1;
     }
@@ -149,7 +149,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
     private function validateInput($cname, OutputInterface $output)
     {
         if (empty($cname) || !preg_match('/^[a-z0-9\-_]+$/', $cname)) {
-            $output->writeln(sprintf('command run failed: cname must not be null or empty, or wrong format (a-z\-_0-9)'));
+            $output->writeln(sprintf('Failed to execute command: cname must not be null or empty, or wrong format (a-z\-_0-9)'));
             return false;
         }
 
@@ -203,9 +203,6 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
             // init new data source integration params values due to new Integration params
             $newDataSourceIntegrationParams = array_map(function ($newIntegrationParam) {
                 $newIntegrationParam[Integration::PARAM_KEY_VALUE] = null;
-                if (array_key_exists(Integration::PARAM_KEY_OPTION_VALUES, $newIntegrationParam)){
-                    unset($newIntegrationParam[Integration::PARAM_KEY_OPTION_VALUES]);
-                }
                 return $newIntegrationParam;
             }, $newIntegrationParams);
 
@@ -216,7 +213,13 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
                     // else, the new value is initialized value as above
                     if ($oldDataSourceIntegrationParam[Integration::PARAM_KEY_KEY] == $newDataSourceIntegrationParam[Integration::PARAM_KEY_KEY]) {
                         if ($newDataSourceIntegrationParam[Integration::PARAM_KEY_TYPE] == $oldDataSourceIntegrationParam[Integration::PARAM_KEY_TYPE]) {
-                            $newDataSourceIntegrationParam[Integration::PARAM_KEY_VALUE] = $oldDataSourceIntegrationParam[Integration::PARAM_KEY_VALUE];
+
+                            /** important: if new type == old type and secure type -> set "null" known as no change */
+                            if ($oldDataSourceIntegrationParam[Integration::PARAM_KEY_TYPE] == Integration::PARAM_TYPE_SECURE) {
+                                $newDataSourceIntegrationParam[Integration::PARAM_KEY_VALUE] = null;
+                            } else {
+                                $newDataSourceIntegrationParam[Integration::PARAM_KEY_VALUE] = $oldDataSourceIntegrationParam[Integration::PARAM_KEY_VALUE];
+                            }
                         }
                         // advance to keep old value if type change from secure to plainText
                         // if from plainText to secure, we already have a listener to do this
