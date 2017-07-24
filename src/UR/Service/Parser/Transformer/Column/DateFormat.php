@@ -33,6 +33,18 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
      */
     const FULL_DATE_FORMAT_REGEX = '/^([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})[\-,\.,\/,_\s]*([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})[\-,\.,\/,_\s]*([Y]{2}|[Y]{4}|[M]{1,4}|[D]{1,2})*(([T]{1}|[H]{2,2}|[m]{2,2}|[s]{2,2})|[\\-,\.,\/,_:\s])*((T?))?$/';
 
+    /**
+     * @var array
+     * format as:
+     * [
+     *      [
+     *          'format': 'YYYY/MM/DD',
+     *          'isCustomFormatDateFrom': false,
+     *          'isPartialMatch': false,
+     *      ],
+     *      ...
+     * ]
+     */
     protected $fromDateFormats;
     protected $toDateFormat;
     protected $timezone;

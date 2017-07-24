@@ -4,6 +4,7 @@ namespace UR\Service\DataSet;
 
 use DateTime;
 use Doctrine\DBAL\Types\Type;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 
 final class FieldType
 {
@@ -14,6 +15,7 @@ final class FieldType
     const NUMBER = 'number'; // integer
     const DECIMAL = 'decimal'; // double/float
     const TEMPORARY = 'temporary';
+    const FIELD = 'field';
 
     /** special for __unique_id: char instead of varchar */
     const DATABASE_TYPE_UNIQUE_ID = 'char';
@@ -50,20 +52,39 @@ final class FieldType
         return in_array($name, self::$types, true);
     }
 
-    public static function convertValue($originalValue, $type)
+    public static function convertValue($originalValue, $type , $fromDateFormats = null, $requireField = null)
     {
         switch ($type) {
             case FieldType::DATE:
-                return DateTime::createFromFormat('Y-m-d', $originalValue);
             case FieldType::DATETIME:
-                $dateTime = DateTime::createFromFormat('Y-m-d H:i:s', $originalValue);
-                if (!$dateTime) {
-                    $dateTime = DateTime::createFromFormat('Y-m-d H:i', $originalValue);
+                $resultDate = '';
+                foreach ($fromDateFormats as $fromDateFormat){
+                    if ($fromDateFormat[self::FIELD] == $requireField){
+                        $fromValues = $fromDateFormat[DateFormat::FROM_KEY];
+                        foreach ($fromValues as $from) {
+                            $format = array_key_exists(DateFormat::FORMAT_KEY, $from) ? $from[DateFormat::FORMAT_KEY] : null;
+                            if (array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $from) && $from[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM]) {
+                                $format = DateFormat::convertCustomFromDateFormatToPHPDateFormat($format);
+                            } else {
+                                $format = DateFormat::convertDateFormatFullToPHPDateFormat($format);
+                            }
+                            $date = DateTime::createFromFormat('!' . $format, $originalValue); // auto set time (H,i,s) to 0 if not available
+
+                            if (!$date instanceof DateTime) {
+                                continue;
+                            }
+                            $resultDate = $date;
+                        }
+                    }
                 }
-                if (!$dateTime) {
-                    $dateTime = DateTime::createFromFormat('Y-m-d H', $originalValue);
+                //This field is required and entered transform date
+                if (!empty($resultDate)) {
+                    return $resultDate;
                 }
-                return $dateTime;
+                //  This field is required but is not entered transform date -> remove this row
+                else {
+                    return false;
+                }
             case FieldType::NUMBER:
                 return is_numeric($originalValue) ? round($originalValue) : null;
             case FieldType::DECIMAL:

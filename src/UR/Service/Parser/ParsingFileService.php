@@ -485,6 +485,8 @@ class ParsingFileService
             return $rows;
         }
 
+        $fromDateFormats = $connectedDataSource->getTransforms();
+
         $mapFields = array_flip($connectedDataSource->getMapFields());
         $dataSet = $connectedDataSource->getDataSet();
         $types = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
@@ -500,7 +502,7 @@ class ParsingFileService
                 if (!array_key_exists($fieldInFile, $row)) {
                     continue;
                 }
-                $value = FieldType::convertValue($row[$fieldInFile], $type);
+                $value = FieldType::convertValue($row[$fieldInFile], $type, $fromDateFormats, $requireField);
 
                 if ($type == FieldType::TEXT || $type == FieldType::LARGE_TEXT || $type == FieldType::DATE || $type == FieldType::DATETIME) {
                     if (empty($value)) {
