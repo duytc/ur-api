@@ -189,7 +189,7 @@ class ConvertTimeZoneCheckAtToUTCCommand extends ContainerAwareCommand
 
             $type = $alertSetting[DataSourceAlertInterface::ALERT_TYPE_KEY];
 
-            if ($type != DataSourceAlertInterface::ALERT_DATA_NO_RECEIVED_KEY) {
+            if ($type != DataSourceAlertInterface::ALERT_TYPE_VALUE_DATA_NO_RECEIVED) {
                 continue;
             }
 

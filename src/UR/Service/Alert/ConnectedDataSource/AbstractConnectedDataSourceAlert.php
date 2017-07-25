@@ -8,6 +8,11 @@ use UR\Model\Core\DataSourceInterface;
 
 abstract class AbstractConnectedDataSourceAlert implements ConnectedDataSourceAlertInterface
 {
+    public static $SUPPORTED_ALERT_SETTING_KEYS = [
+        self::TYPE_DATA_ADDED,
+        self::TYPE_IMPORT_FAILURE
+    ];
+
     /** @var int */
     protected $alertCode;
     /** @var string */

@@ -14,6 +14,12 @@ abstract class AbstractDataSourceAlert implements DataSourceAlertInterface
     /** @var DataSourceInterface */
     protected $dataSource;
 
+    public static $SUPPORTED_ALERT_SETTING_KEYS = [
+        self::ALERT_TYPE_VALUE_WRONG_FORMAT,
+        self::ALERT_TYPE_VALUE_DATA_RECEIVED,
+        self::ALERT_TYPE_VALUE_DATA_NO_RECEIVED,
+    ];
+
     /**
      * AbstractDataSourceAlert constructor.
      * @param $alertCode

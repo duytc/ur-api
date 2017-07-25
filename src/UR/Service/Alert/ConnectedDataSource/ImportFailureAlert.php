@@ -41,25 +41,25 @@ class ImportFailureAlert extends AbstractConnectedDataSourceAlert
     public function getDetails()
     {
         $details = [
-            self::IMPORT_ID => $this->importId,
+            self::KEY_IMPORT_ID => $this->importId,
             self::DATA_SOURCE_NAME => $this->dataSource->getName(),
             self::DATA_SOURCE_ID => $this->dataSource->getId(),
-            self::DATA_SET_NAME => $this->dataSet->getName(),
-            self::DATA_SET_ID => $this->dataSet->getId(),
+            self::KEY_DATA_SET_NAME => $this->dataSet->getName(),
+            self::KEY_DATA_SET_ID => $this->dataSet->getId(),
             self::FILE_NAME => $this->fileName
         ];
 
         switch ($this->getAlertCode()) {
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_REQUIRED_FAIL:
-                $details[self::COLUMN] = $this->column;
+                $details[self::KEY_COLUMN] = $this->column;
                 break;
 
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_WRONG_TYPE_MAPPING:
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_NUMBER:
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_DATE:
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE:
-                $details[self::COLUMN] = $this->column;
-                $details[self::CONTENT] = $this->content;
+                $details[self::KEY_COLUMN] = $this->column;
+                $details[self::KEY_CONTENT] = $this->content;
                 break;
 
             case AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_MAPPING_FAIL:

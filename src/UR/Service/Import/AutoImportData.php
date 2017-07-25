@@ -141,8 +141,8 @@ class AutoImportData implements AutoImportDataInterface
             $details = [
                 AbstractConnectedDataSourceAlert::CODE => $e->getAlertCode(),
                 AbstractConnectedDataSourceAlert::DETAILS => [
-                    AbstractConnectedDataSourceAlert::COLUMN => $e->getColumn(),
-                    AbstractConnectedDataSourceAlert::CONTENT => $e->getContent()
+                    AbstractConnectedDataSourceAlert::KEY_COLUMN => $e->getColumn(),
+                    AbstractConnectedDataSourceAlert::KEY_CONTENT => $e->getContent()
                 ]
             ];
 

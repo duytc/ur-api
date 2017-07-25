@@ -19,20 +19,11 @@ use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\IntegrationPublisherInterface;
 use UR\Model\User\Role\AdminInterface;
+use UR\Service\Alert\DataSource\AbstractDataSourceAlert;
 use UR\Service\Alert\DataSource\DataSourceAlertInterface;
 
 class DataSourceFormType extends AbstractRoleSpecificFormType
 {
-    const ALERT_WRONG_FORMAT_KEY = 'wrongFormat';
-    const ALERT_DATA_RECEIVED_KEY = 'dataReceived';
-    const ALERT_DATA_NO_RECEIVED_KEY = 'notReceived';
-
-    static $SUPPORTED_ALERT_SETTING_KEYS = [
-        self::ALERT_WRONG_FORMAT_KEY,
-        self::ALERT_DATA_RECEIVED_KEY,
-        self::ALERT_DATA_NO_RECEIVED_KEY,
-    ];
-
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
@@ -59,8 +50,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             ->add('dateRange')
             ->add('fromMetadata')
             ->add('pattern')
-            ->add('emailAnchorTexts')
-        ;
+            ->add('emailAnchorTexts');
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(
@@ -135,7 +125,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
 
         $checkedAlertKeys = [];
         foreach ($alertSetting as $alert) {
-            if (!in_array($alert[DataSourceAlertInterface::ALERT_TYPE_KEY], self::$SUPPORTED_ALERT_SETTING_KEYS)
+            if (!in_array($alert[DataSourceAlertInterface::ALERT_TYPE_KEY], AbstractDataSourceAlert::$SUPPORTED_ALERT_SETTING_KEYS)
                 || in_array($alert, $checkedAlertKeys)
             ) {
                 return false;

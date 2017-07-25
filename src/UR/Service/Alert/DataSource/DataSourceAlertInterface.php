@@ -7,13 +7,17 @@ use UR\Service\Alert\AlertDTOInterface;
 
 interface DataSourceAlertInterface extends AlertDTOInterface
 {
-    const ALERT_WRONG_FORMAT_KEY = 'wrongFormat';
-    const ALERT_DATA_RECEIVED_KEY = 'dataReceived';
-    const ALERT_DATA_NO_RECEIVED_KEY = 'notReceived';
     const ALERT_TYPE_KEY = 'type';
+
+    /* values for alert type */
+    const ALERT_TYPE_VALUE_WRONG_FORMAT = 'wrongFormat';
+    const ALERT_TYPE_VALUE_DATA_RECEIVED = 'dataReceived';
+    const ALERT_TYPE_VALUE_DATA_NO_RECEIVED = 'notReceived';
+
     const ALERT_TIME_ZONE_KEY = 'alertTimeZone';
     const ALERT_HOUR_KEY = 'alertHour';
     const ALERT_MINUTE_KEY = 'alertMinutes';
+
     const ALERT_ACTIVE_KEY = 'active';
     const ALERT_DETAIL_KEY = 'detail';
     const DATE = 'date';

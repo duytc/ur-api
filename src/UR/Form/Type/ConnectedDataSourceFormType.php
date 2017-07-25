@@ -82,7 +82,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
                         }
                     }
 
-                    if (!$this->validateAlertSetting($connDataSource)) {
+                    if (!$this->validateAlertSetting($connDataSource->getAlertSetting())) {
                         $form->get('alertSetting')->addError(new FormError('Alerts Setting error'));
                     }
                 }

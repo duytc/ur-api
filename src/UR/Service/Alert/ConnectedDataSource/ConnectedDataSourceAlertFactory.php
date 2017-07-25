@@ -47,7 +47,7 @@ class ConnectedDataSourceAlertFactory
      */
     private function getDataLoadedSuccessfulAlert($importId, $alertCode, $jsonAlerts, $fileName, $dataSourceName, $dataSetName)
     {
-        if (!in_array(DataAddedAlert::DATA_ADDED, $jsonAlerts)) {
+        if (!in_array(DataAddedAlert::TYPE_DATA_ADDED, $jsonAlerts)) {
             return null;
         }
 
@@ -68,7 +68,7 @@ class ConnectedDataSourceAlertFactory
      */
     private function getDataLoadedFailureAlert($importId, $alertCode, $jsonAlerts, $fileName, $dataSourceName, $dataSetName, $column, $row, $content)
     {
-        if (!in_array(ImportFailureAlert::IMPORT_FAILURE, $jsonAlerts)) {
+        if (!in_array(ImportFailureAlert::TYPE_IMPORT_FAILURE, $jsonAlerts)) {
             return null;
         }
 

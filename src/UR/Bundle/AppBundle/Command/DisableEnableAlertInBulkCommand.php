@@ -12,21 +12,33 @@ use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
+use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\PublisherInterface;
+use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertInterface;
+use UR\Service\Alert\DataSource\AbstractDataSourceAlert;
 use UR\Service\Alert\DataSource\DataSourceAlertInterface;
 
 class DisableEnableAlertInBulkCommand extends ContainerAwareCommand
 {
     const COMMAND_NAME = 'ur:alert:update';
-    const PUBLISHER_ID = 'publisher-id';
-    const DATA_SET_ID = 'data-set-id';
-    const DATA_SOURCE_ID = 'data-source-id';
-    const ENABLE_NEW_FILES = 'enable-new-files';
-    const ENABLE_ERRORS = 'enable-error';
+    const OPTION_NAME_PUBLISHER = 'publisher';
+    const OPTION_NAME_DATA_SET = 'data-set';
+    const OPTION_NAME_CONNECTED_DATA_SOURCE = 'connected-data-source';
+    const OPTION_NAME_DATA_SOURCE = 'data-source';
+    const OPTION_ALERT_TYPES = 'alert-types';
+    const OPTION_ENABLE = 'enable';
+    const OPTION_DISABLE = 'disable';
+
+    const RETURN_VALUE_NO_ERROR = 0;
+    const RETURN_VALUE_ERROR_PUBLISHER_NOT_FOUND = 1;
+    const RETURN_VALUE_ERROR_DATA_SET_NOT_FOUND = 2;
+    const RETURN_VALUE_ERROR_CONNECTED_DATA_SOURCE_NOT_FOUND = 3;
+    const RETURN_VALUE_ERROR_DATA_SOURCE_NOT_FOUND = 4;
+    const RETURN_VALUE_GENERAL_ERROR = 99;
 
     /** @var  Logger */
     private $logger;
@@ -34,30 +46,41 @@ class DisableEnableAlertInBulkCommand extends ContainerAwareCommand
     /** @var  PublisherManagerInterface */
     private $publisherManager;
 
-    /** @var  DataSourceManagerInterface */
-    private $dataSourceManager;
-
     /** @var  DataSetManagerInterface */
     private $dataSetManager;
 
     /** @var  ConnectedDataSourceManagerInterface */
     private $connectedDataSourceManager;
 
+    /** @var  DataSourceManagerInterface */
+    private $dataSourceManager;
+
     protected function configure()
     {
         $this
             ->setName(self::COMMAND_NAME)
-            ->setDescription('Enable/disable alert setting on dataSource, connected dataSource')
-            ->addOption(self::PUBLISHER_ID, 'p', InputOption::VALUE_REQUIRED,
-                'Enable for publisher')
-            ->addOption(self::DATA_SET_ID, 'd', InputOption::VALUE_REQUIRED,
-                'Enable for data set')
-            ->addOption(self::DATA_SOURCE_ID, 'i', InputOption::VALUE_REQUIRED,
-                'Enable for data source')
-            ->addOption(self::ENABLE_NEW_FILES, 'f', InputOption::VALUE_REQUIRED,
-                'Alerts relate when new files import, choose Yes to show, No to hide alerts')
-            ->addOption(self::ENABLE_ERRORS, 'r', InputOption::VALUE_REQUIRED,
-                'Error alerts when import file and parse file, choose Yes to show, No to hide alerts');
+            ->setDescription('Enable/disable alert setting on one/all connected data source(s) of dataSet or one dataSource by some alert types.' . "\n"
+                . 'Please only use one of options -p, -t, -c, -r.')
+            ->addOption(self::OPTION_NAME_PUBLISHER, 'p', InputOption::VALUE_OPTIONAL,
+                'Disable/Enable for publisher')
+            ->addOption(self::OPTION_NAME_DATA_SET, 't', InputOption::VALUE_OPTIONAL,
+                'Disable/Enable for all connected data source of data set')
+            ->addOption(self::OPTION_NAME_CONNECTED_DATA_SOURCE, 'c', InputOption::VALUE_OPTIONAL,
+                'Disable/Enable for connected data source')
+            ->addOption(self::OPTION_NAME_DATA_SOURCE, 'r', InputOption::VALUE_OPTIONAL,
+                'Disable/Enable for data source')
+            ->addOption(self::OPTION_ALERT_TYPES, 'a', InputOption::VALUE_REQUIRED,
+                'Allow multiple alert types separated by comma.' . "\n"
+                . 'Notice: alert types are difference from data source and data set.' . "\n"
+                . 'For data set, supported alert types: ' . implode(', ', AbstractConnectedDataSourceAlert::$SUPPORTED_ALERT_SETTING_KEYS) . '.' . "\n"
+                . 'For data source, supported alert types: ' . implode(', ', AbstractDataSourceAlert::$SUPPORTED_ALERT_SETTING_KEYS) . '.'
+            )
+            ->addOption(self::OPTION_ENABLE, 'E', InputOption::VALUE_NONE,
+                'Enable alert settings. Default true if not provide both options "enable" and "disable".'
+            )
+            ->addOption(self::OPTION_DISABLE, 'D', InputOption::VALUE_NONE,
+                'Disable alert settings.'
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -71,157 +94,75 @@ class DisableEnableAlertInBulkCommand extends ContainerAwareCommand
         $this->dataSetManager = $container->get('ur.domain_manager.data_set');
         $this->connectedDataSourceManager = $container->get('ur.domain_manager.connected_data_source');
 
+        /* validate input */
         if (!$this->validateInput($input, $output)) {
-            $output->writeln('Quit command');
-            return;
+            return self::RETURN_VALUE_GENERAL_ERROR;
         }
 
-        $this->logger->info('starting command...');
+        $this->logger->info('Starting command...');
 
-        $dataSources = $this->getDataSourcesFromInput($input);
-        $connectedDataSources = $this->getConnectedDataSourcesFromInput($input);
+        /* get required param */
+        $alertTypesString = $input->getOption(self::OPTION_ALERT_TYPES);
+        $alertTypes = explode(',', $alertTypesString);
 
-        $enableNewFiles = $this->getOptionBoolean($input, self::ENABLE_NEW_FILES);
-        $enableErrors = $this->getOptionBoolean($input, self::ENABLE_ERRORS);
+        $inputEnable = (bool)$input->getOption(self::OPTION_ENABLE);
+        $inputDisable = (bool)$input->getOption(self::OPTION_DISABLE);
+        $isEnable = $inputEnable || !$inputDisable;
 
-        foreach ($dataSources as $dataSource) {
-            if (!$dataSource instanceof DataSourceInterface) {
-                continue;
-            }
-
-            $alertSetting = $this->updateAlertSettingsForDataSource($dataSource->getAlertSetting(), $enableNewFiles, $enableErrors);
-            $dataSource->setAlertSetting($alertSetting);
-            $this->dataSourceManager->save($dataSource);
-            $this->logger->info('Update alert setting for data source ' . $dataSource->getName() . ', id ' . $dataSource->getId());
-        }
-
-        foreach ($connectedDataSources as $connectedDataSource) {
-            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-                continue;
-            }
-
-            $alertSetting = $this->updateAlertSettingsForConnectedDataSource($connectedDataSource->getAlertSetting(), $enableNewFiles, $enableErrors);
-            $connectedDataSource->setAlertSetting($alertSetting);
-            $this->connectedDataSourceManager->save($connectedDataSource);
-            $this->logger->info('Update alert setting for connected data source ' . $connectedDataSource->getName() . ', id ' . $connectedDataSource->getId());
-        }
-
-        $this->logger->info('command run successfully...');
-    }
-
-
-    /**
-     * @param InputInterface $input
-     * @return \UR\Model\Core\DataSourceInterface[]
-     * @internal param OutputInterface $output
-     */
-    private function getDataSourcesFromInput($input)
-    {
-        if ($input->getOption(self::PUBLISHER_ID)) {
-            $publisher = $this->publisherManager->find($input->getOption(self::PUBLISHER_ID));
+        /* if handle by publisher */
+        $publisherId = $input->getOption(self::OPTION_NAME_PUBLISHER);
+        if (!empty($publisherId)) {
+            $publisher = $this->publisherManager->find($publisherId);
             if (!$publisher instanceof PublisherInterface) {
-                return [];
+                $output->writeln(sprintf('Could not find publisher with id %d', $publisherId));
+                return self::RETURN_VALUE_ERROR_PUBLISHER_NOT_FOUND;
             }
-            return $this->dataSourceManager->getDataSourceForPublisher($publisher);
+
+            $this->updateAlertSettingsForPublisher($publisher, $alertTypes, $isEnable);
+            return self::RETURN_VALUE_NO_ERROR;
         }
 
-        if ($input->getOption(self::DATA_SET_ID)) {
-            $dataSet = $this->dataSetManager->find($input->getOption(self::DATA_SET_ID));
+        /* if handle by data set */
+        $dataSetId = $input->getOption(self::OPTION_NAME_DATA_SET);
+        if (!empty($dataSetId)) {
+            $dataSet = $this->dataSetManager->find($dataSetId);
             if (!$dataSet instanceof DataSetInterface) {
-                return [];
+                $output->writeln(sprintf('Could not find data set with id %d', $dataSetId));
+                return self::RETURN_VALUE_ERROR_DATA_SET_NOT_FOUND;
             }
-            return $this->dataSourceManager->getDataSourceByDataSet($dataSet);
+
+            $this->updateAlertSettingsForDataSet($dataSet, $alertTypes, $isEnable);
+            return self::RETURN_VALUE_NO_ERROR;
         }
 
-        if ($input->getOption(self::DATA_SOURCE_ID)) {
-            $dataSource = $this->dataSourceManager->find($input->getOption(self::DATA_SOURCE_ID));
+        /* if handle by connected data source */
+        $connectedDataSourceId = $input->getOption(self::OPTION_NAME_CONNECTED_DATA_SOURCE);
+        if ($connectedDataSourceId) {
+            $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
+            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+                $output->writeln(sprintf('Could not find connected data source with id %d', $connectedDataSourceId));
+                return self::RETURN_VALUE_ERROR_CONNECTED_DATA_SOURCE_NOT_FOUND;
+            }
+
+            $this->updateAlertSettingsForConnectedDataSource($connectedDataSource, $alertTypes, $isEnable);
+            return self::RETURN_VALUE_NO_ERROR;
+        }
+
+        /* if handle by data source */
+        $dataSourceId = $input->getOption(self::OPTION_NAME_DATA_SOURCE);
+        if ($dataSourceId) {
+            $dataSource = $this->dataSourceManager->find($dataSourceId);
             if (!$dataSource instanceof DataSourceInterface) {
-                return [];
+                $output->writeln(sprintf('Could not find data source with id %d', $dataSourceId));
+                return self::RETURN_VALUE_ERROR_DATA_SOURCE_NOT_FOUND;
             }
-            return [$dataSource];
-        }
-        return [];
-    }
 
-    /**
-     * @param $input
-     * @return \UR\Model\Core\ConnectedDataSourceInterface[]
-     * @internal param $output
-     */
-    private function getConnectedDataSourcesFromInput($input)
-    {
-        $dataSources = $this->getDataSourcesFromInput($input);
-
-        $connected = [];
-        foreach ($dataSources as $dataSource) {
-            if (!$dataSource instanceof DataSourceInterface) {
-                continue;
-            }
-            $connected = array_merge($connected, $this->connectedDataSourceManager->getConnectedDataSourceByDataSource($dataSource));
-        }
-        return array_values($connected);
-    }
-
-    /**
-     * @param $alertSettings
-     * @param $enableNewFiles
-     * @param $enableErrors
-     * @return mixed
-     */
-    private function updateAlertSettingsForDataSource($alertSettings, $enableNewFiles, $enableErrors)
-    {
-        if (!is_array($alertSettings)) {
-            return $alertSettings;
+            $this->updateAlertSettingsForDataSource($dataSource, $alertTypes, $isEnable);
+            return self::RETURN_VALUE_NO_ERROR;
         }
 
-        foreach ($alertSettings as &$alertSetting) {
-            if (array_key_exists(DataSourceAlertInterface::ALERT_TYPE_KEY, $alertSetting)) {
-                if ($alertSetting[DataSourceAlertInterface::ALERT_TYPE_KEY] == DataSourceAlertInterface::ALERT_WRONG_FORMAT_KEY) {
-                    $alertSetting[DataSourceAlertInterface::ALERT_ACTIVE_KEY] = $enableErrors;
-                }
-                if ($alertSetting[DataSourceAlertInterface::ALERT_TYPE_KEY] == DataSourceAlertInterface::ALERT_DATA_RECEIVED_KEY) {
-                    $alertSetting[DataSourceAlertInterface::ALERT_ACTIVE_KEY] = $enableNewFiles;
-                }
-            }
-        }
-        return array_values(array_unique($alertSettings, SORT_REGULAR));
-    }
-
-    /**
-     * @param $alertSettings
-     * @param $enableNewFiles
-     * @param $enableErrors
-     * @return mixed
-     */
-    private function updateAlertSettingsForConnectedDataSource($alertSettings, $enableNewFiles, $enableErrors)
-    {
-        if (!is_array($alertSettings)) {
-            return $alertSettings;
-        }
-
-        if ($enableNewFiles) {
-            $alertSettings[] = ConnectedDataSourceAlertInterface::DATA_ADDED;
-            $alertSettings = array_values($alertSettings);
-        } else {
-            foreach ($alertSettings as $key => &$alertSetting) {
-                if ($alertSetting == ConnectedDataSourceAlertInterface::DATA_ADDED) {
-                    unset($alertSettings[$key]);
-                }
-            }
-        }
-
-        if ($enableErrors) {
-            $alertSettings[] = ConnectedDataSourceAlertInterface::IMPORT_FAILURE;
-            $alertSettings = array_values($alertSettings);
-        } else {
-            foreach ($alertSettings as $key => &$alertSetting) {
-                if ($alertSetting == ConnectedDataSourceAlertInterface::IMPORT_FAILURE) {
-                    unset($alertSettings[$key]);
-                }
-            }
-        }
-
-        return array_values(array_unique($alertSettings, SORT_REGULAR));
+        $this->logger->info('Command run successfully');
+        return 0;
     }
 
     /**
@@ -229,128 +170,263 @@ class DisableEnableAlertInBulkCommand extends ContainerAwareCommand
      * @param OutputInterface $output
      * @return bool
      */
-    private function validateInput($input, $output)
+    private function validateInput(InputInterface $input, OutputInterface $output)
     {
-        $count = 0;
-        if ($input->getOption(self::PUBLISHER_ID)) {
-            $count++;
+        /* validate only one param p, d, r */
+        $inputOptionsCount = 0;
+
+        if ($input->getOption(self::OPTION_NAME_PUBLISHER)) {
+            if (!$this->isPositiveInteger($input->getOption(self::OPTION_NAME_PUBLISHER))) {
+                $output->writeln('Expected publisher id is integer');
+                return false;
+            }
+
+            $inputOptionsCount++;
         }
-        if ($input->getOption(self::DATA_SET_ID)) {
-            $count++;
+
+        if ($input->getOption(self::OPTION_NAME_DATA_SET)) {
+            if (!$this->isPositiveInteger($input->getOption(self::OPTION_NAME_DATA_SET))) {
+                $output->writeln('Expected data set id is integer');
+                return false;
+            }
+
+            $inputOptionsCount++;
         }
-        if ($input->getOption(self::DATA_SOURCE_ID)) {
-            $count++;
+
+        if ($input->getOption(self::OPTION_NAME_CONNECTED_DATA_SOURCE)) {
+            if (!$this->isPositiveInteger($input->getOption(self::OPTION_NAME_CONNECTED_DATA_SOURCE))) {
+                $output->writeln('Expected connected data source id is integer');
+                return false;
+            }
+
+            $inputOptionsCount++;
         }
-        if ($count < 1 || $count > 1) {
-            $message = 'Do not use option -p, -d, -i together, use only one of them';
-            $output->writeln($message);
+
+        if ($input->getOption(self::OPTION_NAME_DATA_SOURCE)) {
+            if (!$this->isPositiveInteger($input->getOption(self::OPTION_NAME_DATA_SOURCE))) {
+                $output->writeln('Expected data source id is integer');
+                return false;
+            }
+
+            $inputOptionsCount++;
+        }
+
+        if ($inputOptionsCount !== 1) {
+            $output->writeln('Please only use one of options -p, -t, -c, -r');
             return false;
         }
 
-        $publisherId = $input->getOption(self::PUBLISHER_ID);
-        if ($publisherId) {
-            $publisher = $this->publisherManager->find($publisherId);
-            if (!$publisher instanceof PublisherInterface || !$this->isNumeric($publisherId)) {
-                $message = 'Can not find publisher with id ' . $publisherId;
-                $output->writeln($message);
-                return false;
-            }
-        }
-
-        $dataSetId = $input->getOption(self::DATA_SET_ID);
-        if ($dataSetId) {
-            $dataSet = $this->dataSetManager->find($dataSetId);
-            if (!$dataSet instanceof DataSetInterface || !$this->isNumeric($dataSetId)) {
-                $message = 'Can not find data set with id ' . $dataSetId;
-                $output->writeln($message);
-                return false;
-            }
-        }
-
-        $dataSourceId = $input->getOption(self::DATA_SOURCE_ID);
-        if ($dataSourceId) {
-            $dataSource = $this->dataSourceManager->find($dataSourceId);
-            if (!$dataSource instanceof DataSourceInterface || !$this->isNumeric($dataSourceId)) {
-                $message = 'Can not find data source with id ' . $dataSourceId;
-                $output->writeln($message);
-                return false;
-            }
-        }
-
-        if ($input->getOption(self::ENABLE_NEW_FILES)) {
-            if (!$this->isValidateYesNo($input->getOption(self::ENABLE_NEW_FILES))) {
-                $message = 'Use yes or no for option ' . self::ENABLE_NEW_FILES;
-                $output->writeln($message);
-                return false;
-            }
-        }
-
-        if ($input->getOption(self::ENABLE_ERRORS)) {
-            if (!$this->isValidateYesNo($input->getOption(self::ENABLE_ERRORS))) {
-                $message = 'Use yes or no for option ' . self::ENABLE_ERRORS;
-                $output->writeln($message);
-                return false;
-            }
+        /* validate required param */
+        $alertTypes = $input->getOption(self::OPTION_ALERT_TYPES);
+        if (empty($alertTypes) || !is_string($alertTypes)) {
+            $output->writeln(sprintf('Expected alert types is string (if multiple, separated by comma), got %s', (empty($alertTypes) ? 'empty' : $alertTypes)));
+            return false;
         }
 
         return true;
     }
 
     /**
-     * @param InputInterface $input
-     * @param $option
+     * update Alert Settings For Publisher
+     * @param PublisherInterface $publisher
+     * @param array $alertTypes
+     * @param bool $isEnable
      * @return bool
      */
-    private function getOptionBoolean($input, $option)
+    private function updateAlertSettingsForPublisher($publisher, array $alertTypes, $isEnable)
     {
-        if ($input->getOption($option)) {
-            $rawText = $input->getOption($option);
-            return $this->isYesOrNo($rawText);
+        $this->logger->info(sprintf('Updating alert settings for Publisher #%d...', $publisher->getId()));
+
+        /* update for all data sets */
+        $dataSets = $this->dataSetManager->getDataSetForPublisher($publisher);
+        $alertTypesForDataSet = array_values(
+            array_filter($alertTypes, function ($alertType) {
+                return in_array($alertType, AbstractConnectedDataSourceAlert::$SUPPORTED_ALERT_SETTING_KEYS);
+            })
+        );
+
+        foreach ($dataSets as $dataSet) {
+            $this->updateAlertSettingsForDataSet($dataSet, $alertTypesForDataSet, $isEnable);
         }
+
+        /* update for all connected data sources - already included in updating alert settings for each data set */
+
+        /* update for all data sources */
+        $dataSources = $this->dataSourceManager->getDataSourceForPublisher($publisher);
+        $alertTypesForDataSource = array_values(
+            array_filter($alertTypes, function ($alertType) {
+                return in_array($alertType, AbstractDataSourceAlert::$SUPPORTED_ALERT_SETTING_KEYS);
+            })
+        );
+
+        foreach ($dataSources as $dataSource) {
+            $this->updateAlertSettingsForDataSource($dataSource, $alertTypesForDataSource, $isEnable);
+        }
+
+        $this->logger->info(sprintf('Updating alert settings for Publisher #%d... done!', $publisher->getId()));
         return true;
     }
 
     /**
-     * @param $text
+     * update Alert Settings For Data Set
+     * @param DataSetInterface $dataSet
+     * @param array $alertTypes
+     * @param bool $isEnable
      * @return bool
      */
-    private function isYesOrNo($text)
+    private function updateAlertSettingsForDataSet(DataSetInterface $dataSet, array $alertTypes, $isEnable)
     {
-        $text = strtolower(trim($text));
-        if ($text == 'y' || $text == 'yes' || $text == 'show' || $text == 'true' || $text == 't') {
-            return true;
+        $this->logger->info(sprintf('Updating alert settings for Data Set #%d...', $dataSet->getId()));
+
+        $connectedDataSources = $dataSet->getConnectedDataSources();
+        foreach ($connectedDataSources as $connectedDataSource) {
+            $this->updateAlertSettingsForConnectedDataSource($connectedDataSource, $alertTypes, $isEnable);
         }
 
-        if ($text == 'n' || $text == 'no' || $text == 'hide' || $text == 'false' || $text == 'f') {
-            return false;
-        }
-
-        if ($text != '0') {
-            return true;
-        }
-
-        return false;
+        $this->logger->info(sprintf('Updating alert settings for Data Set #%d... done!', $dataSet->getId()));
+        return true;
     }
 
     /**
-     * @param $text
+     * update Alert Settings For Connected Data Source
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param array $alertTypes
+     * @param bool $isEnable
      * @return bool
      */
-    private function isValidateYesNo($text)
+    private function updateAlertSettingsForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, array $alertTypes, $isEnable)
     {
-        $text = strtolower(trim($text));
-        if ($text == 'y' || $text == 'yes' || $text == 'n' || $text == 'no') {
-            return true;
+        $this->logger->info(sprintf('Updating alert settings for Connected Data Source #%d...', $connectedDataSource->getId()));
+
+        $alertSettings = $connectedDataSource->getAlertSetting();
+        if (!is_array($alertSettings)) {
+            $alertSettings = [];
         }
-        return false;
+
+        foreach ($alertTypes as $alertType) {
+            switch ($alertType) {
+                case ConnectedDataSourceAlertInterface::TYPE_DATA_ADDED:
+                    if ($isEnable) {
+                        if (!in_array($alertType, $alertSettings)) {
+                            $alertSettings[] = ConnectedDataSourceAlertInterface::TYPE_DATA_ADDED;
+                        }
+                    } else {
+                        foreach ($alertSettings as $key => &$alertSetting) {
+                            if ($alertSetting == ConnectedDataSourceAlertInterface::TYPE_DATA_ADDED) {
+                                unset($alertSettings[$key]);
+                            }
+                        }
+
+                        // important: keep continuous array indexes after unset
+                        $alertSettings = array_values($alertSettings);
+
+                        // free memory
+                        unset($alertSetting);
+                    }
+
+                    break;
+
+                case ConnectedDataSourceAlertInterface::TYPE_IMPORT_FAILURE:
+                    if ($isEnable) {
+                        if (!in_array($alertType, $alertSettings)) {
+                            $alertSettings[] = ConnectedDataSourceAlertInterface::TYPE_IMPORT_FAILURE;
+                        }
+                    } else {
+                        foreach ($alertSettings as $key => &$alertSetting) {
+                            if ($alertSetting == ConnectedDataSourceAlertInterface::TYPE_IMPORT_FAILURE) {
+                                unset($alertSettings[$key]);
+                            }
+                        }
+
+                        // important: keep continuous array indexes after unset
+                        $alertSettings = array_values($alertSettings);
+
+                        // free memory
+                        unset($alertSetting);
+                    }
+
+                    break;
+
+                default:
+                    throw new InvalidArgumentException(sprintf('Not supported alert type %s', $alertType));
+            }
+        }
+
+        // save
+        $connectedDataSource->setAlertSetting($alertSettings);
+        $this->connectedDataSourceManager->save($connectedDataSource);
+
+        $this->logger->info(sprintf('Updating alert settings for Connected Data Source #%d... done!', $connectedDataSource->getId()));
+        return true;
     }
 
     /**
-     * @param $text
-     * @return int
+     * update Alert Settings For Data Source
+     * @param DataSourceInterface $dataSource
+     * @param array $alertTypes
+     * @param bool $isEnable
+     * @return bool
      */
-    private function isNumeric($text)
+    private function updateAlertSettingsForDataSource(DataSourceInterface $dataSource, array $alertTypes, $isEnable)
     {
-        return preg_match('/^[0-9]+$/', $text);
+        $this->logger->info(sprintf('Updating alert settings for Data Source #%d...', $dataSource->getId()));
+
+        $alertSettings = $dataSource->getAlertSetting();
+        if (!is_array($alertSettings)) {
+            $alertSettings = [];
+        }
+
+        foreach ($alertSettings as &$alertSetting) {
+            if (!array_key_exists(DataSourceAlertInterface::ALERT_TYPE_KEY, $alertSetting)) {
+                continue;
+            }
+
+            $oldAlertType = $alertSetting[DataSourceAlertInterface::ALERT_TYPE_KEY];
+
+            foreach ($alertTypes as $alertType) {
+                if (!in_array($alertType, AbstractDataSourceAlert::$SUPPORTED_ALERT_SETTING_KEYS)) {
+                    throw new InvalidArgumentException(sprintf('Not supported alert type %s', $alertType));
+                }
+
+                if ($oldAlertType !== $alertType) {
+                    continue;
+                }
+
+                switch ($alertType) {
+                    case DataSourceAlertInterface::ALERT_TYPE_VALUE_WRONG_FORMAT:
+                        $alertSetting[DataSourceAlertInterface::ALERT_ACTIVE_KEY] = $isEnable;
+                        break;
+
+                    case DataSourceAlertInterface::ALERT_TYPE_VALUE_DATA_RECEIVED:
+                        $alertSetting[DataSourceAlertInterface::ALERT_ACTIVE_KEY] = $isEnable;
+                        break;
+
+                    case DataSourceAlertInterface::ALERT_TYPE_VALUE_DATA_NO_RECEIVED:
+                        $alertSetting[DataSourceAlertInterface::ALERT_ACTIVE_KEY] = $isEnable;
+                        break;
+                }
+            }
+        }
+
+        // free memory
+        unset($alertSetting);
+
+        // save
+        $dataSource->setAlertSetting($alertSettings);
+        $this->dataSourceManager->save($dataSource);
+
+        $this->logger->info(sprintf('Updating alert settings for Data Source #%d... done!', $dataSource->getId()));
+        return true;
+    }
+
+    /**
+     * check if text is Positive Integer string
+     *
+     * @param string $text
+     * @return bool
+     */
+    private function isPositiveInteger($text)
+    {
+        return preg_match('/^[0-9]+$/', $text) === 1;
     }
 }

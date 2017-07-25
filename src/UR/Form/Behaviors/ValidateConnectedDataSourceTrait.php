@@ -3,9 +3,10 @@
 namespace UR\Form\Behaviors;
 
 
-use \Exception;
+use Exception;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\DataSet\FieldType;
 use UR\Service\Metadata\Email\EmailMetadata;
 use UR\Service\Parser\Filter\FilterFactory;
@@ -128,12 +129,24 @@ trait ValidateConnectedDataSourceTrait
     /**
      * validate Alert Setting
      *
-     * @param ConnectedDataSourceInterface $connDataSource
+     * @param null|array $alertSetting
      * @return bool
      */
-    public function validateAlertSetting(ConnectedDataSourceInterface $connDataSource)
+    public function validateAlertSetting($alertSetting)
     {
-        // TODO: do validate here...
+        if ($alertSetting === null) {
+            return true;
+        }
+
+        if (!is_array($alertSetting)) {
+            return false;
+        }
+
+        foreach ($alertSetting as $alertType) {
+            if (!in_array($alertType, AbstractConnectedDataSourceAlert::$SUPPORTED_ALERT_SETTING_KEYS)) {
+                return false;
+            }
+        }
 
         return true;
     }
