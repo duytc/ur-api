@@ -65,4 +65,16 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
 
         return $qb->getQuery()->getResult();
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByUUID($uuid)
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->where('a.uuid = :uuid')
+            ->setParameter('uuid', $uuid);
+
+        return $qb->getQuery()->getOneOrNullResult();
+    }
 }

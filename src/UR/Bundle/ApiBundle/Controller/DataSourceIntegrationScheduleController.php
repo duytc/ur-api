@@ -12,6 +12,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceIntegrationScheduleManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
+use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
@@ -19,6 +20,8 @@ use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\FetcherSchedule;
+use UR\Repository\Core\DataSourceIntegrationScheduleRepository;
+use UR\Repository\Core\DataSourceIntegrationScheduleRepositoryInterface;
 
 /**
  * @Rest\RouteResource("datasourceintegrationschedules")
@@ -162,7 +165,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
     /**
      * update executeAt time
      *
-     * @Rest\Post("/datasourceintegrationschedules/{id}/executed")
+     * @Rest\Post("/datasourceintegrationschedules/executed")
      *
      * @Rest\View(serializerGroups={"dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.detail", "integration.detail", "user.summary"})
      *
@@ -174,20 +177,42 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
      *  }
      * )
      *
-     * @param $id
      * @param Request $request
      * @return \UR\Model\Core\DataSourceIntegrationInterface[]
      */
-    public function postUpdateExecutedAction($id, Request $request)
+    public function postUpdateExecutedAction(Request $request)
     {
+        $uuid = $request->request->get('uuid', null);
+        if (null === $uuid) {
+            throw new InvalidArgumentException('Expected uuid of data source integration schedule');
+        }
+
+        /** @var DataSourceIntegrationScheduleRepositoryInterface $dataSourceIntegrationScheduleRepository */
+        $dataSourceIntegrationScheduleRepository = $this->get('ur.repository.data_source_integration_schedule');
         /** @var DataSourceIntegrationScheduleInterface $dataSourceIntegrationSchedule */
-        $dataSourceIntegrationSchedule = $this->one($id);
+        $dataSourceIntegrationSchedule = $dataSourceIntegrationScheduleRepository->findByUUID($uuid);
+        if (!$dataSourceIntegrationSchedule instanceof DataSourceIntegrationScheduleInterface) {
+            throw new InvalidArgumentException(sprintf('Schedule with UUID (%s) not found, may be deleted by hand or changed from UI while fetcher is running.', $uuid));
+        }
+
+        // check permission
+        $this->checkUserPermission($dataSourceIntegrationSchedule, 'edit');
+
+        /*
+         * important: only update executedAt if pending. This is for avoiding race condition between fetcher and ur api
+         * When fetcher running, the pending is set to true.
+         * But the ui may change the schedule setting (and set pending to false).
+         * => When fetcher finishes and update the next executedAt, the setting from UI is overwrite.
+         */
+        if (!$dataSourceIntegrationSchedule->getPending()) {
+            return $this->view(true, Codes::HTTP_OK);
+        }
 
         $nextExecutedUtil = $this->get('ur.service.date_time.next_executed_at');
-        $dataSourceIntegration = $nextExecutedUtil->updateDataSourceIntegrationSchedule($dataSourceIntegrationSchedule->getDataSourceIntegration(), $this->get('doctrine.orm.entity_manager'));
+        $dataSourceIntegrationSchedule = $nextExecutedUtil->updateDataSourceIntegrationSchedule($dataSourceIntegrationSchedule);
 
-        $dataSourceIntegrationManager = $this->get('ur.domain_manager.data_source_integration');
-        $dataSourceIntegrationManager->save($dataSourceIntegration);
+        $dataSourceIntegrationScheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
+        $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
 
         return $this->view(true, Codes::HTTP_OK);
     }
@@ -278,7 +303,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
     /**
      * Update Schedule
      *
-     * @Rest\Post("/datasourceintegrationschedules/{id}/update")
+     * @Rest\Post("/datasourceintegrationschedules/update")
      *
      * @ApiDoc(
      *  section = "Data Source Integration Schedule",
@@ -288,14 +313,23 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
      *  }
      * )
      *
-     * @param $id
      * @param Request $request
      * @return \UR\Model\Core\DataSourceIntegrationSchedule[]
      */
-    public function postUpdateAction($id, Request $request)
+    public function postUpdateAction(Request $request)
     {
+        $uuid = $request->request->get('uuid', null);
+        if (null === $uuid) {
+            throw new InvalidArgumentException('Expected uuid of data source integration schedule');
+        }
+
+        /** @var DataSourceIntegrationScheduleRepositoryInterface $dataSourceIntegrationScheduleRepository */
+        $dataSourceIntegrationScheduleRepository = $this->get('ur.repository.data_source_integration_schedule');
         /** @var DataSourceIntegrationScheduleInterface $dataSourceIntegrationSchedule */
-        $dataSourceIntegrationSchedule = $this->one($id);
+        $dataSourceIntegrationSchedule = $dataSourceIntegrationScheduleRepository->findByUUID($uuid);
+        if (!$dataSourceIntegrationSchedule instanceof DataSourceIntegrationScheduleInterface) {
+            throw new InvalidArgumentException(sprintf('Schedule with UUID (%s) not found, may be deleted by hand or changed from UI while fetcher is running.', $uuid));
+        }
 
         if ($request->request->has(DataSourceIntegrationScheduleInterface::FIELD_PENDING)) {
             $pending = $request->request->get(DataSourceIntegrationScheduleInterface::FIELD_PENDING);

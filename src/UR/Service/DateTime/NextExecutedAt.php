@@ -3,19 +3,16 @@
 namespace UR\Service\DateTime;
 
 use DateTimeZone;
-use Doctrine\ORM\EntityManagerInterface;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Entity\Core\DataSourceIntegrationSchedule;
 use UR\Model\Core\DataSourceIntegration;
 use UR\Model\Core\DataSourceIntegrationInterface;
+use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 
 class NextExecutedAt
 {
-    /** @var DateTimeUtil  */
+    /** @var DateTimeUtil */
     private $dateTimeUtil;
-
-    /** @var  EntityManagerInterface */
-    private $em;
 
     /**
      * DateTimeUtil constructor.
@@ -27,13 +24,55 @@ class NextExecutedAt
     }
 
     /**
+     * @param DataSourceIntegrationScheduleInterface $dataSourceIntegrationSchedule
+     * @return DataSourceIntegrationScheduleInterface
+     */
+    public function updateDataSourceIntegrationSchedule(DataSourceIntegrationScheduleInterface $dataSourceIntegrationSchedule)
+    {
+        $dataSourceIntegration = $dataSourceIntegrationSchedule->getDataSourceIntegration();
+        $scheduleSetting = $dataSourceIntegration->getSchedule();
+        $lastExecuted = date_create('now', new DateTimeZone(GroupByTransform::DEFAULT_TIMEZONE));
+
+        $checkType = $scheduleSetting[DataSourceIntegration::SCHEDULE_KEY_CHECKED];
+        $checkValue = $scheduleSetting[$checkType];
+
+        switch ($checkType) {
+            case DataSourceIntegration::SCHEDULE_CHECKED_CHECK_EVERY:
+                $nextExecuteAt = $this->dateTimeUtil->getNextExecutedByCheckEvery($lastExecuted, $checkValue);
+
+                $dataSourceIntegrationSchedule
+                    ->setExecutedAt($nextExecuteAt)
+                    ->setPending(false);
+
+                break;
+
+            case DataSourceIntegration::SCHEDULE_CHECKED_CHECK_AT:
+                foreach ($checkValue as $checkAtItem) {
+                    if (!array_key_exists(DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID, $checkAtItem)
+                        || $dataSourceIntegrationSchedule->getUuid() !== $checkAtItem[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID]
+                    ) {
+                        continue;
+                    }
+
+                    $nextExecuteAt = $this->dateTimeUtil->getNextExecutedByCheckAt($lastExecuted, $checkAtItem);
+
+                    $dataSourceIntegrationSchedule
+                        ->setExecutedAt($nextExecuteAt)
+                        ->setPending(false);
+                }
+
+                break;
+        }
+
+        return $dataSourceIntegrationSchedule;
+    }
+
+    /**
      * @param DataSourceIntegrationInterface $dataSourceIntegration
-     * @param EntityManagerInterface $em
      * @return DataSourceIntegrationInterface
      */
-    public function updateDataSourceIntegrationSchedule(DataSourceIntegrationInterface $dataSourceIntegration, EntityManagerInterface $em)
+    public function updateDataSourceIntegrationScheduleForDataSourceIntegration(DataSourceIntegrationInterface $dataSourceIntegration)
     {
-        $this->em = $em;
         // update uuid to schedule setting, TODO: move to new listener
         $scheduleSetting = $dataSourceIntegration->getSchedule();
         $scheduleSetting = $this->organizeScheduleSetting($scheduleSetting);

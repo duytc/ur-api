@@ -4,6 +4,7 @@ namespace UR\Bundle\ApiBundle\EventListener;
 
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Service\DateTime\NextExecutedAt;
 
@@ -25,7 +26,6 @@ class UpdateDataSourceIntegrationScheduleListener
      */
     public function prePersist(LifecycleEventArgs $args)
     {
-        $this->em = $args->getEntityManager();
         $dataSourceIntegration = $args->getEntity();
 
         if (!$dataSourceIntegration instanceof DataSourceIntegrationInterface) {
@@ -33,7 +33,25 @@ class UpdateDataSourceIntegrationScheduleListener
         }
 
         // update all dataSourceIntegrationSchedules
-        $dataSourceIntegration = $this->nextExecutedAt->updateDataSourceIntegrationSchedule($dataSourceIntegration, $args->getEntityManager());
+        $dataSourceIntegration = $this->nextExecutedAt->updateDataSourceIntegrationScheduleForDataSourceIntegration($dataSourceIntegration);
+
+        // add to $updateDataSourceIntegrations
+        $this->updateDataSourceIntegrations[] = $dataSourceIntegration;
+    }
+
+    /**
+     * @param PreUpdateEventArgs $args
+     */
+    public function preUpdate(PreUpdateEventArgs $args)
+    {
+        $dataSourceIntegration = $args->getEntity();
+
+        if (!$dataSourceIntegration instanceof DataSourceIntegrationInterface) {
+            return;
+        }
+
+        // update all dataSourceIntegrationSchedules
+        $dataSourceIntegration = $this->nextExecutedAt->updateDataSourceIntegrationScheduleForDataSourceIntegration($dataSourceIntegration);
 
         // add to $updateDataSourceIntegrations
         $this->updateDataSourceIntegrations[] = $dataSourceIntegration;

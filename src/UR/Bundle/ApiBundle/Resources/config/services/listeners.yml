@@ -146,6 +146,7 @@ services:
             - '@ur.service.date_time.next_executed_at'
         tags:
             - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: postFlush }
 
     ur_api.event_listener.create_data_import_table_when_create_new_data_set_listener:

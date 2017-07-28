@@ -21,4 +21,10 @@ interface DataSourceIntegrationScheduleRepositoryInterface extends ObjectReposit
      * @return array|DataSourceIntegrationScheduleInterface[]
      */
     public function findByDataSource(DataSourceInterface $dataSource);
+
+    /**
+     * @param $uuid
+     * @return array|DataSourceIntegrationScheduleInterface[]
+     */
+    public function findByUUID($uuid);
 }
