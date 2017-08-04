@@ -22,8 +22,8 @@ use UR\Service\PublicSimpleException;
 
 class DateRangeService implements DateRangeServiceInterface
 {
-    const PATTERN_KEY  = 'pattern';
-    const REPLACE_VALUE_KEY  = 'value';
+    const PATTERN_KEY = 'pattern';
+    const REPLACE_VALUE_KEY = 'value';
     const FILE_NAME_KEY = 'filename';
 
     /* data source date format config */
@@ -144,6 +144,10 @@ class DateRangeService implements DateRangeServiceInterface
             $endDate = $result[self::END_DATE_KEY];
         }
 
+        if (!$startDate instanceof DateTime || !$endDate instanceof DateTime) {
+            return false;
+        }
+
         $missingDate = $this->calculateMissingDate($dates, $startDate, $endDate);
 
         $dataSource->setMissingDate(array_values($missingDate))
@@ -194,7 +198,7 @@ class DateRangeService implements DateRangeServiceInterface
                 }
 
                 //extract report date based on given pattern
-                $collection = new Collection([],[$metaData]);
+                $collection = new Collection([], [$metaData]);
                 $transform = new ExtractPattern($dateField, $pattern[self::PATTERN_KEY], null, $isOverride = true, false, false, $pattern[self::REPLACE_VALUE_KEY]);
                 $rows = $transform->transform($collection)->getRows();
                 $row = array_shift($rows);
@@ -213,8 +217,7 @@ class DateRangeService implements DateRangeServiceInterface
                     ->setStartDate($detectedDate)
                     ->setEndDate($detectedDate)
                     ->setDateRangeBroken(false)
-                    ->setDates([$detectedDate->format(DateFormat::DEFAULT_DATE_FORMAT)])
-                ;
+                    ->setDates([$detectedDate->format(DateFormat::DEFAULT_DATE_FORMAT)]);
 
                 $this->dataSourceEntryManager->save($dataSourceEntry);
                 $this->logger->info(sprintf('Entry %s update %s missing dates', $dataSourceEntry->getId(), count($dataSourceEntry->getMissingDate())));
@@ -224,7 +227,6 @@ class DateRangeService implements DateRangeServiceInterface
 
             return true;
         }
-
 
 
         /** Get missing date from parse file */
