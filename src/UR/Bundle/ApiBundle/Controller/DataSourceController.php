@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use DateTime;
 use Doctrine\ORM\QueryBuilder;
 use Exception;
 use FOS\RestBundle\Controller\Annotations as Rest;
@@ -16,11 +17,13 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Bundle\ApiBundle\Service\DataSource\UploadFileService;
+use UR\Entity\Core\DataSourceIntegrationBackfillHistory;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\AlertPagerParam;
 use UR\Model\Core\DataSourceEntry;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\DataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
@@ -1031,6 +1034,102 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         return $dataSourceIntegrationBackfillHistoryRepository->getBackfillHistoriesByDataSourceId($dataSource);
     }
 
+    /**
+     * Get missing dates of data source integration and then create backfill for missing dates
+     *
+     * @Rest\Post("/datasources/{id}/createbackfill", requirements={"id" = "\d+"})
+     *
+     * @Rest\View(serializerGroups={"datasource.detail"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the data source id
+     * @param Request $request
+     *
+     * @return string
+     * @throws Exception
+     */
+    public function getMissingDatesAndCreateBackfillAction($id, Request $request)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+        if (!$dataSource instanceof DataSourceInterface) {
+            throw new \Exception('Can not find any data source given by id.');
+        }
+
+        $dataSourceIntegrationRepository = $this->get('ur.repository.data_source_integration');
+        $dataSourceIntegrations = $dataSourceIntegrationRepository->findByDataSource($id);
+        if (!is_array($dataSourceIntegrations) || empty($dataSourceIntegrations)) {
+            throw new \Exception('There is no data source integration.');
+        }
+        foreach ($dataSourceIntegrations as $data) {
+            $dataSourceIntegration = $data;
+        }
+
+        if (!is_array($dataSource->getMissingDate()) && empty($dataSource->getMissingDate())) {
+            throw new \Exception('There is no missing date given by id.');
+        }
+
+        $missingDateRanges = $dataSource->getMissingDate();
+        $startMissingDate = $missingDateRanges[0];
+        $createBackfill = false;
+        for ($i = 0; $i < count($missingDateRanges); $i++) {
+            if ($i == 0) {
+                $lastestMissingDate = $missingDateRanges[0];
+            }
+            if ($i >= 1) {
+                if ($lastestMissingDate < $missingDateRanges[$i] && $missingDateRanges[$i] == date('Y-m-d', strtotime($lastestMissingDate .' +1 day'))) {
+                    $lastestMissingDate = $missingDateRanges[$i];
+                    if ($i == count($missingDateRanges) - 1) {
+                        $createBackfill = true;
+                        //set start and end date
+                        $startDateBackfill = $startMissingDate;
+                        $endDateBackfill = $lastestMissingDate;
+                        //create backfill
+                        $this->createBackfill($startDateBackfill, $endDateBackfill, $dataSourceIntegration);
+                    }
+                } else {
+                    $createBackfill = true;
+                    //set start and end date
+                    $startDateBackfill = $startMissingDate;
+                    $endDateBackfill = $lastestMissingDate;
+                    //create backfill
+                    $this->createBackfill($startDateBackfill, $endDateBackfill, $dataSourceIntegration);
+
+                    //set start missing date
+                    $startMissingDate = $lastestMissingDate = $missingDateRanges[$i];
+                }
+            }
+        }
+        if ($createBackfill == false) {
+            //set start and end date
+            $startDateBackfill = $startMissingDate;
+            $endDateBackfill = $missingDateRanges[count($missingDateRanges) - 1];
+            //create backfill
+            $this->createBackfill($startDateBackfill, $endDateBackfill, $dataSourceIntegration);
+
+        }
+
+        return '';
+    }
+
+    protected function createBackfill($startDateBackfill, $endDateBackfill, $dataSourceIntegration)
+    {
+        $backFillHistoryManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
+        //create backfill
+        $backFillHistory = new DataSourceIntegrationBackfillHistory();
+        $backFillHistory->setDataSourceIntegration($dataSourceIntegration);
+        $backFillHistory->setBackFillStartDate(DateTime::createFromFormat('Y-m-d', $startDateBackfill));
+        $backFillHistory->setBackFillEndDate(DateTime::createFromFormat('Y-m-d', $endDateBackfill));
+
+        $backFillHistoryManager->save($backFillHistory);
+    }
     /**
      * override parent function
      * @inheritdoc
