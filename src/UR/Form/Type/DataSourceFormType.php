@@ -46,6 +46,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             ->add('useIntegration')
             ->add('dateRangeDetectionEnabled')
             ->add('dateFields')
+            ->add('dateFieldsFromMetadata')
             ->add('dateFormats')
             ->add('dateRange')
             ->add('fromMetadata')

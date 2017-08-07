@@ -23,6 +23,8 @@ class DataSource implements DataSourceInterface
     protected $lastActivity;
     protected $numOfFiles;
     protected $dateFields;
+    /** @var  array */
+    protected $dateFieldsFromMetadata;
     protected $dateFormats;
     protected $detectedStartDate;
     protected $detectedEndDate;
@@ -578,6 +580,24 @@ class DataSource implements DataSourceInterface
     public function setEmailAnchorTexts($emailAnchorTexts)
     {
         $this->emailAnchorTexts = $emailAnchorTexts;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDateFieldsFromMetadata()
+    {
+        return $this->dateFieldsFromMetadata;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setDateFieldsFromMetadata($dateFieldsFromMetadata)
+    {
+        $this->dateFieldsFromMetadata = $dateFieldsFromMetadata;
+
         return $this;
     }
 }

@@ -310,4 +310,15 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setEmailAnchorTexts($emailAnchorTexts);
+
+    /**
+     * @return array
+     */
+    public function getDateFieldsFromMetadata();
+
+    /**
+     * @param array $dateFieldsFromMetadata
+     * @return self
+     */
+    public function setDateFieldsFromMetadata($dateFieldsFromMetadata);
 }

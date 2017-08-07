@@ -28,6 +28,8 @@ class DataSource extends DataSourceModel
     protected $dateRangeBroken;
     protected $dateRangeDetectionEnabled;
     protected $dateFields;
+    /** @var  array */
+    protected $dateFieldsFromMetadata;
     protected $dateFormats;
     protected $detectedStartDate;
     protected $detectedEndDate;

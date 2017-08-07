@@ -170,105 +170,71 @@ class DateRangeService implements DateRangeServiceInterface
 
         $dataSource = $dataSourceEntry->getDataSource();
         $dateFields = $dataSource->getDateFields();
+        $dateFieldsFromMetaData = $dataSource->getDateFieldsFromMetadata();
         $formats = $dataSource->getDateFormats();
 
-        if (empty($dateFields)) {
+        if (empty($dateFields) && empty($dateFieldsFromMetaData)) {
             throw new PublicSimpleException('"date" field should not be empty');
         }
 
-        if ($dataSource->isFromMetaData()) {
-            $detectedDate = null;
-            $pattern = $dataSource->getPattern();
-            $metaData = $dataSourceEntry->getMetaData();
-            foreach ($dateFields as $dateField) {
-                if ($dateField == self::FILE_NAME_KEY && (!isset($metaData[$dateField]) || empty($metaData[$dateField]))) {
-                    $metaData['filename'] = $dataSourceEntry->getFileName();
-                }
-
-                if (!array_key_exists($dateField, $metaData)) {
-                    $this->logger->warning(sprintf('"%s" does not exist in the meta data'));
-                    continue;
-                }
-
-                if (in_array($dateField, [EmailMetadata::META_DATA_EMAIL_DATE, EmailMetadata::INTEGRATION_META_DATA_REPORT_DATE])) {
-                    $detectedDate = $this->getDate($metaData[$dateField], $formats);
-                    if ($detectedDate instanceof \DateTime) {
-                        break;
-                    }
-                }
-
-                //extract report date based on given pattern
-                $collection = new Collection([], [$metaData]);
-                $transform = new ExtractPattern($dateField, $pattern[self::PATTERN_KEY], null, $isOverride = true, false, false, $pattern[self::REPLACE_VALUE_KEY]);
-                $rows = $transform->transform($collection)->getRows();
-                $row = array_shift($rows);
-                if (!is_array($row)) {
-                    continue;
-                }
-
-                $detectedDate = $this->getDate($row[$dateField], $formats);
-                if ($detectedDate instanceof \DateTime) {
-                    break;
-                }
+        /** Get missing date from parse file */
+        $dates = [];
+        if (!empty($dateFields)) {
+            try {
+                /* parsing data */
+                $dataSourceFileData = $this->fileFactory->getFile($dataSource->getFormat(), $dataSourceEntry->getPath());
+            } catch (\Exception $e) {
+                return false;
             }
 
-            if ($detectedDate instanceof \DateTime) {
-                $dataSourceEntry->setMissingDate([])
+            $columns = $dataSourceFileData->getColumns();
+            $rows = $dataSourceFileData->getRows();
+
+            try {
+                foreach ($rows as &$row) {
+                    $row = array_combine($columns, $row);
+                }
+            } catch (\Exception $e) {
+                return false;
+            }
+
+
+            foreach ($rows as &$row) {
+                foreach ($dateFields as $dateField) {
+                    if (!array_key_exists($dateField, $row)) {
+                        continue;
+                    }
+
+                    $value = $this->getDate($row[$dateField], $formats);
+                    if ($value instanceof DateTime) {
+                        $value = $value->format(DateFormat::DEFAULT_DATE_FORMAT);
+                        if (!in_array($value, $dates)) {
+                            $dates[] = $value;
+                        }
+
+                        continue;
+                    }
+                }
+            }
+        }
+
+        /** Get missing date from from metadata */
+        if (empty($dates)) {
+            $detectedDate = $this->calculateDateRangeForDataSourceEntryFromMetadata($dataSourceEntry);
+            if ($detectedDate instanceof DateTime) {
+                $dataSourceEntry
                     ->setStartDate($detectedDate)
                     ->setEndDate($detectedDate)
                     ->setDateRangeBroken(false)
-                    ->setDates([$detectedDate->format(DateFormat::DEFAULT_DATE_FORMAT)]);
-
+                    ->setDates([$detectedDate->format('Y-m-d')]);
                 $this->dataSourceEntryManager->save($dataSourceEntry);
                 $this->logger->info(sprintf('Entry %s update %s missing dates', $dataSourceEntry->getId(), count($dataSourceEntry->getMissingDate())));
 
                 $this->calculateDateRangeForDataSource($dataSourceEntry->getDataSource()->getId());
+
+                return true;
             }
 
-            return true;
-        }
-
-
-        /** Get missing date from parse file */
-        try {
-            /* parsing data */
-            $dataSourceFileData = $this->fileFactory->getFile($dataSource->getFormat(), $dataSourceEntry->getPath());
-        } catch (\Exception $e) {
-            return false;
-        }
-
-        $columns = $dataSourceFileData->getColumns();
-        $rows = $dataSourceFileData->getRows();
-
-        try {
-            foreach ($rows as &$row) {
-                $row = array_combine($columns, $row);
-            }
-        } catch (\Exception $e) {
-            return false;
-        }
-
-        $dates = [];
-
-        foreach ($rows as &$row) {
-            foreach ($dateFields as $dateField) {
-                if (!array_key_exists($dateField, $row)) {
-                    continue;
-                }
-
-                $value = $this->getDate($row[$dateField], $formats);
-                if ($value instanceof DateTime) {
-                    $value = $value->format(DateFormat::DEFAULT_DATE_FORMAT);
-                    if (!in_array($value, $dates)) {
-                        $dates[] = $value;
-                    }
-
-                    continue;
-                }
-            }
-        }
-
-        if (empty($dates)) {
             $dataSourceEntry
                 ->setStartDate(null)
                 ->setEndDate(null)
@@ -299,6 +265,50 @@ class DateRangeService implements DateRangeServiceInterface
 
         $this->calculateDateRangeForDataSource($dataSourceEntry->getDataSource()->getId());
         return true;
+    }
+
+    private function calculateDateRangeForDataSourceEntryFromMetadata(DataSourceEntryInterface $dataSourceEntry)
+    {
+        $dataSource = $dataSourceEntry->getDataSource();
+        $dateFieldsFromMetadata = $dataSource->getDateFieldsFromMetadata();
+        $formats = $dataSource->getDateFormats();
+
+        if (empty($dateFieldsFromMetadata)) {
+            return null;
+        }
+
+        $detectedDate = null;
+        $pattern = $dataSource->getPattern();
+        $metaData = $dataSourceEntry->getMetaData();
+        foreach ($dateFieldsFromMetadata as $dateField) {
+            if (!array_key_exists($dateField, $metaData)) {
+                $this->logger->warning(sprintf('"%s" does not exist in the meta data', $dateField));
+                continue;
+            }
+
+            if (in_array($dateField, [EmailMetadata::META_DATA_EMAIL_DATE, EmailMetadata::INTEGRATION_META_DATA_REPORT_DATE])) {
+                $detectedDate = $this->getDate($metaData[$dateField], $formats);
+                if ($detectedDate instanceof \DateTime) {
+                    break;
+                }
+            }
+
+            //extract report date based on given pattern
+            $collection = new Collection([], [$metaData]);
+            $transform = new ExtractPattern($dateField, $pattern[self::PATTERN_KEY], null, $isOverride = true, false, false, $pattern[self::REPLACE_VALUE_KEY]);
+            $rows = $transform->transform($collection)->getRows();
+            $row = array_shift($rows);
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $detectedDate = $this->getDate($row[$dateField], $formats);
+            if ($detectedDate instanceof \DateTime) {
+                break;
+            }
+        }
+
+        return $detectedDate;
     }
 
     /**
@@ -382,7 +392,7 @@ class DateRangeService implements DateRangeServiceInterface
         return $date;
     }
 
-    protected function getDateRange($dateRange)
+    private function getDateRange($dateRange)
     {
         if (
             !array_key_exists(self::START_DATE_KEY, $dateRange) ||

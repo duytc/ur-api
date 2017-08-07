@@ -58,6 +58,9 @@ UR\Entity\Core\DataSource:
         dateFields:
             expose: true
             groups: [datasource.detail, datasource.edit]
+        dateFieldsFromMetadata:
+            expose: true
+            groups: [datasource.detail, datasource.edit]
         dateFormats:
             expose: true
             groups: [datasource.detail, datasource.edit]

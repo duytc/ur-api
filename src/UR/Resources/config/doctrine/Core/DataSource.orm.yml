@@ -74,6 +74,9 @@ UR\Entity\Core\DataSource:
         dateFields:
             type: json_array
             nullable: true
+        dateFieldsFromMetadata:
+            type: json_array
+            nullable: true
         fromMetadata:
             type: boolean
             nullable: true
