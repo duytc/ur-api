@@ -69,9 +69,8 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
                 // set dataRow index due to match
                 if ($match === self::FIRST_MATCH) {
                     if ($i === self::SECOND_ROW) {
-                        $this->dataRow = $i;
-                    } else {
-                        $this->dataRow = $i - 1;
+                        $this->headers = $row;
+                        $this->headerRow = $i;
                     }
                 }
 
@@ -86,6 +85,8 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
 
             break;
         }
+
+        $this->dataRow = $this->headerRow + 1;
 
         // finally, set default column name to header for empty values
         if (is_array($this->headers)) {
