@@ -1068,6 +1068,8 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         if (!is_array($dataSourceIntegrations) || empty($dataSourceIntegrations)) {
             throw new \Exception('There is no data source integration.');
         }
+
+        $dataSourceIntegration = array();
         foreach ($dataSourceIntegrations as $data) {
             $dataSourceIntegration = $data;
         }
@@ -1078,6 +1080,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
 
         $missingDateRanges = $dataSource->getMissingDate();
         $startMissingDate = $missingDateRanges[0];
+        $lastestMissingDate = '';
         $createBackfill = false;
         for ($i = 0; $i < count($missingDateRanges); $i++) {
             if ($i == 0) {
