@@ -73,4 +73,9 @@ interface ReportViewMultiViewInterface extends ModelInterface
      * @return self
      */
     public function setEnableCustomDimensionMetric($enableCustomDimensionMetric);
+
+    /**
+     * @param $id
+     */
+    public function setId($id);
 }

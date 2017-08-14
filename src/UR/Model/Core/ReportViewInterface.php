@@ -10,6 +10,11 @@ use UR\Model\User\Role\PublisherInterface;
 
 interface ReportViewInterface extends ModelInterface
 {
+    const REPORT_VIEW_DIMENSIONS = 'select_dimensions';
+    const REPORT_VIEW_METRICS = 'select_metrics';
+    const REPORT_VIEW_TRANSFORMS = 'transforms';
+    const REPORT_VIEW_FILTERS = 'filters';
+
     /**
      * @return string
      */
@@ -240,4 +245,10 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setEnableCustomDimensionMetric($enableCustomDimensionMetric);
+
+    /**
+     * @param mixed $id
+     * @return self
+     */
+    public function setId($id);
 }

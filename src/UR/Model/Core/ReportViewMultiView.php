@@ -155,4 +155,11 @@ class ReportViewMultiView implements ReportViewMultiViewInterface
         $this->enableCustomDimensionMetric = $enableCustomDimensionMetric;
         return $this;
     }
+
+    /**
+     * @param $id
+     */
+    public function setId($id) {
+        $this->id = $id;
+    }
 }

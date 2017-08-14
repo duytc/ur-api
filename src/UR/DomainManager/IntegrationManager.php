@@ -6,6 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\IntegrationInterface;
+use UR\Model\Core\TagInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\IntegrationRepositoryInterface;
 
@@ -94,5 +95,13 @@ class IntegrationManager implements IntegrationManagerInterface
         return $this->repository->findOneBy(
             array('canonicalName' => $canonicalName)
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByTag(TagInterface $tag)
+    {
+        return $this->repository->findByTag($tag);
     }
 }

@@ -2,16 +2,17 @@
 namespace UR\Service\Report;
 
 use UR\Service\DataSet\FieldType;
+use UR\Service\DTO\Collection;
 
 class ReportViewFilter implements ReportViewFilterInterface
 {
     /**
      * @inheritdoc
      */
-    public function filterReports($reportResult, $params)
+    public function filterReports(Collection $reportCollection, $params)
     {
-        $reports = $reportResult->getReports();
-        $types = $reportResult->getTypes();
+        $reports = $reportCollection->getRows();
+        $types = $reportCollection->getTypes();
         $searches = $params->getSearches();
 
         foreach ($searches as $searchField => $searchContent) {
@@ -56,8 +57,8 @@ class ReportViewFilter implements ReportViewFilterInterface
             }
         }
 
-        $reportResult->setReports($reports);
-        return $reportResult;
+        $reportCollection->setRows($reports);
+        return $reportCollection;
     }
 
     /**

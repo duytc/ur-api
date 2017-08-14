@@ -133,4 +133,10 @@ class ReportViewDataSet implements ReportViewDataSetInterface
         $this->metrics = $metrics;
         return $this;
     }
+    /**
+     * @param $id
+     */
+    public function setId($id) {
+        $this->id = $id;
+    }
 }

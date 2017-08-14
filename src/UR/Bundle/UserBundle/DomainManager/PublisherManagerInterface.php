@@ -4,6 +4,7 @@ namespace UR\Bundle\UserBundle\DomainManager;
 
 use FOS\UserBundle\Model\UserInterface as FOSUserInterface;
 use FOS\UserBundle\Model\UserInterface;
+use UR\Model\Core\ReportViewTemplateInterface;
 use UR\Model\User\UserEntityInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Exception\InvalidUserRoleException;
@@ -97,4 +98,9 @@ interface PublisherManagerInterface
 
     public function generateUuid(UserInterface $user);
 
+    /**
+     * @param ReportViewTemplateInterface $reportViewTemplate
+     * @return PublisherInterface[]
+     */
+    public function findByReportViewTemplate(ReportViewTemplateInterface $reportViewTemplate);
 }

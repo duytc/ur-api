@@ -8,14 +8,21 @@ class DataSourceIntegrationSchedule implements DataSourceIntegrationScheduleInte
 
     protected $uuid;
     /** @var \DateTime */
-    protected $executedAt;
+    protected $nextExecutedAt;
+
+    /** @var  \DateTime */
+    protected $queuedAt;
+
+    /** @var  \DateTime */
+    protected $finishedAt;
+
     protected $scheduleType;
 
     /** @var DataSourceIntegrationInterface */
     protected $dataSourceIntegration;
 
-    /** @var  bool */
-    protected $pending;
+    /** @var  integer */
+    protected $status;
 
     public function __construct()
     {
@@ -49,17 +56,17 @@ class DataSourceIntegrationSchedule implements DataSourceIntegrationScheduleInte
     /**
      * @inheritdoc
      */
-    public function getExecutedAt()
+    public function getNextExecutedAt()
     {
-        return $this->executedAt;
+        return $this->nextExecutedAt;
     }
 
     /**
      * @inheritdoc
      */
-    public function setExecutedAt(\DateTime $executedAt)
+    public function setNextExecutedAt(\DateTime $nextNextExecutedAt)
     {
-        $this->executedAt = $executedAt;
+        $this->nextExecutedAt = $nextNextExecutedAt;
         return $this;
     }
 
@@ -100,17 +107,53 @@ class DataSourceIntegrationSchedule implements DataSourceIntegrationScheduleInte
     /**
      * @inheritdoc
      */
-    public function getPending()
+    public function getStatus()
     {
-        return $this->pending;
+        return $this->status;
     }
 
     /**
      * @inheritdoc
      */
-    public function setPending($pending)
+    public function setStatus($status)
     {
-        $this->pending = $pending;
+        $this->status = $status;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getQueuedAt()
+    {
+        return $this->queuedAt;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setQueuedAt($queuedAt)
+    {
+        $this->queuedAt = $queuedAt;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFinishedAt()
+    {
+        return $this->finishedAt;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setFinishedAt($finishedAt)
+    {
+        $this->finishedAt = $finishedAt;
 
         return $this;
     }

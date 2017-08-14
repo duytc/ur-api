@@ -20,6 +20,7 @@ class ConnectedDataSource extends ConnectedDataSourceModel
     protected $lastActivity;
     protected $totalRow;
     protected $numChanges;
+    protected $importHistories;
 
     /** @var  bool $replayData */
     protected $replayData;

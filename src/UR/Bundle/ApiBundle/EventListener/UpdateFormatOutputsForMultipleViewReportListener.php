@@ -64,6 +64,10 @@ class UpdateFormatOutputsForMultipleViewReportListener
 		foreach ($reportViewMultipleReportViews as $reportViewMultipleReportView) {
 			/**@var ReportViewMultiViewInterface $reportViewMultipleReportView */
 			$multipleReportView = $reportViewMultipleReportView->getReportView();
+
+			if (!$multipleReportView instanceof ReportViewInterface) {
+				continue;
+			}
 			$outputFormats = $multipleReportView->getFormats();
 
 			/**@var FormatInterface[] $outputFormats */

@@ -1,0 +1,60 @@
+parameters:
+    # entity class
+    ur.entity.core.user_tag.class: UR\Entity\Core\UserTag
+    # form class
+    ur.form.type.core.user_tag.class: UR\Form\Type\UserTagFormType
+
+services:
+    ur_api.handler.user_tag:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.user_tag
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.user_tag:
+        class: UR\Repository\Core\UserTagRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.user_tag.class%
+
+    ur.domain_manager.user_tag:
+        class: UR\DomainManager\UserTagManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.user_tag
+
+    ur.form.type.user_tag:
+        class: %ur.form.type.core.user_tag.class%
+        user_tags:
+            - { name: form.type, alias: ur_form_user_tag }
+
+    ur.handler.handlers.user_tag.abstract:
+        class: UR\Handler\Handlers\Core\UserTagHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.user_tag
+            - @ur.domain_manager.user_tag
+
+    ur.handler.handlers.user_tag.admin:
+        class: UR\Handler\Handlers\Core\Admin\UserTagHandler
+        parent: ur.handler.handlers.user_tag.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.user_tag.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\UserTagHandler
+        parent: ur.handler.handlers.user_tag.abstract
+        public: false
+
+    ur.handler.handler_manager.user_tag:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.user_tag.class%
+            -
+                - @ur.handler.handlers.user_tag.admin
+                - @ur.handler.handlers.user_tag.publisher

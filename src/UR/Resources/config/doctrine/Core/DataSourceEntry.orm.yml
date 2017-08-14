@@ -64,4 +64,8 @@ UR\Entity\Core\DataSourceEntry:
             joinColumn:
                 name: data_source_id
                 referencedColumnName: id
-                onDelete: CASCADE
+    oneToMany:
+        importHistories:
+            targetEntity: UR\Entity\Core\ImportHistory
+            mappedBy: dataSourceEntry
+            cascade: ['remove', 'detach']

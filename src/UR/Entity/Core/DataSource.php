@@ -59,6 +59,9 @@ class DataSource extends DataSourceModel
      */
     protected $alerts;
 
+    /** @var  boolean */
+    protected $backfillMissingDateRunning;
+
     /**
      * @inheritdoc
      *

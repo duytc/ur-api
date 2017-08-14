@@ -10,12 +10,18 @@ UR\Entity\Core\DataSourceIntegrationSchedule:
         uuid:
             expose: true
             groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.bySchedule]
-        executeAt:
+        nextExecuteAt:
+            expose: true
+            groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.summary, dataSourceIntegrationSchedule.bySchedule]
+        queuedAt:
+            expose: true
+            groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.summary, dataSourceIntegrationSchedule.bySchedule]
+        finishedAt:
             expose: true
             groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.summary, dataSourceIntegrationSchedule.bySchedule]
         scheduleType:
             expose: true
             groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.summary, dataSourceIntegrationSchedule.bySchedule]
-        pending:
+        status:
             expose: true
             groups: [dataSourceIntegrationSchedule.detail, dataSourceIntegrationSchedule.summary, dataSourceIntegrationSchedule.bySchedule]

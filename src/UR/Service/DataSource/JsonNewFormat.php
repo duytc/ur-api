@@ -19,7 +19,7 @@ class JsonNewFormat extends CommonDataSourceFile implements DataSourceInterface
     {
         $str = file_get_contents($filePath, true);
         $result = json_decode($str, true);
-        if (is_array($result)) {
+        if (!is_array($result)) {
             return;
         }
 

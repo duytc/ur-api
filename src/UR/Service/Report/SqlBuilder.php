@@ -161,6 +161,9 @@ class SqlBuilder implements SqlBuilderInterface
         $qb->where($where);
 
         $qb = $this->bindFilterParam($qb, $filters);
+        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
+            $qb = $this->bindFilterParam($qb, $overridingFilters, $dataSet->getDataSetId());
+        }
 
         return array(
             self::STATEMENT_KEY => $qb,
@@ -190,7 +193,9 @@ class SqlBuilder implements SqlBuilderInterface
             } else if ($filter instanceof TextFilterInterface) {
                 if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN])) {
                     $bindParamName = sprintf(':%s%d', $filter->getFieldName(), $dataSetId ?? 0);
-                    $qb->setParameter($bindParamName, $filter->getComparisonValue(), Connection::PARAM_STR_ARRAY);
+                    $compareValue = $filter->getComparisonValue();
+                    $compareValue = join(',', $compareValue);
+                    $qb->setParameter($bindParamName, $compareValue, PDO::PARAM_STR);
                 } else {
                     $bindParamName = sprintf(':%s%d', $filter->getFieldName(), $dataSetId ?? 0);
                     $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::STRING);
@@ -198,7 +203,9 @@ class SqlBuilder implements SqlBuilderInterface
             } else if ($filter instanceof NumberFilterInterface) {
                 if (in_array($filter->getComparisonType(), [NumberFilter::COMPARISON_TYPE_IN, NumberFilter::COMPARISON_TYPE_NOT_IN])) {
                     $bindParamName = sprintf(':%s%d', $filter->getFieldName(), $dataSetId ?? 0);
-                    $qb->setParameter($bindParamName, $filter->getComparisonValue(), Connection::PARAM_INT_ARRAY);
+                    $compareValue = $filter->getComparisonValue();
+                    $compareValue = join(',', $compareValue);
+                    $qb->setParameter($bindParamName, $compareValue, PDO::PARAM_STR);
                 } else {
                     $bindParamName = sprintf(':%s%d', $filter->getFieldName(), $dataSetId ?? 0);
                     $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::INTEGER);
@@ -236,18 +243,23 @@ class SqlBuilder implements SqlBuilderInterface
 
                 if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN])) {
                     $compareValue = $filter->getComparisonValue();
+//                    $compareValue = array_map(array($this->connection, 'quote'), $compareValue);
+                    $compareValue = join(',', $compareValue);
+//                    $compareValue = implode(',', $compareValue);
                     $bindParamName = sprintf('%s%d', $filter->getFieldName(), $dataSetId ?? 0);
-                    $stmt->bindValue($bindParamName, implode(',', $compareValue), PDO::PARAM_STR);
+                    $stmt->bindParam($bindParamName, $compareValue, PDO::PARAM_STR);
                 } else {
                     $compareValue = $filter->getComparisonValue();
+                    $compareValue = $this->connection->quote($compareValue);
                     $bindParamName = sprintf('%s%d', $filter->getFieldName(), $dataSetId ?? 0);
                     $stmt->bindValue($bindParamName, $compareValue, PDO::PARAM_STR);
                 }
             } else if ($filter instanceof NumberFilterInterface) {
                 if (in_array($filter->getComparisonType(), [NumberFilter::COMPARISON_TYPE_IN, NumberFilter::COMPARISON_TYPE_NOT_IN])) {
                     $compareValue = $filter->getComparisonValue();
+                    $compareValue = join(',', $compareValue);
                     $bindParamName = sprintf('%s%d', $filter->getFieldName(), $dataSetId ?? 0);
-                    $stmt->bindValue($bindParamName, implode(',', $compareValue), PDO::PARAM_STR);
+                    $stmt->bindValue($bindParamName, $compareValue, PDO::PARAM_STR);
                 } else {
                     $compareValue = $filter->getComparisonValue();
                     $bindParamName = sprintf('%s%d', $filter->getFieldName(), $dataSetId ?? 0);
@@ -306,7 +318,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            foreach ($overridingFilters as $filter) {
+            foreach ($overridingFilters as $key => $filter) {
                 if (!$filter instanceof FilterInterface) {
                     continue;
                 }
@@ -325,6 +337,8 @@ class SqlBuilder implements SqlBuilderInterface
                             in_array($fieldName, $dataSet->getMetrics())) && $dataSetId == $dataSet->getDataSetId()
                     ) {
                         $conditions[] = $this->buildSingleFilter($filter, sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());//[self::CONDITION_KEY];
+                        $overridingFilters[$dataSetId][] = $filter;
+                        unset($overridingFilters[$key]);
                     }
                 }
             }
@@ -349,6 +363,12 @@ class SqlBuilder implements SqlBuilderInterface
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
             $stmt = $this->bindStatementParam($stmt, $dataSet->getFilters(), $dataSet->getDataSetId());
+        }
+
+        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
+            foreach ($overridingFilters as $dataSetId => $filters) {
+                $stmt = $this->bindStatementParam($stmt, $filters, $dataSetId);
+            }
         }
 
         $stmt->execute();
@@ -536,10 +556,10 @@ class SqlBuilder implements SqlBuilderInterface
                     return sprintf('%s >= %s', $fieldName, $bindParamName);
 
                 case NumberFilter::COMPARISON_TYPE_IN:
-                    return sprintf('%s IN (%s)', $fieldName, $bindParamName);
+                    return sprintf('FIND_IN_SET(%s, %s)', $fieldName, $bindParamName);
 
                 case NumberFilter::COMPARISON_TYPE_NOT_IN:
-                    return sprintf('(%s IS NULL OR %s NOT IN (%s))', $fieldName, $fieldName, $bindParamName);
+                    return sprintf('(%s IS NULL OR NOT FIND_IN_SET(%s, %s))', $fieldName, $fieldName, $bindParamName);
 
                 case TextFilter::COMPARISON_TYPE_NOT_NULL:
                     return sprintf('(%s IS NOT NULL)', $fieldName);
@@ -564,6 +584,7 @@ class SqlBuilder implements SqlBuilderInterface
 
                 case TextFilter::COMPARISON_TYPE_CONTAINS :
                     $contains = array_map(function ($tcv) use ($fieldName) {
+                        $tcv = preg_replace('/[\'"]/', '', $tcv);
                         return sprintf('%s LIKE \'%%%s%%\'', $fieldName, $tcv);
                     }, $textFilterComparisonValue);
 
@@ -571,6 +592,7 @@ class SqlBuilder implements SqlBuilderInterface
 
                 case TextFilter::COMPARISON_TYPE_NOT_CONTAINS :
                     $notContains = array_map(function ($tcv) use ($fieldName) {
+                        $tcv = preg_replace('/[\'"]/', '', $tcv);
                         return sprintf('%s NOT LIKE \'%%%s%%\'', $fieldName, $tcv);
                     }, $textFilterComparisonValue);
 
@@ -578,6 +600,7 @@ class SqlBuilder implements SqlBuilderInterface
 
                 case TextFilter::COMPARISON_TYPE_START_WITH:
                     $startWiths = array_map(function ($tcv) use ($fieldName) {
+                        $tcv = preg_replace('/[\'"]/', '', $tcv);
                         return sprintf('%s LIKE \'%s%%\'', $fieldName, $tcv);
                     }, $textFilterComparisonValue);
 
@@ -585,16 +608,18 @@ class SqlBuilder implements SqlBuilderInterface
 
                 case TextFilter::COMPARISON_TYPE_END_WITH:
                     $endWiths = array_map(function ($tcv) use ($fieldName) {
+                        $tcv = preg_replace('/[\'"]/', '', $tcv);
                         return sprintf('%s LIKE \'%%%s\'', $fieldName, $tcv);
                     }, $textFilterComparisonValue);
 
                     return sprintf("(%s)", implode(' OR ', $endWiths)); // cover conditions in "()" to keep inner AND/OR of conditions
 
                 case TextFilter::COMPARISON_TYPE_IN:
-                    return sprintf('%s IN (%s)', $fieldName, $bindParamName);
+//                    return sprintf('%s IN (%s)', $fieldName, $bindParamName);
+                    return sprintf('FIND_IN_SET(%s, %s)', $fieldName, $bindParamName);
 
                 case TextFilter::COMPARISON_TYPE_NOT_IN:
-                    return sprintf('(%s IS NULL OR %s = \'\' OR %s NOT IN (%s))', $fieldName, $fieldName, $fieldName, $bindParamName);
+                    return sprintf('(%s IS NULL OR %s = \'\' OR NOT FIND_IN_SET(%s, %s))', $fieldName, $fieldName, $fieldName, $bindParamName);
 
                 case TextFilter::COMPARISON_TYPE_NOT_NULL:
                     return sprintf('(%s IS NOT NULL)', $fieldName);

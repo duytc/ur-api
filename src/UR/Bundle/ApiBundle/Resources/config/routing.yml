@@ -67,3 +67,28 @@ api_data_source_integration_backfill_history:
     type: rest
     resource: UR\Bundle\ApiBundle\Controller\DataSourceIntegrationBackfillHistoryController
     name_prefix:  api_1_
+
+api_report_view_template:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ReportViewTemplateController
+    name_prefix:  api_1_
+
+api_tag:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\TagController
+    name_prefix:  api_1_
+
+api_integration_tag:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\IntegrationTagController
+    name_prefix:  api_1_
+
+api_report_view_template_tag:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ReportViewTemplateTagController
+    name_prefix:  api_1_
+
+api_user_tag:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\UserTagController
+    name_prefix:  api_1_

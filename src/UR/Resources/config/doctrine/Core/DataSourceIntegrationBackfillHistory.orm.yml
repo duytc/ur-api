@@ -8,7 +8,10 @@ UR\Entity\Core\DataSourceIntegrationBackfillHistory:
             generator:
                 strategy: AUTO
     fields:
-        executedAt:
+        queuedAt:
+            type: datetime
+            nullable: true
+        finishedAt:
             type: datetime
             nullable: true
 
@@ -19,9 +22,14 @@ UR\Entity\Core\DataSourceIntegrationBackfillHistory:
         backFillEndDate:
             type: date
             nullable: true
-        pending:
-            type: boolean
+        status:
+            type: integer
             option:
+                default: 0
+        autoCreate:
+            type: boolean
+            nullable: true
+            options:
                 default: false
     manyToOne:
         dataSourceIntegration:

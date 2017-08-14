@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\Util\Codes;
@@ -376,10 +377,15 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
             throw new InvalidArgumentException('"entries" should be an array of data source entry\'s id');
         }
 
+        /** @var EntityManagerInterface $em */
+        $em = $this->get('doctrine.orm.entity_manager');
         foreach ($entries as $entry) {
-            $entry = $this->one($entry);
-            $this->getHandler()->delete($entry);
+            $entity = $this->one($entry);
+            $this->checkUserPermission($entity, 'edit');
+            $em->remove($entity);
         }
+
+        $em->flush();
 
         $view = $this->view(null, Codes::HTTP_NO_CONTENT);
 

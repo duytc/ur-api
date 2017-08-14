@@ -10,9 +10,11 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceIntegrationBackfillHistoryManagerInterface;
+use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\DataSourceIntegrationBackfillHistory;
 use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
 
 /**
@@ -112,6 +114,7 @@ class DataSourceIntegrationBackfillHistoryController extends RestControllerAbstr
      * @param $id
      * @param Request $request
      * @return \UR\Model\Core\DataSourceIntegrationBackfillHistory[]
+     * @throws InvalidArgumentException
      * @internal param Request $request
      */
     public function postUpdateAction($id, Request $request)
@@ -119,14 +122,32 @@ class DataSourceIntegrationBackfillHistoryController extends RestControllerAbstr
         /** @var DataSourceIntegrationBackfillHistoryInterface $dataSourceIntegrationBackFillHistory */
         $dataSourceIntegrationBackFillHistory = $this->one($id);
 
-        if ($request->request->has(DataSourceIntegrationBackfillHistoryInterface::FIELD_PENDING)) {
-            $pending = $request->request->get(DataSourceIntegrationBackfillHistoryInterface::FIELD_PENDING);
-            $dataSourceIntegrationBackFillHistory->setPending($pending);
+        // required param
+        $statusParam = $request->request->get(DataSourceIntegrationBackfillHistoryInterface::FIELD_STATUS, null);
+        if (null === $statusParam || !in_array($statusParam, DataSourceIntegrationBackfillHistory::$SUPPORTED_STATUS)) {
+            throw new InvalidArgumentException('missing status or status is invalid');
         }
 
-        if ($request->request->has(DataSourceIntegrationBackfillHistoryInterface::FIELD_EXECUTED_AT)) {
-            $lastExecuteAt = $request->request->get(DataSourceIntegrationBackfillHistoryInterface::FIELD_EXECUTED_AT);
-            $dataSourceIntegrationBackFillHistory->setExecutedAt(date_create($lastExecuteAt));
+        $dataSourceIntegrationBackFillHistory->setStatus($statusParam);
+
+        $utcTimeZone = new \DateTimeZone('UTC');
+        $nowInUTC = new \DateTime('now', $utcTimeZone);
+
+        /** important: if status is finish and failed -> set autoCreate to false */
+        switch ($statusParam) {
+            case DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_NOT_RUN:
+                break;
+            case DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_PENDING:
+                $dataSourceIntegrationBackFillHistory->setQueuedAt($nowInUTC);
+                break;
+            case DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_FINISHED:
+                $dataSourceIntegrationBackFillHistory->setFinishedAt($nowInUTC);
+                $dataSourceIntegrationBackFillHistory->setAutoCreate(false);
+                break;
+            case DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_FAILED:
+                $dataSourceIntegrationBackFillHistory->setFinishedAt($nowInUTC);
+                $dataSourceIntegrationBackFillHistory->setAutoCreate(false);
+                break;
         }
 
         $dataSourceIntegrationBackFillHistoryManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');

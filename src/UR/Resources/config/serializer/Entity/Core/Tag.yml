@@ -1,0 +1,18 @@
+UR\Entity\Core\Tag:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [tag.detail, tag.summary, tag.edit, tag.minimum]
+        name:
+            expose: true
+            groups: [tag.detail, tag.summary, tag.edit, tag.minimum]
+        userTags:
+            expose: true
+            groups: [tag.detail, tag.summary, tag.edit]
+        integrationTags:
+            expose: true
+            groups: [tag.detail, tag.summary, tag.edit]
+        reportViewTemplateTags:
+            expose: true
+            groups: [tag.detail, tag.summary, tag.edit]

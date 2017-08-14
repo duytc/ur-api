@@ -51,8 +51,14 @@ class ReportGrouper implements ReportGrouperInterface
      */
     public function group(Collection $collection, array $metrics, $weightedCalculation, $dateRanges, $isShowDataSetName)
     {
+        $columns = $collection->getColumns();
+        $headers = [];
+        foreach ($columns as $index => $column) {
+            $headers[$column] = $this->convertColumn($column, $isShowDataSetName);
+        }
+
         if (count($collection->getRows()) < 1) {
-            throw new NotFoundHttpException('can not find the report');
+            return new ReportResult([], [], [], $this->dateUtil->mergeDateRange($dateRanges), $headers, $collection->getTypes());
         }
 
         $metrics = array_intersect($metrics, $collection->getColumns());
@@ -97,12 +103,6 @@ class ReportGrouper implements ReportGrouperInterface
                 continue;
             }
             $average[$metric] = $total[$metric] / $count;
-        }
-
-        $columns = $collection->getColumns();
-        $headers = [];
-        foreach ($columns as $index => $column) {
-            $headers[$column] = $this->convertColumn($column, $isShowDataSetName);
         }
 
         return new ReportResult($rows, $total, $average, $this->dateUtil->mergeDateRange($dateRanges), $headers, $collection->getTypes());

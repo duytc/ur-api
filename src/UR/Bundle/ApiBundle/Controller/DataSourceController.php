@@ -1029,6 +1029,9 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     {
         /** @var DataSourceInterface $dataSource */
         $dataSource = $this->one($id);
+        if (empty($dataSource)) {
+            throw new BadRequestHttpException(sprintf('cannot find any data source with this id %d', $id));
+        }
         $dataSourceIntegrationBackfillHistoryRepository = $this->get('ur.repository.data_source_integration_backfill_history');
 
         return $dataSourceIntegrationBackfillHistoryRepository->getBackfillHistoriesByDataSourceId($dataSource);
@@ -1045,7 +1048,9 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
      *  section = "Data Source",
      *  resource = true,
      *  statusCodes = {
-     *      200 = "Returned when successful"
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *
      *  }
      * )
      *
@@ -1074,8 +1079,8 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             $dataSourceIntegration = $data;
         }
 
-        if (!is_array($dataSource->getMissingDate()) && empty($dataSource->getMissingDate())) {
-            throw new \Exception('There is no missing date given by id.');
+        if (!is_array($dataSource->getMissingDate()) && empty($dataSource->getMissingDate()) || $dataSource->getBackfillMissingDateRunning() == true) {
+            throw new \Exception('There is no missing date given by id or maybe backfill have been created.');
         }
 
         $missingDateRanges = $dataSource->getMissingDate();
@@ -1119,6 +1124,10 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
 
         }
 
+        // change backfillMissingDateRunning to true
+        $dataSource->setBackfillMissingDateRunning(true);
+        $dataSourceManager = $this->get('ur.domain_manager.data_source');
+        $dataSourceManager->save($dataSource);
         return '';
     }
 
@@ -1130,9 +1139,49 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $backFillHistory->setDataSourceIntegration($dataSourceIntegration);
         $backFillHistory->setBackFillStartDate(DateTime::createFromFormat('Y-m-d', $startDateBackfill));
         $backFillHistory->setBackFillEndDate(DateTime::createFromFormat('Y-m-d', $endDateBackfill));
+        $backFillHistory->setAutoCreate(true);
 
         $backFillHistoryManager->save($backFillHistory);
     }
+
+    /**
+     * Update backfillMissingDatesRunning if there is no backfill has autoCreate is true for this data source
+     *
+     * @Rest\Post("/datasources/{id}/updatebackfillmissingdate", requirements={"id" = "\d+"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @param int $id the resource id
+     * @return array
+     * @throws Exception
+     */
+    public function updateBackFillMissingDatesAction($id, Request $request)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+        if (!$dataSource instanceof DataSourceInterface) {
+            throw new \Exception('Can not find any data source given by id.');
+        }
+        $dataSourceIntegrationBackfillHistoryRepository = $this->get('ur.repository.data_source_integration_backfill_history');
+        $backfillResult = $dataSourceIntegrationBackfillHistoryRepository->getBackfillHistoriesByDataSourceIdWithAutoCreated($dataSource);
+
+        if (empty($backfillResult)) {
+            // update backfillMissingDateRunning to false
+            $dataSource->setBackfillMissingDateRunning(false);
+            $dataSourceManager = $this->get('ur.domain_manager.data_source');
+            $dataSourceManager->save($dataSource);
+        }
+
+        return $this->view(true, Codes::HTTP_OK);
+    }
+
     /**
      * override parent function
      * @inheritdoc

@@ -57,10 +57,13 @@ UR\Entity\Core\ConnectedDataSource:
             joinColumn:
                 name: data_set_id
                 referencedColumnName: id
-                onDelete: CASCADE
     oneToMany:
         linkedMapDataSets:
             targetEntity: UR\Entity\Core\LinkedMapDataSet
             cascade: ['persist', 'detach', 'remove']
             mappedBy: connectedDataSource
             orphanRemoval: true
+        importHistories:
+            targetEntity: UR\Entity\Core\ImportHistory
+            mappedBy: connectedDataSource
+            cascade: ['remove', 'detach']

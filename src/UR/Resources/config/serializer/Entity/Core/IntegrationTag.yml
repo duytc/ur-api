@@ -1,0 +1,12 @@
+UR\Entity\Core\IntegrationTag:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [integration_tag.detail, integration_tag.summary, integration_tag.edit]
+        tag:
+            expose: true
+            groups: [integration_tag.detail, integration_tag.summary]
+        integration:
+            expose: true
+            groups: [integration_tag.detail, integration_tag.summary, integration_tag.edit]

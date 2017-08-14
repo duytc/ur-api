@@ -102,6 +102,56 @@ class UserController extends RestControllerAbstract implements ClassResourceInte
     }
 
     /**
+     * Get all tags of a user
+     *
+     * @Rest\Get("/users/{id}/tags" )
+     * @Rest\View(serializerGroups={"user_tag.detail", "tag.detail", "user.uuid"})
+     *
+     * @ApiDoc(
+     *  section = "User",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  },
+     * )
+     *
+     * @param int $id the resource id
+     * @return string
+     * @throws \Exception
+     */
+    public function getTagsByUserAction($id)
+    {
+        /** @var PublisherInterface $publisher */
+        $publisher = $this->one($id);
+        return $this->get('ur.domain_manager.tag')->findByPublisher($publisher);
+    }
+
+    /**
+     * Get all report view templates of a user
+     *
+     * @Rest\Get("/users/{id}/reportviewtemplates" )
+     * @Rest\View(serializerGroups={"user_tag.detail", "tag.detail", "user.uuid", "report_view_template.detail"})
+     *
+     * @ApiDoc(
+     *  section = "User",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  },
+     * )
+     *
+     * @param int $id the resource id
+     * @return string
+     * @throws \Exception
+     */
+    public function getReportViewTemplatesByUserAction($id)
+    {
+        /** @var PublisherInterface $publisher */
+        $publisher = $this->one($id);
+        return $this->get('ur.domain_manager.report_view_template')->findByPublisher($publisher);
+    }
+
+    /**
      * Create a user from the submitted data
      *
      * @ApiDoc(

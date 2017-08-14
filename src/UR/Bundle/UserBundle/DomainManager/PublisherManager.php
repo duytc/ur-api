@@ -2,12 +2,18 @@
 
 namespace UR\Bundle\UserBundle\DomainManager;
 
+use Doctrine\Common\Collections\Collection;
 use FOS\UserBundle\Model\UserInterface as FOSUserInterface;
 use FOS\UserBundle\Model\UserInterface;
 use FOS\UserBundle\Model\UserManagerInterface;
 use Ramsey\Uuid\Exception\UnsatisfiedDependencyException;
 use Ramsey\Uuid\Uuid;
+use UR\Bundle\UserSystem\PublisherBundle\Entity\User;
+use UR\DomainManager\UserTagManagerInterface;
 use UR\Exception\LogicException;
+use UR\Model\Core\ReportViewTemplateInterface;
+use UR\Model\Core\ReportViewTemplateTagInterface;
+use UR\Model\Core\UserTagInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\UserEntityInterface;
 
@@ -26,9 +32,13 @@ class PublisherManager implements PublisherManagerInterface
      */
     protected $FOSUserManager;
 
-    public function __construct(UserManagerInterface $userManager)
+    /** @var UserTagManagerInterface  */
+    protected $userTagManager;
+
+    public function __construct(UserManagerInterface $userManager, UserTagManagerInterface $userTagManager)
     {
         $this->FOSUserManager = $userManager;
+        $this->userTagManager = $userTagManager;
     }
 
     /**
@@ -159,5 +169,44 @@ class PublisherManager implements PublisherManagerInterface
         } catch(UnsatisfiedDependencyException $e) {
             throw new LogicException($e->getMessage());
         }
+    }
+
+    /**
+     * @param ReportViewTemplateInterface $reportViewTemplate
+     * @return PublisherInterface[]
+     */
+    public function findByReportViewTemplate(ReportViewTemplateInterface $reportViewTemplate) {
+        $reportViewTemplateTags = $reportViewTemplate->getReportViewTemplateTags();
+
+        if ($reportViewTemplateTags instanceof Collection) {
+            $reportViewTemplateTags = $reportViewTemplateTags->toArray();
+        }
+
+        $publishers = [];
+
+        foreach ($reportViewTemplateTags as $reportViewTemplateTag) {
+            if (!$reportViewTemplateTag instanceof ReportViewTemplateTagInterface) {
+                continue;
+            }
+
+            $tag = $reportViewTemplateTag->getTag();
+            $userTags = $this->userTagManager->findByTag($tag);
+
+            foreach ($userTags as $userTag) {
+                if (!$userTag instanceof UserTagInterface) {
+                    continue;
+                }
+
+                $publisher = $userTag->getPublisher();
+
+                if (!in_array(User::MODULE_UNIFIED_REPORT,$publisher->getUser()->getEnabledModules())) {
+                    continue;
+                }
+
+                $publishers[] = $userTag->getPublisher();
+            }
+        }
+
+        return $publishers;
     }
 }

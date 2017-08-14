@@ -62,4 +62,9 @@ interface ReportViewDataSetInterface extends ModelInterface
      * @return self
      */
     public function setMetrics($metrics);
+
+    /**
+     * @param $id
+     */
+    public function setId($id);
 }

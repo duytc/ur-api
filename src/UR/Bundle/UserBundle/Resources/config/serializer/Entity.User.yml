@@ -21,7 +21,7 @@ UR\Bundle\UserBundle\Entity\User:
             groups: [user.summary, user.detail]
         username:
             expose: true
-            groups: [user.summary, user.detail]
+            groups: [user.summary, user.detail, user.minimum]
         email:
             expose: true
             groups: [user.summary, user.detail]

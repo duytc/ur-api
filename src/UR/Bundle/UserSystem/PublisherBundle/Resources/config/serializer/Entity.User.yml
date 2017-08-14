@@ -23,7 +23,7 @@ UR\Bundle\UserSystem\PublisherBundle\Entity\User:
     properties:
         id:
             expose: true
-            groups: [user.summary, user.uuid, user.detail]
+            groups: [user.summary, user.uuid, user.detail, user.minimum]
         billingRate:
             expose: true
             groups: [user.detail]

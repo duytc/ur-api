@@ -4,6 +4,8 @@ namespace UR\Repository\Core;
 
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use UR\Model\Core\TagInterface;
+use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
 
@@ -11,13 +13,22 @@ class IntegrationRepository extends EntityRepository implements IntegrationRepos
 {
     public function getIntegrationsForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null)
     {
-        $qb = $this->createQueryBuilder('i')
-            ->leftJoin('i.integrationPublishers', 'ip')
+        $qb = $this->createQueryBuilder('i');
+        $qb
+            ->leftJoin('i.integrationTags', 'it')
+            ->leftJoin('it.tag', 't')
+            ->leftJoin('t.userTags', 'ut')
+            ->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->eq('i.enableForAllUsers', true),
+                    $qb->expr()->andX(
+                        $qb->expr()->eq('ut.publisher', ':publisher'),
+                        $qb->expr()->isNotNull('it.tag')
+                    )
+                )
+            )
             ->select('i')
-            ->where('ip.publisher = :publisher')
-            ->orWhere('i.enableForAllUsers = :enableForAllUsers')
-            ->setParameter('publisher', $publisher)
-            ->setParameter('enableForAllUsers', true);
+            ->setParameter('publisher', $publisher);
 
         if (is_int($limit)) {
             $qb->setMaxResults($limit);
@@ -31,11 +42,23 @@ class IntegrationRepository extends EntityRepository implements IntegrationRepos
     }
 
     /**
-     * @param UserRoleInterface $user
-     * @return QueryBuilder
+     * @inheritdoc
      */
-    public function getIntegrationsForUserQuery(UserRoleInterface $user)
+    public function getIntegrationsForUserQuery(UserRoleInterface $user, PagerParam $param)
     {
         return $user instanceof PublisherInterface ? $this->getIntegrationsForPublisherQuery($user) : $this->createQueryBuilder('a');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByTag(TagInterface $tag)
+    {
+        $qb = $this->createQueryBuilder('i')
+            ->leftJoin('i.integrationTags', 'it')
+            ->where('it.tag = :tag')
+            ->setParameter('tag', $tag);
+
+        return $qb->getQuery()->getResult();
     }
 }

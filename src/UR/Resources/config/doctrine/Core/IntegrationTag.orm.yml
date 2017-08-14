@@ -1,0 +1,15 @@
+UR\Entity\Core\IntegrationTag:
+    type: entity
+    table: core_integration_tag
+    repositoryClass: UR\Repository\Core\IntegrationTagRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+    manyToOne:
+        integration:
+            targetEntity: UR\Entity\Core\Integration
+        tag:
+            targetEntity: UR\Entity\Core\Tag

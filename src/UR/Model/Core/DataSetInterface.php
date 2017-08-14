@@ -18,7 +18,11 @@ interface DataSetInterface extends ModelInterface
     const MAPPING_IS_LEFT_SIDE = '__is_left_side';
     const MAPPING_IS_ASSOCIATED = '__is_associated';
     const MAPPING_IS_IGNORED = '__is_ignored';
+    const ALLOW_OVERWRITE_EXISTING_DATA = 'allowOverwriteExistingData';
 
+    const NAME_COLUMN = 'name';
+    const DIMENSIONS_COLUMN = 'dimensions';
+    const METRICS_COLUMN = 'metrics';
     /**
      * @param mixed $id
      */

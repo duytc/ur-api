@@ -72,3 +72,7 @@ UR\Entity\Core\DataSet:
             cascade: ['persist', 'detach', 'remove']
             mappedBy: dataSet
             orphanRemoval: true
+        importHistories:
+            targetEntity: UR\Entity\Core\ImportHistory
+            mappedBy: dataSet
+            cascade: ['remove', 'detach']

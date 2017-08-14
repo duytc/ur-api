@@ -1,0 +1,53 @@
+UR\Entity\Core\ReportViewTemplate:
+    type: entity
+    table: core_report_view_template
+    repositoryClass: UR\Repository\Core\ReportViewTemplateRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        multiView:
+            type: boolean
+            default: false
+        dataSets:
+            type: json_array
+            nullable: true
+        reportViews:
+            type: json_array
+            nullable: true
+        joinConfig:
+            type: json_array
+            nullable: true
+        transforms:
+            type: json_array
+            nullable: true
+        formats:
+            type: json_array
+            nullable: true
+        showInTotal:
+            type: json_array
+            nullable: true
+        showDataSetName:
+            type: boolean
+            default: false
+        enableCustomDimensionMetric:
+            type: boolean
+            default: false
+        dimensions:
+            type: json_array
+            nullable: true
+        metrics:
+            type: json_array
+            nullable: true
+        name:
+            type: string
+            nullable: true
+
+    oneToMany:
+        reportViewTemplateTags:
+            targetEntity: UR\Entity\Core\ReportViewTemplateTag
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: reportViewTemplate
+            orphanRemoval: true

@@ -10,13 +10,23 @@ class DataSourceIntegrationSchedule extends DataSourceIntegrationScheduleModel
     protected $id;
 
     protected $uuid;
-    protected $executedAt;
+
+    /** @var  \DateTime */
+    protected $nextExecutedAt;
+
+    /** @var  \DateTime */
+    protected $finishedAt;
+
+    /** @var  \DateTime */
+    protected $queuedAt;
+
     protected $scheduleType;
 
     /** @var DataSourceIntegrationInterface */
     protected $dataSourceIntegration;
 
-    protected $pending;
+    /** @var  integer */
+    protected $status;
 
     /**
      * @inheritdoc

@@ -1,0 +1,12 @@
+UR\Entity\Core\ReportViewTemplateTag:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [report_view_template_tag.detail, report_view_template_tag.summary, report_view_template_tag.edit]
+        tag:
+            expose: true
+            groups: [report_view_template_tag.detail, report_view_template_tag.summary, report_view_template_tag.tag]
+        reportViewTemplate:
+            expose: true
+            groups: [report_view_template_tag.detail, report_view_template_tag.summary, report_view_template_tag.edit]

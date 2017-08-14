@@ -73,6 +73,11 @@ class DataSource implements DataSourceInterface
      */
     protected $connectedDataSources;
 
+    /**
+     * @var boolean
+     */
+    protected $backfillMissingDateRunning;
+
     public function __construct()
     {
         $this->enable = true;
@@ -597,6 +602,24 @@ class DataSource implements DataSourceInterface
     public function setDateFieldsFromMetadata($dateFieldsFromMetadata)
     {
         $this->dateFieldsFromMetadata = $dateFieldsFromMetadata;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getBackfillMissingDateRunning()
+    {
+        return $this->backfillMissingDateRunning;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setBackfillMissingDateRunning($backfillMissingDateRunning)
+    {
+        $this->backfillMissingDateRunning = $backfillMissingDateRunning;
 
         return $this;
     }

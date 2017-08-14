@@ -1,0 +1,15 @@
+UR\Entity\Core\UserTag:
+    type: entity
+    table: core_user_tag
+    repositoryClass: UR\Repository\Core\UserTagRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+    manyToOne:
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
+        tag:
+            targetEntity: UR\Entity\Core\Tag

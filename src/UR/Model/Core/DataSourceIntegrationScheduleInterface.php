@@ -6,9 +6,14 @@ use UR\Model\ModelInterface;
 
 interface DataSourceIntegrationScheduleInterface extends ModelInterface
 {
-    const FIELD_EXECUTED_AT = 'executedAt';
-    const FIELD_PENDING = 'pending';
-    
+    const FIELD_NEXT_EXECUTED_AT = 'nextExecutedAt';
+    const FIELD_FINISHED_AT = 'finishedAt';
+    const FIELD_STATUS = 'status';
+
+    const FETCHER_STATUS_NOT_RUN = 0;
+    const FETCHER_STATUS_PENDING = 1;
+    const FETCHER_STATUS_FINISHED = 2;
+
     /**
      * @return mixed
      */
@@ -23,13 +28,13 @@ interface DataSourceIntegrationScheduleInterface extends ModelInterface
     /**
      * @return \DateTime
      */
-    public function getExecutedAt();
+    public function getNextExecutedAt();
 
     /**
-     * @param \DateTime $executedAt
+     * @param \DateTime $nextExecutedAt
      * @return self
      */
-    public function setExecutedAt(\DateTime $executedAt);
+    public function setNextExecutedAt(\DateTime $nextExecutedAt);
 
     /**
      * @return string
@@ -54,13 +59,35 @@ interface DataSourceIntegrationScheduleInterface extends ModelInterface
     public function setDataSourceIntegration(DataSourceIntegrationInterface $dataSourceIntegration);
 
     /**
-     * @return bool
+     * @return integer
      */
-    public function getPending();
+    public function getStatus();
 
     /**
-     * @param bool $pending
+     * @param integer $status
      * @return self
      */
-    public function setPending($pending);
+    public function setStatus($status);
+
+    /**
+     * @return \DateTime
+     */
+    public function getQueuedAt();
+
+    /**
+     * @param \DateTime $queuedAt
+     * @return self
+     */
+    public function setQueuedAt($queuedAt);
+
+    /**
+     * @return \DateTime
+     */
+    public function getFinishedAt();
+
+    /**
+     * @param \DateTime $finishedAt
+     * @return self
+     */
+    public function setFinishedAt($finishedAt);
 }

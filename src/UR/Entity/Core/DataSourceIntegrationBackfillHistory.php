@@ -9,7 +9,11 @@ class DataSourceIntegrationBackfillHistory extends DataSourceIntegrationBackfill
 {
     protected $id;
 
-    protected $executedAt;
+    /** @var  \DateTime */
+    protected $queuedAt;
+
+    /** @var  \DateTime */
+    protected $finishedAt;
 
     // back fill feature
     protected $backFillStartDate;
@@ -18,7 +22,11 @@ class DataSourceIntegrationBackfillHistory extends DataSourceIntegrationBackfill
     /** @var DataSourceIntegrationInterface[] */
     protected $dataSourceIntegration;
 
-    protected $pending;
+    /** @var  integer */
+    protected $status;
+
+    /** var boolean */
+    protected $autoCreate;
 
     /**
      * @inheritdoc

@@ -41,8 +41,7 @@ class NextExecutedAt
                 $nextExecuteAt = $this->dateTimeUtil->getNextExecutedByCheckEvery($lastExecuted, $checkValue);
 
                 $dataSourceIntegrationSchedule
-                    ->setExecutedAt($nextExecuteAt)
-                    ->setPending(false);
+                    ->setNextExecutedAt($nextExecuteAt);
 
                 break;
 
@@ -57,8 +56,7 @@ class NextExecutedAt
                     $nextExecuteAt = $this->dateTimeUtil->getNextExecutedByCheckAt($lastExecuted, $checkAtItem);
 
                     $dataSourceIntegrationSchedule
-                        ->setExecutedAt($nextExecuteAt)
-                        ->setPending(false);
+                        ->setNextExecutedAt($nextExecuteAt);
                 }
 
                 break;
@@ -90,8 +88,8 @@ class NextExecutedAt
                 $newDataSourceIntegrationSchedules = [
                     (new DataSourceIntegrationSchedule())
                         ->setUuid($checkValue[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID])
-                        ->setExecutedAt($nextExecuteAt)
-                        ->setPending(false)
+                        ->setNextExecutedAt($nextExecuteAt)
+                        ->setStatus(DataSourceIntegrationScheduleInterface::FETCHER_STATUS_NOT_RUN)
                         ->setScheduleType($checkType)
                         ->setDataSourceIntegration($dataSourceIntegration)
                 ];
@@ -105,8 +103,8 @@ class NextExecutedAt
                     $nextExecuteAt = $this->dateTimeUtil->getNextExecutedByCheckAt($lastExecuted, $checkAtItem);
                     $newDataSourceIntegrationSchedules[] = ((new DataSourceIntegrationSchedule())
                         ->setUuid($checkAtItem[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_UUID])
-                        ->setExecutedAt($nextExecuteAt)
-                        ->setPending(false)
+                        ->setNextExecutedAt($nextExecuteAt)
+                        ->setStatus(DataSourceIntegrationScheduleInterface::FETCHER_STATUS_NOT_RUN)
                         ->setScheduleType($checkType)
                         ->setDataSourceIntegration($dataSourceIntegration));
                 }

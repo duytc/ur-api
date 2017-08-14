@@ -1,0 +1,35 @@
+UR\Entity\Core\Tag:
+    type: entity
+    table: core_tag
+    repositoryClass: UR\Repository\Core\TagRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    uniqueConstraints:
+        compound_primary_key:
+            columns:
+                - name
+    fields:
+        name:
+            type: string
+            length: 20
+            nullable: true
+
+    oneToMany:
+        userTags:
+            targetEntity: UR\Entity\Core\UserTag
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: tag
+            orphanRemoval: true
+        integrationTags:
+            targetEntity: UR\Entity\Core\IntegrationTag
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: tag
+            orphanRemoval: true
+        reportViewTemplateTags:
+            targetEntity: UR\Entity\Core\ReportViewTemplateTag
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: tag
+            orphanRemoval: true

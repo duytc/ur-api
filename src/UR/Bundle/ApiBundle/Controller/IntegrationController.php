@@ -40,18 +40,24 @@ class IntegrationController extends RestControllerAbstract implements ClassResou
      *  }
      * )
      *
-     * @return IntegrationInterface[]
+     * @param Request $request
+     * @return \UR\Model\Core\IntegrationInterface[]
      */
-    public function cgetAction()
+    public function cgetAction(Request $request)
     {
         $user = $this->getUser();
+        $params = array_merge($request->query->all(), $request->attributes->all());
 
         /** @var IntegrationRepositoryInterface $integrationRepository */
         $integrationRepository = $this->get('ur.repository.integration');
         
-        $qb = $integrationRepository->getIntegrationsForUserQuery($user);
+        $qb = $integrationRepository->getIntegrationsForUserQuery($user, $this->getParams());
 
-        return $qb->getQuery()->getResult();
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
     }
 
     /**
@@ -75,6 +81,56 @@ class IntegrationController extends RestControllerAbstract implements ClassResou
     public function getAction($id)
     {
         return $this->getOr404($id);
+    }
+
+    /**
+     * Get all integration tags of a integration
+     *
+     * @Rest\Get("/integrations/{id}/integrationtags" )
+     * @Rest\View(serializerGroups={"integration_tag.detail", "tag.detail", "integration.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Integration",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  },
+     * )
+     *
+     * @param int $id the resource id
+     * @return string
+     * @throws \Exception
+     */
+    public function getIntegrationTagsByIntegrationAction($id)
+    {
+        /** @var IntegrationInterface $integration */
+        $integration = $this->one($id);
+        return $this->get('ur.domain_manager.integration_tag')->findByIntegration($integration);
+    }
+
+    /**
+     * Get all tags of a integration
+     *
+     * @Rest\Get("/integrations/{id}/tags" )
+     * @Rest\View(serializerGroups={"integration_tag.detail", "tag.detail", "integration.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Integration",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  },
+     * )
+     *
+     * @param int $id the resource id
+     * @return string
+     * @throws \Exception
+     */
+    public function getTagsByIntegrationAction($id)
+    {
+        /** @var IntegrationInterface $integration */
+        $integration = $this->one($id);
+        return $this->get('ur.domain_manager.tag')->findByIntegration($integration);
     }
 
     /**

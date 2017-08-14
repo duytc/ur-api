@@ -55,3 +55,10 @@ UR\Bundle\UserSystem\PublisherBundle\Entity\User:
     manyToOne:
         masterAccount:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
+
+    oneToMany:
+        userTags:
+            targetEntity: UR\Entity\Core\UserTag
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: publisher
+            orphanRemoval: true

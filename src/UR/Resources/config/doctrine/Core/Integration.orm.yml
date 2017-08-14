@@ -27,4 +27,9 @@ UR\Entity\Core\Integration:
             targetEntity: UR\Entity\Core\IntegrationPublisher
             cascade: ['persist', 'detach', 'remove']
             mappedBy: integration
+
+        integrationTags:
+            targetEntity: UR\Entity\Core\IntegrationTag
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: integration
             orphanRemoval: true

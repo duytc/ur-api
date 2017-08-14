@@ -32,19 +32,19 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
         $qb = $this->createQueryBuilder('dibh')
             ->join('dibh.dataSourceIntegration', 'di')
             ->where('di.dataSource = :dataSource')
-            ->orderBy('dibh.executedAt', 'desc')
+            ->orderBy('dibh.queuedAt', 'desc')
             ->setParameter('dataSource', $dataSource);
 
         $result = $qb->getQuery()->getResult();
 
         $nullExecutedBackFillHistories = array_filter($result, function ($backFill) {
             /* @var DataSourceIntegrationBackfillHistoryInterface $backFill */
-            return $backFill->getExecutedAt() == null;
+            return $backFill->getQueuedAt() == null;
         });
 
         $notNullExecutedBackFillHistories = array_filter($result, function ($backFill) {
             /* @var DataSourceIntegrationBackfillHistoryInterface $backFill */
-            return $backFill->getExecutedAt() != null;
+            return $backFill->getQueuedAt() != null;
         });
 
         return array_merge($nullExecutedBackFillHistories, $notNullExecutedBackFillHistories);
@@ -58,10 +58,11 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
         $qb = $this->createQueryBuilder('dibh')
             ->join('dibh.dataSourceIntegration', 'di')
             ->join('di.dataSource', 'ds')
-            ->where('dibh.executedAt is null')
             ->andWhere('ds.enable = true')
-            ->andWhere('dibh.pending = :pending')
-            ->setParameter('pending', false);
+            ->andWhere('dibh.status = :status')
+            ->andWhere('dibh.queuedAt is null')
+            ->andWhere('dibh.finishedAt is null')
+            ->setParameter('status', DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_NOT_RUN);
 
         return $qb->getQuery()->getResult();
     }
@@ -85,5 +86,22 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getBackfillHistoriesByDataSourceIdWithAutoCreated(DataSourceInterface $dataSource)
+    {
+        $qb = $this->createQueryBuilder('dibh')
+            ->join('dibh.dataSourceIntegration', 'di')
+            ->where('di.dataSource = :dataSource')
+            ->andWhere('dibh.autoCreate = :autoCreate')
+            ->setParameter('dataSource', $dataSource)
+            ->setParameter('autoCreate', true);
+
+        $result = $qb->getQuery()->getResult();
+
+        return $result;
     }
 }

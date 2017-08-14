@@ -73,3 +73,6 @@ UR\Entity\Core\DataSource:
         emailAnchorTexts:
             expose: true
             groups: [datasource.detail, datasource.edit]
+        backfillMissingDateRunning:
+            expose: true
+            groups: [datasource.detail, datasource.edit]

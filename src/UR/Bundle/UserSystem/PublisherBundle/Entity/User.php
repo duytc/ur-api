@@ -6,6 +6,7 @@ use Ramsey\Uuid\Exception\UnsatisfiedDependencyException;
 use Ramsey\Uuid\Uuid;
 use UR\Bundle\UserBundle\Entity\User as BaseUser;
 use UR\Exception\LogicException;
+use UR\Model\Core\UserTagInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\UserEntityInterface;
 
@@ -33,6 +34,9 @@ class User extends BaseUser implements PublisherInterface
      * @var PublisherInterface|null
      */
     protected $masterAccount;
+
+    /** @var  UserTagInterface[] */
+    protected $userTags;
 
     /**
      * @var boolean

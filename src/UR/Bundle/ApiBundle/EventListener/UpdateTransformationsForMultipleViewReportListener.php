@@ -62,6 +62,11 @@ class UpdateTransformationsForMultipleViewReportListener
 		foreach ($reportViewMultipleReportViews as $reportViewMultipleReportView) {
 			/**@var ReportViewMultiViewInterface $reportViewMultipleReportView */
 			$multipleReportView = $reportViewMultipleReportView->getReportView();
+
+			if (!$multipleReportView instanceof ReportViewInterface) {
+				continue;
+			}
+
 			$transformations = $multipleReportView->getTransforms();
 			$formats = $multipleReportView->getFormats();
 

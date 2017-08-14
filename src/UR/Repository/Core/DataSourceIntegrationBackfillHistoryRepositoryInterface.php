@@ -33,4 +33,10 @@ interface DataSourceIntegrationBackfillHistoryRepositoryInterface extends Object
      * @return mixed
      */
     public function findHistoryByStartDateEndDate($startDate, $endDate, $dataSourceIntegration);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @return array
+     */
+    public function getBackfillHistoriesByDataSourceIdWithAutoCreated(DataSourceInterface $dataSource);
 }

@@ -94,6 +94,11 @@ UR\Entity\Core\DataSource:
         detectedEndDate:
             type: date
             nullable: true
+        backfillMissingDateRunning:
+            type: boolean
+            nullable: true
+            options:
+                default: false
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

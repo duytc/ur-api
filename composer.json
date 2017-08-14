@@ -42,8 +42,7 @@
         "league/csv": "^8.0",
         "symfony/expression-language": "^3.1",
         "liuggio/excelbundle": "^2.1",
-        "box/spout": "^2.7",
-        "tagcade/unified-reports-custom-transform-bundle": "dev-master"
+        "box/spout": "^2.7"
     },
     "require-dev": {
         "sensio/generator-bundle": "3.0",

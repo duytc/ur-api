@@ -18,7 +18,7 @@ class DataSet extends DataSetModel
     protected $totalRow;
     protected $allowOverwriteExistingData;
     protected $lastActivity;
-
+    protected $importHistories;
     /** @var UserEntityInterface */
     protected $publisher;
 

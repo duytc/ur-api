@@ -20,19 +20,14 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
         $qb
             ->join('dis.dataSourceIntegration', 'dsi')
             ->join('dsi.dataSource', 'ds')
-            ->andWhere(
-                $qb->expr()->orX(
-                // check by executeAt:
-                    $qb->expr()->lte('dis.executedAt', ':currentDate') // 'dis.executedAt <= :currentDate',
-                )
-            )
+            ->andWhere('dis.nextExecutedAt <= :currentDate')
             ->andWhere('dsi.active = :dataSourceActive')
-            ->andWhere('dis.pending = :pending')
+            ->andWhere('dis.status = :status')
             ->andWhere('ds.enable = :enable')
             ->setParameter('currentDate', $currentDate)
             ->setParameter('dataSourceActive', true)
             ->setParameter('enable', true)
-            ->setParameter('pending', false);
+            ->setParameter('status', DataSourceIntegrationScheduleInterface::FETCHER_STATUS_NOT_RUN);
 
         $schedules = $qb->getQuery()->getResult();
 

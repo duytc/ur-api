@@ -24,6 +24,7 @@ services:
         class: UR\Bundle\UserBundle\DomainManager\PublisherManager
         arguments:
             - @ur_user_system_publisher.user_manager
+            - @ur.domain_manager.user_tag
 
     ur_user.handler.authentication_success:
         class: UR\Bundle\UserBundle\Handler\AuthenticationSuccessHandler

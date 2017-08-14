@@ -18,6 +18,11 @@ imports:
     - { resource: services/service.report_view_multi_view.yml }
     - { resource: services/service.linked_map_data_set.yml }
     - { resource: services/service.map_builder_config.yml }
+    - { resource: services/service.tag.yml}
+    - { resource: services/service.user_tag.yml}
+    - { resource: services/service.integration_tag.yml}
+    - { resource: services/service.report_view_template.yml}
+    - { resource: services/service.report_view_template_tag.yml}
 
 
 parameters:

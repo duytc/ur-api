@@ -1,0 +1,46 @@
+UR\Entity\Core\ReportViewTemplate:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit, report_view_template.minimum]
+        multiView:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        dataSets:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        reportViews:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        joinConfig:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        transforms:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        formats:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        showInTotal:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        showDataSetName:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        enableCustomDimensionMetric:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        dimensions:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        metrics:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        name:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit, report_view_template.minimum]
+        reportViewTemplateTags:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit, report_view_template.minimum]
+

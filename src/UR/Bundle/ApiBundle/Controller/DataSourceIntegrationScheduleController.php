@@ -16,11 +16,11 @@ use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Model\Core\DataSourceIntegrationBackfillHistory;
 use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\FetcherSchedule;
-use UR\Repository\Core\DataSourceIntegrationScheduleRepository;
 use UR\Repository\Core\DataSourceIntegrationScheduleRepositoryInterface;
 
 /**
@@ -96,28 +96,38 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
      */
     public function getIntegrationByScheduleAction(Request $request)
     {
+        // get normal data source integration by schedule
         /** @var DataSourceIntegrationScheduleManagerInterface $dsisManager */
         $dsisManager = $this->get('ur.domain_manager.data_source_integration_schedule');
-        $normalSchedules = $dsisManager->findToBeExecuted();
+        $notExecutedNormalSchedules = $dsisManager->findToBeExecuted();
 
-        $normalSchedules = array_map(function ($schedule) {
-            if ($schedule instanceof DataSourceIntegrationScheduleInterface) {
-                $fetcherSchedule = new FetcherSchedule();
-                $fetcherSchedule->setDataSourceIntegrationSchedule($schedule);
-                return $fetcherSchedule;
+        $normalSchedules = [];
+        foreach ($notExecutedNormalSchedules as $notExecutedNormalSchedule) {
+            if (!$notExecutedNormalSchedule instanceof DataSourceIntegrationScheduleInterface) {
+                continue;
             }
-        }, $normalSchedules);
 
+            $fetcherSchedule = (new FetcherSchedule())
+                ->setDataSourceIntegrationSchedule($notExecutedNormalSchedule);
+
+            $normalSchedules[] = $fetcherSchedule;
+        }
+
+        // get data source integration by backfill
         $backFillHistoryManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
         $notExecutedBackFills = $backFillHistoryManager->findByBackFillNotExecuted();
 
-        $backFillSchedules = array_map(function ($backFillHistory) use ($backFillHistoryManager) {
-            if ($backFillHistory instanceof DataSourceIntegrationBackfillHistoryInterface) {
-                $fetcherSchedule = new FetcherSchedule();
-                $fetcherSchedule->setBackFillHistory($backFillHistory);
-                return $fetcherSchedule;
+        $backFillSchedules = [];
+        foreach ($notExecutedBackFills as $notExecutedBackFill) {
+            if (!$notExecutedBackFill instanceof DataSourceIntegrationBackfillHistoryInterface) {
+                continue;
             }
-        }, $notExecutedBackFills);
+
+            $fetcherSchedule = (new FetcherSchedule())
+                ->setBackFillHistory($notExecutedBackFill);
+
+            $backFillSchedules[] = $fetcherSchedule;
+        }
 
         return array_merge($normalSchedules, $backFillSchedules);
     }
@@ -165,7 +175,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
     /**
      * update executeAt time
      *
-     * @Rest\Post("/datasourceintegrationschedules/executed")
+     * @Rest\Post("/datasourceintegrationschedules/finishorfail")
      *
      * @Rest\View(serializerGroups={"dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.detail", "integration.detail", "user.summary"})
      *
@@ -180,7 +190,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
      * @param Request $request
      * @return \UR\Model\Core\DataSourceIntegrationInterface[]
      */
-    public function postUpdateExecutedAction(Request $request)
+    public function postUpdateFinishOrFailAction(Request $request)
     {
         $uuid = $request->request->get('uuid', null);
         if (null === $uuid) {
@@ -204,12 +214,107 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
          * But the ui may change the schedule setting (and set pending to false).
          * => When fetcher finishes and update the next executedAt, the setting from UI is overwrite.
          */
-        if (!$dataSourceIntegrationSchedule->getPending()) {
+        if ($dataSourceIntegrationSchedule->getStatus() != DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_PENDING) {
             return $this->view(true, Codes::HTTP_OK);
         }
 
+        $dataSourceIntegrationScheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
+
+        // do update
+        //// required param
+        $statusParam = $request->request->get(DataSourceIntegrationBackfillHistoryInterface::FIELD_STATUS, null);
+        if (null === $statusParam
+            || !in_array($statusParam, [
+                DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_FINISHED,
+                DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_FAILED
+            ])
+        ) {
+            throw new InvalidArgumentException('missing status or status is invalid');
+        }
+
+        /** Firstly save status, as FINISH or FAILED */
+        $dataSourceIntegrationSchedule->setStatus($statusParam);
+        $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
+
+        /** Save nextExecutedAt */
+        // important: update nextExecutedAt and status for next execution
+        // very important!!! Must save immediately nextExecutedAt before updating the status to not-run
+        // this will avoid race condition between ur api and fetcher
+        // i.e when status is set to not-run to database but the nextExecutedAt is not enough quickly,
+        // the fetcher activator may call again and get this data source integration schedule again
         $nextExecutedUtil = $this->get('ur.service.date_time.next_executed_at');
         $dataSourceIntegrationSchedule = $nextExecutedUtil->updateDataSourceIntegrationSchedule($dataSourceIntegrationSchedule);
+        $dataSourceIntegrationSchedule->setFinishedAt(date_create('now', new \DateTimeZone('UTC')));
+        $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
+
+        /** Reset status to NOT-RUN */
+        $dataSourceIntegrationSchedule->setStatus(DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_NOT_RUN);
+        $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
+
+
+        return $this->view(true, Codes::HTTP_OK);
+    }
+
+    /**
+     * update executeAt time
+     *
+     * @Rest\Post("/datasourceintegrationschedules/pending")
+     *
+     * @ApiDoc(
+     *  section = "Data Source Integration Schedule",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return View
+     */
+    public function postUpdatePendingAction(Request $request)
+    {
+        $uuid = $request->request->get('uuid', null);
+        if (null === $uuid) {
+            throw new InvalidArgumentException('Expected uuid of data source integration schedule');
+        }
+
+        /** @var DataSourceIntegrationScheduleRepositoryInterface $dataSourceIntegrationScheduleRepository */
+        $dataSourceIntegrationScheduleRepository = $this->get('ur.repository.data_source_integration_schedule');
+        /** @var DataSourceIntegrationScheduleInterface $dataSourceIntegrationSchedule */
+        $dataSourceIntegrationSchedule = $dataSourceIntegrationScheduleRepository->findByUUID($uuid);
+        if (!$dataSourceIntegrationSchedule instanceof DataSourceIntegrationScheduleInterface) {
+            throw new InvalidArgumentException(sprintf('Schedule with UUID (%s) not found, may be deleted by hand or changed from UI while fetcher is running.', $uuid));
+        }
+
+        // check permission
+        $this->checkUserPermission($dataSourceIntegrationSchedule, 'edit');
+
+        /*
+         * important: only update executedAt if pending. This is for avoiding race condition between fetcher and ur api
+         * When fetcher running, the pending is set to true.
+         * But the ui may change the schedule setting (and set pending to false).
+         * => When fetcher finishes and update the next executedAt, the setting from UI is overwrite.
+         */
+        if ($dataSourceIntegrationSchedule->getStatus() != DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_NOT_RUN) {
+            throw new InvalidArgumentException(sprintf('This data source integration is not in not-run status (real status: %d', $dataSourceIntegrationSchedule->getStatus()));
+        }
+
+        // do update
+        $dataSourceIntegrationSchedule->setStatus(DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_PENDING);
+
+        //// option param
+        $queuedAtParam = $request->request->get(DataSourceIntegrationBackfillHistoryInterface::FIELD_QUEUED_AT, null);
+
+        try {
+            $queuedAt = null !== $queuedAtParam ? date_create($queuedAtParam) : new \DateTime();
+        } catch (\Exception $e) {
+            $queuedAt = new \DateTime(); // not throw exception to continue updating schedule
+        }
+
+        $dataSourceIntegrationSchedule->setQueuedAt($queuedAt);
+
+        // reset finishedAt
+        $dataSourceIntegrationSchedule->setFinishedAt(null);
 
         $dataSourceIntegrationScheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
         $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
@@ -298,47 +403,5 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.data_source_integration_schedule');
-    }
-
-    /**
-     * Update Schedule
-     *
-     * @Rest\Post("/datasourceintegrationschedules/update")
-     *
-     * @ApiDoc(
-     *  section = "Data Source Integration Schedule",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful"
-     *  }
-     * )
-     *
-     * @param Request $request
-     * @return \UR\Model\Core\DataSourceIntegrationSchedule[]
-     */
-    public function postUpdateAction(Request $request)
-    {
-        $uuid = $request->request->get('uuid', null);
-        if (null === $uuid) {
-            throw new InvalidArgumentException('Expected uuid of data source integration schedule');
-        }
-
-        /** @var DataSourceIntegrationScheduleRepositoryInterface $dataSourceIntegrationScheduleRepository */
-        $dataSourceIntegrationScheduleRepository = $this->get('ur.repository.data_source_integration_schedule');
-        /** @var DataSourceIntegrationScheduleInterface $dataSourceIntegrationSchedule */
-        $dataSourceIntegrationSchedule = $dataSourceIntegrationScheduleRepository->findByUUID($uuid);
-        if (!$dataSourceIntegrationSchedule instanceof DataSourceIntegrationScheduleInterface) {
-            throw new InvalidArgumentException(sprintf('Schedule with UUID (%s) not found, may be deleted by hand or changed from UI while fetcher is running.', $uuid));
-        }
-
-        if ($request->request->has(DataSourceIntegrationScheduleInterface::FIELD_PENDING)) {
-            $pending = $request->request->get(DataSourceIntegrationScheduleInterface::FIELD_PENDING);
-            $dataSourceIntegrationSchedule->setPending($pending);
-        }
-
-        $dataSourceIntegrationScheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
-        $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
-
-        return $this->view(true, Codes::HTTP_OK);
     }
 }

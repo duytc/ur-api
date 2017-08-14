@@ -4,10 +4,20 @@ namespace UR\Model\Core;
 
 class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackfillHistoryInterface
 {
+    public static $SUPPORTED_STATUS = [
+        self::FETCHER_STATUS_NOT_RUN,
+        self::FETCHER_STATUS_PENDING,
+        self::FETCHER_STATUS_FINISHED,
+        self::FETCHER_STATUS_FAILED
+    ];
+
     protected $id;
 
-    /** @var array */
-    protected $executedAt;
+    /** @var \DateTime */
+    protected $queuedAt;
+
+    /** @var  \DateTime */
+    protected $finishedAt;
 
     // back fill feature
     /** @var \DateTime|null */
@@ -18,16 +28,19 @@ class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackf
     /** @var DataSourceIntegrationInterface */
     protected $dataSourceIntegration;
 
-    /** @var */
-    protected $pending;
+    /** @var integer*/
+    protected $status;
+
+    /** @var  boolean */
+    protected $autoCreate;
 
     public function __construct()
     {
         // back fill feature
         $this->backFillStartDate = null;
         $this->backFillEndDate = null;
-        $this->executedAt = null;
-        $this->pending = false;
+        $this->queuedAt = null;
+        $this->status = DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_NOT_RUN;
     }
 
     /**
@@ -59,17 +72,17 @@ class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackf
     /**
      * @inheritdoc
      */
-    public function getExecutedAt()
+    public function getQueuedAt()
     {
-        return $this->executedAt;
+        return $this->queuedAt;
     }
 
     /**
      * @inheritdoc
      */
-    public function setExecutedAt($executedAt)
+    public function setQueuedAt($queuedAt)
     {
-        $this->executedAt = $executedAt;
+        $this->queuedAt = $queuedAt;
         return $this;
     }
 
@@ -112,17 +125,53 @@ class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackf
     /**
      * @inheritdoc
      */
-    public function getPending()
+    public function getStatus()
     {
-        return $this->pending;
+        return $this->status;
     }
 
     /**
      * @inheritdoc
      */
-    public function setPending($pending)
+    public function setStatus($status)
     {
-        $this->pending = $pending;
+        $this->status = $status;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFinishedAt()
+    {
+        return $this->finishedAt;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setFinishedAt($finishedAt)
+    {
+        $this->finishedAt = $finishedAt;
+        
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getAutoCreate()
+    {
+        return $this->autoCreate;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setAutoCreate($autoCreate)
+    {
+        $this->autoCreate = $autoCreate;
 
         return $this;
     }

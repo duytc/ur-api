@@ -21,6 +21,7 @@ use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\ColumnUtilTrait;
+use UR\Service\ReportViewTemplate\DTO\CustomTemplateParams;
 
 /**
  * @Rest\RouteResource("ReportView")
@@ -115,7 +116,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     }
 
     /**
-     * @Rest\View(serializerGroups={"dataset.edit", "report_view.summary"})
+     * @Rest\View(serializerGroups={"dataset.edit", "report_view.summary", "report_view_data_set.summary"})
      *
      * @Rest\QueryParam(name="dataSets", nullable=true, description="the publisher id")
      * @Rest\QueryParam(name="reportViews", nullable=true, description="the page to get")
@@ -247,6 +248,40 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         $dateRange = $request->request->get('dateRange', null);
 
         return $this->getShareableLink($reportView, $fieldsToBeShared, $dateRange);
+    }
+
+    /**
+     * Generate shareable link for ReportView
+     *
+     * @Rest\Post("/reportviews/{id}/reportviewtemplates" )
+     *
+     *
+     * @ApiDoc(
+     *  section = "Report View",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  },
+     *  parameters={
+     *      {"name"="name", "dataType"="string", "required"=false, "description"="Name of report view template want to be created. Use default report view name if null"},
+     *      {"name"="tags", "dataType"="array", "required"=false, "description"="List of tags config to report view template"},
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @param int $id the resource id
+     * @return string
+     */
+    public function createReportViewTemplateAction(Request $request, $id)
+    {
+        /** @var ReportViewInterface $reportView */
+        $reportView = $this->one($id);
+
+        $customParams = new CustomTemplateParams();
+        $customParams->setName($request->request->get('name', $reportView->getName()));
+        $customParams->setTags($request->request->get('tags', []));
+
+        $this->get('ur.service.report_view_template.report_view_template_service')->createReportViewTemplateFromReportView($reportView, $customParams);
     }
 
     /**

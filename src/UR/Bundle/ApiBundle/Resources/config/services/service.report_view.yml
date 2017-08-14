@@ -25,6 +25,12 @@ services:
             - @doctrine.orm.entity_manager
             - @ur.repository.report_view
 
+    ur.domain_manager.report_view_data_set:
+        class: UR\DomainManager\ReportViewDataSetManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.report_view_data_set
+
     ur.form.type.report_view:
         class: %ur.form.type.core.report_view.class%
         arguments:

@@ -321,4 +321,15 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setDateFieldsFromMetadata($dateFieldsFromMetadata);
+
+    /**
+     * @return boolean|null
+     */
+    public function getBackfillMissingDateRunning();
+
+    /**
+     * @param boolean $backfillMissingDateRunning
+     * @return self
+     */
+    public function setBackfillMissingDateRunning($backfillMissingDateRunning);
 }

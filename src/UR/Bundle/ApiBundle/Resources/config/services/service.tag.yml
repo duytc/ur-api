@@ -1,0 +1,62 @@
+parameters:
+    # entity class
+    ur.entity.core.tag.class: UR\Entity\Core\Tag
+    # form class
+    ur.form.type.core.tag.class: UR\Form\Type\TagFormType
+
+services:
+    ur_api.handler.tag:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.tag
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.tag:
+        class: UR\Repository\Core\TagRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.tag.class%
+
+    ur.domain_manager.tag:
+        class: UR\DomainManager\TagManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.tag
+
+    ur.form.type.tag:
+        class: %ur.form.type.core.tag.class%
+        tags:
+            - { name: form.type, alias: ur_form_tag }
+        arguments:
+            - @ur.domain_manager.tag
+
+    ur.handler.handlers.tag.abstract:
+        class: UR\Handler\Handlers\Core\TagHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.tag
+            - @ur.domain_manager.tag
+
+    ur.handler.handlers.tag.admin:
+        class: UR\Handler\Handlers\Core\Admin\TagHandler
+        parent: ur.handler.handlers.tag.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.tag.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\TagHandler
+        parent: ur.handler.handlers.tag.abstract
+        public: false
+
+    ur.handler.handler_manager.tag:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.tag.class%
+            -
+                - @ur.handler.handlers.tag.admin
+                - @ur.handler.handlers.tag.publisher

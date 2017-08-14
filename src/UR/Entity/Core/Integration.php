@@ -3,6 +3,7 @@
 namespace UR\Entity\Core;
 
 use UR\Model\Core\Integration as IntegrationModel;
+use UR\Model\Core\IntegrationTagInterface;
 
 class Integration extends IntegrationModel
 {
@@ -13,6 +14,8 @@ class Integration extends IntegrationModel
     protected $enableForAllUsers;
     protected $integrationPublishers;
 
+    /** @var  IntegrationTagInterface[] */
+    protected $integrationTags;
     /**
      * @inheritdoc
      *

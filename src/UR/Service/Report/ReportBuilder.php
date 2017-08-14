@@ -208,16 +208,16 @@ class ReportBuilder implements ReportBuilderInterface
             $viewFilters = $reportView->getFilters();
 
             if ($reportParam->getStartDate() === null && $reportParam->getEndDate() === null) {
-                $result = $this->getSingleReport($reportParam, null, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
+                $result = $this->getSingleReport($reportParam, $viewFilters, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
                 if (count($result->getReports()) < 1) {
                     continue;
                 }
-                /**
-                 * @var FilterInterface $viewFilter
-                 */
-                foreach ($viewFilters as $viewFilter) {
-                    $result = $viewFilter->filter($result);
-                }
+//                /**
+//                 * @var FilterInterface $viewFilter
+//                 */
+//                foreach ($viewFilters as $viewFilter) {
+//                    $result = $viewFilter->filter($result);
+//                }
             } else {
                 $reportParam->setStartDate($startDate);
                 $reportParam->setEndDate($endDate);
@@ -497,6 +497,10 @@ class ReportBuilder implements ReportBuilderInterface
 
         $reportCollection->setRows($reports);
 
+        if (count($params->getSearches()) > 0) {
+            $reportCollection = $this->reportViewFilter->filterReports($reportCollection, $params);
+        }
+
         /* group reports */
         /** @var ReportResultInterface $reportResult */
         $reportResult = $this->reportGrouper->group($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $params->getIsShowDataSetName());
@@ -675,10 +679,6 @@ class ReportBuilder implements ReportBuilderInterface
 
         $reportResult = $this->reportViewFormatter->getSmartColumns($reportResult, $params);
         $reportResult = $this->reportViewFormatter->getReportAfterApplyDefaultFormat($reportResult, $params);
-
-        if (count($params->getSearches()) > 0) {
-            $reportResult = $this->reportViewFilter->filterReports($reportResult, $params);
-        }
 
         if ($params->getSortField()) {
             $sortField = $params->getSortField();

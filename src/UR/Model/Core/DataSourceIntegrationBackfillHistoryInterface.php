@@ -6,8 +6,14 @@ use UR\Model\ModelInterface;
 
 interface DataSourceIntegrationBackfillHistoryInterface extends ModelInterface
 {
-    const FIELD_EXECUTED_AT = 'executedAt';
-    const FIELD_PENDING = 'pending';
+    const FIELD_QUEUED_AT = 'queuedAt';
+    const FIELD_FINISHED_AT = 'finishedAt';
+    const FIELD_STATUS = 'status';
+
+    const FETCHER_STATUS_NOT_RUN = 0;
+    const FETCHER_STATUS_PENDING = 1;
+    const FETCHER_STATUS_FINISHED = 2;
+    const FETCHER_STATUS_FAILED = 3;
 
     /**
      * @return DataSourceIntegrationInterface
@@ -24,12 +30,12 @@ interface DataSourceIntegrationBackfillHistoryInterface extends ModelInterface
     /**
      * @return mixed
      */
-    public function getExecutedAt();
+    public function getQueuedAt();
 
     /**
-     * @param mixed $executedAt
+     * @param mixed $queuedAt
      */
-    public function setExecutedAt($executedAt);
+    public function setQueuedAt($queuedAt);
 
     /**
      * @return \DateTime|null
@@ -56,11 +62,33 @@ interface DataSourceIntegrationBackfillHistoryInterface extends ModelInterface
     /**
      * @return mixed
      */
-    public function getPending();
+    public function getStatus();
 
     /**
      * @param mixed $status
      * @return self
      */
-    public function setPending($status);
+    public function setStatus($status);
+
+    /**
+     * @return \DateTime
+     */
+    public function getFinishedAt();
+
+    /**
+     * @param \DateTime $finishedAt
+     * @return self
+     */
+    public function setFinishedAt($finishedAt);
+
+    /**
+     * @return boolean
+     */
+    public function getAutoCreate();
+
+    /**
+     * @param mixed $autoCreate
+     * @return self
+     */
+    public function setAutoCreate($autoCreate);
 }

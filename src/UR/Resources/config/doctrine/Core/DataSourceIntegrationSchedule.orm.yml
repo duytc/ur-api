@@ -11,18 +11,25 @@ UR\Entity\Core\DataSourceIntegrationSchedule:
         uuid:
             type: string
             nullable: false
-        executedAt:
+        nextExecutedAt:
             type: datetime
+            nullable: true
             gedmo:
                 timestampable:
                     on: create
+        queuedAt:
+            type: datetime
+            nullable: true
+        finishedAt:
+            type: datetime
+            nullable: true
         scheduleType:
             type: string
             nullable: false
-        pending:
-            type: boolean
+        status:
+            type: integer
             option:
-                default: false
+                default: 0
     manyToOne:
         dataSourceIntegration:
             targetEntity: UR\Entity\Core\DataSourceIntegration

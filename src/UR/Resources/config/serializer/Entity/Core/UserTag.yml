@@ -1,0 +1,12 @@
+UR\Entity\Core\UserTag:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [user_tag.detail, user_tag.summary, user_tag.edit]
+        tag:
+            expose: true
+            groups: [user_tag.detail, user_tag.summary]
+        publisher:
+            expose: true
+            groups: [user_tag.detail, user_tag.summary, user_tag.edit]

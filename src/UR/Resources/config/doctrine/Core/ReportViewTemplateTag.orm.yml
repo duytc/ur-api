@@ -1,0 +1,15 @@
+UR\Entity\Core\ReportViewTemplateTag:
+    type: entity
+    table: core_report_view_template_tag
+    repositoryClass: UR\Repository\Core\ReportViewTemplateTagRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+    manyToOne:
+        reportViewTemplate:
+            targetEntity: UR\Entity\Core\ReportViewTemplate
+        tag:
+            targetEntity: UR\Entity\Core\Tag

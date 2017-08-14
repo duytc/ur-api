@@ -14,6 +14,11 @@ parameters:
     ur.security.auth.voter.connected_data_source.class: UR\Security\Authorization\Voter\ConnectedDataSourceVoter
     ur.security.auth.voter.import_history.class: UR\Security\Authorization\Voter\ImportHistoryVoter
     ur.security.auth.voter.report_view.class: UR\Security\Authorization\Voter\ReportViewVoter
+    ur.security.auth.voter.tag.class: UR\Security\Authorization\Voter\TagVoter
+    ur.security.auth.voter.user_tag.class: UR\Security\Authorization\Voter\UserTagVoter
+    ur.security.auth.voter.integration_tag.class: UR\Security\Authorization\Voter\IntegrationTagVoter
+    ur.security.auth.voter.report_view_template.class: UR\Security\Authorization\Voter\ReportViewTemplateVoter
+    ur.security.auth.voter.report_view_template_tag.class: UR\Security\Authorization\Voter\ReportViewTemplateTagVoter
 
     # event dispatched on user action such as add, remove, delete
     ur.events.handler_event: 'ur.events.handler_event'
@@ -39,6 +44,44 @@ services:
 
     ur.security.auth.voter.alert:
         class:  %ur.security.auth.voter.alert.class%
+        public: false
+        tags:
+            - { name: security.voter}
+
+    ur.security.auth.voter.tag:
+        class:  %ur.security.auth.voter.tag.class%
+        arguments:
+            - '@ur.domain_manager.tag'
+        public: false
+        tags:
+            - { name: security.voter}
+
+    ur.security.auth.voter.user_tag:
+        class:  %ur.security.auth.voter.user_tag.class%
+        public: false
+        tags:
+            - { name: security.voter}
+
+    ur.security.auth.voter.integration_tag:
+        class:  %ur.security.auth.voter.integration_tag.class%
+        arguments:
+            - '@ur.domain_manager.integration_tag'
+        public: false
+        tags:
+            - { name: security.voter}
+
+    ur.security.auth.voter.report_view_template:
+        class:  %ur.security.auth.voter.report_view_template.class%
+        arguments:
+            - '@ur.domain_manager.report_view_template'
+        public: false
+        tags:
+            - { name: security.voter}
+
+    ur.security.auth.voter.report_view_template_tag:
+        class:  %ur.security.auth.voter.report_view_template_tag.class%
+        arguments:
+            - '@ur.domain_manager.report_view_template_tag'
         public: false
         tags:
             - { name: security.voter}
@@ -526,6 +569,19 @@ services:
     ur.service.augmentation_mapping_service:
         class: UR\Service\DataSet\AugmentationMappingService
         arguments:
+
+    ur.service.report_view_template.report_view_template_service:
+        class: UR\Service\ReportViewTemplate\ReportViewTemplateService
+        arguments:
+            - '@ur.domain_manager.report_view'
+            - '@ur.domain_manager.report_view_template'
+            - '@ur.domain_manager.tag'
+            - '@ur.domain_manager.report_view_template_tag'
+            - '@doctrine.orm.entity_manager'
+            - '@ur.services.report.params_builder'
+            - '@ur.domain_manager.report_view_multi_view'
+            - '@ur.domain_manager.report_view_data_set'
+            - '@ur.domain_manager.data_set'
 
     ur.service.file_factory:
         class: UR\Service\DataSource\DataSourceFileFactory

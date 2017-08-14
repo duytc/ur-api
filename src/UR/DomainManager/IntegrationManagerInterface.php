@@ -3,6 +3,7 @@
 namespace UR\DomainManager;
 
 use UR\Model\Core\IntegrationInterface;
+use UR\Model\Core\TagInterface;
 
 interface IntegrationManagerInterface extends ManagerInterface
 {
@@ -18,4 +19,9 @@ interface IntegrationManagerInterface extends ManagerInterface
      * @return IntegrationInterface
      */
     public function findByCanonicalName($canonicalName);
+
+    /**
+     * @param TagInterface $tag
+     */
+    public function findByTag(TagInterface $tag);
 }
