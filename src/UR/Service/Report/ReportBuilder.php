@@ -207,25 +207,11 @@ class ReportBuilder implements ReportBuilderInterface
             $reportParam = $this->paramsBuilder->buildFromReportView($view);
             $viewFilters = $reportView->getFilters();
 
-            if ($reportParam->getStartDate() === null && $reportParam->getEndDate() === null) {
-                $result = $this->getSingleReport($reportParam, $viewFilters, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
-                if (count($result->getReports()) < 1) {
-                    continue;
-                }
-//                /**
-//                 * @var FilterInterface $viewFilter
-//                 */
-//                foreach ($viewFilters as $viewFilter) {
-//                    $result = $viewFilter->filter($result);
-//                }
-            } else {
-                $reportParam->setStartDate($startDate);
-                $reportParam->setEndDate($endDate);
-
-                $result = $this->getSingleReport($reportParam, $viewFilters, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
-                if (count($result->getReports()) < 1) {
-                    continue;
-                }
+            $reportParam->setStartDate($startDate);
+            $reportParam->setEndDate($endDate);
+            $result = $this->getSingleReport($reportParam, $viewFilters, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
+            if (count($result->getReports()) < 1) {
+                continue;
             }
 
             $types = array_merge($types, $result->getTypes());
