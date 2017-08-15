@@ -118,6 +118,9 @@ class ReportBuilder implements ReportBuilderInterface
          * ]
          */
         $reportResult = $this->getReport($params);
+        if (!$reportResult instanceof ReportResultInterface) {
+            return new ReportResult([], [], [], []);
+        }
 
         // check if $fieldsToBeShared not yet configured (empty array) => default share all
         if (count($fieldsToBeShared) < 1) {
@@ -262,7 +265,7 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         if (count($rows) == 0) {
-            return false;
+            return new ReportResult([], [], [], []);
         }
 
         $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
