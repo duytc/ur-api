@@ -86,8 +86,25 @@ trait StringUtilTrait
 
     protected function removeIdSuffix($column)
     {
-        $lastOccur = strrchr($column, "_");
-        return str_replace($lastOccur, "", $column);
+        $idAndField = $this->getIdSuffixAndField($column);
+
+        if ($idAndField) {
+            return $idAndField['field'];
+        }
+
+        return $column;
+    }
+
+    protected function getIdSuffixAndField($column)
+    {
+        if (preg_match('/^(.*)_([0-9]+)$/', $column, $matches)) {
+            return array(
+                'field' => $matches[1],
+                'id' => $matches[2]
+            );
+        }
+
+        return null;
     }
 
     public function getStandardName($name)

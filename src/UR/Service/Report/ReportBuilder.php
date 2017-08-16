@@ -125,6 +125,10 @@ class ReportBuilder implements ReportBuilderInterface
 
         $reportResult->setDateRange(new DateRange($params->getStartDate(), $params->getEndDate()));
 
+        if (!$reportResult instanceof ReportResultInterface) {
+            return new ReportResult([], [], [], []);
+        }
+
         // check if $fieldsToBeShared not yet configured (empty array) => default share all
         if (count($fieldsToBeShared) < 1) {
             return $reportResult;
@@ -358,7 +362,18 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         $dimensions = array_merge($dimensions, $outputJoinFields);
-
+        if (!empty($params->getUserDefinedDimensions()) && $params->getCustomDimensionEnabled()) {
+            foreach ($joinConfig as &$config) {
+                if (in_array($config->getOutputField(), $params->getUserDefinedDimensions())) {
+                    $config->setVisible(true);
+                }
+                if (in_array($config->getOutputField(), $params->getUserDefinedMetrics())) {
+                    $config->setVisible(true);
+                }
+            }
+            unset($config);
+            $params->setJoinConfigs($joinConfig);
+        }
         /*
          * get all reports data
          * Notice: reports data contains all fields in Data Set, i.e both selected and non-selected fields in report view.
@@ -625,9 +640,8 @@ class ReportBuilder implements ReportBuilderInterface
         if (!empty($params->getUserDefinedDimensions())) {
             $newDimensions = $params->getUserDefinedDimensions();
             $newMetrics = $params->getUserDefinedMetrics();
-            $transformFields = $this->getFieldsFromTransforms($params);
 
-            $newColumns = array_merge($newDimensions, $newMetrics, $transformFields);
+            $newColumns = array_merge($newDimensions, $newMetrics);
             $fieldsToRemove = array_diff(array_keys($reportResult->getColumns()), $newColumns);
             $reportResult = $this->getReportAfterRemoveTemporaryFields($reportResult, $fieldsToRemove);
 

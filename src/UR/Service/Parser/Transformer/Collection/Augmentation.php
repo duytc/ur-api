@@ -15,7 +15,7 @@ class Augmentation implements CollectionTransformerInterface
     const MAP_DATA_SET_SIDE = 'rightSide';
     const MAP_DATA_SET = 'mapDataSet';
     const MAP_FIELDS_KEY = 'mapFields';
-    const MAP_CONDITION_KEY = 'mapCondition';
+    const MAP_CONDITION_KEY = 'mapConditions';
     const CUSTOM_CONDITION = 'customCondition';
     const DROP_UNMATCHED = 'dropUnmatched';
     const CUSTOM_FIELD_KEY = 'field';
@@ -52,9 +52,9 @@ class Augmentation implements CollectionTransformerInterface
     protected $customCondition;
 
     /**
-     * @var string
-     */
-    protected $mapCondition;
+    * @var array
+    */
+    protected $mapConditions;
 
     /**
      * @var bool
@@ -69,17 +69,16 @@ class Augmentation implements CollectionTransformerInterface
     /**
      * Augmentation constructor.
      * @param int $mapDataSet
-     * @param array $mapCondition
+     * @param array $mapConditions
      * @param array $mapFields
      * @param bool $dropUnmatched
      * @param array $customCondition
      */
-    public function __construct($mapDataSet, $mapCondition, array $mapFields, $dropUnmatched = false, array $customCondition = [])
+    public function __construct($mapDataSet, $mapConditions, array $mapFields, $dropUnmatched = false, array $customCondition = [])
     {
         $this->mapDataSet = $mapDataSet;
         $this->mapFields = $mapFields;
-        $this->sourceField = $mapCondition[self::DATA_SOURCE_SIDE];
-        $this->destinationField = $mapCondition[self::MAP_DATA_SET_SIDE];
+        $this->mapConditions = $mapConditions;
         $this->customCondition = $customCondition;
         $this->dropUnmatched = $dropUnmatched;
     }
@@ -147,18 +146,16 @@ class Augmentation implements CollectionTransformerInterface
         }
 
 
-        foreach ($rows as $i=>&$row) {
-            if (!array_key_exists($this->sourceField, $row)) {
-                continue;
-            }
-            $mapFields = $this->getMappedValue($mappedResult, $row[$this->sourceField], $matched);
+        foreach ($rows as $index=>&$row) {
+            $mapFields = $this->getMappedValue($mappedResult, $row, $matched);
             if ($this->dropUnmatched === true && $matched === false) {
-                unset($rows[$i]);
+                unset($rows[$index]);
             } else {
                 $row = array_merge($row, $mapFields);
             }
         }
 
+        unset($row);
         return new Collection($columns, array_values($rows), $types);
     }
 
@@ -167,26 +164,38 @@ class Augmentation implements CollectionTransformerInterface
         return preg_replace('/\s+/', '_', $name);
     }
 
-    protected function getMappedValue($mappedResult, $sourceValue, &$matched)
+    protected function getMappedValue($mappedResult, $sourceValues, &$matched)
     {
-        $matched = false;
         foreach($mappedResult as $result) {
-            if (array_key_exists($this->destinationField, $result) && $result[$this->destinationField] == $sourceValue) {
+            $matched = true;
+            foreach ($this->mapConditions as $mapCondition) {
+                $leftField = $mapCondition[self::DATA_SOURCE_SIDE];
+                $rightField = $mapCondition[self::MAP_DATA_SET_SIDE];
+                if (!array_key_exists($rightField, $result)) {
+                    $matched = false;
+                    break;
+                }
+                if (!array_key_exists($leftField, $sourceValues)) {
+                    $matched = false;
+                    break;
+                }
+                if ($result[$rightField] != $sourceValues[$leftField]) {
+                    $matched = false;
+                    break;
+                }
+            }
+            if ($matched === true) {
                 $data = [];
                 foreach($this->mapFields as $mapField) {
                     $data[$mapField[self::DATA_SOURCE_SIDE]] = array_key_exists($mapField[self::MAP_DATA_SET_SIDE], $result) ? $result[$mapField[self::MAP_DATA_SET_SIDE]] : NULL;
                 }
-
-                $matched = true;
                 return $data;
             }
         }
-
         $data = [];
         foreach($this->mapFields as $mapField) {
             $data[$mapField[self::DATA_SOURCE_SIDE]] = NULL;
         }
-
         return $data;
     }
 
@@ -241,11 +250,11 @@ class Augmentation implements CollectionTransformerInterface
     }
 
     /**
-     * @return string
+     * @return array
      */
-    public function getMapCondition(): string
+    public function getMapConditions(): array
     {
-        return $this->mapCondition;
+        return $this->mapConditions;
     }
 
     /**

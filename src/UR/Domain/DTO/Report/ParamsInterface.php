@@ -27,6 +27,12 @@ interface ParamsInterface
     public function getJoinConfigs();
 
     /**
+     * @param $joinConfigs
+     * @return $this
+     */
+    public function setJoinConfigs(array $joinConfigs);
+
+    /**
      * @return WeightedCalculationInterface
      */
     public function getWeightedCalculations();

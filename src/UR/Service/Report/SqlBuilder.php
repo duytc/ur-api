@@ -19,6 +19,7 @@ use UR\Domain\DTO\Report\Filters\NumberFilter;
 use UR\Domain\DTO\Report\Filters\NumberFilterInterface;
 use UR\Domain\DTO\Report\Filters\TextFilter;
 use UR\Domain\DTO\Report\Filters\TextFilterInterface;
+use UR\Domain\DTO\Report\JoinBy\JoinConfig;
 use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Entity\Core\DataSet;
@@ -137,7 +138,7 @@ class SqlBuilder implements SqlBuilderInterface
         $conditions = $buildResult[self::CONDITION_KEY];
         $dateRange = $buildResult[self::DATE_RANGE_KEY];
         if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            $overridingResult = $this->buildFilters($overridingFilters, null, $dataSet->getDataSetId());
+            $overridingResult = $this->buildFilters($overridingFilters, $overrideFilter = true, null, $dataSet->getDataSetId());
             $conditions = array_merge($conditions, $overridingResult[self::CONDITION_KEY]);
             // override date range
             if (!empty($buildResult[self::DATE_RANGE_KEY])) {
@@ -289,7 +290,7 @@ class SqlBuilder implements SqlBuilderInterface
                 if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN])) {
                     $compareValue = $filter->getComparisonValue();
                     $compareValue = join(',', $compareValue);
-                    $stmt->bindParam($bindParamName, $compareValue, PDO::PARAM_STR);
+                    $stmt->bindValue($bindParamName, $compareValue, PDO::PARAM_STR);
                 } else {
                     $compareValue = $filter->getComparisonValue();
                     $compareValue = $this->connection->quote($compareValue);
@@ -347,7 +348,7 @@ class SqlBuilder implements SqlBuilderInterface
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
             $qb = $this->buildSelectQuery($qb, $dataSet, $dataSetIndex, $joinConfig);
-            $buildResult = $this->buildFilters($dataSet->getFilters(), sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());
+            $buildResult = $this->buildFilters($dataSet->getFilters(), $overrideFilter = false, sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());
 
             $overrideDateField = sprintf('%s.%s', sprintf('t%d', $dataSetIndex), \UR\Model\Core\DataSetInterface::OVERWRITE_DATE);
             $conditions[] = sprintf('%s IS NULL', $overrideDateField);
@@ -356,6 +357,7 @@ class SqlBuilder implements SqlBuilderInterface
             $dateRange = array_merge($dateRange, $buildResult[self::DATE_RANGE_KEY]);
         }
 
+        $newFilters = [];
         if (is_array($overridingFilters) && count($overridingFilters) > 0) {
             foreach ($overridingFilters as $key => $filter) {
                 if (!$filter instanceof FilterInterface) {
@@ -366,15 +368,26 @@ class SqlBuilder implements SqlBuilderInterface
                     $dateRange = new DateRange($filter->getStartDate(), $filter->getEndDate());
                 }
 
-                $dataSetId = $this->getDataSetIdInFilter($filter->getFieldName());
-                $fieldName = $this->getFieldNameInFilter($filter->getFieldName());
-                $filter->setFieldName($fieldName);
+                $fieldName = $filter->getFieldName();
+
+                $result = $this->convertOutputJoinField($fieldName, $joinConfig, $dataSetId);
+                if ($result) {
+                    $filter->setFieldName($result);
+                    $fieldName = $result;
+                } else {
+                    $idAndField = $this->getIdSuffixAndField($fieldName);
+                    if ($idAndField) {
+                        $dataSetId = $idAndField['id'];
+                        $fieldName = $idAndField['field'];
+                        $filter->setFieldName($idAndField['field']);
+                    }
+                }
 
                 $filterKeys = [];
                 /** @var DataSetInterface $dataSet */
                 foreach ($dataSets as $dataSetIndex => $dataSet) {
                     if ((in_array($fieldName, $dataSet->getDimensions()) ||
-                            in_array($fieldName, $dataSet->getMetrics())) && $dataSetId == $dataSet->getDataSetId()
+                        in_array($fieldName, $dataSet->getMetrics())) && $dataSetId == $dataSet->getDataSetId()
                     ) {
                         if (!array_key_exists($filter->getFieldName(), $filterKeys)) {
                             $filterKeys[$filter->getFieldName()] = 1;
@@ -382,8 +395,11 @@ class SqlBuilder implements SqlBuilderInterface
                             $filterKeys[$filter->getFieldName()]++;
                         }
                         $conditions[] = $this->buildSingleFilter($filter, $filterKeys, sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());//[self::CONDITION_KEY];
-                        $overridingFilters[$dataSetId][] = $filter;
-                        unset($overridingFilters[$key]);
+                        if (!isset($newFilters[$dataSetId])) {
+                            $newFilters[$dataSetId] = [];
+                        }
+
+                        $newFilters[$dataSetId][] = $filter;
                     }
                 }
             }
@@ -410,8 +426,8 @@ class SqlBuilder implements SqlBuilderInterface
             $stmt = $this->bindStatementParam($stmt, $dataSet->getFilters(), $dataSet->getDataSetId());
         }
 
-        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            foreach ($overridingFilters as $dataSetId => $filters) {
+        if (is_array($newFilters) && count($newFilters) > 0) {
+            foreach ($newFilters as $dataSetId => $filters) {
                 $stmt = $this->bindStatementParam($stmt, $filters, $dataSetId);
             }
         }
@@ -422,6 +438,26 @@ class SqlBuilder implements SqlBuilderInterface
             self::STATEMENT_KEY => $stmt,
             self::DATE_RANGE_KEY => $dateRange
         );
+    }
+
+    public function convertOutputJoinField($field, array $joinConfigs, &$dataSetId)
+    {
+        /** @var JoinConfig $joinConfig */
+        foreach ($joinConfigs as $joinConfig) {
+            $outputJoinFields = explode(',', $joinConfig->getOutputField());
+            foreach ($outputJoinFields as $index => $outputJoinField) {
+                if ($field == $outputJoinField) {
+                    $joinField = $joinConfig->getJoinFields()[0];
+                        $inputJoinFields = explode(',', $joinField->getField());
+                        if (isset($inputJoinFields[$index])) {
+                            $dataSetId = $joinField->getDataSet();
+                            return $inputJoinFields[$index];
+                        }
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -530,11 +566,12 @@ class SqlBuilder implements SqlBuilderInterface
 
     /**
      * @param array $filters
+     * @param $overrideFilter
      * @param null $tableAlias
      * @param null $dataSetId
      * @return array
      */
-    protected function buildFilters(array $filters, $tableAlias = null, $dataSetId = null)
+    protected function buildFilters(array $filters, $overrideFilter = false, $tableAlias = null, $dataSetId = null)
     {
         $sqlConditions = [];
         $dateRanges = [];
@@ -544,7 +581,7 @@ class SqlBuilder implements SqlBuilderInterface
                 continue;
             }
 
-            if ($dataSetId !== null) {
+            if ($overrideFilter == true && $dataSetId !== null) {
                 $filter->trimTrailingAlias($dataSetId);
             }
 

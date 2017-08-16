@@ -475,10 +475,12 @@ class TransformerFactory
             return [];
         }
 
-        if (!array_key_exists(Augmentation::MAP_DATA_SET_SIDE, $augmentationConfig[Augmentation::MAP_CONDITION_KEY])
-            || !array_key_exists(Augmentation::DATA_SOURCE_SIDE, $augmentationConfig[Augmentation::MAP_CONDITION_KEY])
-        ) {
-            return [];
+        foreach ($augmentationConfig[Augmentation::MAP_CONDITION_KEY] as $mapCondition) {
+            if (!array_key_exists(Augmentation::MAP_DATA_SET_SIDE, $mapCondition)
+                || !array_key_exists(Augmentation::DATA_SOURCE_SIDE, $mapCondition)
+            ) {
+                return [];
+            }
         }
 
         foreach ($augmentationConfig[Augmentation::MAP_FIELDS_KEY] as $mapField) {
