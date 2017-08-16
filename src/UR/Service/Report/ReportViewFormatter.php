@@ -13,6 +13,8 @@ use UR\Service\DTO\Report\ReportResultInterface;
 
 class ReportViewFormatter implements ReportViewFormatterInterface
 {
+    const REPORT_VIEW_ALIAS_KEY = 'report_view_alias';
+    const REPORT_VIEW_ALIAS_NAME = 'Report View Alias';
 
     /**
      * @inheritdoc
@@ -244,9 +246,9 @@ class ReportViewFormatter implements ReportViewFormatterInterface
          */
         $smartColumns = [];
 
-        $reportViewAlias = 'report_view_alias';
+        $reportViewAlias = self::REPORT_VIEW_ALIAS_KEY;
         if ($params->isMultiView()) {
-            $smartColumns[$reportViewAlias] = "Report View Alias";
+            $smartColumns[$reportViewAlias] = self::REPORT_VIEW_ALIAS_NAME;
             if ($params->getUserDefinedDimensions() != null && array_key_exists($reportViewAlias, $params->getUserDefinedDimensions())) {
                 unset($params->getUserDefinedDimensions()[$reportViewAlias]);
             }

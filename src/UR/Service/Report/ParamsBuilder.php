@@ -588,6 +588,14 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setFormats($this->createFormats($reportView->getFormats()));
         }
 
+        if (array_key_exists(self::START_DATE, $paginationParams) && !empty($paginationParams[self::START_DATE])) {
+            $param->setStartDate(new \DateTime($paginationParams[self::START_DATE]));
+        }
+
+        if (array_key_exists(self::END_DATE, $paginationParams) && !empty($paginationParams[self::END_DATE])) {
+            $param->setEndDate(new \DateTime($paginationParams[self::END_DATE]));
+        }
+
         if (array_key_exists(self::ORDER_BY_KEY, $paginationParams)) {
             $param->setOrderBy($paginationParams[self::ORDER_BY_KEY]);
         }
@@ -613,16 +621,37 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(self::USER_DEFINED_DIMENSIONS, $paginationParams)) {
-            $param->setUserDefinedDimensions($paginationParams[self::USER_DEFINED_DIMENSIONS]);
+            $userDefinedDimensions = $paginationParams[self::USER_DEFINED_DIMENSIONS];
+            if (is_string($userDefinedDimensions)) {
+                $userDefinedDimensions = json_decode($userDefinedDimensions, true);
+
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($userDefinedDimensions)) {
+                    $userDefinedDimensions = [];
+                }
+            } else {
+                $userDefinedDimensions = [];
+            }
+
+            $param->setUserDefinedDimensions($userDefinedDimensions);
         }
 
         if (array_key_exists(self::USER_DEFINED_METRICS, $paginationParams)) {
-            $param->setUserDefinedMetrics($paginationParams[self::USER_DEFINED_METRICS]);
+            $userDefinedMetrics = $paginationParams[self::USER_DEFINED_METRICS];
+            if (is_string($userDefinedMetrics)) {
+                $userDefinedMetrics = json_decode($userDefinedMetrics, true);
+
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($userDefinedMetrics)) {
+                    $userDefinedMetrics = [];
+                }
+            } else {
+                $userDefinedMetrics = [];
+            }
+
+            $param->setUserDefinedMetrics($userDefinedMetrics);
         }
 
-        if (array_key_exists(self::CUSTOM_DIMENSION_ENABLED, $paginationParams)) {
-            $param->setCustomDimensionEnabled(filter_var($paginationParams[self::CUSTOM_DIMENSION_ENABLED], FILTER_VALIDATE_BOOLEAN));
-        }
+        // get 'enableCustomDimensionMetric' from report view
+        $param->setCustomDimensionEnabled($reportView->isEnableCustomDimensionMetric());
 
         return $param;
     }

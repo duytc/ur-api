@@ -34,7 +34,7 @@ class ReportBuilder implements ReportBuilderInterface
     const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';
     const SUB_VIEW_FIELD_KEY = 'report_view';
-    const REPORT_VIEW_ALIAS = 'report_view_alias';
+    const REPORT_VIEW_ALIAS = ReportViewFormatter::REPORT_VIEW_ALIAS_KEY;
 
     const TYPE_DATE = 'date';
     const TYPE_DATE_TIME = 'dateTime';
@@ -114,6 +114,7 @@ class ReportBuilder implements ReportBuilderInterface
          *      dateRange => '',
          *      reports => [],
          *      total => [],
+         *      totalReport => 19,
          *      types => []
          * ]
          */
@@ -121,6 +122,8 @@ class ReportBuilder implements ReportBuilderInterface
         if (!$reportResult instanceof ReportResultInterface) {
             return new ReportResult([], [], [], []);
         }
+
+        $reportResult->setDateRange(new DateRange($params->getStartDate(), $params->getEndDate()));
 
         // check if $fieldsToBeShared not yet configured (empty array) => default share all
         if (count($fieldsToBeShared) < 1) {

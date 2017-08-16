@@ -53,4 +53,15 @@ class DateRange
     {
         return $this->endDate;
     }
+
+    /**
+     * @return array
+     */
+    public function toArray()
+    {
+        return [
+            'startDate' => $this->startDate->format('Y-m-d'),
+            'endDate' => $this->endDate->format('Y-m-d'),
+        ];
+    }
 }

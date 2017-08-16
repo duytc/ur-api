@@ -6,7 +6,7 @@ UR\Entity\Core\ReportViewDataSet:
 #            groups: [report_view_data_set.detail, report_view_data_set.summary]
         filters:
             expose: true
-            groups: [report_view_data_set.detail, report_view_data_set.summary]
+            groups: [report_view_data_set.detail, report_view_data_set.summary, report_view_data_set.share]
         dimensions:
             expose: true
             groups: [report_view_data_set.detail, report_view_data_set.summary, report_view_data_set.share]

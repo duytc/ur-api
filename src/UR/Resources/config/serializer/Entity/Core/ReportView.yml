@@ -76,7 +76,7 @@ UR\Entity\Core\ReportView:
             groups: [report_view.detail, report_view.summary]
         enableCustomDimensionMetric:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         isShowDataSetName:
             expose: true
             groups: [report_view.detail, report_view.summary]

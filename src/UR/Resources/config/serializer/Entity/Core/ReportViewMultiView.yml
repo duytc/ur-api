@@ -6,7 +6,7 @@ UR\Entity\Core\ReportViewMultiView:
 #            groups: [report_view_multi_view.detail, report_view_multi_view.summary]
         filters:
             expose: true
-            groups: [report_view_multi_view.detail, report_view_multi_view.summary]
+            groups: [report_view_multi_view.detail, report_view_multi_view.summary, report_view_multi_view.share]
         dimensions:
             expose: true
             groups: [report_view_multi_view.detail, report_view_multi_view.summary, report_view_multi_view.share]

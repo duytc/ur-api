@@ -4,6 +4,8 @@
 namespace UR\Service\DTO\Report;
 
 
+use UR\Domain\DTO\Report\DateRange;
+
 interface ReportResultInterface
 {
     /**
@@ -25,6 +27,11 @@ interface ReportResultInterface
      * @return array
      */
     public function getColumns();
+
+    /**
+     * @return DateRange
+     */
+    public function getDateRange();
 
     /**
      * @return array
@@ -60,6 +67,12 @@ interface ReportResultInterface
      * @return self
      */
     public function setTypes($types);
+
+    /**
+     * @param DateRange $dateRange
+     * @return self
+     */
+    public function setDateRange(DateRange $dateRange);
 
     /**
      * @return mixed

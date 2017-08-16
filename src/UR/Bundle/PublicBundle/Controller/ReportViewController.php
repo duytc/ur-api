@@ -8,7 +8,11 @@ use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use UR\Domain\DTO\Report\ParamsInterface;
+use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewInterface;
+use UR\Service\ColumnUtilTrait;
+use UR\Service\Report\ReportBuilder;
+use UR\Service\Report\ReportViewFormatter;
 
 /**
  * Class ReportController
@@ -16,6 +20,8 @@ use UR\Model\Core\ReportViewInterface;
  */
 class ReportViewController extends FOSRestController
 {
+    use ColumnUtilTrait;
+
     /**
      * Get shared report
      *
@@ -23,6 +29,8 @@ class ReportViewController extends FOSRestController
      * @Rest\View(serializerGroups={"report_view.share", "report_view_multi_view.share", "report_view_data_set.share"})
      *
      * @Rest\QueryParam(name="token", nullable=false)
+     * @Rest\QueryParam(name="startDate", nullable=true)
+     * @Rest\QueryParam(name="endDate", nullable=true)
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
      * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
      * @Rest\QueryParam(name="searches", nullable=true)
@@ -66,19 +74,70 @@ class ReportViewController extends FOSRestController
         $fieldsToBeShared = $config['fields'];
         $paginationParams = $request->query->all();
         $params = $this->getParams($reportView, $paginationParams);
+
         if (
             array_key_exists('dateRange', $config) &&
             !empty($config['dateRange']) &&
             !empty($config['dateRange']['startDate']) &&
             !empty($config['dateRange']['endDate'])
         ) {
-            $params->setStartDate(new \DateTime($config['dateRange']['startDate']));
-            $params->setEndDate(new \DateTime($config['dateRange']['endDate']));
+            // if use user provided date range
+            if (($params->getStartDate() instanceof \DateTime && $params->getEndDate() instanceof \DateTime)) {
+                // validate custom date range
+                $reportViewStartDate = new \DateTime($config['dateRange']['startDate']);
+                $reportViewEndDate = new \DateTime($config['dateRange']['endDate']);
+
+                $userProvidedStartDate = $params->getStartDate();
+                $userProvidedEndDate = $params->getEndDate();
+
+                if ($userProvidedStartDate < $reportViewStartDate
+                    || $userProvidedEndDate > $reportViewEndDate
+                    || $userProvidedStartDate > $userProvidedEndDate
+                ) {
+                    throw new InvalidArgumentException(
+                        sprintf('User provided startDate/endDate must be in report view date range (%s - %s)' .
+                            ' and startDate must be not greater than endDate.',
+                            $config['dateRange']['startDate'],
+                            $config['dateRange']['endDate']
+                        )
+                    );
+                }
+            } else {
+                // override previous date range which is parsed from query params
+                $params->setStartDate(new \DateTime($config['dateRange']['startDate']));
+                $params->setEndDate(new \DateTime($config['dateRange']['endDate']));
+            }
         }
+
         $reportResult = $this->getReportBuilder()->getShareableReport($params, $fieldsToBeShared);
         $report = $reportResult->toArray();
 
         $report['reportView'] = $reportView;
+
+        // also return user provided dimensions, metrics, columns
+        $report['dateRange'] = $config['dateRange'];
+        $report['fields'] = $config['fields'];
+
+        //// columns
+        if (!is_array($report['columns']) || empty($report['columns'])) {
+            $columns = array_merge($reportView->getDimensions(), $reportView->getMetrics());
+            $mappedColumns = [];
+            foreach ($columns as $index => $column) {
+                if (!in_array($column, $report['fields'])) {
+                    // do not return the columns that are not in shared fields
+                    continue;
+                }
+
+                $mappedColumns[$column] = $this->convertColumn($column, $reportView->getIsShowDataSetName());
+            }
+
+            if ($reportView->isMultiView()) {
+                $mappedColumns[ReportViewFormatter::REPORT_VIEW_ALIAS_KEY] = ReportViewFormatter::REPORT_VIEW_ALIAS_NAME;
+            }
+
+            $report['columns'] = $mappedColumns;
+        }
+
         return $report;
     }
 
@@ -109,5 +168,13 @@ class ReportViewController extends FOSRestController
     protected function getReportBuilder()
     {
         return $this->get('ur.services.report.report_builder');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getDataSetManager()
+    {
+        return $this->get('ur.domain_manager.data_set');
     }
 }

@@ -164,6 +164,15 @@ class ReportResult implements ReportResultInterface
     }
 
     /**
+     * @inheritdoc
+     */
+    public function setDateRange(DateRange $dateRange)
+    {
+        $this->dateRange = $dateRange;
+        return $this;
+    }
+
+    /**
      * @return mixed
      */
     public function getTotalPage()
@@ -210,7 +219,7 @@ class ReportResult implements ReportResultInterface
             self::REPORT_RESULT_AVERAGE => $this->average,
             self::REPORT_RESULT_COLUMNS => $this->columns,
             self::REPORT_RESULT_TYPES => $this->types,
-            self::REPORT_RESULT_DATE_RANGE => $this->dateRange,
+            self::REPORT_RESULT_DATE_RANGE => $this->dateRange->toArray(),
             self::REPORT_RESULT_TOTAL_REPORT => $this->totalReport
         ];
     }
