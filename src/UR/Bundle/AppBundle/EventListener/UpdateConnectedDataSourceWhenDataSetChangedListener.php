@@ -150,7 +150,7 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
             $transformObjects = $transformerFactory->getTransform($transform);
 
             if ($transformObjects instanceof ColumnTransformerInterface) {
-                if (in_array($transformObjects->getField(), $deletedFields)) {
+                if (array_key_exists($transformObjects->getField(), $deletedFields)) {
                     unset($transforms[$key]);
                 }
                 if (array_key_exists($transformObjects->getField(), $updatedFields)) {
