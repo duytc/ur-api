@@ -4,6 +4,10 @@
 namespace UR\Behaviors;
 
 
+use DateTime;
+use DateTimeZone;
+use UR\Service\Parser\Transformer\Column\DateFormat;
+
 trait ParserUtilTrait
 {
     /**
@@ -67,5 +71,71 @@ trait ParserUtilTrait
         // Remove any non-ASCII Characters
         $string = preg_replace("/[^\x01-\x7F]/", "", $string);
         return $string;
+    }
+
+    /**
+     * @param $value
+     * @param array $formats
+     * @return DateTime
+     */
+    public function getDate($value, $formats, $timezone)
+    {
+        $date = null;
+
+        if (!is_array($formats) || empty($formats)) {
+            return null;
+        }
+
+        /*
+         * Parse date by Custom date formats and partial match
+         * formats:
+         * [
+         *     [
+         *          format: ..., // YYYY-MM-DD, ...
+         *          isCustomDateFormat: true/false,
+         *          isPartialMatch: true/false,
+         *     ]
+         * ]
+         */
+        foreach ($formats as $formatArray) {
+            if (!is_array($formatArray) || !array_key_exists(DateFormat::FORMAT_KEY, $formatArray)) {
+                $format = DateFormat::DEFAULT_DATE_FORMAT_FULL;
+            } else {
+                $format = $formatArray[DateFormat::FORMAT_KEY];
+            }
+
+            // support partial match value
+            $isPartialMatch = array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM_WITH_PARTIAL_MATCH, $formatArray) ? $formatArray[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM_WITH_PARTIAL_MATCH] : false;
+            if ($isPartialMatch) {
+                $value = DateFormat::getPartialMatchValue($format, $value);
+            }
+
+            // support custom date format
+            $isCustomDateFormat = array_key_exists(DateFormat::IS_CUSTOM_FORMAT_DATE_FROM, $formatArray) ? $formatArray[DateFormat::IS_CUSTOM_FORMAT_DATE_FROM] : false;
+            if ($isCustomDateFormat) {
+                $format = DateFormat::convertCustomFromDateFormatToPHPDateFormat($format);
+            } else {
+                $format = DateFormat::convertDateFormatFullToPHPDateFormat($format);
+            }
+
+            // handle the case: apply T for all text
+
+            $date = DateTime::createFromFormat('!' . $format, $value, new DateTimeZone($timezone)); // auto set time (H,i,s) to 0 if not available
+            if ($date instanceof DateTime) {
+                break;
+            }
+
+            $date = date_create_from_format($format, $value);
+            if ($date instanceof DateTime) {
+                break;
+            }
+        }
+
+        /** Parse date by system support formats */
+        if (!$date instanceof DateTime) {
+            $date = DateFormat::getDateFromText($value);
+        }
+
+        return $date;
     }
 }

@@ -2,15 +2,20 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use UR\Behaviors\ParserUtilTrait;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
 use UR\Service\Report\SqlBuilder;
 
 class Augmentation implements CollectionTransformerInterface
 {
+    use ParserUtilTrait;
+
     const DATA_SOURCE_SIDE = 'leftSide';
     const MAP_DATA_SET_SIDE = 'rightSide';
     const MAP_DATA_SET = 'mapDataSet';
@@ -147,7 +152,7 @@ class Augmentation implements CollectionTransformerInterface
 
 
         foreach ($rows as $index=>&$row) {
-            $mapFields = $this->getMappedValue($mappedResult, $row, $matched);
+            $mapFields = $this->getMappedValue($mappedResult, $row, $collection->getTypes(), $fromDateFormats, $connectedDataSource->getMapFields(), $matched);
             if ($this->dropUnmatched === true && $matched === false) {
                 unset($rows[$index]);
             } else {
@@ -164,26 +169,48 @@ class Augmentation implements CollectionTransformerInterface
         return preg_replace('/\s+/', '_', $name);
     }
 
-    protected function getMappedValue($mappedResult, $sourceValues, &$matched)
+    protected function getMappedValue($mappedResult, $sourceValues, $types, $dateFormats, $mapFields, &$matched)
     {
         foreach($mappedResult as $result) {
             $matched = true;
             foreach ($this->mapConditions as $mapCondition) {
                 $leftField = $mapCondition[self::DATA_SOURCE_SIDE];
                 $rightField = $mapCondition[self::MAP_DATA_SET_SIDE];
+
                 if (!array_key_exists($rightField, $result)) {
                     $matched = false;
                     break;
                 }
+
                 if (!array_key_exists($leftField, $sourceValues)) {
                     $matched = false;
                     break;
                 }
-                if ($result[$rightField] != $sourceValues[$leftField]) {
+
+                $leftValue = $sourceValues[$leftField];
+
+                $realLeftField = $leftField;
+                if (array_key_exists($leftField, $mapFields)) {
+                    $realLeftField = $mapFields[$leftField];
+                }
+
+                if (array_key_exists($leftField, $types) && in_array($types[$leftField], [FieldType::DATE, FieldType::DATETIME]) && array_key_exists($realLeftField, $dateFormats)) {
+                    $date = $this->getDate($leftValue, $dateFormats[$realLeftField]['formats'], $dateFormats[$realLeftField]['timezone']);
+                    if ($date instanceof DateTime) {
+                        if ($types[$leftField] == FieldType::DATE) {
+                            $leftValue = $date->format('Y-m-d');
+                        } elseif ($types[$leftField] == FieldType::DATETIME) {
+                            $leftValue = $date->format('Y-m-d H:i:s');
+                        }
+                    }
+                }
+
+                if ($result[$rightField] != $leftValue) {
                     $matched = false;
                     break;
                 }
             }
+
             if ($matched === true) {
                 $data = [];
                 foreach($this->mapFields as $mapField) {
