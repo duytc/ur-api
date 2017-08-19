@@ -985,26 +985,16 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
         $dirItem = '/' . $dataSource->getPublisher()->getId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
         $uploadPath = $uploadRootDir . $dirItem;
-        $name = '/data-message_' . round(microtime(true)) . '.json';
-        $this->file_force_contents(substr($uploadPath, 1) . $name, $data);
+
+        mkdir($uploadPath, 0777, true);
+
+        $name = 'data-message_' . round(microtime(true)) . '.json';
+        file_put_contents($uploadPath . '/' . $name, $data);
 
         $file = new UploadedFile($uploadPath . $name, $name);
         $uploadFileService = $this->container->get('ur.service.data_source.upload_file_service');
-        return $uploadFileService->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $sourceParam, false);
-    }
 
-    /**
-     * @param $dir
-     * @param $contents
-     */
-    private function file_force_contents($dir, $contents)
-    {
-        $parts = explode('/', $dir);
-        $file = array_pop($parts);
-        $dir = '';
-        foreach ($parts as $part)
-            if (!is_dir($dir .= "/$part")) mkdir($dir);
-        file_put_contents("$dir/$file", $contents);
+        return $uploadFileService->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $sourceParam, false);
     }
 
     /**
