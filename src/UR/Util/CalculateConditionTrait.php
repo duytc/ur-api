@@ -18,6 +18,10 @@ trait CalculateConditionTrait
     protected $invalidValue = NULL;
     protected $conditionComparisonValueContain = 'contain';
     protected $conditionComparisonValueNotContain = 'not contain';
+    protected $conditionComparisonValueBetween = 'between';
+
+    protected $startDate = 'startDate';
+    protected $endDate = 'endDate';
 
     /**
      * do Compare
@@ -26,6 +30,7 @@ trait CalculateConditionTrait
      * @param mixed $conditionComparator
      * @param mixed $conditionValue
      * @return bool false if not matched
+     * @throws \Exception
      */
     private function matchCondition($value, $conditionComparator, $conditionValue)
     {
@@ -50,7 +55,7 @@ trait CalculateConditionTrait
                 return $value >= $conditionValue;
             case $this->conditionComparisonValueContain:
                 if (is_array($conditionValue)) {
-                    foreach($conditionValue as $compare) {
+                    foreach ($conditionValue as $compare) {
                         if (strpos($value, $compare) !== false) {
                             return true;
                         }
@@ -62,7 +67,7 @@ trait CalculateConditionTrait
                 return strpos($value, $conditionValue) !== false;
             case $this->conditionComparisonValueNotContain:
                 if (is_array($conditionValue)) {
-                    foreach($conditionValue as $compare) {
+                    foreach ($conditionValue as $compare) {
                         if (strpos($value, $compare) !== false) {
                             return false;
                         }
@@ -72,6 +77,26 @@ trait CalculateConditionTrait
                 }
 
                 return strpos($value, $conditionValue) === false;
+            case $this->conditionComparisonValueBetween:
+                if (!array_key_exists($this->startDate, $conditionValue) ||
+                    !array_key_exists($this->endDate, $conditionValue)
+                ) {
+                    throw new \Exception('Missing startDate, endDate for Between Expression');
+                }
+
+                $startDate = date_create($conditionValue[$this->startDate]);
+                $endDate = date_create($conditionValue[$this->endDate]);
+
+                $date = date_create($value);
+
+                if (!$startDate instanceof \DateTime ||
+                    !$endDate instanceof \DateTime ||
+                    !$date instanceof \DateTime
+                ) {
+                    return false;
+                }
+
+                return $date >= $startDate && $date <= $endDate;
         }
 
         // default not match
