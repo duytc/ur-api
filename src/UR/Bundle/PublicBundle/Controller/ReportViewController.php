@@ -7,11 +7,12 @@ use FOS\RestBundle\Controller\FOSRestController;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Exception\InvalidArgumentException;
+use UR\Exception\RuntimeException;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\ColumnUtilTrait;
-use UR\Service\Report\ReportBuilder;
 use UR\Service\Report\ReportViewFormatter;
 
 /**
@@ -75,17 +76,37 @@ class ReportViewController extends FOSRestController
         $paginationParams = $request->query->all();
         $params = $this->getParams($reportView, $paginationParams);
 
+        // get dateRange from config then convert to array such as [ startDate => '', endDate => '' ],
+        // this is for return to UI for setting startDate-endDate for datePicker
+        $dateRange = null;
+
+        // dateRange from config may be dynamic date range (today, yesterday, last 7 days, ...)
+        // or fixed date range as { startDate:2017-08-01, endDate:2017-08-18 }
+        $dateRangeFromConfig = (array_key_exists('dateRange', $config)) ? $config['dateRange'] : null;
+        if (is_string($dateRangeFromConfig)) {
+            if (!in_array($dateRangeFromConfig, DateFilter::$SUPPORTED_DATE_DYNAMIC_VALUES)) {
+                throw new RuntimeException(sprintf('Invalid dateRange (%s) in shareable report config', $dateRangeFromConfig));
+            }
+
+            $dynamicDateRange = DateFilter::getDynamicDate(DateFilter::DATE_TYPE_DYNAMIC, $dateRangeFromConfig);
+            $dateRange = ['startDate' => $dynamicDateRange[0], 'endDate' => $dynamicDateRange[1]];
+        }
+
+        // else: fixedDateRange
         if (
-            array_key_exists('dateRange', $config) &&
-            !empty($config['dateRange']) &&
-            !empty($config['dateRange']['startDate']) &&
-            !empty($config['dateRange']['endDate'])
+            is_array($dateRangeFromConfig) &&
+            !empty($dateRangeFromConfig) &&
+            array_key_exists('startDate', $dateRangeFromConfig) && !empty($dateRangeFromConfig['startDate']) &&
+            array_key_exists('endDate', $dateRangeFromConfig) && !empty($dateRangeFromConfig['endDate'])
         ) {
+            // get dateRange from config such as [ startDate => '', endDate => '' ],
+            $dateRange = $dateRangeFromConfig;
+
             // if use user provided date range
             if (($params->getStartDate() instanceof \DateTime && $params->getEndDate() instanceof \DateTime)) {
                 // validate custom date range
-                $reportViewStartDate = new \DateTime($config['dateRange']['startDate']);
-                $reportViewEndDate = new \DateTime($config['dateRange']['endDate']);
+                $reportViewStartDate = new \DateTime($dateRangeFromConfig['startDate']);
+                $reportViewEndDate = new \DateTime($dateRangeFromConfig['endDate']);
 
                 $userProvidedStartDate = $params->getStartDate();
                 $userProvidedEndDate = $params->getEndDate();
@@ -97,15 +118,16 @@ class ReportViewController extends FOSRestController
                     throw new InvalidArgumentException(
                         sprintf('User provided startDate/endDate must be in report view date range (%s - %s)' .
                             ' and startDate must be not greater than endDate.',
-                            $config['dateRange']['startDate'],
-                            $config['dateRange']['endDate']
+                            $dateRangeFromConfig['startDate'],
+                            $dateRangeFromConfig['endDate']
                         )
                     );
                 }
             } else {
                 // override previous date range which is parsed from query params
-                $params->setStartDate(new \DateTime($config['dateRange']['startDate']));
-                $params->setEndDate(new \DateTime($config['dateRange']['endDate']));
+                $params->setStartDate(new \DateTime($dateRangeFromConfig['startDate']));
+                $params->setEndDate(new \DateTime($dateRangeFromConfig['endDate']));
+
             }
         }
 
@@ -115,7 +137,7 @@ class ReportViewController extends FOSRestController
         $report['reportView'] = $reportView;
 
         // also return user provided dimensions, metrics, columns
-        $report['dateRange'] = $config['dateRange'];
+        $report['dateRange'] = $dateRange;
         $report['fields'] = $config['fields'];
 
         //// columns

@@ -134,7 +134,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
                 // so that we need to get due to dateType
                 // this occurs if dateType is dynamic
                 if (self::DATE_TYPE_DYNAMIC == $this->dateType) {
-                    return $this->getDynamicDate()[0];
+                    return self::getDynamicDate($this->dateType, $this->dateValue)[0];
                 }
 
                 // else: customRange => invalid because missing startDate-endDate in dateValue
@@ -150,7 +150,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 		}
 
 		// if (self::DATE_TYPE_DYNAMIC == $this->dateType)
-		return $this->getDynamicDate()[0];
+		return self::getDynamicDate($this->dateType, $this->dateValue)[0];
 	}
 
 	/**
@@ -170,7 +170,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 				// so that we need to get due to dateType
 				// this occurs if dateType is dynamic
 				if (self::DATE_TYPE_DYNAMIC == $this->dateType) {
-					return $this->getDynamicDate()[1];
+					return self::getDynamicDate($this->dateType, $this->dateValue)[1];
 				}
 
 				// else: customRange => invalid because missing startDate-endDate in dateValue
@@ -187,7 +187,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 		}
 
 		// if (self::DATE_TYPE_DYNAMIC == $this->dateType)
-		return $this->getDynamicDate()[1];
+		return self::getDynamicDate($this->dateType, $this->dateValue)[1];
 	}
 
 	/**
@@ -221,40 +221,44 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 
 	/**
 	 * get dynamic date from date value
+	 *
+	 * @param string $dateType
+	 * @param string $dateValue
+	 * @return array as [startDate, endDate], on fail => return ['', '']
 	 */
-	private function getDynamicDate()
+	public static function getDynamicDate($dateType, $dateValue)
 	{
-		if (self::DATE_TYPE_DYNAMIC != $this->dateType) {
+		if (self::DATE_TYPE_DYNAMIC != $dateType) {
 			return ['', ''];
 		}
 
 		$startDate = '';
 		$endDate = '';
 
-		if (self::DATE_DYNAMIC_VALUE_TODAY == $this->dateValue) {
+		if (self::DATE_DYNAMIC_VALUE_TODAY == $dateValue) {
 			$startDate = $endDate = date('Y-m-d', strtotime('now'));
 		}
 
-		if (self::DATE_DYNAMIC_VALUE_YESTERDAY == $this->dateValue) {
+		if (self::DATE_DYNAMIC_VALUE_YESTERDAY == $dateValue) {
 			$startDate = $endDate = date('Y-m-d', strtotime('-1 day'));
 		}
 
-		if (self::DATE_DYNAMIC_VALUE_LAST_7_DAYS == $this->dateValue) {
+		if (self::DATE_DYNAMIC_VALUE_LAST_7_DAYS == $dateValue) {
 			$startDate = date('Y-m-d', strtotime('-7 day'));
 			$endDate = date('Y-m-d', strtotime('-1 day'));
 		}
 
-		if (self::DATE_DYNAMIC_VALUE_LAST_30_DAYS == $this->dateValue) {
+		if (self::DATE_DYNAMIC_VALUE_LAST_30_DAYS == $dateValue) {
 			$startDate = date('Y-m-d', strtotime('-30 day'));
 			$endDate = date('Y-m-d', strtotime('-1 day'));
 		}
 
-		if (self::DATE_DYNAMIC_VALUE_THIS_MONTH == $this->dateValue) {
+		if (self::DATE_DYNAMIC_VALUE_THIS_MONTH == $dateValue) {
 			$startDate = date('Y-m-01', strtotime('this month'));
 			$endDate = date('Y-m-d', strtotime('now'));
 		}
 
-		if (self::DATE_DYNAMIC_VALUE_LAST_MONTH == $this->dateValue) {
+		if (self::DATE_DYNAMIC_VALUE_LAST_MONTH == $dateValue) {
 			$startDate = date('Y-m-01', strtotime('last month'));
 			$endDate = date('Y-m-t', strtotime('last month'));
 		}

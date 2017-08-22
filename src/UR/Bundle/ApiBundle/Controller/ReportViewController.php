@@ -10,7 +10,6 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
-use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
@@ -79,8 +78,6 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         }
     }
 
-
-
     /**
      * @Rest\View(serializerGroups={"datasource.missingdate", "dataSourceIntegration.summary", "user.summary", "dataSourceEntry.missingdate"})
      *
@@ -106,7 +103,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         if (is_string($reportViewIds) && !empty($reportViewIds)) {
             $ids = explode(',', $reportViewIds);
             $dataSets = $this->get('ur.repository.report_view_data_set')->getDataSetsForReportViews($ids);
-            $ids = array_map(function(ReportViewDataSetInterface $reportViewDataSet) {
+            $ids = array_map(function (ReportViewDataSetInterface $reportViewDataSet) {
                 return $reportViewDataSet->getDataSet()->getId();
             }, $dataSets);
             return $this->get('ur.repository.data_source')->getBrokenDateRangeDataSourceForDataSets($ids);
@@ -159,7 +156,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
                 }
             }
 
-            return array (
+            return array(
                 'dataSets' => $dataSets,
                 'columns' => $columns
             );
@@ -182,7 +179,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
                 }
             }
 
-            return array (
+            return array(
                 'reportViews' => $reportViews,
                 'columns' => $columns
             );
@@ -244,7 +241,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         if (!is_array($fieldsToBeShared)) {
             throw new InvalidArgumentException('expect "fields" to be an array');
         }
-        
+
         $dateRange = $request->request->get('dateRange', null);
 
         return $this->getShareableLink($reportView, $fieldsToBeShared, $dateRange);
@@ -315,16 +312,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         if (is_array($configs) && count($configs) > 0) {
             foreach ($configs as $key => $config) {
                 if ($token == $key) {
-                    $sharedReportViewLinkTemplate = $this->container->getParameter('shared_report_view_link');
-                    if (strpos($sharedReportViewLinkTemplate, '$$REPORT_VIEW_ID$$') < 0 || strpos($sharedReportViewLinkTemplate, '$$SHARED_KEY$$') < 0) {
-                        throw new RuntimeException('Missing server parameter key $$REPORT_VIEW_ID$$ or $$SHARED_KEY$$');
-                    }
-
-                    $sharedLink = $sharedReportViewLinkTemplate;
-                    $sharedLink = str_replace('$$REPORT_VIEW_ID$$', $reportView->getId(), $sharedLink);
-                    $sharedLink = str_replace('$$SHARED_KEY$$', $token, $sharedLink);
-
-                    return $sharedLink;
+                    return $this->getShareableLinkFromTemplate($reportView->getId(), $token);
                 }
             }
 
@@ -353,11 +341,12 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         /** @var ReportViewInterface $reportView */
         $reportView = $this->one($id);
         $result = [];
-        foreach ($reportView->getSharedKeysConfig() as $key => $value){
+        foreach ($reportView->getSharedKeysConfig() as $key => $value) {
             $result[] = [self::TOKEN => $key, self::FIELDS => $value];
         }
         return $result;
     }
+
     /**
      * Delete shareable link via token
      *
@@ -424,9 +413,9 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      * )
      *
      * @param Request $request the request object
-     *
-     * @param $id
+     * @param int $id
      * @return mixed
+     * @throws Exception
      */
     public function postCloneAction(Request $request, $id)
     {
@@ -541,12 +530,12 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         return $this->container->get('ur_api.handler.report_view');
     }
 
-    /**	
+    /**
      * get shareableLink for reportView, support selecting $fields To Be Shared
      *
      * @param ReportViewInterface $reportView
      * @param array $fieldsToBeShared
-     * @param array|null $dateRange
+     * @param array|string|null $dateRange
      * @return mixed
      */
     private function getShareableLink(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null)
@@ -555,13 +544,28 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         $reportViewManager = $this->get('ur.domain_manager.report_view');
         $token = $reportViewManager->createTokenForReportView($reportView, $fieldsToBeShared, $dateRange);
 
-        $sharedReportViewLinkTemplate = $this->container->getParameter('shared_report_view_link');
-        if (strpos($sharedReportViewLinkTemplate, '$$REPORT_VIEW_ID$$') < 0 || strpos($sharedReportViewLinkTemplate, '$$SHARED_KEY$$') < 0) {
+        return $this->getShareableLinkFromTemplate($reportView->getId(), $token);
+    }
+
+    /**
+     * get shareableLink from template
+     *
+     * @param int $reportViewId
+     * @param string $token
+     * @param string|null $template must contain macros $$REPORT_VIEW_ID$$ and $$SHARED_KEY$$. If null => use default template from config
+     * @return mixed
+     */
+    private function getShareableLinkFromTemplate($reportViewId, $token, $template = null)
+    {
+        $sharedLink = (empty($template))
+            ? $this->container->getParameter('shared_report_view_link')
+            : $template;
+
+        if (strpos($sharedLink, '$$REPORT_VIEW_ID$$') < 0 || strpos($sharedLink, '$$SHARED_KEY$$') < 0) {
             throw new RuntimeException('Missing server parameter key $$REPORT_VIEW_ID$$ or $$SHARED_KEY$$');
         }
 
-        $sharedLink = $sharedReportViewLinkTemplate;
-        $sharedLink = str_replace('$$REPORT_VIEW_ID$$', $reportView->getId(), $sharedLink);
+        $sharedLink = str_replace('$$REPORT_VIEW_ID$$', $reportViewId, $sharedLink);
         $sharedLink = str_replace('$$SHARED_KEY$$', $token, $sharedLink);
 
         return $sharedLink;
