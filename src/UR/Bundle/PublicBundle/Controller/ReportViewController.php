@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\PublicBundle\Controller;
 
+use Doctrine\Common\Collections\Collection;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Controller\FOSRestController;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
@@ -12,7 +13,9 @@ use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\ReportViewInterface;
+use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Service\ColumnUtilTrait;
+use UR\Service\PublicSimpleException;
 use UR\Service\Report\ReportViewFormatter;
 
 /**
@@ -59,6 +62,8 @@ class ReportViewController extends FOSRestController
         if (!($reportView instanceof ReportViewInterface)) {
             throw new BadRequestHttpException('Invalid ReportView');
         }
+
+        $this->validateReportView($reportView);
 
         $token = $request->query->get('token', null);
         if (null == $token) {
@@ -198,5 +203,29 @@ class ReportViewController extends FOSRestController
     protected function getDataSetManager()
     {
         return $this->get('ur.domain_manager.data_set');
+    }
+
+    /**
+     * @param ReportViewInterface $reportView
+     * @throws PublicSimpleException
+     */
+    private function validateReportView(ReportViewInterface $reportView)
+    {
+        if ($reportView->isMultiView()) {
+            $multiViews = $reportView->getReportViewMultiViews();
+            if ($multiViews instanceof Collection) {
+                $multiViews = $multiViews->toArray();
+            }
+
+            foreach ($multiViews as $multiView) {
+                if (!$multiView instanceof ReportViewMultiViewInterface) {
+                    continue;
+                }
+
+                if ($multiView->getSubView()->getId() == $reportView->getId()) {
+                    throw new PublicSimpleException('SubView and MultiView can not be same');
+                }
+            }
+        }
     }
 }

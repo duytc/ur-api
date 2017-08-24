@@ -5,6 +5,7 @@ namespace UR\Form\Type;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
@@ -152,6 +153,9 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
                  * @var ReportViewMultiViewInterface $reportViewMultiView
                  */
                 foreach ($reportViewMultiViews as $reportViewMultiView) {
+                    if ($reportViewMultiView->getSubView()->getId() == $reportView->getId()) {
+                        $form->get('reportViewMultiViews')->addError(new FormError('In Multi View, report view and sub view can not be same report view'));
+                    }
                     $reportViewMultiView->setReportView($reportView);
                 }
             }

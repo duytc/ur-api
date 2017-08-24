@@ -30,6 +30,7 @@ use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Service\DTO\Report\WeightedCalculation;
+use UR\Service\PublicSimpleException;
 
 class ParamsBuilder implements ParamsBuilderInterface
 {
@@ -61,7 +62,6 @@ class ParamsBuilder implements ParamsBuilderInterface
     const SORT_FIELD_KEY = 'sortField';
     const DIMENSIONS_KEY = 'dimensions';
     const METRICS_KEY = 'metrics';
-
 
     /**
      * @inheritdoc
@@ -110,6 +110,16 @@ class ParamsBuilder implements ParamsBuilderInterface
             if (!empty($data[self::REPORT_VIEWS_KEY])) {
                 $reportViews = $this->createReportViews($data[self::REPORT_VIEWS_KEY]);
                 $param->setReportViews($reportViews);
+
+                foreach ($reportViews as $reportView) {
+                    if (!$reportView instanceof ReportView || !array_key_exists(ReportViewInterface::ID, $data)) {
+                        continue;
+                    }
+
+                    if ($reportView->getReportViewId() == $data[ReportViewInterface::ID]) {
+                        throw new PublicSimpleException('SubView and MultiView can not be same');
+                    }
+                }
             }
 
             if (array_key_exists(self::SUB_REPORT_INCLUDED_KEY, $data)) {
