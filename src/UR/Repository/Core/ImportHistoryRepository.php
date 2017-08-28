@@ -197,7 +197,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
     /**
      * @inheritdoc
      */
-    public function getImportedData(ImportHistoryInterface $importHistory)
+    public function getImportedData(ImportHistoryInterface $importHistory, $limit = null)
     {
         $dataSetId = $importHistory->getDataSet()->getId();
         $conn = $this->_em->getConnection();
@@ -207,17 +207,62 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         $metrics = $importHistory->getDataSet()->getMetrics();
         $fields = array_merge($dimensions, $metrics);
         $selectedFields = [];
+        $table = $dataSetSynchronizer->getTable($dataSetSynchronizer->getDataSetImportTableName($dataSetId));
 
         foreach ($fields as $field => $type) {
+            if (!$table->getColumn($field)) {
+                continue;
+            }
             $selectedFields[] = 'd.' . $field;
         }
 
-        $qb = $conn->createQueryBuilder();
-        $query = $qb->select($selectedFields)
-            ->from($dataSetSynchronizer->getDataSetImportTableName($dataSetId), 'd')
-            ->where('d.__import_id = ' . $importHistory->getId());
+        $conn
+            ->getWrappedConnection()
+            ->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 
-        $stmt = $query->execute();
+        $qb = $conn->createQueryBuilder()
+            ->select($selectedFields)
+            ->from($dataSetSynchronizer->getDataSetImportTableName($dataSetId), 'd')
+            ->where('d.__import_id = ' . $importHistory->getId())
+        ;
+
+
+        if ($limit === null) {
+            $stmt = $qb->execute();
+            // Set the filename of the download
+            $filename = 'MyReport_Tagcade_' . date('Ymd') . '-' . date('His');
+
+            // Output CSV-specific headers
+            header('Pragma: public');
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+            header('Cache-Control: private', false);
+            header('Content-Description: File Transfer');
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="' . $filename . '.csv";');
+            header('Content-Transfer-Encoding: binary');
+
+            // Open the output stream
+            $fh = fopen('php://output', 'w');
+
+            // Start output buffering (to capture stream contents)
+            ob_start();
+
+            // CSV Header
+            $header = array_keys($fields);
+            fputcsv($fh, $header);
+
+            // Stream the CSV data
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                fputcsv($fh, $row);
+            }
+            // Get the contents of the output buffer
+            $string = ob_get_clean();
+            exit($string);
+        }
+
+        $qb->setMaxResults($limit);
+        $stmt = $qb->execute();
         $results = $stmt->fetchAll();
         $conn->close();
 

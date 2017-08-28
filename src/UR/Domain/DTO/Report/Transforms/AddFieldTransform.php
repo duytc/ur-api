@@ -4,14 +4,12 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 
+use SplDoublyLinkedList;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
-use UR\Util\CalculateConditionTrait;
 
 class AddFieldTransform extends NewFieldTransform implements TransformInterface
 {
-    use CalculateConditionTrait;
-
     const TRANSFORMS_TYPE = 'addField';
     const FIELD_VALUE = 'value';
 
@@ -61,16 +59,14 @@ class AddFieldTransform extends NewFieldTransform implements TransformInterface
         parent::transform($collection, $metrics, $dimensions, $outputJoinField);
 
         $rows = $collection->getRows();
-//        if (is_numeric($this->fieldName)) {
-//            $this->fieldName = strval($this->fieldName);
-//        }
-
-        $newRows = array_map(function ($row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $index => $row) {
             $conditionValue = $this->getValueByCondition($row);
             $row[$this->fieldName] = $conditionValue;
-            return $row;
-        }, $rows);
+            $newRows->push($row);
+        }
 
+        unset($rows, $row);
         $collection->setRows($newRows);
     }
 
@@ -147,5 +143,21 @@ class AddFieldTransform extends NewFieldTransform implements TransformInterface
         }
 
         return $this->matchCondition($row[$field], $conditionComparator, $conditionValue);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getValue()
+    {
+        return $this->value;
+    }
+
+    /**
+     * @return array
+     */
+    public function getConditions()
+    {
+        return $this->conditions;
     }
 }

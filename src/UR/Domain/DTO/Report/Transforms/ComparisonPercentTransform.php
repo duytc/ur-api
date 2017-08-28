@@ -2,6 +2,7 @@
 
 namespace UR\Domain\DTO\Report\Transforms;
 
+use SplDoublyLinkedList;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 use UR\Util\CalculateRatiosTrait;
@@ -42,16 +43,20 @@ class ComparisonPercentTransform extends NewFieldTransform implements TransformI
         parent::transform($collection, $metrics, $dimensions, $outputJoinField);
 
         $rows = $collection->getRows();
-        foreach ($rows as &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $index => $row) {
             if (!array_key_exists($this->numerator, $row) || !array_key_exists($this->denominator, $row)) {
                 $row[$this->fieldName] = null;
+                $newRows->push($row);
                 continue;
             }
             $calculatedValue = $this->getPercentage($row[$this->numerator], $row[$this->denominator]);
             $row[$this->fieldName] = $calculatedValue;
+            $newRows->push($row);
         }
 
-        $collection->setRows($rows);
+        unset($rows, $row);
+        $collection->setRows($newRows);
     }
 
     public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
@@ -61,5 +66,21 @@ class ComparisonPercentTransform extends NewFieldTransform implements TransformI
         }
 
         $metrics[] = $this->fieldName;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getNumerator()
+    {
+        return $this->numerator;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDenominator()
+    {
+        return $this->denominator;
     }
 }

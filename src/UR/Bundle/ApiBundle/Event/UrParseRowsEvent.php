@@ -2,21 +2,23 @@
 
 namespace UR\Bundle\ApiBundle\Event;
 
+use SplDoublyLinkedList;
+
 class UrParseRowsEvent extends UrEvent
 {
     /**
-     * @var array
+     * @var SplDoublyLinkedList
      */
     protected $rows;
 
-    public function __construct($publisherId, $connectedDataSourceId, $dataSourceId, array $rows)
+    public function __construct($publisherId, $connectedDataSourceId, $dataSourceId, SplDoublyLinkedList $rows)
     {
         parent::__construct($publisherId, $connectedDataSourceId, $dataSourceId);
         $this->rows = $rows;
     }
 
     /**
-     * @return array
+     * @return SplDoublyLinkedList
      */
     public function getRows()
     {
@@ -24,9 +26,9 @@ class UrParseRowsEvent extends UrEvent
     }
 
     /**
-     * @param array $rows
+     * @param SplDoublyLinkedList $rows
      */
-    public function setRows(array $rows)
+    public function setRows($rows)
     {
         $this->rows = $rows;
     }

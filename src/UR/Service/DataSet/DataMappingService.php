@@ -6,9 +6,11 @@ namespace UR\Service\DataSet;
 
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver\Statement;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use SplDoublyLinkedList;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\Exception\InvalidArgumentException;
@@ -101,6 +103,10 @@ class DataMappingService implements DataMappingServiceInterface
         return true;
     }
 
+    /**
+     * @param MapBuilderConfigInterface $mapBuilderConfig
+     * @return SplDoublyLinkedList
+     */
     protected function getDataFromMapBuilderConfig(MapBuilderConfigInterface $mapBuilderConfig)
     {
         $data = array(
@@ -112,7 +118,20 @@ class DataMappingService implements DataMappingServiceInterface
 
         $dataSetDTO = new DataSet($data);
         $result = $this->sqlBuilder->buildQueryForSingleDataSet($dataSetDTO);
-        return $result[SqlBuilder::STATEMENT_KEY]->execute()->fetchAll();
+        /** @var Statement $stmt */
+        $stmt = $result[SqlBuilder::STATEMENT_KEY];
+        try {
+            $stmt->execute();
+        } catch (\Exception $ex) {
+
+        }
+
+        $rows = new SplDoublyLinkedList();
+        while ($row = $stmt->fetch()) {
+            $rows->push($row);
+        }
+
+        return $rows;
     }
 
     public function mapTags(DataSetInterface $dataSet, array $params)
@@ -231,10 +250,10 @@ class DataMappingService implements DataMappingServiceInterface
 
     /**
      * @param MapBuilderConfigInterface $config
-     * @param array $dataSetRows
+     * @param SplDoublyLinkedList $dataSetRows
      * @param $showDataSetId
      */
-    private function insertRowsToDataSet(MapBuilderConfigInterface $config, array $dataSetRows, $showDataSetId = true)
+    private function insertRowsToDataSet(MapBuilderConfigInterface $config, SplDoublyLinkedList $dataSetRows, $showDataSetId = true)
     {
         $dataSet = $config->getDataSet();
         $mapDataSet = $config->getMapDataSet();
@@ -264,12 +283,10 @@ class DataMappingService implements DataMappingServiceInterface
             $qb->values($values);
             $index = 0;
             $validData = false;
-            $dataToCalculateUniqueId = [];
             foreach ($fieldsToInsert as $key => $field) {
                 $qb->setParameter($index, isset($dataSetRow[$field]) ? $dataSetRow[$field] : null);
                 $index++;
                 if (isset($dataSetRow[$field]) && $dataSetRow[$field] != null) {
-                    $dataToCalculateUniqueId[] = $dataSetRow[$field];
                     $validData = true;
                 }
             }
@@ -288,7 +305,7 @@ class DataMappingService implements DataMappingServiceInterface
             $index++;
             $qb->setParameter($index, false);
             $index++;
-            $qb->setParameter($index, md5(implode(':', $dataToCalculateUniqueId)));
+            $qb->setParameter($index, $this->calculateUniqueId($config, $dataSetRow));
 
             if ($this->checkIfDataExist($fieldsToInsert, $dataSetRow, $dataSet)) {
                 continue;
@@ -381,5 +398,34 @@ class DataMappingService implements DataMappingServiceInterface
         }
 
         return true;
+    }
+
+    /**
+     * @param MapBuilderConfigInterface $config
+     * @param array $dataSetRow
+     * @return string
+     */
+    private function calculateUniqueId(MapBuilderConfigInterface $config, array $dataSetRow)
+    {
+        $dataSet = $config->getDataSet();
+        $dimensions = $dataSet->getDimensions();
+        $mapFields = $config->getMapFields();
+
+        $fieldToCalculateUniqueId = [];
+        foreach ($dimensions as $dimension => $fieldType) {
+            if (!array_key_exists($dimension, $mapFields)) {
+                continue;
+            }
+
+            $map = $this->removeIdSuffix($mapFields[$dimension]);
+            $mapWithId = sprintf('%s_%s', $map, $config->getMapDataSet()->getId());
+            if (!array_key_exists($mapWithId, $dataSetRow)) {
+                continue;
+            }
+
+            $fieldToCalculateUniqueId[] = $dataSetRow[$mapWithId];
+        }
+
+        return md5(implode(':', $fieldToCalculateUniqueId));
     }
 }

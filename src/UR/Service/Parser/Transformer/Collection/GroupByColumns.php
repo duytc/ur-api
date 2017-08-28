@@ -5,6 +5,7 @@ namespace UR\Service\Parser\Transformer\Collection;
 use DateTime;
 use DateTimeZone;
 use Doctrine\ORM\EntityManagerInterface;
+use SplDoublyLinkedList;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
@@ -30,12 +31,13 @@ class GroupByColumns implements CollectionTransformerInterface
 
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
-        $rows = array_values($collection->getRows());
+        $rows = $collection->getRows();
         $types = $collection->getTypes();
 
-        if (count($rows) < 1) {
+        if ($rows->count() < 1) {
             return $collection;
         }
+
         $columns = [];
 
         foreach ($rows as $row) {
@@ -57,7 +59,7 @@ class GroupByColumns implements CollectionTransformerInterface
     /**
      * Array grouping
      *
-     * @param array $array
+     * @param SplDoublyLinkedList $array
      * @param array $types
      * @param array $groupFields array of grouping fields
      * @param array $sumFields array of summing fields
@@ -66,11 +68,11 @@ class GroupByColumns implements CollectionTransformerInterface
      *
      * @return array
      */
-    public function group(array $array, array $types, array $groupFields, array $sumFields = array(), $fromDateFormats = [], $mapFields = [])
+    public function group(SplDoublyLinkedList $array, array $types, array $groupFields, array $sumFields = array(), $fromDateFormats = [], $mapFields = [])
     {
         $result = [];
 
-        if (0 === count($array) || 0 === count($groupFields)) {
+        if (0 === $array->count() || 0 === count($groupFields)) {
             return $result;
         }
 
@@ -148,7 +150,14 @@ class GroupByColumns implements CollectionTransformerInterface
             }
         }
 
-        return array_values($result);
+        $result = array_values($result);
+        $rows = new SplDoublyLinkedList();
+        foreach ($result as $item) {
+            $rows->push($item);
+        }
+
+        unset($result, $array);
+        return $rows;
     }
 
     public function validate()

@@ -5,6 +5,7 @@ namespace UR\DomainManager;
 use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\Common\Proxy\Exception\InvalidArgumentException;
 use ReflectionClass;
+use UR\Model\Core\ReportViewInterface;
 use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\ReportViewMultiViewRepositoryInterface;
@@ -18,7 +19,7 @@ class ReportViewMultiViewManager implements ReportViewMultiViewManagerInterface
 	/**
 	 * @var ReportViewMultiViewRepositoryInterface
 	 */
-	private $reportViewMultiViewRepository;
+	private $repository;
 
 
 	/**
@@ -29,7 +30,7 @@ class ReportViewMultiViewManager implements ReportViewMultiViewManagerInterface
 	public function __construct(ObjectManager $objectManager, ReportViewMultiViewRepositoryInterface $reportViewMultiViewRepository)
 	{
 		$this->objectManager = $objectManager;
-		$this->reportViewMultiViewRepository = $reportViewMultiViewRepository;
+		$this->repository = $reportViewMultiViewRepository;
 	}
 
 	/**
@@ -75,7 +76,7 @@ class ReportViewMultiViewManager implements ReportViewMultiViewManagerInterface
 	 */
 	public function createNew()
 	{
-		$entity = new ReflectionClass($this->reportViewMultiViewRepository->getClassName());
+		$entity = new ReflectionClass($this->repository->getClassName());
 		return $entity->newInstance();
 	}
 
@@ -84,7 +85,7 @@ class ReportViewMultiViewManager implements ReportViewMultiViewManagerInterface
 	 */
 	public function find($id)
 	{
-		$this->reportViewMultiViewRepository->find($id);
+		$this->repository->find($id);
 	}
 
 	/**
@@ -92,6 +93,13 @@ class ReportViewMultiViewManager implements ReportViewMultiViewManagerInterface
 	 */
 	public function all($limit = null, $offset = null)
 	{
-		return $this->reportViewMultiViewRepository->findBy($criteria = [], $orderBy = null, $limit, $offset);
+		return $this->repository->findBy($criteria = [], $orderBy = null, $limit, $offset);
 	}
+
+	public function getBySubView(ReportViewInterface $reportView)
+	{
+		return $this->repository->getBySubView($reportView);
+	}
+
+
 }

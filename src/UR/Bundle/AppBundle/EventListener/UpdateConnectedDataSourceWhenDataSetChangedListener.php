@@ -122,6 +122,7 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
      */
     private function updateConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, array $updatedFields, array $deletedFields, $updatingDataSetId = null)
     {
+
         if (count($updatedFields) < 1 && count($deletedFields) < 1) {
             return;
         }
@@ -129,19 +130,21 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
         $mapFields = $connectedDataSource->getMapFields();
         $requires = $connectedDataSource->getRequires();
         $transforms = $connectedDataSource->getTransforms();
-        $delFields = [];
 
+        $delFields = [];
         foreach ($deletedFields as $deletedField => $type) {
             $delFields[] = $deletedField;
         }
 
         if ($updatingDataSetId === null) {
             $mapFields = array_diff($mapFields, $delFields);
+
             foreach ($mapFields as &$mapField) {
                 if (array_key_exists($mapField, $updatedFields)) {
                     $mapField = $updatedFields[$mapField];
                 }
             }
+
             $requires = array_values(array_diff($requires, $delFields));
         }
 
@@ -150,18 +153,20 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
             $transformObjects = $transformerFactory->getTransform($transform);
 
             if ($transformObjects instanceof ColumnTransformerInterface) {
-                if (array_key_exists($transformObjects->getField(), $deletedFields)) {
+                if (in_array($transformObjects->getField(), $deletedFields)) {
                     unset($transforms[$key]);
                 }
+
                 if (array_key_exists($transformObjects->getField(), $updatedFields)) {
                     $transform[ColumnTransformerInterface::FIELD_KEY] = $updatedFields[$transformObjects->getField()];
                 }
-                continue;
 
+                continue;
             } else {
                 if ($transformObjects instanceof GroupByColumns || $transformObjects instanceof SortByColumns) {
                     continue;
                 }
+
                 foreach ($transformObjects as $transformObject) {
                     $this->updateConnectedCollectionTransform($transform, $delFields, $updatedFields, $transforms, $key, $transformObject, $updatingDataSetId);
                 }
@@ -203,13 +208,13 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
     {
         if ($transformObject instanceof Augmentation) {
             $mapConditions = $transformObject->getMapConditions();
-
             foreach ($mapConditions as &$mapCondition) {
-                if (array_key_exists($mapCondition[Augmentation::MAP_DATA_SET_SIDE], $updatedFields) &&
-                    $transformObject->getMapDataSet() == $dataSetId && $dataSetId !== null
+                if (array_key_exists($mapCondition[Augmentation::MAP_DATA_SET_SIDE], $updatedFields)
+                    && $transformObject->getMapDataSet() == $dataSetId && $dataSetId !== null
                 ) {
                     $mapCondition[Augmentation::MAP_DATA_SET_SIDE] = $updatedFields[$mapCondition[Augmentation::MAP_DATA_SET_SIDE]];
                 }
+
                 if (array_key_exists($mapCondition[Augmentation::DATA_SOURCE_SIDE], $updatedFields) && $dataSetId === null) {
                     $mapCondition[Augmentation::DATA_SOURCE_SIDE] = $updatedFields[$mapCondition[Augmentation::DATA_SOURCE_SIDE]];
                 }
@@ -218,11 +223,12 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
             unset($mapCondition);
 
             foreach ($mapConditions as $index => $mapCondition) {
-                if (in_array($mapCondition[Augmentation::MAP_DATA_SET_SIDE], $delFields) &&
-                    $transformObject->getMapDataSet() == $dataSetId && $dataSetId !== null
+                if (in_array($mapCondition[Augmentation::MAP_DATA_SET_SIDE], $delFields)
+                    && $transformObject->getMapDataSet() == $dataSetId && $dataSetId !== null
                 ) {
                     unset($mapConditions[$index]);
                 }
+
                 if (in_array($mapCondition[Augmentation::DATA_SOURCE_SIDE], $delFields) &&
                     $dataSetId === null
                 ) {
@@ -231,45 +237,47 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
             }
 
             $transform[Augmentation::MAP_CONDITION_KEY] = $mapConditions;
-            $mapFields = $transformObject->getMapFields();
 
+            $mapFields = $transformObject->getMapFields();
             foreach ($mapFields as $index => $values) {
                 if (in_array($values[Augmentation::DATA_SOURCE_SIDE], $delFields) && $dataSetId === null) {
                     unset($mapFields[$index]);
                 }
-                if (in_array($values[Augmentation::MAP_DATA_SET_SIDE], $delFields) &&
-                    $transformObject->getMapDataSet() == $dataSetId &&
-                    $dataSetId !== null
+
+                if (in_array($values[Augmentation::MAP_DATA_SET_SIDE], $delFields)
+                    && $transformObject->getMapDataSet() == $dataSetId && $dataSetId !== null
                 ) {
                     unset($mapFields[$index]);
                 }
+
                 if (array_key_exists($values[Augmentation::DATA_SOURCE_SIDE], $updatedFields) && $dataSetId === null) {
                     $values[Augmentation::DATA_SOURCE_SIDE] = $updatedFields[$values[Augmentation::DATA_SOURCE_SIDE]];
                     $mapFields[$index] = $values;
                 }
-                if (array_key_exists($values[Augmentation::MAP_DATA_SET_SIDE], $updatedFields) &&
-                    $transformObject->getMapDataSet() == $dataSetId &&
-                    $dataSetId !== null
+
+                if (array_key_exists($values[Augmentation::MAP_DATA_SET_SIDE], $updatedFields)
+                    && $transformObject->getMapDataSet() == $dataSetId && $dataSetId !== null
                 ) {
                     $values[Augmentation::MAP_DATA_SET_SIDE] = $updatedFields[$values[Augmentation::MAP_DATA_SET_SIDE]];
                     $mapFields[$index] = $values;
                 }
             }
-            $transform[Augmentation::MAP_FIELDS_KEY] = $mapFields;
-            $customConditions = $transformObject->getCustomCondition();
 
+            $transform[Augmentation::MAP_FIELDS_KEY] = $mapFields;
+
+            $customConditions = $transformObject->getCustomCondition();
             foreach ($customConditions as $i => &$customCondition) {
                 $field = $customCondition[Augmentation::CUSTOM_FIELD_KEY];
                 if (in_array($field, $delFields)) {
                     unset($customConditions[$i]);
                 }
+
                 foreach ($updatedFields as $k => $v) {
                     if ($field == $k && $transformObject->getMapDataSet() == $dataSetId) {
                         $customCondition[Augmentation::CUSTOM_FIELD_KEY] = $v;
                     }
                 }
             }
-
             unset($customCondition);
 
             $transform[Augmentation::CUSTOM_CONDITION] = $customConditions;
@@ -305,6 +313,7 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
                 }
             }
 
+            unset($field);
             $transform[SubsetGroup::GROUP_FIELD_KEY] = $groupFields;
             $transform[SubsetGroup::MAP_FIELDS_KEY] = $mapFields;
         } else {
@@ -339,6 +348,7 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
                     }
                 }
             }
+            unset($field);
 
             $transforms[$key][CollectionTransformerInterface::FIELDS_KEY] = array_values($transforms[$key][CollectionTransformerInterface::FIELDS_KEY]);
 

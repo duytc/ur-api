@@ -3,11 +3,15 @@
 namespace UR\Service\Parser\Transformer\Collection;
 
 use Doctrine\ORM\EntityManagerInterface;
+use SplDoublyLinkedList;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Service\ArrayUtilTrait;
 use UR\Service\DTO\Collection;
 
 class SortByColumns implements CollectionTransformerInterface, CollectionTransformerJsonConfigInterface
 {
+    use ArrayUtilTrait;
+
     const DIRECTION = 'direction';
     const NAMES = 'names';
     const ASC = 'asc';
@@ -24,19 +28,17 @@ class SortByColumns implements CollectionTransformerInterface, CollectionTransfo
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
         $rows = $collection->getRows();
-        if (count($rows) < 1) {
+        if ($rows->count() < 1) {
             return $collection;
         }
 
-        $rows = $this->array_sort_by_column($rows);
+        $this->array_sort_by_column($rows);
 
         return new Collection($collection->getColumns(), $rows, $collection->getTypes());
     }
 
-    public function array_sort_by_column(&$arr)
+    public function array_sort_by_column(SplDoublyLinkedList $arr)
     {
-        $params = array();
-        $params[] = $arr;
         $sortCriteria = [];
         foreach ($this->ascendingFields as $ascendingField) {
             $sortCriteria[$ascendingField] = [SORT_ASC];
@@ -46,7 +48,7 @@ class SortByColumns implements CollectionTransformerInterface, CollectionTransfo
             $sortCriteria[$descendingField] = [SORT_DESC];
         }
 
-        return $this->multiSort($arr, $sortCriteria, false);
+        $this->multiSort($arr, $sortCriteria, false);
     }
 
     /**
@@ -55,12 +57,10 @@ class SortByColumns implements CollectionTransformerInterface, CollectionTransfo
      * @param $sortCriteria
      * $sortCriteria = array('field1' => array(SORT_DESC),'field3' => array(SORT_DESC));
      * @param bool $caseInSensitive
-     * @return mixed
+     * @return void
      */
-    protected function multiSort($data, $sortCriteria, $caseInSensitive = true)
+    protected function multiSort(SplDoublyLinkedList $data, $sortCriteria, $caseInSensitive = true)
     {
-        if (!is_array($data) || !is_array($sortCriteria))
-            return false;
         $args = array();
         $i = 0;
         foreach ($sortCriteria as $sortColumn => $sortAttributes) {
@@ -89,12 +89,16 @@ class SortByColumns implements CollectionTransformerInterface, CollectionTransfo
         }
 
         if (count($args) < 1) {
-            return $data;
+            return;
         }
 
-        $args[] = &$data;
+        $rows = $this->getArray($data);
+        $args[] = &$rows;
         call_user_func_array('array_multisort', $args);
-        return end($args);
+        $rows = end($args);
+        foreach ($rows as $index => $row) {
+            $data->offsetSet($index, $row);
+        }
     }
 
     public function validate()

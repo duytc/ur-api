@@ -2,6 +2,7 @@
 
 namespace UR\Domain\DTO\Report\Formats;
 
+use SplDoublyLinkedList;
 use UR\Service\DTO\Report\ReportResultInterface;
 
 class PercentageFormat extends AbstractFormat implements PercentageFormatInterface
@@ -49,48 +50,51 @@ class PercentageFormat extends AbstractFormat implements PercentageFormatInterfa
      */
     public function format(ReportResultInterface $reportResult, array $metrics, array $dimensions)
     {
-        $reports = $reportResult->getReports();
+        $rows = $reportResult->getRows();
         $totals = $reportResult->getTotal();
         $averages = $reportResult->getAverage();
 
         $neededFormatFields = $this->getFields();
-        foreach ($neededFormatFields as $neededFormatField) {
-            foreach ($reports as $key => $report) {
-                if (!array_key_exists($neededFormatField, $report)) {
-                    continue;
+        if (!empty($neededFormatFields)) {
+            $newRows = new SplDoublyLinkedList();
+            gc_enable();
+            $rows->setIteratorMode(SplDoublyLinkedList::IT_MODE_FIFO | SplDoublyLinkedList::IT_MODE_DELETE);
+            foreach ($rows as $row) {
+                foreach ($neededFormatFields as $neededFormatField) {
+                    if (!array_key_exists($neededFormatField, $row)) continue;
+
+                    $value = $row[$neededFormatField];
+                    if (!is_numeric($value)) continue;
+
+                    $convertedString = $this->formatPercentage($value, $this->getPrecision());
+                    $row[$neededFormatField] = $convertedString;
                 }
-                $value = $report[$neededFormatField];
-                if (!is_numeric($value)) {
-                    continue;
-                }
-                $convertedString = $this->formatPercentage($value, $this->getPrecision());
-                $report[$neededFormatField] = $convertedString;
-                $reports[$key] = $report;
+                $newRows->push($row);
+                unset($row);
             }
 
-            if (!array_key_exists($neededFormatField, $totals)) {
-                continue;
-            }
+            unset($rows, $row);
+            gc_collect_cycles();
+            $reportResult->setRows($newRows);
 
-            $totalValue = $totals[$neededFormatField];
-            if (!is_numeric($totalValue)) {
-                continue;
-            }
-            $totals[$neededFormatField] = $this->formatPercentage($totalValue, $this->getPrecision());
+            foreach ($neededFormatFields as $neededFormatField) {
+                if (!array_key_exists($neededFormatField, $totals)) continue;
 
-            if (!array_key_exists($neededFormatField, $averages)) {
-                continue;
+                $totalValue = $totals[$neededFormatField];
+                if (!is_numeric($totalValue)) continue;
+
+                $totals[$neededFormatField] = $this->formatPercentage($totalValue, $this->getPrecision());
+
+                if (!array_key_exists($neededFormatField, $averages)) continue;
+
+                $averageValue = $averages[$neededFormatField];
+                if (!is_numeric($averageValue)) continue;
+
+                $averages[$neededFormatField] = $this->formatPercentage($averageValue, $this->getPrecision());
             }
-            $averageValue = $averages[$neededFormatField];
-            if (!is_numeric($averageValue)) {
-                continue;
-            }
-            $averages[$neededFormatField] = $this->formatPercentage($averageValue, $this->getPrecision());
+            $reportResult->setTotal($totals);
+            $reportResult->setAverage($averages);
         }
-
-        $reportResult->setReports($reports);
-        $reportResult->setTotal($totals);
-        $reportResult->setAverage($averages);
 
         return $reportResult;
     }

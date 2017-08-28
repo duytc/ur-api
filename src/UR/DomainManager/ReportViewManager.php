@@ -176,4 +176,9 @@ class ReportViewManager implements ReportViewManagerInterface
     {
         return md5(serialize($source)) === md5(serialize($destination));
     }
+
+    public function getSingleViews()
+    {
+        return $this->repository->getSingleViews();
+    }
 }

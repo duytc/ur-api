@@ -3,25 +3,27 @@ namespace UR\Service\Report;
 
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
+use UR\Service\DTO\Report\ReportResultInterface;
 
 class ReportViewFilter implements ReportViewFilterInterface
 {
     /**
      * @inheritdoc
      */
-    public function filterReports(Collection $reportCollection, $params)
+    public function filterReports(ReportResultInterface $reportResult, $params)
     {
-        $reports = $reportCollection->getRows();
-        $types = $reportCollection->getTypes();
+        $reports = $reportResult->getRows();
+        $types = $reportResult->getTypes();
         $searches = $params->getSearches();
 
+        $newRows = new \SplDoublyLinkedList();
         foreach ($searches as $searchField => $searchContent) {
             if (!array_key_exists($searchField, $types)) {
                 continue;
             }
             $type = $types[$searchField];
 
-            foreach ($reports as $pos => &$report) {
+            foreach ($reports as $report) {
                 if (!array_key_exists($searchField, $report)) {
                     continue;
                 }
@@ -33,10 +35,12 @@ class ReportViewFilter implements ReportViewFilterInterface
                     $value = $type == FieldType::NUMBER ? intval($value) : floatval($value);
                     foreach ($conditions as $condition) {
                         if (!$this->compareMathCondition($condition, $value)) {
-                            unset($reports[$pos]);
                             continue;
                         }
+
+                        $newRows->push($report);
                     }
+
                     continue;
                 }
 
@@ -47,18 +51,20 @@ class ReportViewFilter implements ReportViewFilterInterface
                         if (empty($word)) {
                             continue;
                         }
+
                         if (strpos(strtolower($value), strtolower($word)) === false) {
-                            unset($reports[$pos]);
                             continue;
                         }
+
+                        $newRows->push($report);
                     }
                     continue;
                 }
             }
         }
 
-        $reportCollection->setRows($reports);
-        return $reportCollection;
+        $reportResult->setRows($newRows);
+        return $reportResult;
     }
 
     /**

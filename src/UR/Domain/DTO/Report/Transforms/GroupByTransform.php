@@ -2,6 +2,8 @@
 
 namespace UR\Domain\DTO\Report\Transforms;
 
+use SplDoublyLinkedList;
+use UR\Domain\DTO\Report\ReportCollection;
 use UR\Exception\RuntimeException;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
@@ -45,8 +47,7 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 	 */
 	public function transform(Collection $collection, array &$metrics, array &$dimensions, array $outputJoinField)
 	{
-		$results = $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions, $outputJoinField);
-		$collection->setRows($results);
+		$collection = $this->getGroupedReport($this->getFields(), $collection, $metrics, $dimensions, $outputJoinField);
 		$collection->setColumns(array_merge($metrics, $dimensions));
 
 		return $collection;
@@ -63,7 +64,7 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 	 * @param array $metrics
 	 * @param array $dimensions
 	 * @param $outputJoinField
-	 * @return array
+	 * @return Collection
 	 */
 	protected function getGroupedReport($groupingFields, Collection $collection, array $metrics, array &$dimensions, array $outputJoinField)
 	{
@@ -72,7 +73,7 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 			$groupingFields[$index] = $this->removeIdSuffix($groupingField);
 		}
 
-		$results = [];
+		$results = new SplDoublyLinkedList();
 		foreach ($groupedReports as $groupedReport) {
 			$result = current($groupedReport);
 
@@ -95,10 +96,12 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 				}
 			}
 
-			$results[] = $result;
+			$results->push($result);
 		}
 
-		return $results;
+		$collection->setRows($results);
+
+		return $collection;
 	}
 
 	/**
@@ -121,7 +124,7 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 			}
 		}
 
-		foreach ($rows as &$report) {
+		foreach ($rows as $report) {
 			$key = '';
 			foreach ($groupingFields as $groupField) {
 				if (!array_key_exists($groupField, $report)) {
@@ -187,5 +190,13 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 	{
 		$this->fields = $fields;
 		return $this;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getTimezone()
+	{
+		return $this->timezone;
 	}
 }

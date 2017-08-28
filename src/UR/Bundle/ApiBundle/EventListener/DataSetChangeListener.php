@@ -5,7 +5,6 @@ namespace UR\Bundle\ApiBundle\EventListener;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
-use UR\Bundle\ApiBundle\Behaviors\CalculateMetricsAndDimensionsTrait;
 use UR\Bundle\ApiBundle\Behaviors\UpdateReportViewTrait;
 use UR\Entity\Core\ReportView;
 use UR\Entity\Core\ReportViewDataSet;

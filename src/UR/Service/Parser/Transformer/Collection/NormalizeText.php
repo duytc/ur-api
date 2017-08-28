@@ -5,6 +5,7 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 
 use Doctrine\ORM\EntityManagerInterface;
+use SplDoublyLinkedList;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
@@ -65,6 +66,14 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
     }
 
 
+    /**
+     * @param Collection $collection
+     * @param EntityManagerInterface|null $em
+     * @param ConnectedDataSourceInterface|null $connectedDataSource
+     * @param array $fromDateFormats
+     * @param array $mapFields
+     * @return Collection
+     */
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
         $rows = $collection->getRows();
@@ -75,11 +84,12 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
             $columns[] = $this->targetField;
         }
 
-        if (count($rows) < 1) {
+        if ($rows->count() < 1) {
             return $collection;
         }
 
-        foreach ($rows as &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
             if (!array_key_exists($this->field, $row)) {
                 return $collection;
             }
@@ -89,9 +99,13 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
             } else {
                 $row[$this->targetField] = $this->getValue($row);
             }
+
+            $newRows->push($row);
+            unset($row);
         }
 
-        return new Collection($columns, $rows, $types);
+        unset($collection, $rows, $row);
+        return new Collection($columns, $newRows, $types);
     }
 
     private function getValue(array $row)

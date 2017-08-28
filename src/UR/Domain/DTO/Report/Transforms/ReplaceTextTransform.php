@@ -3,6 +3,8 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 use Doctrine\Common\Proxy\Exception\InvalidArgumentException;
+use SplDoublyLinkedList;
+use UR\Domain\DTO\Report\ReportCollection;
 use UR\Service\DTO\Collection;
 
 class ReplaceTextTransform extends AbstractTransform implements TransformInterface
@@ -60,11 +62,11 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
      */
     public function transform(Collection $collection, array &$metrics, array &$dimensions, array $outputJoinField)
     {
-        $reports = $collection->getRows();
+        $rows = $collection->getRows();
         $columns = $collection->getColumns();
         $types = $collection->getTypes();
 
-        if (empty($reports)) {
+        if (empty($rows)) {
             return;
         }
 
@@ -88,15 +90,17 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
             $collection->setTypes($allTypes);
         }
 
-        foreach ($reports as $key => $report) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $key => $report) {
             if (!array_key_exists($this->getFieldName(), $report)) {
                 $fieldName = $this->getIsOverride() ? $this->getFieldName() : $this->getTargetField();
                 $report[$fieldName] = null;
-                $reports[$key] = $report;
                 if (!in_array($fieldName, $metrics)) {
                     $metrics[] = $fieldName;
                 }
-                
+
+                $newRows->push($report);
+
                 continue;
             }
             
@@ -109,13 +113,14 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
             }
 
             $report[$fieldName] = $replacedValue;
-            $reports[$key] = $report;
             if (!in_array($fieldName, $metrics)) {
                 $metrics[] = $fieldName;
             }
+            $newRows->push($report);
         }
 
-        $collection->setRows($reports);
+        unset($rows, $report);
+        $collection->setRows($newRows);
     }
 
     /**

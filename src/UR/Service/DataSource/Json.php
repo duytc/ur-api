@@ -2,40 +2,59 @@
 
 namespace UR\Service\DataSource;
 
+use \SplDoublyLinkedList;
+use JsonStreamingParser\Listener\InMemoryListener;
+use JsonStreamingParser\Parser;
 use UR\Behaviors\ParserUtilTrait;
+use UR\Service\ArrayUtilTrait;
 
 class Json extends CommonDataSourceFile implements DataSourceInterface
 {
     use ParserUtilTrait;
-    protected $rows = [];
-    protected $headers;
-    protected $dataRow = 1;
+    use ArrayUtilTrait;
+
+    public $headers;
+    public $dataRow = 1;
+    public $listener;
 
     /**
      * Json constructor.
-     * @param string $filePath
+     * @param $filePath
+     * @throws \Exception
      */
     public function __construct($filePath)
     {
-        $str = file_get_contents($filePath, true);
-        $result = json_decode($str, true);
-        if (!is_array($result)) {
+        $stream = fopen($filePath, 'r');
+        $this->listener = new InMemoryListener();
+        try {
+            $parser = new Parser($stream, $this->listener);
+            $parser->parse();
+            fclose($stream);
+        } catch (\Exception $e) {
+            fclose($stream);
+            throw new \Exception(sprintf('Does not support this JSON format'));
+        }
+
+        $data = $this->listener->getJson();
+        if (array_key_exists('columns', $data) && array_key_exists('rows', $data)) {
+            $this->headers = $data['columns'];
             return;
         }
 
-        $this->rows = $result;
-
-        $i = 0;
         $header = [];
-        for ($rowNum = 0; $rowNum < count($this->rows); $rowNum++) {
+        $i = 0;
+        foreach ($data as $row) {
+            $row = $this->handleNestedColumns($row);
+            $row = $this->removeInvalidColumns($row);
 
-            $row = $this->rows[$rowNum];
-            $this->rows[$rowNum] = $this->handleNestedColumns($row);
-            $cur_row = $this->removeInvalidColumns(array_keys($row));
+            if (!$this->isAssoc($row)) {
+                $header = $row;
+                break;
+            }
 
-            foreach ($cur_row as $item) {
-                if (!in_array($item, $header)) {
-                    $header[] = $item;
+            foreach ($row as $key => $item) {
+                if (!in_array($key, $header)) {
+                    $header[] = $key;
                 }
             }
 
@@ -46,15 +65,17 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
             }
         }
 
+        unset($data, $row);
         $this->headers = $header;
     }
+
 
     /**
      * @return array
      */
     public function getColumns()
     {
-        if (is_array($this->headers)) {
+        if (count($this->headers) > 0) {
             return $this->convertEncodingToASCII($this->headers);
         }
 
@@ -66,36 +87,87 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getRows()
     {
+        $data = $this->listener->getJson();
+        if (array_key_exists('columns', $data) && array_key_exists('rows', $data)) {
+            return $this->getRowsFromJsonObject($data);
+        }
+
+        $newRows = new SplDoublyLinkedList();
         //set all missing columns to null
-        foreach ($this->rows as $key => &$item) {
+        foreach ($data as $key => &$item) {
             if (count(array_diff_key($item, array_flip($this->headers))) > 0) {
-                unset($this->rows[$key]);
                 continue;
             }
 
             if (count($item) === count($this->headers)) {
+                $newRows->push($this->removeNonUtf8CharactersForSingleRow($item));
                 continue;
             }
 
             $missing_columns = array_diff_key(array_flip($this->headers), $item);
             if (count($missing_columns) === 0) {
+                $newRows->push($this->removeNonUtf8CharactersForSingleRow($item));
                 continue;
             }
 
-            $row = [];
             foreach ($this->headers as $index => $columnName) {
-
-                if (array_key_exists($columnName, $item)) {
-                    $row[$columnName] = $item[$columnName];
-                } else {
-                    $row[$columnName] = null;
+                if (!array_key_exists($columnName, $item)) {
+                    $item[$columnName] = null;
                 }
             }
 
-            $item = $row;
+            $newRows->push($this->removeNonUtf8CharactersForSingleRow($item));
         }
 
-        return $this->removeNonUtf8Characters($this->rows);
+        unset($item, $data);
+        return $newRows;
+    }
+
+    /**
+     * @param $data
+     * @param $limit
+     * @return SplDoublyLinkedList
+     */
+    public function getRowsFromJsonObject($data, $limit = null)
+    {
+        $rows = $data['rows'];
+        $newRows = new SplDoublyLinkedList();
+        $count = 0;
+        foreach ($rows as $pos => &$row) {
+            if (count($row) == 0) {
+                continue;
+            }
+
+            $missing_columns = count($this->headers) - count($row);
+
+            if ($missing_columns > 0) {
+                 //fill missing columns with null
+                for ($loop = 0; $loop < $missing_columns; $loop++) {
+                    $row[] = null;
+                }
+
+                $newRows->push($row);
+                $count++;
+                continue;
+            }
+
+            if ($missing_columns < 0) {
+                $row = array_slice($row, 0, $missing_columns, true);
+                $newRows->push($row);
+                $count++;
+                continue;
+            }
+
+            $newRows->push($row);
+            $count++;
+
+            if (is_numeric($limit) && $count >= $limit) {
+                break;
+            }
+        }
+
+        unset($rows, $row);
+        return $newRows;
     }
 
     /**
@@ -134,11 +206,50 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getLimitedRows($limit)
     {
-        $this->getRows();
-
-        if (is_numeric($limit)) {
-            return $this->removeNonUtf8Characters(array_slice($this->rows, 0, $limit));
+        if (!is_numeric($limit)) {
+            return $this->getRows();
         }
+
+        $data = $this->listener->getJson();
+        if (array_key_exists('columns', $data) && array_key_exists('rows', $data)) {
+            return $this->getRowsFromJsonObject($data, $limit);
+        }
+
+        $newRows = new SplDoublyLinkedList();
+        //set all missing columns to null
+        $count = 1;
+        foreach ($data as $key => &$item) {
+            if (count(array_diff_key($item, array_flip($this->headers))) > 0) {
+                continue;
+            }
+
+            if (count($item) === count($this->headers)) {
+                $newRows->push($this->removeNonUtf8CharactersForSingleRow($item));
+                continue;
+            }
+
+            $missing_columns = array_diff_key(array_flip($this->headers), $item);
+            if (count($missing_columns) === 0) {
+                $newRows->push($this->removeNonUtf8CharactersForSingleRow($item));
+                continue;
+            }
+
+            foreach ($this->headers as $index => $columnName) {
+                if (!array_key_exists($columnName, $item)) {
+                    $item[$columnName] = null;
+                }
+            }
+
+            $newRows->push($this->removeNonUtf8CharactersForSingleRow($item));
+
+            $count++;
+            if ($count >= $limit) {
+                break;
+            }
+        }
+
+        unset($item, $data);
+        return $newRows;
     }
 
     /**

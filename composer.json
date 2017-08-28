@@ -42,7 +42,8 @@
         "league/csv": "^8.0",
         "symfony/expression-language": "^3.1",
         "liuggio/excelbundle": "^2.1",
-        "box/spout": "^2.7"
+        "box/spout": "^2.7",
+        "salsify/json-streaming-parser": "^6.0"
     },
     "require-dev": {
         "sensio/generator-bundle": "3.0",

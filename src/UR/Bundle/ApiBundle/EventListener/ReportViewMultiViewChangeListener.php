@@ -6,12 +6,8 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Bundle\ApiBundle\Behaviors\CalculateMetricsAndDimensionsTrait;
-use UR\Domain\DTO\Report\Transforms\TransformInterface;
-use UR\Entity\Core\ReportViewMultiView;
-use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\Core\ReportViewMultiViewInterface;
-use UR\Repository\Core\ReportViewMultiViewRepositoryInterface;
 use UR\Service\Report\ParamsBuilderInterface;
 
 class ReportViewMultiViewChangeListener

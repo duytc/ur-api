@@ -15,12 +15,12 @@ use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
-use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\ColumnUtilTrait;
 use UR\Service\ReportViewTemplate\DTO\CustomTemplateParams;
+use UR\Service\StringUtilTrait;
 
 /**
  * @Rest\RouteResource("ReportView")
@@ -29,6 +29,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
 {
     use GetEntityFromIdTrait;
     use ColumnUtilTrait;
+    use StringUtilTrait;
     const TOKEN = 'token';
     const FIELDS = 'fields';
 
@@ -170,6 +171,11 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
              * @var ReportViewInterface $reportView
              */
             foreach ($reportViews as $reportView) {
+                $newFields = $this->getNewFieldsFromTransforms($reportView->getTransforms());
+                $metrics = $reportView->getMetrics();
+                $metrics = array_diff($metrics, $newFields);
+                $reportView->setMetrics($metrics);
+
                 foreach ($reportView->getDimensions() as $dimension) {
                     $columns[$dimension] = $this->convertColumn($dimension, $showDataSetName);
                 }

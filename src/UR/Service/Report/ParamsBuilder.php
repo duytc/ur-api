@@ -122,9 +122,7 @@ class ParamsBuilder implements ParamsBuilderInterface
                 }
             }
 
-            if (array_key_exists(self::SUB_REPORT_INCLUDED_KEY, $data)) {
-                $param->setSubReportIncluded(filter_var($data[self::SUB_REPORT_INCLUDED_KEY], FILTER_VALIDATE_BOOLEAN));
-            }
+            $param->setSubReportIncluded(false);
 
         } else {
             if (array_key_exists(self::DATA_SET_KEY, $data) && !empty($data[self::DATA_SET_KEY])) {
@@ -409,7 +407,7 @@ class ParamsBuilder implements ParamsBuilderInterface
      * @throws \Exception
      * @return array
      */
-    protected function createTransforms(array $transforms)
+    public function createTransforms(array $transforms)
     {
         $transformObjects = [];
         foreach ($transforms as $transform) {
@@ -503,7 +501,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     /**
      * @inheritdoc
      */
-    public function buildFromReportView(ReportViewInterface $reportView)
+    public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null)
     {
         $param = new Params();
 
@@ -513,8 +511,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 
             $param
                 ->setReportViews($reportViews)
-                ->setSubReportIncluded($reportView->isSubReportsIncluded())
-                ->setShowInTotal($reportView->getShowInTotal());
+                ->setShowInTotal(null);
         } else {
             $dataSetsRawData = $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets());
             $dataSets = $this->createDataSets($dataSetsRawData);
@@ -541,6 +538,8 @@ class ParamsBuilder implements ParamsBuilderInterface
         if (is_array($reportView->getFormats())) {
             $param->setFormats($this->createFormats($reportView->getFormats()));
         }
+
+        $param->setPage(1)->setLimit(10);
 
         return $param;
     }
@@ -575,7 +574,7 @@ class ParamsBuilder implements ParamsBuilderInterface
                 ->setReportViews($this->createReportViews(
                     $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews()))
                 )
-                ->setSubReportIncluded($reportView->isSubReportsIncluded());
+                ->setSubReportIncluded(false);
         } else {
             $param->setDataSets($this->createDataSets(
                 $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))

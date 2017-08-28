@@ -130,9 +130,6 @@ services:
     ur.service.date_util:
         class: UR\Service\DateUtil
 
-    ur.service.array_util:
-        class: UR\Service\ArrayUtil
-
     ur.service.synchronize_user_service:
         class: UR\Service\SynchronizeUser\SynchronizeUserService
         arguments:

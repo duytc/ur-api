@@ -26,19 +26,19 @@ trait CalculateMetricsAndDimensionsTrait
          */
         foreach ($reportViews as $reportView) {
             $metrics = array_merge($metrics, $reportView->getMetrics());
-            $dimensions = array_merge($dimensions, $reportView->getDimensions());
+//            $dimensions = array_merge($dimensions, $reportView->getDimensions());
         }
 
-        $transforms = $params->getTransforms();
+//        $transforms = $params->getTransforms();
         /**
          * @var TransformInterface $transform
          * @var ReportViewInterface $entity
          */
-        foreach ($transforms as $transform) {
-            $transform->getMetricsAndDimensions($metrics, $dimensions);
-        }
+//        foreach ($transforms as $transform) {
+//            $transform->getMetricsAndDimensions($metrics, $dimensions);
+//        }
 
-        return array(
+        return array (
             $this->getMetricsKey() => $metrics,
             $this->getDimensionsKey() => $dimensions
         );

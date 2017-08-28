@@ -2,14 +2,12 @@
 
 namespace UR\Domain\DTO\Report\Transforms;
 
+use SplDoublyLinkedList;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Service\DTO\Collection;
-use UR\Util\CalculateConditionTrait;
 
 class AddCalculatedFieldTransform extends NewFieldTransform implements TransformInterface
 {
-    use CalculateConditionTrait;
-
     const TRANSFORMS_TYPE = 'addCalculatedField';
     const EXPRESSION_CALCULATED_FIELD = 'expression';
     const DEFAULT_VALUE_CALCULATED_FIELD = 'defaultValues';
@@ -64,11 +62,12 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
         }
 
         $rows = $collection->getRows();
-        foreach ($rows as &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $index => $row) {
             try {
                 $calculatedValue = $this->language->evaluate($expressionForm, ['row' => $row]);
             } catch (\Exception $ex) {
-                $calculatedValue = $this->invalidValue;
+                $calculatedValue = self::INVALID_VALUE;
             }
 
             $value = $this->getDefaultValueByCondition($calculatedValue, $row);
@@ -77,11 +76,12 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
             if (is_float($value) && (is_nan($value) || is_infinite($value))) {
                 $value = null;
             }
-
             $row[$this->fieldName] = $value;
+            $newRows->push($row);
         }
 
-        $collection->setRows($rows);
+        unset($rows, $row);
+        $collection->setRows($newRows);
     }
 
     /**
@@ -136,5 +136,21 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
         }
 
         $metrics[] = $this->fieldName;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDefaultValue()
+    {
+        return $this->defaultValue;
+    }
+
+    /**
+     * @return string
+     */
+    public function getExpression()
+    {
+        return $this->expression;
     }
 }

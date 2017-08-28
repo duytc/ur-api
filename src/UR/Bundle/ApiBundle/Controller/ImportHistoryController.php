@@ -116,6 +116,8 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
      *
      * @Rest\Get("/importhistories/{id}/download" )
      *
+     * @Rest\QueryParam(name="limit", nullable=true, requirements="\d+", description="max result to get")
+     *
      * @ApiDoc(
      *  section = "Imported Data",
      *  resource = true,
@@ -124,17 +126,19 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
      *  }
      * )
      *
+     * @param Request $request
      * @param int $id the resource id
      *
      * @return mixed
      * @throws NotFoundHttpException when the resource does not exist
      */
-    public function downloadImportedDataAction($id)
+    public function downloadImportedDataAction(Request $request, $id)
     {
         /**@var ImportHistoryInterface $importHistory */
         $importHistory = $this->one($id);
         $importHistoryRepository = $this->get('ur.repository.import_history');
-        $results = $importHistoryRepository->getImportedData($importHistory);
+        $limit = $request->query->get('limit', null);
+        $results = $importHistoryRepository->getImportedData($importHistory, $limit);
 
         return $this->buildImportedData($results, $importHistory);
     }

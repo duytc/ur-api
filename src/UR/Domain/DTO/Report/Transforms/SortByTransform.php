@@ -2,6 +2,7 @@
 
 namespace UR\Domain\DTO\Report\Transforms;
 
+use SplDoublyLinkedList;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Collection;
 
@@ -50,16 +51,23 @@ class SortByTransform extends AbstractTransform implements TransformInterface
 	{
 		$excludeFields = [];
 		$rows = $collection->getRows();
+		$data = iterator_to_array($rows);
 		$params = [];
 		// collect column data
-		foreach ($rows as $row) {
+		foreach ($data as $row) {
 			foreach ($this->sortObjects as $sortObject) {
 				foreach ($sortObject[self::FIELDS_KEY] as $field) {
-					if (!array_key_exists($field, $row)) {
-						$excludeFields[] = $field;
-						break;
-					}
-					${$field . "values"}[] = $row[$field];
+//					if (!array_key_exists($field, $row)) {
+//						$excludeFields[] = $field;
+//						break;
+//					}
+//					${$field . "values"}[] = $row[$field];
+                    if (array_key_exists($field, $row)) {
+					    ${$field . "values"}[] = $row[$field];
+					} else {
+					    ${$field . "values"}[] = null;
+                        $row[$field] = null;
+                    }
 				}
 			}
 		}
@@ -67,9 +75,9 @@ class SortByTransform extends AbstractTransform implements TransformInterface
 		// build param
 		foreach ($this->sortObjects as $sortObject) {
 			foreach ($sortObject[self::FIELDS_KEY] as $field) {
-				if (in_array($field, $excludeFields)) {
-					break;
-				}
+//				if (in_array($field, $excludeFields)) {
+//					break;
+//				}
 				$params[] = ${$field . "values"};
 				if ($sortObject[self::SORT_DIRECTION_KEY] === self::SORT_ASC) {
 					$params[] = SORT_ASC;
@@ -79,11 +87,26 @@ class SortByTransform extends AbstractTransform implements TransformInterface
 			}
 		}
 
-		$params[] = &$rows;
+		$params[] = &$data;
 
 		call_user_func_array('array_multisort', $params);
-		$collection->setRows($rows);
+		$newRows = new SplDoublyLinkedList();
+		foreach ($data as $row) {
+			$newRows->push($row);
+		}
+
+		unset($rows, $data, $row);
+		$collection->setRows($newRows);
 	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getSortObjects()
+	{
+		return $this->sortObjects;
+	}
+
 
 	public function getMetricsAndDimensions(array &$metrics, array &$dimensions)
 	{

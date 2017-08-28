@@ -8,6 +8,7 @@ use DateInterval;
 use DatePeriod;
 use DateTime;
 use Monolog\Logger;
+use SplDoublyLinkedList;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
 use UR\Exception\InvalidArgumentException;
@@ -190,16 +191,9 @@ class DateRangeService implements DateRangeServiceInterface
             $columns = $dataSourceFileData->getColumns();
             $rows = $dataSourceFileData->getRows();
 
-            try {
-                foreach ($rows as &$row) {
-                    $row = array_combine($columns, $row);
-                }
-            } catch (\Exception $e) {
-                return false;
-            }
 
-
-            foreach ($rows as &$row) {
+            foreach ($rows as $row) {
+                $row = array_combine($columns, $row);
                 foreach ($dateFields as $dateField) {
                     if (!array_key_exists($dateField, $row)) {
                         continue;
@@ -294,10 +288,14 @@ class DateRangeService implements DateRangeServiceInterface
             }
 
             //extract report date based on given pattern
-            $collection = new Collection([], [$metaData]);
+            $data = new SplDoublyLinkedList();
+            $data->push($metaData);
+            $collection = new Collection([], $data);
             $transform = new ExtractPattern($dateField, $pattern[self::PATTERN_KEY], null, $isOverride = true, false, false, $pattern[self::REPLACE_VALUE_KEY]);
             $rows = $transform->transform($collection)->getRows();
-            $row = array_shift($rows);
+
+            $rows->rewind();
+            $row = $rows->shift();
             if (!is_array($row)) {
                 continue;
             }

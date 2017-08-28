@@ -4,6 +4,7 @@
 namespace UR\Domain\DTO\Report\Formats;
 
 
+use SplDoublyLinkedList;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Report\ReportResultInterface;
 
@@ -48,15 +49,17 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
      */
     public function format(ReportResultInterface $reportResult, array $metrics, array $dimensions)
     {
-        $reports = $reportResult->getReports();
+        $rows = $reportResult->getRows();
         $totals = $reportResult->getTotal();
         $averages = $reportResult->getAverage();
 
         $fields = $this->getFields();
 
         /* format for all records of reports */
-        $newReports = [];
-        foreach ($reports as $row) {
+        gc_enable();
+        $newRows = new SplDoublyLinkedList();
+        $rows->setIteratorMode(SplDoublyLinkedList::IT_MODE_FIFO | SplDoublyLinkedList::IT_MODE_DELETE);
+        foreach ($rows as $row) {
             foreach ($fields as $field) {
                 if (!array_key_exists($field, $row)) {
                     continue;
@@ -64,8 +67,8 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
 
                 $row[$field] = $this->formatOneCurrency($row[$field]);
             }
-
-            $newReports[] = $row;
+            $newRows->push($row);
+            unset($row);
         }
 
         /* format for totals */
@@ -89,7 +92,9 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
         }
 
         /* set value again */
-        $reportResult->setReports($newReports);
+        unset($rows, $row);
+        gc_collect_cycles();
+        $reportResult->setRows($newRows);
         $reportResult->setTotal($newTotals);
         $reportResult->setAverage($newAverages);
     }

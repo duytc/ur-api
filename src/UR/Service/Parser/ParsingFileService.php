@@ -4,6 +4,7 @@ namespace UR\Service\Parser;
 
 
 use Exception;
+use SplDoublyLinkedList;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -103,8 +104,6 @@ class ParsingFileService
         $columnsInFile = array_map('strtolower', $columnsInFile);
         $this->addPrefixForColumnsFromFile($columnsInFile);
 
-        $rows = array_values($rows);
-
         /* mapping field */
         $this->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $columnsInFile);
         if (count($this->parserConfig->getAllColumnMappings()) === 0) {
@@ -116,16 +115,16 @@ class ParsingFileService
         //filter config
         $this->createFilterConfigForConnectedDataSource($connectedDataSource, $this->parserConfig);
 
-        $rows = $this->parser->combineRowsWithColumns($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
+        $newRows = $this->parser->combineRowsWithColumns($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
 
-        $rows = $this->removeInvalidRowsDependOnRequiredFields($rows, $connectedDataSource);
+        $newRows = $this->removeInvalidRowsDependOnRequiredFields($newRows, $connectedDataSource);
 
-        $rows = $this->removeNullDateTimeRows($rows, $connectedDataSource);
+        $newRows = $this->removeNullDateTimeRows($newRows, $connectedDataSource);
 
         //transform config
         $this->createTransformConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $dataSourceEntry);
 
-        $collections = $this->parser->parse($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
+        $collections = $this->parser->parse($columnsInFile, $newRows, $this->parserConfig, $connectedDataSource);
 
         return $collections;
     }
@@ -311,9 +310,10 @@ class ParsingFileService
      * @param array $allFields
      * @return Collection
      */
-    public function setDataOfColumnsNotMappedToNull($rows, array $allFields)
+    public function setDataOfColumnsNotMappedToNull(SplDoublyLinkedList $rows, array $allFields)
     {
-        foreach ($rows as &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
             if (!is_array($row)) {
                 continue;
             }
@@ -333,20 +333,24 @@ class ParsingFileService
                 }
             }
 
-            $row = $temp;
+            $newRows->push($temp);
+            unset($row);
         }
 
-        return new Collection(array_keys($allFields), $rows);
+        unset($rows, $row);
+        return new Collection(array_keys($allFields), $newRows);
     }
 
     /**
-     * @param array $rows
-     * @return array
+     * @param Collection $collection
+     * @return void
      * @throws ImportDataException
      */
-    public function formatColumnsTransformsAfterParser(array $rows)
+    public function formatColumnsTransformsAfterParser(Collection $collection)
     {
-        foreach ($rows as &$row) {
+        $rows = $collection->getRows();
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $index => $row) {
             if (!is_array($row)) {
                 continue;
             }
@@ -365,9 +369,13 @@ class ParsingFileService
                     }
                 }
             }
+
+            $newRows->push($row);
+            unset ($row);
         }
 
-        return $rows;
+        unset($rows, $row);
+        $collection->setRows($newRows);
     }
 
     /**
@@ -466,14 +474,10 @@ class ParsingFileService
     /**
      * @param mixed $rows
      * @param ConnectedDataSourceInterface $connectedDataSource
-     * @return mixed
+     * @return SplDoublyLinkedList
      */
-    private function removeInvalidRowsDependOnRequiredFields($rows, $connectedDataSource)
+    private function removeInvalidRowsDependOnRequiredFields(SplDoublyLinkedList $rows, $connectedDataSource)
     {
-        if (!is_array($rows)) {
-            return [];
-        }
-
         $requireFields = $connectedDataSource->getRequires();
         if (!is_array($requireFields)) {
             return $rows;
@@ -490,50 +494,51 @@ class ParsingFileService
         $mapFields = array_flip($connectedDataSource->getMapFields());
         $dataSet = $connectedDataSource->getDataSet();
         $types = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+        $requireFields = array_filter($requireFields, function ($requireField) use ($mapFields) {
+           return  array_key_exists($requireField, $mapFields);
+        });
 
-        foreach ($requireFields as $requireField) {
-            if (!array_key_exists($requireField, $mapFields)) {
-                continue;
-            }
-            $type = $types[$requireField];
-            $fieldInFile = $mapFields[$requireField];
-
-            foreach ($rows as $index => &$row) {
-                if (!array_key_exists($fieldInFile, $row)) {
-                    continue;
-                }
-                $value = FieldType::convertValue($row[$fieldInFile], $type, $fromDateFormats, $requireField);
-
-                if ($type == FieldType::TEXT || $type == FieldType::LARGE_TEXT || $type == FieldType::DATE || $type == FieldType::DATETIME) {
-                    if (empty($value)) {
-                        unset($rows[$index]);
-                    }
-                    continue;
-                }
-
-                if ($type == FieldType::NUMBER || $type == FieldType::DECIMAL) {
-                    if ($value == null) {
-                        unset($rows[$index]);
-                    }
-                    continue;
-                }
-            }
+        if (count($requireFields) < 1) {
+            return $rows;
         }
 
-        return $rows;
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
+            foreach ($requireFields as $requireField) {
+                $type = $types[$requireField];
+                $fieldInFile = $mapFields[$requireField];
+                if (!array_key_exists($fieldInFile, $row)) {
+                    break;
+                    continue;
+                }
+
+                $value = FieldType::convertValue($row[$fieldInFile], $type, $fromDateFormats, $requireField);
+                if (in_array($type, [FieldType::TEXT, FieldType::LARGE_TEXT, FieldType::DATE, FieldType::DATETIME]) && empty($value)) {
+                    break;
+                    continue;
+                }
+
+                if (in_array($type, [FieldType::NUMBER, FieldType::DECIMAL]) && $value == null) {
+                    break;
+                    continue;
+                }
+            }
+
+            $newRows->push($row);
+            unset($row);
+        }
+
+        unset($rows, $row);
+        return $newRows;
     }
 
     /**
      * @param $rows
      * @param ConnectedDataSourceInterface|null $connectedDataSource
-     * @return array
+     * @return SplDoublyLinkedList
      */
-    private function removeNullDateTimeRows($rows, $connectedDataSource = null)
+    private function removeNullDateTimeRows(SplDoublyLinkedList $rows, $connectedDataSource = null)
     {
-        if (!is_array($rows)) {
-            return [];
-        }
-
         if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
             return $rows;
         }
@@ -574,24 +579,33 @@ class ParsingFileService
         }
 
         /** Remove row if have invalid date, datetime value*/
-        foreach ($rows as $key => &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
+
+            $invalidRow = false;
             foreach ($fieldInFiles as $fieldInFile => $type) {
                 if (!array_key_exists($fieldInFile, $row)) {
-                    continue;
-                }
-
-                if ($type !== FieldType::DATE || $type !== FieldType::DATETIME) {
-                    continue;
+                    $invalidRow = true;
+                    break;
                 }
 
                 $value = $row[$fieldInFile];
                 if (empty($value)) {
-                    unset($rows[$key]);
+                    $invalidRow = true;
+                    break;
                 }
             }
+
+            if ($invalidRow) {
+                continue;
+            }
+
+            $newRows->push($row);
+            unset($row);
         }
 
-        return array_values($rows);
+        unset($rows, $row);
+        return $newRows;
     }
 
     public function resetInjectParams()

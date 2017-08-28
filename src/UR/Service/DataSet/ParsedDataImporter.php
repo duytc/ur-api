@@ -85,7 +85,7 @@ class ParsedDataImporter
                 }
             }
 
-            if (!is_array($rows) || count($rows) < 1) {
+            if ($rows->count() < 1) {
                 return true;
             }
 
@@ -98,7 +98,7 @@ class ParsedDataImporter
             $question_marks = [];
             $uniqueIds = [];
             $this->preparedInsertCount = 0;
-            foreach ($rows as &$row) {
+            foreach ($rows as $index => $row) {
                 if (!is_array($row)) {
                     continue;
                 }

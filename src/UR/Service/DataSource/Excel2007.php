@@ -5,6 +5,7 @@ namespace UR\Service\DataSource;
 use Box\Spout\Common\Type;
 use Box\Spout\Reader\ReaderFactory;
 use Box\Spout\Reader\XLSX\Sheet;
+use SplDoublyLinkedList;
 use UR\Behaviors\ParserUtilTrait;
 
 class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
@@ -116,7 +117,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getRows()
     {
-        $this->rows = [];
+        $rows = new SplDoublyLinkedList();
         $curRow = 1;
         /**
          * @var Sheet $sheet
@@ -133,14 +134,14 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
                         $value = $this->normalizeScientificValue($value);
                     }
 
-                    $this->rows[$curRow - 1] = $row;
+                    $rows->push($this->removeNonUtf8CharactersForSingleRow($row));
                 }
 
                 $curRow++;
             }
         }
 
-        return $this->removeNonUtf8Characters($this->rows);
+        return $rows;
     }
 
     public function getDataRow()
@@ -165,12 +166,11 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getLimitedRows($limit)
     {
-        $limitedRows = [];
-
         if (!is_numeric($limit)) {
-            return $this->removeNonUtf8Characters($this->getRows());
+            return $this->getRows();
         }
 
+        $limitedRows = new SplDoublyLinkedList();
         $curRow = 1;
         /**
          * @var Sheet $sheet
@@ -187,7 +187,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
                         $value = $this->normalizeScientificValue($value);
                     }
 
-                    $limitedRows[$curRow - 1] = $row;
+                    $limitedRows->push($this->removeNonUtf8CharactersForSingleRow($row));
                 }
 
                 $curRow++;
@@ -198,7 +198,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
             }
         }
 
-        return $this->removeNonUtf8Characters($limitedRows);
+        return $limitedRows;
     }
 
     protected function isTextArray(array $array)

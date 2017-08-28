@@ -6,6 +6,11 @@ use UR\Service\DTO\Report\ReportResult;
 
 abstract class AbstractFilter
 {
+	const FILTER_TYPE_KEY = 'type';
+	const FILTER_FIELD_KEY = 'field';
+	const FILTER_COMPARISON_KEY = 'comparison';
+	const FILTER_COMPARED_VALUE_KEY = 'compareValue';
+
 	const TYPE_DATE = 'date';
 	const TYPE_TEXT = 'text';
 	const TYPE_NUMBER = 'number';

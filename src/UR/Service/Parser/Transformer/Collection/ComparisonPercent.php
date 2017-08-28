@@ -3,6 +3,7 @@
 namespace UR\Service\Parser\Transformer\Collection;
 
 use Doctrine\ORM\EntityManagerInterface;
+use SplDoublyLinkedList;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
@@ -32,7 +33,7 @@ class ComparisonPercent implements CollectionTransformerInterface, CollectionTra
         $rows = $collection->getRows();
         $types = $collection->getTypes();
 
-        if (count($rows) < 1) {
+        if ($rows->count() < 1) {
             return $collection;
         }
 
@@ -45,12 +46,15 @@ class ComparisonPercent implements CollectionTransformerInterface, CollectionTra
 
         if (count($columnCheck) > 0) {
             $columns[] = $this->newColumn;
-            foreach ($rows as $idx => &$row) {
+            $newRows = new SplDoublyLinkedList();
+            foreach ($rows as $index => $row) {
                 $value = null;
                 $row[$this->newColumn] = $value;
+                $newRows->push($row);
+                unset ($row);
             }
-
-            return new Collection($columns, $rows, $types);
+            unset ($rows, $row);
+            return new Collection($columns, $newRows, $types);
         }
 
         if (!in_array($this->newColumn, $collection->getColumns(), true)) {
@@ -59,8 +63,8 @@ class ComparisonPercent implements CollectionTransformerInterface, CollectionTra
         }
 
         $isNumber = array_key_exists($this->newColumn, $types) && $types[$this->newColumn] == FieldType::NUMBER;
-
-        foreach ($rows as &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
             $value = null;
             $numeratorValue = $row[$this->numerator];
             $denominatorValue = $row[$this->denominator];
@@ -68,6 +72,8 @@ class ComparisonPercent implements CollectionTransformerInterface, CollectionTra
             $denominatorValue = $this->reformatDataService->reformatData($denominatorValue, FieldType::NUMBER);
             if (!is_numeric($numeratorValue) || !is_numeric($numeratorValue)) {
                 $row[$this->newColumn] = $value;
+                $newRows->push($row);
+                unset ($row);
                 continue;
             }
 
@@ -76,9 +82,13 @@ class ComparisonPercent implements CollectionTransformerInterface, CollectionTra
             }
 
             $row[$this->newColumn] = $isNumber ? round($value) : $value;
+            $newRows->push($row);
+            unset ($row);
         }
 
-        return new Collection($columns, $rows, $types);
+
+        unset($collection, $rows, $row);;
+        return new Collection($columns, $newRows, $types);
     }
 
     public function validate()

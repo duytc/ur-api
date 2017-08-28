@@ -4,6 +4,7 @@ namespace UR\Service\DataSource;
 
 use League\Csv\AbstractCsv;
 use League\Csv\Reader;
+use SplDoublyLinkedList;
 use UR\Behaviors\ParserUtilTrait;
 use UR\Exception\InvalidArgumentException;
 
@@ -203,24 +204,59 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     }
 
     /**
-     * @inheritdoc
+     * @return SplDoublyLinkedList
      */
     public function getRows()
     {
-        return $this->removeNonUtf8Characters($this->fetchData());
+        $iterator = $this->csv->getIterator();
+        $result = new SplDoublyLinkedList();
+        while (!$iterator->eof()) {
+            $row = $iterator->current();
+            if (!is_array($row)) {
+                $iterator->next();
+                continue;
+            }
+
+            $result->push($this->removeNonUtf8CharactersForSingleRow($row));
+            $iterator->next();
+        }
+
+        //remove header
+        $result->shift();
+        return $result;
     }
 
     /**
      * @param $limit
-     * @return array
+     * @return SplDoublyLinkedList
      */
     public function getLimitedRows($limit = 100)
     {
-        if (is_numeric($limit)) {
-            $this->csv->setLimit($limit);
+        if (!is_numeric($limit)) {
+            return $this->getRows();
         }
 
-        return $this->removeNonUtf8Characters($this->fetchData());
+        $iterator = $this->csv->getIterator();
+        $result = new SplDoublyLinkedList();
+        $index = 0;
+        while (!$iterator->eof()) {
+            $row = $iterator->current();
+            if (!is_array($row)) {
+                $iterator->next();
+                continue;
+            }
+
+            $result->push($this->removeNonUtf8CharactersForSingleRow($row));
+            $index++;
+            if ($index > $limit) {
+                break;
+            }
+            $iterator->next();
+        }
+
+        //remove header
+        $result->shift();
+        return $result;
     }
 
     /**

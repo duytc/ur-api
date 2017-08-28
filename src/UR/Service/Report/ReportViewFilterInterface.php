@@ -9,9 +9,9 @@ use UR\Service\DTO\Report\ReportResultInterface;
 interface ReportViewFilterInterface
 {
     /**
-     * @param Collection $reportCollection
+     * @param ReportResultInterface $reportResult
      * @param ParamsInterface $params
      * @return ReportResultInterface
      */
-    public function filterReports(Collection $reportCollection, $params);
+    public function filterReports(ReportResultInterface $reportResult, $params);
 }

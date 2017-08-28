@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\Statement;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
+use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 
 class ReportSelector implements ReportSelectorInterface
 {
@@ -48,13 +49,9 @@ class ReportSelector implements ReportSelectorInterface
         $dataSets = $params->getDataSets();
 
         if (count($dataSets) < 2) {
-            $result = $this->sqlBuilder->buildQueryForSingleDataSet($dataSets[0], $overridingFilters);
-            return array (
-                SqlBuilder::DATE_RANGE_KEY => $result[SqlBuilder::DATE_RANGE_KEY],
-                SqlBuilder::STATEMENT_KEY => $result[SqlBuilder::STATEMENT_KEY]->execute()
-            );
+            return $this->sqlBuilder->buildQueryForSingleDataSet($dataSets[0], $params->getPage(), $params->getLimit(), $params->getTransforms(), $params->getSearches(), $params->getSortField(), $params->getOrderBy(), $overridingFilters);
         }
 
-        return $this->sqlBuilder->buildQuery($dataSets, $params->getJoinConfigs(), $overridingFilters);
+        return $this->sqlBuilder->buildQuery($dataSets, $params->getJoinConfigs(), $params->getPage(), $params->getLimit(), $params->getTransforms(), $params->getSearches(), $params->getSortField(), $params->getOrderBy(), $overridingFilters);
     }
 }

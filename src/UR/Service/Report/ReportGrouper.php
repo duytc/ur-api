@@ -2,7 +2,13 @@
 namespace UR\Service\Report;
 
 
+use Doctrine\DBAL\Driver\Statement;
+use Doctrine\DBAL\Query\QueryBuilder;
+use PDO;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Domain\DTO\Report\ParamsInterface;
+use UR\Domain\DTO\Report\ReportCollection;
+use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\Service\ColumnUtilTrait;
 use UR\Service\DataSet\FieldType;
@@ -30,14 +36,21 @@ class ReportGrouper implements ReportGrouperInterface
     protected $dateUtil;
 
     /**
+     * @var SqlBuilderInterface
+     */
+    protected $sqlBuilder;
+
+    /**
      * ReportGrouper constructor.
      * @param DataSetManagerInterface $dataSetManager
      * @param DateUtilInterface $dateUtil
+     * @param SqlBuilderInterface $sqlBuilder
      */
-    public function __construct(DataSetManagerInterface $dataSetManager, DateUtilInterface $dateUtil)
+    public function __construct(DataSetManagerInterface $dataSetManager, DateUtilInterface $dateUtil, SqlBuilderInterface $sqlBuilder)
     {
         $this->dataSetManager = $dataSetManager;
         $this->dateUtil = $dateUtil;
+        $this->sqlBuilder = $sqlBuilder;
     }
 
 
@@ -49,7 +62,7 @@ class ReportGrouper implements ReportGrouperInterface
      * @param $isShowDataSetName
      * @return ReportResult
      */
-    public function group(Collection $collection, array $metrics, $weightedCalculation, $dateRanges, $isShowDataSetName)
+    public function groupForMultiView(Collection $collection, array $metrics, $weightedCalculation, $dateRanges, $isShowDataSetName)
     {
         $columns = $collection->getColumns();
         $headers = [];
@@ -106,6 +119,70 @@ class ReportGrouper implements ReportGrouperInterface
         }
 
         return new ReportResult($rows, $total, $average, $this->dateUtil->mergeDateRange($dateRanges), $headers, $collection->getTypes());
+    }
+
+    public function groupForSingleView($subQuery, Collection $collection, ParamsInterface $params, $overridingFilters = null)
+    {
+        $dataSets = $params->getDataSets();
+
+        if (count($dataSets) < 2) {
+            $stmt = $this->sqlBuilder->buildGroupQueryForSingleDataSet($subQuery, $dataSets[0], $params->getTransforms(), $params->getSearches(), $params->getShowInTotal(), $overridingFilters);
+        } else {
+            $stmt = $this->sqlBuilder->buildGroupQuery($subQuery, $dataSets, $params->getJoinConfigs(), $params->getTransforms(), $params->getSearches(), $params->getShowInTotal(), $overridingFilters);
+        }
+
+        $columns = $collection->getColumns();
+        $headers = [];
+        $total = [];
+        $average = [];
+        $totalReport = 0;
+        foreach ($columns as $index => $column) {
+            $headers[$column] = $this->convertColumn($column, $params->getIsShowDataSetName());
+        }
+
+        $hasGroup = false;
+        $transforms = $params->getTransforms();
+        foreach ($transforms as $transform) {
+            if ($transform instanceof GroupByTransform) {
+                $hasGroup = true;
+                break;
+            }
+        }
+
+        if ($stmt instanceof Statement) {
+            $rows = $stmt->fetchAll();
+            $count = count($rows);
+
+            // has group transform
+            if ($count > 1) {
+                $totalReport = $count;
+                foreach ($rows as $row) {
+                    foreach ($row as $key => $value) {
+                        if (!array_key_exists($key, $total)) {
+                            $total[$key] = (float) $value;
+                            continue;
+                        }
+
+                        $total[$key] += (float) $value;
+                    }
+                }
+            } else {
+                $total = $rows[0];
+//                if ($hasGroup) {
+//                    $totalReport = 1;
+//                } else {
+                    $totalReport = intval($total['total']);
+//                }
+            }
+
+            unset($total['total']);
+            $average = $total;
+            foreach ($average as $key => &$value) {
+                $value = round($total[$key] / $totalReport, 4);
+            }
+        }
+
+        return new ReportResult($collection->getRows(), $total, $average, null, $headers, $collection->getTypes(), $totalReport);
     }
 
     protected function getDataSetManager()

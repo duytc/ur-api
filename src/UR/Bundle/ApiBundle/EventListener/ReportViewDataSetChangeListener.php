@@ -6,7 +6,6 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Bundle\ApiBundle\Behaviors\CalculateMetricsAndDimensionsTrait;
-use UR\Entity\Core\ReportViewMultiView;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\Core\ReportViewMultiViewInterface;

@@ -4,6 +4,7 @@
 namespace UR\Domain\DTO\Report\Formats;
 
 
+use SplDoublyLinkedList;
 use UR\Service\DTO\Report\ReportResultInterface;
 
 class ColumnPositionFormat extends AbstractFormat implements ColumnPositionFormatInterface
@@ -31,19 +32,22 @@ class ColumnPositionFormat extends AbstractFormat implements ColumnPositionForma
      */
     public function format(ReportResultInterface $reportResult, array $metrics, array $dimensions)
     {
-        $reports = $reportResult->getReports();
+        $rows = $reportResult->getRows();
         $column = $reportResult->getColumns();
         $columnOrder = $this->getFields();
 
 
-        $newReports = [];
-        foreach ($reports as $report) {
-            $newReports [] = $this->changeIndex($report, $columnOrder);
+        $newRows = new SplDoublyLinkedList();
+        $rows->setIteratorMode(SplDoublyLinkedList::IT_MODE_FIFO | SplDoublyLinkedList::IT_MODE_DELETE);
+        foreach ($rows as $row) {
+            $newRows->push($this->changeIndex($row, $columnOrder));
+            unset($row);
         }
 
         $newColumns = $this->changeIndex($column, $columnOrder);
 
-        $reportResult->setReports($newReports);
+        unset($rows, $row);
+        $reportResult->setRows($newRows);
         $reportResult->setColumns($newColumns);
     }
 

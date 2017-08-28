@@ -3,6 +3,7 @@
 namespace UR\Service\Parser\Transformer\Collection;
 
 use Doctrine\ORM\EntityManagerInterface;
+use SplDoublyLinkedList;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DTO\Collection;
 
@@ -72,11 +73,12 @@ class ReplaceText implements CollectionTransformerInterface, CollectionTransform
             }
         }
 
-        if (count($rows) < 1) {
+        if ($rows->count() < 1) {
             return $collection;
         }
 
-        foreach ($rows as &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
             if (!array_key_exists($this->field, $row)) {
                 return $collection;
             }
@@ -90,9 +92,13 @@ class ReplaceText implements CollectionTransformerInterface, CollectionTransform
                     $row[$this->targetField] = $this->replaceText($row, $this->field);
                 }
             }
+
+            $newRows->push($row);
+            unset($row);
         }
 
-        return new Collection($columns, $rows, $types);
+        unset($collection, $rows, $row);
+        return new Collection($columns, $newRows, $types);
     }
 
     public function replaceText(array &$row, $field)

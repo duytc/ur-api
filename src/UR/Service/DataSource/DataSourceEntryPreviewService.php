@@ -4,6 +4,7 @@
 namespace UR\Service\DataSource;
 
 
+use SplDoublyLinkedList;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
@@ -57,10 +58,10 @@ class DataSourceEntryPreviewService implements DataSourceEntryPreviewServiceInte
             throw new PublicImportDataException($details, new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_DATA_ROW_FOUND));
         }
 
-        $allRows = $dataSourceFileData->getLimitedRows($limit);
+        $rows = $dataSourceFileData->getLimitedRows($limit);
         $totalRowsCount = $dataSourceEntry->getTotalRow();
 
-        return $this->formatAsReport($columns, array_values($allRows), $totalRowsCount);
+        return $this->formatAsReport($columns, $rows, $totalRowsCount);
     }
 
     /**
@@ -69,19 +70,19 @@ class DataSourceEntryPreviewService implements DataSourceEntryPreviewServiceInte
      * @param $count
      * @return array
      */
-    private function formatAsReport($columns, $reports, $count = 0)
+    private function formatAsReport($columns, SplDoublyLinkedList $reports, $count = 0)
     {
         $types = [];
+        $data = [];
 
-        if (is_array($reports)) {
-            foreach ($reports as &$report) {
-                foreach ($columns as $key => $value) {
-                    if (array_key_exists($key, $report)) {
-                        $report[$value] = $report[$key];
-                        unset($report[$key]);
-                    }
+        foreach ($reports as $report) {
+            foreach ($columns as $key => $value) {
+                if (array_key_exists($key, $report)) {
+                    $report[$value] = $report[$key];
+                    unset($report[$key]);
                 }
             }
+            $data[] = $report;
         }
 
         foreach ($columns as $key => $value) {
@@ -91,13 +92,14 @@ class DataSourceEntryPreviewService implements DataSourceEntryPreviewServiceInte
         }
 
         $dataTransferObject = [];
-        $dataTransferObject[ReportResult::REPORT_RESULT_REPORTS] = $reports;
+        $dataTransferObject[ReportResult::REPORT_RESULT_REPORTS] = $data;
         $dataTransferObject[ReportResult::REPORT_RESULT_COLUMNS] = $columns;
         $dataTransferObject[ReportResult::REPORT_RESULT_TOTAL] = $count;
         $dataTransferObject[ReportResult::REPORT_RESULT_AVERAGE] = [];
         $dataTransferObject[ReportResult::REPORT_RESULT_TYPES] = $types;
         $dataTransferObject[ReportResult::REPORT_RESULT_DATE_RANGE] = null;
 
+        unset($reports, $report);
         return $dataTransferObject;
     }
 }

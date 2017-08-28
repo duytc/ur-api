@@ -2,6 +2,8 @@
 
 namespace UR\Service\DataSource;
 
+use SplDoublyLinkedList;
+
 interface DataSourceInterface
 {
     const DETECT_HEADER_ROWS = 20;
@@ -22,7 +24,7 @@ interface DataSourceInterface
     public function getColumns();
 
     /**
-     * @return array
+     * @return SplDoublyLinkedList
      */
     public function getRows();
 
@@ -33,7 +35,7 @@ interface DataSourceInterface
 
     /**
      * @param $limit
-     * @return array
+     * @return SplDoublyLinkedList
      */
     public function getLimitedRows($limit);
 

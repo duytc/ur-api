@@ -4,6 +4,7 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use SplDoublyLinkedList;
 use UR\Behaviors\ParserUtilTrait;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ConnectedDataSourceInterface;
@@ -44,21 +45,11 @@ class Augmentation implements CollectionTransformerInterface
     /**
      * @var string
      */
-    protected $sourceField;
-
-    /**
-     * @var string
-     */
-    protected $destinationField;
-
-    /**
-     * @var string
-     */
     protected $customCondition;
 
     /**
-    * @var array
-    */
+     * @var array
+     */
     protected $mapConditions;
 
     /**
@@ -83,9 +74,9 @@ class Augmentation implements CollectionTransformerInterface
     {
         $this->mapDataSet = $mapDataSet;
         $this->mapFields = $mapFields;
-        $this->mapConditions = $mapConditions;
         $this->customCondition = $customCondition;
         $this->dropUnmatched = $dropUnmatched;
+        $this->mapConditions = $mapConditions;
     }
 
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
@@ -94,7 +85,7 @@ class Augmentation implements CollectionTransformerInterface
         $columns = $collection->getColumns();
         $types = $collection->getTypes();
 
-        if (count($rows) < 1) {
+        if ($rows->count() < 1) {
             return $collection;
         }
         $conn = $em->getConnection();
@@ -105,13 +96,13 @@ class Augmentation implements CollectionTransformerInterface
 
         if (is_array($this->customCondition)) {
             $mappedFields = [];
-            foreach ($this->customCondition as $i => $condition) {
+            foreach ($this->customCondition as $index => $condition) {
                 if (array_key_exists(self::CUSTOM_FIELD_KEY, $condition)
                     && array_key_exists(self::CUSTOM_OPERATOR_KEY, $condition)
                     && array_key_exists(self::CUSTOM_VALUE_KEY, $condition)
                 ) {
                     $field = $condition[self::CUSTOM_FIELD_KEY];
-                    $paramField = sprintf(':%s_%d', $this->removeSpacesInVariableName($condition[self::CUSTOM_FIELD_KEY]), $i);
+                    $paramField = sprintf(':%s_%d', $this->removeSpacesInVariableName($condition[self::CUSTOM_FIELD_KEY]), $index);
                     $operator = $condition[self::CUSTOM_OPERATOR_KEY];
                     switch ($operator) {
                         case self::CUSTOM_OPERATOR_EQUAL:
@@ -151,17 +142,20 @@ class Augmentation implements CollectionTransformerInterface
         }
 
 
-        foreach ($rows as $index=>&$row) {
-            $mapFields = $this->getMappedValue($mappedResult, $row, $collection->getTypes(), $fromDateFormats, $connectedDataSource->getMapFields(), $matched);
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $index => $row) {
+            $mapFields = $this->getMappedValue($mappedResult, $row, $types, $fromDateFormats, $connectedDataSource->getMapFields(), $matched);
             if ($this->dropUnmatched === true && $matched === false) {
-                unset($rows[$index]);
-            } else {
-                $row = array_merge($row, $mapFields);
+                continue;
             }
+
+            $row = array_merge($row, $mapFields);
+            $newRows->push($row);
+            unset($row);
         }
 
-        unset($row);
-        return new Collection($columns, array_values($rows), $types);
+        unset($collection, $rows, $row);
+        return new Collection($columns, $newRows, $types);
     }
 
     protected function removeSpacesInVariableName($name)
@@ -173,6 +167,7 @@ class Augmentation implements CollectionTransformerInterface
     {
         foreach($mappedResult as $result) {
             $matched = true;
+            
             foreach ($this->mapConditions as $mapCondition) {
                 $leftField = $mapCondition[self::DATA_SOURCE_SIDE];
                 $rightField = $mapCondition[self::MAP_DATA_SET_SIDE];
@@ -188,8 +183,8 @@ class Augmentation implements CollectionTransformerInterface
                 }
 
                 $leftValue = $sourceValues[$leftField];
-
                 $realLeftField = $leftField;
+
                 if (array_key_exists($leftField, $mapFields)) {
                     $realLeftField = $mapFields[$leftField];
                 }
@@ -216,13 +211,17 @@ class Augmentation implements CollectionTransformerInterface
                 foreach($this->mapFields as $mapField) {
                     $data[$mapField[self::DATA_SOURCE_SIDE]] = array_key_exists($mapField[self::MAP_DATA_SET_SIDE], $result) ? $result[$mapField[self::MAP_DATA_SET_SIDE]] : NULL;
                 }
+
                 return $data;
             }
         }
+
         $data = [];
+
         foreach($this->mapFields as $mapField) {
             $data[$mapField[self::DATA_SOURCE_SIDE]] = NULL;
         }
+
         return $data;
     }
 
@@ -252,21 +251,6 @@ class Augmentation implements CollectionTransformerInterface
         return $this->selectedFields;
     }
 
-    /**
-     * @return string
-     */
-    public function getSourceField(): string
-    {
-        return $this->sourceField;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDestinationField(): string
-    {
-        return $this->destinationField;
-    }
 
     /**
      * @return array
@@ -277,9 +261,9 @@ class Augmentation implements CollectionTransformerInterface
     }
 
     /**
-     * @return array
+     * @return string
      */
-    public function getMapConditions(): array
+    public function getMapCondition(): string
     {
         return $this->mapConditions;
     }

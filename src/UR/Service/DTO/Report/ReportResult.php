@@ -4,6 +4,7 @@
 namespace UR\Service\DTO\Report;
 
 
+use SplDoublyLinkedList;
 use UR\Domain\DTO\Report\DateRange;
 
 class ReportResult implements ReportResultInterface
@@ -21,6 +22,11 @@ class ReportResult implements ReportResultInterface
      * @var array
      */
     protected $reports;
+
+    /**
+     * @var SplDoublyLinkedList
+     */
+    protected $rows;
 
     /**
      * @var array
@@ -53,22 +59,24 @@ class ReportResult implements ReportResultInterface
 
     /**
      * ReportResult constructor.
-     * @param array $reports
+     * @param SplDoublyLinkedList|null $rows
      * @param array $total
      * @param array $average
      * @param array $dateRange
      * @param array $columns
      * @param array $types
+     * @param int $totalReport
      */
-    public function __construct(array $reports, array $total, array $average, $dateRange, $columns = [], $types = [], $totalReport = 0)
+    public function __construct($rows, array $total, array $average, $dateRange, $columns = [], $types = [], $totalReport = 0)
     {
-        $this->reports = $reports;
+        $this->rows = $rows;
         $this->total = $total;
         $this->average = $average;
         $this->columns = $columns;
         $this->types = $types;
         $this->dateRange = $dateRange;
         $this->totalReport = $totalReport;
+        $this->reports = [];
     }
 
     /**
@@ -86,6 +94,25 @@ class ReportResult implements ReportResultInterface
     {
         return $this->total;
     }
+
+    /**
+     * @return SplDoublyLinkedList
+     */
+    public function getRows()
+    {
+        return $this->rows;
+    }
+
+    /**
+     * @param SplDoublyLinkedList $rows
+     * @return self
+     */
+    public function setRows($rows)
+    {
+        $this->rows = $rows;
+        return $this;
+    }
+
 
     /**
      * @inheritdoc
@@ -208,6 +235,20 @@ class ReportResult implements ReportResultInterface
         return $this;
     }
 
+    public function generateReports()
+    {
+        if (!$this->rows instanceof SplDoublyLinkedList) {
+            return $this;
+        }
+
+        $this->reports = [];
+        foreach ($this->rows as $row) {
+            $this->reports[] = $row;
+        }
+
+        return $this;
+    }
+
     /**
      * @inheritdoc
      */
@@ -219,7 +260,7 @@ class ReportResult implements ReportResultInterface
             self::REPORT_RESULT_AVERAGE => $this->average,
             self::REPORT_RESULT_COLUMNS => $this->columns,
             self::REPORT_RESULT_TYPES => $this->types,
-            self::REPORT_RESULT_DATE_RANGE => $this->dateRange->toArray(),
+            self::REPORT_RESULT_DATE_RANGE => is_array($this->dateRange) ? $this->dateRange : [],
             self::REPORT_RESULT_TOTAL_REPORT => $this->totalReport
         ];
     }

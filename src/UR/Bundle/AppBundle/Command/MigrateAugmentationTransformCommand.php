@@ -35,7 +35,7 @@ class MigrateAugmentationTransformCommand extends ContainerAwareCommand
                 }
 
                 if ($transform['type'] != CollectionTransformerInterface::AUGMENTATION) {
-                                continue;
+                    continue;
                 }
 
                 $transform['mapConditions'] = [$transform['mapCondition']];

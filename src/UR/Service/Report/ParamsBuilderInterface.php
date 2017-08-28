@@ -17,9 +17,10 @@ interface ParamsBuilderInterface
 
     /**
      * @param ReportViewInterface $reportView
+     * @param array|null $showInTotal
      * @return ParamsInterface
      */
-    public function buildFromReportView(ReportViewInterface $reportView);
+    public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null);
 
     /**
      * @param ReportViewInterface $reportView

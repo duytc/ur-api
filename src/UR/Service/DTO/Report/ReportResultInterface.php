@@ -4,6 +4,8 @@
 namespace UR\Service\DTO\Report;
 
 
+use SplDoublyLinkedList;
+
 use UR\Domain\DTO\Report\DateRange;
 
 interface ReportResultInterface
@@ -12,6 +14,17 @@ interface ReportResultInterface
      * @return array
      */
     public function getReports();
+
+    /**
+     * @return SplDoublyLinkedList
+     */
+    public function getRows();
+
+    /**
+     * @param SplDoublyLinkedList $rows
+     * @return self
+     */
+    public function setRows($rows);
 
     /**
      * @return array
@@ -102,4 +115,9 @@ interface ReportResultInterface
      * @return mixed
      */
     public function toArray();
+
+    /**
+     * @return mixed
+     */
+    public function generateReports();
 }

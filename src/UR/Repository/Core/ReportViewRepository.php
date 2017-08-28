@@ -199,5 +199,11 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
 
     }
 
-
+    public function getSingleViews()
+    {
+        return $this->createQueryBuilder('rpv')
+            ->where('rpv.multiView = 0')
+            ->getQuery()
+            ->getResult();
+    }
 }

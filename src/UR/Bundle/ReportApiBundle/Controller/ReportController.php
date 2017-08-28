@@ -38,7 +38,9 @@ class ReportController extends FOSRestController
             $reportViewRepository->updateLastRun($params->getReportViewId());
         }
 
-        return $this->get('ur.services.report.report_builder')->getReport($params);
+        $result = $this->get('ur.services.report.report_builder')->getReport($params);
+        $result->generateReports();
+        return $result;
     }
 
     /**
@@ -60,8 +62,15 @@ class ReportController extends FOSRestController
         $request->request->remove('page');
         $request->request->remove('limit');
 
+        $params = $this->get('ur.services.report.params_builder')->buildFromArray($request->request->all());
+        $reportViewRepository = $this->get('ur.repository.report_view');
+
+        if ($params->getReportViewId() !== null) {
+            $reportViewRepository->updateLastRun($params->getReportViewId());
+        }
+
         /** @var ReportResult $reportResult */
-        $reportResult = $this->reportAction($request);
+        $reportResult = $this->get('ur.services.report.report_builder')->getReport($params);
         // Set the filename of the download
         $filename = 'MyReport_Tagcade_' . date('Ymd') . '-' . date('His');
 
@@ -86,7 +95,7 @@ class ReportController extends FOSRestController
         fputcsv($fh, $header);
 
         // CSV Data
-        foreach ($reportResult->getReports() as $report) {
+        foreach ($reportResult->getRows() as $report) {
             $line = [];
             foreach ($reportResult->getColumns() as $key => $value) {
                 if (array_key_exists($key, $report)) {

@@ -170,6 +170,17 @@ class Params implements ParamsInterface
         return $this->transforms;
     }
 
+    public function addTransform(TransformInterface $transform)
+    {
+        if (!is_array($this->transforms)) {
+            $this->transforms = [];
+        }
+
+        $this->transforms[] = $transform;
+        return $this;
+    }
+
+
     /**
      * @param array $transforms
      * @return self

@@ -4,6 +4,9 @@
 namespace UR\Service;
 
 
+use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
+use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
+use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Exception\InvalidArgumentException;
 
 trait StringUtilTrait
@@ -87,7 +90,6 @@ trait StringUtilTrait
     protected function removeIdSuffix($column)
     {
         $idAndField = $this->getIdSuffixAndField($column);
-
         if ($idAndField) {
             return $idAndField['field'];
         }
@@ -117,5 +119,25 @@ trait StringUtilTrait
         $name = preg_replace("/_+/ ", "_", $name);
 
         return $name;
+    }
+
+    public function getNewFieldsFromTransforms(array $transforms)
+    {
+        $newFields = [];
+        foreach ($transforms as $transform) {
+            if (array_key_exists('type', $transform)) {
+                $type = $transform['type'];
+                if (in_array($type, [AddCalculatedFieldTransform::TRANSFORMS_TYPE, AddFieldTransform::TRANSFORMS_TYPE, ComparisonPercentTransform::TRANSFORMS_TYPE])) {
+                    $fields = $transform['fields'];
+                    foreach ($fields as $field) {
+                        if (array_key_exists('field', $field)) {
+                            $newFields[] = $field['field'];
+                        }
+                    }
+                }
+            }
+        }
+
+        return $newFields;
     }
 }

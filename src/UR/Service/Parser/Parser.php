@@ -3,6 +3,7 @@
 namespace UR\Service\Parser;
 
 use Doctrine\ORM\EntityManagerInterface;
+use SplDoublyLinkedList;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PostLoadDataEvent;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PostParseDataEvent;
@@ -20,6 +21,7 @@ use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Service\Parser\Transformer\Collection\SubsetGroup;
+use UR\Service\Report\SqlBuilder;
 
 class Parser implements ParserInterface
 {
@@ -46,12 +48,12 @@ class Parser implements ParserInterface
 
     /**
      * @param array $fileCols
-     * @param array $rows
+     * @param SplDoublyLinkedList $rows
      * @param ParserConfig $parserConfig
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @return Collection
      */
-    public function parse(array $fileCols, array $rows, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource)
+    public function parse(array $fileCols, SplDoublyLinkedList $rows, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource)
     {
         $columnsMapping = $parserConfig->getAllColumnMappings();
         $columnFromMap = array_flip($parserConfig->getAllColumnMappings());
@@ -74,7 +76,7 @@ class Parser implements ParserInterface
             $postLoadDataEvent
         );
 
-        $rows = $postLoadDataEvent->getRows();
+//        $rows = $postLoadDataEvent->getRows();
 
         $dataSetColumns = array_merge($connectedDataSource->getDataSet()->getDimensions(), $connectedDataSource->getDataSet()->getMetrics());
         $types = [];
@@ -101,12 +103,12 @@ class Parser implements ParserInterface
             $preFilterEvent
         );
 
-        $rows = $preFilterEvent->getRows();
+//        $rows = $preFilterEvent->getRows();
 
         // TODO: may dispatch event after filtering data
         $collection = new Collection($columns, $rows, $types);
 
-        if (count($rows) < 1) {
+        if ($rows->count() < 1) {
             return $collection;
         }
 
@@ -153,8 +155,7 @@ class Parser implements ParserInterface
         //overwrite duplicate
         if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
             $mappedDimensions = array_intersect_key($columnsMapping, $connectedDataSource->getDataSet()->getDimensions());
-            $overwroteRows = $this->overrideDuplicate($collection->getRows(), array_flip($mappedDimensions));
-            $collection->setRows($overwroteRows);
+            $this->overrideDuplicate($collection, array_flip($mappedDimensions));
         }
 
         $collection = $this->removeTemporaryFields($collection, $connectedDataSource);
@@ -173,23 +174,14 @@ class Parser implements ParserInterface
         );
 
         $collection = $preTransformColumnEvent->getCollection();
-
-        // transform column
-        $rows = array_values($collection->getRows());
-
-        if (count($rows) < 1) {
+        $rows = $collection->getRows();
+        if ($rows->count() < 1) {
             return $collection;
         }
 
         $columns = $this->getColumnsAfterDoCollectionTransforms($rows[0], $columnFromMap, $collection->getColumns());
 
-        $types = $collection->getTypes();
-
         $collection = $this->getFinalParserCollection($rows, $columns, $parserConfig);
-
-        // todo refactor, this is messy to have to set types like this
-
-        $collection->setTypes($types);
 
         // dispatch event post parse data
         $postParseDataEvent = new PostParseDataEvent(
@@ -203,8 +195,6 @@ class Parser implements ParserInterface
             self::EVENT_NAME_POST_PARSE_DATA,
             $postParseDataEvent
         );
-
-        $collection = $postParseDataEvent->getCollection();
 
         return $collection;
     }
@@ -225,18 +215,22 @@ class Parser implements ParserInterface
             return $collection;
         }
 
-        foreach ($temporaryFields as $temp) {
-            $columns[] = $temp;
-            $types[$temp] = FieldType::TEMPORARY;
-
-            foreach ($rows as &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
+            foreach ($temporaryFields as $temp) {
+                $columns[] = $temp;
+                $types[$temp] = FieldType::TEMPORARY;
                 $row[$temp] = '';
             }
+
+            $newRows->push($row);
+            unset($row);
         }
 
+        unset($rows, $row);
         $collection->setColumns($columns);
         $collection->setTypes($types);
-        $collection->setRows($rows);
+        $collection->setRows($newRows);
 
         return $collection;
     }
@@ -257,24 +251,20 @@ class Parser implements ParserInterface
             return $collection;
         }
 
-        foreach ($temporaryFields as $temp) {
-            if (($key = array_search($temp, $columns)) !== false) {
-                unset($columns[$key]);
-            }
-
-            if (array_key_exists($temp, $types)) {
-                unset($types[$temp]);
-            }
-
-            foreach ($rows as &$row) {
-                if (array_key_exists($temp, $row)) {
-                    unset($row[$temp]);
-                }
-            }
+        $tempFieldAsKeys = array_flip($temporaryFields);
+        $columns = array_diff_key($columns, $tempFieldAsKeys);
+        $types = array_diff_key($types, $tempFieldAsKeys);
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
+            $row = array_diff_key($row, $tempFieldAsKeys);
+            $newRows->push($row);
+            unset($row);
         }
 
+        unset ($rows, $row);
+
         $collection->setColumns($columns);
-        $collection->setRows($rows);
+        $collection->setRows($newRows);
         $collection->setTypes($types);
 
         return $collection;
@@ -329,17 +319,17 @@ class Parser implements ParserInterface
     }
 
     /**
-     * @param array $rows
+     * @param SplDoublyLinkedList $rows
      * @param array $columns
      * @param ParserConfig $parserConfig
      * @return Collection
      * @throws ImportDataException
      */
-    private function getFinalParserCollection(array $rows, array $columns, ParserConfig $parserConfig)
+    private function getFinalParserCollection(SplDoublyLinkedList $rows, array $columns, ParserConfig $parserConfig)
     {
-        foreach ($rows as $cur_row => &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
             if (!is_array($row)) {
-                unset($rows[$cur_row]);
                 continue;
             }
 
@@ -347,7 +337,6 @@ class Parser implements ParserInterface
             if (empty($row)) {
                 // after array)intersect_key, the $row may be an empty array
                 // so that we must remove to avoid an empty row data
-                unset($rows[$cur_row]);
                 continue;
             }
 
@@ -382,46 +371,55 @@ class Parser implements ParserInterface
             }
 
             if ($isNeedRemoveRow) {
-                unset($rows[$cur_row]);
+                continue;
             }
+
+            $newRows->push($row);
+            unset($row);
         }
 
-        return new Collection($columns, $rows);
+        unset($rows, $row);
+
+        return new Collection($columns, $newRows);
     }
 
 
     /**
-     * @param array $rows
+     * @param Collection $collection
      * @param array $dimensions
-     * @return array
+     * @return void
      */
-    private function overrideDuplicate(array $rows, array $dimensions)
+    private function overrideDuplicate(Collection $collection, array $dimensions)
     {
+        $rows = $collection->getRows();
         $duplicateRows = [];
-        foreach ($rows as $index => &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
             if (!is_array($row)) {
                 continue;
             }
 
             $uniqueKeys = array_intersect_key($row, $dimensions);
             $uniqueId = md5(implode(":", $uniqueKeys));
+            if (array_key_exists($uniqueId, $duplicateRows)) {
+                continue;
+            }
 
-            $duplicateRows[$uniqueId] = $row;
+            $duplicateRows[] = $uniqueId;
+            $newRows->push($row);
+            unset($row);
         }
 
-        $rows = array_values($duplicateRows);
-
-        return $rows;
+        unset($rows, $row);
+        $collection->setRows($newRows);
     }
 
-    public function combineRowsWithColumns(array $fileCols, array $rows, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource) {
+    public function combineRowsWithColumns(array $fileCols, SplDoublyLinkedList $rows, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource) {
 
         $columnsMapping = $parserConfig->getAllColumnMappings();
-        $cur_row = -1;
-        foreach ($rows as &$row) {
-            $cur_row++;
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
             if (!is_array($row)) {
-                unset($rows[$cur_row]);
                 continue;
             }
 
@@ -448,10 +446,14 @@ class Parser implements ParserInterface
             $isValidFilter = $this->doFilter($parserConfig, $fileCols, $row);
 
             if (!$isValidFilter) {
-                unset($rows[$cur_row]);
                 continue;
             }
+
+            $newRows->push($row);
+            unset($row);
         }
-        return $rows;
+
+        unset($rows, $row);
+        return $newRows;
     }
 }

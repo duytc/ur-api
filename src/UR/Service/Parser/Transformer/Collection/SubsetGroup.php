@@ -6,6 +6,7 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use SplDoublyLinkedList;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
@@ -46,6 +47,8 @@ class SubsetGroup implements CollectionTransformerInterface
     {
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
+        $types = $collection->getTypes();
+
         $mappedFields = array_flip($connectedDataSource->getMapFields());
         $allFields = $connectedDataSource->getDataSet()->getAllDimensionMetrics();
         foreach ($rows as $row) {
@@ -73,17 +76,21 @@ class SubsetGroup implements CollectionTransformerInterface
         }
 
         // create subset
+        $copyCollection = clone $collection;
         $groupByTransform = new GroupByColumns($this->groupFields);
-        $subsetRows = $groupByTransform->transform($collection, $em, $connectedDataSource, $fromDateFormats, $connectedDataSource->getMapFields())->getRows();
+        $subsetRows = $groupByTransform->transform($copyCollection, $em, $connectedDataSource, $fromDateFormats, $connectedDataSource->getMapFields())->getRows();
         $subsetKeys = [];
 
+        $subSetData = [];
         foreach ($subsetRows as $row) {
             $subsetKeys[] = $this->getJoinKey($this->groupFields, $row, $connectedDataSource);
+            $subSetData[] = $row;
         }
 
-        $subsetRows = array_combine($subsetKeys, $subsetRows);
+        $subsetRows = array_combine($subsetKeys, $subSetData);
 
-        foreach ($rows as &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
             $joinKey = $this->getJoinKey($this->groupFields, $row, $connectedDataSource);
 
             if (!isset($subsetRows[$joinKey])) {
@@ -97,12 +104,13 @@ class SubsetGroup implements CollectionTransformerInterface
                 $isNumber = array_key_exists($leftSide, $allFields) && $allFields[$leftSide] == FieldType::NUMBER;
                 $row[$leftSide] = $isNumber ? round($subsetRow[$rightSide]) : $subsetRow[$rightSide];
             }
+            $newRows->push($row);
+            unset($row);
         }
 
-        $collection->setRows($rows);
-        $collection->setColumns($columns);
-
-        return $collection;
+        unset($rows, $row);
+        unset($collection, $copyCollection, $subsetRows, $subSetData, $subsetKeys);
+        return new Collection($columns, $newRows, $types);
     }
 
     /**

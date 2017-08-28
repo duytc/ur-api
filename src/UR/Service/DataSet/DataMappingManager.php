@@ -5,6 +5,7 @@ namespace UR\Service\DataSet;
 
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver\Statement;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -84,55 +85,47 @@ class DataMappingManager implements DataMappingManagerInterface
         ];
 
         $reportDataSet = new DataSet($data);
+        $page = !empty($param->getPage()) ? intval($param->getPage()) : 1;
+        $limit = !empty($param->getLimit()) ? intval($param->getLimit()) : 10;
 
-        /** Inherit code from UR report bundle */
-        $array = $this->sqlBuilder->buildQueryForSingleDataSet($reportDataSet, null, SqlBuilder::OPERATOR_AND);
+        $result = $this->sqlBuilder->buildQueryForSingleDataSet($reportDataSet, $page, $limit, [], [], $param->getSortField(), $param->getSortDirection());
+        $stmt = $result[SqlBuilder::STATEMENT_KEY];
 
-        /** @var QueryBuilder $qb */
-        $qb = $array[SqlBuilder::STATEMENT_KEY];
-
-
-        if (!empty($param->getSortField())) {
-            $sortField = $param->getSortField();
-            $sortDirection = !empty($param->getSortDirection()) ? $param->getSortDirection() : 'ASC';
-
-            $qb
-                ->orderBy($this->conn->quoteIdentifier($sortField), $sortDirection);
-        }
-
-        $page = !empty($param->getPage()) ? $param->getPage() : 1;
-        $limit = !empty($param->getLimit()) ? $param->getLimit() : 10;
-        $offSet = ($page - 1) * $limit;
-
-        $counter = clone $qb;
-        $count = intval($counter->execute()->rowCount());
+        $rows = $stmt->fetchAll();
+        $rows = $this->removeDataSetIdFromFieldName($dataSet->getId(), $this->privateFields, $rows);
+        $rows = $this->removeDataSetIdFromRows($dataSet->getId(), $rows);
+        $rows = $this->removeHiddenFields($dataSet, $rows);
 
         $fieldTypes = $this->getFieldTypes($dataSet);
         $columns = $this->getColumns($fieldTypes);
 
         $paginationDTO = [
-            'totalRecord' => $count,
-            'records' => [],
+            'records' => $rows,
             'itemPerPage' => $limit,
             'currentPage' => $page,
             'fieldTypes' => $fieldTypes,
             'columns' => $columns
         ];
 
-        $qb
-            ->setFirstResult($offSet)
-            ->setMaxResults($limit);
 
-        try {
-            $stmt = $qb->execute();
-            $rows = $stmt->fetchAll();
-            $rows = $this->removeDataSetIdFromFieldName($dataSet->getId(), $this->privateFields, $rows);
-            $rows = $this->removeDataSetIdFromRows($dataSet->getId(), $rows);
-            $rows = $this->removeHiddenFields($dataSet, $rows);
-            $paginationDTO['records'] = $rows;
-        } catch (Exception $e) {
+        /** @var Statement $counter */
+        $counter = $this->sqlBuilder->buildGroupQueryForSingleDataSet($reportDataSet);
+        $totalReport = 0;
 
+        if ($counter instanceof Statement) {
+            $rows = $counter->fetchAll();
+            $count = count($rows);
+
+            // has group transform
+            if ($count > 1) {
+                $totalReport = $count;
+            } else {
+                $total = $rows[0];
+                $totalReport = intval($total['total']);
+            }
         }
+
+        $paginationDTO['totalRecord'] = $totalReport;
 
         return $paginationDTO;
     }

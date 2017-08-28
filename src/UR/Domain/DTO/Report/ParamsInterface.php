@@ -16,6 +16,10 @@ interface ParamsInterface
      */
     public function getTransforms();
 
+    public function addTransform(TransformInterface $transform);
+
+    public function setTransforms($transforms);
+
     /**
      * @return DataSet[]
      */

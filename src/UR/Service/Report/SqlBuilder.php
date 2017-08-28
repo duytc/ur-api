@@ -3,7 +3,6 @@ namespace UR\Service\Report;
 
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Driver\Statement;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Table;
@@ -19,22 +18,28 @@ use UR\Domain\DTO\Report\Filters\NumberFilter;
 use UR\Domain\DTO\Report\Filters\NumberFilterInterface;
 use UR\Domain\DTO\Report\Filters\TextFilter;
 use UR\Domain\DTO\Report\Filters\TextFilterInterface;
-use UR\Domain\DTO\Report\JoinBy\JoinConfig;
 use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
+use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
+use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
+use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
+use UR\Domain\DTO\Report\Transforms\GroupByTransform;
+use UR\Domain\DTO\Report\Transforms\NewFieldTransform;
 use UR\Entity\Core\DataSet;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
+use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\Synchronizer;
-use UR\Service\StringUtilTrait;
+use UR\Service\SqlUtilTrait;
 
 class SqlBuilder implements SqlBuilderInterface
 {
-    use StringUtilTrait;
+    use SqlUtilTrait;
     use JoinConfigUtilTrait;
 
     const STATEMENT_KEY = 'statement';
     const DATE_RANGE_KEY = 'dateRange';
+    const SUB_QUERY = 'subQuery';
     const CONDITION_KEY = 'condition';
 
     const FIRST_ELEMENT = 0;
@@ -54,9 +59,6 @@ class SqlBuilder implements SqlBuilderInterface
     const JOIN_PARAM_FROM_JOIN_FIELD = 'fromJoinField';
     const JOIN_PARAM_TO_JOIN_FIELD = 'toJoinField';
     const JOIN_PARAM_TO_TABLE_NAME = 'tableName';
-
-    const OPERATOR_AND = 'AND';
-    const OPERATOR_OR = 'OR';
 
     /**
      * @var Connection
@@ -81,15 +83,34 @@ class SqlBuilder implements SqlBuilderInterface
     /**
      * @inheritdoc
      */
-    public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $overridingFilters = null, $logicOperator = self::OPERATOR_AND)
+    public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $page = null, $limit = null, $transforms = [], $searches = [],
+        $sortField = null, $sortDirection = null, $overridingFilters = null)
     {
         $metrics = $dataSet->getMetrics();
         $dimensions = $dataSet->getDimensions();
         $filters = $dataSet->getFilters();
+
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $tableColumns = array_keys($table->getColumns());
         $dataSetRepository = $this->em->getRepository(DataSet::class);
         $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
+        $types = [];
+        $realMetrics = $dataSetEntity->getMetrics();
+        foreach ($realMetrics as $metric => $type) {
+            $types[sprintf('%s_%d', $metric, $dataSet->getDataSetId())] = $type;
+        }
+
+        $realDimensions = $dataSetEntity->getDimensions();
+        foreach ($realDimensions as $dimension => $type) {
+            $types[sprintf('%s_%d', $dimension, $dataSet->getDataSetId())] = $type;
+        }
+
+        if ($searches === null) {
+            $searches = [];
+        }
+        $searchFilters = $this->convertSearchToFilter($types, $searches);
+        $filters = array_merge($filters, $searchFilters);
+
         /*
          * we get all fields from data set instead of selected fields in report view.
          * Notice: after that, we should filter all fields that is not yet selected.
@@ -97,10 +118,9 @@ class SqlBuilder implements SqlBuilderInterface
          * If not, the transformers have no value on none-selected fields, so that produce the null value
          */
         $fields = array_keys($dataSetEntity->getAllDimensionMetrics());
-        $fieldsDataSetReport = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
         // merge with dimensions, metrics of dataSetDTO because it contains hidden columns such as __date_month, __date_year, ...
-        $temporaryFields = $this->getTemporaryFieldsFromDataSetTable($table, array_merge($dimensions, $metrics));
-        $fields = array_merge($fields, $dimensions, $metrics, $temporaryFields, $fieldsDataSetReport);
+        $hiddenFields = $this->getHiddenFieldsFromDataSetTable($table);
+        $fields = array_merge($fields, $dimensions, $metrics, $hiddenFields);
         $fields = array_values(array_unique($fields));
 
         if (count($tableColumns) < 1) {
@@ -117,205 +137,250 @@ class SqlBuilder implements SqlBuilderInterface
             throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
         }
 
-        $qb = $this->connection->createQueryBuilder();
+        $this
+            ->connection
+            ->getWrappedConnection()
+            ->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 
-        foreach ($fields as $field) {
-            $qb->addSelect(sprintf('%s as %s_%d', $this->connection->quoteIdentifier($field), $field, $dataSet->getDataSetId()));
-        }
+        $subQb = $this->connection->createQueryBuilder();
 
-        $qb->from($this->connection->quoteIdentifier($table->getName()));
+        $hasGroup = false;
+        $hasNewFieldTransform = false;
+        $timezone = 'UTC';
+        foreach ($transforms as $transform) {
+            if ($transform instanceof GroupByTransform) {
+                $hasGroup = true;
+                $timezone = $transform->getTimezone();
+                continue;
+            }
 
-        if (empty($filters) && empty($overridingFilters)) {
-            $overwriteDateCondition = sprintf('%s IS NULL', $this->connection->quoteIdentifier(\UR\Model\Core\DataSetInterface::OVERWRITE_DATE));
-            $qb->where($overwriteDateCondition);
-            return array(
-                self::DATE_RANGE_KEY => [],
-                self::STATEMENT_KEY => $qb
-            );
-        }
-
-        $buildResult = $this->buildFilters($filters);
-        $conditions = $buildResult[self::CONDITION_KEY];
-        $dateRange = $buildResult[self::DATE_RANGE_KEY];
-        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            $overridingResult = $this->buildFilters($overridingFilters, $overrideFilter = true, null, $dataSet->getDataSetId());
-            $conditions = array_merge($conditions, $overridingResult[self::CONDITION_KEY]);
-            // override date range
-            if (!empty($buildResult[self::DATE_RANGE_KEY])) {
-                $dateRange = $overridingResult[self::DATE_RANGE_KEY];
+            if (
+                $transform instanceof AddFieldTransform ||
+                $transform instanceof ComparisonPercentTransform ||
+                $transform instanceof AddCalculatedFieldTransform
+            ) {
+                $hasNewFieldTransform = true;
+                continue;
             }
         }
 
-        if (count($conditions) == 0) {
-            $qb->where($conditions[self::FIRST_ELEMENT]);
-            $qb = $this->bindFilterParam($qb, $filters);
+        // Add SELECT clause
+        foreach ($fields as $field) {
+            $fieldWithId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
+            if (array_key_exists($fieldWithId, $types) && in_array($types[$fieldWithId], [FieldType::NUMBER, FieldType::DECIMAL]) && $hasGroup) {
+                $subQb->addSelect(sprintf('SUM(%s) as %s_%d', $this->connection->quoteIdentifier($field), $field, $dataSet->getDataSetId()));
+                continue;
+            } else if (array_key_exists($fieldWithId, $types) && $types[$fieldWithId] == FieldType::DATETIME && $hasGroup) {
+                $subQb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as %s_%d", $this->connection->quoteIdentifier($field), $timezone, $field, $dataSet->getDataSetId()));
+                continue;
+            }
+
+            $subQb->addSelect(sprintf('%s as %s_%d', $this->connection->quoteIdentifier($field), $field, $dataSet->getDataSetId()));
+        }
+
+        $subQb->from($this->connection->quoteIdentifier($table->getName()));
+
+        // merge overriding filters
+        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
+            /** @var FilterInterface $filter */
+            foreach ($overridingFilters as $filter) {
+                $filter->trimTrailingAlias($dataSet->getDataSetId());
+            }
+
+            $filters = array_merge($filters, $overridingFilters);
+        }
+
+        $dateRange = null;
+
+        // Add WHERE clause
+        if (empty($filters)) {
+            $overwriteDateCondition = sprintf('%s IS NULL', $this->connection->quoteIdentifier(\UR\Model\Core\DataSetInterface::OVERWRITE_DATE));
+            $subQb->where($overwriteDateCondition);
+        } else {
+            $buildResult = $this->buildFilters($filters);
+            $conditions = $buildResult[self::CONDITION_KEY];
+            $dateRange = $buildResult[self::DATE_RANGE_KEY];
+            if (count($conditions) == 1) {
+                $subQb->where($conditions[self::FIRST_ELEMENT]);
+            } else {
+                $subQb->where(implode(' AND ', $conditions));
+            }
+        }
+
+        $subQb = $this->addGroupByQuery($subQb, $transforms, $types);
+
+        if ($hasNewFieldTransform === false) {
+            $subQb = $this->bindFilterParam($subQb, $filters);
+            $subQuery = clone $subQb;
+            $subQb = $this->addLimitQuery($subQb, $page, $limit);
+            $subQb = $this->addSortQuery($subQb, $transforms, $sortField, $sortDirection);
 
             return array(
-                self::DATE_RANGE_KEY => $dateRange,
-                self::STATEMENT_KEY => $qb
+                self::SUB_QUERY => $subQuery->getSQL(),
+                self::STATEMENT_KEY => $subQb->execute(),
+                self::DATE_RANGE_KEY => $dateRange
             );
         }
-        //Add filter OVERWRITE DATE = null
 
-        $where = implode(" $logicOperator ", $conditions);
-        $where = sprintf('%s IS NULL AND (%s)', \UR\Model\Core\DataSetInterface::OVERWRITE_DATE, $where);
-        $qb->where($where);
+        $qb = $this->connection->createQueryBuilder();
+        $qb->addSelect('*');
 
-        $qb = $this->bindFilterParam($qb, $filters);
-        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            $qb = $this->bindFilterParam($qb, $overridingFilters, $dataSet->getDataSetId());
+        foreach ($transforms as $transform) {
+            if ($transform instanceof AddCalculatedFieldTransform) {
+                $qb = $this->addCalculatedFieldTransformQuery($qb, $transform);
+                continue;
+            }
+
+            if ($transform instanceof AddFieldTransform) {
+                $qb = $this->addNewFieldTransformQuery($qb, $transform);
+                continue;
+            }
+
+            if ($transform instanceof ComparisonPercentTransform) {
+                $qb = $this->addComparisonPercentTransformQuery($qb, $transform);
+                continue;
+            }
         }
 
+        $subQuery = $subQb->getSQL();
+        $qb->from("($subQuery)", "sub1");
+        $qb = $this->bindFilterParam($qb, $filters);
+        $subQuery = clone $qb;
+        $qb = $this->addLimitQuery($qb, $page, $limit);
+        $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
+
         return array(
-            self::STATEMENT_KEY => $qb,
+            self::SUB_QUERY => $subQuery->getSQL(),
+            self::STATEMENT_KEY => $qb->execute(),
             self::DATE_RANGE_KEY => $dateRange
         );
     }
 
-    /**
-     * @param QueryBuilder $qb
-     * @param $filters
-     * @param null $dataSetId
-     * @return QueryBuilder
-     */
-    private function bindFilterParam(QueryBuilder $qb, $filters, $dataSetId = null)
+    public function buildGroupQueryForSingleDataSet($subQuery, DataSetInterface $dataSet, $transforms = [], $searches = [], $showInTotal = null, $overridingFilters = null)
     {
-        $filterKeys = [];
-        foreach ($filters as $filter) {
-            if (!$filter instanceof FilterInterface) {
-                continue;
-            }
+        $dataSetRepository = $this->em->getRepository(DataSet::class);
+        $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
+        $types = [];
+        $realMetrics = $dataSetEntity->getMetrics();
+        foreach ($realMetrics as $metric => $type) {
+            $types[sprintf('%s_%d', $metric, $dataSet->getDataSetId())] = $type;
+        }
 
-            if (!array_key_exists($filter->getFieldName(), $filterKeys)) {
-                $filterKeys[$filter->getFieldName()] = 1;
-            } else {
-                $filterKeys[$filter->getFieldName()]++;
-            }
+        $realDimensions = $dataSetEntity->getDimensions();
+        foreach ($realDimensions as $dimension => $type) {
+            $types[sprintf('%s_%d', $dimension, $dataSet->getDataSetId())] = $type;
+        }
 
-            if ($filter instanceof DateFilterInterface) {
-                $startDate = $filter->getStartDate();
-                if (!$startDate instanceof \DateTime) {
-                    $startDate = date_create_from_format('Y-m-d', $startDate);
-                }
-
-                if ($startDate instanceof \DateTime) {
-                    $startDate = $startDate->format('Y-m-d 00:00:00');
-                }
-
-                $endDate = $filter->getEndDate();
-                if (!$endDate instanceof \DateTime) {
-                    $endDate = date_create_from_format('Y-m-d', $endDate);
-                }
-
-                if ($endDate instanceof \DateTime) {
-                    $endDate = $endDate->format('Y-m-d 00:00:00');
-                }
-
-                $qb->setParameter(sprintf(':startDate%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0), $startDate, Type::STRING);
-                $qb->setParameter(sprintf(':endDate%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0), $endDate, Type::STRING);
-            } else if ($filter instanceof TextFilterInterface) {
-                $bindParamName = sprintf(':%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0);
-                if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN])) {
-                    $compareValue = $filter->getComparisonValue();
-                    $compareValue = join(',', $compareValue);
-                    $qb->setParameter($bindParamName, $compareValue, PDO::PARAM_STR);
-                } else {
-                    $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::STRING);
-                }
-            } else if ($filter instanceof NumberFilterInterface) {
-                $bindParamName = sprintf(':%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0);
-                if (in_array($filter->getComparisonType(), [NumberFilter::COMPARISON_TYPE_IN, NumberFilter::COMPARISON_TYPE_NOT_IN])) {
-                    $compareValue = $filter->getComparisonValue();
-                    $compareValue = join(',', $compareValue);
-                    $qb->setParameter($bindParamName, $compareValue, PDO::PARAM_STR);
-                } else {
-                    $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::INTEGER);
-                }
+        $newFieldsTransform = [];
+        foreach ($transforms as $transform) {
+            if ($transform instanceof NewFieldTransform) {
+                $newFieldsTransform[] = $transform->getFieldName();
             }
         }
 
-        return $qb;
-    }
+        $metrics = $showInTotal;
+        if ($showInTotal === null) {
+            $dataSetId = $dataSet->getDataSetId();
+            $metrics = $dataSet->getMetrics();
+            $dataSetRepository = $this->em->getRepository(DataSet::class);
+            $dataSetObject = $dataSetRepository->find($dataSetId);
+            if ($dataSetObject instanceof \UR\Model\Core\DataSetInterface) {
+                $metrics = $dataSetObject->getMetrics();
+                foreach ($metrics as $key => $type) {
+                    if (in_array($type, [FieldType::NUMBER, FieldType::DECIMAL])) {
+                        $metrics[sprintf('%s_%d', $key, $dataSetId)] = $type;
+                    }
 
-    /**
-     * bind params values based on given filters
-     *
-     * @param Statement $stmt
-     * @param $filters
-     * @param null $dataSetId
-     * @return Statement
-     */
-    private function bindStatementParam(Statement $stmt, $filters, $dataSetId = null)
-    {
-        $filterKeys = [];
-        foreach ($filters as $filter) {
-            if (!$filter instanceof FilterInterface) {
+                    unset($metrics[$key]);
+                }
+
+                $metrics = array_keys($metrics);
+            }
+        }
+
+        if (!is_array($metrics)) {
+            $metrics = [];
+        }
+
+        $filters = $dataSet->getFilters();
+        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
+            foreach ($overridingFilters as $filter) {
+                $filter->trimTrailingAlias($dataSet->getDataSetId());
+                $filters[] = $filter;
+            }
+        }
+
+        if ($searches === null) {
+            $searches = [];
+        }
+        $searchFilters = $this->convertSearchToFilter($types, $searches);
+        $filters = array_merge($filters, $searchFilters);
+        $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
+        $tableColumns = array_keys($table->getColumns());
+
+        foreach ($metrics as $key => $field) {
+            if (in_array($field, $newFieldsTransform)) {
                 continue;
             }
 
-            if (!array_key_exists($filter->getFieldName(), $filterKeys)) {
-                $filterKeys[$filter->getFieldName()] = 1;
-            } else {
-                $filterKeys[$filter->getFieldName()]++;
+            $field = $this->removeIdSuffix($field);
+
+            if (!in_array($field, $tableColumns)) {
+                unset($metrics[$key]);
+                continue;
             }
 
-            $bindParamName = sprintf('%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0);
+            $metrics[$key] = $field;
+        }
 
-            if ($filter instanceof DateFilterInterface) {
-                $startDate = $filter->getStartDate();
-                if (!$startDate instanceof \DateTime) {
-                    $startDate = date_create_from_format('Y-m-d', $startDate);
-                }
+        unset($field);
+        $qb = $this->connection->createQueryBuilder();
 
-                if ($startDate instanceof \DateTime) {
-                    $startDate = $startDate->format('Y-m-d 00:00:00');
-                }
-
-                $endDate = $filter->getEndDate();
-                if (!$endDate instanceof \DateTime) {
-                    $endDate = date_create_from_format('Y-m-d', $endDate);
-                }
-
-                if ($endDate instanceof \DateTime) {
-                    $endDate = $endDate->format('Y-m-d 00:00:00');
-                }
-
-                $stmt->bindValue(sprintf('startDate%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0), $startDate, PDO::PARAM_STR);
-                $stmt->bindValue(sprintf('endDate%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0), $endDate, PDO::PARAM_STR);
-            } else if ($filter instanceof TextFilterInterface) {
-                if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_CONTAINS, TextFilter::COMPARISON_TYPE_NOT_CONTAINS, TextFilter::COMPARISON_TYPE_START_WITH, TextFilter::COMPARISON_TYPE_END_WITH])) {
+        if (!empty($metrics)) {
+            foreach ($metrics as $field) {
+                if (in_array($field, $newFieldsTransform)) {
+                    $qb->addSelect(sprintf('SUM(%s) as `%s`', $this->connection->quoteIdentifier($field), $field));
                     continue;
                 }
 
-                if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN])) {
-                    $compareValue = $filter->getComparisonValue();
-                    $compareValue = join(',', $compareValue);
-                    $stmt->bindValue($bindParamName, $compareValue, PDO::PARAM_STR);
-                } else {
-                    $compareValue = $filter->getComparisonValue();
-                    $compareValue = $this->connection->quote($compareValue);
-                    $stmt->bindValue($bindParamName, $compareValue, PDO::PARAM_STR);
-                }
-            } else if ($filter instanceof NumberFilterInterface) {
-                if (in_array($filter->getComparisonType(), [NumberFilter::COMPARISON_TYPE_IN, NumberFilter::COMPARISON_TYPE_NOT_IN])) {
-                    $compareValue = $filter->getComparisonValue();
-                    $compareValue = join(',', $compareValue);
-                    $stmt->bindValue($bindParamName, $compareValue, PDO::PARAM_STR);
-                } else {
-                    $compareValue = $filter->getComparisonValue();
-                    $stmt->bindValue($bindParamName, $compareValue, PDO::PARAM_INT);
-                }
+                $qb->addSelect(sprintf('SUM(`%s_%d`) as %s_%d', $field, $dataSet->getDataSetId(), $field, $dataSet->getDataSetId()));
             }
         }
 
-        return $stmt;
-    }
+        $qb->addSelect('COUNT(*) as total');
 
+//        $subQuery = $subQuery->getSQL();
+        $qb->from("($subQuery)", "sub");
+
+//        if (empty($filters)) {
+//            $overwriteDateCondition = sprintf('%s IS NULL', $this->connection->quoteIdentifier(\UR\Model\Core\DataSetInterface::OVERWRITE_DATE));
+//            $qb->where($overwriteDateCondition);
+//            $this->addGroupByQuery($qb, $transforms, $types, $removeSuffix = true);
+//
+//            return $qb->execute();
+//        }
+//
+//        $buildResult = $this->buildFilters($filters);
+//        $conditions = $buildResult[self::CONDITION_KEY];
+//        if (count($conditions) == 1) {
+//            $qb->where($conditions[self::FIRST_ELEMENT]);
+//            $qb = $this->bindFilterParam($qb, $filters);
+//            $this->addGroupByQuery($qb, $transforms, $types, $removeSuffix = true);
+//
+//            return $qb->execute();
+//        }
+//
+//        $qb->where(implode(' AND ', $conditions));
+        $qb = $this->bindFilterParam($qb, $filters);
+//        $this->addGroupByQuery($qb, $transforms, $types, $removeSuffix = true);
+
+        return $qb->execute();
+    }
 
     /**
      * @inheritdoc
      */
-    public function buildQuery(array $dataSets, array $joinConfig, $overridingFilters = null)
+    public function buildQuery(array $dataSets, array $joinConfig, $page = null, $limit = null, $transforms = [], $searches = [], $sortField = null, $sortDirection = null, $overridingFilters = null)
     {
         if (empty($dataSets)) {
             throw new InvalidArgumentException('no dataSet');
@@ -327,82 +392,116 @@ class SqlBuilder implements SqlBuilderInterface
                 throw new RuntimeException('expect an DataSetInterface object');
             }
 
-            $result = $this->buildQueryForSingleDataSet($dataSet);
-            return array (
-                self::DATE_RANGE_KEY => $result[self::DATE_RANGE_KEY],
-                self::STATEMENT_KEY => $result[self::STATEMENT_KEY]->execute()
-            );
+            return $this->buildQueryForSingleDataSet($dataSet);
         }
 
         if (count($joinConfig) < 1) {
             throw new InvalidArgumentException('expect joined field is not empty array when multiple data sets is selected');
         }
 
-        $qb = $this->connection->createQueryBuilder();
+        $this
+            ->connection
+            ->getWrappedConnection()
+            ->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+
+        $subQb = $this->connection->createQueryBuilder();
         $conditions = [];
         $dateRange = [];
 
         // add select clause
-        $firstJoinBy = null;
+        $dataSetRepository = $this->em->getRepository(DataSet::class);
+        $types = [];
+        $dataSetIndexes = [];
+        $hasGroup = false;
+        $hasNewFieldTransform = false;
+        $timezone = 'UTC';
+        foreach ($transforms as $transform) {
+            if ($transform instanceof GroupByTransform) {
+                $hasGroup = true;
+                $timezone = $transform->getTimezone();
+                continue;
+            }
+
+            if (
+                $transform instanceof AddFieldTransform ||
+                $transform instanceof ComparisonPercentTransform ||
+                $transform instanceof AddCalculatedFieldTransform
+            ) {
+                $hasNewFieldTransform = true;
+                continue;
+            }
+        }
 
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
-            $qb = $this->buildSelectQuery($qb, $dataSet, $dataSetIndex, $joinConfig);
-            $buildResult = $this->buildFilters($dataSet->getFilters(), $overrideFilter = false, sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());
+            $dataSetIndexes[$dataSet->getDataSetId()] = $dataSetIndex;
+            $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
+            $metrics = $dataSetEntity->getMetrics();
+            foreach ($metrics as $key => $field) {
+                $metrics[sprintf('%s_%d', $key, $dataSet->getDataSetId())] = $field;
+                unset($metrics[$key]);
+            }
 
-            $overrideDateField = sprintf('%s.%s', sprintf('t%d', $dataSetIndex), \UR\Model\Core\DataSetInterface::OVERWRITE_DATE);
-            $conditions[] = sprintf('%s IS NULL', $overrideDateField);
-            
-            $conditions = array_merge($conditions, $buildResult[self::CONDITION_KEY]);
-            $dateRange = array_merge($dateRange, $buildResult[self::DATE_RANGE_KEY]);
+            $dimensions = $dataSetEntity->getDimensions();
+            foreach ($dimensions as $key => $field) {
+                $dimensions[sprintf('%s_%d', $key, $dataSet->getDataSetId())] = $field;
+                unset($dimensions[$key]);
+            }
+            $types = array_merge($types, $metrics, $dimensions);
         }
 
-        $newFilters = [];
-        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            foreach ($overridingFilters as $key => $filter) {
-                if (!$filter instanceof FilterInterface) {
-                    continue;
-                }
+        unset($metrics, $dimensions);
 
-                if ($filter instanceof DateFilterInterface) {
-                    $dateRange = new DateRange($filter->getStartDate(), $filter->getEndDate());
-                }
+        if ($searches === null) {
+            $searches = [];
+        }
 
-                $fieldName = $filter->getFieldName();
-
-                $result = $this->convertOutputJoinField($fieldName, $joinConfig, $dataSetId);
-                if ($result) {
-                    $filter->setFieldName($result);
-                    $fieldName = $result;
-                } else {
-                    $idAndField = $this->getIdSuffixAndField($fieldName);
-                    if ($idAndField) {
-                        $dataSetId = $idAndField['id'];
-                        $fieldName = $idAndField['field'];
-                        $filter->setFieldName($idAndField['field']);
-                    }
-                }
-
-                $filterKeys = [];
-                /** @var DataSetInterface $dataSet */
-                foreach ($dataSets as $dataSetIndex => $dataSet) {
-                    if ((in_array($fieldName, $dataSet->getDimensions()) ||
-                        in_array($fieldName, $dataSet->getMetrics())) && $dataSetId == $dataSet->getDataSetId()
-                    ) {
-                        if (!array_key_exists($filter->getFieldName(), $filterKeys)) {
-                            $filterKeys[$filter->getFieldName()] = 1;
-                        } else {
-                            $filterKeys[$filter->getFieldName()]++;
-                        }
-                        $conditions[] = $this->buildSingleFilter($filter, $filterKeys, sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());//[self::CONDITION_KEY];
-                        if (!isset($newFilters[$dataSetId])) {
-                            $newFilters[$dataSetId] = [];
-                        }
-
-                        $newFilters[$dataSetId][] = $filter;
-                    }
+        // merge search filters to current filters
+        $newSearchFilters = [];
+        if (!empty($searches)) {
+            $searchFilters = $this->convertSearchToFilter($types, $searches, $joinConfig);
+            /** @var FilterInterface $searchFilter */
+            foreach ($searchFilters as $searchFilter) {
+                $field = $searchFilter->getFieldName();
+                $idAndField = $this->getIdSuffixAndField($field);
+                if ($idAndField) {
+                    $newSearchFilters[$idAndField['id']][] = $searchFilter;
                 }
             }
+        }
+
+        // merge overriding filters to current filters
+        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
+            /** @var FilterInterface $filter */
+            foreach ($overridingFilters as $filter) {
+                $field = $filter->getFieldName();
+                $alias = $this->convertOutputJoinField($field, $joinConfig);
+                if ($alias) {
+                    $field = $alias;
+                }
+                $idAndField = $this->getIdSuffixAndField($field);
+                if ($idAndField) {
+                    $clonedFilter = $this->cloneFilter($filter);
+                    $clonedFilter->setFieldName($idAndField['field']);
+                    $newSearchFilters[$idAndField['id']][] = $clonedFilter;
+                }
+            }
+        }
+
+        // Add SELECT clause
+        $selectedJoinFields = [];
+        $allFilters = [];
+        /** @var DataSetInterface $dataSet */
+        foreach ($dataSets as $dataSetIndex => $dataSet) {
+            $filters = $dataSet->getFilters();
+            if (array_key_exists($dataSet->getDataSetId(), $newSearchFilters)) {
+                $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
+            }
+            $allFilters = array_merge($allFilters, $filters);
+            $subQb = $this->buildSelectQuery($subQb, $dataSet, $dataSetIndex, $joinConfig, $selectedJoinFields, $hasGroup, $timezone);
+            $buildResult = $this->buildFilters($filters, sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());
+            $conditions = array_merge($conditions, $buildResult[self::CONDITION_KEY]);
+            $dateRange = array_merge($dateRange, $buildResult[self::DATE_RANGE_KEY]);
         }
 
         // add JOIN clause
@@ -410,7 +509,7 @@ class SqlBuilder implements SqlBuilderInterface
             return $dataSet->getDataSetId();
         }, $dataSets);
 
-        $sql = $this->buildJoinQueryForJoinConfig($qb, $dataSetIds, $joinConfig);
+        $subQuery = $this->buildJoinQueryForJoinConfig($subQb, $dataSetIds, $joinConfig);
 
         if (count($conditions) == 1) {
             $where = $conditions[self::FIRST_ELEMENT];
@@ -418,47 +517,245 @@ class SqlBuilder implements SqlBuilderInterface
             $where = implode(' AND ', $conditions);
         }
 
-        $sql = sprintf('%s WHERE (%s)', $sql, $where);
-        $stmt = $this->connection->prepare($sql);
+        $subQuery = sprintf('%s WHERE (%s)', $subQuery, $where);
+        $subQuery = $this->generateGroupByQuery($subQuery, $transforms, $types, $dataSetIndexes);
 
-        /** @var DataSetInterface $dataSet */
-        foreach ($dataSets as $dataSetIndex => $dataSet) {
-            $stmt = $this->bindStatementParam($stmt, $dataSet->getFilters(), $dataSet->getDataSetId());
+        if ($hasNewFieldTransform === false) {
+            $query = $subQuery;
+            $subQuery = $this->generateSortQuery($subQuery, $transforms, $sortField, $sortDirection);
+            $subQuery = $this->generateLimitQuery($subQuery, $page, $limit);
+
+            $stmt = $this->connection->prepare($subQuery);
+
+            /** @var DataSetInterface $dataSet */
+            foreach ($dataSets as $dataSetIndex => $dataSet) {
+                $filters = $dataSet->getFilters();
+                if (array_key_exists($dataSet->getDataSetId(), $newSearchFilters)) {
+                    $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
+                }
+
+                $stmt = $this->bindStatementParam($stmt, $filters, $dataSet->getDataSetId());
+            }
+
+            $stmt->execute();
+
+            return array (
+                self::SUB_QUERY => $query,
+                self::STATEMENT_KEY => $stmt,
+                self::DATE_RANGE_KEY => $dateRange
+            );
         }
 
-        if (is_array($newFilters) && count($newFilters) > 0) {
-            foreach ($newFilters as $dataSetId => $filters) {
-                $stmt = $this->bindStatementParam($stmt, $filters, $dataSetId);
+        $qb = $this->connection->createQueryBuilder();
+        $qb->addSelect('*');
+
+        foreach ($transforms as $transform) {
+            if ($transform instanceof AddCalculatedFieldTransform) {
+                $qb = $this->addCalculatedFieldTransformQuery($qb, $transform);
+                continue;
+            }
+
+            if ($transform instanceof AddFieldTransform) {
+                $qb = $this->addNewFieldTransformQuery($qb, $transform);
+                continue;
+            }
+
+            if ($transform instanceof ComparisonPercentTransform) {
+                $qb = $this->addComparisonPercentTransformQuery($qb, $transform);
+                continue;
             }
         }
 
-        $stmt->execute();
 
-        return array(
-            self::STATEMENT_KEY => $stmt,
+        $qb->from("($subQuery)", "sub1");
+        /** @var DataSetInterface $dataSet */
+        foreach ($dataSets as $dataSetIndex => $dataSet) {
+            $filters = $dataSet->getFilters();
+            if (array_key_exists($dataSet->getDataSetId(), $newSearchFilters)) {
+                $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
+            }
+
+            $qb = $this->bindFilterParam($qb, $filters, $dataSet->getDataSetId());
+        }
+
+        $subQuery = clone $qb;
+        $qb = $this->addLimitQuery($qb, $page, $limit);
+        $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
+
+        return array (
+            self::SUB_QUERY => $subQuery->getSQL(),
+            self::STATEMENT_KEY => $qb->execute(),
             self::DATE_RANGE_KEY => $dateRange
         );
     }
 
-    public function convertOutputJoinField($field, array $joinConfigs, &$dataSetId)
+    public function buildGroupQuery($subQuery, array $dataSets, array $joinConfig, $transforms = [], $searches = [], $showInTotal = null, $overridingFilters = null)
     {
-        /** @var JoinConfig $joinConfig */
-        foreach ($joinConfigs as $joinConfig) {
-            $outputJoinFields = explode(',', $joinConfig->getOutputField());
-            foreach ($outputJoinFields as $index => $outputJoinField) {
-                if ($field == $outputJoinField) {
-                    $joinField = $joinConfig->getJoinFields()[0];
-                        $inputJoinFields = explode(',', $joinField->getField());
-                        if (isset($inputJoinFields[$index])) {
-                            $dataSetId = $joinField->getDataSet();
-                            return $inputJoinFields[$index];
+        if (count($dataSets) == 1) {
+            $dataSet = $dataSets[self::FIRST_ELEMENT];
+            if (!$dataSet instanceof DataSetInterface) {
+                throw new RuntimeException('expect an DataSetInterface object');
+            }
+
+            return $this->buildGroupQueryForSingleDataSet($subQuery, $dataSet, $transforms, $searches, $showInTotal, $overridingFilters);
+        }
+
+        if (count($joinConfig) < 1) {
+            throw new InvalidArgumentException('expect joined field is not empty array when multiple data sets is selected');
+        }
+
+        $newFieldsTransform = [];
+        foreach ($transforms as $transform) {
+            if ($transform instanceof NewFieldTransform) {
+                $newFieldsTransform[] = $transform->getFieldName();
+            }
+        }
+
+        $qb = $this->connection->createQueryBuilder();
+        $conditions = [];
+        $dateRange = [];
+
+        // add select clause
+        $types = [];
+        $dataSetRepository = $this->em->getRepository(DataSet::class);
+        $dataSetIndexes = [];
+        /** @var DataSetInterface $dataSet */
+        foreach ($dataSets as $dataSetIndex => $dataSet) {
+            $dataSetIndexes[$dataSet->getDataSetId()] = $dataSetIndex;
+            $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
+            $metrics = $dataSetEntity->getMetrics();
+            foreach ($metrics as $key => $field) {
+                $metrics[sprintf('%s_%d', $key, $dataSet->getDataSetId())] = $field;
+                unset($metrics[$key]);
+            }
+
+            $dimensions = $dataSetEntity->getDimensions();
+            foreach ($dimensions as $key => $field) {
+                $dimensions[sprintf('%s_%d', $key, $dataSet->getDataSetId())] = $field;
+                unset($dimensions[$key]);
+            }
+            $types = array_merge($types, $metrics, $dimensions);
+            if ($showInTotal === null) {
+                if ($dataSetEntity instanceof \UR\Model\Core\DataSetInterface) {
+                    $metrics = $dataSetEntity->getMetrics();
+                    foreach ($metrics as $key => $type) {
+                        if (in_array($type, [FieldType::NUMBER, FieldType::DECIMAL])) {
+                            $showInTotal[] = sprintf('%s_%d', $key, $dataSet->getDataSetId());
                         }
+                    }
                 }
             }
         }
 
-        return null;
+        $newSearchFilters = [];
+        if (!empty($searches)) {
+            $searchFilters = $this->convertSearchToFilter($types, $searches, $joinConfig);
+            /** @var FilterInterface $searchFilter */
+            foreach ($searchFilters as $searchFilter) {
+                $field = $searchFilter->getFieldName();
+                $idAndField = $this->getIdSuffixAndField($field);
+                if ($idAndField) {
+                    $searchFilter->setFieldName($idAndField['field']);
+                    $newSearchFilters[$idAndField['id']][] = $searchFilter;
+                }
+            }
+        }
+
+        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
+            /** @var FilterInterface $filter */
+            foreach ($overridingFilters as $filter) {
+                $field = $filter->getFieldName();
+                $alias = $this->convertOutputJoinField($field, $joinConfig);
+                if ($alias) {
+                    $field = $alias;
+                }
+                $idAndField = $this->getIdSuffixAndField($field);
+                if ($idAndField) {
+                    $clonedFilter = $this->cloneFilter($filter);
+                    $clonedFilter->setFieldName($idAndField['field']);
+                    $newSearchFilters[$idAndField['id']][] = $clonedFilter;
+                }
+            }
+        }
+
+        $metrics = [];
+        foreach ($showInTotal as $field) {
+            if (in_array($field, $newFieldsTransform)) {
+                $metrics[] = $field;
+                continue;
+            }
+
+            /** @var DataSetInterface $dataSet */
+            foreach ($dataSets as $dataSetIndex => $dataSet) {
+                $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
+                $tableColumns = array_keys($table->getColumns());
+                $fieldWithoutId = $this->removeIdSuffix($field);
+
+                if (in_array($fieldWithoutId, $tableColumns)) {
+                    $metrics[] = $field;
+                    break;
+                }
+            }
+        }
+
+        if (!empty($metrics)) {
+            foreach ($metrics as $field) {
+                if (in_array($field, $newFieldsTransform)) {
+                    $qb->addSelect(sprintf('SUM(%s) as `%s`', $this->connection->quoteIdentifier($field), $field));
+                    continue;
+                }
+
+                $qb->addSelect(sprintf('SUM(`%s`) as %s', $field, $field));
+            }
+        }
+
+        $qb->addSelect('COUNT(*) as total');
+
+//        $subQuery = $subQuery->getSQL();
+        $qb->from("($subQuery)", "sub");
+
+        /** @var DataSetInterface $dataSet */
+//        foreach ($dataSets as $dataSetIndex => $dataSet) {
+//            $filters = $dataSet->getFilters();
+//            if (array_key_exists($dataSet->getDataSetId(), $newSearchFilters)) {
+//                $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
+//            }
+//            $qb = $this->buildSelectGroupQuery($qb, $dataSet, $dataSetIndex, $joinConfig, $showInTotal);
+//            $buildResult = $this->buildFilters($filters, sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());
+//            $conditions = array_merge($conditions, $buildResult[self::CONDITION_KEY]);
+//            $dateRange = array_merge($dateRange, $buildResult[self::DATE_RANGE_KEY]);
+//        }
+
+        // add JOIN clause
+//        $dataSetIds = array_map(function (DataSetInterface $dataSet) {
+//            return $dataSet->getDataSetId();
+//        }, $dataSets);
+//
+//        $sql = $this->buildJoinQueryForJoinConfig($qb, $dataSetIds, $joinConfig);
+//
+//        if (count($conditions) == 1) {
+//            $where = $conditions[self::FIRST_ELEMENT];
+//        } else {
+//            $where = implode(' AND ', $conditions);
+//        }
+//
+//        $sql = sprintf('%s WHERE (%s)', $sql, $where);
+//        $sql = $this->generateGroupByQuery($sql, $transforms, $types, $dataSetIndexes, $forGrouper = true, $joinConfig);
+//        $stmt = $this->connection->prepare($sql);
+
+        /** @var DataSetInterface $dataSet */
+        foreach ($dataSets as $dataSetIndex => $dataSet) {
+            $filters = $dataSet->getFilters();
+            if (array_key_exists($dataSet->getDataSetId(), $newSearchFilters)) {
+                $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
+            }
+
+            $qb = $this->bindFilterParam($qb, $filters, $dataSet->getDataSetId());
+        }
+
+        return $qb->execute();
     }
+
 
     /**
      * @param $filterFieldName
@@ -489,9 +786,12 @@ class SqlBuilder implements SqlBuilderInterface
      * @param DataSetInterface $dataSet
      * @param $dataSetIndex
      * @param array $joinConfig
+     * @param $selectedJoinFields
+     * @param $hasGroup
+     * @param $timezone
      * @return QueryBuilder
      */
-    protected function buildSelectQuery(QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, array $joinConfig)
+    protected function buildSelectQuery(QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, array $joinConfig, array &$selectedJoinFields, $hasGroup = false, $timezone = 'UTC')
     {
         $metrics = $dataSet->getMetrics();
         $dimensions = $dataSet->getDimensions();
@@ -508,9 +808,10 @@ class SqlBuilder implements SqlBuilderInterface
          * If not, the transformers have no value on none-selected fields, so that produce the null value
          */
         $fields = array_keys($dataSetEntity->getAllDimensionMetrics());
+        $types = array_merge($dataSetEntity->getMetrics(), $dataSetEntity->getDimensions());
         // merge with dimensions, metrics of dataSetDTO because it contains hidden columns such as __date_month, __date_year, ...
-        $temporaryFields = $this->getTemporaryFieldsFromDataSetTable($table, array_merge($dimensions, $metrics));
-        $fields = array_merge($fields, $dimensions, $metrics, $temporaryFields);
+        $hiddenFields = $this->getHiddenFieldsFromDataSetTable($table);
+        $fields = array_merge($fields, $dimensions, $metrics, $hiddenFields);
         $fields = array_values(array_unique($fields));
 
         // filter all fields that are not in table's columns
@@ -531,8 +832,64 @@ class SqlBuilder implements SqlBuilderInterface
             if ($alias === null) {
                 continue;
             }
+
+            $outputField = $this->checkFieldInJoinConfig($field, $dataSet->getDataSetId(), $joinConfig);
+            if ($outputField) {
+                if (in_array($outputField, $selectedJoinFields)) {
+                    continue;
+                }
+                $selectedJoinFields[] = $outputField;
+            }
+
+            if (array_key_exists($field, $types) && in_array($types[$field], ['number', 'decimal']) && $hasGroup) {
+                $field = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
+                $qb->addSelect(sprintf("SUM(%s) as '%s'", $field, $alias));
+                continue;
+            }
+
+            if (array_key_exists($field, $types) && $types[$field] == FieldType::DATETIME && $hasGroup) {
+                $field = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
+                $qb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as %s", $field, $timezone, $alias));
+                continue;
+            }
+
+//            $field = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
+            $qb->addSelect(sprintf("%s as '%s'", sprintf('t%d.%s', $dataSetIndex, $field), $alias));
+        }
+
+        return $qb;
+    }
+
+    protected function buildSelectGroupQuery(QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, array $joinConfig, array $showInTotal)
+    {
+        $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
+        $tableColumns = array_keys($table->getColumns());
+        $fields = $showInTotal;
+
+        // filter all fields that are not in table's columns
+        foreach ($fields as $index => &$field) {
+            $field = $this->removeIdSuffix($field);
+            if (!in_array($field, $tableColumns)) {
+                unset($fields[$index]);
+            }
+        }
+
+        unset($field);
+        $fields = array_unique($fields);
+
+        // if no field is valid
+        if (empty($fields)) {
+            return $qb;
+        }
+
+        // build select query for each data set
+        foreach ($fields as $field) {
+            $alias = $this->getAliasForField($dataSet->getDataSetId(), $field, $joinConfig);
+            if ($alias === null) {
+                continue;
+            }
             $field = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
-            $qb->addSelect(sprintf('%s as "%s"', $field, $alias));
+            $qb->addSelect(sprintf("SUM(%s) as '%s'", $field, $alias));
         }
 
         return $qb;
@@ -566,22 +923,23 @@ class SqlBuilder implements SqlBuilderInterface
 
     /**
      * @param array $filters
-     * @param $overrideFilter
      * @param null $tableAlias
      * @param null $dataSetId
+     * @param $checkOverwriteDate
      * @return array
      */
-    protected function buildFilters(array $filters, $overrideFilter = false, $tableAlias = null, $dataSetId = null)
+    protected function buildFilters(array $filters, $tableAlias = null, $dataSetId = null, $checkOverwriteDate = true)
     {
+        $filterKeys = [];
         $sqlConditions = [];
         $dateRanges = [];
-        $filterKeys = [];
+
         foreach ($filters as $filter) {
             if (!$filter instanceof FilterInterface) {
                 continue;
             }
 
-            if ($overrideFilter == true && $dataSetId !== null) {
+            if ($dataSetId !== null) {
                 $filter->trimTrailingAlias($dataSetId);
             }
 
@@ -596,6 +954,11 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             $sqlConditions[] = $this->buildSingleFilter($filter, $filterKeys, $tableAlias, $dataSetId);
+        }
+
+        $overrideDateField = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, \UR\Model\Core\DataSetInterface::OVERWRITE_DATE) : \UR\Model\Core\DataSetInterface::OVERWRITE_DATE;
+        if ($checkOverwriteDate) {
+            $sqlConditions[] = sprintf('%s IS NULL', $overrideDateField);
         }
 
         return array(
@@ -645,10 +1008,10 @@ class SqlBuilder implements SqlBuilderInterface
                     return sprintf('%s >= %s', $fieldName, $bindParamName);
 
                 case NumberFilter::COMPARISON_TYPE_IN:
-                    return sprintf('FIND_IN_SET(%s, %s)', $fieldName, $bindParamName);
+                    return sprintf('%s IN (%s)', $fieldName, implode(',', $filter->getComparisonValue()));
 
                 case NumberFilter::COMPARISON_TYPE_NOT_IN:
-                    return sprintf('(%s IS NULL OR NOT FIND_IN_SET(%s, %s))', $fieldName, $fieldName, $bindParamName);
+                    return sprintf('(%s IS NULL OR %s NOT IN (%s))', $fieldName, $fieldName, implode(',', $filter->getComparisonValue()));
 
                 case TextFilter::COMPARISON_TYPE_NOT_NULL:
                     return sprintf('(%s IS NOT NULL)', $fieldName);
@@ -673,7 +1036,6 @@ class SqlBuilder implements SqlBuilderInterface
 
                 case TextFilter::COMPARISON_TYPE_CONTAINS :
                     $contains = array_map(function ($tcv) use ($fieldName) {
-                        $tcv = preg_replace('/[\'"]/', '', $tcv);
                         return sprintf('%s LIKE \'%%%s%%\'', $fieldName, $tcv);
                     }, $textFilterComparisonValue);
 
@@ -681,7 +1043,6 @@ class SqlBuilder implements SqlBuilderInterface
 
                 case TextFilter::COMPARISON_TYPE_NOT_CONTAINS :
                     $notContains = array_map(function ($tcv) use ($fieldName) {
-                        $tcv = preg_replace('/[\'"]/', '', $tcv);
                         return sprintf('%s NOT LIKE \'%%%s%%\'', $fieldName, $tcv);
                     }, $textFilterComparisonValue);
 
@@ -689,7 +1050,6 @@ class SqlBuilder implements SqlBuilderInterface
 
                 case TextFilter::COMPARISON_TYPE_START_WITH:
                     $startWiths = array_map(function ($tcv) use ($fieldName) {
-                        $tcv = preg_replace('/[\'"]/', '', $tcv);
                         return sprintf('%s LIKE \'%s%%\'', $fieldName, $tcv);
                     }, $textFilterComparisonValue);
 
@@ -697,17 +1057,22 @@ class SqlBuilder implements SqlBuilderInterface
 
                 case TextFilter::COMPARISON_TYPE_END_WITH:
                     $endWiths = array_map(function ($tcv) use ($fieldName) {
-                        $tcv = preg_replace('/[\'"]/', '', $tcv);
                         return sprintf('%s LIKE \'%%%s\'', $fieldName, $tcv);
                     }, $textFilterComparisonValue);
 
                     return sprintf("(%s)", implode(' OR ', $endWiths)); // cover conditions in "()" to keep inner AND/OR of conditions
 
                 case TextFilter::COMPARISON_TYPE_IN:
-                    return sprintf('FIND_IN_SET(%s, %s)', $fieldName, $bindParamName);
+                    $values = array_map(function($value) {
+                        return "'$value'";
+                    }, $filter->getComparisonValue());
+                    return sprintf('%s IN (%s)', $fieldName, implode(',', $values));
 
                 case TextFilter::COMPARISON_TYPE_NOT_IN:
-                    return sprintf('(%s IS NULL OR %s = \'\' OR NOT FIND_IN_SET(%s, %s))', $fieldName, $fieldName, $fieldName, $bindParamName);
+                    $values = array_map(function($value) {
+                        return "'$value'";
+                    }, $filter->getComparisonValue());
+                    return sprintf('(%s IS NULL OR %s = \'\' OR %s NOT IN (%s))', $fieldName, $fieldName, $fieldName, implode(',', $values));
 
                 case TextFilter::COMPARISON_TYPE_NOT_NULL:
                     return sprintf('(%s IS NOT NULL)', $fieldName);
@@ -829,10 +1194,9 @@ class SqlBuilder implements SqlBuilderInterface
 
     /**
      * @param Table $table
-     * @param $fields
      * @return mixed
      */
-    private function getTemporaryFieldsFromDataSetTable($table, $fields)
+    private function getHiddenFieldsFromDataSetTable($table)
     {
         $columns = $table->getColumns();
         $columns = array_filter($columns, function(Column $column){

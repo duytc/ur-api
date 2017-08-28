@@ -43,4 +43,9 @@ interface ReportViewManagerInterface extends ManagerInterface
      * @return ReportViewInterface[]
      */
     public function getReportMultiViewsByReportView(ReportViewInterface $subReportView);
+
+    /**
+     * @return mixed
+     */
+    public function getSingleViews();
 }

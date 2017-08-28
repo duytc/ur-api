@@ -5,6 +5,7 @@ namespace UR\Domain\DTO\Report\Formats;
 
 
 use DateTime;
+use SplDoublyLinkedList;
 use UR\Exception\InvalidArgumentException;
 use UR\Service\DTO\Report\ReportResultInterface;
 
@@ -47,15 +48,17 @@ class DateFormat extends AbstractFormat implements DateFormatInterface
      */
     public function format(ReportResultInterface $reportResult, array $metrics, array $dimensions)
     {
-        $reports = $reportResult->getReports();
+        $rows = $reportResult->getRows();
         $totals = $reportResult->getTotal();
         $averages = $reportResult->getAverage();
 
         $fields = $this->getFields();
 
         /* format for all records of reports */
-        $newReports = [];
-        foreach ($reports as $row) {
+        $newRows = new SplDoublyLinkedList();
+        gc_enable();
+        $rows->setIteratorMode(SplDoublyLinkedList::IT_MODE_FIFO | SplDoublyLinkedList::IT_MODE_DELETE);
+        foreach ($rows as $row) {
             foreach ($fields as $field) {
                 if (!array_key_exists($field, $row)) {
                     continue;
@@ -64,7 +67,8 @@ class DateFormat extends AbstractFormat implements DateFormatInterface
                 $row[$field] = $this->formatOneDate($row[$field]);
             }
 
-            $newReports[] = $row;
+            $newRows->push($row);
+            unset($row);
         }
 
         /* format for totals */
@@ -88,7 +92,9 @@ class DateFormat extends AbstractFormat implements DateFormatInterface
         }
 
         /* set value again */
-        $reportResult->setReports($newReports);
+        unset($rows, $row);
+        gc_collect_cycles();
+        $reportResult->setRows($newRows);
         $reportResult->setTotal($newTotals);
         $reportResult->setAverage($newAverages);
     }

@@ -1,6 +1,7 @@
 <?php
 namespace UR\Service\Report;
 
+use SplDoublyLinkedList;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\Formats\ColumnPositionFormatInterface;
 use UR\Domain\DTO\Report\Formats\CurrencyFormatInterface;
@@ -47,7 +48,7 @@ class ReportViewFormatter implements ReportViewFormatterInterface
      */
     public function getReportAfterApplyDefaultFormat($reportResult, $params)
     {
-        $reports = $reportResult->getReports();
+        $rows = $reportResult->getRows();
         $columns = $reportResult->getColumns();
         $types = $reportResult->getTypes();
 
@@ -93,36 +94,40 @@ class ReportViewFormatter implements ReportViewFormatterInterface
             return $reportResult;
         }
 
-        foreach ($reports as &$report) {
+        gc_enable();
+        $newRows = new SplDoublyLinkedList();
+        $rows->setIteratorMode(SplDoublyLinkedList::IT_MODE_FIFO | SplDoublyLinkedList::IT_MODE_DELETE);
+        foreach ($rows as $row) {
             foreach ($decimalFields as $decimalField => $name) {
-                if (!array_key_exists($decimalField, $report)) {
-                    continue;
-                }
-                if ($report[$decimalField] == null) {
-                    continue;
-                }
-                $report[$decimalField] = number_format((float)$report[$decimalField], 4, ".", "");
+                if (!array_key_exists($decimalField, $row)) continue;
+
+                if ($row[$decimalField] == null) continue;
+
+                $row[$decimalField] = number_format((float)$row[$decimalField], 4, ".", "");
             }
 
             foreach ($numberFields as $numberField => $name) {
-                if (!array_key_exists($numberField, $report)) {
-                    continue;
-                }
-                if ($report[$numberField] == null) {
-                    continue;
-                }
-                $report[$numberField] = round($report[$numberField]);
+                if (!array_key_exists($numberField, $row)) continue;
+
+                if ($row[$numberField] == null) continue;
+
+                $row[$numberField] = round($row[$numberField]);
             }
+
+            $newRows->push($row);
+            unset($row);
         }
 
-        $reportResult->setReports($reports);
+        unset($rows, $row);
+        gc_collect_cycles();
+        $reportResult->setRows($newRows);
         return $reportResult;
     }
 
     /**
      * @inheritdoc
      */
-    public function getSmartColumns($reportResult, $params)
+    public function getSmartColumns($reportResult, $params, $newFieldsTransform = [])
     {
         $columns = $reportResult->getColumns();
         $types = $reportResult->getTypes();
@@ -136,7 +141,7 @@ class ReportViewFormatter implements ReportViewFormatterInterface
          */
         $dataSets = $params->getDataSets();
 
-        if (count($params->getUserDefinedDimensions()) > 0 || count($params->getUserDefinedMetrics()) > 0) {
+        if ((count($params->getUserDefinedDimensions()) > 0 || count($params->getUserDefinedMetrics()) > 0) && $params->getCustomDimensionEnabled()) {
             $dimensions = array_unique(array_merge($dimensions, $params->getUserDefinedDimensions()));
             $metrics = array_unique(array_merge($metrics, $params->getUserDefinedMetrics()));
         } elseif ($params->isMultiView()) {
@@ -232,6 +237,7 @@ class ReportViewFormatter implements ReportViewFormatterInterface
             return array_key_exists($metric, $types) && ($types[$metric] == FieldType::DATE || $types[$metric] == FieldType::DATE);
         });
         $alphabetMetrics = array_diff($metrics, $dateMetrics);
+        $alphabetMetrics = array_merge($alphabetMetrics, $newFieldsTransform);
         usort($alphabetMetrics, array($this, 'compareFieldsWithOutDataSetId'));
         $alphabetMetrics = array_values($alphabetMetrics);
 
@@ -319,15 +325,21 @@ class ReportViewFormatter implements ReportViewFormatterInterface
     private function syncReportsWithSmartColumns($reportResult)
     {
         $columns = $reportResult->getColumns();
-        $reports = $reportResult->getReports();
+        $rows = $reportResult->getRows();
 
-        foreach ($reports as &$report) {
-            $needDeleteFields = array_diff_key($report, $columns);
-            foreach ($needDeleteFields as $needDeleteField => $displayName) {
-                unset ($report[$needDeleteField]);
-            }
+        gc_enable();
+        $newRows = new SplDoublyLinkedList();
+        $rows->setIteratorMode(SplDoublyLinkedList::IT_MODE_FIFO | SplDoublyLinkedList::IT_MODE_DELETE);
+        foreach ($rows as $row) {
+            $needDeleteFields = array_diff_key($row, $columns);
+            $row = array_diff_key($row, $needDeleteFields);
+            $newRows->push($row);
+            unset($row);
         }
-        $reportResult->setReports($reports);
+
+        unset($rows, $row);
+        gc_collect_cycles();
+        $reportResult->setRows($newRows);
         return $reportResult;
     }
 

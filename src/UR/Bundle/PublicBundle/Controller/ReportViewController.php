@@ -137,6 +137,7 @@ class ReportViewController extends FOSRestController
         }
 
         $reportResult = $this->getReportBuilder()->getShareableReport($params, $fieldsToBeShared);
+        $reportResult->generateReports();
         $report = $reportResult->toArray();
 
         $report['reportView'] = $reportView;

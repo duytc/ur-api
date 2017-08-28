@@ -1,6 +1,7 @@
 <?php
 namespace UR\Service\Report;
 
+use SplDoublyLinkedList;
 use UR\Service\DataSet\FieldType;
 
 class ReportViewSorter implements ReportViewSorterInterface
@@ -10,7 +11,7 @@ class ReportViewSorter implements ReportViewSorterInterface
      */
     public function sortReports($reportResult, $params)
     {
-        $reports = array_values($reportResult->getReports());
+        $reports = iterator_to_array($reportResult->getRows());
         $types = $reportResult->getTypes();
         $sortField = $params->getSortField();
         $orderBy = $params->getOrderBy();
@@ -19,19 +20,19 @@ class ReportViewSorter implements ReportViewSorterInterface
             return $reportResult;
         }
 
-        if (!array_key_exists($sortField, $reports[0])) {
-            return $reportResult;
-        }
+//        if (!array_key_exists($sortField, $reports[0])) {
+//            return $reportResult;
+//        }
 
         if (!array_key_exists($sortField, $types)) {
-            return $reportResult;
+            $types[$sortField] = FieldType::NUMBER;
         }
 
         $type = $types[$sortField];
 
         usort($reports, function ($a, $b) use ($sortField, $orderBy, $type) {
-            $firstValue = $a[$sortField];
-            $secondValue = $b[$sortField];
+            $firstValue = isset($a[$sortField]) ? $a[$sortField] : null;
+            $secondValue = isset($b[$sortField]) ? $b[$sortField]: null;
 
             if ($firstValue == null && $secondValue == null) {
                 return 0;
@@ -67,7 +68,13 @@ class ReportViewSorter implements ReportViewSorterInterface
             return $orderBy == 'desc' ? ($firstValue < $secondValue) : ($firstValue > $secondValue);
         });
 
-        $reportResult->setReports($reports);
+        $newRows = new SplDoublyLinkedList();
+        foreach ($reports as $report) {
+            $newRows->push($report);
+        }
+
+        unset($reports, $report);
+        $reportResult->setRows($newRows);
 
         return $reportResult;
     }

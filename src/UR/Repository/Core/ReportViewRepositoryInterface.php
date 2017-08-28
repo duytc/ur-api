@@ -80,4 +80,9 @@ interface ReportViewRepositoryInterface extends ObjectRepository
     public function getReportMultiViewsByReportView(ReportViewInterface $subReportView);
 
     public function getReportViewByIds(array $ids);
+
+    /**
+     * @return mixed
+     */
+    public function getSingleViews();
 }

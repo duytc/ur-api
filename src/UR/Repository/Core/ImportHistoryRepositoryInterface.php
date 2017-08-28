@@ -38,9 +38,10 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
 
     /**
      * @param ImportHistoryInterface $importHistory
-     * @return QueryBuilder
+     * @param $limit
+     * @return array
      */
-    public function getImportedData(ImportHistoryInterface $importHistory);
+    public function getImportedData(ImportHistoryInterface $importHistory, $limit = null);
 
     /**
      * @param DataSetInterface $dataSet

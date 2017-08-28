@@ -3,6 +3,7 @@
 namespace UR\Service\Parser\Transformer\Collection;
 
 use Doctrine\ORM\EntityManagerInterface;
+use SplDoublyLinkedList;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
@@ -26,7 +27,7 @@ abstract class AbstractAddField implements CollectionTransformerInterface
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
         $rows = $collection->getRows();
-        if (count($rows) < 1) {
+        if ($rows->count() < 1) {
             return $collection;
         }
         $columns = $collection->getColumns();
@@ -37,7 +38,8 @@ abstract class AbstractAddField implements CollectionTransformerInterface
         }
 
         $isNumber = array_key_exists($this->column, $types) && $types[$this->column] == FieldType::NUMBER;
-        foreach ($rows as $idx => &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $index => $row) {
             $value = $this->getValue($row);
 
             // json does not support NAN or INF values
@@ -50,9 +52,13 @@ abstract class AbstractAddField implements CollectionTransformerInterface
             }
 
             $row[$this->column] = ($isNumber && $value !== null) ? round($value) : $value;
+            $newRows->push($row);
+            unset($row);
         }
 
-        return new Collection($columns, $rows, $types);
+        unset($rows, $row);
+
+        return new Collection($columns, $newRows, $types);
     }
 
     /**

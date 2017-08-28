@@ -3,6 +3,7 @@
 namespace UR\Service\DataSource;
 
 use PHPExcel_Reader_IReader;
+use SplDoublyLinkedList;
 use UR\Behaviors\ParserUtilTrait;
 
 class Excel extends CommonDataSourceFile implements DataSourceInterface
@@ -122,7 +123,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getRows()
     {
-        $this->rows = [];
+        $rows = new SplDoublyLinkedList();
         $beginRowsReadRange = $this->dataRow;
         for ($startRow = $this->dataRow; $startRow <= self::MAX_ROW_XLS; $startRow += $this->chunkSize) {
             $chunkRows = $this->getChunkRows($beginRowsReadRange, $this->chunkSize);
@@ -130,16 +131,24 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
                 break;
             }
 
-            $this->rows = array_merge($this->rows, $chunkRows);
+            foreach ($chunkRows as $chunkRow) {
+                $rows->push($chunkRow);
+            }
         }
 
-        return $this->removeNonUtf8Characters($this->rows);
+        return $rows;
     }
 
     public function getLimitedRows($limit = 100)
     {
+        $rows = new SplDoublyLinkedList();
         $beginRowsReadRange = $this->dataRow;
-        return $this->removeNonUtf8Characters($this->getChunkRows($beginRowsReadRange, $limit));
+        $chunkRows =  $this->getChunkRows($beginRowsReadRange, $limit);
+        foreach ($chunkRows as $chunkRow) {
+            $rows->push($chunkRow);
+        }
+
+        return $rows;
     }
 
     /**
@@ -235,7 +244,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
                 }
             }
 
-            $chunkRows[$row] = $rowData;
+            $chunkRows[$row] = $this->removeNonUtf8CharactersForSingleRow($rowData);
         }
 
         $beginRowsReadRange += $chunkSize;

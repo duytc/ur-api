@@ -12,7 +12,7 @@ Abstract class CommonDataSourceFile
     protected function removeInvalidColumns(array $arr)
     {
         foreach ($arr as $key => $value) {
-            if ($value === null || $value === '') {
+            if ($value === null) {
                 unset($arr[$key]);
             }
         }
@@ -102,5 +102,21 @@ Abstract class CommonDataSourceFile
             }
         }
         return $rows;
+    }
+
+    protected function removeNonUtf8CharactersForSingleRow(array $row)
+    {
+        json_encode($row);
+        if (json_last_error() == JSON_ERROR_UTF8) {
+            foreach ($row as &$cell) {
+                json_encode($cell);
+                if (json_last_error() != JSON_ERROR_UTF8) {
+                    continue;
+                }
+                $cell = mb_convert_encoding($cell, 'UTF-8', 'UTF-8');
+            }
+        }
+
+        return $row;
     }
 }
