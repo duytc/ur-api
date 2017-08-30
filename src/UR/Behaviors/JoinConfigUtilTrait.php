@@ -22,11 +22,11 @@ trait JoinConfigUtilTrait
                 $outputFields = explode(',', $config->getOutputField());
                 if ($join->getDataSet() == $dataSetId && in_array($field, $fields)) {
                     $fieldIndexes = array_flip($fields);
-                    if ($config->isVisible()) {
+//                    if ($config->isVisible()) {
                         return $outputFields[$fieldIndexes[$field]];
-                    }
+//                    }
 
-                    return null;
+//                    return null;
                 }
             }
         }
@@ -195,5 +195,8 @@ trait JoinConfigUtilTrait
         }
 
         $source[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD] = $source[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD] . ',' . $toBeGrouped[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD];
+        $source[SqlBuilder::JOIN_CONFIG_VISIBLE] = sprintf('%b,%b', $source[SqlBuilder::JOIN_CONFIG_VISIBLE], $toBeGrouped[SqlBuilder::JOIN_CONFIG_VISIBLE]);
+        $source[SqlBuilder::JOIN_CONFIG_MULTIPLE] = true;
+
     }
 }

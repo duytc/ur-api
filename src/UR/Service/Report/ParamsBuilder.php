@@ -257,6 +257,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             $joinConfig = new JoinConfig();
             $joinConfig->setOutputField($config[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]);
             $joinConfig->setVisible(array_key_exists(SqlBuilder::JOIN_CONFIG_VISIBLE, $config) ? $config[SqlBuilder::JOIN_CONFIG_VISIBLE] : true);
+            $joinConfig->setMultiple(array_key_exists(SqlBuilder::JOIN_CONFIG_MULTIPLE, $config) ? $config[SqlBuilder::JOIN_CONFIG_VISIBLE] : false);
 
             $joinFields = $config[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
             foreach ($joinFields as $joinField) {

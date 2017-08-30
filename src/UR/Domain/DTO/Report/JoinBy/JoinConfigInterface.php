@@ -51,4 +51,14 @@ interface JoinConfigInterface
      * @param boolean $hidden
      */
     public function setVisible($hidden);
+
+    /**
+     * @return boolean
+     */
+    public function isMultiple();
+
+    /**
+     * @param boolean $multiple
+     */
+    public function setMultiple(bool $multiple);
 }

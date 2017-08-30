@@ -158,7 +158,13 @@ trait SqlUtilTrait
     {
         /** @var JoinConfig $joinConfig */
         foreach ($joinConfigs as $joinConfig) {
-            if ($field == $joinConfig->getOutputField()) {
+            foreach (explode(',', $joinConfig->getOutputField()) as $i => $v) {
+                if ($field == $v) {
+                    $joinField = $joinConfig->getJoinFields()[0];
+                    return sprintf('%s_%d', explode(',', $joinField->getField())[$i], $joinField->getDataSet());
+                }
+            }
+            if (in_array($field, explode(',', $joinConfig->getOutputField()))) {
                 $joinField = $joinConfig->getJoinFields()[0];
                 return sprintf('%s_%d', $joinField->getField(), $joinField->getDataSet());
             }
@@ -438,10 +444,12 @@ trait SqlUtilTrait
      * @param $var
      * @param $val
      * @param $cmp
+     * @param $quote
      * @return null|string
      */
-    public function buildSingleSqlCondition($var, $val, $cmp)
+    public function buildSingleSqlCondition($var, $val, $cmp, $quote = true)
     {
+        $var = $quote ? "`$var`" : $var;
         switch ($cmp) {
             case NewFieldTransform::IS_INVALID_OPERATOR:
                 return "$var IS NULL";
@@ -543,13 +551,15 @@ trait SqlUtilTrait
                     $value = floatval($value);
                 }
 
+                $quote = true;
                 $field = $defaultValue[AddCalculatedFieldTransform::CONDITION_FIELD_KEY];
 
                 if ($field == NewFieldTransform::CALCULATED_FIELD) {
+                    $quote = false;
                     $field = $expressionForm;
                 }
 
-                $when = $this->buildSingleSqlCondition($field, $defaultValue[AddCalculatedFieldTransform::CONDITION_VALUE_KEY], $defaultValue[AddCalculatedFieldTransform::CONDITION_COMPARATOR_KEY]);
+                $when = $this->buildSingleSqlCondition($field, $defaultValue[AddCalculatedFieldTransform::CONDITION_VALUE_KEY], $defaultValue[AddCalculatedFieldTransform::CONDITION_COMPARATOR_KEY], $quote);
 
                 if (is_string($when)) {
                     $whenQueries[] = "WHEN $when THEN $value";
@@ -858,12 +868,25 @@ trait SqlUtilTrait
     public function cloneFilter(FilterInterface $filter)
     {
         if ($filter instanceof DateFilter) {
+            if ($filter->getDateType() == DateFilter::DATE_TYPE_DYNAMIC) {
+                $data = array (
+                    DateFilter::FILED_NAME_FILTER_KEY => $filter->getFieldName(),
+                    DateFilter::FIELD_TYPE_FILTER_KEY => $filter->getFieldType(),
+                    DateFilter::DATE_TYPE_FILTER_KEY => $filter->getDateType(),
+                    DateFilter::DATE_VALUE_FILTER_KEY => $filter->getDateValue(),
+                    DateFilter::DATE_USER_PROVIDED_FILTER_KEY => $filter->isUserDefine()
+                );
+
+                return new DateFilter($data);
+            }
+
             $dateValues = $filter->getDateValue();
             foreach ($dateValues as $key => &$value) {
                 if ($value instanceof \DateTime) {
                     $value = $value->format('Y-m-d');
                 }
             }
+
             unset($value);
             $data = array (
                 DateFilter::FILED_NAME_FILTER_KEY => $filter->getFieldName(),

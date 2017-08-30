@@ -155,12 +155,9 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         $newRows = new SplDoublyLinkedList();
-        $rows->rewind();
-        while ($rows->valid()) {
-            $row = $rows->current();
+        foreach ($rows as $row) {
             $report = $this->filterFieldsInArray($fieldsToBeShared, $row);
             $newRows->push($report);
-            $rows->next();
             unset($row);
         }
 
@@ -228,7 +225,7 @@ class ReportBuilder implements ReportBuilderInterface
             } else {
                 $reportParam->setShowInTotal($reportView->getMetrics());
             }
-            
+
             $viewFilters = $reportView->getFilters();
 
             if ($reportParam->getStartDate() !== null || $reportParam->getEndDate() !== null) {
@@ -244,10 +241,11 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             $total = $result->getTotal();
-            $dimensions = array_unique(array_merge($dimensions, array_keys($result->getColumns())));
+            if (!empty($total)) {
+                $total = array_merge($total, array(self::REPORT_VIEW_ALIAS => $view->getAlias()));
+                $rows->push($total);
+            }
             $metrics = array_unique(array_merge($metrics, array_keys($total)));
-            $total = array_merge($total, array(self::REPORT_VIEW_ALIAS => $view->getAlias()));
-            $rows->push($total);
 
             $dateRange = $result->getDateRange();
             if (!$dateRange instanceof DateRange) {
@@ -260,7 +258,7 @@ class ReportBuilder implements ReportBuilderInterface
         $types[self::REPORT_VIEW_ALIAS] = FieldType::TEXT;
 
         if ($rows->count() == 0) {
-            return false;
+            return new ReportResult([], [], [], []);
         }
 
         $collection = new Collection(array_unique(array_merge($metrics, $dimensions)), $rows, $types);
@@ -582,8 +580,15 @@ class ReportBuilder implements ReportBuilderInterface
                 }
             }
 
-            if ($config->isVisible()) {
-                $outputJoinFields = array_merge($outputJoinFields, explode(',', $config->getOutputField()));
+            if ($config->isMultiple()) {
+                $outputs = explode(',', $config->getOutputField());
+                foreach (explode(',', $config->isVisible()) as $i => $v) {
+                    if (filter_var($v, FILTER_VALIDATE_BOOLEAN)) {
+                        $outputJoinFields[] = $outputs[$i];
+                    }
+                }
+            } elseif ($config->isVisible()) {
+                $outputJoinFields[] = $config->getOutputField();
             }
         }
 
@@ -736,7 +741,28 @@ class ReportBuilder implements ReportBuilderInterface
         $joinConfig = $params->getJoinConfigs();
         $hiddenJoinFields = [];
         foreach ($joinConfig as $config) {
-            if (!$config->isVisible()) {
+            if ($config->isMultiple()) {
+                $outputs = explode(',', $config->getOutputField());
+                foreach (explode(',', $config->isVisible()) as $i => $v) {
+                    if (filter_var($v, FILTER_VALIDATE_BOOLEAN)) {
+                        $columns = $reportCollection->getColumns();
+                        $columns[] = $outputs[$i];
+                        $reportCollection->setColumns($columns);
+                        continue;
+                    }
+
+                    if (in_array($outputs[$i], $dimensions) || in_array($outputs[$i], $metrics)) {
+                        continue;
+                    }
+
+                    $hiddenJoinFields[] = $outputs[$i];
+                }
+
+                continue;
+            }
+
+
+            if (!$config->isVisible() && !in_array($config->getOutputField(), $metrics) && !in_array($config->getOutputField(), $dimensions)) {
                 $hiddenJoinFields[] = $config->getOutputField();
             } else {
                 $columns = $reportCollection->getColumns();

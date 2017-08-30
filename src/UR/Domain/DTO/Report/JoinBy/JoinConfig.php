@@ -24,6 +24,11 @@ class JoinConfig implements JoinConfigInterface
      */
     protected $visible;
 
+    /**
+     * @var bool
+     */
+    protected $multiple;
+
 
     /**
      * @return JoinFieldInterface[]
@@ -121,5 +126,21 @@ class JoinConfig implements JoinConfigInterface
     public function setVisible($visible)
     {
         $this->visible = $visible;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isMultiple(): bool
+    {
+        return $this->multiple;
+    }
+
+    /**
+     * @param boolean $multiple
+     */
+    public function setMultiple(bool $multiple)
+    {
+        $this->multiple = $multiple;
     }
 }

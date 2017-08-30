@@ -50,6 +50,7 @@ class SqlBuilder implements SqlBuilderInterface
     const JOIN_CONFIG_JOIN_FIELDS = 'joinFields';
     const JOIN_CONFIG_OUTPUT_FIELD = 'outputField';
     const JOIN_CONFIG_VISIBLE = 'isVisible';
+    const JOIN_CONFIG_MULTIPLE = 'isMultiple';
     const JOIN_CONFIG_FIELD = 'field';
     const JOIN_CONFIG_DATA_SET = 'dataSet';
     const JOIN_CONFIG_DATA_SETS = 'dataSets';
