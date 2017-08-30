@@ -244,6 +244,7 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             $total = $result->getTotal();
+            $dimensions = array_unique(array_merge($dimensions, array_keys($result->getColumns())));
             $metrics = array_unique(array_merge($metrics, array_keys($total)));
             $total = array_merge($total, array(self::REPORT_VIEW_ALIAS => $view->getAlias()));
             $rows->push($total);

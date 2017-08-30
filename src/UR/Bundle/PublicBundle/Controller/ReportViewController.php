@@ -75,9 +75,10 @@ class ReportViewController extends FOSRestController
             throw new BadRequestHttpException('Invalid token');
         }
 
-        $config = $sharedKeysConfig[$token];
+        $shareConfig = $sharedKeysConfig[$token];
 
-        $fieldsToBeShared = $config['fields'];
+        $fieldsToBeShared = $shareConfig['fields'];
+        $allowDatesOutside = array_key_exists('allowDatesOutside', $shareConfig) ? $shareConfig['allowDatesOutside'] : false;
         $paginationParams = $request->query->all();
         $params = $this->getParams($reportView, $paginationParams);
 
@@ -87,7 +88,9 @@ class ReportViewController extends FOSRestController
 
         // dateRange from config may be dynamic date range (today, yesterday, last 7 days, ...)
         // or fixed date range as { startDate:2017-08-01, endDate:2017-08-18 }
-        $dateRangeFromConfig = (array_key_exists('dateRange', $config)) ? $config['dateRange'] : null;
+        $dateRangeFromConfig = (array_key_exists('dateRange', $shareConfig)) ? $shareConfig['dateRange'] : null;
+
+        //// if: dynamic DateRange
         if (is_string($dateRangeFromConfig)) {
             if (!in_array($dateRangeFromConfig, DateFilter::$SUPPORTED_DATE_DYNAMIC_VALUES)) {
                 throw new RuntimeException(sprintf('Invalid dateRange (%s) in shareable report config', $dateRangeFromConfig));
@@ -97,7 +100,7 @@ class ReportViewController extends FOSRestController
             $dateRange = ['startDate' => $dynamicDateRange[0], 'endDate' => $dynamicDateRange[1]];
         }
 
-        // else: fixedDateRange
+        //// else: fixed DateRange
         if (
             is_array($dateRangeFromConfig) &&
             !empty($dateRangeFromConfig) &&
@@ -106,34 +109,59 @@ class ReportViewController extends FOSRestController
         ) {
             // get dateRange from config such as [ startDate => '', endDate => '' ],
             $dateRange = $dateRangeFromConfig;
+        }
 
-            // if use user provided date range
-            if (($params->getStartDate() instanceof \DateTime && $params->getEndDate() instanceof \DateTime)) {
-                // validate custom date range
-                $reportViewStartDate = new \DateTime($dateRangeFromConfig['startDate']);
-                $reportViewEndDate = new \DateTime($dateRangeFromConfig['endDate']);
+        // if allowDatesOutside: max endDate is yesterday
+        $yesterday = (new \DateTime('yesterday'))->setTime(23, 59, 59);
+        if ($allowDatesOutside && date_create_from_format('Y-m-d', $dateRange['endDate']) > $yesterday) {
+            $dateRange['endDate'] = $yesterday->format('Y-m-d');
+        }
 
-                $userProvidedStartDate = $params->getStartDate();
-                $userProvidedEndDate = $params->getEndDate();
+        // override dateRange if use user provided date range
+        if (($params->getStartDate() instanceof \DateTime && $params->getEndDate() instanceof \DateTime)) {
+            // validate custom date range
+            $startDateFromConfig = new \DateTime($dateRange['startDate']);
+            $endDateFromConfig = new \DateTime($dateRange['endDate']);
 
-                if ($userProvidedStartDate < $reportViewStartDate
-                    || $userProvidedEndDate > $reportViewEndDate
+            $userProvidedStartDate = $params->getStartDate();
+            $userProvidedEndDate = $params->getEndDate();
+
+            // if not allowDatesOutside: do not allow user provided date is outside of shared date range
+            if (!$allowDatesOutside
+                && (
+                    $userProvidedStartDate < $startDateFromConfig
+                    || $userProvidedEndDate > $endDateFromConfig
                     || $userProvidedStartDate > $userProvidedEndDate
-                ) {
-                    throw new InvalidArgumentException(
-                        sprintf('User provided startDate/endDate must be in report view date range (%s - %s)' .
-                            ' and startDate must be not greater than endDate.',
-                            $dateRangeFromConfig['startDate'],
-                            $dateRangeFromConfig['endDate']
-                        )
-                    );
-                }
-            } else {
-                // override previous date range which is parsed from query params
-                $params->setStartDate(new \DateTime($dateRangeFromConfig['startDate']));
-                $params->setEndDate(new \DateTime($dateRangeFromConfig['endDate']));
-
+                )
+            ) {
+                throw new InvalidArgumentException(
+                    sprintf('User provided startDate/endDate must be in report view date range (%s - %s)' .
+                        ' and startDate must be not greater than endDate.',
+                        $dateRange['startDate'],
+                        $dateRange['endDate']
+                    )
+                );
             }
+
+            // else, if allowDatesOutside: allow user provided date is outside of shared date range
+            // but can't not over yesterday
+            if ($allowDatesOutside
+                && (
+                    $userProvidedStartDate > $userProvidedEndDate
+                    || $userProvidedEndDate > $yesterday
+                )
+            ) {
+                throw new InvalidArgumentException(
+                    sprintf('User provided endDate could not be greater than %s (yesterday)' .
+                        ' and startDate must be not greater than endDate.',
+                        $yesterday->format('Y-m-d')
+                    )
+                );
+            }
+        } else {
+            // override previous date range which is parsed from query params
+            $params->setStartDate(new \DateTime($dateRange['startDate']));
+            $params->setEndDate(new \DateTime($dateRange['endDate']));
         }
 
         $reportResult = $this->getReportBuilder()->getShareableReport($params, $fieldsToBeShared);
@@ -144,7 +172,10 @@ class ReportViewController extends FOSRestController
 
         // also return user provided dimensions, metrics, columns
         $report['dateRange'] = $dateRange;
-        $report['fields'] = $config['fields'];
+        $report['fields'] = $shareConfig['fields'];
+
+        // also return allowDatesOutside
+        $report['allowDatesOutside'] = $allowDatesOutside;
 
         //// columns
         if (!is_array($report['columns']) || empty($report['columns'])) {

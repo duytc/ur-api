@@ -104,7 +104,7 @@ class ReportViewManager implements ReportViewManagerInterface
     /**
      * @inheritdoc
      */
-    public function createTokenForReportView(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null)
+    public function createTokenForReportView(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null, $allowDatesOutside = false)
     {
         $sharedKeysConfig = $reportView->getSharedKeysConfig();
         if (!is_array($sharedKeysConfig)) {
@@ -119,11 +119,18 @@ class ReportViewManager implements ReportViewManagerInterface
         foreach ($sharedKeysConfig as $token => $fields) {
             $concatenatedOldFieldsToBeShared = implode(':', $fields['fields']);
 
+            // check if token existed base on:
+            // - the shared fields
+            // - the shared date range
+            // - the shared option allowDatesOutside
             if (
                 $concatenatedOldFieldsToBeShared === $concatenatedFieldsToBeShared &&
                 (
                     (array_key_exists('dateRange', $fields) && $this->compareDateRange($fields['dateRange'], $dateRange)) ||
                     (array_key_exists('dateRange', $fields) && $dateRange === null)
+                ) &&
+                (
+                    array_key_exists('allowDatesOutside', $fields) && $fields['allowDatesOutside'] == $allowDatesOutside
                 )
             ) {
                 $tokenExisted = true;
@@ -138,6 +145,7 @@ class ReportViewManager implements ReportViewManagerInterface
             $sharedKeysConfig[$newToken] = array(
                 'fields' => $fieldsToBeShared,
                 'dateRange' => $dateRange,
+                'allowDatesOutside' => $allowDatesOutside,
                 self::DATE_CREATED => date("Y-m-d H:i:s")
             );
 

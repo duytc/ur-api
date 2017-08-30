@@ -249,8 +249,9 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         }
 
         $dateRange = $request->request->get('dateRange', null);
+        $allowDatesOutside = $request->request->get('allowDatesOutside', false);
 
-        return $this->getShareableLink($reportView, $fieldsToBeShared, $dateRange);
+        return $this->getShareableLink($reportView, $fieldsToBeShared, $dateRange, $allowDatesOutside);
     }
 
     /**
@@ -542,13 +543,14 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      * @param ReportViewInterface $reportView
      * @param array $fieldsToBeShared
      * @param array|string|null $dateRange
+     * @param bool $allowDatesOutside
      * @return mixed
      */
-    private function getShareableLink(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null)
+    private function getShareableLink(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null, $allowDatesOutside = false)
     {
         /** @var ReportViewManagerInterface $reportViewManager */
         $reportViewManager = $this->get('ur.domain_manager.report_view');
-        $token = $reportViewManager->createTokenForReportView($reportView, $fieldsToBeShared, $dateRange);
+        $token = $reportViewManager->createTokenForReportView($reportView, $fieldsToBeShared, $dateRange, $allowDatesOutside);
 
         return $this->getShareableLinkFromTemplate($reportView->getId(), $token);
     }
