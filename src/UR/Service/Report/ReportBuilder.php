@@ -258,7 +258,34 @@ class ReportBuilder implements ReportBuilderInterface
         $types[self::REPORT_VIEW_ALIAS] = FieldType::TEXT;
 
         if ($rows->count() == 0) {
-            return new ReportResult([], [], [], []);
+            $columns = [];
+            if (is_array($params->getDimensions())) {
+                $columns = array_merge($columns, $params->getDimensions());
+            }
+            if (is_array($params->getMetrics())) {
+                $columns = array_merge($columns, $params->getMetrics());
+            }
+            if (is_array($params->getUserDefinedDimensions())) {
+                $columns = array_merge($columns, $params->getUserDefinedDimensions());
+            }
+            if (is_array($params->getUserDefinedMetrics())) {
+                $columns = array_merge($columns, $params->getUserDefinedMetrics());
+            }
+
+            foreach ($params->getTransforms() as $transform) {
+                if ($transform instanceof NewFieldTransform) {
+                    $columns[] = $transform->getFieldName();
+                }
+            }
+
+            $columns = array_unique($columns);
+            $columns[] = self::REPORT_VIEW_ALIAS;
+
+            $headers = [];
+            foreach ($columns as $index => $column) {
+                $headers[$column] = $this->convertColumn($column, $params->getIsShowDataSetName());
+            }
+            return new ReportResult(new SplDoublyLinkedList(), [], [], null, $headers, $types, 0);
         }
 
         $collection = new Collection(array_unique(array_merge($metrics, $dimensions)), $rows, $types);
@@ -693,7 +720,28 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         if (count($rows) < 1) {
-            $columns = array_merge($metrics, $dimensions);
+            $columns = [];
+            if (is_array($params->getDimensions())) {
+                $columns = array_merge($columns, $params->getDimensions());
+            }
+            if (is_array($params->getMetrics())) {
+                $columns = array_merge($columns, $params->getMetrics());
+            }
+            if (is_array($params->getUserDefinedDimensions())) {
+                $columns = array_merge($columns, $params->getUserDefinedDimensions());
+            }
+            if (is_array($params->getUserDefinedMetrics())) {
+                $columns = array_merge($columns, $params->getUserDefinedMetrics());
+            }
+
+            foreach ($params->getTransforms() as $transform) {
+                if ($transform instanceof NewFieldTransform) {
+                    $columns[] = $transform->getFieldName();
+                }
+            }
+
+            $columns = array_unique($columns);
+
             $headers = [];
             foreach ($columns as $index => $column) {
                 $headers[$column] = $this->convertColumn($column, $params->getIsShowDataSetName());
