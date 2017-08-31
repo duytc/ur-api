@@ -60,6 +60,13 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
 
     /**
      * @param DataSourceEntryInterface $dataSourceEntry
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return mixed
+     */
+    public function findImportHistoriesByDataSourceEntryAndConnectedDataSource(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource);
+
+    /**
+     * @param DataSourceEntryInterface $dataSourceEntry
      * @return mixed
      */
     public function getImportHistoryByDataSourceEntryWithoutDataSet(DataSourceEntryInterface $dataSourceEntry);

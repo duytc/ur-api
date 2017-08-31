@@ -13,6 +13,7 @@ use Redis;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DateUtilInterface;
+use UR\Worker\Job\Concurrent\CleanUpTimeSeriesForDataSource;
 use UR\Worker\Job\Concurrent\ProcessAlert;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
@@ -324,5 +325,16 @@ class Manager
 
         // concurrent job, we do not care what order it is processed in
         $this->dataSetJobScheduler->addJob($jobData, $dataSetId);
+    }
+
+    public function cleanUpDataSourceTimeSeries($dataSourceId)
+    {
+        $jobData = [
+            'task' => CleanUpTimeSeriesForDataSource::JOB_NAME,
+            CleanUpTimeSeriesForDataSource::DATA_SOURCE_ID => $dataSourceId,
+        ];
+
+        // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
     }
 }

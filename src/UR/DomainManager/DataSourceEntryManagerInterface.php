@@ -3,8 +3,6 @@
 namespace UR\DomainManager;
 
 use DateTime;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
-use UR\Model\Core\DataSourceEntry;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\User\Role\PublisherInterface;
 
@@ -32,4 +30,18 @@ interface DataSourceEntryManagerInterface extends ManagerInterface
      * @return mixed
      */
     public function findByDataSource($dataSource, $limit = null, $offset = null);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param DateTime $startDate
+     * @param DateTime $endDate
+     * @return mixed
+     */
+    public function findByDateRange(DataSourceInterface $dataSource, DateTime $startDate, DateTime $endDate);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @return mixed
+     */
+    public function getCleanUpEntries(DataSourceInterface $dataSource);
 }

@@ -122,4 +122,20 @@ class DataSourceEntryManager implements DataSourceEntryManagerInterface
     {
         return $this->repository->getDataSourceEntriesForDataSource($dataSource, $limit, $offset);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByDateRange(DataSourceInterface $dataSource, DateTime $startDate, DateTime $endDate)
+    {
+        return $this->repository->findByDateRange($dataSource, $startDate, $endDate);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCleanUpEntries(DataSourceInterface $dataSource)
+    {
+        return $this->repository->getCleanUpEntries($dataSource);
+    }
 }

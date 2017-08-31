@@ -26,6 +26,7 @@ class DataSourceEntry extends DataSourceEntryModel
     protected $startDate;
     protected $endDate;
     protected $dates;
+    protected $removeHistory;
 
     /**
      * @inheritdoc

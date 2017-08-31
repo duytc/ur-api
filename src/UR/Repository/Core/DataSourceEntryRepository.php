@@ -3,6 +3,7 @@
 namespace UR\Repository\Core;
 
 use DateInterval;
+use DateTime;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -149,25 +150,32 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
         return $qb->getQuery()->getResult();
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getLastDataSourceEntryForConnectedDataSource(DataSourceInterface $dataSource)
+    public function getDataSourceEntriesForTimeSeriesDataSource(DataSourceInterface $dataSource)
     {
-        $qb = $this->createQueryBuilder('dse');
-        $qb
-            ->orderBy('dse.id', 'DESC')
-            ->andWhere('dse.dataSource = :dataSource')
-            ->setParameter('dataSource', $dataSource);
+        $qb1 = $this->createQueryBuilder('qb1')
+            ->select('MAX(qb1.id)')
+            ->addGroupBy('qb1.startDate')
+            ->addGroupBy('qb1.endDate')
+            ->where('qb1.dataSource = :dataSource')
+            ->andWhere('qb1.startDate IS NOT NULL')
+            ->andWhere('qb1.endDate IS NOT NULL');
 
-        $dataSourceEntries = $qb->getQuery()->getResult();
+        $qb = $this->createQueryBuilder('de');
+        $timeSeriesEntries = $qb->where($qb->expr()->in('de.id', $qb1->getDQL()))
+            ->setParameter('dataSource', $dataSource)
+            ->getQuery()
+            ->getResult();
 
-        if (count($dataSourceEntries) < 1) {
-            return null;
-        }
+        $qb = $this->createQueryBuilder('de');
+        $emptyDateRangeEntries = $qb->where($qb->expr()->orX($qb->expr()->isNull('de.startDate'), $qb->expr()->isNull('de.endDate')))
+            ->andWhere('de.dataSource = :dataSource')
+            ->setParameter('dataSource', $dataSource)
+            ->getQuery()
+            ->getResult();
 
-        return $dataSourceEntries[0];
+        return array_merge($timeSeriesEntries, $emptyDateRangeEntries);
     }
+
 
     /**
      * @inheritdoc
@@ -235,6 +243,51 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
             ->where('dse.dataSource = :dataSource')
             ->setParameter('dataSource', $dataSource)
             ->addOrderBy('dse.endDate', 'asc')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByDateRange(DataSourceInterface $dataSource, DateTime $startDate, DateTime $endDate)
+    {
+        $qb = $this->createQueryBuilder('dse')
+            ->where('dse.dataSource = :dataSource')
+            ->andWhere('dse.startDate = :startDate')
+            ->andWhere('dse.endDate = :endDate')
+            ->setParameter('dataSource', $dataSource)
+            ->setParameter('startDate', $startDate)
+            ->setParameter('endDate', $endDate)
+            ->addOrderBy('dse.id', 'desc');
+
+        return $qb
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCleanUpEntries(DataSourceInterface $dataSource)
+    {
+        $qb1 = $this->createQueryBuilder('qb1')
+            ->select('MAX(qb1.id)')
+            ->addGroupBy('qb1.startDate')
+            ->addGroupBy('qb1.endDate')
+            ->where('qb1.dataSource = :dataSource')
+            ->andWhere('qb1.startDate IS NOT NULL')
+            ->andWhere('qb1.endDate IS NOT NULL')
+            ->setParameter('dataSource', $dataSource);
+
+        $qb = $this->createQueryBuilder('de');
+        return $qb->where(
+            $qb->expr()->notIn('de.id', $qb1->getDQL())
+        )
+            ->andWhere('de.dataSource = :dataSource')
+            ->andWhere('de.startDate is not null')
+            ->andWhere('de.endDate is not null')
+            ->setParameter('dataSource', $dataSource)
             ->getQuery()
             ->getResult();
     }

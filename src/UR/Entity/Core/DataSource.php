@@ -39,6 +39,7 @@ class DataSource extends DataSourceModel
     /** @var UserEntityInterface */
     protected $publisher;
 
+    protected $timeSeries;
     /**
      * @var DataSourceIntegrationInterface[]
      */

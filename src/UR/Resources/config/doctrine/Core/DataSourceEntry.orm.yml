@@ -46,6 +46,11 @@ UR\Entity\Core\DataSourceEntry:
         endDate:
             type: date
             nullable: true
+        removeHistory:
+            type: boolean
+            nullable: true
+            options:
+                default: false
         missingDate:
             type: json_array
             nullable: true
@@ -68,4 +73,5 @@ UR\Entity\Core\DataSourceEntry:
         importHistories:
             targetEntity: UR\Entity\Core\ImportHistory
             mappedBy: dataSourceEntry
-            cascade: ['remove', 'detach']
+            cascade: ['persist', 'remove', 'detach']
+            orphanRemoval: true

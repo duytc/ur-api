@@ -18,6 +18,7 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $totalRow;
     protected $fileExtension;
     private $isDryRun = false;
+    protected $removeHistory;
     /**
      * @var array
      */
@@ -398,6 +399,24 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setDates($dates)
     {
         $this->dates = $dates;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getRemoveHistory()
+    {
+        return $this->removeHistory;
+    }
+
+    /**
+     * @param mixed $removeHistory
+     * @return self
+     */
+    public function setRemoveHistory($removeHistory)
+    {
+        $this->removeHistory = $removeHistory;
         return $this;
     }
 }

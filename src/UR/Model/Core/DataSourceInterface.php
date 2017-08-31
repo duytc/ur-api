@@ -332,4 +332,15 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setBackfillMissingDateRunning($backfillMissingDateRunning);
+
+    /**
+     * @return mixed
+     */
+    public function getTimeSeries();
+
+    /**
+     * @param mixed $timeSeries
+     * @return self
+     */
+    public function setTimeSeries($timeSeries);
 }

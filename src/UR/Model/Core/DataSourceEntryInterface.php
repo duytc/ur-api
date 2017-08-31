@@ -205,4 +205,15 @@ interface DataSourceEntryInterface extends ModelInterface
      * @return self
      */
     public function setDates($dates);
+
+    /**
+     * @return mixed
+     */
+    public function getRemoveHistory();
+
+    /**
+     * @param mixed $removeHistory
+     * @return self
+     */
+    public function setRemoveHistory($removeHistory);
 }

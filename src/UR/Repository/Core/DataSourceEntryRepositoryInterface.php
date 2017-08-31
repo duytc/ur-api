@@ -2,6 +2,7 @@
 
 namespace UR\Repository\Core;
 
+use DateTime;
 use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\QueryBuilder;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -59,7 +60,7 @@ interface DataSourceEntryRepositoryInterface extends ObjectRepository
      * @param DataSourceInterface $dataSource
      * @return mixed
      */
-    public function getLastDataSourceEntryForConnectedDataSource(DataSourceInterface $dataSource);
+    public function getDataSourceEntriesForTimeSeriesDataSource(DataSourceInterface $dataSource);
 
     /**
      * @param DataSourceInterface $dataSource
@@ -87,4 +88,18 @@ interface DataSourceEntryRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getDataSourceEntriesForDataSourceOrderByStartDate(DataSourceInterface $dataSource);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @param DateTime $startDate
+     * @param DateTime $endDate
+     * @return mixed
+     */
+    public function findByDateRange(DataSourceInterface $dataSource, DateTime $startDate, DateTime $endDate);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @return mixed
+     */
+    public function getCleanUpEntries(DataSourceInterface $dataSource);
 }

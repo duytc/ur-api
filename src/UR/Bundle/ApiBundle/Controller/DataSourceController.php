@@ -31,6 +31,7 @@ use Psr\Log\LoggerInterface;
 use UR\Model\Core\IntegrationInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
+use UR\Service\ArrayUtilTrait;
 
 /**
  * @Rest\RouteResource("DataSource")
@@ -39,6 +40,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
 {
     use GetEntityFromIdTrait;
 
+    use ArrayUtilTrait;
     /**
      * Get all data sources
      *
@@ -971,6 +973,23 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     private function processUploadData(Request $request, DataSourceInterface $dataSource, $sourceParam = DataSourceEntryInterface::RECEIVED_VIA_API)
     {
         $data = $request->request->get('data', null);
+        $removeHistory = $request->request->get('removeHistory', false);
+        $startDate = $request->request->get('startDate', null);
+        $endDate = $request->request->get('endDate', null);
+
+        $checkAssociative = $this->isAssoc($data);
+
+        if ($checkAssociative) {
+            if (count($data) != 2) {
+                //throw exception
+                throw new BadRequestHttpException('Invalid data input.');
+            }
+
+            if (!$data['columns'] && !$data['rows']) {
+                throw new BadRequestHttpException('Invalid data input.');
+            }
+        }
+
         $data = json_encode($data);
 
         if (json_last_error() != JSON_ERROR_NONE) {
@@ -985,16 +1004,20 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         $uploadRootDir = $this->container->getParameter('upload_file_dir');
         $dirItem = '/' . $dataSource->getPublisher()->getId() . '/' . $dataSource->getId() . '/' . (date_create('today')->format('Ymd'));
         $uploadPath = $uploadRootDir . $dirItem;
+        try {
+            if (!is_dir($uploadPath))
+                mkdir($uploadPath, 0777, true);
+        } catch (\Exception $e) {
 
-        mkdir($uploadPath, 0777, true);
+        }
 
         $name = 'data-message_' . round(microtime(true)) . '.json';
         file_put_contents($uploadPath . '/' . $name, $data);
 
-        $file = new UploadedFile($uploadPath . $name, $name);
+        $file = new UploadedFile($uploadPath . '/' . $name, $name);
         $uploadFileService = $this->container->get('ur.service.data_source.upload_file_service');
 
-        return $uploadFileService->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $sourceParam, false);
+        return $uploadFileService->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $sourceParam, false, null, $startDate, $endDate, $removeHistory);
     }
 
     /**

@@ -15,6 +15,7 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertFactory;
+use UR\Service\DataSource\CleanUpDataSourceTimeSeriesService;
 use UR\Service\Import\AutoImportDataInterface;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Import\ImportDataLogger;
@@ -29,6 +30,9 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
 
     const CONNECTED_DATA_SOURCE_ID = 'connected_data_source_id';
     const ENTRY_ID = 'entry_id';
+
+    /** @var CleanUpDataSourceTimeSeriesService  */
+    protected $cleanUpDataSourceTimeSeriesService;
 
     /**
      * @var LoggerInterface
@@ -69,7 +73,8 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         AutoImportDataInterface $importData,
         Manager $workerManager,
         ImportDataLogger $importDataLogger,
-        EntityManager $entityManager
+        EntityManager $entityManager,
+        CleanUpDataSourceTimeSeriesService $cleanUpDataSourceTimeSeriesService
     )
     {
         $this->logger = $logger;
@@ -81,6 +86,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         $this->workerManager = $workerManager;
         $this->importDataLogger = $importDataLogger;
         $this->entityManager = $entityManager;
+        $this->cleanUpDataSourceTimeSeriesService = $cleanUpDataSourceTimeSeriesService;
     }
 
     public function getName(): string
@@ -174,6 +180,9 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
                     $connectedDataSource->getDataSource()->getId()
                 )
             );
+
+            $this->cleanUpDataSourceTimeSeries($dataSourceEntry);
+
         } catch (ImportDataException $e) { /* exception */
             $errorCode = $e->getAlertCode();
             $isImportFail = true;
@@ -222,5 +231,36 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
             $this->entityManager->clear();
             gc_collect_cycles();
         }
+    }
+
+    /**
+     * @param DataSourceEntryInterface $dataSourceEntry
+     */
+    private function cleanUpDataSourceTimeSeries(DataSourceEntryInterface $dataSourceEntry)
+    {
+        if (!$dataSourceEntry->getRemoveHistory()) {
+            return;
+        }
+
+        $dataSource = $dataSourceEntry->getDataSource();
+
+        /** Find all connected data sources related to a data source*/
+        $connectedDataSources = $this->connectedDataSourceManager->getConnectedDataSourceByDataSource($dataSource);
+
+        foreach ($connectedDataSources as $connectedDataSource) {
+            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+                continue;
+            }
+
+            $newImportHistories = $this->importHistoryManager->findImportHistoriesByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource);
+            
+            if (count($newImportHistories) < 1) {
+                /** Wait for other worker job load files in to data set */
+                return;
+            }
+        }
+
+        /** Make sure all connected data sources have new import history with new data source entry */
+        $this->cleanUpDataSourceTimeSeriesService->cleanUpDataSourceTimeSeries($dataSourceEntry->getDataSource());
     }
 }

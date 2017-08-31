@@ -52,7 +52,8 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             ->add('fromMetadata')
             ->add('pattern')
             ->add('emailAnchorTexts')
-            ->add('backfillMissingDateRunning');
+            ->add('backfillMissingDateRunning')
+            ->add('timeSeries');
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(

@@ -133,6 +133,19 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
     /**
      * @inheritdoc
      */
+    public function findImportHistoriesByDataSourceEntryAndConnectedDataSource(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $qb = $this->createQueryBuilder('ih')
+            ->where('ih.dataSourceEntry=:dataSourceEntry')
+            ->andWhere('ih.connectedDataSource=:connectedDataSource')
+            ->setParameter('dataSourceEntry', $dataSourceEntry)
+            ->setParameter('connectedDataSource', $connectedDataSource);
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getImportHistoryByDataSourceEntryWithoutDataSet(DataSourceEntryInterface $dataSourceEntry)
     {
         $qb = $this->createQueryBuilder('ih')

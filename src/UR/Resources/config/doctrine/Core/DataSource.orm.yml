@@ -71,6 +71,11 @@ UR\Entity\Core\DataSource:
             nullable: true
             options:
                 default: false
+        timeSeries:
+            type: boolean
+            nullable: true
+            options:
+                default: false
         dateFields:
             type: json_array
             nullable: true

@@ -76,3 +76,6 @@ UR\Entity\Core\DataSource:
         backfillMissingDateRunning:
             expose: true
             groups: [datasource.detail, datasource.edit]
+        timeSeries:
+            expose: true
+            groups: [datasource.detail, datasource.edit]

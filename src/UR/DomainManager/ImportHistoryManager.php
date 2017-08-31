@@ -115,6 +115,14 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
         return $this->repository->getImportHistoryByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource, $importHistory);
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function findImportHistoriesByDataSourceEntryAndConnectedDataSource(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        return $this->repository->findImportHistoriesByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource);
+    }
+
     public function deleteImportHistoriesByIds(array $importHistoryIds)
     {
         return $this->repository->deleteImportHistoriesByIds($importHistoryIds);

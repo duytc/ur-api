@@ -3,6 +3,7 @@
 
 namespace UR\Bundle\ApiBundle\Service\DataSource;
 
+use DateTime;
 use Exception;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use UR\Behaviors\FileUtilsTrait;
@@ -56,7 +57,7 @@ class UploadFileService
         $this->alertFactory = new DataSourceAlertFactory();
     }
 
-    public function uploadDataSourceEntryFile(UploadedFile $file, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile = true, $metadata = null)
+    public function uploadDataSourceEntryFile(UploadedFile $file, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile = true, $metadata = null, $startDate = null, $endDate = null, $removeHistory = false)
     {
         /* validate via type */
         if (!DataSourceEntry::isSupportedReceivedViaType($receivedVia)) {
@@ -136,7 +137,18 @@ class UploadFileService
                 ->setHashFile($hash)
                 ->setMetaData($metadata)
                 ->setDataSource($dataSource)
-                ->setFileExtension($file->getClientOriginalExtension());
+                ->setFileExtension($file->getClientOriginalExtension())
+                ->setRemoveHistory($removeHistory);
+
+            /* Validating startDate and endDate must be not null. */
+            if (!empty($startDate) && !empty($endDate)) {
+                /* converting startDate and endDate from String to DateTime */
+                $startDate = new DateTime($startDate);
+                $endDate = new DateTime($endDate);
+
+                $dataSourceEntry->setStartDate($startDate)
+                                ->setEndDate($endDate);
+            }
 
             // persist and flush
             $this->dataSourceEntryManager->save($dataSourceEntry);

@@ -33,6 +33,7 @@ class DataSource implements DataSourceInterface
      * @var bool
      */
     protected $fromMetadata;
+    protected $timeSeries;
 
     /**
      * @var string
@@ -621,6 +622,24 @@ class DataSource implements DataSourceInterface
     {
         $this->backfillMissingDateRunning = $backfillMissingDateRunning;
 
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTimeSeries()
+    {
+        return $this->timeSeries;
+    }
+
+    /**
+     * @param mixed $timeSeries
+     * @return self
+     */
+    public function setTimeSeries($timeSeries)
+    {
+        $this->timeSeries = $timeSeries;
         return $this;
     }
 }
