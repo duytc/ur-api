@@ -15,7 +15,7 @@ use UR\Service\DataSource\CleanUpDataSourceTimeSeriesService;
 
 class CleanUpDataSourceTimeSeriesCommand extends ContainerAwareCommand
 {
-    const COMMAND_NAME = 'ur:data-source:clean-time-series';
+    const COMMAND_NAME = 'ur:data-source:remove-duplicated-dates';
     const ARGUMENT_DATA_SOURCE_ID = "dataSource";
 
     /** @var  CleanUpDataSourceTimeSeriesService */
