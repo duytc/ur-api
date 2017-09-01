@@ -15,7 +15,7 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertFactory;
-use UR\Service\DataSource\CleanUpDataSourceTimeSeriesService;
+use UR\Service\DataSource\DataSourceCleaningService;
 use UR\Service\Import\AutoImportDataInterface;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Import\ImportDataLogger;
@@ -31,8 +31,8 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
     const CONNECTED_DATA_SOURCE_ID = 'connected_data_source_id';
     const ENTRY_ID = 'entry_id';
 
-    /** @var CleanUpDataSourceTimeSeriesService  */
-    protected $cleanUpDataSourceTimeSeriesService;
+    /** @var DataSourceCleaningService  */
+    protected $dataSourceCleaningService;
 
     /**
      * @var LoggerInterface
@@ -74,7 +74,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         Manager $workerManager,
         ImportDataLogger $importDataLogger,
         EntityManager $entityManager,
-        CleanUpDataSourceTimeSeriesService $cleanUpDataSourceTimeSeriesService
+        DataSourceCleaningService $dataSourceCleaningService
     )
     {
         $this->logger = $logger;
@@ -86,7 +86,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         $this->workerManager = $workerManager;
         $this->importDataLogger = $importDataLogger;
         $this->entityManager = $entityManager;
-        $this->cleanUpDataSourceTimeSeriesService = $cleanUpDataSourceTimeSeriesService;
+        $this->dataSourceCleaningService = $dataSourceCleaningService;
     }
 
     public function getName(): string
@@ -181,7 +181,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
                 )
             );
 
-            $this->cleanUpDataSourceTimeSeries($dataSourceEntry);
+            $this->removeDuplicatedDateEntries($dataSourceEntry);
 
         } catch (ImportDataException $e) { /* exception */
             $errorCode = $e->getAlertCode();
@@ -236,7 +236,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
     /**
      * @param DataSourceEntryInterface $dataSourceEntry
      */
-    private function cleanUpDataSourceTimeSeries(DataSourceEntryInterface $dataSourceEntry)
+    private function removeDuplicatedDateEntries(DataSourceEntryInterface $dataSourceEntry)
     {
         if (!$dataSourceEntry->getRemoveHistory()) {
             return;
@@ -261,6 +261,6 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         }
 
         /** Make sure all connected data sources have new import history with new data source entry */
-        $this->cleanUpDataSourceTimeSeriesService->cleanUpDataSourceTimeSeries($dataSourceEntry->getDataSource());
+        $this->dataSourceCleaningService->removeDuplicatedDateEntries($dataSourceEntry->getDataSource());
     }
 }

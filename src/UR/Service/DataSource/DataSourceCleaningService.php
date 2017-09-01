@@ -9,7 +9,7 @@ use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\ImportHistoryInterface;
 
-class CleanUpDataSourceTimeSeriesService implements CleanUpDataSourceTimeSeriesServiceInterface
+class DataSourceCleaningService implements DataSourceCleaningServiceInterface
 {
     /** @var DataSourceEntryManagerInterface */
     protected $dataSourceEntryManager;
@@ -31,7 +31,7 @@ class CleanUpDataSourceTimeSeriesService implements CleanUpDataSourceTimeSeriesS
     /**
      * @inheritdoc
      */
-    public function cleanUpDataSourceTimeSeries(DataSourceInterface $dataSource)
+    public function removeDuplicatedDateEntries(DataSourceInterface $dataSource)
     {
         if (!$dataSource->getTimeSeries()) {
             return;

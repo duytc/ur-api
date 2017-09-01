@@ -51,7 +51,7 @@ class DataSourceEntryChangeForTimeSeriesListener
              * Can not inject CleanUpDataSourceTimeSeriesService because of circular reference
              * Use worker to run this
              */
-            $this->workerManager->cleanUpDataSourceTimeSeries($dataSource->getId());
+            $this->workerManager->removeDuplicatedDateEntries($dataSource->getId());
         }
     }
 }

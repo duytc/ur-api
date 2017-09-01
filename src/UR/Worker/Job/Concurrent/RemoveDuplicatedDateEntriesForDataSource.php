@@ -7,10 +7,10 @@ use Pubvantage\Worker\Job\LockableJobInterface;
 use Pubvantage\Worker\JobParams;
 use UR\DomainManager\DataSourceManagerInterface;
 use UR\Model\Core\DataSourceInterface;
-use UR\Service\DataSource\CleanUpDataSourceTimeSeriesService;
-use UR\Service\DataSource\CleanUpDataSourceTimeSeriesServiceInterface;
+use UR\Service\DataSource\DataSourceCleaningService;
+use UR\Service\DataSource\DataSourceCleaningServiceInterface;
 
-class CleanUpTimeSeriesForDataSource implements LockableJobInterface
+class RemoveDuplicatedDateEntriesForDataSource implements LockableJobInterface
 {
     const JOB_NAME = 'clean_up_time_series_for_data_source';
 
@@ -24,13 +24,13 @@ class CleanUpTimeSeriesForDataSource implements LockableJobInterface
      */
     private $logger;
 
-    /** @var CleanUpDataSourceTimeSeriesService */
-    private $cleanUpDataSourceTimeSeriesService;
+    /** @var DataSourceCleaningService */
+    private $dataSourceCleaningService;
 
-    public function __construct(LoggerInterface $logger, CleanUpDataSourceTimeSeriesServiceInterface $cleanUpDataSourceTimeServices, DataSourceManagerInterface $dataSourceManager)
+    public function __construct(LoggerInterface $logger, DataSourceCleaningServiceInterface $dataSourceCleaningService, DataSourceManagerInterface $dataSourceManager)
     {
         $this->logger = $logger;
-        $this->cleanUpDataSourceTimeSeriesService = $cleanUpDataSourceTimeServices;
+        $this->dataSourceCleaningService = $dataSourceCleaningService;
         $this->dataSourceManager = $dataSourceManager;
     }
 
@@ -54,6 +54,6 @@ class CleanUpTimeSeriesForDataSource implements LockableJobInterface
             return;
         }
 
-        $this->cleanUpDataSourceTimeSeriesService->cleanUpDataSourceTimeSeries($dataSource);
+        $this->dataSourceCleaningService->removeDuplicatedDateEntries($dataSource);
     }
 }

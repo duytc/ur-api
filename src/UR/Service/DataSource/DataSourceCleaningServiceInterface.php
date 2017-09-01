@@ -5,11 +5,11 @@ namespace UR\Service\DataSource;
 
 use UR\Model\Core\DataSourceInterface;
 
-interface CleanUpDataSourceTimeSeriesServiceInterface
+interface DataSourceCleaningServiceInterface
 {
     /**
      * @param DataSourceInterface $dataSource
      * @return mixed
      */
-    public function cleanUpDataSourceTimeSeries(DataSourceInterface $dataSource);
+    public function removeDuplicatedDateEntries(DataSourceInterface $dataSource);
 }

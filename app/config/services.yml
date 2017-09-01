@@ -283,10 +283,10 @@ services:
             - '@ur.service.date_time.date_range_service'
 
     ur.worker.job.concurrent.clean_up_time_series_for_data_source_subjob:
-        class: UR\Worker\Job\Concurrent\CleanUpTimeSeriesForDataSource
+        class: UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource
         arguments:
             - '@logger'
-            - '@ur.service.data_source.clean_up_data_source_time_series_service'
+            - '@ur.service.data_source.data_source_cleaning_service'
             - '@ur.domain_manager.data_source'
 
     ur.worker.job.linear.load_file_into_data_set_sub_job:
@@ -301,7 +301,7 @@ services:
             - @ur.worker.manager
             - @ur.service.import.do_log
             - @doctrine.orm.entity_manager
-            - @ur.service.data_source.clean_up_data_source_time_series_service
+            - @ur.service.data_source.data_source_cleaning_service
 
     ur.worker.job.linear.load_file_into_data_set_map_builder_sub_job:
         class: UR\Worker\Job\Linear\LoadFileIntoDataSetMapBuilderSubJob
@@ -602,8 +602,8 @@ services:
             - '@ur.service.file_factory'
             - '%max_excel_file_size%'
 
-    ur.service.data_source.clean_up_data_source_time_series_service:
-        class: UR\Service\DataSource\CleanUpDataSourceTimeSeriesService
+    ur.service.data_source.data_source_cleaning_service:
+        class: UR\Service\DataSource\DataSourceCleaningService
         arguments:
             - '@ur.domain_manager.data_source_entry'
             - '@ur.domain_manager.import_history'

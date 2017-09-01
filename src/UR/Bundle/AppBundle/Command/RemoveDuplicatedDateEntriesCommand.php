@@ -11,15 +11,15 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
 use UR\Model\Core\DataSourceInterface;
-use UR\Service\DataSource\CleanUpDataSourceTimeSeriesService;
+use UR\Service\DataSource\DataSourceCleaningService;
 
-class CleanUpDataSourceTimeSeriesCommand extends ContainerAwareCommand
+class RemoveDuplicatedDateEntriesCommand extends ContainerAwareCommand
 {
-    const COMMAND_NAME = 'ur:data-source:remove-duplicated-dates';
+    const COMMAND_NAME = 'ur:data-source:remove-duplicated-date-entries';
     const ARGUMENT_DATA_SOURCE_ID = "dataSource";
 
-    /** @var  CleanUpDataSourceTimeSeriesService */
-    protected $cleanUpDataSourceTimeSeriesService;
+    /** @var  DataSourceCleaningService */
+    protected $dataSourceCleaningService;
 
     protected $dataSource;
 
@@ -39,14 +39,14 @@ class CleanUpDataSourceTimeSeriesCommand extends ContainerAwareCommand
         /** @var ContainerInterface $container */
         $container = $this->getContainer();
         $this->dataSourceManager = $container->get('ur.domain_manager.data_source');
-        $this->cleanUpDataSourceTimeSeriesService = $container->get('ur.service.data_source.clean_up_data_source_time_series_service');
+        $this->dataSourceCleaningService = $container->get('ur.service.data_source.data_source_cleaning_service');
         
         if (!$this->validateInput($input, $output)) {
             $output->writeln('Quit command');
             return;
         }
 
-        $this->cleanUpDataSourceTimeSeriesService->cleanUpDataSourceTimeSeries($this->dataSource);
+        $this->dataSourceCleaningService->removeDuplicatedDateEntries($this->dataSource);
         $output->writeln('Command run success');
     }
 
