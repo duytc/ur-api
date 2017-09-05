@@ -107,6 +107,9 @@ class Params implements ParamsInterface
 
     protected $customDimensionEnabled;
 
+    /** @var  array */
+    protected $metricCalculations;
+
     function __construct()
     {
         $this->dataSets = [];
@@ -114,6 +117,7 @@ class Params implements ParamsInterface
         $this->joinConfigs = [];
         $this->transforms = [];
         $this->searches = [];
+        $this->metricCalculations = [];
     }
 
     /**
@@ -596,6 +600,24 @@ class Params implements ParamsInterface
     public function setCustomDimensionEnabled($customDimensionEnabled)
     {
         $this->customDimensionEnabled = $customDimensionEnabled;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMetricCalculations()
+    {
+        return $this->metricCalculations;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setMetricCalculations($metricCalculations)
+    {
+        $this->metricCalculations = $metricCalculations;
+
         return $this;
     }
 }

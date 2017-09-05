@@ -6,11 +6,11 @@ namespace UR\Service\DataSet;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\Statement;
-use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use UR\Domain\DTO\Report\DataSets\DataSet;
+use UR\Domain\DTO\Report\Params;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\PagerParam;
@@ -88,7 +88,14 @@ class DataMappingManager implements DataMappingManagerInterface
         $page = !empty($param->getPage()) ? intval($param->getPage()) : 1;
         $limit = !empty($param->getLimit()) ? intval($param->getLimit()) : 10;
 
-        $result = $this->sqlBuilder->buildQueryForSingleDataSet($reportDataSet, $page, $limit, [], [], $param->getSortField(), $param->getSortDirection());
+        $reportParam = new Params();
+        $reportParam->setDataSets([$reportDataSet]);
+        $reportParam->setPage($page);
+        $reportParam->setLimit($limit);
+        $reportParam->setSortField($param->getSortField());
+        $reportParam->setOrderBy($param->getSortDirection());
+
+        $result = $this->sqlBuilder->buildQueryForSingleDataSet($reportParam);
         $stmt = $result[SqlBuilder::STATEMENT_KEY];
 
         $rows = $stmt->fetchAll();

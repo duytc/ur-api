@@ -251,4 +251,15 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setId($id);
+
+    /**
+     * @return array
+     */
+    public function getMetricCalculations();
+
+    /**
+     * @param array $metricCalculations
+     * @return self
+     */
+    public function setMetricCalculations($metricCalculations);
 }

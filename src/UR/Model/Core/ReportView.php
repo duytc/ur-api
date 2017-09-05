@@ -132,6 +132,11 @@ class ReportView implements ReportViewInterface
     protected $enableCustomDimensionMetric;
 
     /**
+     * @var array
+     */
+    protected $metricCalculations;
+
+    /**
      * @return mixed
      */
     public function getShared()
@@ -531,6 +536,24 @@ class ReportView implements ReportViewInterface
     public function setEnableCustomDimensionMetric($enableCustomDimensionMetric)
     {
         $this->enableCustomDimensionMetric = $enableCustomDimensionMetric;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMetricCalculations()
+    {
+        return $this->metricCalculations;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setMetricCalculations($metricCalculations)
+    {
+        $this->metricCalculations = $metricCalculations;
+
         return $this;
     }
 }

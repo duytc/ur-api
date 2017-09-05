@@ -7,11 +7,11 @@ namespace UR\Service\DataSet;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\Statement;
-use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use SplDoublyLinkedList;
 use UR\Domain\DTO\Report\DataSets\DataSet;
+use UR\Domain\DTO\Report\Params;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSetInterface;
@@ -117,7 +117,9 @@ class DataMappingService implements DataMappingServiceInterface
         );
 
         $dataSetDTO = new DataSet($data);
-        $result = $this->sqlBuilder->buildQueryForSingleDataSet($dataSetDTO);
+        $params = new Params();
+        $params->setDataSets([$dataSetDTO]);
+        $result = $this->sqlBuilder->buildQueryForSingleDataSet($params);
         /** @var Statement $stmt */
         $stmt = $result[SqlBuilder::STATEMENT_KEY];
         try {

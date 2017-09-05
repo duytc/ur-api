@@ -5,37 +5,24 @@ namespace UR\Service\Report;
 
 
 use Doctrine\DBAL\Driver\Statement;
-use Doctrine\DBAL\Query\QueryBuilder;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
+use UR\Domain\DTO\Report\ParamsInterface;
 
 interface SqlBuilderInterface
 {
     /**
-     * @param DataSetInterface $dataSet
-     * @param null $page
-     * @param null $limit
-     * @param array $transforms
-     * @param array $searches
-     * @param $sortField
-     * @param $sortDirection
+     * @param ParamsInterface $params
      * @param $overridingFilters
      * @return Statement
      */
-    public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $page = null, $limit = null, $transforms = [], $searches = [], $sortField = null, $sortDirection = null, $overridingFilters = null);
+    public function buildQueryForSingleDataSet(ParamsInterface $params, $overridingFilters = null);
 
     /**
-     * @param array $dataSets
-     * @param array $joinConfig
-     * @param $page
-     * @param $limit
-     * @param $transforms
-     * @param $searches
-     * @param $sortField
-     * @param $sortDirection
+     * @param ParamsInterface $params
      * @param $overridingFilters
      * @return Statement
      */
-    public function buildQuery(array $dataSets, array $joinConfig, $page = null, $limit = null, $transforms = [], $searches = [], $sortField = null, $sortDirection = null, $overridingFilters = null);
+    public function buildQuery(ParamsInterface $params, $overridingFilters = null);
 
     public function buildGroupQuery($subQuery, array $dataSets, array $joinConfig, $transforms = [], $searches = [], $showInTotal = null, $overridingFilters = null);
 

@@ -268,4 +268,15 @@ interface ParamsInterface
      * @return self
      */
     public function setMetrics($metrics);
+
+    /**
+     * @return array
+     */
+    public function getMetricCalculations();
+
+    /**
+     * @param array $metricCalculations
+     * @return self
+     */
+    public function setMetricCalculations($metricCalculations);
 }

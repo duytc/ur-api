@@ -97,6 +97,32 @@ trait StringUtilTrait
         return $column;
     }
 
+
+    protected function convertExpressionForm($expression, $removeSuffix = false)
+    {
+        if (is_null($expression)) {
+            throw new \Exception(sprintf('Expression for calculated field can not be null'));
+        }
+
+        $regex = '/\[(.*?)\]/';
+        if (!preg_match_all($regex, $expression, $matches)) {
+            return $expression;
+        };
+
+        $fieldsInBracket = $matches[0];
+        $fields = $matches[1];
+        $newExpressionForm = null;
+
+        foreach ($fields as $index => $field) {
+            if ($removeSuffix === true) {
+                $field = $this->removeIdSuffix($field);
+            }
+            $expression = str_replace($fieldsInBracket[$index], $field, $expression);
+        }
+
+        return $expression;
+    }
+
     protected function getIdSuffixAndField($column)
     {
         if (preg_match('/^(.*)_([0-9]+)$/', $column, $matches)) {

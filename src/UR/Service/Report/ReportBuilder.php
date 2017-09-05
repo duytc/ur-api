@@ -219,7 +219,7 @@ class ReportBuilder implements ReportBuilderInterface
                 throw new InvalidArgumentException(sprintf('The report view %d does not exist', $reportView->getReportViewId()));
             }
 
-            $reportParam = $this->paramsBuilder->buildFromReportView($view);
+            $reportParam = $this->paramsBuilder->buildFromReportView($view, null, $params);
             if (is_array($params->getUserDefinedMetrics())) {
                 $reportParam->setShowInTotal(array_merge($params->getUserDefinedMetrics(), $reportView->getMetrics()));
             } else {

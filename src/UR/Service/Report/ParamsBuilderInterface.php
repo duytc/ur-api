@@ -18,14 +18,16 @@ interface ParamsBuilderInterface
     /**
      * @param ReportViewInterface $reportView
      * @param array|null $showInTotal
+     * @param ParamsInterface $multiParams
      * @return ParamsInterface
      */
-    public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null);
+    public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null, ParamsInterface $multiParams = null);
 
     /**
      * @param ReportViewInterface $reportView
+     * @param array $fieldsToBeShared
      * @param array $paginationParams
      * @return ParamsInterface
      */
-    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $paginationParams);
+    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $fieldsToBeShared, array $paginationParams);
 }

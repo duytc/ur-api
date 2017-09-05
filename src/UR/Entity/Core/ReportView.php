@@ -31,6 +31,11 @@ class ReportView extends ReportViewModel
     protected $enableCustomDimensionMetric;
 
     /**
+     * @var array
+     */
+    protected $metricCalculations;
+
+    /**
      * @inheritdoc
      */
     public function __construct()

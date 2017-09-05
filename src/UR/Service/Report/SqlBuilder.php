@@ -20,6 +20,7 @@ use UR\Domain\DTO\Report\Filters\TextFilter;
 use UR\Domain\DTO\Report\Filters\TextFilterInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
+use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
@@ -30,6 +31,7 @@ use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\Synchronizer;
+use UR\Service\PublicSimpleException;
 use UR\Service\SqlUtilTrait;
 
 class SqlBuilder implements SqlBuilderInterface
@@ -84,9 +86,16 @@ class SqlBuilder implements SqlBuilderInterface
     /**
      * @inheritdoc
      */
-    public function buildQueryForSingleDataSet(DataSetInterface $dataSet, $page = null, $limit = null, $transforms = [], $searches = [],
-        $sortField = null, $sortDirection = null, $overridingFilters = null)
+    public function buildQueryForSingleDataSet(ParamsInterface $params, $overridingFilters = null)
     {
+        $dataSet = $params->getDataSets()[0];
+        $page = $params->getPage();
+        $limit = $params->getLimit();
+        $transforms = $params->getTransforms();
+        $searches = $params->getSearches();
+        $sortField = $params->getSortField();
+        $sortDirection = $params->getOrderBy();
+
         $metrics = $dataSet->getMetrics();
         $dimensions = $dataSet->getDimensions();
         $filters = $dataSet->getFilters();
@@ -165,11 +174,22 @@ class SqlBuilder implements SqlBuilderInterface
             }
         }
 
+        if (!empty($params->getMetricCalculations())) {
+            $hasGroup = true;
+        }
+
+        $metricCalculation = $params->getMetricCalculations();
+
         // Add SELECT clause
         foreach ($fields as $field) {
             $fieldWithId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
             if (array_key_exists($fieldWithId, $types) && in_array($types[$fieldWithId], [FieldType::NUMBER, FieldType::DECIMAL]) && $hasGroup) {
-                $subQb->addSelect(sprintf('SUM(%s) as %s_%d', $this->connection->quoteIdentifier($field), $field, $dataSet->getDataSetId()));
+                if (is_array($metricCalculation) && array_key_exists($fieldWithId, $metricCalculation) && !empty($metricCalculation[$fieldWithId])) {
+                    $expression = $this->convertExpressionForm($metricCalculation[$fieldWithId], $removeSuffix = true);
+                    $subQb->addSelect(sprintf('%s as %s_%d', $expression, $field, $dataSet->getDataSetId()));
+                } else {
+                    $subQb->addSelect(sprintf('SUM(%s) as %s_%d', $this->connection->quoteIdentifier($field), $field, $dataSet->getDataSetId()));
+                }
                 continue;
             } else if (array_key_exists($fieldWithId, $types) && $types[$fieldWithId] == FieldType::DATETIME && $hasGroup) {
                 $subQb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as %s_%d", $this->connection->quoteIdentifier($field), $timezone, $field, $dataSet->getDataSetId()));
@@ -216,9 +236,15 @@ class SqlBuilder implements SqlBuilderInterface
             $subQb = $this->addLimitQuery($subQb, $page, $limit);
             $subQb = $this->addSortQuery($subQb, $transforms, $sortField, $sortDirection);
 
+            try {
+                $stmt = $subQb->execute();
+            } catch (\Exception $e) {
+                throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
+            }
+
             return array(
                 self::SUB_QUERY => $subQuery->getSQL(),
-                self::STATEMENT_KEY => $subQb->execute(),
+                self::STATEMENT_KEY => $stmt,
                 self::DATE_RANGE_KEY => $dateRange
             );
         }
@@ -250,9 +276,15 @@ class SqlBuilder implements SqlBuilderInterface
         $qb = $this->addLimitQuery($qb, $page, $limit);
         $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
 
+        try {
+            $stmt = $qb->execute();
+        } catch (\Exception $e) {
+            throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
+        }
+
         return array(
             self::SUB_QUERY => $subQuery->getSQL(),
-            self::STATEMENT_KEY => $qb->execute(),
+            self::STATEMENT_KEY => $stmt,
             self::DATE_RANGE_KEY => $dateRange
         );
     }
@@ -381,8 +413,17 @@ class SqlBuilder implements SqlBuilderInterface
     /**
      * @inheritdoc
      */
-    public function buildQuery(array $dataSets, array $joinConfig, $page = null, $limit = null, $transforms = [], $searches = [], $sortField = null, $sortDirection = null, $overridingFilters = null)
+    public function buildQuery(ParamsInterface $params, $overridingFilters = null)
     {
+        $dataSets = $params->getDataSets();
+        $joinConfig = $params->getJoinConfigs();
+        $page = $params->getPage();
+        $limit = $params->getLimit();
+        $transforms = $params->getTransforms();
+        $searches = $params->getSearches();
+        $sortField = $params->getSortField();
+        $sortDirection = $params->getOrderBy();
+
         if (empty($dataSets)) {
             throw new InvalidArgumentException('no dataSet');
         }
@@ -393,7 +434,7 @@ class SqlBuilder implements SqlBuilderInterface
                 throw new RuntimeException('expect an DataSetInterface object');
             }
 
-            return $this->buildQueryForSingleDataSet($dataSet);
+            return $this->buildQueryForSingleDataSet($params, $overridingFilters);
         }
 
         if (count($joinConfig) < 1) {
@@ -499,7 +540,7 @@ class SqlBuilder implements SqlBuilderInterface
                 $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
             }
             $allFilters = array_merge($allFilters, $filters);
-            $subQb = $this->buildSelectQuery($subQb, $dataSet, $dataSetIndex, $joinConfig, $selectedJoinFields, $hasGroup, $timezone);
+            $subQb = $this->buildSelectQuery($params, $subQb, $dataSet, $dataSetIndex, $joinConfig, $selectedJoinFields, $hasGroup, $timezone);
             $buildResult = $this->buildFilters($filters, sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());
             $conditions = array_merge($conditions, $buildResult[self::CONDITION_KEY]);
             $dateRange = array_merge($dateRange, $buildResult[self::DATE_RANGE_KEY]);
@@ -538,9 +579,13 @@ class SqlBuilder implements SqlBuilderInterface
                 $stmt = $this->bindStatementParam($stmt, $filters, $dataSet->getDataSetId());
             }
 
-            $stmt->execute();
+            try {
+                $stmt->execute();
+            } catch (\Exception $e) {
+                throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
+            }
 
-            return array (
+            return array(
                 self::SUB_QUERY => $query,
                 self::STATEMENT_KEY => $stmt,
                 self::DATE_RANGE_KEY => $dateRange
@@ -583,9 +628,15 @@ class SqlBuilder implements SqlBuilderInterface
         $qb = $this->addLimitQuery($qb, $page, $limit);
         $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
 
-        return array (
+        try {
+            $stmt = $qb->execute();
+        } catch (\Exception $e) {
+            throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
+        }
+
+        return array(
             self::SUB_QUERY => $subQuery->getSQL(),
-            self::STATEMENT_KEY => $qb->execute(),
+            self::STATEMENT_KEY => $stmt,
             self::DATE_RANGE_KEY => $dateRange
         );
     }
@@ -783,6 +834,7 @@ class SqlBuilder implements SqlBuilderInterface
     }
 
     /**
+     * @param ParamsInterface $params
      * @param QueryBuilder $qb
      * @param DataSetInterface $dataSet
      * @param $dataSetIndex
@@ -792,7 +844,7 @@ class SqlBuilder implements SqlBuilderInterface
      * @param $timezone
      * @return QueryBuilder
      */
-    protected function buildSelectQuery(QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, array $joinConfig, array &$selectedJoinFields, $hasGroup = false, $timezone = 'UTC')
+    protected function buildSelectQuery(ParamsInterface $params, QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, array $joinConfig, array &$selectedJoinFields, $hasGroup = false, $timezone = 'UTC')
     {
         $metrics = $dataSet->getMetrics();
         $dimensions = $dataSet->getDimensions();
@@ -827,6 +879,8 @@ class SqlBuilder implements SqlBuilderInterface
             throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
         }
 
+        $metricCalculation = $params->getMetricCalculations();
+
         // build select query for each data set
         foreach ($fields as $field) {
             $alias = $this->getAliasForField($dataSet->getDataSetId(), $field, $joinConfig);
@@ -843,8 +897,19 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             if (array_key_exists($field, $types) && in_array($types[$field], ['number', 'decimal']) && $hasGroup) {
-                $field = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
-                $qb->addSelect(sprintf("SUM(%s) as '%s'", $field, $alias));
+                $fieldQuote = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
+                if (is_array($metricCalculation) && array_key_exists($fieldQuote, $metricCalculation)) {
+                    $expression = $this->convertExpressionForm($metricCalculation[$fieldQuote]);
+                    $qb->addSelect(sprintf("%s as '%s'", $expression, $alias));
+                } else {
+                    $fieldWithId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
+                    if (is_array($metricCalculation) && array_key_exists($fieldWithId, $metricCalculation) && !empty($metricCalculation[$fieldWithId])) {
+                        $expression = $this->convertExpressionForm($metricCalculation[$fieldWithId], $removeSuffix = true);
+                        $qb->addSelect(sprintf('%s as %s', $expression, $fieldWithId));
+                    } else {
+                        $qb->addSelect(sprintf("SUM(%s) as '%s'", $fieldQuote, $alias));
+                    }
+                }
                 continue;
             }
 
@@ -1064,13 +1129,13 @@ class SqlBuilder implements SqlBuilderInterface
                     return sprintf("(%s)", implode(' OR ', $endWiths)); // cover conditions in "()" to keep inner AND/OR of conditions
 
                 case TextFilter::COMPARISON_TYPE_IN:
-                    $values = array_map(function($value) {
+                    $values = array_map(function ($value) {
                         return "'$value'";
                     }, $filter->getComparisonValue());
                     return sprintf('%s IN (%s)', $fieldName, implode(',', $values));
 
                 case TextFilter::COMPARISON_TYPE_NOT_IN:
-                    $values = array_map(function($value) {
+                    $values = array_map(function ($value) {
                         return "'$value'";
                     }, $filter->getComparisonValue());
                     return sprintf('(%s IS NULL OR %s = \'\' OR %s NOT IN (%s))', $fieldName, $fieldName, $fieldName, implode(',', $values));
@@ -1200,12 +1265,12 @@ class SqlBuilder implements SqlBuilderInterface
     private function getHiddenFieldsFromDataSetTable($table)
     {
         $columns = $table->getColumns();
-        $columns = array_filter($columns, function(Column $column){
+        $columns = array_filter($columns, function (Column $column) {
             return in_array($column->getType()->getName(), [Type::DATE, Type::DATETIME]);
         });
         $temporaryFields = [];
         /** @var Column $column */
-        foreach ($columns as $column){
+        foreach ($columns as $column) {
             $temporaryFields[] = Synchronizer::getHiddenColumnDay($column->getName());
             $temporaryFields[] = Synchronizer::getHiddenColumnMonth($column->getName());
             $temporaryFields[] = Synchronizer::getHiddenColumnYear($column->getName());

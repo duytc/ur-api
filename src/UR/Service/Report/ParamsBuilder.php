@@ -17,6 +17,7 @@ use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinField;
 use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Domain\DTO\Report\Params;
+use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\ReportViews\ReportView;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
@@ -62,6 +63,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const SORT_FIELD_KEY = 'sortField';
     const DIMENSIONS_KEY = 'dimensions';
     const METRICS_KEY = 'metrics';
+    const METRIC_CALCULATIONS = 'metricCalculations';
 
     /**
      * @inheritdoc
@@ -218,6 +220,12 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if (array_key_exists(self::CUSTOM_DIMENSION_ENABLED, $data)) {
             $param->setCustomDimensionEnabled(filter_var($data[self::CUSTOM_DIMENSION_ENABLED], FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if ($this->isSupportMetricCalculations($param)) {
+            if (array_key_exists(self::METRIC_CALCULATIONS, $data)) {
+                $param->setMetricCalculations($data[self::METRIC_CALCULATIONS]);
+            }
         }
 
         return $param;
@@ -502,7 +510,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     /**
      * @inheritdoc
      */
-    public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null)
+    public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null, ParamsInterface $multiParams = null)
     {
         $param = new Params();
 
@@ -542,17 +550,52 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         $param->setPage(1)->setLimit(10);
 
+        if ($this->isSupportMetricCalculations($param)) {
+            $param->setMetricCalculations($reportView->getMetricCalculations());
+
+            /** Overwrite values from multi view */
+            if ($multiParams instanceof ParamsInterface) {
+                $param->setMetricCalculations(array_merge($param->getMetricCalculations(), $multiParams->getMetricCalculations()));
+            }
+        }
+
         return $param;
     }
 
     /**
      * @inheritdoc
      */
-    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $paginationParams)
+    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $fieldsToBeShared, array $paginationParams)
     {
         $param = new Params();
-        $param->setDimensions($reportView->getDimensions());
-        $param->setMetrics($reportView->getMetrics());
+
+        // important: the dimensions/metrics need re-calculate due to shared fields.
+        // This makes sure group calculation is correct
+        // e.g: dimensions are date-tag-country, if shared only date-tag => the shared report need be re-calculate base on
+        // new dimensions are date-tag, not full date-tag-country as original report view
+        //// do filtering dimensions
+        $sharedDimensions = [];
+        $dimensions = $reportView->getDimensions();
+        foreach ($dimensions as $dimension) {
+            if (!in_array($dimension, $fieldsToBeShared)) {
+                continue;
+            }
+
+            $sharedDimensions[] = $dimension;
+        }
+        $param->setDimensions($sharedDimensions);
+
+        //// do filtering metrics
+        $sharedMetrics = [];
+        $metrics = $reportView->getMetrics();
+        foreach ($metrics as $metric) {
+            if (!in_array($metric, $fieldsToBeShared)) {
+                continue;
+            }
+
+            $sharedMetrics[] = $metric;
+        }
+        $param->setMetrics($sharedMetrics);
 
         /*
          * VERY IMPORTANT: build report param same as above buildFromArray() function
@@ -643,6 +686,10 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
 
             $param->setUserDefinedDimensions($userDefinedDimensions);
+        } else {
+            // if not user provide dimensions => set shared dimension to it
+            // this is the quickest way for shareable report where dimensions/metrics are not fully shared
+            $param->setUserDefinedDimensions($sharedDimensions);
         }
 
         if (array_key_exists(self::USER_DEFINED_METRICS, $paginationParams)) {
@@ -658,11 +705,45 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
 
             $param->setUserDefinedMetrics($userDefinedMetrics);
+        } else {
+            // if not user provide metrics => set shared metrics to it
+            // this is the quickest way for shareable report where dimensions/metrics are not fully shared
+            $param->setUserDefinedMetrics($sharedMetrics);
         }
 
         // get 'enableCustomDimensionMetric' from report view
         $param->setCustomDimensionEnabled($reportView->isEnableCustomDimensionMetric());
 
+        if ($this->isSupportMetricCalculations($param)) {
+            $param->setMetricCalculations($reportView->getMetricCalculations());
+        }
+
+
         return $param;
+    }
+
+    /**
+     * @param $param
+     * @return bool
+     */
+    private function isSupportMetricCalculations(ParamsInterface $param)
+    {
+        if ($param->getCustomDimensionEnabled()) {
+            return true;
+        }
+
+        $transforms = $param->getTransforms();
+
+        if (!is_array($transforms)) {
+            return false;
+        }
+
+        foreach ($transforms as $transform) {
+            if ($transform instanceof GroupByTransform) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

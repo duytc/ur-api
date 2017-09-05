@@ -80,7 +80,7 @@ class ReportViewController extends FOSRestController
         $fieldsToBeShared = $shareConfig['fields'];
         $allowDatesOutside = array_key_exists('allowDatesOutside', $shareConfig) ? $shareConfig['allowDatesOutside'] : false;
         $paginationParams = $request->query->all();
-        $params = $this->getParams($reportView, $paginationParams);
+        $params = $this->getParams($reportView, $fieldsToBeShared, $paginationParams);
 
         // get dateRange from config then convert to array such as [ startDate => '', endDate => '' ],
         // this is for return to UI for setting startDate-endDate for datePicker
@@ -202,26 +202,29 @@ class ReportViewController extends FOSRestController
 
     /**
      * @param ReportViewInterface $reportView
+     * @param array $fieldsToBeShared
      * @param array $paginationParams
      * @return ParamsInterface formatted as:
      * {
-     *      {"name"="dataSets", "dataType"="array", "required"=false, "description"="list of data set id to build report"},
-     *      {"name"="fieldTypes", "dataType"="array", "required"=false, "description"="list of fields accompanied with their corresponding type"},
-     *      {"name"="joinBy", "dataType"="string", "required"=false, "description"="filter descriptor"},
-     *      {"name"="transforms", "dataType"="string", "required"=false, "description"="transform descriptor"},
-     *      {"name"="weightedCalculations", "dataType"="string", "required"=false, "description"="weighted value calculations descriptor"},
-     *      {"name"="filters", "dataType"="string", "required"=false, "description"="filters descriptor for multi view report"},
-     *      {"name"="multiView", "dataType"="string", "required"=false, "description"="specify the current report is a multi view report"},
-     *      {"name"="reportViews", "dataType"="string", "required"=false, "description"="report views descriptor"},
-     *      {"name"="showInTotal", "dataType"="string", "required"=false, "description"="those fields that are allowed to be shown in Total area"},
-     *      {"name"="formats", "dataType"="string", "required"=false, "description"="format descriptor"},
-     *      {"name"="subReportsIncluded", "dataType"="bool", "required"=false, "description"="include sub reports in multi view report"}
+     * {"name"="dimensions", "dataType"="array", "required"=false, "description"="list of dimensions to build report"},
+     * {"name"="metrics", "dataType"="array", "required"=false, "description"="list of metrics to build report"},
+     * {"name"="dataSets", "dataType"="array", "required"=false, "description"="list of data set id to build report"},
+     * {"name"="fieldTypes", "dataType"="array", "required"=false, "description"="list of fields accompanied with their corresponding type"},
+     * {"name"="joinBy", "dataType"="string", "required"=false, "description"="filter descriptor"},
+     * {"name"="transforms", "dataType"="string", "required"=false, "description"="transform descriptor"},
+     * {"name"="weightedCalculations", "dataType"="string", "required"=false, "description"="weighted value calculations descriptor"},
+     * {"name"="filters", "dataType"="string", "required"=false, "description"="filters descriptor for multi view report"},
+     * {"name"="multiView", "dataType"="string", "required"=false, "description"="specify the current report is a multi view report"},
+     * {"name"="reportViews", "dataType"="string", "required"=false, "description"="report views descriptor"},
+     * {"name"="showInTotal", "dataType"="string", "required"=false, "description"="those fields that are allowed to be shown in Total area"},
+     * {"name"="formats", "dataType"="string", "required"=false, "description"="format descriptor"},
+     * {"name"="subReportsIncluded", "dataType"="bool", "required"=false, "description"="include sub reports in multi view report"}
      * }
      * @see UR\Bundle\ReportApiBundle\Controller\ReportController
      */
-    protected function getParams($reportView, array $paginationParams)
+    protected function getParams($reportView, array $fieldsToBeShared, array $paginationParams)
     {
-        return $this->get('ur.services.report.params_builder')->buildFromReportViewForSharedReport($reportView, $paginationParams);
+        return $this->get('ur.services.report.params_builder')->buildFromReportViewForSharedReport($reportView, $fieldsToBeShared, $paginationParams);
     }
 
     protected function getReportBuilder()

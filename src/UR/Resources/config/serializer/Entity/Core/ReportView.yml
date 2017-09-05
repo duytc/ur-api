@@ -80,5 +80,7 @@ UR\Entity\Core\ReportView:
         isShowDataSetName:
             expose: true
             groups: [report_view.detail, report_view.summary]
-
+        metricCalculations:
+            expose: true
+            groups: [report_view.detail, report_view.summary, report_view.share]
 
