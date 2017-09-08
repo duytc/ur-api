@@ -220,6 +220,64 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	}
 
 	/**
+	 * Get dynamic date from date value
+	 *
+	 * @param $oldDateValue
+	 * @param $newDateValue
+	 */
+	public static function getTheLargestDynamicDate($oldDateValue, $newDateValue)
+	{
+		if (empty($oldDateValue)) {
+			return $newDateValue;
+		}
+		
+		$oldDateRange = self::getDynamicDate(self::DATE_TYPE_DYNAMIC, $oldDateValue);
+		$newDateRange = self::getDynamicDate(self::DATE_TYPE_DYNAMIC, $newDateValue);
+
+		if ($oldDateRange[0] != $newDateRange[0]) {
+			return $oldDateRange[0] < $newDateRange[0] ? $oldDateValue : $newDateValue ;
+		}
+
+		if ($oldDateRange[1] != $newDateRange[1]) {
+			return $oldDateRange[1] > $newDateRange[1] ? $oldDateValue : $newDateValue ;
+		}
+
+		return $newDateValue;
+	}
+
+	/**
+	 * Get fix date range
+	 *
+	 * @param array $oldDateRange
+	 * @param array $newDateRange
+	 *
+	 * @return array
+	 */
+	public static function getTheLargestFixDate(array $oldDateRange, array $newDateRange)
+	{
+		$startDate = $oldDateRange[0] < $newDateRange[0] ? $oldDateRange[0] : $newDateRange[0] ;
+		$endDate = $oldDateRange[1] > $newDateRange[1] ? $oldDateRange[1] : $newDateRange[1] ;
+
+		if (empty($oldDateRange[0])) {
+			$startDate = $newDateRange[0];
+		}
+
+		if (empty($oldDateRange[1])) {
+			$endDate = $newDateRange[1];
+		}
+
+		if (empty($newDateRange[0])) {
+			$startDate = $oldDateRange[0];
+		}
+
+		if (empty($newDateRange[1])) {
+			$endDate = $oldDateRange[1];
+		}
+
+		return [$startDate, $endDate];
+	}
+
+	/**
 	 * get dynamic date from date value
 	 *
 	 * @param string $dateType

@@ -65,7 +65,7 @@ class ReportViewController extends FOSRestController
 
         $this->validateReportView($reportView);
 
-        $token = $request->query->get('token', null);
+        $token = $request->query->get(ReportViewInterface::TOKEN, null);
         if (null == $token) {
             throw new BadRequestHttpException('Invalid token');
         }
@@ -77,8 +77,8 @@ class ReportViewController extends FOSRestController
 
         $shareConfig = $sharedKeysConfig[$token];
 
-        $fieldsToBeShared = $shareConfig['fields'];
-        $allowDatesOutside = array_key_exists('allowDatesOutside', $shareConfig) ? $shareConfig['allowDatesOutside'] : false;
+        $fieldsToBeShared = $shareConfig[ReportViewInterface::SHARE_FIELDS];
+        $allowDatesOutside = array_key_exists(ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE, $shareConfig) ? $shareConfig[ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE] : false;
         $paginationParams = $request->query->all();
         $params = $this->getParams($reportView, $fieldsToBeShared, $paginationParams);
 
@@ -88,7 +88,7 @@ class ReportViewController extends FOSRestController
 
         // dateRange from config may be dynamic date range (today, yesterday, last 7 days, ...)
         // or fixed date range as { startDate:2017-08-01, endDate:2017-08-18 }
-        $dateRangeFromConfig = (array_key_exists('dateRange', $shareConfig)) ? $shareConfig['dateRange'] : null;
+        $dateRangeFromConfig = (array_key_exists(ReportViewInterface::SHARE_DATE_RANGE, $shareConfig)) ? $shareConfig[ReportViewInterface::SHARE_DATE_RANGE] : null;
 
         //// if: dynamic DateRange
         if (is_string($dateRangeFromConfig)) {
@@ -172,17 +172,17 @@ class ReportViewController extends FOSRestController
 
         // also return user provided dimensions, metrics, columns
         $report['dateRange'] = $dateRange;
-        $report['fields'] = $shareConfig['fields'];
+        $report[ReportViewInterface::SHARE_FIELDS] = $shareConfig[ReportViewInterface::SHARE_FIELDS];
 
         // also return allowDatesOutside
-        $report['allowDatesOutside'] = $allowDatesOutside;
+        $report[ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE] = $allowDatesOutside;
 
         //// columns
         if (!is_array($report['columns']) || empty($report['columns'])) {
             $columns = array_merge($reportView->getDimensions(), $reportView->getMetrics());
             $mappedColumns = [];
             foreach ($columns as $index => $column) {
-                if (!in_array($column, $report['fields'])) {
+                if (!in_array($column, $report[ReportViewInterface::SHARE_FIELDS])) {
                     // do not return the columns that are not in shared fields
                     continue;
                 }

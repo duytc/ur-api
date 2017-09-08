@@ -201,6 +201,10 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
             return;
         }
 
+        if ($this->getIsOverride()) {
+            return;
+        }
+
         $metrics[] = $this->getTargetField();
     }
 

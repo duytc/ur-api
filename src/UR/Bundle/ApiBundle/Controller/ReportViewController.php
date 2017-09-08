@@ -19,6 +19,7 @@ use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\ColumnUtilTrait;
+use UR\Service\PublicSimpleException;
 use UR\Service\ReportViewTemplate\DTO\CustomTemplateParams;
 use UR\Service\StringUtilTrait;
 
@@ -30,8 +31,6 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     use GetEntityFromIdTrait;
     use ColumnUtilTrait;
     use StringUtilTrait;
-    const TOKEN = 'token';
-    const FIELDS = 'fields';
 
     /**
      * Get all report views
@@ -243,13 +242,13 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         /** @var ReportViewInterface $reportView */
         $reportView = $this->one($id);
 
-        $fieldsToBeShared = $request->request->get('fields', '[]');
+        $fieldsToBeShared = $request->request->get(ReportViewInterface::SHARE_FIELDS, '[]');
         if (!is_array($fieldsToBeShared)) {
             throw new InvalidArgumentException('expect "fields" to be an array');
         }
 
-        $dateRange = $request->request->get('dateRange', null);
-        $allowDatesOutside = $request->request->get('allowDatesOutside', false);
+        $dateRange = $request->request->get(ReportViewInterface::SHARE_DATE_RANGE, null);
+        $allowDatesOutside = $request->request->get(ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE, false);
 
         return $this->getShareableLink($reportView, $fieldsToBeShared, $dateRange, $allowDatesOutside);
     }
@@ -312,7 +311,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      */
     public function getShareableLinkAction(Request $request, $id)
     {
-        $token = $request->query->get('token', null);
+        $token = $request->query->get(ReportViewInterface::TOKEN, null);
         /** @var ReportViewInterface $reportView */
         $reportView = $this->one($id);
         $configs = $reportView->getSharedKeysConfig();
@@ -349,7 +348,11 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         $reportView = $this->one($id);
         $result = [];
         foreach ($reportView->getSharedKeysConfig() as $key => $value) {
-            $result[] = [self::TOKEN => $key, self::FIELDS => $value];
+            $result[] = [
+                ReportViewInterface::TOKEN => $key,
+                ReportViewInterface::SHARE_FIELDS => $value,
+                ReportViewInterface::LINK => $this->getShareableLinkFromTemplate($reportView->getId(), $key),
+            ];
         }
         return $result;
     }
@@ -374,7 +377,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     {
         /** @var ReportViewInterface $reportView */
         $reportView = $this->one($id);
-        $token = $request->query->get('token');
+        $token = $request->query->get(ReportViewInterface::TOKEN);
 
         $sharedKeysConfig = $reportView->getSharedKeysConfig();
         unset($sharedKeysConfig[$token]);
@@ -437,6 +440,50 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
 
         $reportViewService->cloneReportView($reportView, $cloneSettings);
         return '';
+    }
+
+    /**
+     * Create new shareableLink or modify exist shareable link for a reportView
+     *
+     * @Rest\Post("/reportviews/{id}/share")
+     *
+     * @param Request $request
+     * @param $id
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function postShareableLinkAction(Request $request, $id)
+    {
+        /** Check permissions and find report view */
+        /** @var ReportViewInterface $reportView */
+        $reportView = $this->one($id);
+
+        /** Get params from request */
+        $token = $request->get(ReportViewInterface::TOKEN);
+        $updateSharedKeyConfig = $request->get(ReportViewInterface::SHARED_KEYS_CONFIG);
+
+        if (empty($token) || !is_array($updateSharedKeyConfig)) {
+            throw new PublicSimpleException('Invalid parameters');
+        }
+
+        /** Check valid structure of share key config */
+        if (!array_key_exists(ReportViewInterface::SHARE_FIELDS, $updateSharedKeyConfig) ||
+            !array_key_exists(ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE, $updateSharedKeyConfig) ||
+            !array_key_exists(ReportViewInterface::SHARE_DATE_RANGE, $updateSharedKeyConfig)
+        ) {
+            throw new PublicSimpleException('Invalid parameters');
+        }
+
+        $updateSharedKeyConfig[ReportViewInterface::SHARE_DATE_CREATED] = date_create('now', new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+
+        $existSharedKeysConfig = $reportView->getSharedKeysConfig();
+
+        /** Update shared keys config (allow add new or modify one) */
+        $sharedKeysConfigs = array_merge($existSharedKeysConfig, [$token => $updateSharedKeyConfig]);
+        $reportView->setSharedKeysConfig($sharedKeysConfigs);
+
+        $this->get('ur.domain_manager.report_view')->save($reportView);
     }
 
     /**

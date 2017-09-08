@@ -15,6 +15,15 @@ interface ReportViewInterface extends ModelInterface
     const REPORT_VIEW_TRANSFORMS = 'transforms';
     const REPORT_VIEW_FILTERS = 'filters';
 
+    const TOKEN = 'token';
+    const LINK = 'link';
+    const SHARED_KEYS_CONFIG = 'sharedKeysConfig';
+
+    const SHARE_FIELDS = 'fields';
+    const SHARE_DATE_CREATED = 'dateCreated';
+    const SHARE_DATE_RANGE = 'dateRange';
+    const SHARE_ALLOW_DATES_OUTSIDE = 'allowDatesOutside';
+
     /**
      * @return string
      */

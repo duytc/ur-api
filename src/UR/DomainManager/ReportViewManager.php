@@ -117,7 +117,7 @@ class ReportViewManager implements ReportViewManagerInterface
         $newToken = '';
 
         foreach ($sharedKeysConfig as $token => $fields) {
-            $concatenatedOldFieldsToBeShared = implode(':', $fields['fields']);
+            $concatenatedOldFieldsToBeShared = implode(':', $fields[ReportViewInterface::SHARE_FIELDS]);
 
             // check if token existed base on:
             // - the shared fields
@@ -126,11 +126,11 @@ class ReportViewManager implements ReportViewManagerInterface
             if (
                 $concatenatedOldFieldsToBeShared === $concatenatedFieldsToBeShared &&
                 (
-                    (array_key_exists('dateRange', $fields) && $this->compareDateRange($fields['dateRange'], $dateRange)) ||
-                    (array_key_exists('dateRange', $fields) && $dateRange === null)
+                    (array_key_exists(ReportViewInterface::SHARE_DATE_RANGE, $fields) && $this->compareDateRange($fields[ReportViewInterface::SHARE_DATE_RANGE], $dateRange)) ||
+                    (array_key_exists(ReportViewInterface::SHARE_DATE_RANGE, $fields) && $dateRange === null)
                 ) &&
                 (
-                    array_key_exists('allowDatesOutside', $fields) && $fields['allowDatesOutside'] == $allowDatesOutside
+                    array_key_exists(ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE, $fields) && $fields[ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE] == $allowDatesOutside
                 )
             ) {
                 $tokenExisted = true;
@@ -143,9 +143,9 @@ class ReportViewManager implements ReportViewManagerInterface
         if (!$tokenExisted) {
             $newToken = ReportView::generateToken();
             $sharedKeysConfig[$newToken] = array(
-                'fields' => $fieldsToBeShared,
-                'dateRange' => $dateRange,
-                'allowDatesOutside' => $allowDatesOutside,
+                ReportViewInterface::SHARE_FIELDS => $fieldsToBeShared,
+                ReportViewInterface::SHARE_DATE_RANGE => $dateRange,
+                ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE => $allowDatesOutside,
                 self::DATE_CREATED => date("Y-m-d H:i:s")
             );
 

@@ -38,6 +38,9 @@ services:
         arguments:
             - '@ur.domain_manager.report_view'
 
+    ur.service.report.shareable_link_updater:
+        class: UR\Service\Report\ShareableLinkUpdater
+
     ur.services.report.report_filter:
         class: UR\Service\Report\ReportViewFilter
 

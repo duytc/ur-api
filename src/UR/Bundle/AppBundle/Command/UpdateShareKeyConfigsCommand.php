@@ -35,11 +35,11 @@ class UpdateShareKeyConfigsCommand extends ContainerAwareCommand
 		foreach($reportViews as $reportView) {
 			$shareKeyConfigs = $reportView->getSharedKeysConfig();
 			foreach ($shareKeyConfigs as $token=>$config) {
-				if (!array_key_exists('fields', $config)) {
+				if (!array_key_exists(ReportViewInterface::SHARE_FIELDS, $config)) {
 					$count++;
 					$shareKeyConfigs[$token] = array(
-						'fields' => $config,
-						'dateRange' => array (
+						ReportViewInterface::SHARE_FIELDS => $config,
+						ReportViewInterface::SHARE_DATE_RANGE => array (
 							'startDate' => null,
 							'endDate' => null
 						)

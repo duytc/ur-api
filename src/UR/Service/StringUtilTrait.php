@@ -7,6 +7,9 @@ namespace UR\Service;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
+use UR\Domain\DTO\Report\Transforms\NewFieldTransform;
+use UR\Domain\DTO\Report\Transforms\ReplaceTextTransform;
+use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Exception\InvalidArgumentException;
 
 trait StringUtilTrait
@@ -91,7 +94,7 @@ trait StringUtilTrait
     {
         $idAndField = $this->getIdSuffixAndField($column);
         if ($idAndField) {
-            return $idAndField['field'];
+            return $idAndField[NewFieldTransform::FIELD_NAME_KEY];
         }
 
         return $column;
@@ -127,7 +130,7 @@ trait StringUtilTrait
     {
         if (preg_match('/^(.*)_([0-9]+)$/', $column, $matches)) {
             return array(
-                'field' => $matches[1],
+                NewFieldTransform::FIELD_NAME_KEY => $matches[1],
                 'id' => $matches[2]
             );
         }
@@ -151,14 +154,42 @@ trait StringUtilTrait
     {
         $newFields = [];
         foreach ($transforms as $transform) {
-            if (array_key_exists('type', $transform)) {
-                $type = $transform['type'];
-                if (in_array($type, [AddCalculatedFieldTransform::TRANSFORMS_TYPE, AddFieldTransform::TRANSFORMS_TYPE, ComparisonPercentTransform::TRANSFORMS_TYPE])) {
-                    $fields = $transform['fields'];
-                    foreach ($fields as $field) {
-                        if (array_key_exists('field', $field)) {
-                            $newFields[] = $field['field'];
+            if (!array_key_exists(TransformInterface::TRANSFORM_TYPE_KEY, $transform)) {
+                continue;
+            }
+            $type = $transform[TransformInterface::TRANSFORM_TYPE_KEY];
+
+            if (in_array($type, [AddCalculatedFieldTransform::TRANSFORMS_TYPE, AddFieldTransform::TRANSFORMS_TYPE, ComparisonPercentTransform::TRANSFORMS_TYPE])) {
+                if (!array_key_exists(TransformInterface::FIELDS_TRANSFORM, $transform)) {
+                    continue;
+                }
+                $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+
+                foreach ($fields as $field) {
+                    if (!array_key_exists(NewFieldTransform::FIELD_NAME_KEY, $field)) {
+                        continue;
+                    }
+                    $newFields[] = $field[NewFieldTransform::FIELD_NAME_KEY];
+                }
+            }
+            if (in_array($type, [ReplaceTextTransform::TRANSFORMS_TYPE])) {
+                if (!array_key_exists(TransformInterface::FIELDS_TRANSFORM, $transform)) {
+                    continue;
+                }
+                $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+
+                foreach ($fields as $field) {
+                    if (!array_key_exists(ReplaceTextTransform::IS_OVERRIDE_KEY, $field)) {
+                        continue;
+                    }
+                    $isOverwrite = $field[ReplaceTextTransform::IS_OVERRIDE_KEY];
+
+                    if (!$isOverwrite) {
+                        if (!array_key_exists(ReplaceTextTransform::TARGET_FIELD_KEY, $field)) {
+                            continue;
                         }
+                        $targetField = $field[ReplaceTextTransform::TARGET_FIELD_KEY];
+                        $newFields[] = $targetField;
                     }
                 }
             }
