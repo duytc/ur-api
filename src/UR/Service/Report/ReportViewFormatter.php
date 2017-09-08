@@ -49,6 +49,8 @@ class ReportViewFormatter implements ReportViewFormatterInterface
     public function getReportAfterApplyDefaultFormat($reportResult, $params)
     {
         $rows = $reportResult->getRows();
+        $total = $reportResult->getTotal();
+        $average = $reportResult->getAverage();
         $columns = $reportResult->getColumns();
         $types = $reportResult->getTypes();
 
@@ -118,8 +120,36 @@ class ReportViewFormatter implements ReportViewFormatterInterface
             unset($row);
         }
 
+        foreach ($total as $key => $value) {
+            if (isset($decimalFields[$key])) {
+                $total[$key] = number_format((float)$value, 4, ".", "");
+                continue;
+            }
+
+            if (isset($numberFields[$key])) {
+                $total[$key] = round($value);
+                continue;
+            }
+        }
+        unset($key, $value);
+
+        foreach ($average as $key => $value) {
+            if (isset($decimalFields[$key])) {
+                $average[$key] = number_format((float)$value, 4, ".", "");
+                continue;
+            }
+
+            if (isset($numberFields[$key])) {
+                $average[$key] = round($value);
+                continue;
+            }
+        }
+
+        unset($key, $value);
         unset($rows, $row);
         gc_collect_cycles();
+        $reportResult->setTotal($total);
+        $reportResult->setAverage($average);
         $reportResult->setRows($newRows);
         return $reportResult;
     }

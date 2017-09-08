@@ -178,7 +178,7 @@ class ReportGrouper implements ReportGrouperInterface
             unset($total['total']);
             $average = $total;
             foreach ($average as $key => &$value) {
-                $value = round($total[$key] / $totalReport, 4);
+                $value = $total[$key] / $totalReport;
             }
         }
 
