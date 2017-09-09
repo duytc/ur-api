@@ -26,6 +26,7 @@ services:
         class: UR\Service\Report\SqlBuilder
         arguments:
             - '@doctrine.orm.entity_manager'
+            - '@logger'
 
     ur.services.report.report_selector:
         class: UR\Service\Report\ReportSelector

@@ -12,17 +12,19 @@ interface SqlBuilderInterface
 {
     /**
      * @param ParamsInterface $params
+     * @param null $userProvidedGroupTransform
      * @param $overridingFilters
      * @return Statement
      */
-    public function buildQueryForSingleDataSet(ParamsInterface $params, $overridingFilters = null);
+    public function buildQueryForSingleDataSet(ParamsInterface $params, $userProvidedGroupTransform = null, $overridingFilters = null);
 
     /**
      * @param ParamsInterface $params
+     * @param null $userProvidedGroupTransform
      * @param $overridingFilters
      * @return Statement
      */
-    public function buildQuery(ParamsInterface $params, $overridingFilters = null);
+    public function buildQuery(ParamsInterface $params, $userProvidedGroupTransform = null, $overridingFilters = null);
 
     public function buildGroupQuery($subQuery, array $dataSets, array $joinConfig, $transforms = [], $searches = [], $showInTotal = null, $overridingFilters = null);
 

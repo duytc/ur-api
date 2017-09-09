@@ -9,6 +9,7 @@ use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use PDO;
+use Psr\Log\LoggerInterface;
 use UR\Behaviors\JoinConfigUtilTrait;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\DateRange;
@@ -63,6 +64,10 @@ class SqlBuilder implements SqlBuilderInterface
     const JOIN_PARAM_TO_JOIN_FIELD = 'toJoinField';
     const JOIN_PARAM_TO_TABLE_NAME = 'tableName';
 
+
+    const AGGREGATE_METRICS_WHITE_LIST = '$$WHITE_LIST$$';
+    const AGGREGATE_METRICS_SUM = '$$SUM$$';
+
     /**
      * @var Connection
      */
@@ -74,19 +79,26 @@ class SqlBuilder implements SqlBuilderInterface
     protected $em;
 
     /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
      * SqlBuilder constructor.
      * @param EntityManagerInterface $em
+     * @param LoggerInterface $logger
      */
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(EntityManagerInterface $em, LoggerInterface $logger)
     {
         $this->em = $em;
         $this->connection = $this->em->getConnection();
+        $this->logger = $logger;
     }
 
     /**
      * @inheritdoc
      */
-    public function buildQueryForSingleDataSet(ParamsInterface $params, $overridingFilters = null)
+    public function buildQueryForSingleDataSet(ParamsInterface $params, $userProvidedGroupTransform = null, $overridingFilters = null)
     {
         $dataSet = $params->getDataSets()[0];
         $page = $params->getPage();
@@ -154,13 +166,13 @@ class SqlBuilder implements SqlBuilderInterface
 
         $subQb = $this->connection->createQueryBuilder();
 
-        $hasGroup = false;
         $hasNewFieldTransform = false;
         $timezone = 'UTC';
+        $hasGroup = false;
         foreach ($transforms as $transform) {
             if ($transform instanceof GroupByTransform) {
-                $hasGroup = true;
                 $timezone = $transform->getTimezone();
+                $hasGroup = true;
                 continue;
             }
 
@@ -174,29 +186,25 @@ class SqlBuilder implements SqlBuilderInterface
             }
         }
 
-        if (!empty($params->getMetricCalculations())) {
-            $hasGroup = true;
+        $metricCalculations = $params->getMetricCalculations();
+        if (!is_array($metricCalculations)) {
+            $metricCalculations = [];
         }
-
-        $metricCalculation = $params->getMetricCalculations();
 
         // Add SELECT clause
         foreach ($fields as $field) {
             $fieldWithId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
-            if (array_key_exists($fieldWithId, $types) && in_array($types[$fieldWithId], [FieldType::NUMBER, FieldType::DECIMAL]) && $hasGroup) {
-                if (is_array($metricCalculation) && array_key_exists($fieldWithId, $metricCalculation) && !empty($metricCalculation[$fieldWithId])) {
-                    $expression = $this->convertExpressionForm($metricCalculation[$fieldWithId], $removeSuffix = true);
-                    $subQb->addSelect(sprintf('%s as %s_%d', $expression, $field, $dataSet->getDataSetId()));
-                } else {
-                    $subQb->addSelect(sprintf('SUM(%s) as %s_%d', $this->connection->quoteIdentifier($field), $field, $dataSet->getDataSetId()));
-                }
-                continue;
-            } else if (array_key_exists($fieldWithId, $types) && $types[$fieldWithId] == FieldType::DATETIME && $hasGroup) {
-                $subQb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as %s_%d", $this->connection->quoteIdentifier($field), $timezone, $field, $dataSet->getDataSetId()));
+            if (in_array($fieldWithId, $metricCalculations) && $hasGroup) {
+                $subQb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($field), $fieldWithId));
                 continue;
             }
 
-            $subQb->addSelect(sprintf('%s as %s_%d', $this->connection->quoteIdentifier($field), $field, $dataSet->getDataSetId()));
+            if (array_key_exists($fieldWithId, $types) && $types[$fieldWithId] == FieldType::DATETIME) {
+                $subQb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as %s", $this->connection->quoteIdentifier($field), $timezone, $fieldWithId));
+                continue;
+            }
+
+            $subQb->addSelect(sprintf('%s as %s', $this->connection->quoteIdentifier($field), $fieldWithId));
         }
 
         $subQb->from($this->connection->quoteIdentifier($table->getName()));
@@ -228,9 +236,9 @@ class SqlBuilder implements SqlBuilderInterface
             }
         }
 
-        $subQb = $this->addGroupByQuery($subQb, $transforms, $types);
+        $subQb = $this->addGroupByQuery($subQb, $transforms, $types, $removeSuffix = true);
 
-        if ($hasNewFieldTransform === false) {
+        if ($hasNewFieldTransform === false && $userProvidedGroupTransform === null) {
             $subQb = $this->bindFilterParam($subQb, $filters);
             $subQuery = clone $subQb;
             $subQb = $this->addLimitQuery($subQb, $page, $limit);
@@ -238,6 +246,7 @@ class SqlBuilder implements SqlBuilderInterface
 
             try {
                 $stmt = $subQb->execute();
+                $this->logger->warning(sprintf('SQL query : %s', $subQb->getSQL()));
             } catch (\Exception $e) {
                 throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
@@ -250,34 +259,110 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         $qb = $this->connection->createQueryBuilder();
-        $qb->addSelect('*');
+        // Add SELECT clause
+        $qb->addSelect("*");
 
+        if ($hasNewFieldTransform === false && $userProvidedGroupTransform !== null) {
+            $subQuery = $subQb->getSQL();
+            $qb->from("($subQuery)", "sub1");
+            $qb = $this->addGroupByQuery($qb, [$userProvidedGroupTransform], $types);
+            $qb = $this->bindFilterParam($qb, $filters);
+            $subQuery = clone $qb;
+            $qb = $this->addLimitQuery($qb, $page, $limit);
+            $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
+
+            try {
+                $stmt = $qb->execute();
+                $this->logger->warning(sprintf('SQL query : %s', $qb->getSQL()));
+            } catch (\Exception $e) {
+                throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
+            }
+
+            return array(
+                self::SUB_QUERY => $subQuery->getSQL(),
+                self::STATEMENT_KEY => $stmt,
+                self::DATE_RANGE_KEY => $dateRange
+            );
+        }
+
+        $newFields = [];
         foreach ($transforms as $transform) {
             if ($transform instanceof AddCalculatedFieldTransform) {
-                $qb = $this->addCalculatedFieldTransformQuery($qb, $transform);
+                $qb = $this->addCalculatedFieldTransformQuery($qb, $transform, $newFields);
                 continue;
             }
 
             if ($transform instanceof AddFieldTransform) {
-                $qb = $this->addNewFieldTransformQuery($qb, $transform);
+                $qb = $this->addNewFieldTransformQuery($qb, $transform, $newFields);
                 continue;
             }
 
             if ($transform instanceof ComparisonPercentTransform) {
-                $qb = $this->addComparisonPercentTransformQuery($qb, $transform);
+                $qb = $this->addComparisonPercentTransformQuery($qb, $transform, $newFields);
                 continue;
             }
         }
 
         $subQuery = $subQb->getSQL();
         $qb->from("($subQuery)", "sub1");
-        $qb = $this->bindFilterParam($qb, $filters);
+
+        if ($userProvidedGroupTransform === null) {
+            $qb = $this->bindFilterParam($qb, $filters);
+            $subQuery = clone $qb;
+            $qb = $this->addLimitQuery($qb, $page, $limit);
+            $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
+
+            try {
+                $stmt = $qb->execute();
+                $this->logger->warning(sprintf('SQL query : %s', $qb->getSQL()));
+            } catch (\Exception $e) {
+                throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
+            }
+
+            return array(
+                self::SUB_QUERY => $subQuery->getSQL(),
+                self::STATEMENT_KEY => $stmt,
+                self::DATE_RANGE_KEY => $dateRange
+            );
+        }
+
+        $outerQb = $this->connection->createQueryBuilder();
+        // Add SELECT clause
+        foreach ($fields as $field) {
+            $fieldWithId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
+            if (in_array($fieldWithId, $metricCalculations)) {
+                $outerQb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($fieldWithId), $fieldWithId));
+                continue;
+            }
+
+            if (array_key_exists($fieldWithId, $types) && $types[$fieldWithId] == FieldType::DATETIME) {
+                $outerQb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as %s", $this->connection->quoteIdentifier($fieldWithId), $timezone, $fieldWithId));
+                continue;
+            }
+
+            $outerQb->addSelect($this->connection->quoteIdentifier($fieldWithId));
+        }
+
+        foreach ($newFields as $newField) {
+            if (in_array($newField, $metricCalculations)) {
+                $outerQb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($newField), $this->connection->quoteIdentifier($newField)));
+                continue;
+            }
+
+            $outerQb->addSelect($this->connection->quoteIdentifier($newField));
+        }
+
+        $outerQb = $this->addGroupByQuery($outerQb, [$userProvidedGroupTransform], $types);
+        $subQuery = $qb->getSQL();
+        $outerQb->from("($subQuery)", "sub2");
+        $outerQb = $this->bindFilterParam($outerQb, $filters);
         $subQuery = clone $qb;
-        $qb = $this->addLimitQuery($qb, $page, $limit);
-        $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
+        $outerQb = $this->addLimitQuery($outerQb, $page, $limit);
+        $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
 
         try {
-            $stmt = $qb->execute();
+            $stmt = $outerQb->execute();
+            $this->logger->warning(sprintf('SQL query : %s', $outerQb->getSQL()));
         } catch (\Exception $e) {
             throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
         }
@@ -382,30 +467,8 @@ class SqlBuilder implements SqlBuilderInterface
 
         $qb->addSelect('COUNT(*) as total');
 
-//        $subQuery = $subQuery->getSQL();
         $qb->from("($subQuery)", "sub");
-
-//        if (empty($filters)) {
-//            $overwriteDateCondition = sprintf('%s IS NULL', $this->connection->quoteIdentifier(\UR\Model\Core\DataSetInterface::OVERWRITE_DATE));
-//            $qb->where($overwriteDateCondition);
-//            $this->addGroupByQuery($qb, $transforms, $types, $removeSuffix = true);
-//
-//            return $qb->execute();
-//        }
-//
-//        $buildResult = $this->buildFilters($filters);
-//        $conditions = $buildResult[self::CONDITION_KEY];
-//        if (count($conditions) == 1) {
-//            $qb->where($conditions[self::FIRST_ELEMENT]);
-//            $qb = $this->bindFilterParam($qb, $filters);
-//            $this->addGroupByQuery($qb, $transforms, $types, $removeSuffix = true);
-//
-//            return $qb->execute();
-//        }
-//
-//        $qb->where(implode(' AND ', $conditions));
         $qb = $this->bindFilterParam($qb, $filters);
-//        $this->addGroupByQuery($qb, $transforms, $types, $removeSuffix = true);
 
         return $qb->execute();
     }
@@ -413,7 +476,7 @@ class SqlBuilder implements SqlBuilderInterface
     /**
      * @inheritdoc
      */
-    public function buildQuery(ParamsInterface $params, $overridingFilters = null)
+    public function buildQuery(ParamsInterface $params, $userProvidedGroupTransform = null, $overridingFilters = null)
     {
         $dataSets = $params->getDataSets();
         $joinConfig = $params->getJoinConfigs();
@@ -434,7 +497,7 @@ class SqlBuilder implements SqlBuilderInterface
                 throw new RuntimeException('expect an DataSetInterface object');
             }
 
-            return $this->buildQueryForSingleDataSet($params, $overridingFilters);
+            return $this->buildQueryForSingleDataSet($params, $userProvidedGroupTransform, $overridingFilters);
         }
 
         if (count($joinConfig) < 1) {
@@ -562,7 +625,7 @@ class SqlBuilder implements SqlBuilderInterface
         $subQuery = sprintf('%s WHERE (%s)', $subQuery, $where);
         $subQuery = $this->generateGroupByQuery($subQuery, $transforms, $types, $dataSetIndexes);
 
-        if ($hasNewFieldTransform === false) {
+        if ($hasNewFieldTransform === false && $userProvidedGroupTransform === null) {
             $query = $subQuery;
             $subQuery = $this->generateSortQuery($subQuery, $transforms, $sortField, $sortDirection);
             $subQuery = $this->generateLimitQuery($subQuery, $page, $limit);
@@ -581,6 +644,7 @@ class SqlBuilder implements SqlBuilderInterface
 
             try {
                 $stmt->execute();
+                $this->logger->warning(sprintf('SQL query : %s', $subQuery));
             } catch (\Exception $e) {
                 throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
@@ -593,27 +657,110 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         $qb = $this->connection->createQueryBuilder();
-        $qb->addSelect('*');
+        $qb->addSelect("*");
+
+        if ($hasNewFieldTransform === false && $userProvidedGroupTransform !== null) {
+            $qb->from("($subQuery)", "sub1");
+            $qb = $this->addGroupByQuery($qb, [$userProvidedGroupTransform], $types);
+
+            /** @var DataSetInterface $dataSet */
+            foreach ($dataSets as $dataSetIndex => $dataSet) {
+                $filters = $dataSet->getFilters();
+                if (array_key_exists($dataSet->getDataSetId(), $newSearchFilters)) {
+                    $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
+                }
+
+                $qb = $this->bindFilterParam($qb, $filters, $dataSet->getDataSetId());
+            }
+
+            $subQuery = clone $qb;
+            $qb = $this->addLimitQuery($qb, $page, $limit);
+            $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
+
+            try {
+                $stmt = $qb->execute();
+                $this->logger->warning(sprintf('SQL query : %s', $qb->getSQL()));
+            } catch (\Exception $e) {
+                throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
+            }
+
+            return array(
+                self::SUB_QUERY => $subQuery->getSQL(),
+                self::STATEMENT_KEY => $stmt,
+                self::DATE_RANGE_KEY => $dateRange
+            );
+        }
+
+        $newFields = [];
 
         foreach ($transforms as $transform) {
             if ($transform instanceof AddCalculatedFieldTransform) {
-                $qb = $this->addCalculatedFieldTransformQuery($qb, $transform);
+                $qb = $this->addCalculatedFieldTransformQuery($qb, $transform, $newFields);
                 continue;
             }
 
             if ($transform instanceof AddFieldTransform) {
-                $qb = $this->addNewFieldTransformQuery($qb, $transform);
+                $qb = $this->addNewFieldTransformQuery($qb, $transform, $newFields);
                 continue;
             }
 
             if ($transform instanceof ComparisonPercentTransform) {
-                $qb = $this->addComparisonPercentTransformQuery($qb, $transform);
+                $qb = $this->addComparisonPercentTransformQuery($qb, $transform, $newFields);
                 continue;
             }
         }
 
-
         $qb->from("($subQuery)", "sub1");
+
+        if ($userProvidedGroupTransform === null) {
+            /** @var DataSetInterface $dataSet */
+            foreach ($dataSets as $dataSetIndex => $dataSet) {
+                $filters = $dataSet->getFilters();
+                if (array_key_exists($dataSet->getDataSetId(), $newSearchFilters)) {
+                    $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
+                }
+
+                $qb = $this->bindFilterParam($qb, $filters, $dataSet->getDataSetId());
+            }
+
+            $subQuery = clone $qb;
+            $qb = $this->addLimitQuery($qb, $page, $limit);
+            $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
+
+            try {
+                $stmt = $qb->execute();
+                $this->logger->warning(sprintf('SQL query : %s', $qb->getSQL()));
+            } catch (\Exception $e) {
+                throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
+            }
+
+            return array(
+                self::SUB_QUERY => $subQuery->getSQL(),
+                self::STATEMENT_KEY => $stmt,
+                self::DATE_RANGE_KEY => $dateRange
+            );
+        }
+
+        $outerQb = $this->connection->createQueryBuilder();
+        $selectedJoinFields = [];
+        /** @var DataSetInterface $dataSet */
+        foreach ($dataSets as $dataSetIndex => $dataSet) {
+            $outerQb = $this->buildSelectQuery($params, $outerQb, $dataSet, null, $joinConfig, $selectedJoinFields, $hasGroup = true, $timezone);
+        }
+
+        $metricCalculations = $params->getMetricCalculations();
+        foreach ($newFields as $newField) {
+            if (in_array($newField, $metricCalculations)) {
+                $outerQb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($newField), $this->connection->quoteIdentifier($newField)));
+                continue;
+            }
+
+            $outerQb->addSelect($this->connection->quoteIdentifier($newField));
+        }
+
+        $subQuery = $qb->getSQL();
+        $outerQb->from("($subQuery)", "sub2");
+        $outerQb = $this->addGroupByQuery($outerQb, [$userProvidedGroupTransform], $types);
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
             $filters = $dataSet->getFilters();
@@ -621,15 +768,16 @@ class SqlBuilder implements SqlBuilderInterface
                 $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
             }
 
-            $qb = $this->bindFilterParam($qb, $filters, $dataSet->getDataSetId());
+            $outerQb = $this->bindFilterParam($outerQb, $filters, $dataSet->getDataSetId());
         }
 
-        $subQuery = clone $qb;
-        $qb = $this->addLimitQuery($qb, $page, $limit);
-        $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
+        $subQuery = clone $outerQb;
+        $outerQb = $this->addLimitQuery($outerQb, $page, $limit);
+        $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
 
         try {
-            $stmt = $qb->execute();
+            $stmt = $outerQb->execute();
+            $this->logger->warning(sprintf('SQL query : %s', $outerQb->getSQL()));
         } catch (\Exception $e) {
             throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
         }
@@ -844,6 +992,117 @@ class SqlBuilder implements SqlBuilderInterface
      * @param $timezone
      * @return QueryBuilder
      */
+//    protected function buildSelectQuery(ParamsInterface $params, QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, array $joinConfig, array &$selectedJoinFields, $hasGroup = false, $timezone = 'UTC')
+//    {
+//        $metrics = $dataSet->getMetrics();
+//        $dimensions = $dataSet->getDimensions();
+//        $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
+//        $tableColumns = array_keys($table->getColumns());
+//        $dataSetRepository = $this->em->getRepository(DataSet::class);
+//        $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
+//        /*
+//         * TODO: this is duplicate code with buildQueryForSingleDataSet()
+//         * TODO: refactor to use a common function
+//         * we get all fields from data set instead of selected fields in report view.
+//         * Notice: after that, we should filter all fields that is not yet selected.
+//         * This is important to allow use the none-selected fields in the transformers.
+//         * If not, the transformers have no value on none-selected fields, so that produce the null value
+//         */
+//        $fields = array_keys($dataSetEntity->getAllDimensionMetrics());
+//        $types = array_merge($dataSetEntity->getMetrics(), $dataSetEntity->getDimensions());
+//        // merge with dimensions, metrics of dataSetDTO because it contains hidden columns such as __date_month, __date_year, ...
+//        $hiddenFields = $this->getHiddenFieldsFromDataSetTable($table);
+//        $fields = array_merge($fields, $dimensions, $metrics, $hiddenFields);
+//        $fields = array_values(array_unique($fields));
+//
+//        // filter all fields that are not in table's columns
+//        foreach ($fields as $index => $field) {
+//            if (!in_array($field, $tableColumns)) {
+//                unset($fields[$index]);
+//            }
+//        }
+//
+//        // if no field is valid
+//        if (empty($fields)) {
+//            throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
+//        }
+//
+//        $metricCalculation = $params->getMetricCalculations();
+//
+//        if (!is_array($metricCalculation)) {
+//            $metricCalculation = [];
+//        }
+//
+//        foreach ($metricCalculation as $field => $expression) {
+//            if ($expression == self::AGGREGATE_METRICS_WHITE_LIST) {
+//                $metricCalculation[$field] = "[$field]";
+//                continue;
+//            }
+//
+//            if ($expression == self::AGGREGATE_METRICS_SUM) {
+//                $metricCalculation[$field] = "SUM([$field])";
+//                continue;
+//            }
+//        }
+//
+//
+//        // build select query for each data set
+//        foreach ($fields as $field) {
+//            $alias = $this->getAliasForField($dataSet->getDataSetId(), $field, $joinConfig);
+//            if ($alias === null) {
+//                continue;
+//            }
+//
+//            $outputField = $this->checkFieldInJoinConfig($field, $dataSet->getDataSetId(), $joinConfig);
+//            if ($outputField) {
+//                if (in_array($outputField, $selectedJoinFields)) {
+//                    continue;
+//                }
+//                $selectedJoinFields[] = $outputField;
+//            }
+//
+//            if (array_key_exists($field, $types) && in_array($types[$field], ['number', 'decimal']) && $hasGroup) {
+//                $fieldQuote = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
+//                if (array_key_exists($fieldQuote, $metricCalculation)) {
+//                    $expression = $this->convertExpressionFormForJoin($metricCalculation[$fieldQuote], $dataSetIndex);
+//                    $qb->addSelect(sprintf("%s as '%s'", $expression, $alias));
+//                } else {
+//                    $fieldWithId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
+//                    if (array_key_exists($fieldWithId, $metricCalculation) && !empty($metricCalculation[$fieldWithId])) {
+//                        $expression = $this->convertExpressionFormForJoin($metricCalculation[$fieldWithId], $dataSetIndex);
+//                        $qb->addSelect(sprintf('%s as %s', $expression, $fieldWithId));
+//                    } else {
+//                        $qb->addSelect(sprintf("SUM(%s) as '%s'", $fieldQuote, $alias));
+//                    }
+//                }
+//                continue;
+//            }
+//
+//            if (array_key_exists($field, $types) && $types[$field] == FieldType::DATETIME && $hasGroup) {
+//                $field = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
+//                $qb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as %s", $field, $timezone, $alias));
+//                continue;
+//            }
+//
+////            $field = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
+//            $qb->addSelect(sprintf("%s as '%s'", sprintf('t%d.%s', $dataSetIndex, $field), $alias));
+//        }
+//
+//        return $qb;
+//    }
+
+    /**
+     * @param ParamsInterface $params
+     * @param QueryBuilder $qb
+     * @param DataSetInterface $dataSet
+     * @param $dataSetIndex
+     * @param array $joinConfig
+     * @param array $selectedJoinFields
+     * @param bool $hasGroup
+     * @param string $timezone
+     * @return QueryBuilder
+     * @internal param $hasGroup
+     */
     protected function buildSelectQuery(ParamsInterface $params, QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex, array $joinConfig, array &$selectedJoinFields, $hasGroup = false, $timezone = 'UTC')
     {
         $metrics = $dataSet->getMetrics();
@@ -866,28 +1125,23 @@ class SqlBuilder implements SqlBuilderInterface
         $hiddenFields = $this->getHiddenFieldsFromDataSetTable($table);
         $fields = array_merge($fields, $dimensions, $metrics, $hiddenFields);
         $fields = array_values(array_unique($fields));
-
         // filter all fields that are not in table's columns
         foreach ($fields as $index => $field) {
             if (!in_array($field, $tableColumns)) {
                 unset($fields[$index]);
             }
         }
-
         // if no field is valid
         if (empty($fields)) {
             throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
         }
-
         $metricCalculation = $params->getMetricCalculations();
-
         // build select query for each data set
         foreach ($fields as $field) {
             $alias = $this->getAliasForField($dataSet->getDataSetId(), $field, $joinConfig);
             if ($alias === null) {
                 continue;
             }
-
             $outputField = $this->checkFieldInJoinConfig($field, $dataSet->getDataSetId(), $joinConfig);
             if ($outputField) {
                 if (in_array($outputField, $selectedJoinFields)) {
@@ -895,34 +1149,21 @@ class SqlBuilder implements SqlBuilderInterface
                 }
                 $selectedJoinFields[] = $outputField;
             }
-
-            if (array_key_exists($field, $types) && in_array($types[$field], ['number', 'decimal']) && $hasGroup) {
-                $fieldQuote = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
-                if (is_array($metricCalculation) && array_key_exists($fieldQuote, $metricCalculation)) {
-                    $expression = $this->convertExpressionForm($metricCalculation[$fieldQuote]);
-                    $qb->addSelect(sprintf("%s as '%s'", $expression, $alias));
-                } else {
-                    $fieldWithId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
-                    if (is_array($metricCalculation) && array_key_exists($fieldWithId, $metricCalculation) && !empty($metricCalculation[$fieldWithId])) {
-                        $expression = $this->convertExpressionForm($metricCalculation[$fieldWithId], $removeSuffix = true);
-                        $qb->addSelect(sprintf('%s as %s', $expression, $fieldWithId));
-                    } else {
-                        $qb->addSelect(sprintf("SUM(%s) as '%s'", $fieldQuote, $alias));
-                    }
-                }
+            $fieldWithId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
+            $fieldName = $dataSetIndex !== null ? $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field)) : $fieldWithId;
+            if ($outputField && $dataSetIndex === null) {
+                $fieldName = "`$outputField`";
+            }
+            if (in_array($fieldWithId, $metricCalculation) && $hasGroup) {
+                $qb->addSelect(sprintf('SUM(%s) as `%s`', $fieldName, $alias));
                 continue;
             }
-
-            if (array_key_exists($field, $types) && $types[$field] == FieldType::DATETIME && $hasGroup) {
-                $field = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
-                $qb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as %s", $field, $timezone, $alias));
+            if (array_key_exists($field, $types) && $types[$field] == FieldType::DATETIME) {
+                $qb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as `%s`", $fieldName, $timezone, $alias));
                 continue;
             }
-
-//            $field = $this->connection->quoteIdentifier(sprintf('t%d.%s', $dataSetIndex, $field));
-            $qb->addSelect(sprintf("%s as '%s'", sprintf('t%d.%s', $dataSetIndex, $field), $alias));
+            $qb->addSelect(sprintf("%s as `%s`", $fieldName, $alias));
         }
-
         return $qb;
     }
 

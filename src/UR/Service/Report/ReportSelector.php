@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\Statement;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
+use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 
 class ReportSelector implements ReportSelectorInterface
 {
@@ -47,11 +48,15 @@ class ReportSelector implements ReportSelectorInterface
     public function getReportData(ParamsInterface $params, $overridingFilters = null)
     {
         $dataSets = $params->getDataSets();
-
-        if (count($dataSets) < 2) {
-            return $this->sqlBuilder->buildQueryForSingleDataSet($params, $overridingFilters);
+        $userProvidedGroupTransform = null;
+        if (!empty($params->getUserDefinedDimensions()) && $params->getCustomDimensionEnabled()) {
+            $userProvidedGroupTransform = new GroupByTransform($params->getUserDefinedDimensions());
         }
 
-        return $this->sqlBuilder->buildQuery($params, $overridingFilters);
+        if (count($dataSets) < 2) {
+            return $this->sqlBuilder->buildQueryForSingleDataSet($params, $userProvidedGroupTransform, $overridingFilters);
+        }
+
+        return $this->sqlBuilder->buildQuery($params, $userProvidedGroupTransform, $overridingFilters);
     }
 }

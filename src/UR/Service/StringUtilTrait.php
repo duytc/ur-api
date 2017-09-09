@@ -126,6 +126,31 @@ trait StringUtilTrait
         return $expression;
     }
 
+    protected function convertExpressionFormForJoin($expression, $dataSetIndex)
+    {
+        if (is_null($expression)) {
+            throw new \Exception(sprintf('Expression for calculated field can not be null'));
+        }
+
+        $regex = '/\[(.*?)\]/';
+        if (!preg_match_all($regex, $expression, $matches)) {
+            return $expression;
+        };
+
+        $fieldsInBracket = $matches[0];
+        $fields = $matches[1];
+        $newExpressionForm = null;
+
+        foreach ($fields as $index => $field) {
+            $field = $this->removeIdSuffix($field);
+            $field = sprintf('t%d.%s', $dataSetIndex, $field);
+
+            $expression = str_replace($fieldsInBracket[$index], $field, $expression);
+        }
+
+        return $expression;
+    }
+
     protected function getIdSuffixAndField($column)
     {
         if (preg_match('/^(.*)_([0-9]+)$/', $column, $matches)) {
