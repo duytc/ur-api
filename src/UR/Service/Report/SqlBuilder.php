@@ -9,7 +9,6 @@ use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use PDO;
-use Psr\Log\LoggerInterface;
 use UR\Behaviors\JoinConfigUtilTrait;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\DateRange;
@@ -79,20 +78,13 @@ class SqlBuilder implements SqlBuilderInterface
     protected $em;
 
     /**
-     * @var LoggerInterface
-     */
-    protected $logger;
-
-    /**
      * SqlBuilder constructor.
      * @param EntityManagerInterface $em
-     * @param LoggerInterface $logger
      */
-    public function __construct(EntityManagerInterface $em, LoggerInterface $logger)
+    public function __construct(EntityManagerInterface $em)
     {
         $this->em = $em;
         $this->connection = $this->em->getConnection();
-        $this->logger = $logger;
     }
 
     /**
@@ -246,7 +238,6 @@ class SqlBuilder implements SqlBuilderInterface
 
             try {
                 $stmt = $subQb->execute();
-                $this->logger->warning(sprintf('SQL query : %s', $subQb->getSQL()));
             } catch (\Exception $e) {
                 throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
@@ -273,7 +264,6 @@ class SqlBuilder implements SqlBuilderInterface
 
             try {
                 $stmt = $qb->execute();
-                $this->logger->warning(sprintf('SQL query : %s', $qb->getSQL()));
             } catch (\Exception $e) {
                 throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
@@ -314,7 +304,6 @@ class SqlBuilder implements SqlBuilderInterface
 
             try {
                 $stmt = $qb->execute();
-                $this->logger->warning(sprintf('SQL query : %s', $qb->getSQL()));
             } catch (\Exception $e) {
                 throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
@@ -362,7 +351,6 @@ class SqlBuilder implements SqlBuilderInterface
 
         try {
             $stmt = $outerQb->execute();
-            $this->logger->warning(sprintf('SQL query : %s', $outerQb->getSQL()));
         } catch (\Exception $e) {
             throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
         }
@@ -644,7 +632,6 @@ class SqlBuilder implements SqlBuilderInterface
 
             try {
                 $stmt->execute();
-                $this->logger->warning(sprintf('SQL query : %s', $subQuery));
             } catch (\Exception $e) {
                 throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
@@ -679,7 +666,6 @@ class SqlBuilder implements SqlBuilderInterface
 
             try {
                 $stmt = $qb->execute();
-                $this->logger->warning(sprintf('SQL query : %s', $qb->getSQL()));
             } catch (\Exception $e) {
                 throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
@@ -729,7 +715,6 @@ class SqlBuilder implements SqlBuilderInterface
 
             try {
                 $stmt = $qb->execute();
-                $this->logger->warning(sprintf('SQL query : %s', $qb->getSQL()));
             } catch (\Exception $e) {
                 throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
@@ -777,7 +762,6 @@ class SqlBuilder implements SqlBuilderInterface
 
         try {
             $stmt = $outerQb->execute();
-            $this->logger->warning(sprintf('SQL query : %s', $outerQb->getSQL()));
         } catch (\Exception $e) {
             throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
         }

@@ -334,26 +334,6 @@ trait SqlUtilTrait
     /**
      * @param QueryBuilder $qb
      * @param $transform
-     * @return QueryBuilder
-     */
-//    public function addComparisonPercentTransformQuery(QueryBuilder $qb, $transform)
-//    {
-//        if ($transform instanceof ComparisonPercentTransform) {
-//            $denominator = $transform->getDenominator();
-//            $numerator = $transform->getNumerator();
-//            $field = $transform->getFieldName();
-//
-//            $str = "CASE WHEN $denominator IS NULL THEN NULL WHEN $denominator <= 0 THEN NULL ELSE ABS($numerator - $denominator) / $denominator END AS `$field`";
-//
-//            $qb->addSelect($str);
-//        }
-//
-//        return $qb;
-//    }
-
-    /**
-     * @param QueryBuilder $qb
-     * @param $transform
      * @param $newFields
      * @param array $dataSetIndexes
      * @return QueryBuilder
@@ -389,63 +369,6 @@ trait SqlUtilTrait
 
         return $qb;
     }
-
-    /**
-     * @param QueryBuilder $qb
-     * @param $transform
-     * @return QueryBuilder
-     */
-//    public function addNewFieldTransformQuery(QueryBuilder $qb, $transform)
-//    {
-//        if ($transform instanceof AddFieldTransform) {
-//            $fieldName = $transform->getFieldName();
-//            $conditions = $transform->getConditions();
-//            $defaultValue = $transform->getValue();
-//            $whenQueries = [];
-//
-//            foreach ($conditions as $condition) {
-//                if (!array_key_exists(AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS, $condition) ||
-//                    !array_key_exists(AddFieldTransform::FIELD_CONDITIONS_VALUE, $condition)
-//                ) {
-//                    continue;
-//                }
-//
-//                $expressions = $condition[AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS];
-//                $conditionValue = $condition[AddFieldTransform::FIELD_CONDITIONS_VALUE];
-//
-//                if (in_array($transform->getType(), [FieldType::TEXT, FieldType::LARGE_TEXT, FieldType::DATETIME, FieldType::DATE])) {
-//                    $conditionValue = "'$conditionValue'";
-//                } elseif ($transform->getType() == FieldType::NUMBER) {
-//                    $conditionValue = intval($conditionValue);
-//                } elseif ($transform->getType() == FieldType::DECIMAL) {
-//                    $conditionValue = floatval($conditionValue);
-//                }
-//
-//                $when = $this->buildSqlCondition($expressions);
-//
-//                if (is_string($when)) {
-//                    $whenQueries[] = "WHEN $when THEN $conditionValue";
-//                }
-//            }
-//
-//            if (in_array($transform->getType(), [FieldType::TEXT, FieldType::LARGE_TEXT, FieldType::DATETIME, FieldType::DATE])) {
-//                $defaultValue = "'$defaultValue'";
-//            } elseif ($transform->getType() == FieldType::NUMBER) {
-//                $defaultValue = intval($defaultValue);
-//            } elseif ($transform->getType() == FieldType::DECIMAL) {
-//                $defaultValue = floatval($defaultValue);
-//            }
-//
-//            if (count($whenQueries) > 0) {
-//                $query = implode(' ', $whenQueries);
-//                $qb->addSelect("CASE $query ELSE $defaultValue END AS `$fieldName`");
-//            } else {
-//                $qb->addSelect("$defaultValue AS `$fieldName`");
-//            }
-//        }
-//
-//        return $qb;
-//    }
 
     /**
      * @param QueryBuilder $qb
@@ -511,42 +434,6 @@ trait SqlUtilTrait
 
     /**
      * @param array $expressions
-     * @return null|string
-     */
-//    public function buildSqlCondition(array $expressions)
-//    {
-//        $conditions = [];
-//        foreach ($expressions as $expression) {
-//            if (!array_key_exists(AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS_CMP, $expression) ||
-//                !array_key_exists(AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS_VAL, $expression) ||
-//                !array_key_exists(AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS_VAR, $expression)
-//            ) {
-//                continue;
-//            }
-//
-//            $conditionComparator = $expression[AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS_CMP];
-//            $conditionValue = $expression[AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS_VAL];
-//            $field = $expression[AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS_VAR];
-//
-//            $condition = $this->buildSingleSqlCondition($field, $conditionValue, $conditionComparator);
-//            if ($condition) {
-//                $conditions[] = $condition;
-//            }
-//        }
-//
-//        if (count($conditions) < 1) {
-//            return null;
-//        }
-//
-//        if (count($conditions) == 1) {
-//            return $conditions[0];
-//        }
-//
-//        return implode(' AND ', $conditions);
-//    }
-
-    /**
-     * @param array $expressions
      * @param array $dataSetIndexes
      * @param bool $removeSuffix
      * @return null|string
@@ -595,77 +482,6 @@ trait SqlUtilTrait
 
         return implode(' AND ', $conditions);
     }
-
-    /**
-     * @param $var
-     * @param $val
-     * @param $cmp
-     * @param $quote
-     * @return null|string
-     */
-//    public function buildSingleSqlCondition($var, $val, $cmp, $quote = true)
-//    {
-//        $var = $quote ? "`$var`" : $var;
-//        switch ($cmp) {
-//            case NewFieldTransform::IS_INVALID_OPERATOR:
-//                return "$var IS NULL";
-//            case NewFieldTransform::SMALLER_OPERATOR:
-//                return "$var < $val";
-//            case NewFieldTransform::SMALLER_OR_EQUAL_OPERATOR:
-//                return "$var <= $val";
-//                break;
-//            case NewFieldTransform::GREATER_OPERATOR:
-//                return "$var > $val";
-//                break;
-//            case NewFieldTransform::GREATER_OR_EQUAL_OPERATOR:
-//                return "$var >= $val";
-//                break;
-//            case NewFieldTransform::EQUAL_OPERATOR:
-//                return "$var = $val";
-//                break;
-//            case NewFieldTransform::NOT_EQUAL_OPERATOR:
-//                return "$var <> $val";
-//                break;
-//            case NewFieldTransform::CONTAIN_OPERATOR:
-//                $conditions = array_map(function($item) use($var) {
-//                    return "$var LIKE '%$item%'";
-//                }, $val);
-//                return join(' OR ', $conditions);
-//                break;
-//            case NewFieldTransform::NOT_CONTAIN_OPERATOR:
-//                $conditions = array_map(function($item) use($var) {
-//                    return "$var NOT LIKE '%$item%'";
-//                }, $val);
-//                return join(' AND ', $conditions);
-//                break;
-//            case NewFieldTransform::IN_OPERATOR:
-//                $val = array_map(function($item) {
-//                    return "'$item'";
-//                }, $val);
-//                $values = implode(',', $val);
-//                return "$var IN ($values)";
-//                break;
-//            case NewFieldTransform::NOT_IN_OPERATOR:
-//                $val = array_map(function($item) {
-//                    return "'$item'";
-//                }, $val);
-//                $values = implode(',', $val);
-//                return "$var NOT IN ($values)";
-//                break;
-//            case NewFieldTransform::BETWEEN_OPERATOR:
-//                if (!array_key_exists(NewFieldTransform::START_DATE_KEY, $val) ||
-//                    !array_key_exists(NewFieldTransform::END_DATE_KEY, $val)
-//                ) {
-//                    throw new \Exception('Missing startDate, endDate for Between Expression');
-//                }
-//
-//                $startDate = $val[NewFieldTransform::START_DATE_KEY];
-//                $endDate = $val[NewFieldTransform::END_DATE_KEY];
-//                return "($var BETWEEN '$startDate' AND '$endDate')";
-//            default:
-//                return null;
-//        }
-//    }
 
     /**
      * @param $var
@@ -741,72 +557,6 @@ trait SqlUtilTrait
     /**
      * @param QueryBuilder $qb
      * @param $transform
-     * @param array $dataSetIndexes
-     * @return QueryBuilder
-     * @throws \Exception
-     */
-//    public function addCalculatedFieldTransformQuery(QueryBuilder $qb, $transform, $dataSetIndexes = [])
-//    {
-//        if ($transform instanceof AddCalculatedFieldTransform) {
-//            $fieldName = $transform->getFieldName();
-//            $expression = $transform->getExpression();
-//            $expressionForm = $this->normalizeExpression($fieldName, $expression, $dataSetIndexes);
-//
-//            if ($expressionForm === null) {
-//                return $qb;
-//            }
-//
-//            $expressionForm = "(SELECT $expressionForm)";
-//            $defaultValues = $transform->getDefaultValue();
-//            $whenQueries = [];
-//
-//            foreach ($defaultValues as $defaultValue) {
-//                if (!array_key_exists(AddCalculatedFieldTransform::DEFAULT_VALUE_KEY, $defaultValue) ||
-//                    !array_key_exists(AddCalculatedFieldTransform::CONDITION_COMPARATOR_KEY, $defaultValue) ||
-//                    !array_key_exists(AddCalculatedFieldTransform::CONDITION_FIELD_KEY, $defaultValue) ||
-//                    !array_key_exists(AddCalculatedFieldTransform::CONDITION_VALUE_KEY, $defaultValue)
-//                ) {
-//                    continue;
-//                }
-//
-//                $value = $defaultValue[AddCalculatedFieldTransform::DEFAULT_VALUE_KEY];
-//                if (in_array($transform->getType(), [FieldType::TEXT, FieldType::LARGE_TEXT, FieldType::DATETIME, FieldType::DATE])) {
-//                    $value = "'$value'";
-//                } elseif ($transform->getType() == FieldType::NUMBER) {
-//                    $value = intval($value);
-//                } elseif ($transform->getType() == FieldType::DECIMAL) {
-//                    $value = floatval($value);
-//                }
-//
-//                $quote = true;
-//                $field = $defaultValue[AddCalculatedFieldTransform::CONDITION_FIELD_KEY];
-//
-//                if ($field == NewFieldTransform::CALCULATED_FIELD) {
-//                    $quote = false;
-//                    $field = $expressionForm;
-//                }
-//
-//                $when = $this->buildSingleSqlCondition($field, $defaultValue[AddCalculatedFieldTransform::CONDITION_VALUE_KEY], $defaultValue[AddCalculatedFieldTransform::CONDITION_COMPARATOR_KEY], $quote);
-//
-//                if (is_string($when)) {
-//                    $whenQueries[] = "WHEN $when THEN $value";
-//                }
-//            }
-//
-//            if (count($whenQueries) > 0) {
-//                $query = implode(' ', $whenQueries);
-//                $qb->addSelect("CASE $query ELSE $expressionForm END AS `$fieldName`");
-//            } else {
-//                $qb->addSelect("$expressionForm AS `$fieldName`");
-//            }
-//        }
-//
-//        return $qb;
-//    }
-
-    /**
-     * @param QueryBuilder $qb
-     * @param $transform
      * @param $newFields
      * @param array $dataSetIndexes
      * @return QueryBuilder
@@ -868,58 +618,6 @@ trait SqlUtilTrait
         }
         return $qb;
     }
-
-    /**
-     * @param $fieldName
-     * @param $expression
-     * @param array $dataSetIndexes
-     * @return mixed
-     * @throws \Exception
-     */
-//    protected function normalizeExpression($fieldName, $expression, $dataSetIndexes = [])
-//    {
-//        if (is_null($expression)) {
-//            throw new \Exception(sprintf('Expression for calculated field can not be null'));
-//        }
-//
-//        $regex = '/\[(.*?)\]/';
-//        if (!preg_match_all($regex, $expression, $matches)) {
-//            return $expression;
-//        };
-//
-//        $fieldsInBracket = $matches[0];
-//        $fields = $matches[1];
-//        $newExpressionForm = null;
-//
-//        $evalExpression = $expression;
-//        foreach ($fields as $index => $field) {
-//            $evalExpression = str_replace($fieldsInBracket[$index], strval($index + 1), $evalExpression);
-//        }
-//
-//        $language = new ExpressionLanguage();
-//        try {
-//            $language->evaluate($evalExpression);
-//        } catch (SyntaxError $ex) {
-//            throw new RuntimeException(sprintf('AddCalculatedField : %s', $ex->getMessage()));
-//        }
-//
-//        foreach ($fields as $index => $field) {
-//            if ($fieldsInBracket[$index] == "[$fieldName]") {
-//                throw new RuntimeException('Can not reference Calculated Field to itself');
-//            }
-//
-//            $tableAlias = null;
-//            $fieldAndId = $this->getIdSuffixAndField($field);
-//            if ($fieldAndId && array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
-//                $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
-//            }
-//
-//            $replaceString = $tableAlias === null ? "`$field`" : sprintf('%s.%s', $tableAlias, $this->removeIdSuffix($field));
-//            $expression = str_replace($fieldsInBracket[$index], $replaceString, $expression);
-//        }
-//
-//        return $expression;
-//    }
 
 
     /**
