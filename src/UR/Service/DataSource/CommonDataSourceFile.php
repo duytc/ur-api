@@ -119,4 +119,18 @@ Abstract class CommonDataSourceFile
 
         return $row;
     }
+
+    protected function isTextArray(array $array)
+    {
+        return count(array_filter($array, function($item) {
+            return !is_string($item);
+        })) < 1;
+    }
+
+    protected function isEmptyArray(array $array)
+    {
+        return count(array_filter($array, function($item) {
+            return !empty($item);
+        })) < 1;
+    }
 }

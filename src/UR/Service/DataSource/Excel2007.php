@@ -38,55 +38,13 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         $this->excel->open($filePath);
 
         foreach ($this->excel->getSheetIterator() as $sheet) {
-            $maxColumnsCount = 0;
-            $i = 0;
-            $previousColumns = [];
-            $match = 0;
-
             /**@var Sheet $sheet */
             foreach ($sheet->getRowIterator() as $rowIndex2 => $row) {
-                $i++;
-                if ($this->isTextArray($row)) {
+                if ($this->isTextArray($row) && !$this->isEmptyArray($row) && count($row) > 1) {
                     $this->headers = $row;
-                    $this->headerRow = 1;
+                    $this->headerRow = $rowIndex2;
                     break;
                 }
-
-//                // trim invalid trailing columns, only do this if found header before
-//                $currentRow = (is_array($this->headers))
-//                    ? $this->removeInvalidTrailingColumns($row)
-//                    : $row;
-//
-//                if (count($currentRow) > $maxColumnsCount) {
-//                    // set row with max length as header
-//                    $this->headers = $currentRow;
-//                    $maxColumnsCount = count($this->headers);
-//                    $this->headerRow = $i;
-//                }
-//
-//                if ((count($currentRow) !== count($previousColumns)) && count($currentRow) > 0) {
-//                    $match = 0;
-//                    $previousColumns = $currentRow;
-//                    continue;
-//                }
-//
-//                $match++;
-//
-//                // set dataRow index due to match
-//                if ($match === self::FIRST_MATCH) {
-//                    if ($i === self::SECOND_ROW) {
-//                        $this->headers = $row;
-//                        $this->headerRow = $i;
-//                    }
-//                }
-//
-//                if ($match > self::ROW_MATCH) {
-//                    break;
-//                }
-//
-//                if ($i > DataSourceInterface::DETECT_HEADER_ROWS) {
-//                    break;
-//                }
             }
 
             break;
@@ -199,13 +157,6 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         }
 
         return $limitedRows;
-    }
-
-    protected function isTextArray(array $array)
-    {
-        return count(array_filter($array, function($item) {
-           return !is_string($item);
-        })) < 1;
     }
 
     /**

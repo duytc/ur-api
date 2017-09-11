@@ -185,17 +185,18 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
 
             $i++;
 
-            if (count($cur_row) > $max) {
+            if ($this->isTextArray($cur_row) && !$this->isEmptyArray($cur_row) && count($cur_row) > $max) {
                 $this->headers = $cur_row;
                 $max = count($this->headers);
                 $this->headerRow = $row;
-                $this->dataRow = $row + 1;
             }
 
             if ($i >= DataSourceInterface::DETECT_HEADER_ROWS) {
                 break;
             }
         }
+
+        $this->dataRow = $this->headerRow + 1;
 
         if ($this->headers === null) {
             return [];
@@ -210,9 +211,16 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     {
         $iterator = $this->csv->getIterator();
         $result = new SplDoublyLinkedList();
+        $index = 0;
         while (!$iterator->eof()) {
+            if ($index < $this->dataRow) {
+                $index++;
+                $iterator->next();
+                continue;
+            }
             $row = $iterator->current();
-            if (!is_array($row)) {
+            if (!is_array($row) || $this->isEmptyArray($row)) {
+                $index++;
                 $iterator->next();
                 continue;
             }
@@ -240,8 +248,14 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         $result = new SplDoublyLinkedList();
         $index = 0;
         while (!$iterator->eof()) {
+            if ($index < $this->dataRow) {
+                $index++;
+                $iterator->next();
+                continue;
+            }
             $row = $iterator->current();
-            if (!is_array($row)) {
+            if (!is_array($row) || $this->isEmptyArray($row)) {
+                $index++;
                 $iterator->next();
                 continue;
             }
@@ -265,27 +279,6 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     public function getTotalRows()
     {
         return count($this->getRows());
-    }
-
-    private function fetchData()
-    {
-        $this->csv->setOffset($this->dataRow);
-        $this->csv->stripBom(true);
-        $allData = $this->csv->fetchAll();
-//        $rows = [];
-//        foreach ($allData as $item) {
-//            // refactor this code
-//            $modifiedRow = $this->removeInvalidColumns($item);
-//            if (count($modifiedRow) === count($this->headers)) {
-//                $rows[] = $modifiedRow;
-//            }
-//        }
-//
-//        return $rows;
-        // above code is need for csv file has "total" row but not have date column
-        // but current not use removeInvalidColumns because this remove entire row if contain an empty value
-        // we return this file data
-        return $allData;
     }
 
     /**
