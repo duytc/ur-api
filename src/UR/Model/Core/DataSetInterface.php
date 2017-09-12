@@ -17,6 +17,7 @@ interface DataSetInterface extends ModelInterface
     const UNIQUE_HASH_INX = 'unique_hash_idx';
     const MAPPING_IS_LEFT_SIDE = '__is_left_side';
     const MAPPING_IS_ASSOCIATED = '__is_associated';
+    const MAPPING_IS_MAPPED = '__is_mapped';
     const MAPPING_IS_IGNORED = '__is_ignored';
     const ALLOW_OVERWRITE_EXISTING_DATA = 'allowOverwriteExistingData';
 

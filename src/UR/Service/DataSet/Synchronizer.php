@@ -91,6 +91,7 @@ class Synchronizer
         $dataSetImportTable->addColumn(DataSetInterface::ENTRY_DATE_COLUMN, FieldType::DATETIME, array('notnull' => true));
         $dataSetImportTable->addColumn(DataSetInterface::MAPPING_IS_IGNORED, Type::BOOLEAN, array('notnull' => true, 'default' => false));
         $dataSetImportTable->addColumn(DataSetInterface::MAPPING_IS_ASSOCIATED, Type::BOOLEAN, array('notnull' => true, 'default' => false));
+        $dataSetImportTable->addColumn(DataSetInterface::MAPPING_IS_MAPPED, Type::BOOLEAN, array('notnull' => true, 'default' => false));
         $dataSetImportTable->addColumn(DataSetInterface::MAPPING_IS_LEFT_SIDE, Type::BOOLEAN, array('notnull' => true, 'default' => false));
 
         // add dimensions

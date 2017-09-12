@@ -44,6 +44,7 @@ class DataMappingManager implements DataMappingManagerInterface
 
     protected $privateFields = [
         DataSetInterface::MAPPING_IS_ASSOCIATED,
+        DataSetInterface::MAPPING_IS_MAPPED,
         DataSetInterface::MAPPING_IS_IGNORED,
         DataSetInterface::MAPPING_IS_LEFT_SIDE,
         DataSetInterface::UNIQUE_ID_COLUMN,
@@ -72,6 +73,7 @@ class DataMappingManager implements DataMappingManagerInterface
     {
         $metrics = $dataSet->getMetrics();
         $metrics[DataSetInterface::MAPPING_IS_ASSOCIATED] = 'number';
+        $metrics[DataSetInterface::MAPPING_IS_MAPPED] = 'number';
         $metrics[DataSetInterface::MAPPING_IS_IGNORED] = 'number';
         $metrics[DataSetInterface::MAPPING_IS_LEFT_SIDE] = 'number';
         $metrics[DataSetInterface::UNIQUE_ID_COLUMN] = 'string';
@@ -116,7 +118,7 @@ class DataMappingManager implements DataMappingManagerInterface
 
 
         /** @var Statement $counter */
-        $counter = $this->sqlBuilder->buildGroupQueryForSingleDataSet($reportDataSet);
+        $counter = $this->sqlBuilder->buildGroupQueryForSingleDataSet($result[SqlBuilder::SUB_QUERY], $reportDataSet);
         $totalReport = 0;
 
         if ($counter instanceof Statement) {
@@ -271,6 +273,7 @@ class DataMappingManager implements DataMappingManagerInterface
         }
 
         $fieldTypes[DataSetInterface::MAPPING_IS_ASSOCIATED] = FieldType::NUMBER;
+        $fieldTypes[DataSetInterface::MAPPING_IS_MAPPED] = FieldType::NUMBER;
         $fieldTypes[DataSetInterface::MAPPING_IS_IGNORED] = FieldType::NUMBER;
         $fieldTypes[DataSetInterface::MAPPING_IS_LEFT_SIDE] = FieldType::NUMBER;
         $fieldTypes[DataSetInterface::UNIQUE_ID_COLUMN] = FieldType::TEXT;

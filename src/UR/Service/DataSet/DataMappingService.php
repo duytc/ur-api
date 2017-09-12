@@ -159,49 +159,129 @@ class DataMappingService implements DataMappingServiceInterface
             $updateUniques = $rightSide;
         }
 
-        foreach ($updateUniques as &$unique) {
-            $unique = '"' . $unique . '"';
-        }
+//        foreach ($updateUniques as &$unique) {
+//            $unique = '"' . $unique . '"';
+//        }
+
+        $tableName = sprintf(Synchronizer::DATA_IMPORT_TABLE_NAME_PREFIX_TEMPLATE, $dataSet->getId());
 
         $mapSideConfigs = $dataSet->getMapBuilderConfigs();
-        /** @var MapBuilderConfigInterface $mapSideConfig */
-        foreach ($mapSideConfigs as $mapSideConfig) {
-            if ($isLeft != $mapSideConfig->isLeftSide()) {
-                continue;
-            }
-            $columns = array_keys($mapSideConfig->getMapFields());
-            $tableName = sprintf(Synchronizer::DATA_IMPORT_TABLE_NAME_PREFIX_TEMPLATE, $mapSideConfig->getDataSet()->getId());
-            $qb = $this->conn->createQueryBuilder();
-            $qb->from($this->conn->quoteIdentifier($tableName))
-                ->where(sprintf('%s = :uniqueId', $this->conn->quoteIdentifier('__unique_id')))
-                ->setParameter('uniqueId', $referenceUnique);
-            foreach ($columns as $column) {
-                $qb->addSelect($column);
-            }
-            $referenceData = $qb->execute()->fetchAll();
 
-            if (count($referenceData) < 1) {
-                continue;
-            }
+        foreach ($updateUniques as $item) {
+            if ($item['__is_associated'] == true) {
+                /** @var MapBuilderConfigInterface $mapSideConfig */
+                foreach ($mapSideConfigs as $mapSideConfig) {
+                    if ($isLeft != $mapSideConfig->isLeftSide()) {
+                        continue;
+                    }
+                    $columns = array_keys($mapSideConfig->getMapFields());
 
-            $referenceData = reset($referenceData);
+                    $qb = $this->conn->createQueryBuilder();
+                    $qb->from($this->conn->quoteIdentifier($tableName))
+                        ->where(sprintf('%s = :uniqueId', $this->conn->quoteIdentifier('__unique_id')))
+                        ->setParameter('uniqueId', $referenceUnique);
+                    foreach ($columns as $column) {
+                        $qb->addSelect($column);
+                    }
+                    $referenceData = $qb->execute()->fetchAll();
 
-            //associate rows
-            $qb = $this->conn->createQueryBuilder();
-            $qb->update($tableName)
-                ->where($qb->expr()->in('__unique_id', $updateUniques));
-            foreach ($columns as $column) {
-                $value = $referenceData[$column];
-                if ($value == null || $value == '') {
-                    continue;
+                    if (count($referenceData) < 1) {
+                        continue;
+                    }
+
+                    $referenceData = reset($referenceData);
+
+                    // get data to duplicate
+                    $qb = $this->conn->createQueryBuilder();
+                    $qb->select("*")->from($this->conn->quoteIdentifier($tableName))
+                        ->where(sprintf('%s = :uniqueId', $this->conn->quoteIdentifier('__unique_id')))
+                        ->setParameter('uniqueId', $item[DataSetInterface::UNIQUE_ID_COLUMN]);
+                    $qb->andWhere(sprintf('%s is null', $this->conn->quoteIdentifier('__overwrite_date')));
+                    $insertIntoData = $qb->execute()->fetchAll();
+
+                    if (count($insertIntoData) < 1) {
+                        continue;
+                    }
+
+                    $insertIntoData = reset($insertIntoData);
+
+                    // reference Data according Map field
+                    foreach ($columns as $column) {
+                        $insertIntoData[$column] = $referenceData[$column];
+                    }
+
+                    // Remove __id
+                    $insertIntoData[DataSetInterface::ID_COLUMN] = '';
+
+                    //associate rows
+                    $qb = $this->conn->createQueryBuilder();
+                    $qb->insert($tableName);
+
+                    foreach ($insertIntoData as $key => $value) {
+                        if ($value == null || $value == '') {
+                            continue;
+                        }
+                        $qb
+                            ->setValue($key, ":$key")
+                            ->setParameter(":$key", $value);
+                    }
+
+                    $qb->execute();
                 }
-                $qb
-                    ->set($column, ":$column")
-                    ->setParameter(":$column", $value);
+            } else {
+                /** @var MapBuilderConfigInterface $mapSideConfig */
+                foreach ($mapSideConfigs as $mapSideConfig) {
+                    if ($isLeft != $mapSideConfig->isLeftSide()) {
+                        continue;
+                    }
+                    $columns = array_keys($mapSideConfig->getMapFields());
+
+                    $qb = $this->conn->createQueryBuilder();
+                    $qb->from($this->conn->quoteIdentifier($tableName))
+                        ->where(sprintf('%s = :uniqueId', $this->conn->quoteIdentifier(DataSetInterface::UNIQUE_ID_COLUMN)))
+                        ->setParameter('uniqueId', $referenceUnique);
+                    foreach ($columns as $column) {
+                        $qb->addSelect($column);
+                    }
+                    $referenceData = $qb->execute()->fetchAll();
+
+                    if (count($referenceData) < 1) {
+                        continue;
+                    }
+
+                    $referenceData = reset($referenceData);
+
+                    //associate rows
+                    $qb = $this->conn->createQueryBuilder();
+                    $qb
+                        ->update($tableName)
+                        ->where(sprintf('%s = :uniqueId', $this->conn->quoteIdentifier(DataSetInterface::UNIQUE_ID_COLUMN)))
+                        ->setParameter('uniqueId', $item[DataSetInterface::UNIQUE_ID_COLUMN]);
+
+                    foreach ($columns as $column) {
+                        $value = $referenceData[$column];
+                        if ($value == null || $value == '') {
+                            continue;
+                        }
+                        $qb
+                            ->set($column, ":$column")
+                            ->setParameter(":$column", $value);
+                    }
+                    $qb->set(DataSetInterface::MAPPING_IS_ASSOCIATED, 1);
+                    $qb->set(DataSetInterface::MAPPING_IS_MAPPED, 1);
+                    $qb->execute();
+                }
             }
-            $qb->set(DataSetInterface::MAPPING_IS_ASSOCIATED, 1);
-            $qb->execute();
         }
+
+        //set is_mapped left side rows
+        $qb = $this->conn->createQueryBuilder();
+        $qb->update($tableName)
+            ->where('__unique_id= :referenceUnique')
+            ->setParameter('referenceUnique', $referenceUnique);
+
+        $qb->set(DataSetInterface::MAPPING_IS_MAPPED, 1);
+        $qb->execute();
 
         $this->augmentationMappingService->noticeChangesInDataSetMapBuilder($dataSet, $this->em);
     }
@@ -219,30 +299,260 @@ class DataMappingService implements DataMappingServiceInterface
         }
 
         $columns = [];
+        $columnsOpposite = [];
         /** @var MapBuilderConfigInterface $mapSideConfig */
         foreach ($mapSideConfigs as $mapSideConfig) {
             if ($isLeftSide != $mapSideConfig->isLeftSide()) {
                 $columns = array_merge($columns, array_keys($mapSideConfig->getMapFields()));
-                continue;
+            } else {
+                $columnsOpposite = array_merge($columnsOpposite, array_keys($mapSideConfig->getMapFields()));
             }
         }
 
         try {
             $tableName = sprintf(Synchronizer::DATA_IMPORT_TABLE_NAME_PREFIX_TEMPLATE, $dataSet->getId());
             $qb = $this->conn->createQueryBuilder();
-            $qb->update($tableName)
-                ->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $rowId));
 
+            // get item need to unmapped
+            $qb->select("*")->from($tableName)->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $rowId))->execute();
+            $item =  $qb->execute()->fetch();
 
-            foreach ($columns as $field) {
+            // get all rows have been mapped contains this $columns and $isLeftSide value
+            $qb = $this->conn->createQueryBuilder();
+            $qb->select("*")->from($tableName);
+
+            foreach ($columnsOpposite as $column) {
+                $value = $item[$column];
+                if ($value == null || $value == '') {
+                    continue;
+                }
                 $qb
-                    ->set($field, ":value")
-                    ->setParameter(':value', null);
+                    ->andWhere($column. "= :$column")
+                    ->setParameter(":$column", $value);
+            }
+            $qb->andWhere($qb->expr()->eq(DataSetInterface::MAPPING_IS_ASSOCIATED, 1));
+            $qb->andWhere($qb->expr()->eq(DataSetInterface::MAPPING_IS_LEFT_SIDE, $isLeftSide));
+            $qb->andWhere(sprintf('%s is null', $this->conn->quoteIdentifier('__overwrite_date')));
+            $itemsFound = $qb->execute()->fetchAll();
+
+            if (count($itemsFound) == 1) {
+                // remove opposite side value to null
+                // set is_associated to false
+                // set is_mapped to false
+                $qb = $this->conn->createQueryBuilder();
+                $qb->update($tableName)
+                    ->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $rowId));
+
+                foreach ($columns as $field) {
+                    $qb
+                        ->set($field, ":value")
+                        ->setParameter(':value', null);
+                }
+
+                $qb->set(DataSetInterface::MAPPING_IS_ASSOCIATED, 0);
+                //$qb->set(DataSetInterface::MAPPING_IS_MAPPED, 0);
+
+                $qb->execute();
+
+            } else {
+
+                //delete this item because there is one or many another item has the same $columns and $isLeftSide value
+                $qb = $this->conn->createQueryBuilder();
+                $qb->delete($tableName)
+                    ->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $rowId));
+                $qb->execute();
+
+//                if (count($itemsFound) == 2) {
+//                    // Update is_mapped for remain item to false
+//                    foreach ($itemsFound as $item) {
+//                        if ($item[DataSetInterface::ID_COLUMN] !=$rowId){
+//                            // check is_associated
+//                            if ($item[DataSetInterface::MAPPING_IS_ASSOCIATED] != 1){
+//                                $qb = $this->conn->createQueryBuilder();
+//                                $qb->update($tableName)
+//                                    ->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $rowId));
+//                                $qb->set(DataSetInterface::MAPPING_IS_MAPPED, 0);
+//                                $qb->execute();
+//                            }
+//                        }
+//                        }
+//
+//                    }
+
             }
 
-            $qb->set(DataSetInterface::MAPPING_IS_ASSOCIATED, 0);
+            //get row according map columns
+            $qb = $this->conn->createQueryBuilder();
+            $qb->select("*")->from($tableName);
 
-            $qb->execute();
+            foreach ($columnsOpposite as $column) {
+                $value = $item[$column];
+                if ($value == null || $value == '') {
+                    continue;
+                }
+                $qb
+                    ->andWhere($column. "= :$column")
+                    ->setParameter(":$column", $value);
+            }
+
+            $qb->andWhere(sprintf('%s is null', $this->conn->quoteIdentifier('__overwrite_date')));
+
+            $itemsFound = $qb->execute()->fetchAll();
+
+            if (count($itemsFound) == 1) {
+                //update // remove leftSide value and set is_associated to false
+                if ($itemsFound[0][DataSetInterface::MAPPING_IS_ASSOCIATED] != 1){
+                    $qb = $this->conn->createQueryBuilder();
+                    $qb->update($tableName)
+                        ->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $itemsFound[0][DataSetInterface::ID_COLUMN]));
+
+                    $qb->set(DataSetInterface::MAPPING_IS_MAPPED, 0);
+
+                    $qb->execute();
+
+                }
+            }
+
+            $qb = $this->conn->createQueryBuilder();
+            $qb->select("*")->from($tableName);
+
+            foreach ($columns as $column) {
+                $value = $item[$column];
+                if ($value == null || $value == '') {
+                    continue;
+                }
+                $qb
+                    ->andWhere($column. "= :$column")
+                    ->setParameter(":$column", $value);
+            }
+
+            $qb->andWhere(sprintf('%s is null', $this->conn->quoteIdentifier('__overwrite_date')));
+
+            $itemsOppositeFound = $qb->execute()->fetchAll();
+
+            if (count($itemsOppositeFound) == 1) {
+                //update // remove leftSide value and set is_associated to false
+                if ($itemsOppositeFound[0][DataSetInterface::MAPPING_IS_ASSOCIATED] != 1){
+                    $qb = $this->conn->createQueryBuilder();
+                    $qb->update($tableName)
+                        ->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $itemsOppositeFound[0][DataSetInterface::ID_COLUMN]));
+
+                    $qb->set(DataSetInterface::MAPPING_IS_MAPPED, 0);
+
+                    $qb->execute();
+
+                }
+            }
+
+            $this->augmentationMappingService->noticeChangesInDataSetMapBuilder($dataSet, $this->em);
+
+        } catch (Exception $e) {
+
+        }
+    }
+
+    public function oldUnMapTags(DataSetInterface $dataSet, $rowId, $isLeftSide)
+    {
+        $mapSideConfigs = $dataSet->getMapBuilderConfigs();
+        if ($mapSideConfigs instanceof Collection) {
+            $mapSideConfigs = $mapSideConfigs->toArray();
+        }
+
+        $columns = [];
+        $columnsOpposite = [];
+        /** @var MapBuilderConfigInterface $mapSideConfig */
+        foreach ($mapSideConfigs as $mapSideConfig) {
+            if ($isLeftSide != $mapSideConfig->isLeftSide()) {
+                $columns = array_merge($columns, array_keys($mapSideConfig->getMapFields()));
+            } else {
+                $columnsOpposite = array_merge($columnsOpposite, array_keys($mapSideConfig->getMapFields()));
+            }
+        }
+
+        try {
+            $tableName = sprintf(Synchronizer::DATA_IMPORT_TABLE_NAME_PREFIX_TEMPLATE, $dataSet->getId());
+            $qb = $this->conn->createQueryBuilder();
+
+            // get item need to unmapped
+            $qb->select("*")->from($tableName)->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $rowId))->execute();
+            $item =  $qb->execute()->fetch();
+
+            // get all rows have been mapped contains this columns
+            $qb = $this->conn->createQueryBuilder();
+            $qb->select("*")->from($tableName);
+
+            foreach ($columns as $column) {
+                $value = $item[$column];
+                if ($value == null || $value == '') {
+                    continue;
+                }
+                $qb
+                    ->andWhere($column. "= :$column")
+                    ->setParameter(":$column", $value);
+            }
+            $qb->andWhere($qb->expr()->eq(DataSetInterface::MAPPING_IS_ASSOCIATED, 1));
+            $itemsFound = $qb->execute()->fetchAll();
+
+            if (count($itemsFound) == 1) {
+                // set is_mapped of left side to false
+                $qb = $this->conn->createQueryBuilder();
+                $qb->update($tableName);
+                foreach ($columns as $column) {
+                    $value = $item[$column];
+                    if ($value == null || $value == '') {
+                        continue;
+                    }
+                    $qb
+                        ->andWhere($column. "= :$column")
+                        ->setParameter(":$column", $value);
+
+                }
+                $qb->set(DataSetInterface::MAPPING_IS_MAPPED, ":value")
+                    ->setParameter(':value', 0);
+                $qb->execute();
+            }
+
+            // remove leftSide value and set is_associated to false
+            // get all rows have been mapped contains this rightSide
+            $qb = $this->conn->createQueryBuilder();
+            $qb->select("*")->from($tableName);
+
+            foreach ($columnsOpposite as $column) {
+                $value = $item[$column];
+                if ($value == null || $value == '') {
+                    continue;
+                }
+                $qb
+                    ->andWhere($column. "= :$column")
+                    ->setParameter(":$column", $value);
+            }
+            $itemsOppositeFound = $qb->execute()->fetchAll();
+
+            if (count($itemsOppositeFound) == 1) {
+                //update // remove leftSide value and set is_associated to false
+                $qb = $this->conn->createQueryBuilder();
+                $qb->update($tableName)
+                    ->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $rowId));
+
+                foreach ($columns as $field) {
+                    $qb
+                        ->set($field, ":value")
+                        ->setParameter(':value', null);
+                }
+
+                $qb->set(DataSetInterface::MAPPING_IS_ASSOCIATED, 0);
+                $qb->set(DataSetInterface::MAPPING_IS_MAPPED, 0);
+
+                $qb->execute();
+            } else {
+
+                // delete this item
+                $qb = $this->conn->createQueryBuilder();
+                $qb->delete($tableName)
+                    ->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $rowId));
+
+                $qb->execute();
+            }
 
             $this->augmentationMappingService->noticeChangesInDataSetMapBuilder($dataSet, $this->em);
         } catch (Exception $e) {

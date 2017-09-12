@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use Blameable\Fixture\Document\Type;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\Annotations as Rest;
