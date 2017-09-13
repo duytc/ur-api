@@ -159,10 +159,6 @@ class DataMappingService implements DataMappingServiceInterface
             $updateUniques = $rightSide;
         }
 
-//        foreach ($updateUniques as &$unique) {
-//            $unique = '"' . $unique . '"';
-//        }
-
         $tableName = sprintf(Synchronizer::DATA_IMPORT_TABLE_NAME_PREFIX_TEMPLATE, $dataSet->getId());
 
         $mapSideConfigs = $dataSet->getMapBuilderConfigs();
@@ -338,7 +334,6 @@ class DataMappingService implements DataMappingServiceInterface
             if (count($itemsFound) == 1) {
                 // remove opposite side value to null
                 // set is_associated to false
-                // set is_mapped to false
                 $qb = $this->conn->createQueryBuilder();
                 $qb->update($tableName)
                     ->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $rowId));
@@ -361,23 +356,6 @@ class DataMappingService implements DataMappingServiceInterface
                 $qb->delete($tableName)
                     ->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $rowId));
                 $qb->execute();
-
-//                if (count($itemsFound) == 2) {
-//                    // Update is_mapped for remain item to false
-//                    foreach ($itemsFound as $item) {
-//                        if ($item[DataSetInterface::ID_COLUMN] !=$rowId){
-//                            // check is_associated
-//                            if ($item[DataSetInterface::MAPPING_IS_ASSOCIATED] != 1){
-//                                $qb = $this->conn->createQueryBuilder();
-//                                $qb->update($tableName)
-//                                    ->where($qb->expr()->eq(DataSetInterface::ID_COLUMN, $rowId));
-//                                $qb->set(DataSetInterface::MAPPING_IS_MAPPED, 0);
-//                                $qb->execute();
-//                            }
-//                        }
-//                        }
-//
-//                    }
 
             }
 
