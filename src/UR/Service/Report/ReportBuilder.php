@@ -312,7 +312,7 @@ class ReportBuilder implements ReportBuilderInterface
         $userProvidedDimensions = [];
         $userProvidedMetrics = [];
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        if (!empty($params->getUserDefinedDimensions()) && $params->getCustomDimensionEnabled()) {
+        if (!empty($params->getUserDefinedDimensions())) {
             if (count($transforms) > 0) {
                 $groupByTransforms = array_filter($transforms, function ($transform) {
                     return $transform instanceof GroupByTransform;
@@ -442,7 +442,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         $reportResult = $this->getReportAfterRemoveTemporaryFields($reportResult, $temporaryFields);
 
-        if (!empty($params->getUserDefinedDimensions()) && $params->getCustomDimensionEnabled()) {
+        if (!empty($params->getUserDefinedDimensions())) {
             $newDimensions = $params->getUserDefinedDimensions();
             $newMetrics = $params->getUserDefinedMetrics();
 
@@ -657,7 +657,7 @@ class ReportBuilder implements ReportBuilderInterface
          * So, after that we need filter all non-selected fields from reports data
          */
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        if (!empty($params->getUserDefinedDimensions()) && $params->getCustomDimensionEnabled()) {
+        if (!empty($params->getUserDefinedDimensions())) {
             if (count($transforms) > 0) {
                 $groupByTransforms = array_filter($transforms, function ($transform) {
                     return $transform instanceof GroupByTransform;
@@ -771,7 +771,7 @@ class ReportBuilder implements ReportBuilderInterface
         $userProvidedDimensions = [];
         $userProvidedMetrics = [];
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        if (!empty($params->getUserDefinedDimensions()) && $params->getCustomDimensionEnabled()) {
+        if (!empty($params->getUserDefinedDimensions())) {
             $userProvidedDimensions = $params->getUserDefinedDimensions();
             $userProvidedMetrics = $params->getUserDefinedMetrics();
             $dimensions = array_values(array_unique(array_merge($dimensions, $userProvidedDimensions)));
@@ -922,7 +922,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         $reportResult = $this->getReportAfterRemoveTemporaryFields($reportResult, $temporaryFields);
 
-        if (!empty($params->getUserDefinedDimensions()) && $params->getCustomDimensionEnabled()) {
+        if (!empty($params->getUserDefinedDimensions())) {
             $newColumns = array_merge($params->getUserDefinedDimensions(), $params->getUserDefinedMetrics());
             $fieldsToRemove = array_diff(array_keys($reportResult->getColumns()), $newColumns);
             $reportResult = $this->getReportAfterRemoveTemporaryFields($reportResult, $fieldsToRemove);

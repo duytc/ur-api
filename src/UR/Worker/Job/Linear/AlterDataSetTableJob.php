@@ -2,19 +2,10 @@
 
 namespace UR\Worker\Job\Linear;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Schema\Comparator;
-use Doctrine\DBAL\Schema\TableDiff;
-use Doctrine\ORM\EntityManagerInterface;
-use Exception;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\JobParams;
 use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
-use UR\DomainManager\DataSetManagerInterface;
-use UR\Model\Core\DataSetInterface;
-use UR\Service\DataSet\Synchronizer;
-use Doctrine\DBAL\Types\Type;
-use UR\Service\DataSet\FieldType;
+use UR\Service\Report\ReportViewUpdaterInterface;
 
 class AlterDataSetTableJob implements SplittableJobInterface
 {
@@ -77,9 +68,9 @@ class AlterDataSetTableJob implements SplittableJobInterface
         $jobs[] = array (
             'task' => UpdateReportViewWhenAlterDataSetSubJob::JOB_NAME,
             UpdateReportViewWhenAlterDataSetSubJob::DATA_SET_ID => $dataSetId,
-            UpdateReportViewWhenAlterDataSetSubJob::NEW_FIELDS => $newColumns,
-            UpdateReportViewWhenAlterDataSetSubJob::UPDATE_FIELDS => $updateColumns,
-            UpdateReportViewWhenAlterDataSetSubJob::DELETED_FIELDS => $deletedColumns,
+            ReportViewUpdaterInterface::NEW_FIELDS => $newColumns,
+            ReportViewUpdaterInterface::UPDATE_FIELDS => $updateColumns,
+            ReportViewUpdaterInterface::DELETED_FIELDS => $deletedColumns,
         );
 
         // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once

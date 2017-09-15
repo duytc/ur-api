@@ -5,11 +5,8 @@ namespace UR\Form\Type;
 
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\FormEvent;
-use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\ReportViewTemplate;
-use UR\Model\Core\ReportViewTemplateInterface;
 
 class ReportViewTemplateFormType extends AbstractRoleSpecificFormType
 {
@@ -25,7 +22,6 @@ class ReportViewTemplateFormType extends AbstractRoleSpecificFormType
             ->add('formats')
             ->add('showInTotal')
             ->add('showDataSetName')
-            ->add('enableCustomDimensionMetric')
             ->add('dimensions')
             ->add('metrics');
 
@@ -35,15 +31,6 @@ class ReportViewTemplateFormType extends AbstractRoleSpecificFormType
             'allow_add' => true,
             'allow_delete' => true,
         ));
-
-        $builder->addEventListener(
-            FormEvents::POST_SUBMIT,
-            function (FormEvent $event) {
-                /** @var ReportViewTemplateInterface $reportViewTemplate */
-                $reportViewTemplate = $event->getData();
-                $form = $event->getForm();
-            }
-        );
     }
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)

@@ -21,8 +21,10 @@ use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\ReportViews\ReportView;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
+use UR\Domain\DTO\Report\Transforms\AggregationTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
+use UR\Domain\DTO\Report\Transforms\PostAggregationTransform;
 use UR\Domain\DTO\Report\Transforms\ReplaceTextTransform;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
@@ -54,7 +56,6 @@ class ParamsBuilder implements ParamsBuilderInterface
     const USER_DEFINED_DIMENSIONS = 'userDefineDimensions';
     const USER_DEFINED_METRICS = 'userDefineMetrics';
     const IS_SHOW_DATA_SET_NAME = 'isShowDataSetName';
-    const CUSTOM_DIMENSION_ENABLED = 'enableCustomDimensionMetric';
     const REPORT_VIEW_ID = 'id';
     const PAGE_KEY = 'page';
     const LIMIT_KEY = 'limit';
@@ -70,6 +71,7 @@ class ParamsBuilder implements ParamsBuilderInterface
      */
     public function buildFromArray(array $data)
     {
+        $metricCalculations = [];
         $param = new Params();
 
         $multiView = false;
@@ -145,7 +147,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(self::TRANSFORM_KEY, $data) && !empty($data[self::TRANSFORM_KEY])) {
-            $transforms = $this->createTransforms($data[self::TRANSFORM_KEY]);
+            $transforms = $this->createTransforms($data[self::TRANSFORM_KEY], $metricCalculations);
             $param->setTransforms($transforms);
         }
 
@@ -218,16 +220,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setUserDefinedMetrics($data[self::USER_DEFINED_METRICS]);
         }
 
-        if (array_key_exists(self::CUSTOM_DIMENSION_ENABLED, $data)) {
-            $param->setCustomDimensionEnabled(filter_var($data[self::CUSTOM_DIMENSION_ENABLED], FILTER_VALIDATE_BOOLEAN));
-        }
-
-        if ($this->isSupportMetricCalculations($param)) {
-            if (array_key_exists(self::METRIC_CALCULATIONS, $data)) {
-                $param->setMetricCalculations($data[self::METRIC_CALCULATIONS]);
-            }
-        }
-
+        $param->setMetricCalculations($metricCalculations);
         return $param;
     }
 
@@ -413,10 +406,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 
     /**
      * @param array $transforms
-     * @throws \Exception
+     * @param $metricCalculations
      * @return array
      */
-    public function createTransforms(array $transforms)
+    public function createTransforms(array $transforms, &$metricCalculations)
     {
         $transformObjects = [];
         foreach ($transforms as $transform) {
@@ -441,6 +434,17 @@ class ParamsBuilder implements ParamsBuilderInterface
                 case TransformInterface::GROUP_TRANSFORM:
                     $timezone = array_key_exists(GroupByTransform::TIMEZONE_KEY, $transform) ? $transform[GroupByTransform::TIMEZONE_KEY] : GroupByTransform::DEFAULT_TIMEZONE;
                     $transformObjects[] = new GroupByTransform($transform[TransformInterface::FIELDS_TRANSFORM], $timezone);
+                    break;
+
+                case TransformInterface::AGGREGATION_TRANSFORM:
+                    $metricCalculations = $transform[TransformInterface::FIELDS_TRANSFORM];
+                    $transformObjects[] = new AggregationTransform($transform[TransformInterface::FIELDS_TRANSFORM]);
+                    break;
+
+                case TransformInterface::POST_AGGREGATION_TRANSFORM:
+                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $postAggregation) {
+                        $transformObjects[] = new PostAggregationTransform($postAggregation);
+                    }
                     break;
 
                 case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
@@ -513,7 +517,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null, ParamsInterface $multiParams = null)
     {
         $param = new Params();
-
+        $metricCalculations = [];
         if ($reportView->isMultiView()) {
             $reportViewsRawData = $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews());
             $reportViews = $this->createReportViews($reportViewsRawData);
@@ -537,7 +541,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         $param
             ->setMultiView($reportView->isMultiView())
-            ->setTransforms($this->createTransforms($reportView->getTransforms()))
+            ->setTransforms($this->createTransforms($reportView->getTransforms(), $metricCalculations))
             ->setFieldTypes($reportView->getFieldTypes());
 
         if (is_array($reportView->getWeightedCalculations())) {
@@ -551,7 +555,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         $param->setPage(1)->setLimit(10);
 
         if ($this->isSupportMetricCalculations($param)) {
-            $param->setMetricCalculations($reportView->getMetricCalculations());
+            $param->setMetricCalculations($metricCalculations);
 
             /** Overwrite values from multi view */
             if ($multiParams instanceof ParamsInterface) {
@@ -568,7 +572,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $fieldsToBeShared, array $paginationParams)
     {
         $param = new Params();
-
+        $metricCalculations = [];
         // important: the dimensions/metrics need re-calculate due to shared fields.
         // This makes sure group calculation is correct
         // e.g: dimensions are date-tag-country, if shared only date-tag => the shared report need be re-calculate base on
@@ -628,7 +632,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         $param
             ->setMultiView($reportView->isMultiView())
-            ->setTransforms($this->createTransforms($reportView->getTransforms()))
+            ->setTransforms($this->createTransforms($reportView->getTransforms(), $metricCalculations))
             ->setFieldTypes($reportView->getFieldTypes())
             ->setShowInTotal($reportView->getShowInTotal())
             ->setIsShowDataSetName($reportView->getIsShowDataSetName());
@@ -711,13 +715,9 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setUserDefinedMetrics($sharedMetrics);
         }
 
-        // get 'enableCustomDimensionMetric' from report view
-        $param->setCustomDimensionEnabled($reportView->isEnableCustomDimensionMetric());
-
         if ($this->isSupportMetricCalculations($param)) {
-            $param->setMetricCalculations($reportView->getMetricCalculations());
+            $param->setMetricCalculations($metricCalculations);
         }
-
 
         return $param;
     }
@@ -728,10 +728,6 @@ class ParamsBuilder implements ParamsBuilderInterface
      */
     private function isSupportMetricCalculations(ParamsInterface $param)
     {
-        if ($param->getCustomDimensionEnabled()) {
-            return true;
-        }
-
         $transforms = $param->getTransforms();
 
         if (!is_array($transforms)) {

@@ -2,6 +2,8 @@
 
 namespace UR\Service\Parser\Transformer;
 
+use UR\Domain\DTO\Report\Transforms\AggregationTransform;
+use UR\Domain\DTO\Report\Transforms\PostAggregationTransform;
 use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
 use UR\Service\Parser\Transformer\Collection\AddField;
 use UR\Service\Parser\Transformer\Collection\Augmentation;
@@ -24,6 +26,7 @@ class TransformerFactory
         ColumnTransformerInterface::DATE_FORMAT,
         ColumnTransformerInterface::NUMBER_FORMAT,
         CollectionTransformerInterface::GROUP_BY,
+        CollectionTransformerInterface::AGGREGATION,
         CollectionTransformerInterface::SORT_BY,
         CollectionTransformerInterface::ADD_FIELD,
         CollectionTransformerInterface::ADD_CALCULATED_FIELD,
@@ -161,6 +164,13 @@ class TransformerFactory
             case CollectionTransformerInterface::SORT_BY:
                 $transformObject = $this->getSortByTransform($config);
                 break;
+            case CollectionTransformerInterface::AGGREGATION:
+                $transformObject = $this->getAggregationTransform($config);
+                break;
+
+            case CollectionTransformerInterface::POST_AGGREGATION:
+                $transformObject = $this->getPostAggregationTransform($config);
+                break;
 
             case CollectionTransformerInterface::ADD_FIELD:
                 $transformObject = $this->getAddFieldTransform($config);
@@ -211,6 +221,32 @@ class TransformerFactory
         }
 
         return new GroupByColumns($config, $timezone);
+    }
+
+    /**
+     * @param array $config
+     * @return null|AggregationTransform
+     */
+    private function getAggregationTransform(array $config)
+    {
+        if (!is_array($config)) {
+            return null;
+        }
+
+        return new AggregationTransform($config);
+    }
+
+    /**
+     * @param array $config
+     * @return null|AggregationTransform
+     */
+    private function getPostAggregationTransform(array $config)
+    {
+        if (!is_array($config)) {
+            return null;
+        }
+
+        return new PostAggregationTransform($config);
     }
 
     /**

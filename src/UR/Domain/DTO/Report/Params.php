@@ -105,8 +105,6 @@ class Params implements ParamsInterface
      */
     protected $userDefinedMetrics;
 
-    protected $customDimensionEnabled;
-
     /** @var  array */
     protected $metricCalculations;
 
@@ -582,24 +580,6 @@ class Params implements ParamsInterface
     public function setMetrics($metrics)
     {
         $this->metrics = $metrics;
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getCustomDimensionEnabled()
-    {
-        return $this->customDimensionEnabled;
-    }
-
-    /**
-     * @param mixed $customDimensionEnabled
-     * @return self
-     */
-    public function setCustomDimensionEnabled($customDimensionEnabled)
-    {
-        $this->customDimensionEnabled = $customDimensionEnabled;
         return $this;
     }
 

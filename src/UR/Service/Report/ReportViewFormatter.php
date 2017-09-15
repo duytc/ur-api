@@ -171,7 +171,7 @@ class ReportViewFormatter implements ReportViewFormatterInterface
          */
         $dataSets = $params->getDataSets();
 
-        if ((count($params->getUserDefinedDimensions()) > 0 || count($params->getUserDefinedMetrics()) > 0) && $params->getCustomDimensionEnabled()) {
+        if (count($params->getUserDefinedDimensions()) > 0 || count($params->getUserDefinedMetrics()) > 0) {
             $dimensions = array_unique(array_merge($dimensions, $params->getUserDefinedDimensions()));
             $metrics = array_unique(array_merge($metrics, $params->getUserDefinedMetrics()));
         } elseif ($params->isMultiView()) {

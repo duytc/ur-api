@@ -134,7 +134,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $reportView->setPublisher($publisher);
 
         /** Inherited bool value*/
-        $reportView->setEnableCustomDimensionMetric($template->isEnableCustomDimensionMetric());
         $reportView->setMultiView($template->isMultiView());
         $reportView->setIsShowDataSetName($template->isShowDataSetName());
         $reportView->setName($template->getName());
@@ -174,7 +173,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
     private function inheritedTemplateFromReportView(ReportViewTemplateInterface $template, ReportViewInterface $reportView)
     {
         /** Inherited bool value*/
-        $template->setEnableCustomDimensionMetric($reportView->isEnableCustomDimensionMetric());
         $template->setMultiView($reportView->isMultiView());
         $template->setShowDataSetName($reportView->getIsShowDataSetName());
         $template->setName($reportView->getName());

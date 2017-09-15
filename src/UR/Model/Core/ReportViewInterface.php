@@ -14,6 +14,9 @@ interface ReportViewInterface extends ModelInterface
     const REPORT_VIEW_METRICS = 'select_metrics';
     const REPORT_VIEW_TRANSFORMS = 'transforms';
     const REPORT_VIEW_FILTERS = 'filters';
+    const REPORT_VIEW_FIELD_TYPES = 'field_types';
+    const REPORT_VIEW_FORMATS = 'formats';
+    const REPORT_VIEW_JOIN_BY = 'join_by';
 
     const TOKEN = 'token';
     const LINK = 'link';
@@ -245,30 +248,8 @@ interface ReportViewInterface extends ModelInterface
     public function setLastRun($LastRun);
 
     /**
-     * @return boolean
-     */
-    public function isEnableCustomDimensionMetric();
-
-    /**
-     * @param boolean $enableCustomDimensionMetric
-     * @return self
-     */
-    public function setEnableCustomDimensionMetric($enableCustomDimensionMetric);
-
-    /**
      * @param mixed $id
      * @return self
      */
     public function setId($id);
-
-    /**
-     * @return array
-     */
-    public function getMetricCalculations();
-
-    /**
-     * @param array $metricCalculations
-     * @return self
-     */
-    public function setMetricCalculations($metricCalculations);
 }

@@ -11,6 +11,8 @@ interface TransformInterface
 	const ADD_CALCULATED_FIELD_TRANSFORM = 'addCalculatedField';
 	const COMPARISON_PERCENT_TRANSFORM = 'comparisonPercent';
 	const GROUP_TRANSFORM = 'groupBy';
+	const AGGREGATION_TRANSFORM = 'aggregation';
+	const POST_AGGREGATION_TRANSFORM = 'postAggregation';
 	const SORT_TRANSFORM = 'sortBy';
     const REPLACE_TEXT_TRANSFORM = 'replaceText';
 	const FORMAT_NUMBER_TRANSFORM = 'number';

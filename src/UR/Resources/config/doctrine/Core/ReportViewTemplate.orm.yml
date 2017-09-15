@@ -32,9 +32,6 @@ UR\Entity\Core\ReportViewTemplate:
         showDataSetName:
             type: boolean
             default: false
-        enableCustomDimensionMetric:
-            type: boolean
-            default: false
         dimensions:
             type: json_array
             nullable: true

@@ -118,17 +118,6 @@ interface ReportViewTemplateInterface extends ModelInterface
     public function setShowDataSetName($showDataSetName);
 
     /**
-     * @return boolean
-     */
-    public function isEnableCustomDimensionMetric();
-
-    /**
-     * @param boolean $enableCustomDimensionMetric
-     * @return self
-     */
-    public function setEnableCustomDimensionMetric($enableCustomDimensionMetric);
-
-    /**
      * @return array
      */
     public function getDimensions();

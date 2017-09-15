@@ -48,15 +48,11 @@ class ReportSelector implements ReportSelectorInterface
     public function getReportData(ParamsInterface $params, $overridingFilters = null)
     {
         $dataSets = $params->getDataSets();
-        $userProvidedGroupTransform = null;
-        if (!empty($params->getUserDefinedDimensions()) && $params->getCustomDimensionEnabled()) {
-            $userProvidedGroupTransform = new GroupByTransform($params->getUserDefinedDimensions());
-        }
 
         if (count($dataSets) < 2) {
-            return $this->sqlBuilder->buildQueryForSingleDataSet($params, $userProvidedGroupTransform, $overridingFilters);
+            return $this->sqlBuilder->buildQueryForSingleDataSet($params, $overridingFilters);
         }
 
-        return $this->sqlBuilder->buildQuery($params, $userProvidedGroupTransform, $overridingFilters);
+        return $this->sqlBuilder->buildQuery($params, $overridingFilters);
     }
 }

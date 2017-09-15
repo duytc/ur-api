@@ -8,9 +8,7 @@ use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\ReportViewTemplateTag;
-use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\ReportViewTemplateTagInterface;
-use UR\Model\User\Role\AdminInterface;
 
 class ReportViewTemplateTagFormType extends AbstractRoleSpecificFormType
 {

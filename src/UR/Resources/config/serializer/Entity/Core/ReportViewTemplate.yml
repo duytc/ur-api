@@ -28,9 +28,6 @@ UR\Entity\Core\ReportViewTemplate:
         showDataSetName:
             expose: true
             groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
-        enableCustomDimensionMetric:
-            expose: true
-            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
         dimensions:
             expose: true
             groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]

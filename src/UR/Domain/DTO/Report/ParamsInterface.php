@@ -226,17 +226,6 @@ interface ParamsInterface
     public function setUserDefinedDimensions($userDefinedDimensions);
 
     /**
-     * @return mixed
-     */
-    public function getCustomDimensionEnabled();
-
-    /**
-     * @param mixed $customDimensionEnabled
-     * @return self
-     */
-    public function setCustomDimensionEnabled($customDimensionEnabled);
-
-    /**
      * @return array
      */
     public function getUserDefinedMetrics();

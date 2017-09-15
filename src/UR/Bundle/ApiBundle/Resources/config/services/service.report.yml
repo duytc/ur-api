@@ -49,3 +49,8 @@ services:
 
     ur.services.report.report_sorter:
         class: UR\Service\Report\ReportViewSorter
+
+    ur.services.report.report_updater:
+        class: UR\Service\Report\ReportViewUpdater
+        arguments:
+            - '@doctrine.orm.entity_manager'

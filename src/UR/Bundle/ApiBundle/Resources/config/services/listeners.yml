@@ -62,12 +62,6 @@ services:
             - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: postFlush }
 
-#    ur_api.event_listener.data_set_change_listener:
-#        class: UR\Bundle\ApiBundle\EventListener\DataSetChangeListener
-#        tags:
-#            - { name: doctrine.event_listener, event: preUpdate }
-#            - { name: doctrine.event_listener, event: postFlush }
-
     ur_api.event_listener.map_builder_change_listener:
         class: UR\Bundle\ApiBundle\EventListener\MapBuilderChangeListener
         arguments:

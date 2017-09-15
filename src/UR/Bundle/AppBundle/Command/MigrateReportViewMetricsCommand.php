@@ -31,7 +31,7 @@ class MigrateReportViewMetricsCommand extends ContainerAwareCommand
         $count = [];
         /** @var ReportViewInterface $singleView */
         foreach ($singleViews as $singleView) {
-            $transforms = $paramBuilder->createTransforms($singleView->getTransforms());
+            $transforms = $paramBuilder->createTransforms($singleView->getTransforms(), $metricCalculation);
             $newFields = [];
             $textAndDateFields = [];
             foreach ($transforms as $transform) {

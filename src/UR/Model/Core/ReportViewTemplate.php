@@ -35,9 +35,6 @@ class ReportViewTemplate implements ReportViewTemplateInterface
     /** @var  bool */
     protected $showDataSetName;
 
-    /** @var  bool */
-    protected $enableCustomDimensionMetric;
-
     /** @var  array */
     protected $dimensions;
 
@@ -228,24 +225,6 @@ class ReportViewTemplate implements ReportViewTemplateInterface
     public function setShowDataSetName($showDataSetName)
     {
         $this->showDataSetName = $showDataSetName;
-
-        return $this;
-    }
-
-    /**
-     * @return boolean
-     */
-    public function isEnableCustomDimensionMetric()
-    {
-        return $this->enableCustomDimensionMetric;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setEnableCustomDimensionMetric($enableCustomDimensionMetric)
-    {
-        $this->enableCustomDimensionMetric = $enableCustomDimensionMetric;
 
         return $this;
     }

@@ -6,7 +6,6 @@ namespace UR\Form\Type;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\ReportSchedule;
-use UR\Entity\Core\ReportView;
 
 class ReportScheduleFormType extends AbstractRoleSpecificFormType
 {

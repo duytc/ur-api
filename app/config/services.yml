@@ -263,6 +263,7 @@ services:
         arguments:
             - '@monolog.logger'
             - '@doctrine.orm.entity_manager'
+            - '@ur.services.report.report_updater'
 
     ur.worker.job.linear.load_files_into_data_set_map_builder:
         class: UR\Worker\Job\Linear\LoadFilesIntoDataSetMapBuilder

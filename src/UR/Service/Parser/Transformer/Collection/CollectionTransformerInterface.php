@@ -13,6 +13,8 @@ interface CollectionTransformerInterface extends TransformerInterface
     const FIELDS_KEY = 'fields';
     const FIELD_KEY = 'field';
     const GROUP_BY = 'groupBy';
+    const AGGREGATION = 'aggregation';
+    const POST_AGGREGATION = 'postAggregation';
     const SORT_BY = 'sortBy';
     const ADD_FIELD = 'addField';
     const ADD_CALCULATED_FIELD = 'addCalculatedField';

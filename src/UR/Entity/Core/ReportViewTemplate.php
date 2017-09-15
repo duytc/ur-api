@@ -38,9 +38,6 @@ class ReportViewTemplate extends ReportViewTemplateModel
     /** @var  bool */
     protected $showDataSetName;
 
-    /** @var  bool */
-    protected $enableCustomDimensionMetric;
-
     /** @var  array */
     protected $dimensions;
 

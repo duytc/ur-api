@@ -48,8 +48,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             ->add('fieldTypes')
             ->add('subReportsIncluded')
             ->add('isShowDataSetName')
-            ->add('enableCustomDimensionMetric')
-            ->add('metricCalculations');
+        ;
 
         $builder
             ->add('reportViewMultiViews', 'collection', array(
@@ -132,11 +131,6 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
 
                 if (!is_string($alias)) {
                     $reportView->setAlias($reportView->getName());
-                }
-
-                $enableCustomDimensionMetric = $reportView->isEnableCustomDimensionMetric();
-                if (!$enableCustomDimensionMetric) {
-                    $reportView->setEnableCustomDimensionMetric(false);
                 }
 
                 $reportViewDataSets = $reportView->getReportViewDataSets();
