@@ -277,6 +277,10 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         foreach ($newFields as $newField) {
+            if (in_array($newField, $postAggregationFields)) {
+                continue;
+            }
+
             $outerQb->addSelect($this->connection->quoteIdentifier($newField));
         }
 
