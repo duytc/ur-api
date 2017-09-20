@@ -130,6 +130,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                     return;
                 }
                 
+                $dataSet->setAllowOverwriteExistingData(true);
                 $mapBuilderConfigs = $dataSet->getMapBuilderConfigs();
 
                 if ($mapBuilderConfigs instanceof Collection) {
