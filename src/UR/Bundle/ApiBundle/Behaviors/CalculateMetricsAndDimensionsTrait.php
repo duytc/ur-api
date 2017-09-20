@@ -5,6 +5,7 @@ namespace UR\Bundle\ApiBundle\Behaviors;
 
 
 use UR\Behaviors\JoinConfigUtilTrait;
+use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\ReportViews\ReportViewInterface as ReportViewDTO;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
@@ -50,23 +51,48 @@ trait CalculateMetricsAndDimensionsTrait
         $dimensions = [];
         $dataSets = $params->getDataSets();
         $joinBy = $params->getJoinConfigs();
+
+        $dataSetDimensions = [];
+        $dataSetMetrics = [];
+
+        foreach ($dataSets as $dataSet) {
+            if (!$dataSet instanceof DataSet) {
+                continue;
+            }
+            $dataSetId = $dataSet->getDataSetId();
+
+            $subDimensions = array_map(function ($field) use ($dataSetId){
+                return sprintf("%s_%s", $field, $dataSetId);
+            }, $dataSet->getDimensions());
+
+            $subMetrics = array_map(function ($field) use ($dataSetId){
+                return sprintf("%s_%s", $field, $dataSetId);
+            }, $dataSet->getMetrics());
+
+            $dataSetDimensions = array_merge($dataSetDimensions, $subDimensions);
+            $dataSetMetrics = array_merge($dataSetMetrics, $subMetrics);
+        }
+
         foreach ($dataSets as $dataSet) {
             foreach ($dataSet->getMetrics() as $item) {
-                $alias = $this->getAliasForField($dataSet->getDataSetId(), $item, $joinBy);
-                if ($alias === null) {
+                $isDimension = false;
+                $alias = $this->getAliasForUpdateField($dataSet->getDataSetId(), $item, $joinBy, $dataSetMetrics, $isDimension);
+
+                if (!in_array($alias, $metrics) && !$isDimension) {
+                    $metrics[] = $alias;
                     continue;
                 }
 
-                if (!in_array($alias, $metrics)) {
-                    $metrics[] = $alias;
+                if (!in_array($alias, $dimensions) && $isDimension) {
+                    $dimensions[] = $alias;
+                    continue;
                 }
             }
 
             foreach ($dataSet->getDimensions() as $item) {
-                $alias = $this->getAliasForField($dataSet->getDataSetId(), $item, $joinBy);
-                if ($alias === null) {
-                    continue;
-                }
+                $isDimension = true;
+                $alias = $this->getAliasForUpdateField($dataSet->getDataSetId(), $item, $joinBy, $dataSetMetrics, $isDimension);
+
                 if (!in_array($alias, $dimensions)) {
                     $dimensions[] = $alias;
                 }

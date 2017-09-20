@@ -3,7 +3,6 @@
 namespace UR\Domain\DTO\Report\Transforms;
 
 use SplDoublyLinkedList;
-use UR\Domain\DTO\Report\ReportCollection;
 use UR\Exception\RuntimeException;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
@@ -15,6 +14,8 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 	const TRANSFORMS_TYPE = 'groupBy';
 	const TIMEZONE_KEY = 'timezone';
 	const FIELDS_KEY = 'fields';
+	const AGGREGATION_FIELDS_KEY = 'aggregationFields';
+	const AGGREGATE_ALL_KEY = 'aggregateAll';
 	const DEFAULT_TIMEZONE = 'UTC';
 
 	/**
@@ -22,14 +23,36 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 	 */
 	protected $fields;
 
+	/**
+	 * @var array
+	 */
+	protected $aggregateFields;
+
+	/**
+	 * @var string
+	 */
 	protected $timezone;
 
-	function __construct(array $data, $timezone = self::DEFAULT_TIMEZONE)
+	/**
+	 * @var bool
+	 */
+	protected $aggregateAll;
+
+	/**
+	 * GroupByTransform constructor.
+	 * @param array $fields
+	 * @param bool $aggregateAll
+	 * @param array $aggregationFields
+	 * @param string $timezone
+	 */
+	function __construct(array $fields, $aggregateAll = true, array $aggregationFields, $timezone = self::DEFAULT_TIMEZONE)
 	{
 		parent::__construct();
 
-		$this->fields = $data;
 		$this->timezone = $timezone;
+		$this->fields = $fields;
+		$this->aggregateAll = $aggregateAll;
+		$this->aggregateFields = $aggregationFields;
 	}
 
 	public function addField($field)
@@ -198,5 +221,41 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 	public function getTimezone()
 	{
 		return $this->timezone;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getAggregateFields()
+	{
+		return $this->aggregateFields;
+	}
+
+	/**
+	 * @param array $aggregateFields
+	 * @return self
+	 */
+	public function setAggregateFields($aggregateFields)
+	{
+		$this->aggregateFields = $aggregateFields;
+		return $this;
+	}
+
+	/**
+	 * @return boolean
+	 */
+	public function isAggregateAll()
+	{
+		return $this->aggregateAll;
+	}
+
+	/**
+	 * @param boolean $aggregateAll
+	 * @return self
+	 */
+	public function setAggregateAll($aggregateAll)
+	{
+		$this->aggregateAll = $aggregateAll;
+		return $this;
 	}
 }

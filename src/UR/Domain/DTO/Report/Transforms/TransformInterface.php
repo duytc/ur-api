@@ -6,6 +6,7 @@ use UR\Service\DTO\Collection;
 interface TransformInterface
 {
 	const TRANSFORM_TYPE_KEY = 'type';
+	const TRANSFORM_IS_POST_KEY = 'isPostGroup';
 
 	const ADD_FIELD_TRANSFORM = 'addField';
 	const ADD_CALCULATED_FIELD_TRANSFORM = 'addCalculatedField';
@@ -40,4 +41,9 @@ interface TransformInterface
 	 * @return mixed
 	 */
 	public function getTransformsType();
+
+	/**
+	 * @return mixed
+	 */
+	public function getIsPostGroup();
 }

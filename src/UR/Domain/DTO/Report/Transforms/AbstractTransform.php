@@ -7,6 +7,7 @@ namespace UR\Domain\DTO\Report\Transforms;
 abstract class AbstractTransform
 {
 	const TRANSFORMS_TYPE = 'abstractTransform';
+	private $isPostGroup;
 
     /**
      * AbstractTransform constructor.
@@ -19,4 +20,20 @@ abstract class AbstractTransform
     {
 	    return self::TRANSFORMS_TYPE;
     }
+
+	/**
+	 * @return mixed
+	 */
+	public function getIsPostGroup()
+	{
+		return $this->isPostGroup;
+	}
+
+	/**
+	 * @param mixed $isPostGroup
+	 */
+	public function setIsPostGroup($isPostGroup)
+	{
+		$this->isPostGroup = $isPostGroup;
+	}
 }

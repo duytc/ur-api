@@ -81,6 +81,11 @@ class ReportView implements ReportViewInterface
     protected $dimensions;
 
     /**
+     * @var bool
+     */
+    protected $enableCustomDimensionMetric;
+
+    /**
      * @var array format as
      * [
      *      token1 => [field1, field2, ...],
@@ -509,6 +514,24 @@ class ReportView implements ReportViewInterface
     public function setLastRun($lastRun)
     {
         $this->lastRun = $lastRun;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isEnableCustomDimensionMetric()
+    {
+        return $this->enableCustomDimensionMetric;
+    }
+
+    /**
+     * @param boolean $enableCustomDimensionMetric
+     * @return self
+     */
+    public function setEnableCustomDimensionMetric($enableCustomDimensionMetric)
+    {
+        $this->enableCustomDimensionMetric = $enableCustomDimensionMetric;
         return $this;
     }
 }

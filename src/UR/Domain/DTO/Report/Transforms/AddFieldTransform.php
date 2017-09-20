@@ -27,8 +27,9 @@ class AddFieldTransform extends NewFieldTransform implements TransformInterface
     /**
      * AddFieldTransform constructor.
      * @param array $data
+     * @param bool $isPostGroup
      */
-    public function __construct(array $data)
+    public function __construct(array $data, bool $isPostGroup = true)
     {
         parent::__construct();
 
@@ -45,6 +46,8 @@ class AddFieldTransform extends NewFieldTransform implements TransformInterface
         } else {
             $this->conditions = [];
         }
+
+        $this->setIsPostGroup($isPostGroup);
     }
 
     /**

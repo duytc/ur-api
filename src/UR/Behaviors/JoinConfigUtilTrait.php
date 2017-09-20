@@ -12,6 +12,52 @@ use UR\Service\Report\SqlBuilder;
 
 trait JoinConfigUtilTrait
 {
+    public function getAliasForUpdateField($dataSetId, $field, $joinConfig, $dataSetMetrics = [], &$isDimension)
+    {
+        $alias = null;
+        /** @var JoinConfigInterface $config */
+        foreach ($joinConfig as $config) {
+            $matchIndex = 0;
+            /** @var JoinFieldInterface $join */
+            foreach($config->getJoinFields() as $join) {
+                $inputFields = explode(',', $join->getField());
+                foreach ($inputFields as $i => $inputField) {
+                    if ($field == $inputField && $join->getDataSet() == $dataSetId) {
+                        $outputFields = explode(',', $config->getOutputField());
+                        $alias = $outputFields[$i];
+                        $matchIndex = $i;
+                        break 2;
+                    }
+                }
+            }
+
+            /** @var JoinFieldInterface $join */
+            foreach($config->getJoinFields() as $join) {
+                if ($join->getDataSet() == $dataSetId) {
+                    continue;
+                }
+
+                $inputFields = explode(',', $join->getField());
+                $otherField = $inputFields[$matchIndex];
+                $otherField = sprintf('%s_%d', $otherField, $join->getDataSet());
+                if (in_array($otherField, $dataSetMetrics) && !$isDimension) {
+                    $isDimension = false;
+                } else {
+                    $isDimension = true;
+                }
+
+                break 2;
+            }
+        }
+
+        if ($alias) {
+            return $alias;
+        }
+
+        return sprintf('%s_%d', $field, $dataSetId);
+    }
+
+
     public function getAliasForField($dataSetId, $field, $joinConfig)
     {
         /** @var JoinConfigInterface $config */
@@ -23,7 +69,7 @@ trait JoinConfigUtilTrait
                 if ($join->getDataSet() == $dataSetId && in_array($field, $fields)) {
                     $fieldIndexes = array_flip($fields);
 //                    if ($config->isVisible()) {
-                        return $outputFields[$fieldIndexes[$field]];
+                    return $outputFields[$fieldIndexes[$field]];
 //                    }
 
 //                    return null;

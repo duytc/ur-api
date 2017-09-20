@@ -17,16 +17,45 @@ use UR\Service\Parser\Transformer\Column\DateFormat;
 class GroupByColumns implements CollectionTransformerInterface
 {
     const TIMEZONE_KEY = 'timezone';
+    const AGGREGATION_FIELDS_KEY = 'aggregationFields';
+    const AGGREGATE_ALL_KEY = 'aggregateAll';
     const DEFAULT_TIMEZONE = 'UTC';
     const TEMPORARY_DATE_FORMAT = 'Y--m--d--H--i--s';
 
+    /**
+     * @var array
+     */
     protected $groupByColumns;
+
+    /**
+     * @var string
+     */
     protected $timezone;
 
-    public function __construct(array $config, $timezone = self::DEFAULT_TIMEZONE)
+    /**
+     * @var array
+     */
+    protected $aggregationFields;
+
+    /**
+     * @var bool
+     */
+    protected $aggregateAll;
+
+    /**
+     * GroupByColumns constructor.
+     * @param array $config
+     * @param array $aggregationFields
+     * @param bool $aggregateAll
+     * @param string $timezone
+     */
+    public function __construct(array $config, $aggregateAll = true, array $aggregationFields, $timezone = self::DEFAULT_TIMEZONE)
     {
         $this->groupByColumns = $config;
         $this->timezone = $timezone;
+        $this->aggregateAll = $aggregateAll;
+        $this->aggregationFields = $aggregationFields;
+
     }
 
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
@@ -50,7 +79,8 @@ class GroupByColumns implements CollectionTransformerInterface
         $sumFieldKeys = array_diff($columns, $groupColumnKeys);
 
         if (!empty($groupColumnKeys)) {
-            $rows = self::group($rows, $types, $groupColumnKeys, $sumFieldKeys, $fromDateFormats, $mapFields);
+            $aggregationFields = array_keys(array_intersect($mapFields, $this->aggregationFields));
+            $rows = self::group($rows, $types, $groupColumnKeys, $sumFieldKeys, $this->aggregateAll, $aggregationFields, $fromDateFormats, $mapFields);
         }
 
         return new Collection($collection->getColumns(), $rows, $types);
@@ -63,12 +93,15 @@ class GroupByColumns implements CollectionTransformerInterface
      * @param array $types
      * @param array $groupFields array of grouping fields
      * @param array $sumFields array of summing fields
+     * @param bool $aggregateAll
+     * @param array $aggregationFields
      * @param array $fromDateFormats
      * @param array $mapFields
-     *
      * @return array
+     * @throws ImportDataException
      */
-    public function group(SplDoublyLinkedList $array, array $types, array $groupFields, array $sumFields = array(), $fromDateFormats = [], $mapFields = [])
+    public function group(SplDoublyLinkedList $array, array $types, array $groupFields, array $sumFields = [], $aggregateAll = true, array $aggregationFields = [],
+                          $fromDateFormats = [], $mapFields = [])
     {
         $result = [];
 
@@ -132,9 +165,8 @@ class GroupByColumns implements CollectionTransformerInterface
                     }
 
                     if (!$isFirst) {
-                        $isSumField = array_key_exists($sumField, $types) && ($types[$sumField] == FieldType::NUMBER || $types[$sumField] == FieldType::DECIMAL);
-
-                        if ($isSumField) {
+                        $sum = ($aggregateAll && array_key_exists($sumField, $types) && in_array($types[$sumField], [FieldType::NUMBER, FieldType::DECIMAL])) || in_array($sumField, $aggregationFields);
+                        if ($sum) {
                             if ($result[$key][$sumField] === null && $element[$sumField] === null) {
                                 $result[$key][$sumField] = null;
                             } else {

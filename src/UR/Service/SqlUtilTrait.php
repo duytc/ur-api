@@ -155,7 +155,7 @@ trait SqlUtilTrait
                     if (array_key_exists($joinField->getDataSet(), $dataSetIndexes)) {
                         $inputJoinFields = explode(',', $joinField->getField());
                         if (isset($inputJoinFields[$index])) {
-                            return sprintf('t%d.%s', $dataSetIndexes[$joinField->getDataSet()], $inputJoinFields[$index]);
+                            return sprintf('`t%d`.`%s`', $dataSetIndexes[$joinField->getDataSet()], $inputJoinFields[$index]);
                         }
                     }
                 }
@@ -348,34 +348,40 @@ trait SqlUtilTrait
      * @param $transform
      * @param $newFields
      * @param array $dataSetIndexes
+     * @param bool $removeSuffix
      * @return QueryBuilder
      */
-    public function addComparisonPercentTransformQuery(QueryBuilder $qb, $transform, &$newFields, $dataSetIndexes = [])
+    public function addComparisonPercentTransformQuery(QueryBuilder $qb, $transform, &$newFields, $dataSetIndexes = [], $removeSuffix = true)
     {
         if ($transform instanceof ComparisonPercentTransform) {
             $denominator = $transform->getDenominator();
-            $tableAlias = null;
-            $fieldAndId = $this->getIdSuffixAndField($denominator);
-
-            if ($fieldAndId) {
-                $denominator = $fieldAndId['field'];
-                if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
-                    $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
-                }
-            }
-
-            $denominator = $tableAlias === null ? "`$denominator`" : sprintf('%s.%s', $tableAlias, $this->removeIdSuffix($denominator));
             $numerator = $transform->getNumerator();
-            $fieldAndId = $this->getIdSuffixAndField($numerator);
 
-            if ($fieldAndId) {
-                $numerator = $fieldAndId['field'];
-                if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
-                    $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+            if ($removeSuffix) {
+                $tableAlias = null;
+                $fieldAndId = $this->getIdSuffixAndField($denominator);
+
+                if ($fieldAndId) {
+                    $denominator = $fieldAndId['field'];
+                    if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
+                        $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                    }
                 }
+
+                $denominator = $tableAlias === null ? "`$denominator`" : sprintf('%s.%s', $tableAlias, $this->removeIdSuffix($denominator));
+
+                $fieldAndId = $this->getIdSuffixAndField($numerator);
+
+                if ($fieldAndId) {
+                    $numerator = $fieldAndId['field'];
+                    if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
+                        $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                    }
+                }
+
+                $numerator = $tableAlias === null ? "`$numerator`" : sprintf('%s.%s', $tableAlias, $this->removeIdSuffix($numerator));
             }
 
-            $numerator = $tableAlias === null ? "`$numerator`" : sprintf('%s.%s', $tableAlias, $this->removeIdSuffix($numerator));
             $fieldName = $transform->getFieldName();
             $str = "CASE WHEN $denominator IS NULL THEN NULL WHEN $denominator <= 0 THEN NULL ELSE ABS($numerator - $denominator) / $denominator END AS `$fieldName`";
             $qb->addSelect($str);
@@ -391,10 +397,11 @@ trait SqlUtilTrait
      * @param $transform
      * @param $newFields
      * @param array $dataSetIndexes
+     * @param array $joinConfig
      * @param bool $removeSuffix
      * @return QueryBuilder
      */
-    public function addNewFieldTransformQuery(QueryBuilder $qb, $transform, &$newFields, $dataSetIndexes = [], $removeSuffix = false)
+    public function addNewFieldTransformQuery(QueryBuilder $qb, $transform, &$newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = false)
     {
         if ($transform instanceof AddFieldTransform) {
             $fieldName = $transform->getFieldName();
@@ -420,7 +427,7 @@ trait SqlUtilTrait
                     $conditionValue = floatval($conditionValue);
                 }
 
-                $when = $this->buildSqlCondition($expressions, $dataSetIndexes, $removeSuffix);
+                $when = $this->buildSqlCondition($transform->getIsPostGroup(),$expressions, $dataSetIndexes, $joinConfig, $removeSuffix);
 
                 if (is_string($when)) {
                     $whenQueries[] = "WHEN $when THEN $conditionValue";
@@ -449,13 +456,15 @@ trait SqlUtilTrait
     }
 
     /**
+     * @param $postGroup
      * @param array $expressions
      * @param array $dataSetIndexes
+     * @param array $joinConfig
      * @param bool $removeSuffix
      * @return null|string
      * @throws \Exception
      */
-    public function buildSqlCondition(array $expressions, $dataSetIndexes = [], $removeSuffix = false)
+    public function buildSqlCondition($postGroup, array $expressions, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = false)
     {
         $conditions = [];
         foreach ($expressions as $expression) {
@@ -470,24 +479,33 @@ trait SqlUtilTrait
             $conditionValue = $expression[AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS_VAL];
             $field = $expression[AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS_VAR];
 
-            if ($removeSuffix === true) {
-                $field = $this->removeIdSuffix($field);
-            }
-
-            $tableAlias = null;
-            $fieldAndId = $this->getIdSuffixAndField($field);
             $quote = true;
-            if ($fieldAndId) {
-                $field = $fieldAndId['field'];
-                if (empty($dataSetIndexes)) {
-                    $field = "t.$field";
-                } elseif (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
-                    $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+            if (!$postGroup) {
+//                if ($removeSuffix === true) {
+//                    $field = $this->removeIdSuffix($field);
+//                }
+
+                $alias = $this->convertOutputJoinFieldToAlias($field, $joinConfig, $dataSetIndexes);
+                if ($alias) {
+                    $field = $alias;
+                    $quote = false;
+                } else {
+                    $tableAlias = null;
+                    $fieldAndId = $this->getIdSuffixAndField($field);
+                    if ($fieldAndId) {
+                        $field = $fieldAndId['field'];
+                        if (empty($dataSetIndexes)) {
+                            $field = "t.$field";
+                        } elseif (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
+                            $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                        }
+                        $quote = false;
+                    }
+
+                    $field = $tableAlias === null ? $field : sprintf('%s.%s', $tableAlias, $this->removeIdSuffix($field));
                 }
-                $quote = false;
             }
 
-            $field = $tableAlias === null ? $field : sprintf('%s.%s', $tableAlias, $this->removeIdSuffix($field));
             $condition = $this->buildSingleSqlCondition($field, $conditionValue, $conditionComparator, $quote);
 
             if ($condition) {
@@ -582,15 +600,17 @@ trait SqlUtilTrait
      * @param $transform
      * @param $newFields
      * @param array $dataSetIndexes
+     * @param array $joinConfig
      * @return QueryBuilder
      * @throws \Exception
      */
-    public function addCalculatedFieldTransformQuery(QueryBuilder $qb, $transform, &$newFields, $dataSetIndexes = [])
+    public function addCalculatedFieldTransformQuery(QueryBuilder $qb, $transform, &$newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = false)
     {
         if ($transform instanceof AddCalculatedFieldTransform) {
             $fieldName = $transform->getFieldName();
             $expression = $transform->getExpression();
-            $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $dataSetIndexes);
+
+            $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $dataSetIndexes, $removeSuffix);
 
             if ($expressionForm === null) return $qb;
 
@@ -621,6 +641,26 @@ trait SqlUtilTrait
                 if ($field == NewFieldTransform::CALCULATED_FIELD) {
                     $quote = false;
                     $field = $expressionForm;
+                } else {
+                    if (!$transform->getIsPostGroup()) {
+                        $alias = $this->convertOutputJoinFieldToAlias($field, $joinConfig, $dataSetIndexes);
+                        if ($alias) {
+                            $field = $alias;
+                            $quote = false;
+                        } else {
+                            $tableAlias = null;
+                            $fieldAndId = $this->getIdSuffixAndField($field);
+                            if ($fieldAndId) {
+                                $field = $fieldAndId['field'];
+                                if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
+                                    $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                                }
+                            }
+
+                            $field = $tableAlias !== null ? "`$tableAlias`.`$field`" : "`t`.`$field`";
+                            $quote = false;
+                        }
+                    }
                 }
 
                 $when = $this->buildSingleSqlCondition(
@@ -711,7 +751,7 @@ trait SqlUtilTrait
         try {
             $language->evaluate($evalExpression);
         } catch (SyntaxError $ex) {
-            throw new RuntimeException(sprintf('%s : %s', $transformType, $ex->getMessage()));
+            throw new PublicSimpleException(sprintf('Warning: Wrong expression of %s', $transformType));
         }
 
         foreach ($fields as $index => $field) {

@@ -158,18 +158,13 @@ class TransformerFactory
         switch ($jsonTransform[CollectionTransformerInterface::TYPE_KEY]) {
             case CollectionTransformerInterface::GROUP_BY:
                 $timezone = array_key_exists(GroupByColumns::TIMEZONE_KEY, $jsonTransform) ? $jsonTransform[GroupByColumns::TIMEZONE_KEY] : GroupByColumns::DEFAULT_TIMEZONE;
-                $transformObject = $this->getGroupByTransform($config, $timezone);
+                $aggregationFields = $jsonTransform[GroupByColumns::AGGREGATION_FIELDS_KEY];
+                $aggregateAll = filter_var($jsonTransform[GroupByColumns::AGGREGATE_ALL_KEY], FILTER_VALIDATE_BOOLEAN) ;
+                $transformObject = $this->getGroupByTransform($config, $aggregateAll, $aggregationFields, $timezone);
                 break;
 
             case CollectionTransformerInterface::SORT_BY:
                 $transformObject = $this->getSortByTransform($config);
-                break;
-            case CollectionTransformerInterface::AGGREGATION:
-                $transformObject = $this->getAggregationTransform($config);
-                break;
-
-            case CollectionTransformerInterface::POST_AGGREGATION:
-                $transformObject = $this->getPostAggregationTransform($config);
                 break;
 
             case CollectionTransformerInterface::ADD_FIELD:
@@ -211,43 +206,24 @@ class TransformerFactory
 
     /**
      * @param array $config
+     * @param bool $aggregateAll
+     * @param array $aggregationFields
      * @param $timezone
      * @return GroupByColumns
      */
-    private function getGroupByTransform(array $config, $timezone)
+    private function getGroupByTransform(array $config, $aggregateAll = true, array $aggregationFields, $timezone)
     {
         if (!is_array($config)) {
             return null;
         }
 
-        return new GroupByColumns($config, $timezone);
-    }
-
-    /**
-     * @param array $config
-     * @return null|AggregationTransform
-     */
-    private function getAggregationTransform(array $config)
-    {
-        if (!is_array($config)) {
+        if (!is_array($aggregationFields)) {
             return null;
         }
 
-        return new AggregationTransform($config);
+        return new GroupByColumns($config, $aggregateAll, $aggregationFields, $timezone);
     }
 
-    /**
-     * @param array $config
-     * @return null|AggregationTransform
-     */
-    private function getPostAggregationTransform(array $config)
-    {
-        if (!is_array($config)) {
-            return null;
-        }
-
-        return new PostAggregationTransform($config);
-    }
 
     /**
      * @param array $config
@@ -548,6 +524,7 @@ class TransformerFactory
         if (!is_array($subsetGroupConfig)
             || !array_key_exists(SubsetGroup::MAP_FIELDS_KEY, $subsetGroupConfig)
             || !array_key_exists(SubsetGroup::GROUP_FIELD_KEY, $subsetGroupConfig)
+            || !array_key_exists(SubsetGroup::AGGREGATION_FIELDS_KEY, $subsetGroupConfig)
         ) {
             return [];
         }
@@ -573,6 +550,8 @@ class TransformerFactory
 
         $subsetTransforms[] = new SubsetGroup(
             $subsetGroupConfig[SubsetGroup::GROUP_FIELD_KEY],
+            filter_var($subsetGroupConfig[SubsetGroup::AGGREGATE_ALL_KEY], FILTER_VALIDATE_BOOLEAN),
+            $subsetGroupConfig[SubsetGroup::AGGREGATION_FIELDS_KEY],
             $subsetGroupConfig[SubsetGroup::MAP_FIELDS_KEY]
         );
 

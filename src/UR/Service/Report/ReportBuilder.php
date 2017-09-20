@@ -18,6 +18,8 @@ use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\ReportViews\ReportViewInterface as ReportViewDTO;
+use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
+use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\NewFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ReplaceTextTransform;
@@ -208,6 +210,12 @@ class ReportBuilder implements ReportBuilderInterface
             }
         }
 
+        /**
+         * Fields on Calculated Fields/Comparison Percent on Multi View need to be query from sub view
+         * We
+         */
+        $fieldOnNewFieldTransforms = $this->getSubFieldsForTransforms($params);
+
         /* get all reports data */
 
         /**
@@ -220,11 +228,13 @@ class ReportBuilder implements ReportBuilderInterface
             }
 
             $reportParam = $this->paramsBuilder->buildFromReportView($view, null, $params);
-            if (is_array($params->getUserDefinedMetrics())) {
-                $reportParam->setShowInTotal(array_merge($params->getUserDefinedMetrics(), $reportView->getMetrics()));
+            if (is_array($params->getUserDefinedMetrics()) && !empty($params->getUserDefinedMetrics())) {
+                $reportParam->setShowInTotal(array_intersect($params->getUserDefinedMetrics(), $reportView->getMetrics()));
             } else {
                 $reportParam->setShowInTotal($reportView->getMetrics());
             }
+
+            $reportParam->setShowInTotal(array_merge($reportParam->getShowInTotal(), $fieldOnNewFieldTransforms));
 
             $viewFilters = $reportView->getFilters();
 
@@ -312,16 +322,27 @@ class ReportBuilder implements ReportBuilderInterface
         $userProvidedDimensions = [];
         $userProvidedMetrics = [];
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        if (!empty($params->getUserDefinedDimensions())) {
+        if (!empty($params->getUserDefinedDimensions()) && $params->isUserProvidedDimensionEnabled()) {
+            $types = $reportCollection->getTypes();
+            $aggregateFields = [];
+            foreach ($metrics as $metric) {
+                if (array_key_exists($metric, $types) && in_array($types[$metric], [FieldType::NUMBER, FieldType::DECIMAL])) {
+                    $aggregateFields[] = $metric;
+                }
+            }
+
+            foreach ($transforms as $transform) {
+                if ($transform instanceof NewFieldTransform) {
+                    $aggregateFields[] = $transform->getFieldName();
+                }
+            }
+
             if (count($transforms) > 0) {
                 $groupByTransforms = array_filter($transforms, function ($transform) {
                     return $transform instanceof GroupByTransform;
                 });
-
                 if (count($groupByTransforms) < 1) {
-                    $transforms[] = new GroupByTransform(
-                        $params->getUserDefinedDimensions()
-                    );
+                    $transforms[] = new GroupByTransform($params->getUserDefinedDimensions(), $aggregateAll = true, $aggregateFields);
                 } else {
                     foreach ($groupByTransforms as &$groupByTransform) {
                         $allDimensionMetrics = array_merge($params->getUserDefinedDimensions(), $params->getUserDefinedMetrics());
@@ -340,9 +361,7 @@ class ReportBuilder implements ReportBuilderInterface
                     }
                 }
             } else {
-                $transforms[] = new GroupByTransform(
-                    $params->getUserDefinedDimensions()
-                );
+                $transforms[] = new GroupByTransform($params->getUserDefinedDimensions(), $aggregateAll = true, $aggregateFields);
             }
 
             $userProvidedDimensions = $params->getUserDefinedDimensions();
@@ -657,16 +676,35 @@ class ReportBuilder implements ReportBuilderInterface
          * So, after that we need filter all non-selected fields from reports data
          */
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        if (!empty($params->getUserDefinedDimensions())) {
+        if (!empty($params->getUserDefinedDimensions()) && $params->isUserProvidedDimensionEnabled()) {
+            $aggregateFields = [];
+            $types = $params->getFieldTypes();
+            foreach ($metrics as $metric) {
+                if (array_key_exists($metric, $types) && in_array($types[$metric], [FieldType::NUMBER, FieldType::DECIMAL])) {
+                    $aggregateFields[] = $metric;
+                }
+            }
+
+            foreach ($transforms as $transform) {
+                if ($transform instanceof NewFieldTransform) {
+                    $aggregateFields[] = $transform->getFieldName();
+                }
+            }
+
             if (count($transforms) > 0) {
                 $groupByTransforms = array_filter($transforms, function ($transform) {
                     return $transform instanceof GroupByTransform;
                 });
 
                 if (count($groupByTransforms) < 1) {
-                    $transforms[] = new GroupByTransform(
-                        $params->getUserDefinedDimensions()
-                    );
+                    $userDefinedDimension = $params->getUserDefinedDimensions();
+                    foreach ($userDefinedDimension as $key => $dimension) {
+                        if ($dimension == ReportBuilder::REPORT_VIEW_ALIAS) {
+                            unset($userDefinedDimension[$key]);
+                        }
+                    }
+
+                    $transforms[] = new GroupByTransform($userDefinedDimension, $aggregateAll = true, $aggregateFields);
                 } else {
                     foreach ($groupByTransforms as &$groupByTransform) {
                         $allDimensionMetrics = array_merge($params->getUserDefinedDimensions(), $params->getUserDefinedMetrics());
@@ -685,9 +723,7 @@ class ReportBuilder implements ReportBuilderInterface
                     }
                 }
             } else {
-                $transforms[] = new GroupByTransform(
-                    $params->getUserDefinedDimensions()
-                );
+                $transforms[] = new GroupByTransform($params->getUserDefinedDimensions(), $aggregateAll = true, $aggregateFields);
             }
 
             foreach ($joinConfig as &$config) {
@@ -1139,5 +1175,32 @@ class ReportBuilder implements ReportBuilderInterface
     protected function getDataSetManager()
     {
         return $this->dataSetManager;
+    }
+
+	/**
+     * @param ParamsInterface $params
+     * @return array
+     */
+    private function getSubFieldsForTransforms(ParamsInterface $params)
+    {
+        $fields = [];
+
+        $transforms = $params->getTransforms();
+
+        foreach ($transforms as $transform) {
+            if ($transform instanceof AddCalculatedFieldTransform) {
+                $fieldsOnCalculatedField = $transform->getSubFields();
+                $fields = array_merge($fields, $fieldsOnCalculatedField);
+                continue;
+            }
+
+            if ($transform instanceof ComparisonPercentTransform) {
+                $fieldsOnComparisonPercent = $transform->getSubFields();
+                $fields = array_merge($fields, $fieldsOnComparisonPercent);
+                continue;
+            }
+        }
+
+        return array_unique($fields);
     }
 }

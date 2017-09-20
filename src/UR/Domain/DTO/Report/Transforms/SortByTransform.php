@@ -38,6 +38,12 @@ class SortByTransform extends AbstractTransform implements TransformInterface
 		if (count($intersect) > 0) {
 			throw new InvalidArgumentException(sprintf('"%s" are present in both sort direction', implode(',', $intersect)));
 		}
+		
+		if (array_key_exists(TransformInterface::TRANSFORM_IS_POST_KEY, $sortObjects)) {
+			$this->setIsPostGroup($sortObjects[TransformInterface::TRANSFORM_IS_POST_KEY]);
+		} else {
+			$this->setIsPostGroup(true);
+		}
 	}
 
 	/**

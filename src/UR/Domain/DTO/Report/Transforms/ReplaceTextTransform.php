@@ -50,6 +50,12 @@ class ReplaceTextTransform extends AbstractTransform implements TransformInterfa
         $this->replaceWith = $data[self::REPLACE_WITH_KEY];
         $this->isOverride = $data[self::IS_OVERRIDE_KEY];
         $this->targetField = $data[self::TARGET_FIELD_KEY];
+
+        if (array_key_exists(TransformInterface::TRANSFORM_IS_POST_KEY, $data)) {
+            $this->setIsPostGroup($data[TransformInterface::TRANSFORM_IS_POST_KEY]);
+        } else {
+            $this->setIsPostGroup(true);
+        }
     }
 
 

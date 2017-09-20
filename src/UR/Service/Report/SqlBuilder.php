@@ -27,6 +27,7 @@ use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\NewFieldTransform;
 use UR\Domain\DTO\Report\Transforms\PostAggregationTransform;
+use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Entity\Core\DataSet;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
@@ -165,20 +166,22 @@ class SqlBuilder implements SqlBuilderInterface
         $postAggregationFields = [];
         $timezone = 'UTC';
         $hasGroup = false;
+        $aggregationFields = [];
+        $isAggregateAll = false;
+
         foreach ($transforms as $transform) {
             if ($transform instanceof GroupByTransform) {
                 $hasGroup = true;
+                $timezone = $transform->getTimezone();
+
+                $isAggregateAll = $transform->isAggregateAll();
+                if ($isAggregateAll) {
+                    $aggregationFields = [];
+                } else {
+                    $aggregationFields = $transform->getAggregateFields();
+                }
                 continue;
             }
-
-            if ($transform instanceof PostAggregationTransform) {
-                $postAggregationFields[] = $transform->getFieldName();
-            }
-        }
-
-        $metricCalculations = $params->getMetricCalculations();
-        if (!is_array($metricCalculations)) {
-            $metricCalculations = [];
         }
 
         // Add SELECT clause
@@ -189,18 +192,26 @@ class SqlBuilder implements SqlBuilderInterface
 
         $newFields = [];
         foreach ($transforms as $transform) {
+            if (!$transform instanceof TransformInterface) {
+                continue;
+            }
+
+            if ($transform->getIsPostGroup()) {
+                continue;
+            }
+
             if ($transform instanceof AddCalculatedFieldTransform) {
-                $subQb = $this->addCalculatedFieldTransformQuery($subQb, $transform, $newFields);
+                $subQb = $this->addCalculatedFieldTransformQuery($subQb, $transform, $newFields, [], [] , $removeSuffix = true);
                 continue;
             }
 
             if ($transform instanceof AddFieldTransform) {
-                $subQb = $this->addNewFieldTransformQuery($subQb, $transform, $newFields);
+                $subQb = $this->addNewFieldTransformQuery($subQb, $transform, $newFields, [], [], $removeSuffix = true);
                 continue;
             }
 
             if ($transform instanceof ComparisonPercentTransform) {
-                $subQb = $this->addComparisonPercentTransformQuery($subQb, $transform, $newFields);
+                $subQb = $this->addComparisonPercentTransformQuery($subQb, $transform, $newFields, [], $removeSuffix = true);
                 continue;
             }
         }
@@ -234,37 +245,71 @@ class SqlBuilder implements SqlBuilderInterface
             }
         }
 
-        $qb = $this->connection->createQueryBuilder();
-        foreach ($newFields as $newField) {
-            if (in_array($newField, $metricCalculations) && $hasGroup) {
-                $qb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($newField), $this->connection->quoteIdentifier($newField)));
-                continue;
-            }
-
-            $qb->addSelect(sprintf('%s as %s', $this->connection->quoteIdentifier($newField), $this->connection->quoteIdentifier($newField)));
-        }
-
-        foreach ($fields as $field) {
-            $fieldWithId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
-            if (in_array($fieldWithId, $metricCalculations) && $hasGroup) {
-                $qb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($fieldWithId), $this->connection->quoteIdentifier($fieldWithId)));
-                continue;
-            }
-
-            if (array_key_exists($fieldWithId, $types) && $types[$fieldWithId] == FieldType::DATETIME && $hasGroup) {
-                $qb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as %s", $this->connection->quoteIdentifier($fieldWithId), $timezone, $fieldWithId));
-                continue;
-            }
-
-            $qb->addSelect(sprintf('%s', $this->connection->quoteIdentifier($fieldWithId)));
-        }
-
-        $qb = $this->addGroupByQuery($qb, $transforms, $types);
         $subQuery = $subQb->getSQL();
-        $qb->from("($subQuery)", "sub1");
+
+        if ($hasGroup) {
+            $qb = $this->connection->createQueryBuilder();
+            foreach ($newFields as $newField) {
+                if (($isAggregateAll || in_array($newField, $aggregationFields)) && $hasGroup) {
+                    $qb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($newField), $this->connection->quoteIdentifier($newField)));
+                    continue;
+                }
+
+                $qb->addSelect(sprintf('%s as %s', $this->connection->quoteIdentifier($newField), $this->connection->quoteIdentifier($newField)));
+            }
+
+            foreach ($fields as $field) {
+                $fieldWithId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
+                if ($isAggregateAll && $hasGroup && array_key_exists($fieldWithId, $types) && in_array($types[$fieldWithId], [FieldType::NUMBER, FieldType::DECIMAL])){
+                    $qb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($fieldWithId), $this->connection->quoteIdentifier($fieldWithId)));
+                    continue;
+                }
+
+                if (in_array($fieldWithId, $aggregationFields) && $hasGroup) {
+                    $qb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($fieldWithId), $this->connection->quoteIdentifier($fieldWithId)));
+                    continue;
+                }
+
+                if (array_key_exists($fieldWithId, $types) && $types[$fieldWithId] == FieldType::DATETIME && $hasGroup) {
+                    $qb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as %s", $this->connection->quoteIdentifier($fieldWithId), $timezone, $fieldWithId));
+                    continue;
+                }
+
+                $qb->addSelect(sprintf('%s', $this->connection->quoteIdentifier($fieldWithId)));
+            }
+
+            $qb = $this->addGroupByQuery($qb, $transforms, $types);
+            $qb->from("($subQuery)", "sub1");
+            $subQuery = $qb->getSQL();
+        }
 
         $outerQb = $this->connection->createQueryBuilder();
-        $outerQb = $this->addPostAggregationTransformQuery($outerQb, $transforms);
+
+        $newFieldsOnPost = [];
+        foreach ($transforms as $transform) {
+            if (!$transform instanceof TransformInterface) {
+                continue;
+            }
+
+            if (!$transform->getIsPostGroup()) {
+                continue;
+            }
+
+            if ($transform instanceof AddCalculatedFieldTransform) {
+                $outerQb = $this->addCalculatedFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, [], [], $removeSuffix = false);
+                continue;
+            }
+
+            if ($transform instanceof AddFieldTransform) {
+                $outerQb = $this->addNewFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, [], [], $removeSuffix = false);
+                continue;
+            }
+
+            if ($transform instanceof ComparisonPercentTransform) {
+                $outerQb = $this->addComparisonPercentTransformQuery($outerQb, $transform, $newFieldsOnPost, [], false);
+                continue;
+            }
+        }
 
         // Add SELECT clause
         foreach ($fields as $field) {
@@ -284,7 +329,8 @@ class SqlBuilder implements SqlBuilderInterface
             $outerQb->addSelect($this->connection->quoteIdentifier($newField));
         }
 
-        $subQuery = $qb->getSQL();
+
+//        $subQuery = $qb->getSQL();
         $outerQb->from("($subQuery)", "sub2");
         $outerQb = $this->bindFilterParam($outerQb, $filters);
         $subQuery = clone $outerQb;
@@ -462,10 +508,21 @@ class SqlBuilder implements SqlBuilderInterface
         $hasGroup = false;
         $postAggregationFields = [];
         $timezone = 'UTC';
+        $aggregationFields = [];
+        $isAggregateAll = false;
+
         foreach ($transforms as $transform) {
             if ($transform instanceof GroupByTransform) {
                 $hasGroup = true;
                 $timezone = $transform->getTimezone();
+
+                $isAggregateAll = $transform->isAggregateAll();
+                if ($isAggregateAll) {
+                    $aggregationFields = [];
+                } else {
+                    $aggregationFields = $transform->getAggregateFields();
+                }
+
                 continue;
             }
 
@@ -542,7 +599,7 @@ class SqlBuilder implements SqlBuilderInterface
                 $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
             }
             $allFilters = array_merge($allFilters, $filters);
-            $subQb = $this->buildSelectQuery($params, $subQb, $dataSet, $dataSetIndex, $joinConfig, $selectedJoinFields, $hasGroup = false, [], $timezone);
+            $subQb = $this->buildSelectQuery($isAggregateAll, $aggregationFields, $subQb, $dataSet, $dataSetIndex, $joinConfig, $selectedJoinFields, false, [], $timezone);
             $buildResult = $this->buildFilters($filters, sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());
             $conditions = array_merge($conditions, $buildResult[self::CONDITION_KEY]);
             $dateRange = array_merge($dateRange, $buildResult[self::DATE_RANGE_KEY]);
@@ -550,18 +607,26 @@ class SqlBuilder implements SqlBuilderInterface
 
         $newFields = [];
         foreach ($transforms as $transform) {
+            if (!$transform instanceof TransformInterface) {
+                continue;
+            }
+
+            if ($transform->getIsPostGroup()) {
+                continue;
+            }
+
             if ($transform instanceof AddCalculatedFieldTransform) {
-                $subQb = $this->addCalculatedFieldTransformQuery($subQb, $transform, $newFields, $dataSetIndexes);
+                $subQb = $this->addCalculatedFieldTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, $joinConfig, true);
                 continue;
             }
 
             if ($transform instanceof AddFieldTransform) {
-                $subQb = $this->addNewFieldTransformQuery($subQb, $transform, $newFields, $dataSetIndexes);
+                $subQb = $this->addNewFieldTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, $joinConfig, true);
                 continue;
             }
 
             if ($transform instanceof ComparisonPercentTransform) {
-                $subQb = $this->addComparisonPercentTransformQuery($subQb, $transform, $newFields, $dataSetIndexes);
+                $subQb = $this->addComparisonPercentTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, true);
                 continue;
             }
         }
@@ -581,33 +646,60 @@ class SqlBuilder implements SqlBuilderInterface
 
         $subQuery = sprintf('%s WHERE (%s)', $subQuery, $where);
 
-        $qb = $this->connection->createQueryBuilder();
-        $selectedJoinFields = [];
-        /** @var DataSetInterface $dataSet */
-        foreach ($dataSets as $dataSetIndex => $dataSet) {
-            $qb = $this->buildSelectQuery($params, $qb, $dataSet, null, $joinConfig, $selectedJoinFields, $hasGroup = true, [], $timezone);
+        if ($hasGroup) {
+            $qb = $this->connection->createQueryBuilder();
+            $selectedJoinFields = [];
+            /** @var DataSetInterface $dataSet */
+            foreach ($dataSets as $dataSetIndex => $dataSet) {
+                $qb = $this->buildSelectQuery($isAggregateAll, $aggregationFields, $qb, $dataSet, null, $joinConfig, $selectedJoinFields, true, [], $timezone);
+            }
+
+            foreach ($newFields as $newField) {
+                if (($isAggregateAll || in_array($newField, $aggregationFields)) && $hasGroup) {
+                    $qb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($newField), $this->connection->quoteIdentifier($newField)));
+                    continue;
+                }
+
+                $qb->addSelect($this->connection->quoteIdentifier($newField));
+            }
+
+            $qb->from("($subQuery)", "sub1");
+            $qb = $this->addGroupByQuery($qb, $transforms, $types);
+            $subQuery = $qb->getSQL();
         }
 
-        $metricCalculations = $params->getMetricCalculations();
-        foreach ($newFields as $newField) {
-            if (in_array($newField, $metricCalculations) && $hasGroup) {
-                $qb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($newField), $this->connection->quoteIdentifier($newField)));
+        $outerQb = $this->connection->createQueryBuilder();
+
+        $newFieldsOnPost = [];
+        foreach ($transforms as $transform) {
+            if (!$transform instanceof TransformInterface) {
                 continue;
             }
 
-            $qb->addSelect($this->connection->quoteIdentifier($newField));
+            if (!$transform->getIsPostGroup()) {
+                continue;
+            }
+
+            if ($transform instanceof AddCalculatedFieldTransform) {
+                $outerQb = $this->addCalculatedFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, $dataSetIndexes, $joinConfig, $removeSuffix = false);
+                continue;
+            }
+
+            if ($transform instanceof AddFieldTransform) {
+                $outerQb = $this->addNewFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, $dataSetIndexes, $joinConfig, $removeSuffix = false);
+                continue;
+            }
+
+            if ($transform instanceof ComparisonPercentTransform) {
+                $outerQb = $this->addComparisonPercentTransformQuery($outerQb, $transform, $newFieldsOnPost, $dataSetIndexes, $removeSuffix = false);
+                continue;
+            }
         }
-
-        $qb->from("($subQuery)", "sub1");
-        $qb = $this->addGroupByQuery($qb, $transforms, $types);
-
-        $outerQb = $this->connection->createQueryBuilder();
-        $outerQb = $this->addPostAggregationTransformQuery($outerQb, $transforms);
 
         $selectedJoinFields = [];
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
-            $outerQb = $this->buildSelectQuery($params, $outerQb, $dataSet, null, $joinConfig, $selectedJoinFields, $hasGroup = false, $postAggregationFields, $timezone);
+            $outerQb = $this->buildSelectQuery($isAggregateAll, $aggregationFields, $outerQb, $dataSet, null, $joinConfig, $selectedJoinFields, false, $postAggregationFields, $timezone);
         }
 
         foreach ($newFields as $newField) {
@@ -617,7 +709,7 @@ class SqlBuilder implements SqlBuilderInterface
             $outerQb->addSelect($this->connection->quoteIdentifier($newField));
         }
 
-        $subQuery = $qb->getSQL();
+
         $outerQb->from("($subQuery)", "sub2");
 
         /** @var DataSetInterface $dataSet */
@@ -818,7 +910,8 @@ class SqlBuilder implements SqlBuilderInterface
 
 
     /**
-     * @param ParamsInterface $params
+     * @param $aggregateAll
+     * @param array $aggregationFields
      * @param QueryBuilder $qb
      * @param DataSetInterface $dataSet
      * @param $dataSetIndex
@@ -828,9 +921,10 @@ class SqlBuilder implements SqlBuilderInterface
      * @param array $postAggregationFields
      * @param string $timezone
      * @return QueryBuilder
+     * @internal param ParamsInterface $params
      * @internal param $hasGroup
      */
-    protected function buildSelectQuery(ParamsInterface $params, QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex,
+    protected function buildSelectQuery($aggregateAll, array $aggregationFields, QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex,
                 array $joinConfig, array &$selectedJoinFields, $hasGroup = false, $postAggregationFields = [], $timezone = 'UTC')
     {
         $metrics = $dataSet->getMetrics();
@@ -863,7 +957,7 @@ class SqlBuilder implements SqlBuilderInterface
         if (empty($fields)) {
             throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
         }
-        $metricCalculation = $params->getMetricCalculations();
+
         // build select query for each data set
         foreach ($fields as $field) {
             $alias = $this->getAliasForField($dataSet->getDataSetId(), $field, $joinConfig);
@@ -891,16 +985,25 @@ class SqlBuilder implements SqlBuilderInterface
             if ($outputField && $dataSetIndex === null) {
                 $fieldName = "`$outputField`";
             }
-            if (in_array($fieldWithId, $metricCalculation) && $hasGroup) {
+
+            if (array_key_exists($field, $types) && in_array($types[$field], [FieldType::DECIMAL, FieldType::NUMBER]) && $hasGroup && $aggregateAll) {
                 $qb->addSelect(sprintf('SUM(%s) as `%s`', $fieldName, $alias));
                 continue;
             }
+
+            if (in_array($fieldWithId, $aggregationFields) && $hasGroup) {
+                $qb->addSelect(sprintf('SUM(%s) as `%s`', $fieldName, $alias));
+                continue;
+            }
+
             if (array_key_exists($field, $types) && $types[$field] == FieldType::DATETIME) {
                 $qb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as `%s`", $fieldName, $timezone, $alias));
                 continue;
             }
+
             $qb->addSelect(sprintf("%s as `%s`", $fieldName, $alias));
         }
+
         return $qb;
     }
 

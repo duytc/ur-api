@@ -19,6 +19,8 @@ class SubsetGroup implements CollectionTransformerInterface
 
     const MAP_FIELDS_KEY = 'mapFields';
     const GROUP_FIELD_KEY = 'groupFields';
+    const AGGREGATION_FIELDS_KEY = 'aggregationFields';
+    const AGGREGATE_ALL_KEY = 'aggregateAll';
 
     /**
      * @var array
@@ -28,18 +30,31 @@ class SubsetGroup implements CollectionTransformerInterface
     /**
      * @var array
      */
+    protected $aggregationFields;
+
+    /**
+     * @var array
+     */
     protected $mapFields;
 
+    /**
+     * @var bool
+     */
+    protected $aggregateAll;
 
     /**
      * SubsetGroup constructor.
      * @param array $groupFields
+     * @param bool $aggregateAll
+     * @param array $aggregationFields
      * @param array $mapFields
      */
-    public function __construct(array $groupFields, array $mapFields)
+    public function __construct(array $groupFields, $aggregateAll = true, array $aggregationFields, array $mapFields)
     {
         $this->groupFields = $groupFields;
         $this->mapFields = $mapFields;
+        $this->aggregateAll = $aggregateAll;
+        $this->aggregationFields = $aggregationFields;
     }
 
 
@@ -77,7 +92,8 @@ class SubsetGroup implements CollectionTransformerInterface
 
         // create subset
         $copyCollection = clone $collection;
-        $groupByTransform = new GroupByColumns($this->groupFields);
+        $aggregationFields = array_keys(array_intersect(array_flip($connectedDataSource->getMapFields()), $this->aggregationFields));
+        $groupByTransform = new GroupByColumns($this->groupFields, $this->aggregateAll, $aggregationFields);
         $subsetRows = $groupByTransform->transform($copyCollection, $em, $connectedDataSource, $fromDateFormats, $connectedDataSource->getMapFields())->getRows();
         $subsetKeys = [];
 
@@ -133,7 +149,7 @@ class SubsetGroup implements CollectionTransformerInterface
                         $data[] = $date->format(DateFormat::DEFAULT_DATE_FORMAT);
                         continue;
                     }
-                    
+
                     $data[] = DateFormat::getDateFromDateTime($row[$column], $column, $connectedDataSource);
                 } else {
                     $data[] = $row[$column];

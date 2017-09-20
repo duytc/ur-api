@@ -20,9 +20,10 @@ class ComparisonPercentTransform extends NewFieldTransform implements TransformI
 
     /**
      * ComparisonPercentTransform constructor.
-     * @param $data
+     * @param array $data
+     * @param bool $isPostGroup
      */
-    public function __construct(array $data)
+    public function __construct(array $data, bool $isPostGroup = true)
     {
         parent::__construct();
 
@@ -36,6 +37,8 @@ class ComparisonPercentTransform extends NewFieldTransform implements TransformI
         $this->denominator = $data[self::DENOMINATOR_KEY];
         $this->fieldName = $data[self::FIELD_NAME_KEY];
         $this->type = $data[self::TYPE_KEY];
+
+        $this->setIsPostGroup($isPostGroup);
     }
 
     public function transform(Collection $collection, array &$metrics, array &$dimensions, array $outputJoinField)
@@ -82,5 +85,15 @@ class ComparisonPercentTransform extends NewFieldTransform implements TransformI
     public function getDenominator()
     {
         return $this->denominator;
+    }
+
+    /**
+     * @return array
+     */
+    public function getSubFields() {
+       return [
+           $this->getNumerator(),
+           $this->getDenominator(),
+       ];
     }
 }

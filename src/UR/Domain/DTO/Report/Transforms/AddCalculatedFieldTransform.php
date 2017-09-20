@@ -24,7 +24,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
     protected $defaultValue;
     protected $language;
 
-    public function __construct(ExpressionLanguage $language, array $addCalculatedField)
+    public function __construct(ExpressionLanguage $language, array $addCalculatedField, bool $isPostGroup = true)
     {
         parent::__construct();
 
@@ -44,6 +44,8 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
         } else {
             $this->defaultValue = [];
         }
+
+        $this->setIsPostGroup($isPostGroup);
     }
 
     /**
@@ -152,5 +154,23 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
     public function getExpression()
     {
         return $this->expression;
+    }
+
+    /**
+     * @return array
+     */
+    public function getSubFields() {
+        $expression = $this->getExpression();
+
+        if (is_null($expression)) {
+            return [];
+        }
+
+        $regex = '/\[(.*?)\]/';
+        if (!preg_match_all($regex, $expression, $matches)) {
+            return [];
+        };
+
+        return $matches[1];
     }
 }

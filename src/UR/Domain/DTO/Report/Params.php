@@ -101,6 +101,11 @@ class Params implements ParamsInterface
     protected $userDefinedDimensions;
 
     /**
+     * @var bool
+     */
+    protected $userProvidedDimensionEnabled;
+
+    /**
      * @var array
      */
     protected $userDefinedMetrics;
@@ -598,6 +603,24 @@ class Params implements ParamsInterface
     {
         $this->metricCalculations = $metricCalculations;
 
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isUserProvidedDimensionEnabled()
+    {
+        return $this->userProvidedDimensionEnabled;
+    }
+
+    /**
+     * @param boolean $userProvidedDimensionEnabled
+     * @return self
+     */
+    public function setUserProvidedDimensionEnabled($userProvidedDimensionEnabled)
+    {
+        $this->userProvidedDimensionEnabled = $userProvidedDimensionEnabled;
         return $this;
     }
 }

@@ -56,6 +56,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const USER_DEFINED_DIMENSIONS = 'userDefineDimensions';
     const USER_DEFINED_METRICS = 'userDefineMetrics';
     const IS_SHOW_DATA_SET_NAME = 'isShowDataSetName';
+    const USER_PROVIDED_DIMENSION_ENABLED = 'enableCustomDimensionMetric';
     const REPORT_VIEW_ID = 'id';
     const PAGE_KEY = 'page';
     const LIMIT_KEY = 'limit';
@@ -71,7 +72,6 @@ class ParamsBuilder implements ParamsBuilderInterface
      */
     public function buildFromArray(array $data)
     {
-        $metricCalculations = [];
         $param = new Params();
 
         $multiView = false;
@@ -147,7 +147,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if (array_key_exists(self::TRANSFORM_KEY, $data) && !empty($data[self::TRANSFORM_KEY])) {
-            $transforms = $this->createTransforms($data[self::TRANSFORM_KEY], $metricCalculations);
+            $transforms = $this->createTransforms($data[self::TRANSFORM_KEY]);
             $param->setTransforms($transforms);
         }
 
@@ -182,6 +182,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if (array_key_exists(self::IS_SHOW_DATA_SET_NAME, $data) && !empty($data[self::IS_SHOW_DATA_SET_NAME])) {
             $param->setIsShowDataSetName(filter_var($data[self::IS_SHOW_DATA_SET_NAME], FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if (array_key_exists(self::USER_PROVIDED_DIMENSION_ENABLED, $data) && !empty($data[self::USER_PROVIDED_DIMENSION_ENABLED])) {
+            $param->setUserProvidedDimensionEnabled(filter_var($data[self::USER_PROVIDED_DIMENSION_ENABLED], FILTER_VALIDATE_BOOLEAN));
         }
 
         if (array_key_exists(self::REPORT_VIEW_ID, $data) && !empty($data[self::REPORT_VIEW_ID])) {
@@ -220,7 +224,6 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setUserDefinedMetrics($data[self::USER_DEFINED_METRICS]);
         }
 
-        $param->setMetricCalculations($metricCalculations);
         return $param;
     }
 
@@ -406,10 +409,9 @@ class ParamsBuilder implements ParamsBuilderInterface
 
     /**
      * @param array $transforms
-     * @param $metricCalculations
      * @return array
      */
-    public function createTransforms(array $transforms, &$metricCalculations)
+    public function createTransforms(array $transforms)
     {
         $transformObjects = [];
         foreach ($transforms as $transform) {
@@ -419,26 +421,30 @@ class ParamsBuilder implements ParamsBuilderInterface
 
             switch ($transform[TransformInterface::TRANSFORM_TYPE_KEY]) {
                 case TransformInterface::ADD_FIELD_TRANSFORM:
+                    $isPostGroup = array_key_exists(TransformInterface::TRANSFORM_IS_POST_KEY, $transform) ? $transform[TransformInterface::TRANSFORM_IS_POST_KEY] : true;
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField) {
-                        $transformObjects[] = new AddFieldTransform($addField);
+                        $transformObjects[] = new AddFieldTransform($addField, $isPostGroup);
                     }
                     break;
 
                 case TransformInterface::ADD_CALCULATED_FIELD_TRANSFORM:
                     $expressionLanguage = new ExpressionLanguage();
+                    $isPostGroup = array_key_exists(TransformInterface::TRANSFORM_IS_POST_KEY, $transform) ? $transform[TransformInterface::TRANSFORM_IS_POST_KEY] : true;
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addField) {
-                        $transformObjects[] = new AddCalculatedFieldTransform($expressionLanguage, $addField);
+                        $transformObjects[] = new AddCalculatedFieldTransform($expressionLanguage, $addField, $isPostGroup);
                     }
                     break;
 
                 case TransformInterface::GROUP_TRANSFORM:
+                    $aggregateAll = array_key_exists(GroupByTransform::AGGREGATE_ALL_KEY, $transform) ? $transform[GroupByTransform::AGGREGATE_ALL_KEY] : false;
+                    $aggregationFields = array_key_exists(GroupByTransform::AGGREGATION_FIELDS_KEY, $transform) ? $transform[GroupByTransform::AGGREGATION_FIELDS_KEY] : [];
                     $timezone = array_key_exists(GroupByTransform::TIMEZONE_KEY, $transform) ? $transform[GroupByTransform::TIMEZONE_KEY] : GroupByTransform::DEFAULT_TIMEZONE;
-                    $transformObjects[] = new GroupByTransform($transform[TransformInterface::FIELDS_TRANSFORM], $timezone);
-                    break;
 
-                case TransformInterface::AGGREGATION_TRANSFORM:
-                    $metricCalculations = $transform[TransformInterface::FIELDS_TRANSFORM];
-                    $transformObjects[] = new AggregationTransform($transform[TransformInterface::FIELDS_TRANSFORM]);
+                    $transformObjects[] = new GroupByTransform(
+                        $transform[TransformInterface::FIELDS_TRANSFORM],
+                        $aggregateAll,
+                        $aggregationFields,
+                        $timezone);
                     break;
 
                 case TransformInterface::POST_AGGREGATION_TRANSFORM:
@@ -448,8 +454,9 @@ class ParamsBuilder implements ParamsBuilderInterface
                     break;
 
                 case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
+                    $isPostGroup = array_key_exists(TransformInterface::TRANSFORM_IS_POST_KEY, $transform) ? $transform[TransformInterface::TRANSFORM_IS_POST_KEY] : true;
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $comparisonField) {
-                        $transformObjects[] = new ComparisonPercentTransform($comparisonField);
+                        $transformObjects[] = new ComparisonPercentTransform($comparisonField, $isPostGroup);
                     }
                     break;
 
@@ -517,7 +524,6 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null, ParamsInterface $multiParams = null)
     {
         $param = new Params();
-        $metricCalculations = [];
         if ($reportView->isMultiView()) {
             $reportViewsRawData = $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews());
             $reportViews = $this->createReportViews($reportViewsRawData);
@@ -541,8 +547,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         $param
             ->setMultiView($reportView->isMultiView())
-            ->setTransforms($this->createTransforms($reportView->getTransforms(), $metricCalculations))
-            ->setFieldTypes($reportView->getFieldTypes());
+            ->setTransforms($this->createTransforms($reportView->getTransforms()))
+            ->setFieldTypes($reportView->getFieldTypes())
+            ->setUserProvidedDimensionEnabled($reportView->isEnableCustomDimensionMetric())
+        ;
 
         if (is_array($reportView->getWeightedCalculations())) {
             $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
@@ -554,15 +562,6 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         $param->setPage(1)->setLimit(10);
 
-        if ($this->isSupportMetricCalculations($param)) {
-            $param->setMetricCalculations($metricCalculations);
-
-            /** Overwrite values from multi view */
-            if ($multiParams instanceof ParamsInterface) {
-                $param->setMetricCalculations(array_merge($param->getMetricCalculations(), $multiParams->getMetricCalculations()));
-            }
-        }
-
         return $param;
     }
 
@@ -572,7 +571,6 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $fieldsToBeShared, array $paginationParams)
     {
         $param = new Params();
-        $metricCalculations = [];
         // important: the dimensions/metrics need re-calculate due to shared fields.
         // This makes sure group calculation is correct
         // e.g: dimensions are date-tag-country, if shared only date-tag => the shared report need be re-calculate base on
@@ -587,6 +585,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 
             $sharedDimensions[] = $dimension;
         }
+        $sharedDimensions[] = 'report_view_alias';
         $param->setDimensions($sharedDimensions);
 
         //// do filtering metrics
@@ -632,10 +631,12 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         $param
             ->setMultiView($reportView->isMultiView())
-            ->setTransforms($this->createTransforms($reportView->getTransforms(), $metricCalculations))
+            ->setTransforms($this->createTransforms($reportView->getTransforms()))
             ->setFieldTypes($reportView->getFieldTypes())
             ->setShowInTotal($reportView->getShowInTotal())
-            ->setIsShowDataSetName($reportView->getIsShowDataSetName());
+            ->setIsShowDataSetName($reportView->getIsShowDataSetName())
+            ->setUserProvidedDimensionEnabled($reportView->isEnableCustomDimensionMetric())
+        ;
 
         if (is_array($reportView->getWeightedCalculations())) {
             $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
@@ -715,31 +716,6 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setUserDefinedMetrics($sharedMetrics);
         }
 
-        if ($this->isSupportMetricCalculations($param)) {
-            $param->setMetricCalculations($metricCalculations);
-        }
-
         return $param;
-    }
-
-    /**
-     * @param $param
-     * @return bool
-     */
-    private function isSupportMetricCalculations(ParamsInterface $param)
-    {
-        $transforms = $param->getTransforms();
-
-        if (!is_array($transforms)) {
-            return false;
-        }
-
-        foreach ($transforms as $transform) {
-            if ($transform instanceof GroupByTransform) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

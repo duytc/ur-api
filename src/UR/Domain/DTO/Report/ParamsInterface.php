@@ -268,4 +268,15 @@ interface ParamsInterface
      * @return self
      */
     public function setMetricCalculations($metricCalculations);
+
+    /**
+     * @return boolean
+     */
+    public function isUserProvidedDimensionEnabled();
+
+    /**
+     * @param boolean $userProvidedDimensionEnabled
+     * @return self
+     */
+    public function setUserProvidedDimensionEnabled($userProvidedDimensionEnabled);
 }
