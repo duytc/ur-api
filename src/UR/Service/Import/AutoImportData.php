@@ -15,6 +15,7 @@ use UR\Service\ArrayUtilTrait;
 use UR\Service\DataSet\DataMappingService;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\ParsedDataImporter;
+use UR\Service\DTO\Collection;
 use UR\Service\Parser\DryRunReportFilterInterface;
 use UR\Service\Parser\DryRunReportSorterInterface;
 use UR\Service\Parser\ParsingFileService;
@@ -75,6 +76,10 @@ class AutoImportData implements AutoImportDataInterface
         /* import data to database */
         $this->logger->notice(sprintf('begin loading file "%s" data to database "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
         $collection = $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
+
+        if (!($collection instanceof Collection)) {
+            return;
+        }
 
         /** Import collection to map builder configs */
         $dataSet = $connectedDataSource->getDataSet();
