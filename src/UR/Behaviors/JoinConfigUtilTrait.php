@@ -17,7 +17,7 @@ trait JoinConfigUtilTrait
         $alias = null;
         /** @var JoinConfigInterface $config */
         foreach ($joinConfig as $config) {
-            $matchIndex = 0;
+            $matchIndex = -1;
             /** @var JoinFieldInterface $join */
             foreach($config->getJoinFields() as $join) {
                 $inputFields = explode(',', $join->getField());
@@ -29,6 +29,10 @@ trait JoinConfigUtilTrait
                         break 2;
                     }
                 }
+            }
+
+            if ($matchIndex == -1) {
+                continue;
             }
 
             /** @var JoinFieldInterface $join */

@@ -26,7 +26,6 @@ use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\NewFieldTransform;
-use UR\Domain\DTO\Report\Transforms\PostAggregationTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Entity\Core\DataSet;
 use UR\Exception\InvalidArgumentException;
@@ -524,12 +523,6 @@ class SqlBuilder implements SqlBuilderInterface
                 }
 
                 continue;
-            }
-
-            if (
-                $transform instanceof PostAggregationTransform
-            ) {
-                $postAggregationFields[] = $transform->getFieldName();
             }
         }
 

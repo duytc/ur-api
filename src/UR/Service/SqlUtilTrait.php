@@ -25,7 +25,6 @@ use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\NewFieldTransform;
-use UR\Domain\DTO\Report\Transforms\PostAggregationTransform;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Exception\RuntimeException;
 use UR\Service\DataSet\FieldType;
@@ -688,34 +687,6 @@ trait SqlUtilTrait
 
         return $qb;
     }
-
-    /**
-     * @param QueryBuilder $qb
-     * @param $transforms
-     * @param array $dataSetIndexes
-     * @return QueryBuilder
-     * @throws \Exception
-     */
-    public function addPostAggregationTransformQuery(QueryBuilder $qb, $transforms, $dataSetIndexes = [])
-    {
-        foreach ($transforms as $transform) {
-            if (!$transform instanceof PostAggregationTransform) {
-                continue;
-            }
-
-            $fieldName = $transform->getFieldName();
-            $expression = $transform->getExpression();
-            $expressionForm = $this->normalizeExpression(PostAggregationTransform::TRANSFORMS_TYPE, $fieldName, $expression, $dataSetIndexes, $removeSuffix = false);
-            if ($expressionForm === null) {
-                return $qb;
-            }
-
-            $qb->addSelect("($expressionForm) AS `$fieldName`");
-        }
-
-        return $qb;
-    }
-
 
     /**
      * @param $transformType

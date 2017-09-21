@@ -344,20 +344,9 @@ class ReportBuilder implements ReportBuilderInterface
                 if (count($groupByTransforms) < 1) {
                     $transforms[] = new GroupByTransform($params->getUserDefinedDimensions(), $aggregateAll = true, $aggregateFields);
                 } else {
+                    /** @var GroupByTransform $groupByTransform */
                     foreach ($groupByTransforms as &$groupByTransform) {
-                        $allDimensionMetrics = array_merge($params->getUserDefinedDimensions(), $params->getUserDefinedMetrics());
-
-                        /** @var GroupByTransform $groupByTransform */
-                        $transformFields = $groupByTransform->getFields();
-                        $transformFields = array_filter($transformFields, function ($field) use ($allDimensionMetrics) {
-                            return in_array($field, $allDimensionMetrics);
-                        });
-
-                        if (count($transformFields) < 1) {
-                            $transformFields = $params->getUserDefinedDimensions();
-                        }
-
-                        $groupByTransform->setFields(array_unique($transformFields));
+                        $groupByTransform->setFields($params->getUserDefinedDimensions());
                     }
                 }
             } else {
@@ -706,20 +695,9 @@ class ReportBuilder implements ReportBuilderInterface
 
                     $transforms[] = new GroupByTransform($userDefinedDimension, $aggregateAll = true, $aggregateFields);
                 } else {
+                    /** @var GroupByTransform $groupByTransform */
                     foreach ($groupByTransforms as &$groupByTransform) {
-                        $allDimensionMetrics = array_merge($params->getUserDefinedDimensions(), $params->getUserDefinedMetrics());
-
-                        /** @var GroupByTransform $groupByTransform */
-                        $transformFields = $groupByTransform->getFields();
-                        $transformFields = array_filter($transformFields, function ($field) use ($allDimensionMetrics) {
-                            return in_array($field, $allDimensionMetrics);
-                        });
-
-                        if (count($transformFields) < 1) {
-                            $transformFields = $params->getUserDefinedDimensions();
-                        }
-
-                        $groupByTransform->setFields(array_unique($transformFields));
+                        $groupByTransform->setFields($params->getUserDefinedDimensions());
                     }
                 }
             } else {

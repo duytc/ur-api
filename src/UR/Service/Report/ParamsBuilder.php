@@ -21,10 +21,8 @@ use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\ReportViews\ReportView;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
-use UR\Domain\DTO\Report\Transforms\AggregationTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
-use UR\Domain\DTO\Report\Transforms\PostAggregationTransform;
 use UR\Domain\DTO\Report\Transforms\ReplaceTextTransform;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
@@ -216,12 +214,26 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setSearches($searches);
         }
 
-        if (array_key_exists(self::USER_DEFINED_DIMENSIONS, $data)) {
-            $param->setUserDefinedDimensions($data[self::USER_DEFINED_DIMENSIONS]);
-        }
+        if (array_key_exists(self::USER_PROVIDED_DIMENSION_ENABLED, $data) && $data[self::USER_PROVIDED_DIMENSION_ENABLED] == true) {
+            if (array_key_exists(self::USER_DEFINED_DIMENSIONS, $data)) {
+                $param->setUserDefinedDimensions($data[self::USER_DEFINED_DIMENSIONS]);
+            }
 
-        if (array_key_exists(self::USER_DEFINED_METRICS, $data)) {
-            $param->setUserDefinedMetrics($data[self::USER_DEFINED_METRICS]);
+            if (array_key_exists(self::USER_DEFINED_METRICS, $data)) {
+                $param->setUserDefinedMetrics($data[self::USER_DEFINED_METRICS]);
+            }
+
+            $transforms = $param->getTransforms();
+
+            foreach ($transforms as &$transform) {
+                if (!$transform instanceof GroupByTransform) {
+                    continue;
+                }
+
+                $transform->setFields($param->getUserDefinedDimensions());
+            }
+
+            $param->setTransforms($transforms);
         }
 
         return $param;
@@ -447,12 +459,6 @@ class ParamsBuilder implements ParamsBuilderInterface
                         $timezone);
                     break;
 
-                case TransformInterface::POST_AGGREGATION_TRANSFORM:
-                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $postAggregation) {
-                        $transformObjects[] = new PostAggregationTransform($postAggregation);
-                    }
-                    break;
-
                 case TransformInterface::COMPARISON_PERCENT_TRANSFORM:
                     $isPostGroup = array_key_exists(TransformInterface::TRANSFORM_IS_POST_KEY, $transform) ? $transform[TransformInterface::TRANSFORM_IS_POST_KEY] : true;
                     foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $comparisonField) {
@@ -585,7 +591,10 @@ class ParamsBuilder implements ParamsBuilderInterface
 
             $sharedDimensions[] = $dimension;
         }
-        $sharedDimensions[] = 'report_view_alias';
+        if ($reportView->isMultiView()) {
+            $sharedDimensions[] = 'report_view_alias';
+        }
+
         $param->setDimensions($sharedDimensions);
 
         //// do filtering metrics

@@ -82,15 +82,9 @@ class ReportViewMultiViewChangeListener
 			$param = $this->paramsBuilder->buildFromReportView($reportView);
 			$columns = $this->getMetricsAndDimensionsForMultiView($param);
 
-			$fieldTypes = $reportView->getFieldTypes();
-			foreach($fieldTypes as $field=>$type) {
-				if (!in_array($field, $columns[self::METRICS_KEY]) && !in_array($field, $columns[self::DIMENSIONS_KEY])) {
-					unset($fieldTypes[$field]);
-				}
-			}
 			$reportView->setMetrics($columns[self::METRICS_KEY]);
 			$reportView->setDimensions($columns[self::DIMENSIONS_KEY]);
-			$reportView->setFieldTypes($fieldTypes);
+
 			$em->persist($reportView);
 		}
 
