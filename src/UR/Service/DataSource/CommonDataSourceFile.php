@@ -131,6 +131,13 @@ Abstract class CommonDataSourceFile
     {
         return count(array_filter($array, function($item) {
             return !empty($item);
+        })) < 2;
+    }
+
+    protected function isEmptyRow(array $array)
+    {
+        return count(array_filter($array, function($item) {
+            return !empty($item);
         })) < 1;
     }
 }

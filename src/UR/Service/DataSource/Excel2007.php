@@ -83,8 +83,18 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         foreach ($this->excel->getSheetIterator() as $sheet) {
             foreach ($sheet->getRowIterator() as $row) {
                 if ($curRow >= $this->dataRow) {
+                    if ($this->isEmptyRow($row)) {
+                        continue;
+                    }
                     if (count($row) !== count($this->headers)) {
+                        if (!is_array($this->headers)) {
+                            $this->headers = [];
+                        }
                         $missingColumns = array_diff_key($this->headers, $row);
+
+                        if (!is_array($missingColumns)) {
+                            $missingColumns = [];
+                        }
                         $this->setMissingColumnValueToNull(array_keys($missingColumns), $row);
                     }
 
@@ -136,8 +146,17 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         foreach ($this->excel->getSheetIterator() as $sheet) {
             foreach ($sheet->getRowIterator() as $row) {
                 if ($curRow >= $this->dataRow) {
+                    if ($this->isEmptyRow($row)) {
+                        continue;
+                    }
                     if (count($row) !== count($this->headers)) {
+                        if (!is_array($this->headers)) {
+                            $this->headers = [];
+                        }
                         $missingColumns = array_diff_key($this->headers, $row);
+                        if (!is_array($missingColumns)) {
+                            $missingColumns = [];
+                        }
                         $this->setMissingColumnValueToNull(array_keys($missingColumns), $row);
                     }
 
