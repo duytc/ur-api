@@ -12,6 +12,7 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
+use UR\Service\Parser\Transformer\Collection\SubsetGroup;
 
 class MigrateGroupByTransformCommand extends ContainerAwareCommand
 {
@@ -38,6 +39,25 @@ class MigrateGroupByTransformCommand extends ContainerAwareCommand
             $hasGroup = false;
             foreach ($transforms as &$transform) {
                 if (!array_key_exists('type', $transform)) {
+                    continue;
+                }
+
+                if ($transform['type'] == CollectionTransformerInterface::SUBSET_GROUP) {
+                    if (!array_key_exists(SubsetGroup::AGGREGATION_FIELDS_KEY, $transform)) {
+                        $transform[SubsetGroup::AGGREGATION_FIELDS_KEY] = [];
+                        $transform[SubsetGroup::AGGREGATE_ALL_KEY] = true;
+                        continue;
+                    }
+
+                    if (!array_key_exists(SubsetGroup::AGGREGATE_ALL_KEY, $transform)) {
+                        $fields = $transform[SubsetGroup::AGGREGATION_FIELDS_KEY];
+                        if (empty($fields)) {
+                            $transform[SubsetGroup::AGGREGATE_ALL_KEY] = true;
+                        } else {
+                            $transform[SubsetGroup::AGGREGATE_ALL_KEY] = false;
+                        }
+                    }
+
                     continue;
                 }
 

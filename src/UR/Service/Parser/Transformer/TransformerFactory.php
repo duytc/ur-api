@@ -156,8 +156,8 @@ class TransformerFactory
         switch ($jsonTransform[CollectionTransformerInterface::TYPE_KEY]) {
             case CollectionTransformerInterface::GROUP_BY:
                 $timezone = array_key_exists(GroupByColumns::TIMEZONE_KEY, $jsonTransform) ? $jsonTransform[GroupByColumns::TIMEZONE_KEY] : GroupByColumns::DEFAULT_TIMEZONE;
-                $aggregationFields = $jsonTransform[GroupByColumns::AGGREGATION_FIELDS_KEY];
-                $aggregateAll = filter_var($jsonTransform[GroupByColumns::AGGREGATE_ALL_KEY], FILTER_VALIDATE_BOOLEAN) ;
+                $aggregationFields = array_key_exists(GroupByColumns::AGGREGATION_FIELDS_KEY, $jsonTransform) ? $jsonTransform[GroupByColumns::AGGREGATION_FIELDS_KEY] : [];
+                $aggregateAll = array_key_exists(GroupByColumns::AGGREGATE_ALL_KEY, $jsonTransform) ? filter_var($jsonTransform[GroupByColumns::AGGREGATE_ALL_KEY], FILTER_VALIDATE_BOOLEAN) : false;
                 $transformObject = $this->getGroupByTransform($config, $aggregateAll, $aggregationFields, $timezone);
                 break;
 
@@ -546,10 +546,12 @@ class TransformerFactory
             }
         }
 
+        $aggregateAll = array_key_exists(SubsetGroup::AGGREGATE_ALL_KEY, $subsetGroupConfig) ? filter_var($subsetGroupConfig[SubsetGroup::AGGREGATE_ALL_KEY], FILTER_VALIDATE_BOOLEAN) : false;
+        $aggregateFields = array_key_exists(SubsetGroup::AGGREGATION_FIELDS_KEY, $subsetGroupConfig) ? $subsetGroupConfig[SubsetGroup::AGGREGATION_FIELDS_KEY] : [];
         $subsetTransforms[] = new SubsetGroup(
             $subsetGroupConfig[SubsetGroup::GROUP_FIELD_KEY],
-            filter_var($subsetGroupConfig[SubsetGroup::AGGREGATE_ALL_KEY], FILTER_VALIDATE_BOOLEAN),
-            $subsetGroupConfig[SubsetGroup::AGGREGATION_FIELDS_KEY],
+            $aggregateAll,
+            $aggregateFields,
             $subsetGroupConfig[SubsetGroup::MAP_FIELDS_KEY]
         );
 
