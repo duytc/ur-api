@@ -30,6 +30,7 @@ use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\Core\ReportViewMultiViewInterface;
+use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Report\WeightedCalculation;
 use UR\Service\PublicSimpleException;
 
@@ -723,6 +724,119 @@ class ParamsBuilder implements ParamsBuilderInterface
             // if not user provide metrics => set shared metrics to it
             // this is the quickest way for shareable report where dimensions/metrics are not fully shared
             $param->setUserDefinedMetrics($sharedMetrics);
+        }
+
+        return $param;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function buildFromReportViewAndParams(ReportViewInterface $reportView, $data)
+    {
+        $param = new Params();
+
+        if (array_key_exists(self::REPORT_VIEW_ID, $data) && !empty($data[self::REPORT_VIEW_ID])) {
+            $param->setReportViewId($reportView->getId());
+        }
+
+        $metricCalculations = [];
+        if ($reportView->isMultiView()) {
+            $reportViewsRawData = $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews());
+
+            foreach ($reportViewsRawData as &$item) {
+
+                foreach ($item[self::FILTERS_KEY] as &$filter){
+                    if ($filter['type'] == FieldType::DATETIME || $filter['type'] == FieldType::DATE) {
+                        $filter['dateValue'] = [
+                            self::START_DATE => $data[self::START_DATE],
+                            self::END_DATE => $data[self::END_DATE]
+                        ];
+                    }
+                }
+            }
+
+            $reportViews = $this->createReportViews($reportViewsRawData);
+
+            $param
+                ->setReportViews($reportViews)
+                ->setShowInTotal($reportView->getShowInTotal())
+                ->setSubReportIncluded(false);
+        } else {
+            $dataSetsRawData = $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets());
+            $dataSets = $this->createDataSets($dataSetsRawData);
+
+            $joinConfigs = $this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets());
+
+            $param
+                ->setDataSets($dataSets)
+                ->setJoinConfigs($joinConfigs);
+        }
+
+        $param
+            ->setMultiView($reportView->isMultiView())
+            ->setDimensions($reportView->getDimensions())
+            ->setMetrics($reportView->getMetrics())
+            ->setTransforms($this->createTransforms($reportView->getTransforms()))
+            ->setFieldTypes($reportView->getFieldTypes())
+            ->setIsShowDataSetName($reportView->getIsShowDataSetName())
+            ->setMetricCalculations($metricCalculations)
+            ->setUserProvidedDimensionEnabled($reportView->isEnableCustomDimensionMetric());
+
+        if (is_array($reportView->getWeightedCalculations())) {
+            $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
+        }
+
+        if (is_array($reportView->getFormats())) {
+            $param->setFormats($this->createFormats($reportView->getFormats()));
+        }
+
+        if (array_key_exists(self::START_DATE, $data) && !empty($data[self::START_DATE] && array_key_exists(self::END_DATE, $data) && !empty($data[self::END_DATE]))) {
+            $startDate = $data[self::START_DATE];
+            $endDate = $data[self::END_DATE];
+            if ($startDate <= $endDate && $endDate <= date('Y-m-d')) {
+                $param->setStartDate(new \DateTime($data[self::START_DATE]));
+                $param->setEndDate(new \DateTime($data[self::END_DATE]));
+            } else {
+                throw new InvalidArgumentException('startDate is not less than endDate or endDate is not less than today');
+            }
+        }
+
+        if (array_key_exists(self::PAGE_KEY, $data)) {
+            $param->setPage(intval($data[self::PAGE_KEY]));
+        }
+
+        if (array_key_exists(self::LIMIT_KEY, $data)) {
+            $param->setLimit(intval($data[self::LIMIT_KEY]));
+        }
+
+        if (array_key_exists(self::SEARCHES, $data)) {
+            $searches = $data[self::SEARCHES];
+            if (is_string($searches)) {
+                $searches = json_decode($searches, true);
+            }
+            $param->setSearches($searches);
+        }
+
+        if ($reportView->isEnableCustomDimensionMetric() == true) {
+            if (array_key_exists(self::USER_DEFINED_DIMENSIONS, $data) && is_array($data[self::USER_DEFINED_DIMENSIONS])) {
+                $param->setUserDefinedDimensions($data[self::USER_DEFINED_DIMENSIONS]);
+            }
+
+            if (array_key_exists(self::USER_DEFINED_METRICS, $data) && is_array($data[self::USER_DEFINED_METRICS])) {
+                $param->setUserDefinedMetrics($data[self::USER_DEFINED_METRICS]);
+            }
+            $transforms = $param->getTransforms();
+
+            foreach ($transforms as &$transform) {
+                if (!$transform instanceof GroupByTransform) {
+                    continue;
+                }
+
+                $transform->setFields($param->getUserDefinedDimensions());
+            }
+
+            $param->setTransforms($transforms);
         }
 
         return $param;
