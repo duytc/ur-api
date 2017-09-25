@@ -145,10 +145,22 @@ class Parser implements ParserInterface
         // transform collection
         foreach ($allFieldsTransforms as $transform) {
             /** @var CollectionTransformerInterface $transform */
-            if ($transform instanceof Augmentation || $transform instanceof SubsetGroup || $transform instanceof GroupByColumns) {
+            if ($transform instanceof Augmentation) {
+                continue;
+            }
+            if ($transform instanceof SubsetGroup || $transform instanceof GroupByColumns) {
                 $collection = $transform->transform($collection, $this->em, $connectedDataSource, $fromDateFormat, $mapFields);
             } else {
                 $collection = $transform->transform($collection);
+            }
+        }
+
+        /** Augmentation need other transforms completed first */
+
+        foreach ($allFieldsTransforms as $transform) {
+            /** @var CollectionTransformerInterface $transform */
+            if ($transform instanceof Augmentation) {
+                $collection = $transform->transform($collection, $this->em, $connectedDataSource, $fromDateFormat, $mapFields);
             }
         }
 
