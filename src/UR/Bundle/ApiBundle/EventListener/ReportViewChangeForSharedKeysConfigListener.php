@@ -36,12 +36,12 @@ class ReportViewChangeForSharedKeysConfigListener
 	{
 		$entity = $args->getEntity();
 
-		if ($entity instanceof ReportViewDataSetInterface) {
+		if ($entity instanceof ReportViewDataSetInterface && $entity->getReportView() !== null) {
 			$this->updateReportViewIds[] = $entity->getReportView()->getId();
 			return;
 		}
 
-		if ($entity instanceof ReportViewMultiViewInterface) {
+		if ($entity instanceof ReportViewMultiViewInterface && $entity->getReportView() !== null) {
 			$this->updateReportViewIds[] = $entity->getReportView()->getId();
 			return;
 		}
