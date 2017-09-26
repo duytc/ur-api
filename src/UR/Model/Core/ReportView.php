@@ -148,6 +148,7 @@ class ReportView implements ReportViewInterface
         $this->sharedKeysConfig = [];
         $this->joinBy = [];
         $this->reportViewDataSets = new ArrayCollection();
+        $this->enableCustomDimensionMetric = true;
     }
 
     /**

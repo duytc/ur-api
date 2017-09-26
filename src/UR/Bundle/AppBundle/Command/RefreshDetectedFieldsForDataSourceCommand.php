@@ -27,7 +27,7 @@ class RefreshDetectedFieldsForDataSourceCommand extends ContainerAwareCommand
             ->setName('tc:ur:data-source:refresh-detected-field')
             ->addArgument('path', InputArgument::REQUIRED, 'Standard file which contains the correct headers')
             ->addOption('id', 'id', InputOption::VALUE_REQUIRED, 'Id of the data source being updated')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Id of the data source being updated')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Whether to save changes to database')
             ->setDescription('Refresh detected fields for Data Source from a standard file');
     }
 
@@ -96,6 +96,9 @@ class RefreshDetectedFieldsForDataSourceCommand extends ContainerAwareCommand
         }
 
         $detectedFields = $importService->getNewFieldsFromFiles($dataSourceFile);
+        $detectedFields = array_map(function($item) {
+            return strtolower($item);
+        }, $detectedFields);
         $fields = json_encode($detectedFields);
         $output->writeln('<info>Detected fields :</info>');
         $output->writeln(sprintf('<info>%s</info>', $fields));

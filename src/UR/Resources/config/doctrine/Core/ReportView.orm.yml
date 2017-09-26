@@ -75,7 +75,7 @@ UR\Entity\Core\ReportView:
             type: boolean
             nullable: true
             options:
-                default: false
+                default: true
 
     manyToOne:
         publisher:
