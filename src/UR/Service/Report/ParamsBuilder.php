@@ -743,15 +743,16 @@ class ParamsBuilder implements ParamsBuilderInterface
         $metricCalculations = [];
         if ($reportView->isMultiView()) {
             $reportViewsRawData = $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews());
+            if (!empty($data) && array_key_exists(self::START_DATE, $data) && array_key_exists(self::END_DATE, $data) ){
+                foreach ($reportViewsRawData as &$item) {
 
-            foreach ($reportViewsRawData as &$item) {
-
-                foreach ($item[self::FILTERS_KEY] as &$filter){
-                    if ($filter['type'] == FieldType::DATETIME || $filter['type'] == FieldType::DATE) {
-                        $filter['dateValue'] = [
-                            self::START_DATE => $data[self::START_DATE],
-                            self::END_DATE => $data[self::END_DATE]
-                        ];
+                    foreach ($item[self::FILTERS_KEY] as &$filter){
+                        if ($filter['type'] == FieldType::DATETIME || $filter['type'] == FieldType::DATE) {
+                            $filter['dateValue'] = [
+                                self::START_DATE => $data[self::START_DATE],
+                                self::END_DATE => $data[self::END_DATE]
+                            ];
+                        }
                     }
                 }
             }
