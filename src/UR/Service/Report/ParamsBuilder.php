@@ -744,9 +744,9 @@ class ParamsBuilder implements ParamsBuilderInterface
         if ($reportView->isMultiView()) {
             $reportViewsRawData = $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews());
             if (!empty($data) && array_key_exists(self::START_DATE, $data) && array_key_exists(self::END_DATE, $data) ){
-                foreach ($reportViewsRawData as &$item) {
+                foreach ($reportViewsRawData as &$value) {
 
-                    foreach ($item[self::FILTERS_KEY] as &$filter){
+                    foreach ($value[self::FILTERS_KEY] as &$filter){
                         if ($filter['type'] == FieldType::DATETIME || $filter['type'] == FieldType::DATE) {
                             $filter['dateValue'] = [
                                 self::START_DATE => $data[self::START_DATE],
@@ -821,11 +821,31 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if ($reportView->isEnableCustomDimensionMetric() == true) {
             if (array_key_exists(self::USER_DEFINED_DIMENSIONS, $data) && is_array($data[self::USER_DEFINED_DIMENSIONS])) {
-                $param->setUserDefinedDimensions($data[self::USER_DEFINED_DIMENSIONS]);
+                $userDefinedDimensions = $data[self::USER_DEFINED_DIMENSIONS];
+
+                foreach ($userDefinedDimensions as $key => $value) {
+                    if (!in_array($value, $reportView->getDimensions())) {
+                        unset($userDefinedDimensions[$key]);
+                    }
+                }
+
+                //set user defined dimensions after delete the dimensions is invalid
+                $param->setUserDefinedDimensions($userDefinedDimensions);
+
             }
 
             if (array_key_exists(self::USER_DEFINED_METRICS, $data) && is_array($data[self::USER_DEFINED_METRICS])) {
-                $param->setUserDefinedMetrics($data[self::USER_DEFINED_METRICS]);
+                $userDefinedMetrics = $data[self::USER_DEFINED_METRICS];
+
+                foreach ($userDefinedMetrics as $key => $value) {
+                    if (!in_array($value, $reportView->getMetrics())) {
+                        unset($userDefinedMetrics[$key]);
+                    }
+                }
+
+                // set user defined metric after delete the metrics is invalid
+                $param->setUserDefinedMetrics($userDefinedMetrics);
+
             }
             $transforms = $param->getTransforms();
 
