@@ -322,7 +322,7 @@ class ReportBuilder implements ReportBuilderInterface
         $userProvidedDimensions = [];
         $userProvidedMetrics = [];
         $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        if (!empty($params->getUserDefinedDimensions()) && $params->isUserProvidedDimensionEnabled()) {
+        if (!$params->isMultiView() && !empty($params->getUserDefinedDimensions()) && $params->isUserProvidedDimensionEnabled()) {
             $types = $reportCollection->getTypes();
             $aggregateFields = [];
             foreach ($metrics as $metric) {

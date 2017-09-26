@@ -113,7 +113,7 @@ class GroupByTransform extends AbstractTransform implements TransformInterface
 
 			foreach ($groupedReport as $report) {
 				foreach ($report as $key => $value) {
-					if ($value && in_array($collection->getTypeOf($key), [FieldType::NUMBER, FieldType::DECIMAL]) && !in_array($key, $this->fields)) {
+					if (array_key_exists($key, $result) && $value && in_array($collection->getTypeOf($key), [FieldType::NUMBER, FieldType::DECIMAL]) && !in_array($key, $this->fields)) {
 						$result[$key] += $value;
 					}
 				}
