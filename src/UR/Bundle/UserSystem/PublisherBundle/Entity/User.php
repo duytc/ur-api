@@ -28,7 +28,7 @@ class User extends BaseUser implements PublisherInterface
     protected $settings; //json string represent setting for report bundle
     protected $tagDomain;
     protected $bidders;
-    /** @var  string */
+    /** @var array */
     protected $emailSendAlert;
     /**
      * @var PublisherInterface|null
@@ -369,20 +369,18 @@ class User extends BaseUser implements PublisherInterface
     }
 
     /**
-     * @return string
+     * @inheritdoc
      */
     public function getEmailSendAlert()
     {
-        // TODO: Implement getEmailSendAlert() method.
         return $this->emailSendAlert;
     }
 
     /**
-     * @param mixed $emailSendAlert
+     * @inheritdoc
      */
     public function setEmailSendAlert($emailSendAlert)
     {
-        // TODO: Implement setEmailSendAlert() method.
-        $this->emailSendAlert = $emailSendAlert;
+        $this->emailSendAlert = is_array($emailSendAlert) ? $emailSendAlert : [];
     }
 }

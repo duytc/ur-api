@@ -93,8 +93,8 @@ class SendEmailWarningForAlertCommand extends ContainerAwareCommand
                 continue;
             }
 
-            $email = $publisher->getEmailSendAlert();
-            if (!$email) {
+            $emails = $publisher->getEmailSendAlert();
+            if (!is_array($emails) || empty($emails)) {
                 $output->writeln(sprintf('[warning] Publisher %s (id:%d) missing email to send alert. Please set email for this account then run again.', $this->getPublisherName($publisher), $publisher->getId()));
                 continue;
             }
@@ -104,9 +104,15 @@ class SendEmailWarningForAlertCommand extends ContainerAwareCommand
                 continue;
             }
 
-            $sentEmailsNumber = $this->sendEmailAlert($output, $publisher, $alerts, $email);
-            if ($sentEmailsNumber > 0) {
-                $emailAlertsCount++;
+            foreach ($emails as $email) {
+                if (!is_array($email) || !array_key_exists('email', $email)) {
+                    continue;
+                }
+
+                $sentEmailsNumber = $this->sendEmailAlert($output, $publisher, $alerts, $email['email']);
+                if ($sentEmailsNumber > 0) {
+                    $emailAlertsCount++;
+                }
             }
         }
 
