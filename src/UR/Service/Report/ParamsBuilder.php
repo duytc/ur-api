@@ -5,7 +5,9 @@ namespace UR\Service\Report;
 use Doctrine\ORM\PersistentCollection;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Behaviors\JoinConfigUtilTrait;
+use UR\Behaviors\ReportViewUtilTrait;
 use UR\Domain\DTO\Report\DataSets\DataSet;
+use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Formats\ColumnPositionFormat;
 use UR\Domain\DTO\Report\Formats\CurrencyFormat;
 use UR\Domain\DTO\Report\Formats\DateFormat;
@@ -37,6 +39,7 @@ use UR\Service\PublicSimpleException;
 class ParamsBuilder implements ParamsBuilderInterface
 {
     use JoinConfigUtilTrait;
+    use ReportViewUtilTrait;
 
     const DATA_SET_KEY = 'reportViewDataSets';
     const FIELD_TYPES_KEY = 'fieldTypes';
@@ -734,6 +737,8 @@ class ParamsBuilder implements ParamsBuilderInterface
      */
     public function buildFromReportViewAndParams(ReportViewInterface $reportView, $data)
     {
+        //get all field
+        $fullFields = $this->getFieldsFromReportView($reportView);
         $param = new Params();
 
         if (array_key_exists(self::REPORT_VIEW_ID, $data) && !empty($data[self::REPORT_VIEW_ID])) {
@@ -743,20 +748,25 @@ class ParamsBuilder implements ParamsBuilderInterface
         $metricCalculations = [];
         if ($reportView->isMultiView()) {
             $reportViewsRawData = $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews());
-            if (!empty($data) && array_key_exists(self::START_DATE, $data) && array_key_exists(self::END_DATE, $data) ){
-                foreach ($reportViewsRawData as &$value) {
+            // set startDate and endDate for sub report view
+            // because startDate and endDate of sub report view depend on startDate and endDate from request params
+            if (!empty($data) && array_key_exists(self::START_DATE, $data) && array_key_exists(self::END_DATE, $data) ) {
+                $startDate = $data[self::START_DATE];
+                $endDate = $data[self::END_DATE];
 
-                    foreach ($value[self::FILTERS_KEY] as &$filter){
-                        if ($filter['type'] == FieldType::DATETIME || $filter['type'] == FieldType::DATE) {
-                            $filter['dateValue'] = [
-                                self::START_DATE => $data[self::START_DATE],
-                                self::END_DATE => $data[self::END_DATE]
-                            ];
+                foreach ($reportViewsRawData as &$value) {
+                    foreach ($value[self::FILTERS_KEY] as &$filter) {
+                        if ($filter[DateFilter::DATE_USER_PROVIDED_FILTER_KEY] === true ) {
+                            if ($filter[DateFilter::FILTER_TYPE_KEY] == FieldType::DATETIME || $filter[DateFilter::FILTER_TYPE_KEY] == FieldType::DATE) {
+                                $filter[DateFilter::DATE_VALUE_FILTER_KEY] = [
+                                    self::START_DATE => $startDate,
+                                    self::END_DATE => $endDate
+                                ];
+                            }
                         }
                     }
                 }
             }
-
             $reportViews = $this->createReportViews($reportViewsRawData);
 
             $param
@@ -799,7 +809,7 @@ class ParamsBuilder implements ParamsBuilderInterface
                 $param->setStartDate(new \DateTime($data[self::START_DATE]));
                 $param->setEndDate(new \DateTime($data[self::END_DATE]));
             } else {
-                throw new InvalidArgumentException('startDate is not less than endDate or endDate is not less than today');
+                throw new InvalidArgumentException('Invalid: startDate is not less than endDate or endDate is not less than today');
             }
         }
 
@@ -820,33 +830,46 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         if ($reportView->isEnableCustomDimensionMetric() == true) {
-            if (array_key_exists(self::USER_DEFINED_DIMENSIONS, $data) && is_array($data[self::USER_DEFINED_DIMENSIONS])) {
+            if (array_key_exists(self::USER_DEFINED_DIMENSIONS, $data) && is_array($data[self::USER_DEFINED_DIMENSIONS]) && !empty($data[self::USER_DEFINED_DIMENSIONS])) {
                 $userDefinedDimensions = $data[self::USER_DEFINED_DIMENSIONS];
 
                 foreach ($userDefinedDimensions as $key => $value) {
-                    if (!in_array($value, $reportView->getDimensions())) {
+                    if (!in_array($value, $fullFields)) {
                         unset($userDefinedDimensions[$key]);
                     }
                 }
 
                 //set user defined dimensions after delete the dimensions is invalid
-                $param->setUserDefinedDimensions($userDefinedDimensions);
+                if (!empty($userDefinedDimensions)) {
+                    $param->setUserDefinedDimensions($userDefinedDimensions);
+                } else {
+                    $param->setUserDefinedDimensions($reportView->getDimensions());
+                }
 
+            } else {
+                $param->setUserDefinedDimensions($reportView->getDimensions());
             }
 
-            if (array_key_exists(self::USER_DEFINED_METRICS, $data) && is_array($data[self::USER_DEFINED_METRICS])) {
+            if (array_key_exists(self::USER_DEFINED_METRICS, $data) && is_array($data[self::USER_DEFINED_METRICS]) && !empty($data[self::USER_DEFINED_METRICS])) {
                 $userDefinedMetrics = $data[self::USER_DEFINED_METRICS];
 
                 foreach ($userDefinedMetrics as $key => $value) {
-                    if (!in_array($value, $reportView->getMetrics())) {
+                    if (!in_array($value, $fullFields)) {
                         unset($userDefinedMetrics[$key]);
                     }
                 }
 
                 // set user defined metric after delete the metrics is invalid
-                $param->setUserDefinedMetrics($userDefinedMetrics);
-
+                if (!empty($userDefinedMetrics))
+                {
+                    $param->setUserDefinedMetrics($userDefinedMetrics);
+                } else {
+                    $param->setUserDefinedMetrics($reportView->getMetrics());
+                }
+            } else {
+                $param->setUserDefinedMetrics($reportView->getMetrics());
             }
+
             $transforms = $param->getTransforms();
 
             foreach ($transforms as &$transform) {
