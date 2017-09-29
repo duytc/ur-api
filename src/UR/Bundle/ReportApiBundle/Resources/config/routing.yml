@@ -4,7 +4,7 @@ report_api_homepage:
     methods: [POST]
 
 report_result_api:
-    path:     /reportview/{id}/reportResult
+    path:     /reportview/{id}/data
     defaults: { _controller: ReportApiBundle:Report:reportResult }
     methods: [POST]
 

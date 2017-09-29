@@ -2,13 +2,14 @@
 
 namespace UR\Bundle\ReportApiBundle\Controller;
 
-use FOS\RestBundle\Controller\FOSRestController;
 use FOS\RestBundle\Controller\Annotations as Rest;
+use FOS\RestBundle\Routing\ClassResourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Component\HttpFoundation\Request;
+use UR\Bundle\ApiBundle\Controller\RestControllerAbstract;
+use UR\Handler\HandlerInterface;
 use UR\Service\DTO\Report\ReportResult;
-use UR\Service\Report\ParamsBuilder;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewInterface;
 
@@ -16,7 +17,7 @@ use UR\Model\Core\ReportViewInterface;
  * Class ReportController
  * @package UR\Bundle\ReportApiBundle\Controller
  */
-class ReportController extends FOSRestController
+class ReportController extends RestControllerAbstract implements ClassResourceInterface
 {
     /**
      * @Rest\Post("/reportview/data")
@@ -35,6 +36,7 @@ class ReportController extends FOSRestController
     public function reportAction(Request $request)
     {
         $params = $this->get('ur.services.report.params_builder')->buildFromArray($request->request->all());
+        $this->one($params->getReportViewId());
         $reportViewRepository = $this->get('ur.repository.report_view');
 
         if ($params->getReportViewId() !== null) {
@@ -47,7 +49,7 @@ class ReportController extends FOSRestController
     }
 
     /**
-     * @Rest\Post("/reportview/{id}/reportResult")
+     * @Rest\Post("/reportview/{id}/data")
      *
      * @ApiDoc(
      *  section = "admin",
@@ -82,10 +84,13 @@ class ReportController extends FOSRestController
             ]
         }
         */
+        //get request params
         $data = $request->request->all();
 
         $reportViewRepository = $this->get('ur.repository.report_view');
-        $reportViewData = $reportViewRepository->find($id);
+
+        // get report view and also check permission
+        $reportViewData = $this->one($id);
 
         if (!$reportViewData instanceof ReportViewInterface) {
             throw new InvalidArgumentException('Report view id is missing or not existing');
@@ -124,7 +129,8 @@ class ReportController extends FOSRestController
 
         $params = $this->get('ur.services.report.params_builder')->buildFromArray($request->request->all());
         $reportViewRepository = $this->get('ur.repository.report_view');
-
+        //check permission
+        $this->one($params->getReportViewId());
         if ($params->getReportViewId() !== null) {
             $reportViewRepository->updateLastRun($params->getReportViewId());
         }
@@ -172,5 +178,31 @@ class ReportController extends FOSRestController
 
         // Stream the CSV data
         exit($string);
+    }
+
+    /**
+     * @return string
+     */
+    protected function getResourceName()
+    {
+        return 'reportview';
+    }
+
+    /**
+     * The 'get' route name to redirect to after resource creation
+     *
+     * @return string
+     */
+    protected function getGETRouteName()
+    {
+        // TODO: Implement getGETRouteName() method.
+    }
+
+    /**
+     * @return HandlerInterface
+     */
+    protected function getHandler()
+    {
+        return $this->container->get('ur_api.handler.report_view');
     }
 }
