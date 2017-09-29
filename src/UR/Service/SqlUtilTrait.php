@@ -57,7 +57,7 @@ trait SqlUtilTrait
                         }
 
                         if ($timezone != 'UTC') {
-                            return sprintf("DATE(CONVERT_TZ(`$field``, 'UTC', '$timezone'))");
+                            return sprintf("DATE(CONVERT_TZ(`$field`, 'UTC', '$timezone'))");
                         }
 
                         return sprintf("DATE(`$field`)");
@@ -600,7 +600,9 @@ trait SqlUtilTrait
      * @param $newFields
      * @param array $dataSetIndexes
      * @param array $joinConfig
+     * @param bool $removeSuffix
      * @return QueryBuilder
+     * @throws PublicSimpleException
      * @throws \Exception
      */
     public function addCalculatedFieldTransformQuery(QueryBuilder $qb, $transform, &$newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = false)
@@ -609,7 +611,7 @@ trait SqlUtilTrait
             $fieldName = $transform->getFieldName();
             $expression = $transform->getExpression();
 
-            $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $dataSetIndexes, $removeSuffix);
+            $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $dataSetIndexes, $joinConfig, $removeSuffix);
 
             if ($expressionForm === null) return $qb;
 
@@ -693,11 +695,13 @@ trait SqlUtilTrait
      * @param $fieldName
      * @param $expression
      * @param array $dataSetIndexes
+     * @param array $joinConfig
      * @param bool $removeSuffix
      * @return mixed
+     * @throws PublicSimpleException
      * @throws \Exception
      */
-    protected function normalizeExpression($transformType, $fieldName, $expression, $dataSetIndexes = [], $removeSuffix = true)
+    protected function normalizeExpression($transformType, $fieldName, $expression, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = true)
     {
         if (is_null($expression)) {
             throw new \Exception(sprintf('Expression for calculated field can not be null'));
@@ -735,17 +739,23 @@ trait SqlUtilTrait
                 continue;
             }
 
-            $tableAlias = null;
-            $fieldAndId = $this->getIdSuffixAndField($field);
-            if ($fieldAndId) {
-                $field = $fieldAndId['field'];
-                if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
-                    $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+            $alias = $this->convertOutputJoinFieldToAlias($field, $joinConfig, $dataSetIndexes);
+            if ($alias) {
+                $field = $alias;
+            } else {
+                $tableAlias = null;
+                $fieldAndId = $this->getIdSuffixAndField($field);
+                if ($fieldAndId) {
+                    $field = $fieldAndId['field'];
+                    if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
+                        $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                    }
                 }
+
+                $field = $tableAlias !== null ? "`$tableAlias`.`$field`" : "`t`.`$field`";
             }
 
-            $replaceString = $tableAlias === null ? "`$field`" : sprintf('%s.%s', $tableAlias, $field);
-            $expression = str_replace($fieldsInBracket[$index], $replaceString, $expression);
+            $expression = str_replace($fieldsInBracket[$index], $field, $expression);
         }
 
         return $expression;

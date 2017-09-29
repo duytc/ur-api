@@ -201,16 +201,19 @@ class SqlBuilder implements SqlBuilderInterface
 
             if ($transform instanceof AddCalculatedFieldTransform) {
                 $subQb = $this->addCalculatedFieldTransformQuery($subQb, $transform, $newFields, [], [] , $removeSuffix = true);
+                $types[$transform->getFieldName()] = $transform->getType();
                 continue;
             }
 
             if ($transform instanceof AddFieldTransform) {
                 $subQb = $this->addNewFieldTransformQuery($subQb, $transform, $newFields, [], [], $removeSuffix = true);
+                $types[$transform->getFieldName()] = $transform->getType();
                 continue;
             }
 
             if ($transform instanceof ComparisonPercentTransform) {
                 $subQb = $this->addComparisonPercentTransformQuery($subQb, $transform, $newFields, [], $removeSuffix = true);
+                $types[$transform->getFieldName()] = $transform->getType();
                 continue;
             }
         }
@@ -244,12 +247,13 @@ class SqlBuilder implements SqlBuilderInterface
             }
         }
 
-        $subQuery = $subQb->getSQL();
+        $fromQuery = $subQb->getSQL();
+        $grouperQuery = $fromQuery;
 
         if ($hasGroup) {
             $qb = $this->connection->createQueryBuilder();
             foreach ($newFields as $newField) {
-                if (($isAggregateAll || in_array($newField, $aggregationFields)) && $hasGroup) {
+                if (($isAggregateAll || in_array($newField, $aggregationFields)) && $hasGroup && in_array($types[$newField], [FieldType::NUMBER, FieldType::DECIMAL])) {
                     $qb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($newField), $this->connection->quoteIdentifier($newField)));
                     continue;
                 }
@@ -278,8 +282,12 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             $qb = $this->addGroupByQuery($qb, $transforms, $types);
-            $qb->from("($subQuery)", "sub1");
-            $subQuery = $qb->getSQL();
+            $qb->from("($fromQuery)", "sub1");
+            // add ORDER BY NULL for performance
+            $qb->addOrderBy('NULL');
+            $grouperQuery = $qb->getSQL();
+            $qb = $this->addLimitQuery($qb, $page, $limit);
+            $fromQuery = $qb->getSQL();
         }
 
         $outerQb = $this->connection->createQueryBuilder();
@@ -328,14 +336,13 @@ class SqlBuilder implements SqlBuilderInterface
             $outerQb->addSelect($this->connection->quoteIdentifier($newField));
         }
 
-
-//        $subQuery = $qb->getSQL();
-        $outerQb->from("($subQuery)", "sub2");
+        $grouperQb = clone $outerQb;
+        $outerQb->from("($fromQuery)", "sub2");
         $outerQb = $this->bindFilterParam($outerQb, $filters);
-        $subQuery = clone $outerQb;
-        $outerQb = $this->addLimitQuery($outerQb, $page, $limit);
         $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
 
+        $grouperQb->from("($grouperQuery)", "sub2");
+        $grouperQuery = $grouperQb->getSQL();
         try {
             $stmt = $outerQb->execute();
         } catch (\Exception $e) {
@@ -343,7 +350,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         return array(
-            self::SUB_QUERY => $subQuery->getSQL(),
+            self::SUB_QUERY => $grouperQuery,
             self::STATEMENT_KEY => $stmt,
             self::DATE_RANGE_KEY => $dateRange
         );
@@ -610,16 +617,19 @@ class SqlBuilder implements SqlBuilderInterface
 
             if ($transform instanceof AddCalculatedFieldTransform) {
                 $subQb = $this->addCalculatedFieldTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, $joinConfig, true);
+                $types[$transform->getFieldName()] = $transform->getType();
                 continue;
             }
 
             if ($transform instanceof AddFieldTransform) {
                 $subQb = $this->addNewFieldTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, $joinConfig, true);
+                $types[$transform->getFieldName()] = $transform->getType();
                 continue;
             }
 
             if ($transform instanceof ComparisonPercentTransform) {
                 $subQb = $this->addComparisonPercentTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, true);
+                $types[$transform->getFieldName()] = $transform->getType();
                 continue;
             }
         }
@@ -638,6 +648,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         $subQuery = sprintf('%s WHERE (%s)', $subQuery, $where);
+        $grouperQuery = $subQuery;
 
         if ($hasGroup) {
             $qb = $this->connection->createQueryBuilder();
@@ -648,7 +659,7 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             foreach ($newFields as $newField) {
-                if (($isAggregateAll || in_array($newField, $aggregationFields)) && $hasGroup) {
+                if (($isAggregateAll || in_array($newField, $aggregationFields)) && $hasGroup && in_array($types[$newField], [FieldType::NUMBER, FieldType::DECIMAL])) {
                     $qb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($newField), $this->connection->quoteIdentifier($newField)));
                     continue;
                 }
@@ -658,6 +669,10 @@ class SqlBuilder implements SqlBuilderInterface
 
             $qb->from("($subQuery)", "sub1");
             $qb = $this->addGroupByQuery($qb, $transforms, $types);
+            // add ORDER BY NULL for performance
+            $qb->addOrderBy('NULL');
+            $grouperQuery = $qb->getSQL();
+            $qb = $this->addLimitQuery($qb, $page, $limit);
             $subQuery = $qb->getSQL();
         }
 
@@ -702,9 +717,9 @@ class SqlBuilder implements SqlBuilderInterface
             $outerQb->addSelect($this->connection->quoteIdentifier($newField));
         }
 
-
+        $grouperQb = clone $outerQb;
         $outerQb->from("($subQuery)", "sub2");
-
+        $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
             $filters = $dataSet->getFilters();
@@ -715,9 +730,7 @@ class SqlBuilder implements SqlBuilderInterface
             $outerQb = $this->bindFilterParam($outerQb, $filters, $dataSet->getDataSetId());
         }
 
-        $subQuery = clone $outerQb;
-        $outerQb = $this->addLimitQuery($outerQb, $page, $limit);
-        $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
+        $grouperQuery = $grouperQb->from("($grouperQuery)", "sub2");
 
         try {
             $stmt = $outerQb->execute();
@@ -726,7 +739,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         return array(
-            self::SUB_QUERY => $subQuery->getSQL(),
+            self::SUB_QUERY => $grouperQuery,
             self::STATEMENT_KEY => $stmt,
             self::DATE_RANGE_KEY => $dateRange
         );
