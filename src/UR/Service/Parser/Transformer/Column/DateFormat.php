@@ -4,10 +4,12 @@ namespace UR\Service\Parser\Transformer\Column;
 
 use DateTime;
 use DateTimeZone;
+use SplDoublyLinkedList;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
@@ -106,6 +108,42 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         }
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function transformCollection(Collection $collection, ConnectedDataSourceInterface $connectedDataSource) {
+        $rows = $collection->getRows();
+
+        if (!$rows instanceof SplDoublyLinkedList || $rows->count() < 1) {
+            return $collection;
+        }
+
+        $mapFields = array_flip($connectedDataSource->getMapFields());
+        $dateFieldInDataSet = $this->getField();
+
+        if (!array_key_exists($dateFieldInDataSet, $mapFields)) {
+            /** Extra fields is field not mapping with data source, they come from Transformation ad Add Field, Extract Pattern ... and need reformat in the end */
+            $dateFieldInFile = $this->getField();
+        } else {
+            $dateFieldInFile = $mapFields[$dateFieldInDataSet];
+        }
+
+        $newRows = new SplDoublyLinkedList();
+
+        foreach ($rows as $row) {
+            if (!array_key_exists($dateFieldInFile, $row)) {
+                continue;
+            }
+
+            $row[$dateFieldInFile] = $this->transform($row[$dateFieldInFile]);
+            $newRows->push($row);
+        }
+
+        $collection->setRows($newRows);
+
+        return $collection;
+    }
+    
     /**
      * @inheritdoc
      */

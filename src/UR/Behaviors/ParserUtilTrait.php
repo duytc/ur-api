@@ -6,6 +6,8 @@ namespace UR\Behaviors;
 
 use DateTime;
 use DateTimeZone;
+use UR\Service\DataSet\FieldType;
+use UR\Service\DTO\Collection;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 
 trait ParserUtilTrait
@@ -137,5 +139,50 @@ trait ParserUtilTrait
         }
 
         return $date;
+    }
+
+    /**
+     * @param $groupingFields
+     * @param Collection $collection
+     * @return array
+     * @throws \Exception
+     */
+    private function generateGroupedArray($groupingFields, Collection $collection)
+    {
+        $groupedArray = [];
+        $rows = $collection->getRows();
+
+        foreach ($rows as $report) {
+            $key = '';
+            foreach ($groupingFields as $groupField) {
+                if (!array_key_exists($groupField, $report)) {
+                    continue;
+                }
+
+                if (empty($report[$groupField])) {
+                    continue;
+                }
+
+                if ($collection->getTypeOf($groupField) == FieldType::DATETIME) {
+                    $normalizedDate = date_create($report[$groupField]);
+
+                    if ($normalizedDate instanceof \DateTime) {
+                        $report[$groupField] = $normalizedDate->format('Y-m-d');
+                        $key .= $normalizedDate->format('Y-m-d');
+                    } else {
+                        $key .= $report[$groupField];
+                    }
+
+                    continue;
+                }
+
+                $key .= is_array($report[$groupField]) ? json_encode($report[$groupField], JSON_UNESCAPED_UNICODE) : $report[$groupField];
+            }
+
+            $key = md5($key);
+            $groupedArray[$key][] = $report;
+        }
+
+        return $groupedArray;
     }
 }

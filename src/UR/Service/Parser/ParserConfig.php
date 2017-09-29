@@ -24,6 +24,13 @@ class ParserConfig
     protected $collectionTransforms = [];
 
     /**
+     * Extra fields is field not mapping with data source, they come from Transformation ad Add Field, Extract Pattern ... and need reformat in the end
+     *
+     * @var ColumnTransformerInterface[]
+     */
+    protected $extraColumnTransforms = [];
+
+    /**
      * ParserConfig constructor.
      */
     public function __construct()
@@ -68,15 +75,22 @@ class ParserConfig
 
     public function addTransformColumn($column, ColumnTransformerInterface $transform)
     {
-//        if (!$this->hasColumnMapping($column)) {
-//            throw new \InvalidArgumentException('Cannot add the column transform because the column does not exist');
-//        }
-
         if (!array_key_exists($column, $this->columnTransforms)) {
             $this->columnTransforms[$column] = [];
         }
 
         $this->columnTransforms[$column][] = $transform;
+
+        return $this;
+    }
+
+    public function addExtraTransformColumn($column, ColumnTransformerInterface $transform)
+    {
+        if (!array_key_exists($column, $this->extraColumnTransforms)) {
+            $this->extraColumnTransforms[$column] = [];
+        }
+
+        $this->extraColumnTransforms[$column][] = $transform;
 
         return $this;
     }
@@ -140,5 +154,13 @@ class ParserConfig
     public function getCollectionTransforms()
     {
         return $this->collectionTransforms;
+    }
+
+    /**
+     * @return Transformer\Column\ColumnTransformerInterface[]
+     */
+    public function getExtraColumnTransforms()
+    {
+        return $this->extraColumnTransforms;
     }
 }

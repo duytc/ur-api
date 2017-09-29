@@ -99,9 +99,6 @@ class AutoImportData implements AutoImportDataInterface
         try {
             $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, $dryRunParams->getLimitRows());
 
-            $this->parsingFileService->addTransformColumnAfterParsing($connectedDataSource->getTransforms());
-            $this->parsingFileService->formatColumnsTransformsAfterParser($collection);
-
             $dataSet = $connectedDataSource->getDataSet();
             $rows = $collection->getRows();
             $columns = [];

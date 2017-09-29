@@ -13,6 +13,7 @@ use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformCollectionDataEvent;
 use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformColumnDataEvent;
 use UR\Service\DTO\Collection;
 use UR\Service\Parser\ParserInterface;
+use UR\Service\Parser\UREventDispatcherInterface;
 
 $loader = require_once __DIR__ . '/../app/autoload.php';
 require_once __DIR__ . '/../app/AppKernel.php';
@@ -34,7 +35,7 @@ $columns = ['date', 'tag', 'request', 'revenue'];
 // load
 $postLoadEvent = new PostLoadDataEvent($publisherId, $connectedDataSourceId, $dataSourceId, $rows);
 $eventDispatcher->dispatch(
-    ParserInterface::EVENT_NAME_POST_LOADED_DATA,
+    UREventDispatcherInterface::EVENT_NAME_POST_LOADED_DATA,
     $postLoadEvent
 );
 echo 'dispatched post load' . "\n";
@@ -44,7 +45,7 @@ var_dump($rows);
 // filter
 $preFilterEvent = new PreFilterDataEvent($publisherId, $connectedDataSourceId, $dataSourceId, $rows);
 $eventDispatcher->dispatch(
-    ParserInterface::EVENT_NAME_PRE_FILTER_DATA,
+    UREventDispatcherInterface::EVENT_NAME_PRE_FILTER_DATA,
     $preFilterEvent
 );
 echo 'dispatched pre filter' . "\n";
@@ -57,7 +58,7 @@ $collection = new Collection($columns, $rows);
 // pre transform collection
 $preTransformCollectionEvent = new PreTransformCollectionDataEvent($publisherId, $connectedDataSourceId, $dataSourceId, $collection, $metadata = []);
 $eventDispatcher->dispatch(
-    ParserInterface::EVENT_NAME_PRE_TRANSFORM_COLLECTION_DATA,
+    UREventDispatcherInterface::EVENT_NAME_PRE_TRANSFORM_COLLECTION_DATA,
     $preTransformCollectionEvent
 );
 echo 'dispatched pre transform collection' . "\n";
@@ -67,7 +68,7 @@ var_dump($collection);
 // pre transform column
 $preTransformColumnEvent = new PreTransformColumnDataEvent($publisherId, $connectedDataSourceId, $dataSourceId, $collection, $metadata = []);
 $eventDispatcher->dispatch(
-    ParserInterface::EVENT_NAME_PRE_TRANSFORM_COLUMN_DATA,
+    UREventDispatcherInterface::EVENT_NAME_PRE_TRANSFORM_COLUMN_DATA,
     $preTransformColumnEvent
 );
 echo 'dispatched pre transform column' . "\n";
@@ -77,7 +78,7 @@ var_dump($collection);
 // post parse data
 $postParseDataEvent = new PostParseDataEvent($publisherId, $connectedDataSourceId, $dataSourceId, $collection, $metadata = []);
 $eventDispatcher->dispatch(
-    ParserInterface::EVENT_NAME_POST_PARSE_DATA,
+    UREventDispatcherInterface::EVENT_NAME_POST_PARSE_DATA,
     $postParseDataEvent
 );
 echo 'dispatched post parse data' . "\n";

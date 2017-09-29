@@ -522,8 +522,13 @@ services:
     ur.service.parser:
         class: UR\Service\Parser\Parser
         arguments:
-            - @event_dispatcher
+            - @ur.service.parser.ur_event_dispatcher
             - @doctrine.orm.entity_manager
+
+    ur.service.parser.ur_event_dispatcher:
+        class: UR\Service\Parser\UREventDispatcher
+        arguments:
+            - @event_dispatcher
 
     ur.service.import:
         class: UR\Service\Import\ImportService

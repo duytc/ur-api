@@ -129,19 +129,6 @@ class ParsingFileService
         return $collections;
     }
 
-    /**
-     * @param array $transforms
-     */
-    public function addTransformColumnAfterParsing(array $transforms)
-    {
-        foreach ($transforms as $transform) {
-            $transformObject = $this->transformerFactory->getTransform($transform);
-            if ($transformObject instanceof NumberFormat) {
-                $this->parserConfig->addTransformColumn($transformObject->getField(), $transformObject);
-            }
-        }
-    }
-
     /**UpdateConnectedDataSourceWhenDataSetChangedListener
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param ParserConfig $parserConfig
@@ -201,6 +188,10 @@ class ParsingFileService
         $allDimensionMetrics = $connectedDataSource->getDataSet()->getAllDimensionMetrics();
         $tempFields = array_flip($connectedDataSource->getTemporaryFields());
         $allFields = array_merge($allDimensionMetrics, $tempFields);
+
+        /** Extra fields is field not mapping with data source, they come from Transformation ad Add Field, Extract Pattern ... and need reformat in the end */
+        $extraFields = [];
+
         foreach ($connectedDataSource->getTransforms() as $transform) {
             if (!is_array($transform)) {
                 continue;
@@ -208,12 +199,13 @@ class ParsingFileService
 
             $transformObjects = $this->transformerFactory->getTransform($transform);
 
-            if ($transformObjects instanceof DateFormat) {
-                if (!array_key_exists($transformObjects->getField(), $parserConfig->getAllColumnMappings())) {
-                    continue;
+            if ($transformObjects instanceof DateFormat || $transformObjects instanceof NumberFormat) {
+                if (in_array($transformObjects->getField(), $extraFields)) {
+                    $parserConfig->addExtraTransformColumn($transformObjects->getField(), $transformObjects);
+                } else {
+                    $parserConfig->addTransformColumn($transformObjects->getField(), $transformObjects);
                 }
 
-                $parserConfig->addTransformColumn($transformObjects->getField(), $transformObjects);
                 continue;
             }
 
@@ -246,6 +238,7 @@ class ParsingFileService
                     $type = array_key_exists($transformObject->getColumn(), $tempFields) ? FieldType::TEXT : $allFields[$transformObject->getColumn()];
                     $transformObject->setType($type);
                 } else if ($transformObject instanceof ReplaceText || $transformObject instanceof ExtractPattern) {
+                    $extraFields[] = $transformObject->getTargetField();
                     $this->addInternalVariableToTransform($transformObject->getField(), $transformObject->getTargetField(), $allFields, $parserConfig, $dataSourceEntry);
                 }
 
@@ -339,43 +332,6 @@ class ParsingFileService
 
         unset($rows, $row);
         return new Collection(array_keys($allFields), $newRows);
-    }
-
-    /**
-     * @param Collection $collection
-     * @return void
-     * @throws ImportDataException
-     */
-    public function formatColumnsTransformsAfterParser(Collection $collection)
-    {
-        $rows = $collection->getRows();
-        $newRows = new SplDoublyLinkedList();
-        foreach ($rows as $index => $row) {
-            if (!is_array($row)) {
-                continue;
-            }
-
-            foreach ($this->parserConfig->getColumnTransforms() as $column => $transforms) {
-                /** @var ColumnTransformerInterface[] $transforms */
-                if (!array_key_exists($column, $row)) {
-                    continue;
-                }
-
-                foreach ($transforms as $transform) {
-                    if ($transform instanceof DateFormat) {
-                        $row[$column] = $transform->transformFromDatabaseToClient($row[$column]);
-                    } else {
-                        $row[$column] = $transform->transform($row[$column]);
-                    }
-                }
-            }
-
-            $newRows->push($row);
-            unset ($row);
-        }
-
-        unset($rows, $row);
-        $collection->setRows($newRows);
     }
 
     /**

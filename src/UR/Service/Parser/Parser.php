@@ -4,12 +4,6 @@ namespace UR\Service\Parser;
 
 use Doctrine\ORM\EntityManagerInterface;
 use SplDoublyLinkedList;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use UR\Bundle\ApiBundle\Event\CustomCodeParse\PostLoadDataEvent;
-use UR\Bundle\ApiBundle\Event\CustomCodeParse\PostParseDataEvent;
-use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreFilterDataEvent;
-use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformCollectionDataEvent;
-use UR\Bundle\ApiBundle\Event\CustomCodeParse\PreTransformColumnDataEvent;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
@@ -18,16 +12,15 @@ use UR\Service\Parser\Filter\ColumnFilterInterface;
 use UR\Service\Parser\Transformer\Collection\Augmentation;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
-use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Service\Parser\Transformer\Collection\SubsetGroup;
-use UR\Service\Report\SqlBuilder;
+use UR\Service\Parser\Transformer\Column\NumberFormat;
 
 class Parser implements ParserInterface
 {
-    /**@var EventDispatcherInterface $eventDispatcher
+    /**@var UREventDispatcherInterface $urEventDispatcher
      */
-    protected $eventDispatcher;
+    protected $urEventDispatcher;
 
     /** @var EntityManagerInterface */
     protected $em;
@@ -36,12 +29,12 @@ class Parser implements ParserInterface
 
     /**
      * Parser constructor.
-     * @param EventDispatcherInterface $eventDispatcher
+     * @param UREventDispatcherInterface $eventDispatcher
      * @param EntityManagerInterface $em
      */
-    public function __construct(EventDispatcherInterface $eventDispatcher, EntityManagerInterface $em)
+    public function __construct(UREventDispatcherInterface $eventDispatcher, EntityManagerInterface $em)
     {
-        $this->eventDispatcher = $eventDispatcher;
+        $this->urEventDispatcher = $eventDispatcher;
         $this->em = $em;
         $this->reformatDataService = new ReformatDataService();
     }
@@ -55,158 +48,37 @@ class Parser implements ParserInterface
      */
     public function parse(array $fileCols, SplDoublyLinkedList $rows, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource)
     {
-        $columnsMapping = $parserConfig->getAllColumnMappings();
-        $columnFromMap = array_flip($parserConfig->getAllColumnMappings());
-
-//        $fileCols = array_map("strtolower", $fileCols);
-        $fileCols = array_map("trim", $fileCols);
-
-        $columns = array_intersect($fileCols, $parserConfig->getAllColumnMappings());
-
-        // dispatch event after loading data
-        $postLoadDataEvent = new PostLoadDataEvent(
-            $connectedDataSource->getDataSet()->getPublisherId(),
-            $connectedDataSource->getId(),
-            $connectedDataSource->getDataSource()->getId(),
-            $rows
-        );
-
-        $this->eventDispatcher->dispatch(
-            self::EVENT_NAME_POST_LOADED_DATA,
-            $postLoadDataEvent
-        );
-
-//        $rows = $postLoadDataEvent->getRows();
-
-        $dataSetColumns = array_merge($connectedDataSource->getDataSet()->getDimensions(), $connectedDataSource->getDataSet()->getMetrics());
-        $types = [];
-        foreach ($dataSetColumns as $dsColumn => $type) {
-            if (!array_key_exists($dsColumn, $columnsMapping)) {
-                $types[$dsColumn] = $type;
-                continue;
-            }
-
-            $types[$columnsMapping[$dsColumn]] = $type;
-        }
-
-        /* 2. do filtering data */
-        // dispatch event pre filtering data
-        $preFilterEvent = new PreFilterDataEvent(
-            $connectedDataSource->getDataSet()->getPublisherId(),
-            $connectedDataSource->getId(),
-            $connectedDataSource->getDataSource()->getId(),
-            $rows
-        );
-
-        $this->eventDispatcher->dispatch(
-            self::EVENT_NAME_PRE_FILTER_DATA,
-            $preFilterEvent
-        );
-
-//        $rows = $preFilterEvent->getRows();
-
-        // TODO: may dispatch event after filtering data
-        $collection = new Collection($columns, $rows, $types);
-
-        if ($rows->count() < 1) {
-            return $collection;
-        }
-
-        /* 3. do transforming data */
-        $allFieldsTransforms = $parserConfig->getCollectionTransforms();
-
-        // dispatch event pre transforming collection data
-        $preTransformCollectionEvent = new PreTransformCollectionDataEvent(
-            $connectedDataSource->getDataSet()->getPublisherId(),
-            $connectedDataSource->getId(),
-            $connectedDataSource->getDataSource()->getId(),
-            $collection
-        );
-
-        $this->eventDispatcher->dispatch(
-            self::EVENT_NAME_PRE_TRANSFORM_COLLECTION_DATA,
-            $preTransformCollectionEvent
-        );
-
-        $collection = $preTransformCollectionEvent->getCollection();
+        $collection = $this->createCollection($rows, $fileCols, $parserConfig, $connectedDataSource);
         $collection = $this->addTemporaryFields($collection, $connectedDataSource);
 
-        $fromDateFormat = [];
-        foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
-            foreach ($transforms as $transform) {
-                if ($transform instanceof DateFormat) {
-                    $fromDateFormat[$column] = array('formats' => $transform->getFromDateFormats(), 'timezone' => $transform->getTimezone());
-                }
-            }
-        }
-
-        $mapFields = $connectedDataSource->getMapFields();
-
-        // transform collection
-        foreach ($allFieldsTransforms as $transform) {
-            /** @var CollectionTransformerInterface $transform */
-            if ($transform instanceof Augmentation) {
-                continue;
-            }
-            if ($transform instanceof SubsetGroup || $transform instanceof GroupByColumns) {
-                $collection = $transform->transform($collection, $this->em, $connectedDataSource, $fromDateFormat, $mapFields);
-            } else {
-                $collection = $transform->transform($collection);
-            }
-        }
-
-        /** Augmentation need other transforms completed first */
-
-        foreach ($allFieldsTransforms as $transform) {
-            /** @var CollectionTransformerInterface $transform */
-            if ($transform instanceof Augmentation) {
-                $collection = $transform->transform($collection, $this->em, $connectedDataSource, $fromDateFormat, $mapFields);
-            }
-        }
-
-        //overwrite duplicate
-        if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
-            $mappedDimensions = array_intersect_key($columnsMapping, $connectedDataSource->getDataSet()->getDimensions());
-            $this->overrideDuplicate($collection, array_flip($mappedDimensions));
-        }
-
-        $collection = $this->removeTemporaryFields($collection, $connectedDataSource);
-
-        // dispatch event pre transforming column data
-        $preTransformColumnEvent = new PreTransformColumnDataEvent(
-            $connectedDataSource->getDataSet()->getPublisherId(),
-            $connectedDataSource->getId(),
-            $connectedDataSource->getDataSource()->getId(),
-            $collection
-        );
-
-        $this->eventDispatcher->dispatch(
-            self::EVENT_NAME_PRE_TRANSFORM_COLUMN_DATA,
-            $preTransformColumnEvent
-        );
-
-        $collection = $preTransformColumnEvent->getCollection();
-        $rows = $collection->getRows();
+        /** Check before fire any UR event to custom transform bundle */
         if ($rows->count() < 1) {
             return $collection;
         }
 
-        $columns = $this->getColumnsAfterDoCollectionTransforms($rows[0], $columnFromMap, $collection->getColumns());
+        $collection = $this->urEventDispatcher->postLoadDataEvent($connectedDataSource, $collection);
 
-        $collection = $this->getFinalParserCollection($rows, $columns, $parserConfig);
+        $collection = $this->urEventDispatcher->preFilterDataEvent($connectedDataSource, $collection);
 
-        // dispatch event post parse data
-        $postParseDataEvent = new PostParseDataEvent(
-            $connectedDataSource->getDataSet()->getPublisherId(),
-            $connectedDataSource->getId(),
-            $connectedDataSource->getDataSource()->getId(),
-            $collection
-        );
+        $collection = $this->urEventDispatcher->preTransformColumnDataEvent($connectedDataSource, $collection);
 
-        $this->eventDispatcher->dispatch(
-            self::EVENT_NAME_POST_PARSE_DATA,
-            $postParseDataEvent
-        );
+        /** Execute Format transforms first, for DateFormat and NumberFormat */
+        $collection = $this->executeFormatTransform($parserConfig, $connectedDataSource, $collection);
+
+        $collection = $this->urEventDispatcher->preTransformCollectionDataEvent($connectedDataSource, $collection);
+
+        /** Execute other transforms */
+        $collection = $this->executeOtherTransforms($parserConfig, $connectedDataSource, $collection);
+
+        /** Execute last transform Augmentation */
+        $collection = $this->executeAugmentationTransform($parserConfig, $connectedDataSource, $collection);
+
+        /** Execute extra transforms */
+        $collection = $this->executeExtraTransforms($parserConfig, $connectedDataSource, $collection);
+
+        $collection = $this->getFinalCollection($parserConfig, $connectedDataSource, $collection);
+
+        $collection = $this->urEventDispatcher->postParseDataEvent($connectedDataSource, $collection);
 
         return $collection;
     }
@@ -337,7 +209,7 @@ class Parser implements ParserInterface
      * @return Collection
      * @throws ImportDataException
      */
-    private function getFinalParserCollection(SplDoublyLinkedList $rows, array $columns, ParserConfig $parserConfig)
+    private function switchFieldInFileToFieldInDataSet(SplDoublyLinkedList $rows, array $columns, ParserConfig $parserConfig)
     {
         $newRows = new SplDoublyLinkedList();
         foreach ($rows as $row) {
@@ -357,34 +229,6 @@ class Parser implements ParserInterface
             }, array_keys($row));
 
             $row = array_combine($keys, $row);
-
-            $isNeedRemoveRow = false; // true if current row is need remove from rows, this depends on the transform result
-            foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
-                /** @var ColumnTransformerInterface[] $transforms */
-                if (!array_key_exists($column, $row)) {
-                    continue;
-                }
-
-                foreach ($transforms as $transform) {
-                    // special for type DATE and DATETIME: if value is null, we unset row data
-                    // and do not do transform on null value
-                    if (null === $row[$column] && $transform instanceof DateFormat) {
-                        $isNeedRemoveRow = true;
-                        break; // break loop transforms of one columns
-                    }
-
-                    // do transform, throw exception on invalid value
-                    $row[$column] = $transform->transform($row[$column]);
-                }
-
-                if ($isNeedRemoveRow) {
-                    break; // break loop columns
-                }
-            }
-
-            if ($isNeedRemoveRow) {
-                continue;
-            }
 
             $newRows->push($row);
             unset($row);
@@ -467,5 +311,221 @@ class Parser implements ParserInterface
 
         unset($rows, $row);
         return $newRows;
+    }
+
+    /**
+     * @param SplDoublyLinkedList $rows
+     * @param array $fileCols
+     * @param ParserConfig $parserConfig
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return Collection
+     */
+    private function createCollection(SplDoublyLinkedList $rows, array $fileCols, ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $columnsMapping = $parserConfig->getAllColumnMappings();
+
+        $fileCols = array_map("trim", $fileCols);
+
+        $columns = array_intersect($fileCols, $parserConfig->getAllColumnMappings());
+
+        $dataSetColumns = array_merge($connectedDataSource->getDataSet()->getDimensions(), $connectedDataSource->getDataSet()->getMetrics());
+        $types = [];
+        foreach ($dataSetColumns as $dsColumn => $type) {
+            if (!array_key_exists($dsColumn, $columnsMapping)) {
+                $types[$dsColumn] = $type;
+                continue;
+            }
+
+            $types[$columnsMapping[$dsColumn]] = $type;
+        }
+        $collection = new Collection($columns, $rows, $types);
+
+        return $collection;
+    }
+
+	/**
+     * @param ParserConfig $parserConfig
+     * @return array
+     */
+    private function getFromDateFormats(ParserConfig $parserConfig)
+    {
+        $fromDateFormat = [];
+        foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
+            foreach ($transforms as $transform) {
+                if ($transform instanceof DateFormat) {
+                    $fromDateFormat[$column] = array('formats' => $transform->getFromDateFormats(), 'timezone' => $transform->getTimezone());
+                }
+            }
+        }
+
+        return $fromDateFormat;
+    }
+
+	/**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param ParserConfig $parserConfig
+     * @param Collection $collection
+     * @return Collection
+     */
+    private function overWriteDuplicate(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, Collection $collection)
+    {
+        //overwrite duplicate
+        if ($connectedDataSource->getDataSet()->getAllowOverwriteExistingData()) {
+            $mappedDimensions = array_intersect_key(array_flip($parserConfig->getAllColumnMappings()), $connectedDataSource->getDataSet()->getDimensions());
+            $this->overrideDuplicate($collection, array_flip($mappedDimensions));
+        }
+
+        return $collection;
+    }
+
+	/**
+     * @param ParserConfig $parserConfig
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param Collection $collection
+     * @return Collection
+     */
+    private function executeFormatTransform(ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
+    {
+        $groups = $parserConfig->getColumnTransforms();
+
+        if (!is_array($groups)) {
+            return $collection;
+        }
+
+        /** Execute Date Format first */
+        foreach ($groups as $column => $transforms) {
+            foreach ($transforms as $transform) {
+                if ($transform instanceof DateFormat) {
+                    $transform->transformCollection($collection, $connectedDataSource);
+                    continue;
+                }
+
+                if ($transform instanceof NumberFormat) {
+                    $transform->transformCollection($collection, $connectedDataSource);
+                    continue;
+                }
+            }
+        }
+
+        return $collection;
+    }
+
+    /**
+     * @param ParserConfig $parserConfig
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param Collection $collection
+     * @return Collection
+     */
+    private function executeOtherTransforms(ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
+    {
+        /** Execute other transforms */
+        $allFieldsTransforms = $parserConfig->getCollectionTransforms();
+
+        if (!is_array($allFieldsTransforms)) {
+            return $collection;
+        }
+
+        foreach ($allFieldsTransforms as $transform) {
+            /** @var CollectionTransformerInterface $transform */
+            if ($transform instanceof Augmentation) {
+                continue;
+            }
+
+            if ($transform instanceof GroupByColumns) {
+                $collection = $transform->transform($collection, $this->em, $connectedDataSource);
+                continue;
+            }
+
+            if ($transform instanceof SubsetGroup) {
+                $collection = $transform->transform($collection, $this->em, $connectedDataSource);
+                continue;
+            }
+
+            $collection = $transform->transform($collection);
+        }
+
+        return $collection;
+    }
+
+	/**
+     * @param ParserConfig $parserConfig
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param Collection $collection
+     * @return Collection
+     */
+    private function executeAugmentationTransform(ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
+    {
+        /** Execute other transforms */
+        $allFieldsTransforms = $parserConfig->getCollectionTransforms();
+
+        if (!is_array($allFieldsTransforms)) {
+            return $collection;
+        }
+
+        /** Execute last transform Augmentation */
+        $fromDateFormat = $this->getFromDateFormats($parserConfig);
+        $mapFields = $connectedDataSource->getMapFields();
+
+        foreach ($allFieldsTransforms as $transform) {
+            /** @var CollectionTransformerInterface $transform */
+            if ($transform instanceof Augmentation) {
+                $collection = $transform->transform($collection, $this->em, $connectedDataSource, $fromDateFormat, $mapFields);
+            }
+        }
+
+        return $collection;
+    }
+
+    /**
+     * @param ParserConfig $parserConfig
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param Collection $collection
+     * @return Collection
+     */
+    private function getFinalCollection(ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
+    {
+        $collection = $this->overWriteDuplicate($connectedDataSource, $parserConfig, $collection);
+        $collection = $this->removeTemporaryFields($collection, $connectedDataSource);
+
+        if ($collection->getRows()->count() < 1) {
+            return $collection;
+        }
+        $columns = $this->getColumnsAfterDoCollectionTransforms($collection->getRows()[0], array_flip($parserConfig->getAllColumnMappings()), $collection->getColumns());
+
+        $collection = $this->switchFieldInFileToFieldInDataSet($collection->getRows(), $columns, $parserConfig);
+
+        return $collection;
+    }
+
+	/**
+     * @param ParserConfig $parserConfig
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param Collection $collection
+     * @return Collection
+     */
+    private function executeExtraTransforms(ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
+    {
+        $groups = $parserConfig->getExtraColumnTransforms();
+
+        if (!is_array($groups)) {
+            return $collection;
+        }
+
+        /** Execute Date Format first */
+        foreach ($groups as $column => $transforms) {
+            foreach ($transforms as $transform) {
+                if ($transform instanceof DateFormat) {
+                    $transform->transformCollection($collection, $connectedDataSource);
+                    continue;
+                }
+
+                if ($transform instanceof NumberFormat) {
+                    $transform->transformCollection($collection, $connectedDataSource);
+                    continue;
+                }
+            }
+        }
+
+        return $collection;
     }
 }

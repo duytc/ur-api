@@ -3,17 +3,17 @@
 
 namespace UR\Service\Parser\Transformer\Collection;
 
-
-use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use SplDoublyLinkedList;
+use UR\Behaviors\ParserUtilTrait;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
-use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class SubsetGroup implements CollectionTransformerInterface
 {
+    use ParserUtilTrait;
+
     const DATA_SOURCE_SIDE = 'leftSide';
     const GROUP_DATA_SET_SIDE = 'rightSide';
 
@@ -61,107 +61,31 @@ class SubsetGroup implements CollectionTransformerInterface
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
         $rows = $collection->getRows();
-        $columns = $collection->getColumns();
-        $types = $collection->getTypes();
-
-        $mappedFields = array_flip($connectedDataSource->getMapFields());
-        $allFields = $connectedDataSource->getDataSet()->getAllDimensionMetrics();
-        foreach ($rows as $row) {
-            $dataColumns = array_keys($row);
-            foreach ($this->groupFields as &$groupField) {
-                if (!in_array($groupField, $dataColumns)) {
-                    if (!array_key_exists($groupField, $mappedFields)) {
-                        return $collection;
-                    }
-
-                    $groupField = $mappedFields[$groupField];
-                }
-            }
-
-            break;
+        if ($rows instanceof SplDoublyLinkedList && count($rows) < 1) {
+            return $collection;
         }
 
-        foreach ($this->mapFields as $mapField) {
-            $field = $mapField[self::DATA_SOURCE_SIDE];
-            if (in_array($field, $columns)) {
-                continue;
-            }
-
-            $columns[] = $field;
-        }
-
-        // create subset
-        $copyCollection = clone $collection;
-        $aggregationFields = array_keys(array_intersect(array_flip($connectedDataSource->getMapFields()), $this->aggregationFields));
-        $groupByTransform = new GroupByColumns($this->groupFields, $this->aggregateAll, $aggregationFields);
-        $subsetRows = $groupByTransform->transform($copyCollection, $em, $connectedDataSource, $fromDateFormats, $connectedDataSource->getMapFields())->getRows();
-        $subsetKeys = [];
-
-        $subSetData = [];
-        foreach ($subsetRows as $row) {
-            $subsetKeys[] = $this->getJoinKey($this->groupFields, $row, $connectedDataSource);
-            $subSetData[] = $row;
-        }
-
-        $subsetRows = array_combine($subsetKeys, $subSetData);
-
+        $collection = $this->updateColumns($connectedDataSource, $collection);
+        $sumFields = $this->getSumFields();
+        $groupedReports = $this->generateGroupedArray($this->groupFields, $collection);
         $newRows = new SplDoublyLinkedList();
-        foreach ($rows as $row) {
-            $joinKey = $this->getJoinKey($this->groupFields, $row, $connectedDataSource);
 
-            if (!isset($subsetRows[$joinKey])) {
-                continue;
-            }
-
-            $subsetRow = $subsetRows[$joinKey];
-            foreach ($this->mapFields as $mapField) {
-                $leftSide = $mapField[self::DATA_SOURCE_SIDE];
-                $rightSide = $mapField[self::GROUP_DATA_SET_SIDE];
-                $isNumber = array_key_exists($leftSide, $allFields) && $allFields[$leftSide] == FieldType::NUMBER;
-                $row[$leftSide] = $isNumber ? round($subsetRow[$rightSide]) : $subsetRow[$rightSide];
-            }
-            $newRows->push($row);
-            unset($row);
-        }
-
-        unset($rows, $row);
-        unset($collection, $copyCollection, $subsetRows, $subSetData, $subsetKeys);
-        return new Collection($columns, $newRows, $types);
-    }
-
-    /**
-     * @param array $columns
-     * @param array $row
-     * @param ConnectedDataSourceInterface $connectedDataSource
-     * @return string
-     */
-    protected function getJoinKey(array $columns, array $row, ConnectedDataSourceInterface $connectedDataSource)
-    {
-        $data = [];
-
-        // need to guarantee column order is the same or key hash will be different
-        foreach ($columns as $column) {
-            $fieldType = $this->getFieldType($column, $connectedDataSource);
-            if (isset($row[$column])) {
-                if ($fieldType == FieldType::DATETIME || $fieldType == FieldType::DATE) { // include format type DATE because now support partial match
-                    $date = DateTime::createFromFormat(GroupByColumns::TEMPORARY_DATE_FORMAT, $row[$column]);
-                    if ($date instanceof DateTime) {
-                        $data[] = $date->format(DateFormat::DEFAULT_DATE_FORMAT);
-                        continue;
-                    }
-
-                    $data[] = DateFormat::getDateFromDateTime($row[$column], $column, $connectedDataSource);
-                } else {
-                    $data[] = $row[$column];
+        foreach ($groupedReports as $groupedReport) {
+            $mapValuesAllRows = [];
+            if (empty($sumFields)) {
+                $headerRow = reset($groupedReport);
+                $mapValuesAllRows = $this->getMapValues($headerRow);
+            } else {
+                foreach ($groupedReport as $row) {
+                    $mapValuesOneRow = $this->getMapValues($row);
+                    $mapValuesAllRows = $this->mergeSubSetResult($mapValuesAllRows, $mapValuesOneRow, $collection);
                 }
             }
+            $this->addMapValuesToRows($newRows, $mapValuesAllRows, $groupedReport);
         }
 
-        $key = md5(join('|', $data));
-
-        return $key;
+        return new Collection($collection->getColumns(), $newRows, $collection->getTypes());
     }
-
 
     /**
      * The idea is that some column transformers should run before others to avoid conflicts
@@ -199,24 +123,137 @@ class SubsetGroup implements CollectionTransformerInterface
     }
 
     /**
-     * @param $fieldFromFile
      * @param ConnectedDataSourceInterface $connectedDataSource
-     * @return string
+     * @param Collection $collection
+     * @return Collection
      */
-    private function getFieldType($fieldFromFile, ConnectedDataSourceInterface $connectedDataSource)
+    private function updateColumns(ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
     {
-        $mapFields = $connectedDataSource->getMapFields();
-        if (!array_key_exists($fieldFromFile, $mapFields)) {
-            return null;
+        $rows = $collection->getRows();
+        $columns = $collection->getColumns();
+
+        if ($rows->count() < 1) {
+            return $collection;
+        }
+        $mappedFields = array_flip($connectedDataSource->getMapFields());
+        foreach ($rows as $row) {
+            $dataColumns = array_keys($row);
+            foreach ($this->groupFields as &$groupField) {
+                if (!in_array($groupField, $dataColumns)) {
+                    if (!array_key_exists($groupField, $mappedFields)) {
+                        return $collection;
+                    }
+
+                    $groupField = $mappedFields[$groupField];
+                }
+            }
+
+            break;
         }
 
-        $field = $mapFields[$fieldFromFile];
-        $dataSet = $connectedDataSource->getDataSet();
-        $allFields = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+        foreach ($this->mapFields as $mapField) {
+            if (!array_key_exists(self::DATA_SOURCE_SIDE, $mapField)) {
+                continue;
+            }
+            $field = $mapField[self::DATA_SOURCE_SIDE];
 
-        if (!array_key_exists($field, $allFields)) {
-            return null;
+            if (in_array($field, $columns)) {
+                continue;
+            }
+
+            $columns[] = $field;
         }
-        return $allFields[$field];
+
+        $collection->setColumns($columns);
+
+        return $collection;
+    }
+
+    /**
+     * @return array
+     */
+    private function getSumFields()
+    {
+        if ($this->aggregateAll) {
+            $mapFields = $this->getMapFields();
+
+            if (!is_array($mapFields)) {
+                return [];
+            }
+
+            $sumFields = [];
+
+            foreach ($mapFields as $mapField) {
+                if (!array_key_exists(self::GROUP_DATA_SET_SIDE, $mapField)) {
+                    continue;
+                }
+                $sumFields[] = $mapField[self::GROUP_DATA_SET_SIDE];
+            }
+
+            return $sumFields;
+        } else {
+            return $this->aggregationFields == null ? [] : $this->aggregationFields;
+        }
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    private function getMapValues(array $row)
+    {
+        $map = [];
+        foreach ($this->mapFields as $mapField) {
+            if (!array_key_exists(self::DATA_SOURCE_SIDE, $mapField) || !array_key_exists(self::GROUP_DATA_SET_SIDE, $mapField)) {
+                continue;
+            }
+
+            $leftSide = $mapField[self::DATA_SOURCE_SIDE];
+            $rightSide = $mapField[self::GROUP_DATA_SET_SIDE];
+
+            if (!array_key_exists($rightSide, $row)) {
+                continue;
+            }
+
+            $map[$leftSide] = $row[$rightSide];
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param array $mapValueAllRows
+     * @param array $mapValueOneRow
+     * @param Collection $collection
+     * @return array
+     */
+    private function mergeSubSetResult(array $mapValueAllRows, array $mapValueOneRow, Collection $collection)
+    {
+        foreach ($mapValueOneRow as $key => $value) {
+            if (in_array($collection->getTypeOf($key), [FieldType::NUMBER, FieldType::DECIMAL])) {
+                $mapValueOneRow[$key] += array_key_exists($key, $mapValueAllRows) ? $mapValueAllRows[$key] : 0;
+            }
+        }
+
+        return $mapValueOneRow;
+    }
+
+    /**
+     * @param SplDoublyLinkedList $newRows
+     * @param array $map
+     * @param array $groupedReport
+     * @return SplDoublyLinkedList
+     */
+    private function addMapValuesToRows(SplDoublyLinkedList $newRows, array $map, array $groupedReport)
+    {
+        foreach ($groupedReport as $row) {
+            foreach ($map as $field => $value) {
+                $row[$field] = $value;
+            }
+
+            $newRows->push($row);
+        }
+
+        return $newRows;
     }
 }
