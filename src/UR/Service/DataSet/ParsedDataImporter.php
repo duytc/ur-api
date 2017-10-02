@@ -98,6 +98,7 @@ class ParsedDataImporter
             $question_marks = [];
             $uniqueIds = [];
             $this->preparedInsertCount = 0;
+            $entryDateStr = $entryDate->format('Y-m-d H:i:s');
             foreach ($rows as $index => $row) {
                 if (!is_array($row)) {
                     continue;
@@ -114,7 +115,7 @@ class ParsedDataImporter
                 $row[DataSetInterface::CONNECTED_DATA_SOURCE_ID_COLUMN] = $connectedDataSource->getId();
                 $row[DataSetInterface::IMPORT_ID_COLUMN] = $importId;
                 $row[DataSetInterface::UNIQUE_ID_COLUMN] = $uniqueId;
-                $row[DataSetInterface::ENTRY_DATE_COLUMN] = $entryDate->format('Y-m-d H:i:sP');
+                $row[DataSetInterface::ENTRY_DATE_COLUMN] = $entryDateStr;
                 //update
                 $uniqueIds[] = $uniqueId;
                 $question_marks[] = '(' . $this->placeholders('?', sizeof($row)) . ')';
