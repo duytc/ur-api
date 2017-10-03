@@ -207,7 +207,7 @@ class UpdateConnectedDataSourceWhenDataSetChangedListener
     private function updateConnectedCollectionTransform(array &$transform, array $delFields, array $updatedFields, array &$transforms, &$key, CollectionTransformerInterface $transformObject, $dataSetId = null)
     {
         if ($transformObject instanceof Augmentation) {
-            $mapConditions = $transformObject->getMapConditions();
+            $mapConditions = $transformObject->getMapCondition();
             foreach ($mapConditions as &$mapCondition) {
                 if (array_key_exists($mapCondition[Augmentation::MAP_DATA_SET_SIDE], $updatedFields)
                     && $transformObject->getMapDataSet() == $dataSetId && $dataSetId !== null

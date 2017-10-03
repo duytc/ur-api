@@ -20,13 +20,13 @@ use UR\Service\Metadata\MetadataInterface;
 use UR\Service\Parser\Filter\FilterFactory;
 use UR\Service\Parser\Transformer\Collection\AddField;
 use UR\Service\Parser\Transformer\Collection\Augmentation;
+use UR\Service\Parser\Transformer\Collection\CollectionTransformerAugmentationInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\ExtractPattern;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Collection\ReplaceText;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Parser\Transformer\Collection\SubsetGroup;
-use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Service\Parser\Transformer\Column\NumberFormat;
 use UR\Service\Parser\Transformer\TransformerFactory;
@@ -242,9 +242,12 @@ class ParsingFileService
                     $this->addInternalVariableToTransform($transformObject->getField(), $transformObject->getTargetField(), $allFields, $parserConfig, $dataSourceEntry);
                 }
 
-                $parserConfig->addTransformCollection($transformObject);
-
-                $this->addExtraColumnParserConfig($parserConfig, $transformObject, $connectedDataSource->getDataSet()->getDimensions());
+                if ($transformObject instanceof CollectionTransformerAugmentationInterface) {
+                    $parserConfig->addAugmentationTransformCollection($transformObject);
+                } else {
+                    $parserConfig->addTransformCollection($transformObject);
+                    $this->addExtraColumnParserConfig($parserConfig, $transformObject, $connectedDataSource->getDataSet()->getDimensions());
+                }
             }
         }
     }

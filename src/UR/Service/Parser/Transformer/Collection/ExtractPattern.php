@@ -74,6 +74,8 @@ class ExtractPattern implements CollectionTransformerInterface
      * @param Collection $collection
      * @param EntityManagerInterface|null $em
      * @param ConnectedDataSourceInterface|null $connectedDataSource
+     * @param array $fromDateFormats
+     * @param array $mapFields
      * @return Collection
      */
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])

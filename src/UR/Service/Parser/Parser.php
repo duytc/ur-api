@@ -343,7 +343,7 @@ class Parser implements ParserInterface
         return $collection;
     }
 
-	/**
+    /**
      * @param ParserConfig $parserConfig
      * @return array
      */
@@ -361,7 +361,7 @@ class Parser implements ParserInterface
         return $fromDateFormat;
     }
 
-	/**
+    /**
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param ParserConfig $parserConfig
      * @param Collection $collection
@@ -378,7 +378,7 @@ class Parser implements ParserInterface
         return $collection;
     }
 
-	/**
+    /**
      * @param ParserConfig $parserConfig
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param Collection $collection
@@ -447,7 +447,7 @@ class Parser implements ParserInterface
         return $collection;
     }
 
-	/**
+    /**
      * @param ParserConfig $parserConfig
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param Collection $collection
@@ -456,7 +456,7 @@ class Parser implements ParserInterface
     private function executeAugmentationTransform(ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
     {
         /** Execute other transforms */
-        $allFieldsTransforms = $parserConfig->getCollectionTransforms();
+        $allFieldsTransforms = $parserConfig->getAugmentationTransforms();
 
         if (!is_array($allFieldsTransforms)) {
             return $collection;
@@ -464,12 +464,10 @@ class Parser implements ParserInterface
 
         /** Execute last transform Augmentation */
         $fromDateFormat = $this->getFromDateFormats($parserConfig);
-        $mapFields = $connectedDataSource->getMapFields();
 
         foreach ($allFieldsTransforms as $transform) {
-            /** @var CollectionTransformerInterface $transform */
             if ($transform instanceof Augmentation) {
-                $collection = $transform->transform($collection, $this->em, $connectedDataSource, $fromDateFormat, $mapFields);
+                $collection = $transform->transform($collection, $this->em, $connectedDataSource, $fromDateFormat);
             }
         }
 
@@ -497,7 +495,7 @@ class Parser implements ParserInterface
         return $collection;
     }
 
-	/**
+    /**
      * @param ParserConfig $parserConfig
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param Collection $collection

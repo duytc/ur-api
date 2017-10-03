@@ -3,6 +3,7 @@
 namespace UR\Service\Parser;
 
 use UR\Service\Parser\Filter\ColumnFilterInterface;
+use UR\Service\Parser\Transformer\Collection\CollectionTransformerAugmentationInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\PublicSimpleException;
@@ -22,6 +23,9 @@ class ParserConfig
      * @var CollectionTransformerInterface[]
      */
     protected $collectionTransforms = [];
+
+    /** @var  CollectionTransformerAugmentationInterface[] */
+    protected $augmentationTransforms = [];
 
     /**
      * Extra fields is field not mapping with data source, they come from Transformation ad Add Field, Extract Pattern ... and need reformat in the end
@@ -102,6 +106,13 @@ class ParserConfig
         return $this;
     }
 
+    public function addAugmentationTransformCollection(CollectionTransformerAugmentationInterface $transform)
+    {
+        $this->augmentationTransforms[] = $transform;
+
+        return $this;
+    }
+
     /**
      * @return array
      */
@@ -162,5 +173,13 @@ class ParserConfig
     public function getExtraColumnTransforms()
     {
         return $this->extraColumnTransforms;
+    }
+
+    /**
+     * @return Transformer\Collection\CollectionTransformerAugmentationInterface[]
+     */
+    public function getAugmentationTransforms(): array
+    {
+        return $this->augmentationTransforms;
     }
 }

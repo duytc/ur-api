@@ -13,7 +13,7 @@ use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
 use UR\Service\Report\SqlBuilder;
 
-class Augmentation implements CollectionTransformerInterface
+class Augmentation implements CollectionTransformerAugmentationInterface
 {
     use ParserUtilTrait;
 
@@ -79,7 +79,7 @@ class Augmentation implements CollectionTransformerInterface
         $this->mapConditions = $mapConditions;
     }
 
-    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
+    public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [])
     {
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
@@ -141,7 +141,6 @@ class Augmentation implements CollectionTransformerInterface
             $columns[] = $field;
         }
 
-
         $newRows = new SplDoublyLinkedList();
         foreach ($rows as $index => $row) {
             $mapFields = $this->getMappedValue($mappedResult, $row, $types, $fromDateFormats, $connectedDataSource->getMapFields(), $matched);
@@ -155,6 +154,7 @@ class Augmentation implements CollectionTransformerInterface
         }
 
         unset($collection, $rows, $row);
+
         return new Collection($columns, $newRows, $types);
     }
 
@@ -167,7 +167,7 @@ class Augmentation implements CollectionTransformerInterface
     {
         foreach($mappedResult as $result) {
             $matched = true;
-            
+
             foreach ($this->mapConditions as $mapCondition) {
                 $leftField = $mapCondition[self::DATA_SOURCE_SIDE];
                 $rightField = $mapCondition[self::MAP_DATA_SET_SIDE];
@@ -250,7 +250,6 @@ class Augmentation implements CollectionTransformerInterface
     {
         return $this->selectedFields;
     }
-
 
     /**
      * @return array
