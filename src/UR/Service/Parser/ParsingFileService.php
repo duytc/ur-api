@@ -7,11 +7,12 @@ use Exception;
 use SplDoublyLinkedList;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\DataSet\FieldType;
+use UR\Service\DataSet\TransformOrdersServiceInterface;
 use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\DataSource\DataSourceInterface;
-use UR\Service\DataSource\Excel;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Metadata\DataSourceEntryMetadataFactory;
@@ -19,14 +20,11 @@ use UR\Service\Metadata\Email\EmailMetadata;
 use UR\Service\Metadata\MetadataInterface;
 use UR\Service\Parser\Filter\FilterFactory;
 use UR\Service\Parser\Transformer\Collection\AddField;
-use UR\Service\Parser\Transformer\Collection\Augmentation;
-use UR\Service\Parser\Transformer\Collection\CollectionTransformerAugmentationInterface;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\ExtractPattern;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 use UR\Service\Parser\Transformer\Collection\ReplaceText;
 use UR\Service\Parser\Transformer\Collection\SortByColumns;
-use UR\Service\Parser\Transformer\Collection\SubsetGroup;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Service\Parser\Transformer\Column\NumberFormat;
 use UR\Service\Parser\Transformer\TransformerFactory;
@@ -34,6 +32,9 @@ use UR\Service\Parser\Transformer\TransformerFactory;
 class ParsingFileService
 {
     protected $parser;
+
+    /** @var TransformOrdersServiceInterface  */
+    protected $transformOrdersService;
 
     /**
      * @var ParserConfig $parserConfig
@@ -56,11 +57,13 @@ class ParsingFileService
      * ParsingFileService constructor.
      * @param Parser $parser
      * @param DataSourceFileFactory $fileFactory
+     * @param TransformOrdersServiceInterface $transformOrders
      */
-    public function __construct(Parser $parser, DataSourceFileFactory $fileFactory)
+    public function __construct(Parser $parser, DataSourceFileFactory $fileFactory, TransformOrdersServiceInterface $transformOrders)
     {
         $this->parser = $parser;
         $this->fileFactory = $fileFactory;
+        $this->transformOrdersService = $transformOrders;
     }
 
     /**
@@ -87,11 +90,6 @@ class ParsingFileService
 
         if ($dataRow < 1) {
             throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_DATA_ROW_FOUND);
-        }
-
-        if ($dataSourceFileData instanceof Excel) {
-            $formats = $this->getFormatDateForEachFieldInDataSourceFile();
-            $dataSourceFileData->setFromDateFormats($formats);
         }
 
         /* 1. get all row data */
@@ -189,8 +187,7 @@ class ParsingFileService
         $tempFields = array_flip($connectedDataSource->getTemporaryFields());
         $allFields = array_merge($allDimensionMetrics, $tempFields);
 
-        /** Extra fields is field not mapping with data source, they come from Transformation ad Add Field, Extract Pattern ... and need reformat in the end */
-        $extraFields = [];
+        $allTransforms = [];
 
         foreach ($connectedDataSource->getTransforms() as $transform) {
             if (!is_array($transform)) {
@@ -200,11 +197,7 @@ class ParsingFileService
             $transformObjects = $this->transformerFactory->getTransform($transform);
 
             if ($transformObjects instanceof DateFormat || $transformObjects instanceof NumberFormat) {
-                if (in_array($transformObjects->getField(), $extraFields)) {
-                    $parserConfig->addExtraTransformColumn($transformObjects->getField(), $transformObjects);
-                } else {
-                    $parserConfig->addTransformColumn($transformObjects->getField(), $transformObjects);
-                }
+                $allTransforms[] = $transformObjects;
 
                 continue;
             }
@@ -214,7 +207,9 @@ class ParsingFileService
              */
             if ($transformObjects instanceof GroupByColumns || $transformObjects instanceof SortByColumns) {
                 $transformObjects->validate();
-                $parserConfig->addTransformCollection($transformObjects);
+
+                $allTransforms[] = $transformObjects;
+
                 continue;
             }
 
@@ -238,18 +233,15 @@ class ParsingFileService
                     $type = array_key_exists($transformObject->getColumn(), $tempFields) ? FieldType::TEXT : $allFields[$transformObject->getColumn()];
                     $transformObject->setType($type);
                 } else if ($transformObject instanceof ReplaceText || $transformObject instanceof ExtractPattern) {
-                    $extraFields[] = $transformObject->getTargetField();
                     $this->addInternalVariableToTransform($transformObject->getField(), $transformObject->getTargetField(), $allFields, $parserConfig, $dataSourceEntry);
                 }
 
-                if ($transformObject instanceof CollectionTransformerAugmentationInterface) {
-                    $parserConfig->addAugmentationTransformCollection($transformObject);
-                } else {
-                    $parserConfig->addTransformCollection($transformObject);
-                    $this->addExtraColumnParserConfig($parserConfig, $transformObject, $connectedDataSource->getDataSet()->getDimensions());
-                }
+                $allTransforms[] = $transformObject;
             }
         }
+
+        $allTransforms = $this->transformOrdersService->orderTransforms($allTransforms, $connectedDataSource);
+        $this->parserConfig->setTransforms($allTransforms);
     }
 
     /**
@@ -290,7 +282,7 @@ class ParsingFileService
         $internalField = sprintf("[%s]", $field);
         $metadataFields = array_merge(EmailMetadata::$internalFields);
         if (in_array($internalField, $metadataFields)) {
-            $parserConfig->addTransformCollection(new AddField($field, $this->getSingleMetaDataFieldValue($internalField, $dataSourceEntry), FieldType::TEXT));
+            $parserConfig->addTransform(new AddField($field, $this->getSingleMetaDataFieldValue($internalField, $dataSourceEntry), FieldType::TEXT));
         }
 
         if ($targetField !== null && array_key_exists($targetField, $allFields)) {
@@ -302,38 +294,49 @@ class ParsingFileService
     }
 
     /**
-     * @param $rows
-     * @param array $allFields
+     * @param Collection $collection
+     * @param ConnectedDataSourceInterface $connectedDataSource
      * @return Collection
      */
-    public function setDataOfColumnsNotMappedToNull(SplDoublyLinkedList $rows, array $allFields)
+    public function setDataOfColumnsNotMappedToNull(Collection $collection, ConnectedDataSourceInterface $connectedDataSource)
     {
+        $dataSet = $connectedDataSource->getDataSet();
+
+        if (!$dataSet instanceof DataSetInterface) {
+            return $collection;
+        }
+
+        $allFields = $dataSet->getAllDimensionMetrics();
+
+        if (!is_array($allFields) || empty($allFields)) {
+            return $collection;
+        }
+
+        $rows = $collection->getRows();
         $newRows = new SplDoublyLinkedList();
+
         foreach ($rows as $row) {
             if (!is_array($row)) {
                 continue;
             }
 
-            $temp = [];
+            /**
+             * Notice: Keeping order of fields as all dimension metric of data set to ensure import database success
+             * Use  $newRows->push($row) causing many problem.
+             * So we use $newRows->push($newRow);
+             */
+            $newRow = [];
             foreach ($allFields as $field => $type) {
                 if (!array_key_exists($field, $row)) {
-                    $temp[$field] = null;
-                } else if ($row[$field] === null) {
-                    $temp[$field] = null;
-                } else if ($type === FieldType::NUMBER) {
-                    $temp[$field] = round($row[$field]);
-                } else if ($type === FieldType::DECIMAL) {
-                    $temp[$field] = floatval($row[$field]);
+                    $newRow[$field] = null;
                 } else {
-                    $temp[$field] = $row[$field];
+                    $newRow[$field] = $row[$field];
                 }
             }
 
-            $newRows->push($temp);
-            unset($row);
+            $newRows->push($newRow);
         }
 
-        unset($rows, $row);
         return new Collection(array_keys($allFields), $newRows);
     }
 
@@ -354,49 +357,6 @@ class ParsingFileService
         }
 
         return $dataSourceEntryMetadata->getMetadataValueByInternalVariable($internalField);
-    }
-
-    private function getFormatDateForEachFieldInDataSourceFile()
-    {
-        $formats = [];//format date
-        foreach ($this->parserConfig->getColumnTransforms() as $field => $columnTransform) {
-            foreach ($columnTransform as $item) {
-                if ($item instanceof DateFormat) {
-                    $formats[$field] = $item->getFromDateFormats();
-                }
-            }
-        }
-
-        return $formats;
-    }
-
-    private function addExtraColumnParserConfig(ParserConfig $parserConfig, CollectionTransformerInterface $transformObject, array $dimensions)
-    {
-        $extraColumns = [];
-        if ($transformObject instanceof AddField) {
-            $extraColumns[] = $transformObject->getColumn();
-        }
-
-
-        if ($transformObject instanceof ExtractPattern || $transformObject instanceof ReplaceText) {
-            if (!$transformObject->isIsOverride()) {
-                $extraColumns[] = $transformObject->getTargetField();
-            }
-        }
-
-        if ($transformObject instanceof Augmentation || $transformObject instanceof SubsetGroup) {
-            foreach ($transformObject->getMapFields() as $mapField) {
-                $extraColumns[] = $mapField[Augmentation::DATA_SOURCE_SIDE];
-            }
-        }
-
-        foreach ($extraColumns as $extraColumn) {
-            if (!array_key_exists($extraColumn, $dimensions) || $parserConfig->hasColumnMapping($extraColumn)) {
-                continue;
-            }
-
-            $parserConfig->addColumn($extraColumn, $extraColumn);
-        }
     }
 
     private function addPrefixForColumnsFromFile(array &$columns)
@@ -454,7 +414,7 @@ class ParsingFileService
         $dataSet = $connectedDataSource->getDataSet();
         $types = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
         $requireFields = array_filter($requireFields, function ($requireField) use ($mapFields) {
-           return  array_key_exists($requireField, $mapFields);
+            return  array_key_exists($requireField, $mapFields);
         });
 
         if (count($requireFields) < 1) {

@@ -256,4 +256,36 @@ class SubsetGroup implements CollectionTransformerInterface
 
         return $newRows;
     }
+
+    /**
+     * @return array
+     */
+    public function getAggregationFields()
+    {
+        return $this->aggregationFields;
+    }
+
+    /**
+     * @param array $aggregationFields
+     */
+    public function setAggregationFields($aggregationFields)
+    {
+        $this->aggregationFields = $aggregationFields;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isAggregateAll()
+    {
+        return $this->aggregateAll;
+    }
+
+    /**
+     * @param boolean $aggregateAll
+     */
+    public function setAggregateAll($aggregateAll)
+    {
+        $this->aggregateAll = $aggregateAll;
+    }
 }

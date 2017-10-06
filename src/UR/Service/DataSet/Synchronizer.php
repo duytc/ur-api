@@ -165,7 +165,7 @@ class Synchronizer
             $truncateSql = $this->conn->getDatabasePlatform()->getTruncateTableSQL(self::getDataSetImportTableName($dataSet->getId()));
             $this->conn->exec($truncateSql);
         } catch (\Exception $e) {
-            throw new \mysqli_sql_exception(sprintf('Cannot Sync Schema %s, exception: %s', $schema->getName(), $e->getMessage()));
+            
         }
 
         return $dataSetImportTable;
@@ -381,7 +381,12 @@ class Synchronizer
             self::prepareStatementCreateIndex($conn, $indexName, $dataSetImportTable->getName(), $columnNamesAndLengths);
         }
 
-        $conn->commit();
+        try {
+            $conn->commit();
+        } catch (\Exception $e) {
+
+        }
+
 
         // remove non existing indexes
         $conn->beginTransaction();
@@ -404,7 +409,11 @@ class Synchronizer
             $removedIndexesCount++;
         }
 
-        $conn->commit();
+        try {
+            $conn->commit();
+        } catch (\Exception $e) {
+
+        }
 
         return $createdIndexesCount;
     }

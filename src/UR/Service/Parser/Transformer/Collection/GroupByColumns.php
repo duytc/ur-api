@@ -121,4 +121,52 @@ class GroupByColumns implements CollectionTransformerInterface
     {
         return $this->groupByColumns;
     }
+
+    /**
+     * @return string
+     */
+    public function getTimezone()
+    {
+        return $this->timezone;
+    }
+
+    /**
+     * @param string $timezone
+     */
+    public function setTimezone($timezone)
+    {
+        $this->timezone = $timezone;
+    }
+
+    /**
+     * @return array
+     */
+    public function getAggregationFields()
+    {
+        return $this->aggregationFields;
+    }
+
+    /**
+     * @param array $aggregationFields
+     */
+    public function setAggregationFields($aggregationFields)
+    {
+        $this->aggregationFields = $aggregationFields;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isAggregateAll()
+    {
+        return $this->aggregateAll;
+    }
+
+    /**
+     * @param boolean $aggregateAll
+     */
+    public function setAggregateAll($aggregateAll)
+    {
+        $this->aggregateAll = $aggregateAll;
+    }
 }

@@ -547,6 +547,7 @@ services:
         arguments:
             - @ur.service.parser
             - @ur.service.file_factory
+            - @ur.service.transform_orders_service
 
     ur.service.data_set.importer:
         class: UR\Service\DataSet\ParsedDataImporter
@@ -577,6 +578,9 @@ services:
             - '@doctrine.orm.entity_manager'
             - '@ur.domain_manager.data_set'
             - '@ur.services.report.sql_builder'
+
+    ur.service.transform_orders_service:
+        class: UR\Service\DataSet\TransformOrdersService
 
     ur.service.augmentation_mapping_service:
         class: UR\Service\DataSet\AugmentationMappingService

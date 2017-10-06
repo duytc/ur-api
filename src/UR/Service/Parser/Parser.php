@@ -62,19 +62,9 @@ class Parser implements ParserInterface
 
         $collection = $this->urEventDispatcher->preTransformColumnDataEvent($connectedDataSource, $collection);
 
-        /** Execute Format transforms first, for DateFormat and NumberFormat */
-        $collection = $this->executeFormatTransform($parserConfig, $connectedDataSource, $collection);
-
         $collection = $this->urEventDispatcher->preTransformCollectionDataEvent($connectedDataSource, $collection);
 
-        /** Execute other transforms */
-        $collection = $this->executeOtherTransforms($parserConfig, $connectedDataSource, $collection);
-
-        /** Execute last transform Augmentation */
-        $collection = $this->executeAugmentationTransform($parserConfig, $connectedDataSource, $collection);
-
-        /** Execute extra transforms */
-        $collection = $this->executeExtraTransforms($parserConfig, $connectedDataSource, $collection);
+        $collection = $this->executeTransforms($parserConfig, $connectedDataSource, $collection);
 
         $collection = $this->getFinalCollection($parserConfig, $connectedDataSource, $collection);
 
@@ -350,11 +340,9 @@ class Parser implements ParserInterface
     private function getFromDateFormats(ParserConfig $parserConfig)
     {
         $fromDateFormat = [];
-        foreach ($parserConfig->getColumnTransforms() as $column => $transforms) {
-            foreach ($transforms as $transform) {
-                if ($transform instanceof DateFormat) {
-                    $fromDateFormat[$column] = array('formats' => $transform->getFromDateFormats(), 'timezone' => $transform->getTimezone());
-                }
+        foreach ($parserConfig->getTransforms() as $transform) {
+            if ($transform instanceof DateFormat) {
+                $fromDateFormat[$transform->getField()] = array('formats' => $transform->getFromDateFormats(), 'timezone' => $transform->getTimezone());
             }
         }
 
@@ -384,79 +372,10 @@ class Parser implements ParserInterface
      * @param Collection $collection
      * @return Collection
      */
-    private function executeFormatTransform(ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
-    {
-        $groups = $parserConfig->getColumnTransforms();
-
-        if (!is_array($groups)) {
-            return $collection;
-        }
-
-        /** Execute Date Format first */
-        foreach ($groups as $column => $transforms) {
-            foreach ($transforms as $transform) {
-                if ($transform instanceof DateFormat) {
-                    $transform->transformCollection($collection, $connectedDataSource);
-                    continue;
-                }
-
-                if ($transform instanceof NumberFormat) {
-                    $transform->transformCollection($collection, $connectedDataSource);
-                    continue;
-                }
-            }
-        }
-
-        return $collection;
-    }
-
-    /**
-     * @param ParserConfig $parserConfig
-     * @param ConnectedDataSourceInterface $connectedDataSource
-     * @param Collection $collection
-     * @return Collection
-     */
-    private function executeOtherTransforms(ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
+    private function executeTransforms(ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
     {
         /** Execute other transforms */
-        $allFieldsTransforms = $parserConfig->getCollectionTransforms();
-
-        if (!is_array($allFieldsTransforms)) {
-            return $collection;
-        }
-
-        foreach ($allFieldsTransforms as $transform) {
-            /** @var CollectionTransformerInterface $transform */
-            if ($transform instanceof Augmentation) {
-                continue;
-            }
-
-            if ($transform instanceof GroupByColumns) {
-                $collection = $transform->transform($collection, $this->em, $connectedDataSource);
-                continue;
-            }
-
-            if ($transform instanceof SubsetGroup) {
-                $collection = $transform->transform($collection, $this->em, $connectedDataSource);
-                continue;
-            }
-
-            $collection = $transform->transform($collection);
-        }
-
-        return $collection;
-    }
-
-    /**
-     * @param ParserConfig $parserConfig
-     * @param ConnectedDataSourceInterface $connectedDataSource
-     * @param Collection $collection
-     * @return Collection
-     */
-    private function executeAugmentationTransform(ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
-    {
-        /** Execute other transforms */
-        $allFieldsTransforms = $parserConfig->getAugmentationTransforms();
+        $allFieldsTransforms = $parserConfig->getTransforms();
 
         if (!is_array($allFieldsTransforms)) {
             return $collection;
@@ -466,14 +385,27 @@ class Parser implements ParserInterface
         $fromDateFormat = $this->getFromDateFormats($parserConfig);
 
         foreach ($allFieldsTransforms as $transform) {
+            if ($transform instanceof DateFormat || $transform instanceof NumberFormat) {
+                $transform->transformCollection($collection, $connectedDataSource);
+                continue;
+            }
+
             if ($transform instanceof Augmentation) {
                 $collection = $transform->transform($collection, $this->em, $connectedDataSource, $fromDateFormat);
+                continue;
             }
+
+            if ($transform instanceof GroupByColumns || $transform instanceof SubsetGroup) {
+                $collection = $transform->transform($collection, $this->em, $connectedDataSource);
+                continue;
+            }
+
+            $collection = $transform->transform($collection);
         }
 
         return $collection;
     }
-
+    
     /**
      * @param ParserConfig $parserConfig
      * @param ConnectedDataSourceInterface $connectedDataSource
@@ -491,38 +423,6 @@ class Parser implements ParserInterface
         $columns = $this->getColumnsAfterDoCollectionTransforms($collection->getRows()[0], array_flip($parserConfig->getAllColumnMappings()), $collection->getColumns());
 
         $collection = $this->switchFieldInFileToFieldInDataSet($collection->getRows(), $columns, $parserConfig);
-
-        return $collection;
-    }
-
-    /**
-     * @param ParserConfig $parserConfig
-     * @param ConnectedDataSourceInterface $connectedDataSource
-     * @param Collection $collection
-     * @return Collection
-     */
-    private function executeExtraTransforms(ParserConfig $parserConfig, ConnectedDataSourceInterface $connectedDataSource, Collection $collection)
-    {
-        $groups = $parserConfig->getExtraColumnTransforms();
-
-        if (!is_array($groups)) {
-            return $collection;
-        }
-
-        /** Execute Date Format first */
-        foreach ($groups as $column => $transforms) {
-            foreach ($transforms as $transform) {
-                if ($transform instanceof DateFormat) {
-                    $transform->transformCollection($collection, $connectedDataSource);
-                    continue;
-                }
-
-                if ($transform instanceof NumberFormat) {
-                    $transform->transformCollection($collection, $connectedDataSource);
-                    continue;
-                }
-            }
-        }
 
         return $collection;
     }

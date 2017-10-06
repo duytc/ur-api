@@ -75,24 +75,73 @@ class NumberFormat extends AbstractCommonColumnTransform implements ColumnTransf
         $mapFields = array_flip($connectedDataSource->getMapFields());
         $dateFieldInDataSet = $this->getField();
 
-        if (!array_key_exists($dateFieldInDataSet, $mapFields)) {
-            return $collection;
+        $field = $dateFieldInDataSet;
+
+        if (array_key_exists($dateFieldInDataSet, $mapFields)) {
+            $field = $mapFields[$dateFieldInDataSet];
         }
 
-        $dateFieldInFile = $mapFields[$dateFieldInDataSet];
         $newRows = new SplDoublyLinkedList();
 
         foreach ($rows as $row) {
-            if (!array_key_exists($dateFieldInFile, $row)) {
+            if (!array_key_exists($field, $row)) {
                 continue;
             }
 
-            $row[$dateFieldInFile] = $this->transform($row[$dateFieldInFile]);
+            $row[$field] = $this->transform($row[$field]);
             $newRows->push($row);
         }
 
         $collection->setRows($newRows);
 
         return $collection;
+    }
+
+    /**
+     * @return array
+     */
+    public static function getSupportedThousandsSeparator()
+    {
+        return self::$supportedThousandsSeparator;
+    }
+
+    /**
+     * @param array $supportedThousandsSeparator
+     */
+    public static function setSupportedThousandsSeparator($supportedThousandsSeparator)
+    {
+        self::$supportedThousandsSeparator = $supportedThousandsSeparator;
+    }
+
+    /**
+     * @return int
+     */
+    public function getDecimals()
+    {
+        return $this->decimals;
+    }
+
+    /**
+     * @param int $decimals
+     */
+    public function setDecimals($decimals)
+    {
+        $this->decimals = $decimals;
+    }
+
+    /**
+     * @return string
+     */
+    public function getThousandsSeparator()
+    {
+        return $this->thousandsSeparator;
+    }
+
+    /**
+     * @param string $thousandsSeparator
+     */
+    public function setThousandsSeparator($thousandsSeparator)
+    {
+        $this->thousandsSeparator = $thousandsSeparator;
     }
 }

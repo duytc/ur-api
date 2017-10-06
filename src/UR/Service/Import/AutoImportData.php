@@ -163,8 +163,6 @@ class AutoImportData implements AutoImportDataInterface
      */
     private function parsingData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, $limit = null)
     {
-        $allFields = $connectedDataSource->getDataSet()->getAllDimensionMetrics();
-
         /*
          * parsing data
          */
@@ -172,64 +170,7 @@ class AutoImportData implements AutoImportDataInterface
         $this->parsingFileService->resetInjectParams();
         $collection = $this->parsingFileService->doParser($dataSourceEntry, $connectedDataSource, $limit);
         $this->logger->notice('parsing file completed');
-        $rows = $collection->getRows();
 
-        return $this->parsingFileService->setDataOfColumnsNotMappedToNull($rows, $allFields);
-    }
-
-    /**
-     * @param mixed $rows
-     * @param ConnectedDataSourceInterface $connectedDataSource
-     * @return mixed
-     */
-    private function removeRowsNotMapRequiresFields($rows, $connectedDataSource)
-    {
-        if (!is_array($rows)) {
-            return [];
-        }
-
-        $requireFields = $connectedDataSource->getRequires();
-        if (!is_array($requireFields)) {
-            return $rows;
-        }
-
-        $requireFields = array_values($requireFields);
-
-        if (empty($requireFields)) {
-            return $rows;
-        }
-
-        $dataSet = $connectedDataSource->getDataSet();
-        $types = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
-
-        foreach ($requireFields as $requireField) {
-            if (!array_key_exists($requireField, $types)) {
-                continue;
-            }
-            $type = $types[$requireField];
-
-            foreach ($rows as $index => &$row) {
-                if (!array_key_exists($requireField, $row)) {
-                    continue;
-                }
-                $value = FieldType::convertValue($row[$requireField], $type);
-
-                if ($type == FieldType::TEXT || $type == FieldType::LARGE_TEXT || $type == FieldType::DATE || $type == FieldType::DATETIME) {
-                    if (empty($value)) {
-                        unset($rows[$index]);
-                    }
-                    continue;
-                }
-
-                if ($type == FieldType::NUMBER || $type == FieldType::DECIMAL) {
-                    if ($value == null) {
-                        unset($rows[$index]);
-                    }
-                    continue;
-                }
-            }
-        }
-
-        return $rows;
+        return $this->parsingFileService->setDataOfColumnsNotMappedToNull($collection, $connectedDataSource);
     }
 }

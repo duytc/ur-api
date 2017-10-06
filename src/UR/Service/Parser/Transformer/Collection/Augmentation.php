@@ -43,9 +43,9 @@ class Augmentation implements CollectionTransformerAugmentationInterface
     protected $selectedFields;
 
     /**
-     * @var string
+     * @var array
      */
-    protected $customCondition;
+    protected $customConditions;
 
     /**
      * @var array
@@ -68,13 +68,13 @@ class Augmentation implements CollectionTransformerAugmentationInterface
      * @param array $mapConditions
      * @param array $mapFields
      * @param bool $dropUnmatched
-     * @param array $customCondition
+     * @param array $customConditions
      */
-    public function __construct($mapDataSet, $mapConditions, array $mapFields, $dropUnmatched = false, array $customCondition = [])
+    public function __construct($mapDataSet, $mapConditions, array $mapFields, $dropUnmatched = false, array $customConditions = [])
     {
         $this->mapDataSet = $mapDataSet;
         $this->mapFields = $mapFields;
-        $this->customCondition = $customCondition;
+        $this->customConditions = $customConditions;
         $this->dropUnmatched = $dropUnmatched;
         $this->mapConditions = $mapConditions;
     }
@@ -94,9 +94,9 @@ class Augmentation implements CollectionTransformerAugmentationInterface
         $qb->from($conn->quoteIdentifier($tableName))->select('*');
         $qb->where(sprintf('%s IS NULL', DataSetInterface::OVERWRITE_DATE));
 
-        if (is_array($this->customCondition)) {
+        if (is_array($this->customConditions)) {
             $mappedFields = [];
-            foreach ($this->customCondition as $index => $condition) {
+            foreach ($this->customConditions as $index => $condition) {
                 if (array_key_exists(self::CUSTOM_FIELD_KEY, $condition)
                     && array_key_exists(self::CUSTOM_OPERATOR_KEY, $condition)
                     && array_key_exists(self::CUSTOM_VALUE_KEY, $condition)
@@ -254,15 +254,15 @@ class Augmentation implements CollectionTransformerAugmentationInterface
     /**
      * @return array
      */
-    public function getCustomCondition()
+    public function getCustomConditions()
     {
-        return $this->customCondition;
+        return $this->customConditions;
     }
 
     /**
-     * @return string
+     * @return array
      */
-    public function getMapCondition(): string
+    public function getMapConditions(): array
     {
         return $this->mapConditions;
     }

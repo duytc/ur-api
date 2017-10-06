@@ -3,9 +3,6 @@
 namespace UR\Service\Parser;
 
 use UR\Service\Parser\Filter\ColumnFilterInterface;
-use UR\Service\Parser\Transformer\Collection\CollectionTransformerAugmentationInterface;
-use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
-use UR\Service\Parser\Transformer\Column\ColumnTransformerInterface;
 use UR\Service\PublicSimpleException;
 
 class ParserConfig
@@ -16,23 +13,9 @@ class ParserConfig
      */
     protected $columnFilters = [];
     /**
-     * @var ColumnTransformerInterface[]
+     * @var array
      */
-    protected $columnTransforms = [];
-    /**
-     * @var CollectionTransformerInterface[]
-     */
-    protected $collectionTransforms = [];
-
-    /** @var  CollectionTransformerAugmentationInterface[] */
-    protected $augmentationTransforms = [];
-
-    /**
-     * Extra fields is field not mapping with data source, they come from Transformation ad Add Field, Extract Pattern ... and need reformat in the end
-     *
-     * @var ColumnTransformerInterface[]
-     */
-    protected $extraColumnTransforms = [];
+    protected $transforms = [];
 
     /**
      * ParserConfig constructor.
@@ -41,8 +24,7 @@ class ParserConfig
     {
         $this->columnMapping = [];
         $this->columnFilters = [];
-        $this->columnTransforms = [];
-        $this->collectionTransforms = [];
+        $this->transforms = [];
     }
 
     public function addColumn($fromColumn, $toColumn = null)
@@ -77,40 +59,12 @@ class ParserConfig
         $this->columnFilters[$column][] = $filter;
     }
 
-    public function addTransformColumn($column, ColumnTransformerInterface $transform)
+    /**
+     * @return ColumnFilterInterface[]
+     */
+    public function getColumnFilters()
     {
-        if (!array_key_exists($column, $this->columnTransforms)) {
-            $this->columnTransforms[$column] = [];
-        }
-
-        $this->columnTransforms[$column][] = $transform;
-
-        return $this;
-    }
-
-    public function addExtraTransformColumn($column, ColumnTransformerInterface $transform)
-    {
-        if (!array_key_exists($column, $this->extraColumnTransforms)) {
-            $this->extraColumnTransforms[$column] = [];
-        }
-
-        $this->extraColumnTransforms[$column][] = $transform;
-
-        return $this;
-    }
-
-    public function addTransformCollection(CollectionTransformerInterface $transform)
-    {
-        $this->collectionTransforms[] = $transform;
-
-        return $this;
-    }
-
-    public function addAugmentationTransformCollection(CollectionTransformerAugmentationInterface $transform)
-    {
-        $this->augmentationTransforms[] = $transform;
-
-        return $this;
+        return $this->columnFilters;
     }
 
     /**
@@ -144,42 +98,29 @@ class ParserConfig
     }
 
     /**
-     * @return ColumnTransformerInterface[]
+     * @param $transform
+     * @return $this
      */
-    public function getColumnTransforms()
+    public function addTransform($transform)
     {
-        return $this->columnTransforms;
+        $this->transforms[] = $transform;
+
+        return $this;
     }
 
     /**
-     * @return ColumnFilterInterface[]
+     * @return array
      */
-    public function getColumnFilters()
+    public function getTransforms()
     {
-        return $this->columnFilters;
+        return $this->transforms;
     }
 
     /**
-     * @return CollectionTransformerInterface[]
+     * @param array
      */
-    public function getCollectionTransforms()
+    public function setTransforms($transforms)
     {
-        return $this->collectionTransforms;
-    }
-
-    /**
-     * @return Transformer\Column\ColumnTransformerInterface[]
-     */
-    public function getExtraColumnTransforms()
-    {
-        return $this->extraColumnTransforms;
-    }
-
-    /**
-     * @return Transformer\Collection\CollectionTransformerAugmentationInterface[]
-     */
-    public function getAugmentationTransforms(): array
-    {
-        return $this->augmentationTransforms;
+        $this->transforms = $transforms;
     }
 }
