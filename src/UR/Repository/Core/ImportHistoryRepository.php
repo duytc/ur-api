@@ -75,11 +75,6 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
                     $qb->expr()->like('ih.id', ':searchKey')
                 ))
                 ->setParameter('searchKey', $searchLike);
-
-            $searchLike = sprintf('%%%s%%', str_replace("/", "-", $param->getSearchKey()));
-            $qb
-                ->orWhere($qb->expr()->like('ih.createdDate', ':date'))
-                ->setParameter('date', $searchLike);
         }
 
         if (is_string($param->getSortField()) &&
