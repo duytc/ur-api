@@ -69,12 +69,17 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
 
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
+            $createdDateLike = sprintf('%%%s%%', str_replace("/", "-", $param->getSearchKey()));
+
             $qb
                 ->andWhere($qb->expr()->orX(
                     $qb->expr()->like('ds.name', ':searchKey'),
-                    $qb->expr()->like('ih.id', ':searchKey')
+                    $qb->expr()->like('ih.id', ':searchKey'),
+                    $qb->expr()->like('dse.fileName', ':searchKey'),
+                    $qb->expr()->like('ih.createdDate', ':date')
                 ))
-                ->setParameter('searchKey', $searchLike);
+                ->setParameter('searchKey', $searchLike)
+                ->setParameter('date', $createdDateLike);
         }
 
         if (is_string($param->getSortField()) &&
@@ -292,17 +297,17 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
 
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
+            $createdDateLike = sprintf('%%%s%%', str_replace("/", "-", $param->getSearchKey()));
+
             $qb
                 ->andWhere($qb->expr()->orX(
                     $qb->expr()->like('ds.name', ':searchKey'),
-                    $qb->expr()->like('ih.id', ':searchKey')
+                    $qb->expr()->like('ih.id', ':searchKey'),
+                    $qb->expr()->like('dse.fileName', ':searchKey'),
+                    $qb->expr()->like('ih.createdDate', ':date')
                 ))
-                ->setParameter('searchKey', $searchLike);
-
-            $searchLike = sprintf('%%%s%%', str_replace("/", "-", $param->getSearchKey()));
-            $qb
-                ->orWhere($qb->expr()->like('ih.createdDate', ':date'))
-                ->setParameter('date', $searchLike);
+                ->setParameter('searchKey', $searchLike)
+                ->setParameter('date', $createdDateLike);
         }
 
         if (is_string($param->getSortField()) &&
