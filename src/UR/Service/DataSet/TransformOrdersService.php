@@ -32,23 +32,42 @@ class TransformOrdersService implements TransformOrdersServiceInterface
         foreach ($transforms as $key => $transform) {
             if ($key < $index) {
                 $orderTransforms[] = $transform;
+                $visibleFields = $this->updateVisibleFields($visibleFields, $transform);
                 continue;
             }
 
-            if ($this->needWaiting($transform, $visibleFields)) {
+            if (!$this->isValidTransform($transform, $visibleFields)) {
                 /** Do not reorder transform if waited transform in the end. It make loop limit */
-                if ($key == 0 || ($key < count($transforms) - 1 && $key > $index)) {
-                    /** Move waited transform to end of queue */
-                    $transforms[] = $transform;
-                    unset($transforms[$key]);
-                    $transforms = array_values($transforms);
+                if ($key == 0 || ($key < count($transforms) - 1 && $key >= $index)) {
+                    /** Ensure all Number Formats is last */
+                    if ($transform instanceof GroupByColumns || $transform instanceof SubsetGroup) {
+                        if ($this->isAfterNumberFormats($transforms, $key)) {
+                            /** Move waited transform to end of queue */
+                            $transforms[] = $transform;
+                            unset($transforms[$key]);
+                            $transforms = array_values($transforms);
 
-                    /** Restart order transforms with update queue */
-                    return $this->orderTransforms($transforms, $connectedDataSource, $key);
+                            /** Restart order transforms with update queue */
+                            return $this->orderTransforms($transforms, $connectedDataSource, $key);
+                        }
+
+                        $visibleFields = $this->updateVisibleFields($visibleFields, $transform);
+                        $orderTransforms[] = $transform;
+                    } else {
+                        /** Move waited transform to end of queue */
+                        $transforms[] = $transform;
+                        unset($transforms[$key]);
+                        $transforms = array_values($transforms);
+
+                        /** Restart order transforms with update queue */
+                        return $this->orderTransforms($transforms, $connectedDataSource, $key);
+                    }
                 } else {
+                    $visibleFields = $this->updateVisibleFields($visibleFields, $transform);
                     $orderTransforms[] = $transform;
                 }
             } else {
+                $visibleFields = $this->updateVisibleFields($visibleFields, $transform);
                 $orderTransforms[] = $transform;
             }
         }
@@ -88,79 +107,46 @@ class TransformOrdersService implements TransformOrdersServiceInterface
      * @param array $visibleFields
      * @return bool
      */
-    private function needWaiting($transform, array &$visibleFields)
+    private function isValidTransform($transform, array $visibleFields)
     {
         if ($transform instanceof AddField) {
-            if ($this->evaluateAddFieldTransform($transform, $visibleFields)) {
-                $visibleFields[] = $transform->getColumn();
-
-                return false;
-            }
+            return $this->evaluateAddFieldTransform($transform, $visibleFields);
         }
 
         if ($transform instanceof DateFormat) {
-            if ($this->evaluateDateFormatTransform($transform, $visibleFields)) {
-                $visibleFields[] = $transform->getField();
-                return false;
-            }
+            return $this->evaluateDateFormatTransform($transform, $visibleFields);
         }
 
         if ($transform instanceof NumberFormat) {
-            return true;
+            return false;
         }
 
         if ($transform instanceof ReplaceText) {
-            if ($this->evaluateReplaceTextTransform($transform, $visibleFields)) {
-                $visibleFields[] = $transform->getField();
-
-                return false;
-            }
+            return $this->evaluateReplaceTextTransform($transform, $visibleFields);
         }
 
         if ($transform instanceof ExtractPattern) {
-            if ($this->evaluateExtractPatternTransform($transform, $visibleFields)) {
-                $visibleFields[] = $transform->getField();
-
-                return false;
-            }
+            return $this->evaluateExtractPatternTransform($transform, $visibleFields);
         }
 
         if ($transform instanceof ConvertCase) {
-            if ($this->evaluateConvertCaseTransform($transform, $visibleFields)) {
-                $visibleFields[] = $transform->getField();
-
-                return false;
-            }
+            return $this->evaluateConvertCaseTransform($transform, $visibleFields);
         }
 
         if ($transform instanceof NormalizeText) {
-            if ($this->evaluateNormalizeTextTransform($transform, $visibleFields)) {
-                $visibleFields[] = $transform->getField();
-
-                return false;
-            }
+            return $this->evaluateNormalizeTextTransform($transform, $visibleFields);
         }
 
         if ($transform instanceof ComparisonPercent) {
-            if ($this->evaluateComparisonPercentTransform($transform, $visibleFields)) {
-                $visibleFields[] = $transform->getNewColumn();
-
-                return false;
-            }
+            return $this->evaluateComparisonPercentTransform($transform, $visibleFields);
         }
 
         if ($transform instanceof AddCalculatedField) {
-            if ($this->evaluateAddCalculatedFieldTransform($transform, $visibleFields)) {
-                $visibleFields[] = $transform->getColumn();
-
-                return false;
-            }
+            return $this->evaluateAddCalculatedFieldTransform($transform, $visibleFields);
         }
 
         if ($transform instanceof GroupByColumns) {
-            if ($this->evaluateGroupByColumnsTransform($transform, $visibleFields)) {
-                return false;
-            }
+            return $this->evaluateGroupByColumnsTransform($transform, $visibleFields);
         }
 
         if ($transform instanceof SortByColumns) {
@@ -168,27 +154,14 @@ class TransformOrdersService implements TransformOrdersServiceInterface
         }
 
         if ($transform instanceof Augmentation) {
-            if ($this->evaluateAugmentationTransform($transform, $visibleFields)) {
-                $mapFields = $transform->getMapFields();
-
-                foreach ($mapFields as $map) {
-                    if (!array_key_exists(Augmentation::DATA_SOURCE_SIDE, $map)) {
-                        continue;
-                    }
-
-                    $visibleFields[] = $map[Augmentation::DATA_SOURCE_SIDE];
-                }
-                return false;
-            }
+            return $this->evaluateAugmentationTransform($transform, $visibleFields);
         }
 
         if ($transform instanceof SubsetGroup) {
-            if ($this->evaluateSubsetGroupTransform($transform, $visibleFields)) {
-                return false;
-            }
+            return $this->evaluateSubsetGroupTransform($transform, $visibleFields);
         }
 
-        return true;
+        return false;
     }
 
     /**
@@ -422,8 +395,107 @@ class TransformOrdersService implements TransformOrdersServiceInterface
 
         $fields = $matches[1];
 
-        foreach ($fields as $field) {   
+        foreach ($fields as $field) {
             if (!in_array($field, $visibleFields)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array $visibleFields
+     * @param $transform
+     * @return array
+     */
+    private function updateVisibleFields(array $visibleFields, $transform)
+    {
+        if ($transform instanceof AddField) {
+            $visibleFields[] = $transform->getColumn();
+        }
+
+        if ($transform instanceof DateFormat) {
+            $visibleFields[] = $transform->getField();
+        }
+
+        if ($transform instanceof NumberFormat) {
+            $visibleFields[] = $transform->getField();
+        }
+
+        if ($transform instanceof ReplaceText) {
+            if ($transform->isIsOverride()) {
+                $visibleFields[] = $transform->getField();
+            } else {
+                $visibleFields[] = $transform->getTargetField();
+            }
+        }
+
+        if ($transform instanceof ExtractPattern) {
+            if ($transform->isIsOverride()) {
+                $visibleFields[] = $transform->getField();
+            } else {
+                $visibleFields[] = $transform->getTargetField();
+            }
+        }
+
+        if ($transform instanceof ConvertCase) {
+            if ($transform->isIsOverride()) {
+                $visibleFields[] = $transform->getField();
+            } else {
+                $visibleFields[] = $transform->getTargetField();
+            }
+        }
+
+        if ($transform instanceof NormalizeText) {
+            if ($transform->isIsOverride()) {
+                $visibleFields[] = $transform->getField();
+            } else {
+                $visibleFields[] = $transform->getTargetField();
+            }
+        }
+
+        if ($transform instanceof ComparisonPercent) {
+            $visibleFields[] = $transform->getNewColumn();
+        }
+
+        if ($transform instanceof AddCalculatedField) {
+            $visibleFields[] = $transform->getColumn();
+        }
+
+        if ($transform instanceof GroupByColumns) {
+        }
+
+        if ($transform instanceof SortByColumns) {
+        }
+
+        if ($transform instanceof Augmentation) {
+            $mapFields = $transform->getMapFields();
+
+            foreach ($mapFields as $map) {
+                if (!array_key_exists(Augmentation::DATA_SOURCE_SIDE, $map)) {
+                    continue;
+                }
+
+                $visibleFields[] = $map[Augmentation::DATA_SOURCE_SIDE];
+            }
+        }
+
+        if ($transform instanceof SubsetGroup) {
+        }
+
+        return $visibleFields;
+    }
+
+    /**
+     * @param $transforms
+     * @param $key
+     * @return bool
+     */
+    private function isAfterNumberFormats($transforms, $key)
+    {
+        for ($i = $key + 1; $i < count($transforms); $i++) {
+            if (!$transforms[$i] instanceof NumberFormat) {
                 return false;
             }
         }

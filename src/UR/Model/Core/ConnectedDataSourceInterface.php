@@ -182,7 +182,18 @@ interface ConnectedDataSourceInterface extends ModelInterface
     public function setNumChanges($numChanges);
 
     /**
-     * @return $this
+     * @return self
      */
     public function increaseNumChanges();
+
+    /**
+     * @return boolean
+     */
+    public function isPreview();
+
+    /**
+     * @param boolean $preview
+     * @return self
+     */
+    public function setPreview($preview);
 }

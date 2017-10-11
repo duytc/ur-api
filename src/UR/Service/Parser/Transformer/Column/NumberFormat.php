@@ -37,7 +37,7 @@ class NumberFormat extends AbstractCommonColumnTransform implements ColumnTransf
     /**
      * @inheritdoc
      */
-    public function transform($value)
+    public function transform($value, ConnectedDataSourceInterface $connectedDataSource = null)
     {
         if (!is_numeric($value)) {
             return null; // return null on non numeric value
@@ -45,7 +45,20 @@ class NumberFormat extends AbstractCommonColumnTransform implements ColumnTransf
 
         $thousandsSeparator = $this->thousandsSeparator === self::SEPARATOR_NONE ? '' : $this->thousandsSeparator;
 
-        return number_format($value, $this->decimals, '.', $thousandsSeparator);
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            return number_format($value, $this->decimals, '.', $thousandsSeparator);
+        }
+
+        if ($connectedDataSource->isPreview()) {
+            return number_format($value, $this->decimals, '.', $thousandsSeparator);
+        } else {
+            /**
+             * Thousand separator as "," will make insert to database fail
+             * Database auto convert one million as 1,000,000 to 1.0 (wrong value)
+             * So we use empty separator to ensure inserting number/decimal success
+             */
+            return number_format($value, $this->decimals, '.', "");
+        }
     }
 
     /**
@@ -88,7 +101,7 @@ class NumberFormat extends AbstractCommonColumnTransform implements ColumnTransf
                 continue;
             }
 
-            $row[$field] = $this->transform($row[$field]);
+            $row[$field] = $this->transform($row[$field], $connectedDataSource);
             $newRows->push($row);
         }
 
