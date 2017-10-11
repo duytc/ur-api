@@ -37,7 +37,7 @@ class TransformOrdersService implements TransformOrdersServiceInterface
 
             if ($this->needWaiting($transform, $visibleFields)) {
                 /** Do not reorder transform if waited transform in the end. It make loop limit */
-                if ($key < count($transforms) - 1 && $key > $index) {
+                if ($key == 0 || ($key < count($transforms) - 1 && $key > $index)) {
                     /** Move waited transform to end of queue */
                     $transforms[] = $transform;
                     unset($transforms[$key]);
