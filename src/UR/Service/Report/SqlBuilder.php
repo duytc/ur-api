@@ -26,6 +26,7 @@ use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\NewFieldTransform;
+use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Entity\Core\DataSet;
 use UR\Exception\InvalidArgumentException;
@@ -165,6 +166,7 @@ class SqlBuilder implements SqlBuilderInterface
         $postAggregationFields = [];
         $timezone = 'UTC';
         $hasGroup = false;
+        $hasSort = false;
         $aggregationFields = [];
         $isAggregateAll = false;
 
@@ -180,6 +182,10 @@ class SqlBuilder implements SqlBuilderInterface
                     $aggregationFields = $transform->getAggregateFields();
                 }
                 continue;
+            }
+
+            if ($transform instanceof SortByTransform) {
+                $hasSort = true;
             }
         }
 
@@ -283,9 +289,13 @@ class SqlBuilder implements SqlBuilderInterface
 
             $qb = $this->addGroupByQuery($qb, $transforms, $types);
             $qb->from("($fromQuery)", "sub1");
-            // add ORDER BY NULL for performance
-            $qb->addOrderBy('NULL');
             $grouperQuery = $qb->getSQL();
+            $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
+            if (empty($sortField) && !$hasSort) {
+                // add ORDER BY NULL for performance
+                $qb->addOrderBy('NULL');
+            }
+
             $qb = $this->addLimitQuery($qb, $page, $limit);
             $fromQuery = $qb->getSQL();
         }
@@ -339,7 +349,15 @@ class SqlBuilder implements SqlBuilderInterface
         $grouperQb = clone $outerQb;
         $outerQb->from("($fromQuery)", "sub2");
         $outerQb = $this->bindFilterParam($outerQb, $filters);
-        $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
+
+        if (!$hasGroup) {
+            $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
+            if (empty($sortField) && !$hasSort) {
+                // add ORDER BY NULL for performance
+                $outerQb->addOrderBy('NULL');
+            }
+            $outerQb = $this->addLimitQuery($outerQb, $page, $limit);
+        }
 
         $grouperQb->from("($grouperQuery)", "sub2");
         $grouperQuery = $grouperQb->getSQL();
@@ -512,6 +530,7 @@ class SqlBuilder implements SqlBuilderInterface
         $types = [];
         $dataSetIndexes = [];
         $hasGroup = false;
+        $hasSort = false;
         $postAggregationFields = [];
         $timezone = 'UTC';
         $aggregationFields = [];
@@ -530,6 +549,10 @@ class SqlBuilder implements SqlBuilderInterface
                 }
 
                 continue;
+            }
+
+            if ($transform instanceof SortByTransform) {
+                $hasSort = true;
             }
         }
 
@@ -669,9 +692,13 @@ class SqlBuilder implements SqlBuilderInterface
 
             $qb->from("($subQuery)", "sub1");
             $qb = $this->addGroupByQuery($qb, $transforms, $types);
-            // add ORDER BY NULL for performance
-            $qb->addOrderBy('NULL');
             $grouperQuery = $qb->getSQL();
+            $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
+            if (empty($sortField) && !$hasSort) {
+                // add ORDER BY NULL for performance
+                $qb->addOrderBy('NULL');
+            }
+
             $qb = $this->addLimitQuery($qb, $page, $limit);
             $subQuery = $qb->getSQL();
         }
@@ -719,7 +746,17 @@ class SqlBuilder implements SqlBuilderInterface
 
         $grouperQb = clone $outerQb;
         $outerQb->from("($subQuery)", "sub2");
-        $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
+        
+        if (!$hasGroup) {
+            $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
+            if (empty($sortField) && !$hasSort) {
+                // add ORDER BY NULL for performance
+                $outerQb->addOrderBy('NULL');
+            }
+
+            $outerQb = $this->addLimitQuery($outerQb, $page, $limit);
+        }
+
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
             $filters = $dataSet->getFilters();

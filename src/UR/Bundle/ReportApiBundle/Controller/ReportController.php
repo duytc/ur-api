@@ -36,10 +36,10 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
     public function reportAction(Request $request)
     {
         $params = $this->get('ur.services.report.params_builder')->buildFromArray($request->request->all());
-        $this->one($params->getReportViewId());
-        $reportViewRepository = $this->get('ur.repository.report_view');
 
         if ($params->getReportViewId() !== null) {
+            $this->one($params->getReportViewId());
+            $reportViewRepository = $this->get('ur.repository.report_view');
             $reportViewRepository->updateLastRun($params->getReportViewId());
         }
 
@@ -128,10 +128,10 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
         $request->request->remove('limit');
 
         $params = $this->get('ur.services.report.params_builder')->buildFromArray($request->request->all());
-        $reportViewRepository = $this->get('ur.repository.report_view');
         //check permission
-        $this->one($params->getReportViewId());
         if ($params->getReportViewId() !== null) {
+            $reportViewRepository = $this->get('ur.repository.report_view');
+            $this->one($params->getReportViewId());
             $reportViewRepository->updateLastRun($params->getReportViewId());
         }
 
