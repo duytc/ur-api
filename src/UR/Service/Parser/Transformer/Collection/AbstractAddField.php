@@ -5,7 +5,6 @@ namespace UR\Service\Parser\Transformer\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use SplDoublyLinkedList;
 use UR\Model\Core\ConnectedDataSourceInterface;
-use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
 
 abstract class AbstractAddField implements CollectionTransformerInterface
@@ -37,7 +36,6 @@ abstract class AbstractAddField implements CollectionTransformerInterface
             $columns[] = $this->column;
         }
 
-        $isNumber = array_key_exists($this->column, $types) && $types[$this->column] == FieldType::NUMBER;
         $newRows = new SplDoublyLinkedList();
         foreach ($rows as $index => $row) {
             $value = $this->getValue($row);
@@ -51,7 +49,7 @@ abstract class AbstractAddField implements CollectionTransformerInterface
                 return $value;
             }
 
-            $row[$this->column] = ($isNumber && $value !== null) ? round($value) : $value;
+            $row[$this->column] = $value;
             $newRows->push($row);
             unset($row);
         }

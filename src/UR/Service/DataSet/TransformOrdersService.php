@@ -382,7 +382,7 @@ class TransformOrdersService implements TransformOrdersServiceInterface
         foreach ($defaultValues as $item) {
             $field = $item[AddCalculatedField::CONDITION_FIELD_KEY];
 
-            if (!in_array($field, $visibleFields)) {
+            if ($field != AddCalculatedField::CONDITION_FIELD_CALCULATED_VALUE && !in_array($field, $visibleFields)) {
                 return false;
             }
         }

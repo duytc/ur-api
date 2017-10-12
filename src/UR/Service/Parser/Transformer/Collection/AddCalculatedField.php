@@ -179,7 +179,6 @@ class AddCalculatedField extends AbstractAddField implements CollectionTransform
 
             // FIRST MATCH, FIRST SERVE. PLEASE MIND THE ORDER
 
-            $valueForCompare = $this->reformatDataService->reformatData($valueForCompare, FieldType::NUMBER);
             $isMatched = $this->matchCondition($valueForCompare, $conditionComparator, $conditionValue);
             if ($isMatched) {
                 return $defaultValue;
