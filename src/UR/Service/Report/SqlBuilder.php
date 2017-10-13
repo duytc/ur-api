@@ -290,13 +290,6 @@ class SqlBuilder implements SqlBuilderInterface
             $qb = $this->addGroupByQuery($qb, $transforms, $types);
             $qb->from("($fromQuery)", "sub1");
             $grouperQuery = $qb->getSQL();
-            $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
-            if (empty($sortField) && !$hasSort) {
-                // add ORDER BY NULL for performance
-                $qb->addOrderBy('NULL');
-            }
-
-            $qb = $this->addLimitQuery($qb, $page, $limit);
             $fromQuery = $qb->getSQL();
         }
 
@@ -350,14 +343,12 @@ class SqlBuilder implements SqlBuilderInterface
         $outerQb->from("($fromQuery)", "sub2");
         $outerQb = $this->bindFilterParam($outerQb, $filters);
 
-        if (!$hasGroup) {
-            $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
-            if (empty($sortField) && !$hasSort) {
-                // add ORDER BY NULL for performance
-                $outerQb->addOrderBy('NULL');
-            }
-            $outerQb = $this->addLimitQuery($outerQb, $page, $limit);
+        $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
+        if (empty($sortField)) {
+            // add ORDER BY NULL for performance
+            $outerQb->addOrderBy('NULL');
         }
+        $outerQb = $this->addLimitQuery($outerQb, $page, $limit);
 
         $grouperQb->from("($grouperQuery)", "sub2");
         $grouperQuery = $grouperQb->getSQL();
