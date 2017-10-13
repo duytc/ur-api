@@ -92,22 +92,16 @@ class AddCalculatedField extends AbstractAddField implements CollectionTransform
     protected function getValue(array $row)
     {
         try {
-            $defaultValue = $this->getDefaultValueByInputFieldCondition($row, $isMatched);
-            if ($isMatched === true) {
-                return $defaultValue;
-            }
-
             $expressionForm = $this->convertExpressionForm($this->expression, $row);
-            if ($expressionForm === NULL) {
-                return NULL;
+            $result = null;
+            if ($expressionForm != NULL) {
+                $row[$this->column] = $this->expressionLanguage->evaluate($expressionForm, ['row' => $row]);
             }
-
-            $result = $this->expressionLanguage->evaluate($expressionForm, ['row' => $row]);
         } catch (\Exception $exception) {
-            $result = NULL;
+            $row[$this->column] = null;
         }
 
-        return $this->getDefaultValueByCalculatedFieldCondition($result);
+        return $this->getDefaultValueByInputFieldCondition($row, $isMatched);
     }
 
     /**
@@ -166,10 +160,14 @@ class AddCalculatedField extends AbstractAddField implements CollectionTransform
             $conditionComparator = $defaultValueConfig[self::CONDITION_COMPARATOR_KEY];
             $conditionValue = $defaultValueConfig[self::CONDITION_VALUE_KEY];
             $defaultValue = $defaultValueConfig[self::DEFAULT_VALUE_KEY];
+
+            if ($conditionField == self::CONDITION_FIELD_CALCULATED_VALUE) {
+                $conditionField = $this->column;
+            }
             // TODO: should remove check in_array($conditionValue, self::$INVALID_VALUES) ????
             // this related to case compare calculatedValue with simple value, not is invalid
             // or related to case compare field from file or data set is invalid
-            if ($conditionField == self::CONDITION_FIELD_CALCULATED_VALUE || !array_key_exists($conditionField, $row)) {
+            if (!array_key_exists($conditionField, $row)) {
                 continue;
             }
 
@@ -185,35 +183,11 @@ class AddCalculatedField extends AbstractAddField implements CollectionTransform
             }
         }
 
+        if (array_key_exists($this->column, $row)) {
+            return $row[$this->column];
+        }
+
         return NULL;
-    }
-
-    /**
-     * @param $value
-     * @return mixed
-     */
-    private function getDefaultValueByCalculatedFieldCondition($value)
-    {
-        if (!is_array($this->defaultValues)) {
-            return $value;
-        }
-
-        foreach ($this->defaultValues as $defaultValueConfig) {
-            $conditionComparator = $defaultValueConfig[self::CONDITION_COMPARATOR_KEY];
-            $conditionValue = $defaultValueConfig[self::CONDITION_VALUE_KEY];
-            $conditionField = $defaultValueConfig[self::CONDITION_FIELD_KEY];
-            $defaultValue = $defaultValueConfig[self::DEFAULT_VALUE_KEY];
-            if ($conditionField != self::CONDITION_FIELD_CALCULATED_VALUE) {
-                continue;
-            }
-
-            $isMatched = $this->matchCondition($value, $conditionComparator, $conditionValue);
-            if ($isMatched) {
-                return $defaultValue;
-            }
-        }
-
-        return $value;
     }
 
     /**
@@ -252,7 +226,7 @@ class AddCalculatedField extends AbstractAddField implements CollectionTransform
                 return $value >= $conditionValue;
 
             case self::CONDITION_COMPARISON_VALUE_IS_INVALID:
-                return in_array($value, self::$INVALID_VALUES);
+                return $value != 0 && in_array($value, self::$INVALID_VALUES);
         }
 
         // default not match

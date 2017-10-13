@@ -229,7 +229,7 @@ class ImportHistoryController extends RestControllerAbstract implements ClassRes
                 }
 
                 if ($transformObject instanceof NumberFormat) {
-                    $row[$transformObject->getField()] = $transformObject->transform($row[$transformObject->getField()], $connDataSource);
+                    $row[$transformObject->getField()] = $transformObject->transform($row[$transformObject->getField()]);
                 }
             }
         }

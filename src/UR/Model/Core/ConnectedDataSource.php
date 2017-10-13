@@ -41,9 +41,6 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
      */
     protected $numChanges;
 
-    /** @var  bool */
-    protected $preview;
-
     /**
      * @return boolean
      */
@@ -76,7 +73,6 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     {
         $this->totalRow = 0;
         $this->numChanges = 0;
-        $this->preview = false;
     }
 
     /**
@@ -355,24 +351,6 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     public function increaseNumChanges()
     {
         ++$this->numChanges;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function isPreview()
-    {
-        return $this->preview;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setPreview($preview)
-    {
-        $this->preview = $preview;
-
         return $this;
     }
 }

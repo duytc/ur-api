@@ -232,6 +232,8 @@ class SubsetGroup implements CollectionTransformerInterface
         foreach ($mapValueOneRow as $key => $value) {
             if (in_array($collection->getTypeOf($key), [FieldType::NUMBER, FieldType::DECIMAL])) {
                 $mapValueOneRow[$key] += array_key_exists($key, $mapValueAllRows) ? $mapValueAllRows[$key] : 0;
+            } elseif (array_key_exists($key, $mapValueAllRows)) {
+                $mapValueOneRow[$key] = $mapValueAllRows[$key];
             }
         }
 

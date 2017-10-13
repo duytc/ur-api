@@ -127,6 +127,25 @@ class ParsingFileService
         return $collections;
     }
 
+    /**
+     * @param Collection $collection
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return Collection
+     */
+    public function formatNumbersAfterParser(Collection $collection, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $transforms = $connectedDataSource->getTransforms();
+
+        foreach ($transforms as $transform) {
+            $transformObject = $this->transformerFactory->getTransform($transform);
+            if ($transformObject instanceof NumberFormat) {
+                $collection = $transformObject->transformCollection($collection, $connectedDataSource);
+            }
+        }
+
+        return $collection;
+    }
+
     /**UpdateConnectedDataSourceWhenDataSetChangedListener
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param ParserConfig $parserConfig
@@ -196,9 +215,13 @@ class ParsingFileService
 
             $transformObjects = $this->transformerFactory->getTransform($transform);
 
-            if ($transformObjects instanceof DateFormat || $transformObjects instanceof NumberFormat) {
+            if ($transformObjects instanceof DateFormat) {
                 $allTransforms[] = $transformObjects;
 
+                continue;
+            }
+
+            if ($transformObjects instanceof NumberFormat) {
                 continue;
             }
 
@@ -240,7 +263,7 @@ class ParsingFileService
             }
         }
 
-        $allTransforms = $this->transformOrdersService->orderTransforms($allTransforms, $connectedDataSource);
+//        $allTransforms = $this->transformOrdersService->orderTransforms($allTransforms, $connectedDataSource);
         $this->parserConfig->setTransforms($allTransforms);
     }
 
@@ -329,6 +352,8 @@ class ParsingFileService
             foreach ($allFields as $field => $type) {
                 if (!array_key_exists($field, $row)) {
                     $newRow[$field] = null;
+                } elseif ($type === FieldType::NUMBER && !empty($row[$field])) {
+                    $newRow[$field] = round($row[$field]);
                 } else {
                     $newRow[$field] = $row[$field];
                 }

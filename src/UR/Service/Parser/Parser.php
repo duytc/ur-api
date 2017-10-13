@@ -153,20 +153,24 @@ class Parser implements ParserInterface
      */
     private function doFilter(ParserConfig $parserConfig, array $fileCols, array $row)
     {
-        $isValidFilter = 1;
-        foreach ($parserConfig->getColumnFilters() as $column => $filters) {
-            /**@var ColumnFilterInterface[] $filters */
-            if (!in_array($column, $fileCols)) {
-                continue;
+        try {
+            $isValidFilter = 1;
+            foreach ($parserConfig->getColumnFilters() as $column => $filters) {
+                /**@var ColumnFilterInterface[] $filters */
+                if (!in_array($column, $fileCols)) {
+                    continue;
+                }
+
+                foreach ($filters as $filter) {
+                    $filterResult = $filter->filter($row[$column]);
+                    $isValidFilter = $isValidFilter & $filterResult;
+                }
             }
 
-            foreach ($filters as $filter) {
-                $filterResult = $filter->filter($row[$column]);
-                $isValidFilter = $isValidFilter & $filterResult;
-            }
+            return $isValidFilter;
+        } catch (\Exception $e) {
+            return 0;
         }
-
-        return $isValidFilter;
     }
 
     /**

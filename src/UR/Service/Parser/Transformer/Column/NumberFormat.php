@@ -37,7 +37,7 @@ class NumberFormat extends AbstractCommonColumnTransform implements ColumnTransf
     /**
      * @inheritdoc
      */
-    public function transform($value, ConnectedDataSourceInterface $connectedDataSource = null)
+    public function transform($value)
     {
         if (!is_numeric($value)) {
             return null; // return null on non numeric value
@@ -45,20 +45,7 @@ class NumberFormat extends AbstractCommonColumnTransform implements ColumnTransf
 
         $thousandsSeparator = $this->thousandsSeparator === self::SEPARATOR_NONE ? '' : $this->thousandsSeparator;
 
-        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-            return number_format($value, $this->decimals, '.', $thousandsSeparator);
-        }
-
-        if ($connectedDataSource->isPreview()) {
-            return number_format($value, $this->decimals, '.', $thousandsSeparator);
-        } else {
-            /**
-             * Thousand separator as "," will make insert to database fail
-             * Database auto convert one million as 1,000,000 to 1.0 (wrong value)
-             * So we use empty separator to ensure inserting number/decimal success
-             */
-            return number_format($value, $this->decimals, '.', "");
-        }
+        return number_format($value, $this->decimals, '.', $thousandsSeparator);
     }
 
     /**
@@ -85,23 +72,16 @@ class NumberFormat extends AbstractCommonColumnTransform implements ColumnTransf
             return $collection;
         }
 
-        $mapFields = array_flip($connectedDataSource->getMapFields());
-        $dateFieldInDataSet = $this->getField();
-
-        $field = $dateFieldInDataSet;
-
-        if (array_key_exists($dateFieldInDataSet, $mapFields)) {
-            $field = $mapFields[$dateFieldInDataSet];
-        }
-
+        $field = $this->getField();
         $newRows = new SplDoublyLinkedList();
 
         foreach ($rows as $row) {
             if (!array_key_exists($field, $row)) {
-                continue;
+                $row[$field] = null;
+            } else {
+                $row[$field] = $this->transform($row[$field]);
             }
 
-            $row[$field] = $this->transform($row[$field], $connectedDataSource);
             $newRows->push($row);
         }
 

@@ -70,7 +70,6 @@ class AutoImportData implements AutoImportDataInterface
      */
     public function loadingDataFromFileToDatabase(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, ImportHistoryInterface $importHistoryEntity)
     {
-        $connectedDataSource->setPreview(false);
         /* parsing data */
         $collection = $this->parsingData($connectedDataSource, $dataSourceEntry);
 
@@ -98,8 +97,9 @@ class AutoImportData implements AutoImportDataInterface
     public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, DryRunParamsInterface $dryRunParams)
     {
         try {
-            $connectedDataSource->setPreview(true);
             $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, $dryRunParams->getLimitRows());
+
+            $collection = $this->parsingFileService->formatNumbersAfterParser($collection, $connectedDataSource);
 
             $dataSet = $connectedDataSource->getDataSet();
             $rows = $collection->getRows();
