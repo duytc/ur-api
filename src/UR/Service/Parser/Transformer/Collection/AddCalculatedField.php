@@ -93,9 +93,10 @@ class AddCalculatedField extends AbstractAddField implements CollectionTransform
     {
         try {
             $expressionForm = $this->convertExpressionForm($this->expression, $row);
-            $result = null;
             if ($expressionForm != NULL) {
                 $row[$this->column] = $this->expressionLanguage->evaluate($expressionForm, ['row' => $row]);
+            } else {
+                $row[$this->column] = null;
             }
         } catch (\Exception $exception) {
             $row[$this->column] = null;
