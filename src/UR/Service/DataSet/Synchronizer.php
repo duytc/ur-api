@@ -66,6 +66,24 @@ class Synchronizer
         return $this;
     }
 
+    /**
+     * Get query: Synchronize the schema with the database
+     *
+     * @param Schema $schema
+     * @return $this
+     */
+    public function getSyncSchemaDataSet(Schema $schema)
+    {
+        $sm = $this->conn->getSchemaManager();
+        $fromSchema = $sm->createSchema();
+
+        $schemaDiff = $this->comparator->compare($fromSchema, $schema);
+
+        $saveQueries = $schemaDiff->toSaveSql($this->conn->getDatabasePlatform());
+
+        return $saveQueries;
+    }
+
     public function createEmptyDataSetTable(DataSetInterface $dataSet)
     {
         /* check if data import table existed */
