@@ -183,7 +183,7 @@ class PublisherManager implements PublisherManagerInterface
         }
 
         $publishers = [];
-
+        $publisherIds = [];
         foreach ($reportViewTemplateTags as $reportViewTemplateTag) {
             if (!$reportViewTemplateTag instanceof ReportViewTemplateTagInterface) {
                 continue;
@@ -203,7 +203,10 @@ class PublisherManager implements PublisherManagerInterface
                     continue;
                 }
 
-                $publishers[] = $userTag->getPublisher();
+                if (!in_array($userTag->getPublisher()->getId(), $publisherIds)) {
+                    $publishers[] = $userTag->getPublisher();
+                    $publisherIds[] = $userTag->getPublisher()->getId();
+                }
             }
         }
 
