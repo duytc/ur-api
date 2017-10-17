@@ -595,7 +595,6 @@ services:
             - '@ur.domain_manager.report_view_template_tag'
             - '@doctrine.orm.entity_manager'
             - '@ur.services.report.params_builder'
-            - '@ur.domain_manager.report_view_multi_view'
             - '@ur.domain_manager.report_view_data_set'
             - '@ur.domain_manager.data_set'
 

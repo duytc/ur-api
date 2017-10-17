@@ -46,10 +46,6 @@ class AutoSetDefaultNameForReportViewListener
 
         $defaultName = $result['idMax'] +1;
         $entity->setName($defaultName);
-        if (empty($entity->getAlias())){
-            $entity->setAlias($defaultName);
-        }
-
     }
 
     /**
@@ -71,8 +67,5 @@ class AutoSetDefaultNameForReportViewListener
         $defaultName = $entity->getId();
 
         $entity->setName($defaultName);
-        if (empty($entity->getAlias())){
-            $entity->setAlias($defaultName);
-        }
     }
 }

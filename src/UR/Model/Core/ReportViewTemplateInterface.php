@@ -30,17 +30,6 @@ interface ReportViewTemplateInterface extends ModelInterface
     public function setName($name);
 
     /**
-     * @return boolean
-     */
-    public function isMultiView();
-
-    /**
-     * @param boolean $multiView
-     * @return self
-     */
-    public function setMultiView($multiView);
-
-    /**
      * @return array
      */
     public function getDataSets();

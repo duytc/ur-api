@@ -4,7 +4,6 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
-use UR\Entity\Core\ReportViewMultiView;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\DataSetInterface;
@@ -14,7 +13,6 @@ use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;
 use UR\Repository\Core\ReportViewRepositoryInterface;
-use UR\Service\PublicSimpleException;
 
 class ReportViewManager implements ReportViewManagerInterface
 {
@@ -62,9 +60,8 @@ class ReportViewManager implements ReportViewManagerInterface
             throw new InvalidArgumentException('expect ReportViewInterface object');
         }
 
-        $reportViewMultiViewRepository = $this->om->getRepository(ReportViewMultiView::class);
-        if ($reportViewMultiViewRepository->checkIfReportViewBelongsToMultiView($reportView)) {
-            throw new PublicSimpleException('This report view belongs to another report view');
+        if ($this->repository->hasSubviews($reportView)) {
+            throw new InvalidArgumentException("There're some subviews still referencing to this report view");
         }
 
         $this->om->remove($reportView);
@@ -170,14 +167,6 @@ class ReportViewManager implements ReportViewManagerInterface
     public function getReportViewsByDataSet(DataSetInterface $dataSet)
     {
         return $this->repository->getReportViewsByDataSet($dataSet);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getReportMultiViewsByReportView(ReportViewInterface $subReportView)
-    {
-        return $this->repository->getReportMultiViewsByReportView($subReportView);
     }
 
     protected function compareDateRange($source, $destination)

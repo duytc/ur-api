@@ -201,8 +201,12 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 		}
 
 		if (self::DATE_TYPE_DYNAMIC == $this->dateType) {
-			if (!in_array($this->dateValue, self::$SUPPORTED_DATE_DYNAMIC_VALUES)) {
+			if (!in_array($this->dateValue, self::$SUPPORTED_DATE_DYNAMIC_VALUES) && is_string($this->dateValue)) {
 				throw new \Exception (sprintf('not supported date value %s', $this->dateValue));
+			}
+
+			if (is_array($this->dateValue)) {
+				throw new \Exception ('invalid dynamic date value');
 			}
 		}
 

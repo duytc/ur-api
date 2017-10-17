@@ -59,12 +59,8 @@ class UpdateMetricsAndDimensionsForReportViewListener
 	protected function updateMetricsAndDimensionsForReportView(ReportViewInterface $reportView)
 	{
 		$param = $this->paramsBuilder->buildFromReportView($reportView);
-		if ($reportView->isMultiView()) {
-			$columns = $this->getMetricsAndDimensionsForMultiView($param);
-		} else {
-			$columns = $this->getMetricsAndDimensionsForSingleView($param);
-		}
-		
+		$columns = $this->getMetricsAndDimensionsForSingleView($param);
+
 		$reportView->setMetrics($columns[self::METRICS_KEY]);
 		$reportView->setDimensions($columns[self::DIMENSIONS_KEY]);
 	}

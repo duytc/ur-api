@@ -23,14 +23,6 @@ UR\Entity\Core\ReportView:
         name:
             type: string
             nullable: false
-        alias:
-            type: string
-            nullable: false
-        multiView:
-            type: boolean
-            options:
-                default: false
-            nullable: false
         fieldTypes:
             type: json_array
             nullable: false
@@ -51,11 +43,6 @@ UR\Entity\Core\ReportView:
         formats:
             type: json_array
             nullable: true
-        subReportsIncluded:
-            type: boolean
-            nullable: false
-            options:
-                default: false
         isShowDataSetName:
             type: boolean
             nullable: false
@@ -77,16 +64,22 @@ UR\Entity\Core\ReportView:
             options:
                 default: true
 
+        subView:
+            type: boolean
+            options:
+                default: false
+            nullable: false
+
+        filters:
+            type: json_array
+            nullable: true
+
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
+        masterReportView:
+            targetEntity: UR\Entity\Core\ReportView
     oneToMany:
-        reportViewMultiViews:
-            targetEntity: UR\Entity\Core\ReportViewMultiView
-            mappedBy: reportView
-            fetch: EXTRA_LAZY
-            cascade: ['persist', 'remove', 'detach']
-            orphanRemoval: true
         reportViewDataSets:
             targetEntity: UR\Entity\Core\ReportViewDataSet
             mappedBy: reportView

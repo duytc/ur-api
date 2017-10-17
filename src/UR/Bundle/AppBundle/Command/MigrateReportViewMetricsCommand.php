@@ -8,9 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use UR\Domain\DTO\Report\Transforms\NewFieldTransform;
-use UR\DomainManager\ReportViewManager;
 use UR\Model\Core\ReportViewInterface;
-use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Service\DataSet\FieldType;
 
 class MigrateReportViewMetricsCommand extends ContainerAwareCommand
@@ -25,7 +23,6 @@ class MigrateReportViewMetricsCommand extends ContainerAwareCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $reportViewManager = $this->getContainer()->get('ur.domain_manager.report_view');
-        $reportViewMultiviewManager = $this->getContainer()->get('ur.domain_manager.report_view_multi_view');
         $paramBuilder = $this->getContainer()->get('ur.services.report.params_builder');
         $singleViews = $reportViewManager->getSingleViews();
         $count = [];
@@ -57,25 +54,6 @@ class MigrateReportViewMetricsCommand extends ContainerAwareCommand
                 $count[$singleView->getId()]++;
             } else {
                 $count[$singleView->getId()] = 1;
-            }
-
-            $reportViewMultiViews = $reportViewMultiviewManager->getBySubView($singleView);
-            /** @var ReportViewMultiViewInterface $reportViewMultiView */
-            foreach ($reportViewMultiViews as $reportViewMultiView) {
-                $reportViewMultiView->setMetrics($metrics);
-                $reportViewMultiviewManager->save($reportViewMultiView);
-                $multiView = $reportViewMultiView->getReportView();
-                $metrics = $multiView->getMetrics();
-                $metrics = array_diff($metrics, $newFields);
-                $metrics = array_diff($metrics, $textAndDateFields);
-                $metrics = array_values($metrics);
-                $multiView->setMetrics($metrics);
-                $reportViewManager->save($multiView);
-                if (array_key_exists($multiView->getId(), $count)) {
-                    $count[$multiView->getId()]++;
-                } else {
-                    $count[$multiView->getId()] = 1;
-                }
             }
         }
 

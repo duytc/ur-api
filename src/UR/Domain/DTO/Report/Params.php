@@ -64,6 +64,11 @@ class Params implements ParamsInterface
     protected $multiView;
 
     /**
+     * @var boolean
+     */
+    protected $subview;
+
+    /**
      * @var array
      */
     protected $showInTotal;
@@ -231,7 +236,11 @@ class Params implements ParamsInterface
      */
     public function setFilters($filters)
     {
+        if (!is_array($filters)) {
+            $filters = [];
+        }
         $this->filters = $filters;
+
         return $this;
     }
 
@@ -621,6 +630,24 @@ class Params implements ParamsInterface
     public function setUserProvidedDimensionEnabled($userProvidedDimensionEnabled)
     {
         $this->userProvidedDimensionEnabled = $userProvidedDimensionEnabled;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isSubview()
+    {
+        return $this->subview;
+    }
+
+    /**
+     * @param boolean $subview
+     * @return self
+     */
+    public function setSubview($subview)
+    {
+        $this->subview = $subview;
         return $this;
     }
 }

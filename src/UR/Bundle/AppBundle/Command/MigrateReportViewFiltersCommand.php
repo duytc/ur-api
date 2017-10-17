@@ -13,7 +13,6 @@ use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\DomainManager\ReportViewManagerInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
-use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Service\StringUtilTrait;
 
 class MigrateReportViewFiltersCommand extends ContainerAwareCommand
@@ -94,16 +93,6 @@ class MigrateReportViewFiltersCommand extends ContainerAwareCommand
             $reportViewDataSets = $this->migrateFiltersDueToUserProvidedChangeForReportViewDataSets($output, $reportViewDataSets);
             $reportView->setReportViewDataSets($reportViewDataSets);
 
-            // migrate report view multi views
-            /** @var Collection|ReportViewMultiViewInterface[] $reportViewMultiViews */
-            $reportViewMultiViews = $reportView->getReportViewMultiViews();
-            if ($reportViewMultiViews instanceof Collection) {
-                $reportViewMultiViews = $reportViewMultiViews->toArray();
-            }
-
-            $reportViewMultiViews = $this->migrateFiltersDueToUserProvidedChangeForReportViewMultiViews($output, $reportViewMultiViews);
-            $reportView->setReportViewMultiViews($reportViewMultiViews);
-
             // update back to report view
             $migratedCount++;
             $this->reportViewManager->save($reportView);
@@ -138,34 +127,6 @@ class MigrateReportViewFiltersCommand extends ContainerAwareCommand
         }
 
         return $reportViewDataSets;
-    }
-
-    /**
-     * migrate Filters Due To User Provide Change For Report View Multi Views
-     *
-     * @param OutputInterface $output
-     * @param array|ReportViewMultiViewInterface[] $reportViewMultiViews
-     * @return array
-     */
-    private function migrateFiltersDueToUserProvidedChangeForReportViewMultiViews(OutputInterface $output, array $reportViewMultiViews)
-    {
-        foreach ($reportViewMultiViews as &$reportViewMultiView) {
-            if (!$reportViewMultiView instanceof ReportViewMultiViewInterface) {
-                continue;
-            }
-
-            $filters = $reportViewMultiView->getFilters();
-            if (!is_array($filters)) {
-                continue;
-            }
-
-            $filters = $this->migrateFiltersDueToUserProvideChange($output, $filters);
-
-            // set back to reportViewDataSet
-            $reportViewMultiView->setFilters($filters);
-        }
-
-        return $reportViewMultiViews;
     }
 
     /**

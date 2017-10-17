@@ -10,7 +10,6 @@ class ReportView extends ReportViewModel
     protected $id;
     protected $joinBy;
     protected $name;
-    protected $alias;
     protected $transforms;
     protected $createdDate;
     protected $weightedCalculations;
@@ -18,17 +17,17 @@ class ReportView extends ReportViewModel
     protected $showInTotal;
     protected $dimensions;
     protected $metrics;
-    protected $multiView;
     protected $formats;
     protected $fieldTypes;
     protected $publisher;
-    protected $subReportsIncluded;
     protected $reportViewDataSets;
-    protected $reportViewMultiViews;
     protected $isShowDataSetName;
     protected $lastActivity;
     protected $enableCustomDimensionMetric;
     protected $lastRun;
+    protected $subView;
+    protected $masterReportView;
+    protected $filters;
 
     /**
      * @inheritdoc

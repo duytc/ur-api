@@ -2,7 +2,6 @@
 
 namespace UR\Bundle\PublicBundle\Controller;
 
-use Doctrine\Common\Collections\Collection;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Controller\FOSRestController;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
@@ -13,10 +12,7 @@ use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\ReportViewInterface;
-use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Service\ColumnUtilTrait;
-use UR\Service\PublicSimpleException;
-use UR\Service\Report\ReportViewFormatter;
 
 /**
  * Class ReportController
@@ -62,8 +58,6 @@ class ReportViewController extends FOSRestController
         if (!($reportView instanceof ReportViewInterface)) {
             throw new BadRequestHttpException('Invalid ReportView');
         }
-
-        $this->validateReportView($reportView);
 
         $token = $request->query->get(ReportViewInterface::TOKEN, null);
         if (null == $token) {
@@ -158,7 +152,7 @@ class ReportViewController extends FOSRestController
                     )
                 );
             }
-        } else {
+        } else if ($dateRange && array_key_exists('startDate', $dateRange) && array_key_exists('endDate', $dateRange)){
             // override previous date range which is parsed from query params
             $params->setStartDate(new \DateTime($dateRange['startDate']));
             $params->setEndDate(new \DateTime($dateRange['endDate']));
@@ -188,10 +182,6 @@ class ReportViewController extends FOSRestController
                 }
 
                 $mappedColumns[$column] = $this->convertColumn($column, $reportView->getIsShowDataSetName());
-            }
-
-            if ($reportView->isMultiView()) {
-                $mappedColumns[ReportViewFormatter::REPORT_VIEW_ALIAS_KEY] = ReportViewFormatter::REPORT_VIEW_ALIAS_NAME;
             }
 
             $report['columns'] = $mappedColumns;
@@ -238,29 +228,5 @@ class ReportViewController extends FOSRestController
     protected function getDataSetManager()
     {
         return $this->get('ur.domain_manager.data_set');
-    }
-
-    /**
-     * @param ReportViewInterface $reportView
-     * @throws PublicSimpleException
-     */
-    private function validateReportView(ReportViewInterface $reportView)
-    {
-        if ($reportView->isMultiView()) {
-            $multiViews = $reportView->getReportViewMultiViews();
-            if ($multiViews instanceof Collection) {
-                $multiViews = $multiViews->toArray();
-            }
-
-            foreach ($multiViews as $multiView) {
-                if (!$multiView instanceof ReportViewMultiViewInterface) {
-                    continue;
-                }
-
-                if ($multiView->getSubView()->getId() == $reportView->getId()) {
-                    throw new PublicSimpleException('SubView and MultiView can not be same');
-                }
-            }
-        }
     }
 }

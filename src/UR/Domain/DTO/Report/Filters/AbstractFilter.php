@@ -10,6 +10,7 @@ abstract class AbstractFilter
 	const FILTER_FIELD_KEY = 'field';
 	const FILTER_COMPARISON_KEY = 'comparison';
 	const FILTER_COMPARED_VALUE_KEY = 'compareValue';
+	const FILTER_DATA_SET_KEY = 'dataSet';
 
 	const TYPE_DATE = 'date';
 	const TYPE_TEXT = 'text';
@@ -69,9 +70,9 @@ abstract class AbstractFilter
 		}
 
 		foreach ($keys as $key) {
-            if (!array_key_exists($key, $reports)) {
-                continue;
-            }
+			if (!array_key_exists($key, $reports)) {
+				continue;
+			}
 
 			$totalValues[$key] = 0;
 			foreach ($reports as $report) {
@@ -95,9 +96,9 @@ abstract class AbstractFilter
 		}
 
 		foreach ($keys as $key) {
-            if (!array_key_exists($key, $reports)) {
-                continue;
-            }
+			if (!array_key_exists($key, $reports)) {
+				continue;
+			}
 
 			$total = 0;
 			$averagesValues[$key] = 0;

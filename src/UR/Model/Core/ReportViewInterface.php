@@ -39,17 +39,6 @@ interface ReportViewInterface extends ModelInterface
     public function setName($name);
 
     /**
-     * @return string
-     */
-    public function getAlias();
-
-    /**
-     * @param string $alias
-     * @return self
-     */
-    public function setAlias($alias);
-
-    /**
      * @return array
      */
     public function getJoinBy();
@@ -116,17 +105,6 @@ interface ReportViewInterface extends ModelInterface
     public function setDimensions($dimensions);
 
     /**
-     * @return boolean
-     */
-    public function isMultiView();
-
-    /**
-     * @param boolean $multiView
-     * @return self
-     */
-    public function setMultiView($multiView);
-
-    /**
      * @return PublisherInterface
      */
     public function getPublisher();
@@ -180,28 +158,6 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setFormats($formats);
-
-    /**
-     * @return boolean
-     */
-    public function isSubReportsIncluded();
-
-    /**
-     * @param boolean $subReportsIncluded
-     * @return self
-     */
-    public function setSubReportsIncluded($subReportsIncluded);
-
-    /**
-     * @return PersistentCollection
-     */
-    public function getReportViewMultiViews();
-
-    /**
-     * @param mixed $reportViewMultiViews
-     * @return self
-     */
-    public function setReportViewMultiViews($reportViewMultiViews);
 
     /**
      * @return PersistentCollection
@@ -263,4 +219,37 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setEnableCustomDimensionMetric($enableCustomDimensionMetric);
+
+    /**
+     * @return ReportViewInterface
+     */
+    public function getMasterReportView();
+
+    /**
+     * @param ReportViewInterface $masterReportView
+     * @return self
+     */
+    public function setMasterReportView($masterReportView);
+
+    /**
+     * @return array
+     */
+    public function getFilters();
+
+    /**
+     * @param array $filters
+     * @return self
+     */
+    public function setFilters($filters);
+
+    /**
+     * @return boolean
+     */
+    public function isSubView();
+
+    /**
+     * @param boolean $subview
+     * @return self
+     */
+    public function setSubView($subview);
 }

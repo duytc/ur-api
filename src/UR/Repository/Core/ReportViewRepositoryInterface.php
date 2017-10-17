@@ -71,18 +71,16 @@ interface ReportViewRepositoryInterface extends ObjectRepository
      */
     public function getReportViewsByDataSet(DataSetInterface $dataSet);
 
-    /**
-     * get Report Multi Views By Report View
-     *
-     * @param ReportViewInterface $subReportView
-     * @return ReportViewInterface[]
-     */
-    public function getReportMultiViewsByReportView(ReportViewInterface $subReportView);
-
     public function getReportViewByIds(array $ids);
 
     /**
      * @return mixed
      */
     public function getSingleViews();
+
+    /**
+     * @param ReportViewInterface $reportView
+     * @return null|ReportViewInterface
+     */
+    public function hasSubviews(ReportViewInterface $reportView);
 }

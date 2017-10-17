@@ -8,9 +8,6 @@ UR\Entity\Core\ReportViewTemplate:
             generator:
                 strategy: AUTO
     fields:
-        multiView:
-            type: boolean
-            default: false
         dataSets:
             type: json_array
             nullable: true

@@ -192,21 +192,6 @@ class MigrateDataSetFieldTypeCommand extends ContainerAwareCommand
             $this->migrateOneReportView($relatedReportViewByDataSet, $alsoRelatedReportViews = false);
         }
 
-        /** @var Collection|ReportViewInterface[] $relatedReportViewsByViewOfView */
-        $relatedReportViewsByViewOfView = $this->reportViewManager->getReportMultiViewsByReportView($reportView);
-        if ($relatedReportViewsByViewOfView instanceof Collection) {
-            $relatedReportViewsByViewOfView = $relatedReportViewsByViewOfView->toArray();
-        }
-
-        foreach ($relatedReportViewsByViewOfView as $relatedReportViewByViewOfView) {
-            // exclude current report view
-            if ($relatedReportViewByViewOfView->getId() === $reportView->getId()) {
-                continue;
-            }
-
-            $this->migrateOneReportView($relatedReportViewByViewOfView, $alsoRelatedReportViews = false);
-        }
-
         // finally save report view
         $this->reportViewManager->save($reportView);
     }

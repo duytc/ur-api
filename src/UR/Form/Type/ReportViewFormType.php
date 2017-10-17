@@ -5,7 +5,6 @@ namespace UR\Form\Type;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
@@ -13,13 +12,11 @@ use UR\Entity\Core\ReportView;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
-use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Model\User\Role\AdminInterface;
 
 class ReportViewFormType extends AbstractRoleSpecificFormType
 {
     private $originalReportViewDataSets;
-    private $originalReportViewMultiViews;
     /**
      * @var EntityManagerInterface
      */
@@ -38,27 +35,20 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
     {
         $builder
             ->add('name')
-            ->add('alias')
             ->add('transforms')
             ->add('joinBy')
             ->add('weightedCalculations')
-            ->add('multiView')
             ->add('showInTotal')
             ->add('formats')
             ->add('fieldTypes')
-            ->add('subReportsIncluded')
             ->add('isShowDataSetName')
             ->add('enableCustomDimensionMetric')
+            ->add('subView')
+            ->add('masterReportView')
+            ->add('filters')
         ;
 
         $builder
-            ->add('reportViewMultiViews', 'collection', array(
-                    'mapped' => true,
-                    'type' => new ReportViewMultiViewFormType(),
-                    'allow_add' => true,
-                    'allow_delete' => true,
-                )
-            )
             ->add('reportViewDataSets', 'collection', array(
                     'mapped' => true,
                     'type' => new ReportViewDataSetFormType(),
@@ -81,13 +71,8 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
                 /** @var ReportViewInterface $reportView */
                 $reportView = $event->getData();
                 $this->originalReportViewDataSets = $reportView->getReportViewDataSets();
-                $this->originalReportViewMultiViews = $reportView->getReportViewMultiViews();
                 if ($this->originalReportViewDataSets === null) {
                     $this->originalReportViewDataSets = [];
-                }
-
-                if ($this->originalReportViewMultiViews === null) {
-                    $this->originalReportViewMultiViews = [];
                 }
             }
         );
@@ -97,10 +82,6 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             function (FormEvent $event) {
                 foreach ($this->originalReportViewDataSets as $reportViewDataSet) {
                     $this->em->remove($reportViewDataSet);
-                }
-
-                foreach ($this->originalReportViewMultiViews as $reportViewMultiView) {
-                    $this->em->remove($reportViewMultiView);
                 }
 
                 $this->em->flush();
@@ -128,12 +109,6 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
                     $reportView->setFieldTypes([]);
                 }
 
-                $alias = $reportView->getAlias();
-
-                if (!is_string($alias)) {
-                    $reportView->setAlias($reportView->getName());
-                }
-
                 $reportViewDataSets = $reportView->getReportViewDataSets();
 
                 /**
@@ -141,18 +116,6 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
                  */
                 foreach ($reportViewDataSets as $reportViewDataSet) {
                     $reportViewDataSet->setReportView($reportView);
-                }
-
-                $reportViewMultiViews = $reportView->getReportViewMultiViews();
-
-                /**
-                 * @var ReportViewMultiViewInterface $reportViewMultiView
-                 */
-                foreach ($reportViewMultiViews as $reportViewMultiView) {
-                    if ($reportViewMultiView->getSubView()->getId() == $reportView->getId()) {
-                        $form->get('reportViewMultiViews')->addError(new FormError('In Multi View, report view and sub view can not be same report view'));
-                    }
-                    $reportViewMultiView->setReportView($reportView);
                 }
             }
         );

@@ -7,8 +7,6 @@ use UR\Domain\DTO\Report\Transforms\ReplaceTextTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
-use UR\Model\Core\ReportViewMultiViewInterface;
-use UR\Service\Report\ReportBuilder;
 use UR\Service\Report\SqlBuilder;
 use UR\Service\StringUtilTrait;
 
@@ -24,32 +22,17 @@ trait ReportViewUtilTrait
     {
         /** Get all filters from report view */
         $filters = [];
-        if ($reportView->isMultiView()) {
-            $multiViews = $reportView->getReportViewMultiViews();
-            if ($multiViews instanceof Collection) {
-                $multiViews = $multiViews->toArray();
+        $rpDataSets = $reportView->getReportViewDataSets();
+        if ($rpDataSets instanceof Collection) {
+            $rpDataSets = $rpDataSets->toArray();
+        }
+
+        foreach ($rpDataSets as $rpDataSet) {
+            if (!$rpDataSet instanceof ReportViewDataSetInterface) {
+                continue;
             }
 
-            foreach ($multiViews as $multiView) {
-                if (!$multiView instanceof ReportViewMultiViewInterface) {
-                    continue;
-                }
-
-                $filters = array_merge($filters, $multiView->getFilters());
-            }
-        } else {
-            $rpDataSets = $reportView->getReportViewDataSets();
-            if ($rpDataSets instanceof Collection) {
-                $rpDataSets = $rpDataSets->toArray();
-            }
-
-            foreach ($rpDataSets as $rpDataSet) {
-                if (!$rpDataSet instanceof ReportViewDataSetInterface) {
-                    continue;
-                }
-
-                $filters = array_merge($filters, $rpDataSet->getFilters());
-            }
+            $filters = array_merge($filters, $rpDataSet->getFilters());
         }
 
         return $filters;
@@ -72,34 +55,17 @@ trait ReportViewUtilTrait
         $fields = array_merge($fields, $this->getNewFieldsFromTransforms($reportView->getTransforms()));
         $fields = array_merge($fields, $reportView->getDimensions(), $reportView->getMetrics());
 
-        if ($reportView->isMultiView()) {
-            $multiViews = $reportView->getReportViewMultiViews();
-            if ($multiViews instanceof Collection) {
-                $multiViews = $multiViews->toArray();
+        $rpDataSets = $reportView->getReportViewDataSets();
+        if ($rpDataSets instanceof Collection) {
+            $rpDataSets = $rpDataSets->toArray();
+        }
+
+        foreach ($rpDataSets as $rpDataSet) {
+            if (!$rpDataSet instanceof ReportViewDataSetInterface) {
+                continue;
             }
 
-            foreach ($multiViews as $multiView) {
-                if (!$multiView instanceof ReportViewMultiViewInterface) {
-                    continue;
-                }
-
-                $fields = array_merge($fields, $multiView->getDimensions(), $multiView->getMetrics());
-            }
-
-            $fields[] = ReportBuilder::REPORT_VIEW_ALIAS;
-        } else {
-            $rpDataSets = $reportView->getReportViewDataSets();
-            if ($rpDataSets instanceof Collection) {
-                $rpDataSets = $rpDataSets->toArray();
-            }
-
-            foreach ($rpDataSets as $rpDataSet) {
-                if (!$rpDataSet instanceof ReportViewDataSetInterface) {
-                    continue;
-                }
-
-                $fields = array_merge($fields, $rpDataSet->getDimensions(), $rpDataSet->getMetrics());
-            }
+            $fields = array_merge($fields, $rpDataSet->getDimensions(), $rpDataSet->getMetrics());
         }
 
         $fields = $this->removeInvisibleFieldInReplaceTextTransforms($reportView, $fields);

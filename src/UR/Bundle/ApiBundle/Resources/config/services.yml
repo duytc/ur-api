@@ -15,7 +15,6 @@ imports:
     - { resource: services/service.report.yml }
     - { resource: services/service.report_schedule.yml }
     - { resource: services/service.report_view_data_set.yml }
-    - { resource: services/service.report_view_multi_view.yml }
     - { resource: services/service.linked_map_data_set.yml }
     - { resource: services/service.map_builder_config.yml }
     - { resource: services/service.tag.yml}

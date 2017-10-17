@@ -4,19 +4,13 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
-use UR\Entity\Core\ReportViewMultiView;
 use UR\Exception\InvalidArgumentException;
-use UR\Exception\RuntimeException;
 use UR\Model\Core\DataSetInterface;
-use UR\Model\Core\ReportView;
 use UR\Model\Core\ReportViewDataSetInterface;
-use UR\Model\Core\ReportViewInterface;
 use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\UserRoleInterface;
 use UR\Repository\Core\ReportViewDataSetRepositoryInterface;
-use UR\Repository\Core\ReportViewRepositoryInterface;
-use UR\Service\PublicSimpleException;
 
 class ReportViewDataSetManager implements ReportViewDataSetManagerInterface
 {
@@ -62,11 +56,6 @@ class ReportViewDataSetManager implements ReportViewDataSetManagerInterface
     {
         if (!$reportView instanceof ReportViewDataSetInterface) {
             throw new InvalidArgumentException('expect ReportViewDataSetInterface object');
-        }
-
-        $reportViewMultiViewRepository = $this->om->getRepository(ReportViewMultiView::class);
-        if ($reportViewMultiViewRepository->checkIfReportViewBelongsToMultiView($reportView)) {
-            throw new PublicSimpleException('This report view belongs to another report view');
         }
 
         $this->om->remove($reportView);

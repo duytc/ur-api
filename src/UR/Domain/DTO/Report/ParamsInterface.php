@@ -279,4 +279,15 @@ interface ParamsInterface
      * @return self
      */
     public function setUserProvidedDimensionEnabled($userProvidedDimensionEnabled);
+
+    /**
+     * @return boolean
+     */
+    public function isSubview();
+
+    /**
+     * @param boolean $subview
+     * @return self
+     */
+    public function setSubview($subview);
 }

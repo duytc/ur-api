@@ -10,7 +10,7 @@ UR\Entity\Core\ReportView:
         name:
             expose: true
             groups: [report_view.detail, report_view.summary, report_view.share]
-        alias:
+        subView:
             expose: true
             groups: [report_view.detail, report_view.summary]
         joinBy:
@@ -25,10 +25,10 @@ UR\Entity\Core\ReportView:
         weightedCalculations:
             expose: true
             groups: [report_view.detail, report_view.summary]
-        reportViews:
-            expose: true
-            groups: [report_view.detail, report_view.summary]
         filters:
+            expose: true
+            groups: [report_view.detail, report_view.summary, report_view.share]
+        masterReportView:
             expose: true
             groups: [report_view.detail, report_view.summary]
         showInTotal:
@@ -40,9 +40,6 @@ UR\Entity\Core\ReportView:
         dimensions:
             expose: true
             groups: [report_view.detail, report_view.summary]
-        multiView:
-            expose: true
-            groups: [report_view.detail, report_view.summary, report_view.share]
         publisher:
             expose: true
             groups: [report_view.detail, report_view.summary]
@@ -59,12 +56,6 @@ UR\Entity\Core\ReportView:
         reportViewDataSets:
             expose: true
             groups: [report_view.detail, report_view.summary, report_view.share]
-        reportViewMultiViews:
-            expose: true
-            groups: [report_view.detail, report_view.summary, report_view.share]
-        subReportsIncluded:
-            expose: true
-            groups: [report_view.detail, report_view.summary]
         userDefineDateRange:
             expose: true
             groups: [report_view.detail, report_view.summary]

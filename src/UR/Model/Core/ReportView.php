@@ -4,6 +4,7 @@
 namespace UR\Model\Core;
 
 
+use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use UR\Model\User\Role\PublisherInterface;
 
@@ -18,11 +19,6 @@ class ReportView implements ReportViewInterface
      * @var string
      */
     protected $name;
-
-    /**
-     * @var string
-     */
-    protected $alias;
 
     /**
      * formatted as
@@ -59,11 +55,6 @@ class ReportView implements ReportViewInterface
      * @var array
      */
     protected $weightedCalculations;
-
-    /**
-     * @var boolean
-     */
-    protected $multiView;
 
     /**
      * @var array
@@ -106,16 +97,9 @@ class ReportView implements ReportViewInterface
     protected $formats;
 
     /**
-     * @var boolean
-     */
-    protected $subReportsIncluded;
-
-    /**
      * @var PublisherInterface
      */
     protected $publisher;
-
-    protected $reportViewMultiViews;
 
     /**
      * @var array
@@ -127,9 +111,30 @@ class ReportView implements ReportViewInterface
      */
     protected $isShowDataSetName;
 
+    /**
+     * @var DateTime
+     */
     protected $lastActivity;
 
+    /**
+     * @var DateTime
+     */
     protected $lastRun;
+
+    /**
+     * @var ReportViewInterface
+     */
+    protected $masterReportView;
+
+    /**
+     * @var array
+     */
+    protected $filters;
+
+    /**
+     * @var bool
+     */
+    protected $subView;
 
     /**
      * @return mixed
@@ -144,11 +149,12 @@ class ReportView implements ReportViewInterface
      */
     public function __construct()
     {
-        $this->multiView = false;
         $this->sharedKeysConfig = [];
         $this->joinBy = [];
         $this->reportViewDataSets = new ArrayCollection();
         $this->enableCustomDimensionMetric = true;
+        $this->subView = false;
+        $this->filters = [];
     }
 
     /**
@@ -182,23 +188,6 @@ class ReportView implements ReportViewInterface
     public function setName($name)
     {
         $this->name = $name;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getAlias()
-    {
-        return $this->alias;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setAlias($alias)
-    {
-        $this->alias = $alias;
         return $this;
     }
 
@@ -308,23 +297,6 @@ class ReportView implements ReportViewInterface
     /**
      * @inheritdoc
      */
-    public function isMultiView()
-    {
-        return $this->multiView;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setMultiView($multiView)
-    {
-        $this->multiView = $multiView;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function getPublisher()
     {
         return $this->publisher;
@@ -416,41 +388,6 @@ class ReportView implements ReportViewInterface
     }
 
     /**
-     * @inheritdoc
-     */
-    public function isSubReportsIncluded()
-    {
-        return $this->subReportsIncluded;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setSubReportsIncluded($subReportsIncluded)
-    {
-        $this->subReportsIncluded = $subReportsIncluded;
-        return $this;
-    }
-
-    /**
-     * @return ReportViewMultiViewInterface[]
-     */
-    public function getReportViewMultiViews()
-    {
-        return $this->reportViewMultiViews;
-    }
-
-    /**
-     * @param mixed $reportViewMultiViews
-     * @return self
-     */
-    public function setReportViewMultiViews($reportViewMultiViews)
-    {
-        $this->reportViewMultiViews = $reportViewMultiViews;
-        return $this;
-    }
-
-    /**
      * @return mixed
      */
     public function getReportViewDataSets()
@@ -533,6 +470,60 @@ class ReportView implements ReportViewInterface
     public function setEnableCustomDimensionMetric($enableCustomDimensionMetric)
     {
         $this->enableCustomDimensionMetric = $enableCustomDimensionMetric;
+        return $this;
+    }
+
+    /**
+     * @return ReportViewInterface
+     */
+    public function getMasterReportView()
+    {
+        return $this->masterReportView;
+    }
+
+    /**
+     * @param ReportViewInterface $masterReportView
+     * @return self
+     */
+    public function setMasterReportView($masterReportView)
+    {
+        $this->masterReportView = $masterReportView;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFilters()
+    {
+        return $this->filters;
+    }
+
+    /**
+     * @param array $filters
+     * @return self
+     */
+    public function setFilters($filters)
+    {
+        $this->filters = $filters;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isSubView()
+    {
+        return $this->subView;
+    }
+
+    /**
+     * @param boolean $subview
+     * @return self
+     */
+    public function setSubView($subview)
+    {
+        $this->subView = $subview;
         return $this;
     }
 }

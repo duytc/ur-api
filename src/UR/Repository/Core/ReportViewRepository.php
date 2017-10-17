@@ -176,21 +176,6 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
         return $qb->getQuery()->getResult();
     }
 
-    /**
-     * get Report Multi Views By Report View
-     *
-     * @param ReportViewInterface $subReportView
-     * @return ReportViewInterface[]
-     */
-    public function getReportMultiViewsByReportView(ReportViewInterface $subReportView) {
-        $qb = $this->createQueryBuilder('rpv')
-            ->join('rpv.reportViewMultiViews', 'rpvmv')
-            ->where('rpvmv.subView = :subReportView')
-            ->setParameter('subReportView', $subReportView);
-
-        return $qb->getQuery()->getResult();
-    }
-
     public function getReportViewByIds(array $ids)
     {
         $qb = $this->createQueryBuilder('rpv');
@@ -205,5 +190,16 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
             ->where('rpv.multiView = 0')
             ->getQuery()
             ->getResult();
+    }
+
+    public function hasSubviews(ReportViewInterface $reportView)
+    {
+        $reportViews =  $this->createQueryBuilder('r')
+            ->where('r.masterReportView = :reportView')
+            ->setParameter('reportView', $reportView)
+            ->getQuery()
+            ->getResult();
+
+        return count($reportViews) > 0;
     }
 }

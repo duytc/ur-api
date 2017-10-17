@@ -7,7 +7,6 @@ use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Behaviors\JoinConfigUtilTrait;
 use UR\Behaviors\ReportViewUtilTrait;
 use UR\Domain\DTO\Report\DataSets\DataSet;
-use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Formats\ColumnPositionFormat;
 use UR\Domain\DTO\Report\Formats\CurrencyFormat;
 use UR\Domain\DTO\Report\Formats\DateFormat;
@@ -31,8 +30,6 @@ use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
-use UR\Model\Core\ReportViewMultiViewInterface;
-use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Report\WeightedCalculation;
 use UR\Service\PublicSimpleException;
 
@@ -46,8 +43,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const TRANSFORM_KEY = 'transforms';
     const JOIN_BY_KEY = 'joinBy';
     const WEIGHTED_CALCULATION_KEY = 'weightedCalculations';
-    const MULTI_VIEW_KEY = 'multiView';
-    const REPORT_VIEWS_KEY = 'reportViewMultiViews';
+    const SUBVIEW_KEY = 'subView';
     const FILTERS_KEY = 'filters';
     const FORMAT_KEY = 'formats';
     const SHOW_IN_TOTAL_KEY = 'showInTotal';
@@ -76,13 +72,12 @@ class ParamsBuilder implements ParamsBuilderInterface
     {
         $param = new Params();
 
-        $multiView = false;
-        if (array_key_exists(self::MULTI_VIEW_KEY, $data)) {
-            $multiView = filter_var($data[self::MULTI_VIEW_KEY], FILTER_VALIDATE_BOOLEAN);
+        $subView = false;
+        if (array_key_exists(self::SUBVIEW_KEY, $data)) {
+            $subView = filter_var($data[self::SUBVIEW_KEY], FILTER_VALIDATE_BOOLEAN);
         }
 
-        $param->setMultiView($multiView);
-        $param->setSubReportIncluded(false);
+        $param->setSubView($subView);
 
         if (array_key_exists(self::DIMENSIONS_KEY, $data)) {
             $param->setDimensions($data[self::DIMENSIONS_KEY]);
@@ -101,50 +96,33 @@ class ParamsBuilder implements ParamsBuilderInterface
          *      transforms,
          *      weightedCalculations,
          *      filters,
-         *      multiView,
-         *      reportViews => required for multiView=true
+         *      reportView => required for subView=true
          *      showInTotal,
          *      formats,
          *      subReportsIncluded => required for multiView=true
          */
-
-        if ($param->isMultiView()) {
-            if (!array_key_exists(self::REPORT_VIEWS_KEY, $data) || empty($data[self::MULTI_VIEW_KEY])) {
-                throw new InvalidArgumentException('multi view require at least one report view is selected');
+        if ($param->isSubView()) {
+            if (array_key_exists(self::FILTERS_KEY, $data) && !empty($data[self::FILTERS_KEY])) {
+                $param->setFilters(DataSet::createFilterObjects($data[self::FILTERS_KEY], $overrideFilter = true));
             }
+        }
 
-            if (!empty($data[self::REPORT_VIEWS_KEY])) {
-                $reportViews = $this->createReportViews($data[self::REPORT_VIEWS_KEY]);
-                $param->setReportViews($reportViews);
+        if (array_key_exists(self::DATA_SET_KEY, $data) && !empty($data[self::DATA_SET_KEY])) {
+//            if (array_key_exists(self::FILTERS_KEY, $data)) {
+//                $dataSets = $this->createDataSets($data[self::DATA_SET_KEY], $data[self::FILTERS_KEY]);
+//            } else {
+            $dataSets = $this->createDataSets($data[self::DATA_SET_KEY], null);
+//            }
+            $param->setDataSets($dataSets);
+        }
 
-                foreach ($reportViews as $reportView) {
-                    if (!$reportView instanceof ReportView || !array_key_exists(ReportViewInterface::ID, $data)) {
-                        continue;
-                    }
-
-                    if ($reportView->getReportViewId() == $data[ReportViewInterface::ID]) {
-                        throw new PublicSimpleException('SubView and MultiView can not be same');
-                    }
-                }
+        if (array_key_exists(self::JOIN_BY_KEY, $data)) {
+            $joinBy = $data[self::JOIN_BY_KEY];
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new InvalidArgumentException('Invalid JSON format in JoinConfigs');
             }
-
-            $param->setSubReportIncluded(false);
-
-        } else {
-            if (array_key_exists(self::DATA_SET_KEY, $data) && !empty($data[self::DATA_SET_KEY])) {
-                $dataSets = $this->createDataSets($data[self::DATA_SET_KEY]);
-                $param->setDataSets($dataSets);
-            }
-
-            if (array_key_exists(self::JOIN_BY_KEY, $data)) {
-                $joinBy = $data[self::JOIN_BY_KEY];
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    throw new InvalidArgumentException('Invalid JSON format in JoinConfigs');
-                }
-
-                if (is_array($joinBy) && !empty($joinBy)) {
-                    $param->setJoinConfigs($this->createJoinConfigs($joinBy, $param->getDataSets()));
-                }
+            if (is_array($joinBy) && !empty($joinBy)) {
+                $param->setJoinConfigs($this->createJoinConfigs($joinBy, $param->getDataSets()));
             }
         }
 
@@ -168,18 +146,9 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setFieldTypes($data[self::FIELD_TYPES_KEY]);
         }
 
-        /* set output formatting */
         if (array_key_exists(self::FORMAT_KEY, $data) && !empty($data[self::FORMAT_KEY])) {
             $formats = $this->createFormats($data[self::FORMAT_KEY]);
             $param->setFormats($formats);
-        }
-
-        if (array_key_exists(self::START_DATE, $data) && !empty($data[self::START_DATE])) {
-            $param->setStartDate(new \DateTime($data[self::START_DATE]));
-        }
-
-        if (array_key_exists(self::END_DATE, $data) && !empty($data[self::END_DATE])) {
-            $param->setEndDate(new \DateTime($data[self::END_DATE]));
         }
 
         if (array_key_exists(self::IS_SHOW_DATA_SET_NAME, $data) && !empty($data[self::IS_SHOW_DATA_SET_NAME])) {
@@ -188,6 +157,31 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if (array_key_exists(self::USER_PROVIDED_DIMENSION_ENABLED, $data) && !empty($data[self::USER_PROVIDED_DIMENSION_ENABLED])) {
             $param->setUserProvidedDimensionEnabled(filter_var($data[self::USER_PROVIDED_DIMENSION_ENABLED], FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if (array_key_exists(self::USER_PROVIDED_DIMENSION_ENABLED, $data) && $data[self::USER_PROVIDED_DIMENSION_ENABLED] == true) {
+            if (array_key_exists(self::USER_DEFINED_DIMENSIONS, $data)) {
+                $param->setUserDefinedDimensions($data[self::USER_DEFINED_DIMENSIONS]);
+            }
+            if (array_key_exists(self::USER_DEFINED_METRICS, $data)) {
+                $param->setUserDefinedMetrics($data[self::USER_DEFINED_METRICS]);
+            }
+            $transforms = $param->getTransforms();
+            foreach ($transforms as &$transform) {
+                if (!$transform instanceof GroupByTransform) {
+                    continue;
+                }
+                $transform->setFields($param->getUserDefinedDimensions());
+            }
+            $param->setTransforms($transforms);
+        }
+
+        if (array_key_exists(self::START_DATE, $data) && !empty($data[self::START_DATE])) {
+            $param->setStartDate(new \DateTime($data[self::START_DATE]));
+        }
+
+        if (array_key_exists(self::END_DATE, $data) && !empty($data[self::END_DATE])) {
+            $param->setEndDate(new \DateTime($data[self::END_DATE]));
         }
 
         if (array_key_exists(self::REPORT_VIEW_ID, $data) && !empty($data[self::REPORT_VIEW_ID])) {
@@ -205,7 +199,6 @@ class ParamsBuilder implements ParamsBuilderInterface
         if (array_key_exists(self::PAGE_KEY, $data)) {
             $param->setPage(intval($data[self::PAGE_KEY]));
         }
-
         if (array_key_exists(self::LIMIT_KEY, $data)) {
             $param->setLimit(intval($data[self::LIMIT_KEY]));
         }
@@ -218,41 +211,28 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setSearches($searches);
         }
 
-        if (array_key_exists(self::USER_PROVIDED_DIMENSION_ENABLED, $data) && $data[self::USER_PROVIDED_DIMENSION_ENABLED] == true) {
-            if (array_key_exists(self::USER_DEFINED_DIMENSIONS, $data)) {
-                $param->setUserDefinedDimensions($data[self::USER_DEFINED_DIMENSIONS]);
-            }
-
-            if (array_key_exists(self::USER_DEFINED_METRICS, $data)) {
-                $param->setUserDefinedMetrics($data[self::USER_DEFINED_METRICS]);
-            }
-
-            $transforms = $param->getTransforms();
-
-            foreach ($transforms as &$transform) {
-                if (!$transform instanceof GroupByTransform) {
-                    continue;
-                }
-
-                $transform->setFields($param->getUserDefinedDimensions());
-            }
-
-            $param->setTransforms($transforms);
-        }
-
         return $param;
     }
 
     /**
      * @param array $dataSets
+     * @param array $filters
      * @return array
      */
-    protected function createDataSets(array $dataSets)
+    protected function createDataSets(array $dataSets, array $filters = null)
     {
         $dataSetObjects = [];
         foreach ($dataSets as $dataSet) {
             if (!is_array($dataSet)) {
                 throw new InvalidArgumentException(sprintf('expect array, got %s', gettype($dataSet)));
+            }
+
+            if ($filters) {
+                foreach ($filters as $filter) {
+                    if ($dataSet['dataSet'] == $filter['dataSet']){
+                        $dataSet['filters'][] = $filter;
+                    }
+                }
             }
 
             $dataSetObjects[] = new DataSet($dataSet);
@@ -369,32 +349,6 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         return $reportViewObjects;
-    }
-
-    public static function reportViewMultiViewObjectsToArray($reportViewMultiViews)
-    {
-        if ($reportViewMultiViews instanceof PersistentCollection) {
-            $reportViewMultiViews = $reportViewMultiViews->toArray();
-        }
-
-        $reportViewData = [];
-        /**
-         * @var ReportViewMultiViewInterface $reportViewMultiView
-         */
-        foreach ($reportViewMultiViews as $reportViewMultiView) {
-            if (!$reportViewMultiView instanceof ReportViewMultiViewInterface) {
-                throw new InvalidArgumentException(sprintf('expect ReportViewMultiViewInterface, got %s', get_class($reportViewMultiView)));
-            }
-
-            $reportViewData[] = array(
-                ReportView::REPORT_VIEW_ID_KEY => $reportViewMultiView->getSubView()->getId(),
-                ReportView::DIMENSIONS_KEY => $reportViewMultiView->getDimensions(),
-                ReportView::METRICS_KEY => $reportViewMultiView->getMetrics(),
-                ReportView::FILTERS_KEY => $reportViewMultiView->getFilters(),
-            );
-        }
-
-        return $reportViewData;
     }
 
     public function reportViewDataSetObjectsToArray($reportViewDataSets)
@@ -534,29 +488,25 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null, ParamsInterface $multiParams = null)
     {
         $param = new Params();
-        if ($reportView->isMultiView()) {
-            $reportViewsRawData = $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews());
-            $reportViews = $this->createReportViews($reportViewsRawData);
-
-            $param
-                ->setReportViews($reportViews)
-                ->setShowInTotal(null);
-        } else {
-            $dataSetsRawData = $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets());
-            $dataSets = $this->createDataSets($dataSetsRawData);
-
-            $joinConfigs = $this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets());
-
-            $param
-                ->setDataSets($dataSets)
-                ->setJoinConfigs($joinConfigs);
-
-            // set showInTotal to NULL to get all total values
-            // DO NOT change
+        $param->setSubview($reportView->isSubView());
+        if ($reportView->isSubView()) {
+            $param->setFilters(DataSet::createFilterObjects($reportView->getFilters()));
+            if ($reportView->getMasterReportView() instanceof ReportViewInterface) {
+                $reportView = $reportView->getMasterReportView();
+            }
         }
 
+        $dataSetsRawData = $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets());
+        $dataSets = $this->createDataSets($dataSetsRawData);
+        $joinConfigs = $this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets());
+
         $param
-            ->setMultiView($reportView->isMultiView())
+            ->setDataSets($dataSets)
+            ->setJoinConfigs($joinConfigs);
+        // set showInTotal to NULL to get all total values
+        // DO NOT change
+
+        $param
             ->setTransforms($this->createTransforms($reportView->getTransforms()))
             ->setFieldTypes($reportView->getFieldTypes())
             ->setUserProvidedDimensionEnabled($reportView->isEnableCustomDimensionMetric())
@@ -588,15 +538,13 @@ class ParamsBuilder implements ParamsBuilderInterface
         //// do filtering dimensions
         $sharedDimensions = [];
         $dimensions = $reportView->getDimensions();
+
         foreach ($dimensions as $dimension) {
             if (!in_array($dimension, $fieldsToBeShared)) {
                 continue;
             }
 
             $sharedDimensions[] = $dimension;
-        }
-        if ($reportView->isMultiView()) {
-            $sharedDimensions[] = 'report_view_alias';
         }
 
         $param->setDimensions($sharedDimensions);
@@ -611,39 +559,36 @@ class ParamsBuilder implements ParamsBuilderInterface
 
             $sharedMetrics[] = $metric;
         }
+
         $param->setMetrics($sharedMetrics);
+        $param->setSubView($reportView->isSubView());
 
         /*
          * VERY IMPORTANT: build report param same as above buildFromArray() function
          * report param:
-         *      dataSets => required for multiView=false
+         *      dataSets => required
          *      fieldTypes
-         *      joinBy => required for multiView=false
+         *      joinBy => required
          *      transforms
          *      weightedCalculations
          *      filters
          *      multiView
-         *      reportViews => required for multiView=true
          *      showInTotal
          *      formats
-         *      subReportsIncluded => required for multiView=true
          */
-
-        if ($reportView->isMultiView()) {
-            $param
-                ->setReportViews($this->createReportViews(
-                    $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews()))
-                )
-                ->setSubReportIncluded(false);
-        } else {
-            $param->setDataSets($this->createDataSets(
-                $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
-            );
-            $param->setJoinConfigs($this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets()));
+        if ($reportView->isSubView()) {
+            $param->setFilters(DataSet::createFilterObjects($reportView->getFilters(), $overrideFilter = true));
+            if ($reportView->getMasterReportView() instanceof ReportViewInterface) {
+                $reportView = $reportView->getMasterReportView();
+            }
         }
 
+        $param->setDataSets($this->createDataSets(
+            $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
+        );
+        $param->setJoinConfigs($this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets()));
+
         $param
-            ->setMultiView($reportView->isMultiView())
             ->setTransforms($this->createTransforms($reportView->getTransforms()))
             ->setFieldTypes($reportView->getFieldTypes())
             ->setShowInTotal($reportView->getShowInTotal())
@@ -688,6 +633,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             if (is_string($searches)) {
                 $searches = json_decode($searches, true);
             }
+
             $param->setSearches($searches);
         }
 
@@ -746,46 +692,16 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         $metricCalculations = [];
-        if ($reportView->isMultiView()) {
-            $reportViewsRawData = $this->reportViewMultiViewObjectsToArray($reportView->getReportViewMultiViews());
-            // set startDate and endDate for sub report view
-            // because startDate and endDate of sub report view depend on startDate and endDate from request params
-            if (!empty($data) && array_key_exists(self::START_DATE, $data) && array_key_exists(self::END_DATE, $data) ) {
-                $startDate = $data[self::START_DATE];
-                $endDate = $data[self::END_DATE];
+        $dataSetsRawData = $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets());
+        $dataSets = $this->createDataSets($dataSetsRawData);
 
-                foreach ($reportViewsRawData as &$value) {
-                    foreach ($value[self::FILTERS_KEY] as &$filter) {
-                        if ($filter[DateFilter::DATE_USER_PROVIDED_FILTER_KEY] === true ) {
-                            if ($filter[DateFilter::FILTER_TYPE_KEY] == FieldType::DATETIME || $filter[DateFilter::FILTER_TYPE_KEY] == FieldType::DATE) {
-                                $filter[DateFilter::DATE_VALUE_FILTER_KEY] = [
-                                    self::START_DATE => $startDate,
-                                    self::END_DATE => $endDate
-                                ];
-                            }
-                        }
-                    }
-                }
-            }
-            $reportViews = $this->createReportViews($reportViewsRawData);
-
-            $param
-                ->setReportViews($reportViews)
-                ->setShowInTotal($reportView->getShowInTotal())
-                ->setSubReportIncluded(false);
-        } else {
-            $dataSetsRawData = $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets());
-            $dataSets = $this->createDataSets($dataSetsRawData);
-
-            $joinConfigs = $this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets());
-
-            $param
-                ->setDataSets($dataSets)
-                ->setJoinConfigs($joinConfigs);
-        }
+        $joinConfigs = $this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets());
 
         $param
-            ->setMultiView($reportView->isMultiView())
+            ->setDataSets($dataSets)
+            ->setJoinConfigs($joinConfigs);
+
+        $param
             ->setDimensions($reportView->getDimensions())
             ->setMetrics($reportView->getMetrics())
             ->setTransforms($this->createTransforms($reportView->getTransforms()))

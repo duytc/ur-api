@@ -14,9 +14,6 @@ class ReportViewTemplate extends ReportViewTemplateModel
     /** @var  string */
     protected $name;
 
-    /** @var  bool */
-    protected $multiView;
-
     /** @var  array */
     protected $dataSets;
 

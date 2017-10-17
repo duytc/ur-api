@@ -102,8 +102,8 @@ class ReportBuilder implements ReportBuilderInterface
      * @param LoggerInterface $logger
      */
     public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper,
-            ReportViewManagerInterface $reportViewManager, ParamsBuilderInterface $paramsBuilder, DataSetManagerInterface $dataSetManager,
-            ReportViewFilter $reportViewFilter, ReportViewFormatter $reportViewFormatter, ReportViewSorter $reportViewSorter, LoggerInterface $logger)
+                                ReportViewManagerInterface $reportViewManager, ParamsBuilderInterface $paramsBuilder, DataSetManagerInterface $dataSetManager,
+                                ReportViewFilter $reportViewFilter, ReportViewFormatter $reportViewFormatter, ReportViewSorter $reportViewSorter, LoggerInterface $logger)
     {
         $this->reportSelector = $reportSelector;
         $this->reportGrouper = $reportGrouper;
@@ -181,416 +181,20 @@ class ReportBuilder implements ReportBuilderInterface
 
     public function getReport(ParamsInterface $params)
     {
-        if ($params->isMultiView()) {
-            return $this->getMultipleReport($params);
+        if ($params->isSubview()) {
+            return $this->getSingleReport($params, $params->getFilters());
         }
 
         return $this->getSingleReport($params);
     }
 
-    protected function getMultipleReport(ParamsInterface $params)
-    {
-        $rows = new SplDoublyLinkedList();
-        $dimensions = [];
-        $metrics = [];
-        $types = [];
-        $dateRanges = [];
-
-        $reportViews = $params->getReportViews();
-        if (empty($reportViews)) {
-            throw new NotFoundHttpException('can not find the report');
-        }
-
-        $startDate = $params->getStartDate();
-        $endDate = $params->getEndDate();
-
-        if (!empty($startDate) && !empty($endDate)) {
-            foreach ($reportViews as $reportView) {
-                $this->overrideDateTypeFiltersForReportView($reportView, $startDate, $endDate);
-            }
-        }
-
-        /**
-         * Fields on Calculated Fields/Comparison Percent on Multi View need to be query from sub view
-         * We
-         */
-        $fieldOnNewFieldTransforms = $this->getSubFieldsForTransforms($params);
-
-        /* get all reports data */
-
-        /**
-         * @var ReportViewDTO $reportView
-         */
-        foreach ($reportViews as $reportView) {
-            $view = $this->reportViewManager->find($reportView->getReportViewId());
-            if (!$view instanceof ReportViewInterface) {
-                throw new InvalidArgumentException(sprintf('The report view %d does not exist', $reportView->getReportViewId()));
-            }
-
-            $reportParam = $this->paramsBuilder->buildFromReportView($view, null, $params);
-            if (is_array($params->getUserDefinedMetrics()) && !empty($params->getUserDefinedMetrics())) {
-                $reportParam->setShowInTotal(array_intersect($params->getUserDefinedMetrics(), $reportView->getMetrics()));
-            } else {
-                $reportParam->setShowInTotal($reportView->getMetrics());
-            }
-
-            $reportParam->setShowInTotal(array_merge($reportParam->getShowInTotal(), $fieldOnNewFieldTransforms));
-
-            $viewFilters = $reportView->getFilters();
-
-            if ($reportParam->getStartDate() !== null || $reportParam->getEndDate() !== null) {
-                $reportParam->setStartDate($startDate);
-                $reportParam->setEndDate($endDate);
-            }
-
-            $result = $this->getSingleReport($reportParam, $viewFilters, $isNeedFormatReport = false); // do not format report to avoid error when doing duplicate format
-            foreach ($result->getTypes() as $field => $type) {
-                if (in_array($type, [FieldType::NUMBER, FieldType::DECIMAL])) {
-                    $types[$field] = $type;
-                }
-            }
-
-            $total = $result->getTotal();
-            if (!empty($total)) {
-                $total = array_merge($total, array(self::REPORT_VIEW_ALIAS => $view->getAlias()));
-                $rows->push($total);
-            }
-            $metrics = array_unique(array_merge($metrics, array_keys($total)));
-
-            $dateRange = $result->getDateRange();
-            if (!$dateRange instanceof DateRange) {
-                continue;
-            }
-            $dateRanges[] = $dateRange;
-        }
-
-        $dimensions[] = self::REPORT_VIEW_ALIAS;
-        $types[self::REPORT_VIEW_ALIAS] = FieldType::TEXT;
-
-        if ($rows->count() == 0) {
-            $columns = [];
-            if (is_array($params->getDimensions())) {
-                $columns = array_merge($columns, $params->getDimensions());
-            }
-            if (is_array($params->getMetrics())) {
-                $columns = array_merge($columns, $params->getMetrics());
-            }
-            if (is_array($params->getUserDefinedDimensions())) {
-                $columns = array_merge($columns, $params->getUserDefinedDimensions());
-            }
-            if (is_array($params->getUserDefinedMetrics())) {
-                $columns = array_merge($columns, $params->getUserDefinedMetrics());
-            }
-
-            foreach ($params->getTransforms() as $transform) {
-                if ($transform instanceof NewFieldTransform) {
-                    $columns[] = $transform->getFieldName();
-                }
-            }
-
-            $columns = array_unique($columns);
-            $columns[] = self::REPORT_VIEW_ALIAS;
-
-            $headers = [];
-            foreach ($columns as $index => $column) {
-                $headers[$column] = $this->convertColumn($column, $params->getIsShowDataSetName());
-            }
-            return new ReportResult(new SplDoublyLinkedList(), [], [], null, $headers, $types, 0);
-        }
-
-        $collection = new Collection(array_unique(array_merge($metrics, $dimensions)), $rows, $types);
-
-        /* get final reports */
-        return $this->finalizeMultipleReport($collection, $params, $metrics, $dimensions, $dateRanges);
-    }
-
-    /**
-     * @param Collection $reportCollection
-     * @param ParamsInterface $params
-     * @param array $metrics
-     * @param array $dimensions
-     * @param $dateRanges
-     * @param array $outputJoinField
-     * @param bool $isNeedFormatReport
-     * @param array $overridingFilters
-     * @return ReportResultInterface
-     */
-    private function finalizeMultipleReport(Collection $reportCollection, ParamsInterface $params, array $metrics, array $dimensions,
-            $dateRanges, array $outputJoinField = [], $isNeedFormatReport = true, $overridingFilters = [])
-    {
-        /* transform data */
-        $userProvidedDimensions = [];
-        $userProvidedMetrics = [];
-        $transforms = is_array($params->getTransforms()) ? $params->getTransforms() : [];
-        if (!$params->isMultiView() && !empty($params->getUserDefinedDimensions()) && $params->isUserProvidedDimensionEnabled()) {
-            $types = $reportCollection->getTypes();
-            $aggregateFields = [];
-            foreach ($metrics as $metric) {
-                if (array_key_exists($metric, $types) && in_array($types[$metric], [FieldType::NUMBER, FieldType::DECIMAL])) {
-                    $aggregateFields[] = $metric;
-                }
-            }
-
-            foreach ($transforms as $transform) {
-                if ($transform instanceof NewFieldTransform) {
-                    $aggregateFields[] = $transform->getFieldName();
-                }
-            }
-
-            if (count($transforms) > 0) {
-                $groupByTransforms = array_filter($transforms, function ($transform) {
-                    return $transform instanceof GroupByTransform;
-                });
-                if (count($groupByTransforms) < 1) {
-                    $transforms[] = new GroupByTransform($params->getUserDefinedDimensions(), $aggregateAll = true, $aggregateFields);
-                } else {
-                    /** @var GroupByTransform $groupByTransform */
-                    foreach ($groupByTransforms as &$groupByTransform) {
-                        $groupByTransform->setFields($params->getUserDefinedDimensions());
-                    }
-                }
-            } else {
-                $transforms[] = new GroupByTransform($params->getUserDefinedDimensions(), $aggregateAll = true, $aggregateFields);
-            }
-
-            $userProvidedDimensions = $params->getUserDefinedDimensions();
-            $userProvidedMetrics = $params->getUserDefinedMetrics();
-            $dimensions = array_values(array_unique(array_merge($dimensions, $userProvidedDimensions)));
-            $metrics = array_values(array_unique(array_merge($metrics, $userProvidedMetrics)));
-        }
-
-        if (count($transforms) > 0) {
-            $this->transformReports($reportCollection, $transforms, $metrics, $dimensions, $outputJoinField);
-        }
-
-        /* build columns that will be showed in total */
-        $showInTotal = is_array($params->getShowInTotal()) ? $params->getShowInTotal() : $metrics;
-
-        /* group reports */
-        /** @var ReportResultInterface $reportResult */
-        $reportResult = $this->reportGrouper->groupForMultiView($reportCollection, $showInTotal, $params->getWeightedCalculations(), $dateRanges, $params->getIsShowDataSetName());
-
-        /* Filter all non-selected fields from reports data */
-        $nonSelectedFields = [];
-
-        // get nonSelectedFields from sub-report-views if report-multi-views used multiple report views
-        /** @var \UR\Domain\DTO\Report\ReportViews\ReportViewInterface[] $reportViews */
-        $reportViews = $params->getReportViews();
-        if (is_array($reportViews)) {
-            $allSubReportFields = [];
-            $selectedFields = [];
-
-            foreach ($reportViews as $reportView) {
-                // get all fields from report view entity
-                $reportViewId = $reportView->getReportViewId();
-                $reportViewEntity = $this->reportViewManager->find($reportViewId);
-                if (!$reportViewEntity instanceof ReportViewInterface) {
-                    continue;
-                }
-
-                $allReportViewFieldsTmp = array_merge($reportViewEntity->getDimensions(), $reportViewEntity->getMetrics());
-
-                // get all selected fields from data set DTO
-                $metrics = $reportView->getMetrics();
-                $dimensions = $reportView->getDimensions();
-                $selectedFieldsTmp = array_merge($metrics, $dimensions);
-
-                $allSubReportFields = array_merge($allSubReportFields, $allReportViewFieldsTmp);
-                $selectedFields = array_merge($selectedFields, $selectedFieldsTmp);
-            }
-
-            $selectedFields = array_unique(array_merge($selectedFields, $userProvidedDimensions, $userProvidedMetrics));
-            $nonSelectedFields = array_diff($allSubReportFields, $selectedFields);
-        }
-
-        // do filter
-        $this->filterNonSelectedFieldsFromReports($reportResult, $nonSelectedFields);
-
-        $types = $reportResult->getTypes();
-        $temporaryFields = [];
-        foreach ($types as $column => $type) {
-            if ($type == FieldType::DATE || $type == FieldType::DATETIME) {
-                $pos = strpos($column, "_");
-                $fieldPattern = "__" . substr($column, 0, $pos + 1) . "%s" . substr($column, $pos);
-                $temporaryFields[] = sprintf($fieldPattern, "day");
-                $temporaryFields[] = sprintf($fieldPattern, "month");
-                $temporaryFields[] = sprintf($fieldPattern, "year");
-            }
-        }
-
-        $columns = $reportResult->getColumns();
-        $newFieldsTransform = [];
-        if (count($transforms) > 0) {
-            foreach ($transforms as $transform) {
-                if ($transform instanceof NewFieldTransform) {
-                    $columns[$transform->getFieldName()] = $transform->getFieldName();
-                    $newFieldsTransform[] = $transform->getFieldName();
-                }
-            }
-        }
-        $reports = $reportCollection->getRows();
-        if ($reports->count() > 0) {
-            $unUsedColumns = array_diff_key($reports[0], $columns);
-            foreach ($unUsedColumns as $field => $name) {
-                $temporaryFields[] = $field;
-            }
-        }
-
-        foreach ($temporaryFields as $temporaryField) {
-            if (array_key_exists($temporaryField, $columns)) {
-                unset($columns[$temporaryField]);
-            }
-
-            if (array_key_exists($temporaryField, $types)) {
-                unset($types[$temporaryField]);
-            }
-        }
-        $reportResult->setColumns($columns);
-        $reportResult->setTypes($types);
-
-        $reportResult = $this->getReportAfterRemoveTemporaryFields($reportResult, $temporaryFields);
-
-        if (!empty($params->getUserDefinedDimensions())) {
-            $newDimensions = $params->getUserDefinedDimensions();
-            $newMetrics = $params->getUserDefinedMetrics();
-
-            $newColumns = array_merge($newDimensions, $newMetrics);
-            $fieldsToRemove = array_diff(array_keys($reportResult->getColumns()), $newColumns);
-            $reportResult = $this->getReportAfterRemoveTemporaryFields($reportResult, $fieldsToRemove);
-
-            $types = $reportResult->getTypes();
-            foreach ($types as $k => $v) {
-                if (in_array($k, $fieldsToRemove)) {
-                    unset($types[$k]);
-                }
-            }
-
-            $reportResult->setTypes($types);
-            $oldColumns = $reportResult->getColumns();
-            foreach ($oldColumns as $k => $v) {
-                if (in_array($k, $newColumns)) {
-                    continue;
-                }
-
-                unset($oldColumns[$k]);
-            }
-            $reportResult->setColumns($oldColumns);
-            $totalFields = $reportResult->getTotal();
-            foreach ($totalFields as $k => $v) {
-                if (in_array($k, $newColumns)) {
-                    continue;
-                }
-
-                unset($totalFields[$k]);
-            }
-            $reportResult->setTotal($totalFields);
-
-            $averageFields = $reportResult->getAverage();
-            foreach ($averageFields as $k => $v) {
-                if (in_array($k, $newColumns)) {
-                    continue;
-                }
-
-                unset($averageFields[$k]);
-            }
-            $reportResult->setAverage($averageFields);
-        }
-
-        $reportResult = $this->reportViewFormatter->getSmartColumns($reportResult, $params, $newFieldsTransform);
-        $reportResult = $this->reportViewFormatter->getReportAfterApplyDefaultFormat($reportResult, $params);
-
-        if (count($params->getSearches()) > 0) {
-            $reportResult = $this->reportViewFilter->filterReports($reportResult, $params);
-        }
-
-        if ($params->getSortField()) {
-            $sortField = $params->getSortField();
-            $sortField = str_replace('"', '', $sortField);
-            $params->setSortField($sortField);
-
-            if (!$params->getOrderBy()) {
-                $params->setOrderBy('asc');
-            }
-            $reportResult = $this->reportViewSorter->sortReports($reportResult, $params);
-        }
-
-        $totalRow = $reportResult->getRows()->count();
-        $reportResult->setTotalReport($totalRow);
-
-        $rows = iterator_to_array($reportResult->getRows());
-        if (is_int($params->getPage())) {
-            if (!is_int($params->getLimit()) || $params->getLimit() < 1) {
-                $params->setLimit(10);
-            }
-            $offset = ($params->getPage() - 1) * $params->getLimit();
-
-            $rows = array_splice($rows, $offset, $params->getLimit());
-            $reportResult->setTotalPage(floor($totalRow / $params->getLimit()) + 1);
-            $newRows = new SplDoublyLinkedList();
-            foreach ($rows as $row) {
-                $newRows->push($row);
-            }
-
-            $reportResult->setRows($newRows);
-        }
-
-
-        /* format data if need */
-        if ($isNeedFormatReport) {
-            /** @var FormatInterface[] $formats */
-            $formats = is_array($params->getFormats()) ? $params->getFormats() : [];
-            $this->reportViewFormatter->formatReports($reportResult, $formats, $metrics, $dimensions);
-        }
-
-        $rows = $reportResult->getRows();
-        $columns = $reportResult->getColumns();
-        foreach ($rows as $index => $row) {
-            $diff = array_diff_key($columns, $row);
-            if (count($diff) > 0) {
-                foreach ($diff as $field => $type) {
-                    $row[$field] = null;
-                }
-                $rows->offsetSet($index, $row);
-            }
-        }
-        /* return report result */
-        return $reportResult;
-    }
-    /**
-     * @param ReportViewDTO $reportView
-     * @param $startDate
-     * @param $endDate
-     * @return ReportViewDTO
-     */
-    private function overrideDateTypeFiltersForReportView(ReportViewDTO $reportView, $startDate, $endDate)
-    {
-        $filters = $reportView->getFilters();
-        /** @var FilterInterface|DateFilterInterface $filter */
-        foreach ($filters as $filter) {
-            if (!$filter instanceof DateFilterInterface) {
-                continue;
-            }
-
-            if ($filter->isUserDefine()) {
-                $filter->setDateValue(array(
-                    DateFilter::DATE_VALUE_FILTER_START_DATE_KEY => $startDate,
-                    DateFilter::DATE_VALUE_FILTER_END_DATE_KEY => $endDate
-                ));
-            }
-        }
-
-        $reportView->setFilters($filters);
-
-        return $reportView;
-    }
-
     /**
      * @param ParamsInterface $params
-     * @param null $overridingFilters
+     * @param $overridingFilters
      * @param bool $isNeedFormatReport
      * @return mixed|ReportResult|ReportResultInterface
      */
-    private function getSingleReport(ParamsInterface $params, $overridingFilters = null, $isNeedFormatReport = true)
+    private function getSingleReport(ParamsInterface $params, $overridingFilters = [], $isNeedFormatReport = true)
     {
         $metrics = [];
         $dimensions = [];
@@ -631,7 +235,21 @@ class ReportBuilder implements ReportBuilderInterface
 
         if ($startDate instanceof \DateTime && $endDate instanceof \DateTime) {
             foreach ($dataSets as $dataSet) {
-                $this->overrideDateTypeFilterForDataSet($dataSet, $startDate, $endDate);
+                $this->overrideDateTypeFilterForDataSet($dataSet, $startDate, $endDate, $dataSet->getFilters());
+            }
+
+            /** @var FilterInterface|DateFilterInterface $overridingFilter */
+            foreach ($overridingFilters as $overridingFilter) {
+                if (!$overridingFilter instanceof DateFilterInterface) {
+                    continue;
+                }
+
+                if ($overridingFilter->isUserDefine()) {
+                    $overridingFilter->setDateValue(array(
+                        DateFilter::DATE_VALUE_FILTER_START_DATE_KEY => $startDate->format('Y-m-d'),
+                        DateFilter::DATE_VALUE_FILTER_END_DATE_KEY => $endDate->format('Y-m-d')
+                    ));
+                }
             }
         }
 
@@ -780,7 +398,7 @@ class ReportBuilder implements ReportBuilderInterface
      * @return mixed|ReportResultInterface
      */
     private function finalizeSingleReport($subQuery, Collection $reportCollection, ParamsInterface $params, array $metrics,
-        array $dimensions, array $outputJoinField = [], $isNeedFormatReport = true, $overridingFilters = [])
+                                          array $dimensions, array $outputJoinField = [], $isNeedFormatReport = true, $overridingFilters = [])
     {
         $userProvidedDimensions = [];
         $userProvidedMetrics = [];
@@ -995,13 +613,15 @@ class ReportBuilder implements ReportBuilderInterface
 
     /**
      * @param DataSetDTO $dataSet
-     * @param $startDate
-     * @param $endDate
+     * @param \DateTime $startDate
+     * @param \DateTime $endDate
+     * @param array $overwriteFilters
      * @return DataSetDTO
      */
-    private function overrideDateTypeFilterForDataSet(DataSetDTO &$dataSet, \DateTime $startDate, \DateTime $endDate)
+    private function overrideDateTypeFilterForDataSet(DataSetDTO &$dataSet, \DateTime $startDate, \DateTime $endDate, $overwriteFilters = [])
     {
         $filters = $dataSet->getFilters();
+        $filters = array_merge($filters, $overwriteFilters);
 
         /** @var FilterInterface|DateFilterInterface $filter */
         foreach ($filters as $filter) {
@@ -1155,7 +775,7 @@ class ReportBuilder implements ReportBuilderInterface
         return $this->dataSetManager;
     }
 
-	/**
+    /**
      * @param ParamsInterface $params
      * @return array
      */

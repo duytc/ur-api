@@ -50,7 +50,6 @@ class MigrateReportViewFormatFromObjectToArrayCommand extends ContainerAwareComm
 
     /**
      * migrate ReportViews's format from object to json
-     * ReportViewMultiView do not have format, so no need to update
      *
      * @param OutputInterface $output
      * @param array|ReportViewInterface[] $reportViews

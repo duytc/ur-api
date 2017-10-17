@@ -8,7 +8,6 @@ use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Entity\Core\ReportView;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
-use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Repository\Core\ReportViewRepositoryInterface;
 use UR\Service\Report\ShareableLinkUpdaterInterface;
 
@@ -40,11 +39,6 @@ class ReportViewChangeForSharedKeysConfigListener
 			$this->updateReportViewIds[] = $entity->getReportView()->getId();
 			return;
 		}
-
-		if ($entity instanceof ReportViewMultiViewInterface && $entity->getReportView() !== null) {
-			$this->updateReportViewIds[] = $entity->getReportView()->getId();
-			return;
-		}
 	}
 
 	/**
@@ -63,11 +57,6 @@ class ReportViewChangeForSharedKeysConfigListener
 		}
 
 		if ($entity instanceof ReportViewDataSetInterface) {
-			$this->updateReportViewIds[] = $entity->getReportView()->getId();
-			return;
-		}
-
-		if ($entity instanceof ReportViewMultiViewInterface) {
 			$this->updateReportViewIds[] = $entity->getReportView()->getId();
 			return;
 		}

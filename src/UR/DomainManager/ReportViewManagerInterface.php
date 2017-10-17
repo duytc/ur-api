@@ -38,14 +38,6 @@ interface ReportViewManagerInterface extends ManagerInterface
     public function getReportViewsByDataSet(DataSetInterface $dataSet);
 
     /**
-     * get Report Multi Views By Report View
-     *
-     * @param ReportViewInterface $subReportView
-     * @return ReportViewInterface[]
-     */
-    public function getReportMultiViewsByReportView(ReportViewInterface $subReportView);
-
-    /**
      * @return mixed
      */
     public function getSingleViews();

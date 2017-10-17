@@ -14,7 +14,6 @@ class ReportViewTemplateFormType extends AbstractRoleSpecificFormType
     {
         $builder
             ->add('name')
-            ->add('multiView')
             ->add('dataSets')
             ->add('reportViews')
             ->add('joinConfig')

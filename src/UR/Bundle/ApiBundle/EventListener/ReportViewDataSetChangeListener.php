@@ -8,7 +8,6 @@ use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Bundle\ApiBundle\Behaviors\CalculateMetricsAndDimensionsTrait;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
-use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Service\Report\ParamsBuilderInterface;
 use UR\Worker\Manager;
 
@@ -68,7 +67,7 @@ class ReportViewDataSetChangeListener
 		}
 
 		foreach($this->changedReportViews as $reportView) {
-			if (!$reportView instanceof ReportViewInterface || ($reportView instanceof ReportViewInterface && $reportView->isMultiView() === true)) {
+			if (!$reportView instanceof ReportViewInterface) {
 				continue;
 			}
 
@@ -79,18 +78,6 @@ class ReportViewDataSetChangeListener
 			$reportView->setDimensions($columns[self::DIMENSIONS_KEY]);
 
 			$em->persist($reportView);
-
-			//$reportViewMultiViewRepository = $em->getRepository(ReportViewMultiView::class);
-
-			//$reportViewMultiViews = $reportViewMultiViewRepository->getBySubView($reportView);
-			/**
-			 * @var ReportViewMultiViewInterface $reportViewMultiView
-			 */
-		/*	foreach($reportViewMultiViews as $reportViewMultiView) {
-				$reportViewMultiView->setMetrics($columns[self::METRICS_KEY]);
-				$reportViewMultiView->setDimensions($columns[self::DIMENSIONS_KEY]);
-				$em->persist($reportViewMultiView);
-			}*/
 		}
 
 		$this->changedReportViews = [];

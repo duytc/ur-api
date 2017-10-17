@@ -6,28 +6,24 @@ namespace UR\Service\ReportViewTemplate;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Bundle\ApiBundle\Behaviors\CalculateMetricsAndDimensionsTrait;
-use UR\Bundle\ApiBundle\EventListener\ReportViewMultiViewChangeListener;
+use UR\Bundle\ApiBundle\EventListener\ReportViewDataSetChangeListener;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\ReportViewDataSetManagerInterface;
 use UR\DomainManager\ReportViewManagerInterface;
-use UR\DomainManager\ReportViewMultiViewManagerInterface;
 use UR\DomainManager\ReportViewTemplateManagerInterface;
 use UR\DomainManager\ReportViewTemplateTagManagerInterface;
 use UR\DomainManager\TagManagerInterface;
 use UR\Entity\Core\DataSet;
 use UR\Entity\Core\ReportView;
 use UR\Entity\Core\ReportViewDataSet;
-use UR\Entity\Core\ReportViewMultiView;
+use UR\Entity\Core\ReportViewTemplate;
 use UR\Entity\Core\ReportViewTemplateTag;
+use UR\Entity\Core\Tag;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
-use UR\Entity\Core\ReportViewTemplate;
-use UR\Model\Core\ReportViewMultiViewInterface;
 use UR\Model\Core\ReportViewTemplateInterface;
-use UR\Entity\Core\Tag;
 use UR\Model\Core\TagInterface;
-use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Service\Report\ParamsBuilderInterface;
 use UR\Service\Report\SqlBuilder;
@@ -58,9 +54,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
     /** @var array */
     protected $replaceDataSetId = [];
 
-    /** @var ReportViewMultiViewManagerInterface  */
-    protected $reportViewMultiViewManager;
-
     /** @var ReportViewDataSetManagerInterface  */
     protected $reportViewDataSetManager;
 
@@ -75,11 +68,12 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
      * @param ReportViewTemplateTagManagerInterface $reportViewTemplateTagManager
      * @param EntityManagerInterface $em
      * @param ParamsBuilderInterface $paramsBuilder
-     * @param ReportViewMultiViewManagerInterface $reportViewMultiViewManager
      * @param ReportViewDataSetManagerInterface $reportViewDataSetManager
      * @param DataSetManagerInterface $dataSetManager
      */
-    public function __construct(ReportViewManagerInterface $reportViewManager, ReportViewTemplateManagerInterface $reportViewTemplateManager, TagManagerInterface $tagManager, ReportViewTemplateTagManagerInterface $reportViewTemplateTagManager, EntityManagerInterface $em, ParamsBuilderInterface $paramsBuilder, ReportViewMultiViewManagerInterface $reportViewMultiViewManager, ReportViewDataSetManagerInterface $reportViewDataSetManager, DataSetManagerInterface $dataSetManager)
+    public function __construct(ReportViewManagerInterface $reportViewManager, ReportViewTemplateManagerInterface $reportViewTemplateManager,
+    TagManagerInterface $tagManager, ReportViewTemplateTagManagerInterface $reportViewTemplateTagManager, EntityManagerInterface $em, ParamsBuilderInterface $paramsBuilder,
+    ReportViewDataSetManagerInterface $reportViewDataSetManager, DataSetManagerInterface $dataSetManager)
     {
         $this->reportViewManager = $reportViewManager;
         $this->reportViewTemplateManager = $reportViewTemplateManager;
@@ -87,7 +81,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $this->reportViewTemplateTagManager = $reportViewTemplateTagManager;
         $this->em = $em;
         $this->paramsBuilder = $paramsBuilder;
-        $this->reportViewMultiViewManager = $reportViewMultiViewManager;
         $this->reportViewDataSetManager = $reportViewDataSetManager;
         $this->dataSetManager = $dataSetManager;
     }
@@ -134,11 +127,8 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $reportView->setPublisher($publisher);
 
         /** Inherited bool value*/
-        $reportView->setMultiView($template->isMultiView());
         $reportView->setIsShowDataSetName($template->isShowDataSetName());
         $reportView->setName($template->getName());
-        $reportView->setAlias($template->getName());
-        $reportView->setSubReportsIncluded($template->isMultiView());
 
         /** Inherited array value */
         $reportView->setDimensions($template->getDimensions());
@@ -149,7 +139,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $reportView->setShowInTotal($template->getShowInTotal());
 
         /** Convert report views multi views and report view data sets */
-        $reportView->setReportViewMultiViews($this->convertArrayToReportViewMultiViews($template->getReportViews(), $publisher));
         $reportView->setReportViewDataSets($this->convertArrayToReportViewDataSets($template->getDataSets(), $publisher));
 
         /** Inherited value from custom params */
@@ -162,7 +151,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $this->reportViewManager->save($reportView);
 
         $this->setReportViewForReportViewDataSets($reportView);
-        $this->setReportViewForReportViewMultiViews($reportView);
     }
 
     /**
@@ -173,7 +161,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
     private function inheritedTemplateFromReportView(ReportViewTemplateInterface $template, ReportViewInterface $reportView)
     {
         /** Inherited bool value*/
-        $template->setMultiView($reportView->isMultiView());
         $template->setShowDataSetName($reportView->getIsShowDataSetName());
         $template->setName($reportView->getName());
 
@@ -186,7 +173,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $template->setShowInTotal($reportView->getShowInTotal());
 
         /** Convert sub report views and data sets to array in template */
-        $template->setReportViews($this->convertReportViewMultiViewsToArray($reportView->getReportViewMultiViews()));
         $template->setDataSets($this->convertReportViewDataSetsToArray($reportView->getReportViewDataSets()));
 
         return $template;
@@ -204,36 +190,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         }
 
         return $template;
-    }
-
-    /**
-     * @param Collection $reportViewMultiViews
-     * @return array
-     */
-    private function convertReportViewMultiViewsToArray(Collection $reportViewMultiViews)
-    {
-        $reportViewMultiViews = $reportViewMultiViews->toArray();
-
-        if (empty($reportViewMultiViews)) {
-            return [];
-        }
-
-        $reportViews = [];
-
-        foreach ($reportViewMultiViews as $reportViewMultiView) {
-            if (!$reportViewMultiView instanceof ReportViewMultiViewInterface) {
-                continue;
-            }
-
-            $reportViews[] = [
-                ModelInterface::ID => $reportViewMultiView->getSubView()->getId(),
-                ReportViewInterface::REPORT_VIEW_FILTERS => $reportViewMultiView->getFilters(),
-                ReportViewInterface::REPORT_VIEW_DIMENSIONS => $reportViewMultiView->getDimensions(),
-                ReportViewInterface::REPORT_VIEW_METRICS => $reportViewMultiView->getMetrics()
-            ];
-        }
-
-        return $reportViews;
     }
 
     /**
@@ -269,44 +225,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         }
 
         return $dataSets;
-    }
-
-    /**
-     * @param array $reportViews
-     * @param PublisherInterface $publisher
-     * @return \UR\Model\Core\ReportViewMultiViewInterface[]
-     */
-    private function convertArrayToReportViewMultiViews(array $reportViews, PublisherInterface $publisher)
-    {
-        $reportViewMultiViews = [];
-
-        foreach ($reportViews as $data) {
-            $id = $data[ReportViewInterface::ID];
-            $oldSubView = $this->reportViewManager->find($id);
-            if (!$oldSubView instanceof ReportViewInterface) {
-                continue;
-            }
-
-            $subView = $this->cloneReportView($oldSubView, $publisher);
-
-            $reportViewMultiView = new ReportViewMultiView();
-            $reportViewMultiView->setSubView($subView);
-            if (array_key_exists(ReportViewInterface::REPORT_VIEW_FILTERS, $data)) {
-                $reportViewMultiView->setFilters($data[ReportViewInterface::REPORT_VIEW_FILTERS]);
-            }
-
-            $reportViewMultiView->setEnableCustomDimensionMetric(false);
-            $reportViewMultiView->setDimensions($data[ReportViewInterface::REPORT_VIEW_DIMENSIONS]);
-            $reportViewMultiView->setMetrics($data[ReportViewInterface::REPORT_VIEW_METRICS]);
-            $this->correctFieldsInReportViewMultiView($reportViewMultiView);
-
-            $this->em->persist($reportViewMultiView);
-            $this->em->flush();
-
-            $reportViewMultiViews[] = $reportViewMultiView;
-        }
-
-        return $reportViewMultiViews;
     }
 
     /**
@@ -403,11 +321,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
 
         $joinBy = $this->updateJoinByForReportView($reportView->getJoinBy());
         $reportView->setJoinBy($joinBy);
-
-        $alias = $reportView->getAlias();
-        if (empty($alias)) {
-            $reportView->setAlias($reportView->getName());
-        }
     }
 
     /**
@@ -426,62 +339,31 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
     }
 
     /**
-     * @param ReportViewMultiViewInterface $reportViewMultiView
-     */
-    private function correctFieldsInReportViewMultiView(ReportViewMultiViewInterface $reportViewMultiView)
-    {
-        $filters = $this->updateDataSetId($reportViewMultiView->getFilters());
-        $reportViewMultiView->setFilters($filters);
-
-        $dimensions = $this->updateDataSetId($reportViewMultiView->getDimensions());
-        $reportViewMultiView->setDimensions($dimensions);
-
-        $metrics = $this->updateDataSetId($reportViewMultiView->getMetrics());
-        $reportViewMultiView->setMetrics($metrics);
-    }
-
-    /**
      * @param ReportViewInterface $reportView
      * @return array
      */
     protected function updateFieldTypesForReportView(ReportViewInterface $reportView)
     {
         $fieldTypes = [];
+        /** Get fieldTypes from data sets */
+        $reportViewDataSets = $reportView->getReportViewDataSets();
+        if ($reportViewDataSets instanceof Collection) {
+            $reportViewDataSets = $reportViewDataSets->toArray();
+        }
 
-        if ($reportView->isMultiView()) {
-            /** Get fieldTypes from sub views */
-            $multiViews = $reportView->getReportViewMultiViews();
-            if ($multiViews instanceof Collection) {
-                $multiViews = $multiViews->toArray();
+        foreach ($reportViewDataSets as $reportViewDataSet) {
+            if (!$reportViewDataSet instanceof ReportViewDataSetInterface) {
+                continue;
             }
 
-            foreach ($multiViews as $multiView) {
-                if (!$multiView instanceof ReportViewMultiViewInterface) {
-                    continue;
-                }
-                $subView = $multiView->getSubView();
-                $fieldTypes = array_merge($fieldTypes, $subView->getFieldTypes());
-            }
-        } else {
-            /** Get fieldTypes from data sets */
-            $reportViewDataSets = $reportView->getReportViewDataSets();
-            if ($reportViewDataSets instanceof Collection) {
-                $reportViewDataSets = $reportViewDataSets->toArray();
-            }
-            foreach ($reportViewDataSets as $reportViewDataSet) {
-                if (!$reportViewDataSet instanceof ReportViewDataSetInterface) {
-                    continue;
-                }
+            $dataSet = $reportViewDataSet->getDataSet();
 
-                $dataSet = $reportViewDataSet->getDataSet();
-
-                $subFieldTypes = $dataSet->getAllDimensionMetrics();
-                foreach ($subFieldTypes as $field => $type) {
-                    $subFieldTypes[sprintf('%s_%s', $field, $dataSet->getId())] = $type;
-                    unset($subFieldTypes[$field]);
-                }
-                $fieldTypes = array_merge($fieldTypes, $subFieldTypes);
+            $subFieldTypes = $dataSet->getAllDimensionMetrics();
+            foreach ($subFieldTypes as $field => $type) {
+                $subFieldTypes[sprintf('%s_%s', $field, $dataSet->getId())] = $type;
+                unset($subFieldTypes[$field]);
             }
+            $fieldTypes = array_merge($fieldTypes, $subFieldTypes);
         }
 
         return $fieldTypes;
@@ -492,12 +374,12 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
      */
     protected function getMetricsKey()
     {
-        return ReportViewMultiViewChangeListener::METRICS_KEY;
+        return ReportViewDataSetChangeListener::METRICS_KEY;
     }
 
     protected function getDimensionsKey()
     {
-        return ReportViewMultiViewChangeListener::DIMENSIONS_KEY;
+        return ReportViewDataSetChangeListener::DIMENSIONS_KEY;
     }
 
     /**
@@ -567,23 +449,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
 
     /**
      * @param ReportViewInterface $reportView
-     */
-    private function setReportViewForReportViewMultiViews(ReportViewInterface $reportView)
-    {
-        $multiViews = $reportView->getReportViewMultiViews();
-        if ($multiViews instanceof Collection) {
-            $multiViews = $multiViews->toArray();
-        }
-        foreach ($multiViews as $multiView) {
-            $multiView->setReportView($reportView);
-            $this->em->merge($multiView);
-        }
-        $reportView->setReportViewMultiViews($multiViews);
-        $this->reportViewManager->save($reportView);
-    }
-
-    /**
-     * @param ReportViewInterface $reportView
      * @param PublisherInterface $publisher
      * @return ReportViewInterface
      */
@@ -595,39 +460,20 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
 
         $this->reportViewManager->save($cloneReportView);
 
-        if (!$reportView->isMultiView()) {
-            $reportViewDataSets = $reportView->getReportViewDataSets();
-            if ($reportViewDataSets instanceof Collection) {
-                $reportViewDataSets = $reportViewDataSets->toArray();
-            }
-            $cloneReportViewDataSets = [];
-
-            foreach ($reportViewDataSets as &$reportViewDataSet) {
-                if (!$reportViewDataSet instanceof ReportViewDataSetInterface) {
-                    continue;
-                }
-
-                $cloneReportViewDataSets[] = $this->cloneReportViewDataSet($reportViewDataSet, $cloneReportView, $publisher);
-            }
-            $cloneReportView->setReportViewDataSets($cloneReportViewDataSets);
-        } else {
-            $reportViewMultiViews = $reportView->getReportViewMultiViews();
-            if ($reportViewMultiViews instanceof Collection) {
-                $reportViewMultiViews = $reportViewMultiViews->toArray();
-            }
-
-            $cloneReportViewMultiViews = [];
-
-            foreach ($reportViewMultiViews as $reportViewMultiView) {
-                if (!$reportViewMultiView instanceof ReportViewMultiViewInterface) {
-                    continue;
-                }
-
-                $cloneReportViewMultiViews[] = $this->cloneReportViewMultiView($reportViewMultiView, $cloneReportView, $publisher);
-            }
-
-            $cloneReportView->setReportViewMultiViews($cloneReportViewMultiViews);
+        $reportViewDataSets = $reportView->getReportViewDataSets();
+        if ($reportViewDataSets instanceof Collection) {
+            $reportViewDataSets = $reportViewDataSets->toArray();
         }
+        $cloneReportViewDataSets = [];
+
+        foreach ($reportViewDataSets as &$reportViewDataSet) {
+            if (!$reportViewDataSet instanceof ReportViewDataSetInterface) {
+                continue;
+            }
+
+            $cloneReportViewDataSets[] = $this->cloneReportViewDataSet($reportViewDataSet, $cloneReportView, $publisher);
+        }
+        $cloneReportView->setReportViewDataSets($cloneReportViewDataSets);
 
         $this->correctFieldsInReportView($cloneReportView);
         $this->reportViewManager->save($cloneReportView);
@@ -653,23 +499,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $cloneReportViewDataSet->setDataSet($this->cloneDataSet($dataSet, $publisher));
 
         return $cloneReportViewDataSet;
-    }
-
-    /**
-     * @param ReportViewMultiViewInterface $reportViewMultiView
-     * @param ReportViewInterface $cloneReportView
-     * @param PublisherInterface $publisher
-     * @return ReportViewMultiViewInterface
-     */
-    private function cloneReportViewMultiView(ReportViewMultiViewInterface $reportViewMultiView, ReportViewInterface $cloneReportView, PublisherInterface $publisher)
-    {
-        $cloneReportViewMultiView = clone $reportViewMultiView;
-        $cloneReportViewMultiView->setId(null);
-        $cloneReportViewMultiView->setReportView($cloneReportView);
-        $cloneReportViewMultiView->setSubView($this->cloneReportView($reportViewMultiView->getSubView(), $publisher));
-        $this->reportViewMultiViewManager->save($cloneReportViewMultiView);
-
-        return $cloneReportViewMultiView;
     }
 
     /**

@@ -11,9 +11,6 @@ class ReportViewTemplate implements ReportViewTemplateInterface
     /** @var  string */
     protected $name;
 
-    /** @var  bool */
-    protected $multiView;
-
     /** @var  array */
     protected $dataSets;
 
@@ -81,24 +78,6 @@ class ReportViewTemplate implements ReportViewTemplateInterface
     public function setName($name)
     {
         $this->name = $name;
-
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function isMultiView()
-    {
-        return $this->multiView;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setMultiView($multiView)
-    {
-        $this->multiView = $multiView;
 
         return $this;
     }

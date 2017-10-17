@@ -4,9 +4,6 @@ UR\Entity\Core\ReportViewTemplate:
         id:
             expose: true
             groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit, report_view_template.minimum]
-        multiView:
-            expose: true
-            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
         dataSets:
             expose: true
             groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]

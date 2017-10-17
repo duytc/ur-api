@@ -752,7 +752,7 @@ trait SqlUtilTrait
                     }
                 }
 
-                $field = $tableAlias !== null ? "`$tableAlias`.`$field`" : "`t`.`$field`";
+                $field = $tableAlias !== null ? "`$tableAlias`.`$field`" : "`$field`";
             }
 
             $expression = str_replace($fieldsInBracket[$index], $field, $expression);

@@ -4,6 +4,7 @@
 namespace UR\Domain\DTO\Report\DataSets;
 
 
+use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Filters\NumberFilter;
 use UR\Domain\DTO\Report\Filters\TextFilter;
@@ -73,16 +74,21 @@ class DataSet implements DataSetInterface
 
     /**
      * @param array $allFilters
-     * @throws \Exception
+     * @param bool $overrideFilter
      * @return array
+     * @throws \Exception
      */
-    public static function createFilterObjects(array $allFilters)
+    public static function createFilterObjects(array $allFilters, $overrideFilter = false)
     {
         $filterObjects = [];
         foreach ($allFilters as $filter) {
 
             if (!array_key_exists(self::FIELD_TYPE_FILTER_KEY, $filter)) {
                 throw new \Exception(sprintf('Filter must have key = %s', self::FIELD_TYPE_FILTER_KEY));
+            }
+
+            if ($overrideFilter) {
+                $filter[AbstractFilter::FILTER_FIELD_KEY] = sprintf('%s_%d', $filter[AbstractFilter::FILTER_FIELD_KEY], $filter[AbstractFilter::FILTER_DATA_SET_KEY]);
             }
 
             $filterType = $filter[self::FIELD_TYPE_FILTER_KEY];
@@ -137,10 +143,10 @@ class DataSet implements DataSetInterface
         return $this->dataSetId;
     }
 
-	public function setFilters($filters)
-	{
-		$this->filters = $filters;
+    public function setFilters($filters)
+    {
+        $this->filters = $filters;
 
-		return $this;
-	}
+        return $this;
+    }
 }
