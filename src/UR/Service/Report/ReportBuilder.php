@@ -245,6 +245,7 @@ class ReportBuilder implements ReportBuilderInterface
                 }
 
                 if ($overridingFilter->isUserDefine()) {
+                    $overridingFilter->setDateType(DateFilter::DATE_TYPE_CUSTOM_RANGE);
                     $overridingFilter->setDateValue(array(
                         DateFilter::DATE_VALUE_FILTER_START_DATE_KEY => $startDate->format('Y-m-d'),
                         DateFilter::DATE_VALUE_FILTER_END_DATE_KEY => $endDate->format('Y-m-d')
