@@ -35,7 +35,13 @@ trait ReportViewUtilTrait
             $filters = array_merge($filters, $rpDataSet->getFilters());
         }
 
-        return $filters;
+        $subViewFilters = $reportView->getFilters();
+
+        if (!is_array($subViewFilters)) {
+            $subViewFilters = [];
+        }
+
+        return array_merge($filters, $subViewFilters);
     }
 
     /**
