@@ -66,7 +66,7 @@ class Params implements ParamsInterface
     /**
      * @var boolean
      */
-    protected $subview;
+    protected $subView;
 
     /**
      * @var array
@@ -636,18 +636,18 @@ class Params implements ParamsInterface
     /**
      * @return boolean
      */
-    public function isSubview()
+    public function isSubView()
     {
-        return $this->subview;
+        return $this->subView;
     }
 
     /**
-     * @param boolean $subview
+     * @param boolean $subView
      * @return self
      */
-    public function setSubview($subview)
+    public function setSubView($subView)
     {
-        $this->subview = $subview;
+        $this->subView = $subView;
         return $this;
     }
 }

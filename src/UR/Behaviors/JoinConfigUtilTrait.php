@@ -5,6 +5,7 @@ namespace UR\Behaviors;
 
 
 use UR\Domain\DTO\Report\DataSets\DataSet;
+use UR\Domain\DTO\Report\Filters\FilterInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Exception\InvalidArgumentException;
@@ -197,7 +198,7 @@ trait JoinConfigUtilTrait
         if (count($joinConfig) < 2) {
             return false;
         }
-        
+
         $occurrence = [];
 
         /** @var JoinConfigInterface $config */
@@ -247,6 +248,125 @@ trait JoinConfigUtilTrait
         $source[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD] = $source[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD] . ',' . $toBeGrouped[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD];
         $source[SqlBuilder::JOIN_CONFIG_VISIBLE] = sprintf('%b,%b', $source[SqlBuilder::JOIN_CONFIG_VISIBLE], $toBeGrouped[SqlBuilder::JOIN_CONFIG_VISIBLE]);
         $source[SqlBuilder::JOIN_CONFIG_MULTIPLE] = true;
+    }
 
+    /**
+     * @param array $allFilters
+     * @param array $joinConfigs
+     * @return array
+     */
+    private function normalizeFiltersWithJoinConfig(array $allFilters, array $joinConfigs)
+    {
+        if (empty($allFilters) || empty($joinConfigs)) {
+            return $allFilters;
+        }
+
+        foreach ($allFilters as &$filter) {
+            if (!$filter instanceof FilterInterface) {
+                continue;
+            }
+
+            $updateField = $this->matchJoin($filter->getFieldName(), $joinConfigs);
+            $filter->setFieldName($updateField);
+        }
+
+        return $allFilters;
+    }
+
+    /**
+     * @param $fieldName
+     * @param array $joinConfigs
+     * @return mixed
+     */
+    private function matchJoin($fieldName, array $joinConfigs)
+    {
+        if (empty($fieldName) || empty($joinConfigs)) {
+            return $fieldName;
+        }
+
+        foreach ($joinConfigs as $joinConfig) {
+            if (!$joinConfig instanceof JoinConfigInterface || empty($joinConfig->getJoinFields())) {
+                continue;
+            }
+
+            $joinFields = $joinConfig->getJoinFields();
+
+            foreach ($joinFields as $joinField) {
+                if (!$joinField instanceof JoinFieldInterface) {
+                    continue;
+                }
+
+                $joins = explode(",", $joinField->getField());
+                $outputs = explode(",", $joinConfig->getOutputField());
+
+                if (empty($joins) || empty($outputs) || !is_array($joins) || !is_array($outputs)) {
+                    continue;
+                }
+
+                foreach ($joins as $key => $join) {
+                    if ($fieldName == sprintf("%s_%s", $join, $joinField->getDataSet())) {
+                        return $outputs[$key];
+                    }
+                }
+            }
+        }
+
+        return $fieldName;
+    }
+
+    /**
+     * @param array $filters
+     * @param array $dataSets
+     * @return array
+     */
+    private function normalizeFiltersWithDataSets(array $filters, array $dataSets) {
+        if (empty($filters) || empty($dataSets)) {
+            return  $filters;
+        }
+
+        $dataSetFields = $this->getDataSetFields($dataSets);
+
+        foreach ($filters as &$filter) {
+            if (!$filter instanceof FilterInterface) {
+                continue;
+            }
+
+            $field = $filter->getFieldName();
+
+            foreach ($dataSetFields as $dataSetId => $dataSetField) {
+                if (in_array($field, $dataSetField)) {
+                    $filter->setFieldName(sprintf("%s_%s", $field, $dataSetId));
+                }
+            }
+        }
+
+        return $filters;
+    }
+
+    /**
+     * @param array $dataSets
+     * @return array
+     */
+    private function getDataSetFields(array $dataSets) {
+        if (empty($dataSets)) {
+            return [];
+        }
+
+        $fields = [];
+
+        foreach ($dataSets as $dataSet) {
+            if ($dataSet instanceof DataSet) {
+                $dataSetId = $dataSet->getDataSetId();
+
+                if (!array_key_exists($dataSetId, $fields)) {
+                    $fields[$dataSetId] = [];
+                }
+
+                $fields[$dataSetId] = array_merge($fields[$dataSetId], $dataSet->getDimensions());
+                $fields[$dataSetId] = array_merge($fields[$dataSetId], $dataSet->getMetrics());
+            }
+        }
+
+        return $fields;
     }
 }

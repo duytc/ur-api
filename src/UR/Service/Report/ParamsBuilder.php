@@ -31,7 +31,6 @@ use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\DTO\Report\WeightedCalculation;
-use UR\Service\PublicSimpleException;
 
 class ParamsBuilder implements ParamsBuilderInterface
 {
@@ -488,7 +487,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null, ParamsInterface $multiParams = null)
     {
         $param = new Params();
-        $param->setSubview($reportView->isSubView());
+        $param->setSubView($reportView->isSubView());
         if ($reportView->isSubView()) {
             $param->setFilters(DataSet::createFilterObjects($reportView->getFilters()));
             if ($reportView->getMasterReportView() instanceof ReportViewInterface) {

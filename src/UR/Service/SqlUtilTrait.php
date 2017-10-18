@@ -4,10 +4,8 @@
 namespace UR\Service;
 
 
-use Doctrine\DBAL\Driver\Statement;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Types\Type;
-use PDO;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
@@ -397,10 +395,9 @@ trait SqlUtilTrait
      * @param $newFields
      * @param array $dataSetIndexes
      * @param array $joinConfig
-     * @param bool $removeSuffix
      * @return QueryBuilder
      */
-    public function addNewFieldTransformQuery(QueryBuilder $qb, $transform, &$newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = false)
+    public function addNewFieldTransformQuery(QueryBuilder $qb, $transform, &$newFields, $dataSetIndexes = [], array $joinConfig = [])
     {
         if ($transform instanceof AddFieldTransform) {
             $fieldName = $transform->getFieldName();
@@ -426,7 +423,7 @@ trait SqlUtilTrait
                     $conditionValue = floatval($conditionValue);
                 }
 
-                $when = $this->buildSqlCondition($transform->getIsPostGroup(),$expressions, $dataSetIndexes, $joinConfig, $removeSuffix);
+                $when = $this->buildSqlCondition($transform->getIsPostGroup(),$expressions, $dataSetIndexes, $joinConfig);
 
                 if (is_string($when)) {
                     $whenQueries[] = "WHEN $when THEN $conditionValue";
@@ -459,11 +456,10 @@ trait SqlUtilTrait
      * @param array $expressions
      * @param array $dataSetIndexes
      * @param array $joinConfig
-     * @param bool $removeSuffix
      * @return null|string
      * @throws \Exception
      */
-    public function buildSqlCondition($postGroup, array $expressions, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = false)
+    public function buildSqlCondition($postGroup, array $expressions, $dataSetIndexes = [], array $joinConfig = [])
     {
         $conditions = [];
         foreach ($expressions as $expression) {
@@ -480,10 +476,6 @@ trait SqlUtilTrait
 
             $quote = true;
             if (!$postGroup) {
-//                if ($removeSuffix === true) {
-//                    $field = $this->removeIdSuffix($field);
-//                }
-
                 $alias = $this->convertOutputJoinFieldToAlias($field, $joinConfig, $dataSetIndexes);
                 if ($alias) {
                     $field = $alias;
@@ -725,7 +717,7 @@ trait SqlUtilTrait
 
         try {
             $language->evaluate($evalExpression);
-        } catch (SyntaxError $ex) {
+        } catch (\Exception $ex) {
             throw new PublicSimpleException(sprintf('Warning: Wrong expression of %s', $transformType));
         }
 
@@ -752,7 +744,7 @@ trait SqlUtilTrait
                     }
                 }
 
-                $field = $tableAlias !== null ? "`$tableAlias`.`$field`" : "`$field`";
+                $field = $tableAlias !== null ? "`$tableAlias`.`$field`" : (empty($joinConfig) ? "`t`.`$field`" : "`$field`");
             }
 
             $expression = str_replace($fieldsInBracket[$index], $field, $expression);
@@ -873,71 +865,6 @@ trait SqlUtilTrait
     }
 
     /**
-     * bind params values based on given filters
-     *
-     * @param Statement $stmt
-     * @param $filters
-     * @param null $dataSetId
-     * @return Statement
-     */
-    private function bindStatementParam(Statement $stmt, $filters, $dataSetId = null)
-    {
-        $filterKeys = [];
-        foreach ($filters as $filter) {
-            if (!$filter instanceof FilterInterface) {
-                continue;
-            }
-
-            if (!array_key_exists($filter->getFieldName(), $filterKeys)) {
-                $filterKeys[$filter->getFieldName()] = 1;
-            } else {
-                $filterKeys[$filter->getFieldName()]++;
-            }
-
-            $bindParamName = sprintf('%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0);
-            if ($filter instanceof DateFilterInterface) {
-                $startDate = $filter->getStartDate();
-                if (!$startDate instanceof \DateTime) {
-                    $startDate = date_create_from_format('Y-m-d', $startDate);
-                }
-
-                if ($startDate instanceof \DateTime) {
-                    $startDate = $startDate->format('Y-m-d 00:00:00');
-                }
-
-                $endDate = $filter->getEndDate();
-                if (!$endDate instanceof \DateTime) {
-                    $endDate = date_create_from_format('Y-m-d', $endDate);
-                }
-
-                if ($endDate instanceof \DateTime) {
-                    $endDate = $endDate->format('Y-m-d 00:00:00');
-                }
-
-                $stmt->bindValue(sprintf('startDate%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0), $startDate, PDO::PARAM_STR);
-                $stmt->bindValue(sprintf('endDate%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0), $endDate, PDO::PARAM_STR);
-            } else if ($filter instanceof TextFilterInterface) {
-                if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_CONTAINS, TextFilter::COMPARISON_TYPE_NOT_CONTAINS, TextFilter::COMPARISON_TYPE_START_WITH,
-                    TextFilter::COMPARISON_TYPE_END_WITH, TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN])) {
-                    continue;
-                }
-
-                $compareValue = $filter->getComparisonValue();
-                $stmt->bindValue($bindParamName, $compareValue, PDO::PARAM_STR);
-            } else if ($filter instanceof NumberFilterInterface) {
-                if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN])) {
-                    continue;
-                }
-
-                $compareValue = $filter->getComparisonValue();
-                $stmt->bindValue($bindParamName, $compareValue, PDO::PARAM_INT);
-            }
-        }
-
-        return $stmt;
-    }
-
-    /**
      * @param QueryBuilder $qb
      * @param $filters
      * @param null $dataSetId
@@ -945,17 +872,12 @@ trait SqlUtilTrait
      */
     public function bindFilterParam(QueryBuilder $qb, $filters, $dataSetId = null)
     {
-        $filterKeys = [];
-        foreach ($filters as $filter) {
+        foreach ($filters as $key => $filter) {
             if (!$filter instanceof FilterInterface) {
                 continue;
             }
 
-            if (!array_key_exists($filter->getFieldName(), $filterKeys)) {
-                $filterKeys[$filter->getFieldName()] = 1;
-            } else {
-                $filterKeys[$filter->getFieldName()]++;
-            }
+            $filterField = str_replace(" ", "", $filter->getFieldName()) . $key;
 
             if ($filter instanceof DateFilterInterface) {
                 $startDate = $filter->getStartDate();
@@ -976,21 +898,21 @@ trait SqlUtilTrait
                     $endDate = $endDate->format('Y-m-d 00:00:00');
                 }
 
-                $qb->setParameter(sprintf(':startDate%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0), $startDate, Type::STRING);
-                $qb->setParameter(sprintf(':endDate%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0), $endDate, Type::STRING);
+                $qb->setParameter(sprintf('startDate%d%d', $filterField, $dataSetId ?? 0), $startDate, Type::STRING);
+                $qb->setParameter(sprintf('endDate%d%d', $filterField, $dataSetId ?? 0), $endDate, Type::STRING);
             } else if ($filter instanceof TextFilterInterface) {
                 if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN])) {
                     continue;
                 }
 
-                $bindParamName = sprintf(':%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0);
+                $bindParamName = sprintf(':%s%d%d', $filterField, $filterField, $dataSetId ?? 0);
                 $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::STRING);
             } else if ($filter instanceof NumberFilterInterface) {
                 if (in_array($filter->getComparisonType(), [NumberFilter::COMPARISON_TYPE_IN, NumberFilter::COMPARISON_TYPE_NOT_IN])) {
                     continue;
                 }
 
-                $bindParamName = sprintf(':%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0);
+                $bindParamName = sprintf(':%s%d%d', $filterField, $filterField, $dataSetId ?? 0);
                 $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::INTEGER);
             }
         }
@@ -1000,7 +922,7 @@ trait SqlUtilTrait
 
     /**
      * @param FilterInterface $filter
-     * @return DateFilter|FilterInterface|NumberFilter|TextFilter
+     * @return FilterInterface
      */
     public function cloneFilter(FilterInterface $filter)
     {

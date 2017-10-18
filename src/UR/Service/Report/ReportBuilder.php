@@ -2,14 +2,10 @@
 
 namespace UR\Service\Report;
 
-use Doctrine\DBAL\Driver\Statement;
-use Doctrine\DBAL\Query\QueryBuilder;
 use Psr\Log\LoggerInterface;
 use SplDoublyLinkedList;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface as DataSetDTO;
-use UR\Domain\DTO\Report\DateRange;
 use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Filters\DateFilterInterface;
 use UR\Domain\DTO\Report\Filters\FilterInterface;
@@ -17,18 +13,12 @@ use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
-use UR\Domain\DTO\Report\ReportViews\ReportViewInterface as ReportViewDTO;
-use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
-use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\NewFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ReplaceTextTransform;
-use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\ReportViewManagerInterface;
-use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSetInterface;
-use UR\Model\Core\ReportViewInterface;
 use UR\Service\ColumnUtilTrait;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
@@ -181,7 +171,7 @@ class ReportBuilder implements ReportBuilderInterface
 
     public function getReport(ParamsInterface $params)
     {
-        if ($params->isSubview()) {
+        if ($params->isSubView()) {
             return $this->getSingleReport($params, $params->getFilters());
         }
 
@@ -190,11 +180,11 @@ class ReportBuilder implements ReportBuilderInterface
 
     /**
      * @param ParamsInterface $params
-     * @param $overridingFilters
+     * @param null $overridingFilters
      * @param bool $isNeedFormatReport
      * @return mixed|ReportResult|ReportResultInterface
      */
-    private function getSingleReport(ParamsInterface $params, $overridingFilters = [], $isNeedFormatReport = true)
+    private function getSingleReport(ParamsInterface $params, $overridingFilters = null, $isNeedFormatReport = true)
     {
         $metrics = [];
         $dimensions = [];
@@ -238,18 +228,20 @@ class ReportBuilder implements ReportBuilderInterface
                 $this->overrideDateTypeFilterForDataSet($dataSet, $startDate, $endDate, $dataSet->getFilters());
             }
 
-            /** @var FilterInterface|DateFilterInterface $overridingFilter */
-            foreach ($overridingFilters as $overridingFilter) {
-                if (!$overridingFilter instanceof DateFilterInterface) {
-                    continue;
-                }
+            if (is_array($overridingFilters)) {
+                /** @var FilterInterface|DateFilterInterface $overridingFilter */
+                foreach ($overridingFilters as $overridingFilter) {
+                    if (!$overridingFilter instanceof DateFilterInterface) {
+                        continue;
+                    }
 
-                if ($overridingFilter->isUserDefine()) {
-                    $overridingFilter->setDateType(DateFilter::DATE_TYPE_CUSTOM_RANGE);
-                    $overridingFilter->setDateValue(array(
-                        DateFilter::DATE_VALUE_FILTER_START_DATE_KEY => $startDate->format('Y-m-d'),
-                        DateFilter::DATE_VALUE_FILTER_END_DATE_KEY => $endDate->format('Y-m-d')
-                    ));
+                    if ($overridingFilter->isUserDefine()) {
+                        $overridingFilter->setDateType(DateFilter::DATE_TYPE_CUSTOM_RANGE);
+                        $overridingFilter->setDateValue(array(
+                            DateFilter::DATE_VALUE_FILTER_START_DATE_KEY => $startDate->format('Y-m-d'),
+                            DateFilter::DATE_VALUE_FILTER_END_DATE_KEY => $endDate->format('Y-m-d')
+                        ));
+                    }
                 }
             }
         }
@@ -343,14 +335,9 @@ class ReportBuilder implements ReportBuilderInterface
 
         $params->setTransforms($transforms);
         $data = $this->reportSelector->getReportData($params, $overridingFilters);
-        /** @var Statement $stmt */
-        $stmt = $data[SqlBuilder::STATEMENT_KEY];
-        /** @var QueryBuilder $stmt */
         $subQuery = $data[SqlBuilder::SUB_QUERY];
-        $rows = new SplDoublyLinkedList();
-        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-            $rows->push($row);
-        }
+        $rows = $data[SqlBuilder::ROWS];
+        $total = $data[SqlBuilder::TOTAl_ROWS];
 
         if (count($rows) < 1) {
             $columns = [];
@@ -379,12 +366,12 @@ class ReportBuilder implements ReportBuilderInterface
             foreach ($columns as $index => $column) {
                 $headers[$column] = $this->convertColumn($column, $params->getIsShowDataSetName());
             }
-            return new ReportResult(new SplDoublyLinkedList(), [], [], null, $headers, $types, 0);
+            return new ReportResult(new SplDoublyLinkedList(), [], [], null, $headers, $types, $total);
         }
 
         $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
 
-        return $this->finalizeSingleReport($subQuery, $collection, $params, $metrics, $dimensions, $outputJoinFields, $isNeedFormatReport, $overridingFilters);
+        return $this->finalizeSingleReport($subQuery, $collection, $params, $metrics, $dimensions, $outputJoinFields, $isNeedFormatReport, $overridingFilters, $total);
     }
 
     /**
@@ -396,10 +383,11 @@ class ReportBuilder implements ReportBuilderInterface
      * @param array $outputJoinField
      * @param bool $isNeedFormatReport
      * @param array $overridingFilters
+     * @param int $totalReport
      * @return mixed|ReportResultInterface
      */
     private function finalizeSingleReport($subQuery, Collection $reportCollection, ParamsInterface $params, array $metrics,
-                                          array $dimensions, array $outputJoinField = [], $isNeedFormatReport = true, $overridingFilters = [])
+                                          array $dimensions, array $outputJoinField = [], $isNeedFormatReport = true, $overridingFilters = [], $totalReport = 0)
     {
         $userProvidedDimensions = [];
         $userProvidedMetrics = [];
@@ -608,6 +596,13 @@ class ReportBuilder implements ReportBuilderInterface
             $this->reportViewFormatter->formatReports($reportResult, $formats, $metrics, $dimensions);
         }
 
+        $reportResult->setTotalReport($totalReport);
+
+        if (!empty($params->getPage()) && is_int($params->getPage())) {
+            $limit = !empty($params->getLimit()) && is_int($params->getLimit()) ? $params->getLimit() : 10;
+            $reportResult->setTotalPage($totalReport/$limit);
+        }
+
         /* return report result */
         return $reportResult;
     }
@@ -641,25 +636,6 @@ class ReportBuilder implements ReportBuilderInterface
         $dataSet->setFilters($filters);
 
         return $dataSet;
-    }
-
-    /**
-     * transform reports
-     *
-     * @param Collection $reportCollection
-     * @param array $transforms
-     * @param array $metrics
-     * @param array $dimensions
-     * @param $outputJoinField
-     */
-    private function transformReports(Collection $reportCollection, array $transforms, array &$metrics, array &$dimensions, array $outputJoinField)
-    {
-        /**
-         * @var TransformInterface $transform
-         */
-        foreach ($transforms as $transform) {
-            $transform->transform($reportCollection, $metrics, $dimensions, $outputJoinField);
-        }
     }
 
     /**
@@ -753,53 +729,8 @@ class ReportBuilder implements ReportBuilderInterface
         return $reportResult;
     }
 
-    /**
-     * @param ParamsInterface $param
-     * @return mixed
-     */
-    private function getFieldsFromTransforms($param)
-    {
-        $transforms = $param->getTransforms();
-
-        $transformFields = [];
-        foreach ($transforms as $transform) {
-            if ($transform instanceof NewFieldTransform) {
-                $transformFields[] = $transform->getFieldName();
-                continue;
-            }
-        }
-        return $transformFields;
-    }
-
     protected function getDataSetManager()
     {
         return $this->dataSetManager;
-    }
-
-    /**
-     * @param ParamsInterface $params
-     * @return array
-     */
-    private function getSubFieldsForTransforms(ParamsInterface $params)
-    {
-        $fields = [];
-
-        $transforms = $params->getTransforms();
-
-        foreach ($transforms as $transform) {
-            if ($transform instanceof AddCalculatedFieldTransform) {
-                $fieldsOnCalculatedField = $transform->getSubFields();
-                $fields = array_merge($fields, $fieldsOnCalculatedField);
-                continue;
-            }
-
-            if ($transform instanceof ComparisonPercentTransform) {
-                $fieldsOnComparisonPercent = $transform->getSubFields();
-                $fields = array_merge($fields, $fieldsOnComparisonPercent);
-                continue;
-            }
-        }
-
-        return array_unique($fields);
     }
 }

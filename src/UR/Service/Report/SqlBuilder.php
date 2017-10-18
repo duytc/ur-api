@@ -5,11 +5,13 @@ namespace UR\Service\Report;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
-use PDO;
+use SplDoublyLinkedList;
 use UR\Behaviors\JoinConfigUtilTrait;
+use UR\Behaviors\ReportViewFilterUtilTrait;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\DateRange;
 use UR\Domain\DTO\Report\Filters\DateFilterInterface;
@@ -40,11 +42,14 @@ class SqlBuilder implements SqlBuilderInterface
 {
     use SqlUtilTrait;
     use JoinConfigUtilTrait;
+    use ReportViewFilterUtilTrait;
 
     const STATEMENT_KEY = 'statement';
     const DATE_RANGE_KEY = 'dateRange';
     const SUB_QUERY = 'subQuery';
     const CONDITION_KEY = 'condition';
+    const ROWS = 'rows';
+    const TOTAl_ROWS = 'total_rows';
 
     const FIRST_ELEMENT = 0;
     const START_DATE_INDEX = 0;
@@ -79,6 +84,9 @@ class SqlBuilder implements SqlBuilderInterface
      */
     protected $em;
 
+    /** @var  Synchronizer */
+    protected $sync;
+
     /**
      * SqlBuilder constructor.
      * @param EntityManagerInterface $em
@@ -87,6 +95,18 @@ class SqlBuilder implements SqlBuilderInterface
     {
         $this->em = $em;
         $this->connection = $this->em->getConnection();
+    }
+
+    /**
+     * @return Synchronizer
+     */
+    public function getSync()
+    {
+        if (!$this->sync instanceof Synchronizer) {
+            $this->sync = new Synchronizer($this->connection, new Comparator());
+        }
+
+        return $this->sync;
     }
 
     /**
@@ -107,7 +127,6 @@ class SqlBuilder implements SqlBuilderInterface
 
         $metrics = $dataSet->getMetrics();
         $dimensions = $dataSet->getDimensions();
-        $filters = $dataSet->getFilters();
 
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $tableColumns = array_keys($table->getColumns());
@@ -124,11 +143,7 @@ class SqlBuilder implements SqlBuilderInterface
             $types[sprintf('%s_%d', $dimension, $dataSet->getDataSetId())] = $type;
         }
 
-        if ($searches === null) {
-            $searches = [];
-        }
-        $searchFilters = $this->convertSearchToFilter($types, $searches);
-        $filters = array_merge($filters, $searchFilters);
+        $types = array_merge($types, $params->getFieldTypes());
 
         /*
          * we get all fields from data set instead of selected fields in report view.
@@ -166,7 +181,6 @@ class SqlBuilder implements SqlBuilderInterface
         $postAggregationFields = [];
         $timezone = 'UTC';
         $hasGroup = false;
-        $hasSort = false;
         $aggregationFields = [];
         $isAggregateAll = false;
 
@@ -182,10 +196,6 @@ class SqlBuilder implements SqlBuilderInterface
                     $aggregationFields = $transform->getAggregateFields();
                 }
                 continue;
-            }
-
-            if ($transform instanceof SortByTransform) {
-                $hasSort = true;
             }
         }
 
@@ -212,7 +222,7 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             if ($transform instanceof AddFieldTransform) {
-                $subQb = $this->addNewFieldTransformQuery($subQb, $transform, $newFields, [], [], $removeSuffix = true);
+                $subQb = $this->addNewFieldTransformQuery($subQb, $transform, $newFields, [], []);
                 $types[$transform->getFieldName()] = $transform->getType();
                 continue;
             }
@@ -226,35 +236,10 @@ class SqlBuilder implements SqlBuilderInterface
 
         $subQb->from($this->connection->quoteIdentifier($table->getName()), 't');
 
-        // merge overriding filters
-        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            /** @var FilterInterface $filter */
-            foreach ($overridingFilters as $filter) {
-                $filter->trimTrailingAlias($dataSet->getDataSetId());
-            }
-
-            $filters = array_merge($filters, $overridingFilters);
-        }
-
-        $dateRange = null;
-
-        // Add WHERE clause
-        if (empty($filters)) {
-            $overwriteDateCondition = sprintf('%s IS NULL', $this->connection->quoteIdentifier(\UR\Model\Core\DataSetInterface::OVERWRITE_DATE));
-            $subQb->where($overwriteDateCondition);
-        } else {
-            $buildResult = $this->buildFilters($filters);
-            $conditions = $buildResult[self::CONDITION_KEY];
-            $dateRange = $buildResult[self::DATE_RANGE_KEY];
-            if (count($conditions) == 1) {
-                $subQb->where($conditions[self::FIRST_ELEMENT]);
-            } else {
-                $subQb->where(implode(' AND ', $conditions));
-            }
-        }
+        $sqlConditions = sprintf('%s IS NULL', \UR\Model\Core\DataSetInterface::OVERWRITE_DATE);
+        $subQb->where($sqlConditions);
 
         $fromQuery = $subQb->getSQL();
-        $grouperQuery = $fromQuery;
 
         if ($hasGroup) {
             $qb = $this->connection->createQueryBuilder();
@@ -289,7 +274,6 @@ class SqlBuilder implements SqlBuilderInterface
 
             $qb = $this->addGroupByQuery($qb, $transforms, $types);
             $qb->from("($fromQuery)", "sub1");
-            $grouperQuery = $qb->getSQL();
             $fromQuery = $qb->getSQL();
         }
 
@@ -311,7 +295,7 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             if ($transform instanceof AddFieldTransform) {
-                $outerQb = $this->addNewFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, [], [], $removeSuffix = false);
+                $outerQb = $this->addNewFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, [], []);
                 continue;
             }
 
@@ -339,21 +323,47 @@ class SqlBuilder implements SqlBuilderInterface
             $outerQb->addSelect($this->connection->quoteIdentifier($newField));
         }
 
-        $grouperQb = clone $outerQb;
         $outerQb->from("($fromQuery)", "sub2");
-        $outerQb = $this->bindFilterParam($outerQb, $filters);
 
-        $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
+        $finalQb = $this->connection->createQueryBuilder();
+        $finalQb->select("*");
+        $fromQuery = $outerQb->getSQL();
+        $finalQb->from("($fromQuery)", "sub2");
+
+        $grouperQuery = $finalQb->getSQL();
+
+        $dateRange = null;
+
+        $finalQb = $this->applyFiltersForSingleDataSet($finalQb, $dataSet, $searches, $overridingFilters, $types);
+
+        $totalRowsQuery = $finalQb->getSQL();
+        $totalRowsQb = $this->connection->createQueryBuilder();
+        $totalRowsQb->select("count(*)");
+        $totalRowsQb->from("($totalRowsQuery)", "sub3");
+        $totalRowsQb->addOrderBy('NULL');
+
+        /** Not call build filters because we don't have any column because of count(*) */
+        $filters = $this->getFiltersForSingleDataSet($searches, $overridingFilters, $types, $dataSet);
+        $totalRowsQb = $this->bindFilterParam($totalRowsQb, $filters, $dataSet->getDataSetId());
+
+        $finalQb = $this->addSortQuery($finalQb, $transforms, $sortField, $sortDirection);
         if (empty($sortField)) {
             // add ORDER BY NULL for performance
-            $outerQb->addOrderBy('NULL');
+            $finalQb->addOrderBy('NULL');
         }
-        $outerQb = $this->addLimitQuery($outerQb, $page, $limit);
-
-        $grouperQb->from("($grouperQuery)", "sub2");
-        $grouperQuery = $grouperQb->getSQL();
+        $finalQb = $this->addLimitQuery($finalQb, $page, $limit);
+        $rows = new SplDoublyLinkedList();
+        $total = 0;
         try {
-            $stmt = $outerQb->execute();
+            $stmt = $finalQb->execute();
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $rows->push($row);
+            }
+            $stmtAllRows = $totalRowsQb->execute();
+            while ($row = $stmtAllRows->fetch(\PDO::FETCH_ASSOC)) {
+                $total = reset($row);
+                break;
+            }
         } catch (\Exception $e) {
             throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
         }
@@ -361,7 +371,9 @@ class SqlBuilder implements SqlBuilderInterface
         return array(
             self::SUB_QUERY => $grouperQuery,
             self::STATEMENT_KEY => $stmt,
-            self::DATE_RANGE_KEY => $dateRange
+            self::DATE_RANGE_KEY => $dateRange,
+            self::ROWS => $rows,
+            self::TOTAl_ROWS => $total
         );
     }
 
@@ -393,6 +405,7 @@ class SqlBuilder implements SqlBuilderInterface
         foreach ($transforms as $transform) {
             if ($transform instanceof NewFieldTransform) {
                 $newFieldsTransform[] = $transform->getFieldName();
+                $types[$transform->getFieldName()] = $transform->getType();
             }
         }
 
@@ -420,19 +433,6 @@ class SqlBuilder implements SqlBuilderInterface
             $metrics = [];
         }
 
-        $filters = $dataSet->getFilters();
-        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            foreach ($overridingFilters as $filter) {
-                $filter->trimTrailingAlias($dataSet->getDataSetId());
-                $filters[] = $filter;
-            }
-        }
-
-        if ($searches === null) {
-            $searches = [];
-        }
-        $searchFilters = $this->convertSearchToFilter($types, $searches);
-        $filters = array_merge($filters, $searchFilters);
         $table = $this->getDataSetTableSchema($dataSet->getDataSetId());
         $tableColumns = array_keys($table->getColumns());
 
@@ -468,7 +468,8 @@ class SqlBuilder implements SqlBuilderInterface
         $qb->addSelect('COUNT(*) as total');
 
         $qb->from("($subQuery)", "sub");
-        $qb = $this->bindFilterParam($qb, $filters);
+
+        $qb = $this->applyFiltersForSingleDataSet($qb, $dataSet, $searches, $overridingFilters, $types);
 
         return $qb->execute();
     }
@@ -565,58 +566,15 @@ class SqlBuilder implements SqlBuilderInterface
             $types = array_merge($types, $metrics, $dimensions);
         }
 
+        $types = array_merge($types, $params->getFieldTypes());
+
         unset($metrics, $dimensions);
-
-        if ($searches === null) {
-            $searches = [];
-        }
-
-        // merge search filters to current filters
-        $newSearchFilters = [];
-        if (!empty($searches)) {
-            $searchFilters = $this->convertSearchToFilter($types, $searches, $joinConfig);
-            /** @var FilterInterface $searchFilter */
-            foreach ($searchFilters as $searchFilter) {
-                $field = $searchFilter->getFieldName();
-                $idAndField = $this->getIdSuffixAndField($field);
-                if ($idAndField) {
-                    $newSearchFilters[$idAndField['id']][] = $searchFilter;
-                }
-            }
-        }
-
-        // merge overriding filters to current filters
-        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            /** @var FilterInterface $filter */
-            foreach ($overridingFilters as $filter) {
-                $field = $filter->getFieldName();
-                $alias = $this->convertOutputJoinField($field, $joinConfig);
-                if ($alias) {
-                    $field = $alias;
-                }
-                $idAndField = $this->getIdSuffixAndField($field);
-                if ($idAndField) {
-                    $clonedFilter = $this->cloneFilter($filter);
-                    $clonedFilter->setFieldName($idAndField['field']);
-                    $newSearchFilters[$idAndField['id']][] = $clonedFilter;
-                }
-            }
-        }
 
         // Add SELECT clause
         $selectedJoinFields = [];
-        $allFilters = [];
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
-            $filters = $dataSet->getFilters();
-            if (array_key_exists($dataSet->getDataSetId(), $newSearchFilters)) {
-                $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
-            }
-            $allFilters = array_merge($allFilters, $filters);
             $subQb = $this->buildSelectQuery($isAggregateAll, $aggregationFields, $subQb, $dataSet, $dataSetIndex, $joinConfig, $selectedJoinFields, false, [], $timezone);
-            $buildResult = $this->buildFilters($filters, sprintf('t%d', $dataSetIndex), $dataSet->getDataSetId());
-            $conditions = array_merge($conditions, $buildResult[self::CONDITION_KEY]);
-            $dateRange = array_merge($dateRange, $buildResult[self::DATE_RANGE_KEY]);
         }
 
         $newFields = [];
@@ -636,7 +594,7 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             if ($transform instanceof AddFieldTransform) {
-                $subQb = $this->addNewFieldTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, $joinConfig, true);
+                $subQb = $this->addNewFieldTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, $joinConfig);
                 $types[$transform->getFieldName()] = $transform->getType();
                 continue;
             }
@@ -661,8 +619,9 @@ class SqlBuilder implements SqlBuilderInterface
             $where = implode(' AND ', $conditions);
         }
 
-        $subQuery = sprintf('%s WHERE (%s)', $subQuery, $where);
-        $grouperQuery = $subQuery;
+        if (!empty($where)) {
+            $subQuery = sprintf('%s WHERE (%s)', $subQuery, $where);
+        }
 
         if ($hasGroup) {
             $qb = $this->connection->createQueryBuilder();
@@ -683,14 +642,6 @@ class SqlBuilder implements SqlBuilderInterface
 
             $qb->from("($subQuery)", "sub1");
             $qb = $this->addGroupByQuery($qb, $transforms, $types);
-            $grouperQuery = $qb->getSQL();
-            $qb = $this->addSortQuery($qb, $transforms, $sortField, $sortDirection);
-            if (empty($sortField) && !$hasSort) {
-                // add ORDER BY NULL for performance
-                $qb->addOrderBy('NULL');
-            }
-
-            $qb = $this->addLimitQuery($qb, $page, $limit);
             $subQuery = $qb->getSQL();
         }
 
@@ -712,7 +663,7 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             if ($transform instanceof AddFieldTransform) {
-                $outerQb = $this->addNewFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, $dataSetIndexes, $joinConfig, $removeSuffix = false);
+                $outerQb = $this->addNewFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, $dataSetIndexes, $joinConfig);
                 continue;
             }
 
@@ -735,33 +686,49 @@ class SqlBuilder implements SqlBuilderInterface
             $outerQb->addSelect($this->connection->quoteIdentifier($newField));
         }
 
-        $grouperQb = clone $outerQb;
         $outerQb->from("($subQuery)", "sub2");
-        
-        if (!$hasGroup) {
-            $outerQb = $this->addSortQuery($outerQb, $transforms, $sortField, $sortDirection);
-            if (empty($sortField) && !$hasSort) {
-                // add ORDER BY NULL for performance
-                $outerQb->addOrderBy('NULL');
-            }
 
-            $outerQb = $this->addLimitQuery($outerQb, $page, $limit);
+        $finalQb = $this->connection->createQueryBuilder();
+        $finalQb->select("*");
+        $fromQuery = $outerQb->getSQL();
+        $finalQb->from("($fromQuery)", "sub2");
+
+        $grouperQuery = $finalQb->getSQL();
+
+        $finalQb = $this->applyFiltersForMultiDataSets($finalQb, $dataSets, $searches, $overridingFilters, $types, $joinConfig);
+
+        $totalRowsQuery = $finalQb->getSQL();
+        $totalRowsQb = $this->connection->createQueryBuilder();
+        $totalRowsQb->select("count(*)");
+        $totalRowsQb->from("($totalRowsQuery)", "sub3");
+        $totalRowsQb->addOrderBy('NULL');
+
+        /** Not call build filters because we don't have any column because of count(*) */
+        $allFilters = $this->getFiltersForMultiDataSets($dataSets, $searches, $overridingFilters, $types, $joinConfig);
+        $totalRowsQb = $this->bindFilterParam($totalRowsQb, $allFilters);
+
+        $finalQb = $this->addSortQuery($finalQb, $transforms, $sortField, $sortDirection);
+        if (empty($sortField) && !$hasSort) {
+            // add ORDER BY NULL for performance
+            $finalQb->addOrderBy('NULL');
         }
+        $finalQb = $this->addLimitQuery($finalQb, $page, $limit);
 
-        /** @var DataSetInterface $dataSet */
-        foreach ($dataSets as $dataSetIndex => $dataSet) {
-            $filters = $dataSet->getFilters();
-            if (array_key_exists($dataSet->getDataSetId(), $newSearchFilters)) {
-                $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
-            }
-
-            $outerQb = $this->bindFilterParam($outerQb, $filters, $dataSet->getDataSetId());
-        }
-
-        $grouperQuery = $grouperQb->from("($grouperQuery)", "sub2");
+        $rows = new SplDoublyLinkedList();
+        $total = 0;
 
         try {
-            $stmt = $outerQb->execute();
+            $stmt = $finalQb->execute();
+
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $rows->push($row);
+            }
+
+            $stmtAllRows = $totalRowsQb->execute();
+            while ($row = $stmtAllRows->fetch(\PDO::FETCH_ASSOC)) {
+                $total = reset($row);
+                break;
+            }
         } catch (\Exception $e) {
             throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
         }
@@ -769,7 +736,9 @@ class SqlBuilder implements SqlBuilderInterface
         return array(
             self::SUB_QUERY => $grouperQuery,
             self::STATEMENT_KEY => $stmt,
-            self::DATE_RANGE_KEY => $dateRange
+            self::DATE_RANGE_KEY => $dateRange,
+            self::ROWS => $rows,
+            self::TOTAl_ROWS => $total
         );
     }
 
@@ -798,17 +767,18 @@ class SqlBuilder implements SqlBuilderInterface
             throw new InvalidArgumentException('expect joined field is not empty array when multiple data sets is selected');
         }
 
+        $types = [];
         $newFieldsTransform = [];
         foreach ($transforms as $transform) {
             if ($transform instanceof NewFieldTransform) {
                 $newFieldsTransform[] = $transform->getFieldName();
+                $types[$transform->getFieldName()] = $transform->getType();
             }
         }
 
         $qb = $this->connection->createQueryBuilder();
 
         // add select clause
-        $types = [];
         $dataSetRepository = $this->em->getRepository(DataSet::class);
         $dataSetIndexes = [];
         /** @var DataSetInterface $dataSet */
@@ -835,37 +805,6 @@ class SqlBuilder implements SqlBuilderInterface
                             $showInTotal[] = sprintf('%s_%d', $key, $dataSet->getDataSetId());
                         }
                     }
-                }
-            }
-        }
-
-        $newSearchFilters = [];
-        if (!empty($searches)) {
-            $searchFilters = $this->convertSearchToFilter($types, $searches, $joinConfig);
-            /** @var FilterInterface $searchFilter */
-            foreach ($searchFilters as $searchFilter) {
-                $field = $searchFilter->getFieldName();
-                $idAndField = $this->getIdSuffixAndField($field);
-                if ($idAndField) {
-                    $searchFilter->setFieldName($idAndField['field']);
-                    $newSearchFilters[$idAndField['id']][] = $searchFilter;
-                }
-            }
-        }
-
-        if (is_array($overridingFilters) && count($overridingFilters) > 0) {
-            /** @var FilterInterface $filter */
-            foreach ($overridingFilters as $filter) {
-                $field = $filter->getFieldName();
-                $alias = $this->convertOutputJoinField($field, $joinConfig);
-                if ($alias) {
-                    $field = $alias;
-                }
-                $idAndField = $this->getIdSuffixAndField($field);
-                if ($idAndField) {
-                    $clonedFilter = $this->cloneFilter($filter);
-                    $clonedFilter->setFieldName($idAndField['field']);
-                    $newSearchFilters[$idAndField['id']][] = $clonedFilter;
                 }
             }
         }
@@ -904,15 +843,7 @@ class SqlBuilder implements SqlBuilderInterface
         $qb->addSelect('COUNT(*) as total');
         $qb->from("($subQuery)", "sub");
 
-        /** @var DataSetInterface $dataSet */
-        foreach ($dataSets as $dataSetIndex => $dataSet) {
-            $filters = $dataSet->getFilters();
-            if (array_key_exists($dataSet->getDataSetId(), $newSearchFilters)) {
-                $filters = array_merge($filters, $newSearchFilters[$dataSet->getDataSetId()]);
-            }
-
-            $qb = $this->bindFilterParam($qb, $filters, $dataSet->getDataSetId());
-        }
+        $qb = $this->applyFiltersForMultiDataSets($qb, $dataSets, $searches, $overridingFilters, $types, $joinConfig);
 
         return $qb->execute();
     }
@@ -1114,16 +1045,14 @@ class SqlBuilder implements SqlBuilderInterface
      * @param array $filters
      * @param null $tableAlias
      * @param null $dataSetId
-     * @param $checkOverwriteDate
      * @return array
      */
-    protected function buildFilters(array $filters, $tableAlias = null, $dataSetId = null, $checkOverwriteDate = true)
+    protected function buildFilters(array $filters, $tableAlias = null, $dataSetId = null)
     {
-        $filterKeys = [];
         $sqlConditions = [];
         $dateRanges = [];
 
-        foreach ($filters as $filter) {
+        foreach ($filters as $key => $filter) {
             if (!$filter instanceof FilterInterface) {
                 continue;
             }
@@ -1132,22 +1061,11 @@ class SqlBuilder implements SqlBuilderInterface
                 $filter->trimTrailingAlias($dataSetId);
             }
 
-            if (!array_key_exists($filter->getFieldName(), $filterKeys)) {
-                $filterKeys[$filter->getFieldName()] = 1;
-            } else {
-                $filterKeys[$filter->getFieldName()]++;
-            }
-
             if ($filter instanceof DateFilterInterface) {
                 $dateRanges[] = new DateRange($filter->getStartDate(), $filter->getEndDate());
             }
 
-            $sqlConditions[] = $this->buildSingleFilter($filter, $filterKeys, $tableAlias, $dataSetId);
-        }
-
-        $overrideDateField = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, \UR\Model\Core\DataSetInterface::OVERWRITE_DATE) : \UR\Model\Core\DataSetInterface::OVERWRITE_DATE;
-        if ($checkOverwriteDate) {
-            $sqlConditions[] = sprintf('%s IS NULL', $overrideDateField);
+            $sqlConditions[] = $this->buildSingleFilter($filter, $tableAlias, $dataSetId, $key);
         }
 
         return array(
@@ -1158,24 +1076,30 @@ class SqlBuilder implements SqlBuilderInterface
 
     /**
      * @param FilterInterface $filter
-     * @param array $filterKeys
      * @param null $tableAlias
      * @param null $dataSetId
+     * @param $key
      * @return string
      */
-    protected function buildSingleFilter(FilterInterface $filter, array $filterKeys, $tableAlias = null, $dataSetId = null)
+    protected function buildSingleFilter(FilterInterface $filter, $tableAlias = null, $dataSetId = null, $key)
     {
-        $fieldName = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, $filter->getFieldName()) : $filter->getFieldName();
-        $fieldName = $this->connection->quoteIdentifier($fieldName);
+        if (!empty($dataSetId) && $this->exitColumnInTable($filter->getFieldName(), $dataSetId)) {
+            $filterField = str_replace(" ", "", $filter->getFieldName()) . $key;
+            $fieldName = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, $filter->getFieldName()) : $filter->getFieldName();
+            $fieldName = empty($dataSetId) ? $this->connection->quoteIdentifier($fieldName) : $this->connection->quoteIdentifier($fieldName. "_" . $dataSetId);
+        } else {
+            $fieldName = $this->connection->quoteIdentifier($filter->getFieldName());
+            $filterField = str_replace(" ", "", $filter->getFieldName()) . $key;
+        }
         if ($filter instanceof DateFilterInterface) {
             if (!$filter->getStartDate() || !$filter->getEndDate()) {
                 throw new InvalidArgumentException('invalid date range of filter');
             }
 
-            return sprintf('(%s BETWEEN %s AND %s)', $fieldName, sprintf(':startDate%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0), sprintf(':endDate%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0));
+            return sprintf('(%s BETWEEN %s AND %s)', $fieldName, sprintf(':startDate%d%d', $filterField, $dataSetId ?? 0), sprintf(':endDate%d%d', $filterField, $dataSetId ?? 0));
         }
 
-        $bindParamName = sprintf(':%s%d%d', $filter->getFieldName(), $filterKeys[$filter->getFieldName()], $dataSetId ?? 0);
+        $bindParamName = sprintf(':%s%d%d', $filterField, $filterField, $dataSetId ?? 0);
         if ($filter instanceof NumberFilterInterface) {
             switch ($filter->getComparisonType()) {
                 case NumberFilter::COMPARISON_TYPE_EQUAL :
@@ -1400,5 +1324,23 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         return $temporaryFields;
+    }
+
+    /**
+     * @param $column
+     * @param $dataSetId
+     * @return bool
+     */
+    private function exitColumnInTable($column, $dataSetId)
+    {
+        $sync = $this->getSync();
+
+        $table = $sync->getTable($sync->getDataSetImportTableName($dataSetId));
+
+        if ($table instanceof Table) {
+            return $table->hasColumn($column);
+        }
+
+        return false;
     }
 }

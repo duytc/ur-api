@@ -213,7 +213,7 @@ class ReportResult implements ReportResultInterface
      */
     public function setTotalPage($totalPage)
     {
-        $this->totalPage = $totalPage;
+        $this->totalPage = round($totalPage);
         return $this;
     }
 

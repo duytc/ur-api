@@ -283,11 +283,11 @@ interface ParamsInterface
     /**
      * @return boolean
      */
-    public function isSubview();
+    public function isSubView();
 
     /**
      * @param boolean $subview
      * @return self
      */
-    public function setSubview($subview);
+    public function setSubView($subview);
 }
