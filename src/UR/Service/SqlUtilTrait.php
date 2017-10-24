@@ -238,7 +238,19 @@ trait SqlUtilTrait
      */
     public function addSortQuery(QueryBuilder $qb, $transforms = [], $sortField = null, $orderBy = null)
     {
-        $sortFields = [];
+        if (!empty($sortField)) {
+            if (!in_array(strtolower($orderBy), ['asc', 'desc'])) {
+                $orderBy = 'asc';
+            }
+
+            $sortField = str_replace('"', '', $sortField);
+            $qb->addOrderBy("`$sortField`", $orderBy);
+        }
+
+        if (!is_array($transforms)) {
+            return $qb;
+        }
+
         foreach ($transforms as $transform) {
             if ($transform instanceof SortByTransform) {
                 $sortObjects = $transform->getSortObjects();
@@ -246,30 +258,15 @@ trait SqlUtilTrait
                     $names = $sortObject[SortByTransform::FIELDS_KEY];
                     if (!empty($names)) {
                         foreach ($names as $name) {
-                            $qb->addOrderBy("`$name`", $sortObject[SortByTransform::SORT_DIRECTION_KEY]);
-                            if (!in_array($name, $sortFields)) {
-                                $sortFields[] = $name;
+                            if ($name == $sortField) {
+                                continue;
                             }
+                            $qb->addOrderBy("`$name`", $sortObject[SortByTransform::SORT_DIRECTION_KEY]);
                         }
                     }
                 }
             }
         }
-
-        if (empty($sortField) || empty($orderBy)) {
-            return $qb;
-        }
-
-        if (!in_array(strtolower($orderBy), ['asc', 'desc'])) {
-            return $qb;
-        }
-
-        $sortField = str_replace('"', '', $sortField);
-        if (in_array($sortField, $sortFields)) {
-            return $qb;
-        }
-
-        $qb->addOrderBy("`$sortField`", $orderBy);
 
         return $qb;
     }
