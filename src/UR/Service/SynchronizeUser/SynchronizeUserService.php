@@ -29,6 +29,8 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
     public function synchronizeUser(array $entityData)
     {
         $id = $entityData['id'];
+        $salt = array_key_exists(self::SALT, $entityData) ? $entityData[self::SALT] :null;
+
         /** @var PublisherInterface|UserInterface $existingPublisher */
         $existingPublisher = $this->publisherManager->findPublisher($id);
         if (!in_array(User::MODULE_UNIFIED_REPORT, $entityData['roles'])) {
@@ -41,39 +43,36 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
         $masterAccount = ($masterAccount instanceof PublisherInterface) ? $masterAccount : null;
         $entityData['masterAccount'] = $masterAccount;
         $connection = $this->em->getConnection();
-        $userId = null;
 
         if ($existingPublisher instanceof PublisherInterface) {
             $existingPublisher = $this->mapUserInfo($entityData, $existingPublisher);
             $this->publisherManager->save($existingPublisher);
-            $userId = $existingPublisher->getUser()->getId();
+
+            /** Build raw SQL to update salt because FOS\UserBundle\Model\User in Symfony does not support method to update this */
+            $statementForSalt = $connection->prepare(sprintf('UPDATE core_user SET salt = "%s" WHERE id = %s', $salt, $id));
+            try {
+                $statementForSalt->execute();
+            } catch (\Exception $e) {
+
+            }
         } else {
             /** @var PublisherInterface|UserInterface $newPublisher */
             $newPublisher = new User();
             $newPublisher = $this->mapUserInfo($entityData, $newPublisher);
             $this->publisherManager->save($newPublisher);
 
-            $userId = $newPublisher->getId();
             $statement = $connection->prepare("SET FOREIGN_KEY_CHECKS = 0;"
-                . "UPDATE core_user SET id = " . $id . " WHERE id = " . $userId
-                . ";UPDATE core_user_publisher SET id = " . $id . " WHERE id = " . $userId
+                . "UPDATE core_user SET id = " . $id . " WHERE id = " . $id
+                . !empty($salt) ? sprintf('UPDATE core_user SET salt = "%s" WHERE id = %s', $salt, $id) : ""
+                . ";UPDATE core_user_publisher SET id = " . $id . " WHERE id = " . $id
                 . ";SET FOREIGN_KEY_CHECKS = 1");
-            $statement->execute();
-        }
 
-        /** Update salt from Tagcade API */
-        if (!array_key_exists(self::SALT, $entityData)) {
-            return;
-        }
-        $salt = $entityData[self::SALT];
+            try {
+                $statement->execute();
+            } catch (\Exception $e) {
 
-        if (empty($userId) || empty($salt)) {
-            return;
+            }
         }
-
-        /** Build raw SQL to update salt because FOS\UserBundle\Model\User in Symfony does not support method to update this */
-        $statementForSalt = $connection->prepare(sprintf('UPDATE core_user SET salt = "%s" WHERE id = %s', $salt, $userId));
-        $statementForSalt->execute();
     }
 
     /**
