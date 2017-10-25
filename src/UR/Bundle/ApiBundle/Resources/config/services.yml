@@ -22,6 +22,7 @@ imports:
     - { resource: services/service.integration_tag.yml}
     - { resource: services/service.report_view_template.yml}
     - { resource: services/service.report_view_template_tag.yml}
+    - { resource: services/service.report_view_add_conditional_transform_value.yml}
 
 
 parameters:

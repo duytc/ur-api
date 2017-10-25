@@ -1,0 +1,30 @@
+UR\Entity\Core\ReportViewAddConditionalTransformValue:
+    type: entity
+    table: core_report_view_add_conditional_transform_value
+    repositoryClass: UR\Repository\Core\ReportViewAddConditionalTransformValueRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            nullable: false
+        defaultValue:
+            type: string
+            nullable: true
+        sharedConditions:
+            type: json_array
+            nullable: true
+        conditions:
+            type: json_array
+            nullable:
+        createdDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+    manyToOne:
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

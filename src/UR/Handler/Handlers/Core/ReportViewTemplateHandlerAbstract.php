@@ -8,11 +8,11 @@ use UR\Handler\RoleHandlerAbstract;
 
 abstract class ReportViewTemplateHandlerAbstract extends RoleHandlerAbstract
 {
-    /**
-     * @return AlertManagerInterface
-     */
-    protected function getDomainManager()
-    {
-        return parent::getDomainManager();
-    }
+	/**
+	 * @return AlertManagerInterface
+	 */
+	protected function getDomainManager()
+	{
+		return parent::getDomainManager();
+	}
 }

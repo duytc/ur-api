@@ -10,6 +10,7 @@ interface TransformInterface
 
 	const ADD_FIELD_TRANSFORM = 'addField';
 	const ADD_CALCULATED_FIELD_TRANSFORM = 'addCalculatedField';
+	const ADD_CONDITION_VALUE_TRANSFORM = 'addConditionValue';
 	const COMPARISON_PERCENT_TRANSFORM = 'comparisonPercent';
 	const GROUP_TRANSFORM = 'groupBy';
 	const AGGREGATION_TRANSFORM = 'aggregation';

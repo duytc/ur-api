@@ -154,3 +154,21 @@ services:
         arguments:
         tags:
             - { name: doctrine.event_listener, event: preRemove }
+
+    ur_api.event_listener.delete_report_view_add_comditional_transform_value_listener:
+        class: UR\Bundle\ApiBundle\EventListener\DeleteReportViewAddConditionalTransformValueListener
+        arguments:
+        tags:
+            - { name: doctrine.event_listener, event: preRemove }
+    ur_api.event_listener.update_condition_transform_value_when_report_view_change_dimensions_metrics_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateConditionTransformValueWhenReportViewChangeDimensionsMetricsListener
+        arguments:
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
+    ur_api.event_listener.delete_condition_transform_value_when_report_view_remove_ransform:
+        class: UR\Bundle\ApiBundle\EventListener\DeleteConditionTransformValueWhenReportViewRemoveTransformListener
+        arguments:
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: preRemove }
+            - { name: doctrine.event_listener, event: postFlush }

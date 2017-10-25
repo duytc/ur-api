@@ -2,7 +2,6 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
-use Blameable\Fixture\Document\Type;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\Annotations as Rest;
@@ -10,7 +9,6 @@ use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Pubvantage\Worker\JobCounterInterface;
 use Pubvantage\Worker\Scheduler\DataSetJobScheduler;
-use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -22,7 +20,6 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
-use UR\Service\PublicSimpleException;
 
 /**
  * @Rest\RouteResource("DataSet")

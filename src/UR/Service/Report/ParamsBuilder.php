@@ -21,6 +21,7 @@ use UR\Domain\DTO\Report\Params;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\ReportViews\ReportView;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
+use UR\Domain\DTO\Report\Transforms\AddConditionValueTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
@@ -404,6 +405,13 @@ class ParamsBuilder implements ParamsBuilderInterface
                     }
                     break;
 
+                case TransformInterface::ADD_CONDITION_VALUE_TRANSFORM:
+                    $isPostGroup = array_key_exists(TransformInterface::TRANSFORM_IS_POST_KEY, $transform) ? $transform[TransformInterface::TRANSFORM_IS_POST_KEY] : true;
+                    foreach ($transform[TransformInterface::FIELDS_TRANSFORM] as $addConditionValue) {
+                        $transformObjects[] = new AddConditionValueTransform($addConditionValue, $isPostGroup);
+                    }
+                    break;
+
                 case TransformInterface::GROUP_TRANSFORM:
                     $aggregateAll = array_key_exists(GroupByTransform::AGGREGATE_ALL_KEY, $transform) ? $transform[GroupByTransform::AGGREGATE_ALL_KEY] : false;
                     $aggregationFields = array_key_exists(GroupByTransform::AGGREGATION_FIELDS_KEY, $transform) ? $transform[GroupByTransform::AGGREGATION_FIELDS_KEY] : [];
@@ -508,8 +516,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         $param
             ->setTransforms($this->createTransforms($reportView->getTransforms()))
             ->setFieldTypes($reportView->getFieldTypes())
-            ->setUserProvidedDimensionEnabled($reportView->isEnableCustomDimensionMetric())
-        ;
+            ->setUserProvidedDimensionEnabled($reportView->isEnableCustomDimensionMetric());
 
         if (is_array($reportView->getWeightedCalculations())) {
             $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
@@ -592,8 +599,7 @@ class ParamsBuilder implements ParamsBuilderInterface
             ->setFieldTypes($reportView->getFieldTypes())
             ->setShowInTotal($reportView->getShowInTotal())
             ->setIsShowDataSetName($reportView->getIsShowDataSetName())
-            ->setUserProvidedDimensionEnabled($reportView->isEnableCustomDimensionMetric())
-        ;
+            ->setUserProvidedDimensionEnabled($reportView->isEnableCustomDimensionMetric());
 
         if (is_array($reportView->getWeightedCalculations())) {
             $param->setWeightedCalculations(new WeightedCalculation($reportView->getWeightedCalculations()));
@@ -775,8 +781,7 @@ class ParamsBuilder implements ParamsBuilderInterface
                 }
 
                 // set user defined metric after delete the metrics is invalid
-                if (!empty($userDefinedMetrics))
-                {
+                if (!empty($userDefinedMetrics)) {
                     $param->setUserDefinedMetrics($userDefinedMetrics);
                 } else {
                     $param->setUserDefinedMetrics($reportView->getMetrics());

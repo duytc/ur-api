@@ -7,7 +7,10 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Bundle\ApiBundle\Behaviors\CalculateMetricsAndDimensionsTrait;
 use UR\Bundle\ApiBundle\EventListener\ReportViewDataSetChangeListener;
+use UR\Domain\DTO\Report\Transforms\AddConditionValueTransform;
+use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\DomainManager\DataSetManagerInterface;
+use UR\DomainManager\ReportViewAddConditionalTransformValueManagerInterface;
 use UR\DomainManager\ReportViewDataSetManagerInterface;
 use UR\DomainManager\ReportViewManagerInterface;
 use UR\DomainManager\ReportViewTemplateManagerInterface;
@@ -15,11 +18,13 @@ use UR\DomainManager\ReportViewTemplateTagManagerInterface;
 use UR\DomainManager\TagManagerInterface;
 use UR\Entity\Core\DataSet;
 use UR\Entity\Core\ReportView;
+use UR\Entity\Core\ReportViewAddConditionalTransformValue;
 use UR\Entity\Core\ReportViewDataSet;
 use UR\Entity\Core\ReportViewTemplate;
 use UR\Entity\Core\ReportViewTemplateTag;
 use UR\Entity\Core\Tag;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\ReportViewAddConditionalTransformValueInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\Core\ReportViewTemplateInterface;
@@ -60,6 +65,9 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
     /** @var DataSetManagerInterface  */
     protected $dataSetManager;
 
+    /** @var ReportViewAddConditionalTransformValueManagerInterface  */
+    protected $reportViewAddConditionalTransformValueManager;
+
     /**
      * ReportViewTemplateService constructor.
      * @param ReportViewManagerInterface $reportViewManager
@@ -70,10 +78,11 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
      * @param ParamsBuilderInterface $paramsBuilder
      * @param ReportViewDataSetManagerInterface $reportViewDataSetManager
      * @param DataSetManagerInterface $dataSetManager
+     * @param ReportViewAddConditionalTransformValueManagerInterface $reportViewAddConditionalTransformValueManager
      */
     public function __construct(ReportViewManagerInterface $reportViewManager, ReportViewTemplateManagerInterface $reportViewTemplateManager,
     TagManagerInterface $tagManager, ReportViewTemplateTagManagerInterface $reportViewTemplateTagManager, EntityManagerInterface $em, ParamsBuilderInterface $paramsBuilder,
-    ReportViewDataSetManagerInterface $reportViewDataSetManager, DataSetManagerInterface $dataSetManager)
+    ReportViewDataSetManagerInterface $reportViewDataSetManager, DataSetManagerInterface $dataSetManager, ReportViewAddConditionalTransformValueManagerInterface $reportViewAddConditionalTransformValueManager)
     {
         $this->reportViewManager = $reportViewManager;
         $this->reportViewTemplateManager = $reportViewTemplateManager;
@@ -83,6 +92,7 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $this->paramsBuilder = $paramsBuilder;
         $this->reportViewDataSetManager = $reportViewDataSetManager;
         $this->dataSetManager = $dataSetManager;
+        $this->reportViewAddConditionalTransformValueManager = $reportViewAddConditionalTransformValueManager;
     }
 
     /**
@@ -147,6 +157,9 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         }
 
         $this->correctFieldsInReportView($reportView);
+
+        /** Clone ReportViewAddConditionValue in transforms */
+        $this->correctAddConditionTransformValuesInReportView($reportView);
 
         $this->reportViewManager->save($reportView);
 
@@ -321,6 +334,98 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
 
         $joinBy = $this->updateJoinByForReportView($reportView->getJoinBy());
         $reportView->setJoinBy($joinBy);
+    }
+
+    /**
+     * correct correctAddConditionTransformValues In ReportView
+     *
+     * Example values=[12,13] need to update to values=[14,15]
+     *
+     * @param ReportViewInterface $reportView
+     */
+    private function correctAddConditionTransformValuesInReportView(ReportViewInterface $reportView)
+    {
+        /* clone AddConditionValueTransforms */
+        $transforms = $reportView->getTransforms();
+        if (!is_array($transforms)) {
+            return;
+        }
+
+        foreach ($transforms as &$transform) {
+            if (!is_array($transform)
+                || !array_key_exists(TransformInterface::TRANSFORM_TYPE_KEY, $transform)
+                || TransformInterface::ADD_CONDITION_VALUE_TRANSFORM !== $transform[TransformInterface::TRANSFORM_TYPE_KEY]
+                || !array_key_exists(TransformInterface::FIELDS_TRANSFORM, $transform)
+            ) {
+                continue;
+            }
+
+            // get all $addConditionValueTransform configs
+            $addConditionValueTransforms = $transform[TransformInterface::FIELDS_TRANSFORM];
+            if (!is_array($addConditionValueTransforms)) {
+                continue;
+            }
+
+            // handle each $addConditionValueTransform config
+            foreach ($addConditionValueTransforms as &$addConditionValueTransform) {
+                if (!is_array($addConditionValueTransform)
+                    || !array_key_exists(AddConditionValueTransform::VALUES_KEY, $addConditionValueTransform)
+                ) {
+                    continue;
+                }
+
+                // get old values
+                $oldValues = $addConditionValueTransform[AddConditionValueTransform::VALUES_KEY];
+                if (!is_array($oldValues) || empty($oldValues)) {
+                    continue;
+                }
+
+                // clone
+                $newValues = [];
+
+                foreach ($oldValues as $oldReportViewAddConditionalTransformValueId) {
+                    $oldReportViewAddConditionalTransformValue = $this->reportViewAddConditionalTransformValueManager->find($oldReportViewAddConditionalTransformValueId);
+                    if (!$oldReportViewAddConditionalTransformValue instanceof ReportViewAddConditionalTransformValueInterface) {
+                        continue;
+                    }
+
+                    $reportViewAddConditionalTransformValue = new ReportViewAddConditionalTransformValue();
+                    $reportViewAddConditionalTransformValue->setPublisher($reportView->getPublisher());
+                    $reportViewAddConditionalTransformValue->setName($oldReportViewAddConditionalTransformValue->getName());
+
+                    // correct conditions
+                    $oldConditions = $oldReportViewAddConditionalTransformValue->getConditions();
+                    $newConditions = $this->updateDataSetId($oldConditions);
+                    $reportViewAddConditionalTransformValue->setConditions($newConditions);
+
+                    $reportViewAddConditionalTransformValue->setDefaultValue($oldReportViewAddConditionalTransformValue->getDefaultValue());
+
+                    // correct shared conditions
+                    $oldSharedConditions = $oldReportViewAddConditionalTransformValue->getSharedConditions();
+                    $newSharedConditions = $this->updateDataSetId($oldSharedConditions);
+                    $reportViewAddConditionalTransformValue->setSharedConditions($newSharedConditions);
+
+                    $this->em->persist($reportViewAddConditionalTransformValue);
+                    $this->em->flush();
+
+                    $newValues[] = $reportViewAddConditionalTransformValue->getId();
+                }
+
+                // update new values
+                $addConditionValueTransform[AddConditionValueTransform::VALUES_KEY] = $newValues;
+            }
+
+            // update $addConditionValueTransform configs
+            $transform[TransformInterface::FIELDS_TRANSFORM] = $addConditionValueTransforms;
+
+            unset($addConditionValueTransform);
+        }
+
+        unset($transform);
+
+        /* correct AddConditionValueTransforms */
+        $transforms = $this->updateDataSetId($transforms);
+        $reportView->setTransforms($transforms);
     }
 
     /**

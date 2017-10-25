@@ -92,3 +92,7 @@ api_user_tag:
     type: rest
     resource: UR\Bundle\ApiBundle\Controller\UserTagController
     name_prefix:  api_1_
+api_report_view_add_conditional_transformer_value:
+    type: rest
+    resource: UR\Bundle\ApiBundle\Controller\ReportViewAddConditionalTransformValueController
+    name_prefix:  api_1_

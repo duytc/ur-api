@@ -83,4 +83,11 @@ interface ReportViewRepositoryInterface extends ObjectRepository
      * @return null|ReportViewInterface
      */
     public function hasSubviews(ReportViewInterface $reportView);
+
+	/**
+	 * remove a "add conditional transform value" id in "add conditional value transform"
+	 * @param $id
+	 * @return mixed
+	 */
+	public function removeAddConditionalTransformValue($id);
 }

@@ -11,6 +11,7 @@ use UR\Model\Core\ReportView;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
+use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
 use UR\Repository\Core\ReportViewRepositoryInterface;
 

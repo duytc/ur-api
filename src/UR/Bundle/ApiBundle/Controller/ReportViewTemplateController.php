@@ -18,7 +18,6 @@ use UR\Model\Core\ReportViewTemplateInterface;
 use UR\Model\Core\ReportViewTemplateTagInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use UR\Model\Core\TagInterface;
-use UR\Model\User\Role\AdminInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Service\PublicSimpleException;
 use UR\Service\ReportViewTemplate\DTO\CustomTemplateParams;

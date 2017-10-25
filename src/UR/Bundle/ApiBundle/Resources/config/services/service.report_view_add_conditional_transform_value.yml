@@ -1,0 +1,60 @@
+parameters:
+    # entity class
+    ur.entity.core.report_view_add_conditional_transform_value.class: UR\Entity\Core\ReportViewAddConditionalTransformValue
+    # form class
+    ur.form.type.core.report_view_add_conditional_transform_value.class: UR\Form\Type\ReportViewAddConditionalTransformValueFormType
+
+services:
+    ur_api.handler.report_view_add_conditional_transform_value:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.report_view_add_conditional_transform_value
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.report_view_add_conditional_transform_value:
+        class: UR\Repository\Core\ReportViewAddConditionalTransformValueRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.report_view_add_conditional_transform_value.class%
+
+    ur.domain_manager.report_view_add_conditional_transform_value:
+        class: UR\DomainManager\ReportViewAddConditionalTransformValueManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.report_view_add_conditional_transform_value
+
+    ur.form.type.report_view_add_conditional_transform_value:
+        class: %ur.form.type.core.report_view_add_conditional_transform_value.class%
+        tags:
+            - { name: form.type, alias: ur_form_report_view_add_conditional_transform_value }
+
+    ur.handler.handlers.report_view_add_conditional_transform_value.abstract:
+        class: UR\Handler\Handlers\Core\ReportViewAddConditionalTransformValueHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.report_view_add_conditional_transform_value
+            - @ur.domain_manager.report_view_add_conditional_transform_value
+
+    ur.handler.handlers.report_view_add_conditional_transform_value.admin:
+        class: UR\Handler\Handlers\Core\Admin\ReportViewAddConditionalTransformValueHandler
+        parent: ur.handler.handlers.report_view_add_conditional_transform_value.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.report_view_add_conditional_transform_value.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\ReportViewAddConditionalTransformValueHandler
+        parent: ur.handler.handlers.report_view_add_conditional_transform_value.abstract
+        public: false
+
+    ur.handler.handler_manager.report_view_add_conditional_transform_value:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.report_view_add_conditional_transform_value.class%
+            -
+                - @ur.handler.handlers.report_view_add_conditional_transform_value.admin
+                - @ur.handler.handlers.report_view_add_conditional_transform_value.publisher

@@ -100,7 +100,7 @@ abstract class HandlerAbstract implements HandlerInterface
      */
     public function delete(ModelInterface $entity)
     {
-        $this->domainManager->delete($entity);
+        return $this->domainManager->delete($entity);
     }
 
     /**

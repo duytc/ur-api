@@ -72,13 +72,14 @@ class ReportBuilder implements ReportBuilderInterface
      */
     private $reportViewFormatter;
 
-    /** @var ReportViewSorter  */
+    /** @var ReportViewSorter */
     private $reportViewSorter;
 
     /**
      * @var LoggerInterface
      */
     private $logger;
+
     /**
      * ReportBuilder constructor.
      * @param ReportSelectorInterface $reportSelector

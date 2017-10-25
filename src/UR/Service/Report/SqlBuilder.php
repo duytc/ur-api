@@ -11,6 +11,7 @@ use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use SplDoublyLinkedList;
 use UR\Behaviors\JoinConfigUtilTrait;
+use UR\Behaviors\ReformatDataTrait;
 use UR\Behaviors\ReportViewFilterUtilTrait;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\DateRange;
@@ -24,6 +25,7 @@ use UR\Domain\DTO\Report\JoinBy\JoinConfigInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinFieldInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
+use UR\Domain\DTO\Report\Transforms\AddConditionValueTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
 use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
@@ -31,8 +33,11 @@ use UR\Domain\DTO\Report\Transforms\NewFieldTransform;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Entity\Core\DataSet;
+use UR\Entity\Core\ReportViewAddConditionalTransformValue;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
+use UR\Model\Core\ReportViewAddConditionalTransformValueInterface;
+use UR\Repository\Core\ReportViewAddConditionalTransformValueRepositoryInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\Synchronizer;
 use UR\Service\PublicSimpleException;
@@ -43,6 +48,7 @@ class SqlBuilder implements SqlBuilderInterface
     use SqlUtilTrait;
     use JoinConfigUtilTrait;
     use ReportViewFilterUtilTrait;
+    use ReformatDataTrait;
 
     const STATEMENT_KEY = 'statement';
     const DATE_RANGE_KEY = 'dateRange';
@@ -205,6 +211,7 @@ class SqlBuilder implements SqlBuilderInterface
             $subQb->addSelect(sprintf('t.%s as %s', $this->connection->quoteIdentifier($field), $fieldWithId));
         }
 
+        /* do pre transform */
         $newFields = [];
         foreach ($transforms as $transform) {
             if (!$transform instanceof TransformInterface) {
@@ -227,6 +234,15 @@ class SqlBuilder implements SqlBuilderInterface
                 continue;
             }
 
+            if ($transform instanceof AddConditionValueTransform) {
+                // patch values for AddConditionValueTransform
+                $transform = $this->patchAddConditionValueTransform($transform);
+
+                $subQb = $this->addConditionValueTransformQuery($subQb, $transform, $newFields, [], [], $removeSuffix = true);
+                $types[$transform->getFieldName()] = $transform->getType();
+                continue;
+            }
+
             if ($transform instanceof ComparisonPercentTransform) {
                 $subQb = $this->addComparisonPercentTransformQuery($subQb, $transform, $newFields, [], $removeSuffix = true);
                 $types[$transform->getFieldName()] = $transform->getType();
@@ -241,6 +257,7 @@ class SqlBuilder implements SqlBuilderInterface
 
         $fromQuery = $subQb->getSQL();
 
+        /* do group */
         if ($hasGroup) {
             $qb = $this->connection->createQueryBuilder();
             foreach ($newFields as $newField) {
@@ -279,6 +296,7 @@ class SqlBuilder implements SqlBuilderInterface
 
         $outerQb = $this->connection->createQueryBuilder();
 
+        /* do post transform */
         $newFieldsOnPost = [];
         foreach ($transforms as $transform) {
             if (!$transform instanceof TransformInterface) {
@@ -296,6 +314,14 @@ class SqlBuilder implements SqlBuilderInterface
 
             if ($transform instanceof AddFieldTransform) {
                 $outerQb = $this->addNewFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, [], []);
+                continue;
+            }
+
+            if ($transform instanceof AddConditionValueTransform) {
+                // patch values for AddConditionValueTransform
+                $transform = $this->patchAddConditionValueTransform($transform);
+
+                $outerQb = $this->addConditionValueTransformQuery($outerQb, $transform, $newFieldsOnPost, [], [], $removeSuffix = false);
                 continue;
             }
 
@@ -599,6 +625,15 @@ class SqlBuilder implements SqlBuilderInterface
                 continue;
             }
 
+            if ($transform instanceof AddConditionValueTransform) {
+                // patch values for AddConditionValueTransform
+                $transform = $this->patchAddConditionValueTransform($transform);
+
+                $subQb = $this->addConditionValueTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, $joinConfig, $removeSuffix = true);
+                $types[$transform->getFieldName()] = $transform->getType();
+                continue;
+            }
+
             if ($transform instanceof ComparisonPercentTransform) {
                 $subQb = $this->addComparisonPercentTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, true);
                 $types[$transform->getFieldName()] = $transform->getType();
@@ -664,6 +699,14 @@ class SqlBuilder implements SqlBuilderInterface
 
             if ($transform instanceof AddFieldTransform) {
                 $outerQb = $this->addNewFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, $dataSetIndexes, $joinConfig);
+                continue;
+            }
+
+            if ($transform instanceof AddConditionValueTransform) {
+                // patch values for AddConditionValueTransform
+                $transform = $this->patchAddConditionValueTransform($transform);
+
+                $outerQb = $this->addConditionValueTransformQuery($outerQb, $transform, $newFieldsOnPost, $dataSetIndexes, $joinConfig, $removeSuffix = true);
                 continue;
             }
 
@@ -1342,5 +1385,46 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         return false;
+    }
+
+    /**
+     * @param AddConditionValueTransform $transform
+     * @return AddConditionValueTransform
+     */
+    private function patchAddConditionValueTransform(AddConditionValueTransform $transform)
+    {
+        // skip if $transform is already patched
+        if (is_array($transform->getMappedValues())) {
+            return $transform;
+        }
+
+        $values = $transform->getValues();
+
+        // get all AddConditionValues by ids in values
+        if (!is_array($values)) {
+            return $transform;
+        }
+
+        /** @var ReportViewAddConditionalTransformValueRepositoryInterface $reportViewAddConditionTransformValueManager */
+        $reportViewAddConditionTransformValueManager = $this->em->getRepository(ReportViewAddConditionalTransformValue::class);
+
+        $addConditionValues = []; // as new values
+        foreach ($values as $id) {
+            if (empty($id) || !is_numeric($id)) {
+                continue;
+            }
+
+            $addConditionValue = $reportViewAddConditionTransformValueManager->find($id);
+            if (!$addConditionValue instanceof ReportViewAddConditionalTransformValueInterface) {
+                continue;
+            }
+
+            $addConditionValues[] = $addConditionValue;
+        }
+
+        // override values in $addConditionValueConfig by new values
+        $transform->setMappedValues($addConditionValues);
+
+        return $transform;
     }
 }
