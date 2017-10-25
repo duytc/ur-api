@@ -417,7 +417,7 @@ trait SqlUtilTrait
                 if (in_array($transform->getType(), [FieldType::TEXT, FieldType::LARGE_TEXT, FieldType::DATETIME, FieldType::DATE])) {
                     $conditionValue = "'$conditionValue'";
                 } elseif ($transform->getType() == FieldType::NUMBER) {
-                    $conditionValue = intval(ceil($conditionValue));
+                    $conditionValue = intval(round($conditionValue, 0));
                 } elseif ($transform->getType() == FieldType::DECIMAL) {
                     $conditionValue = floatval($conditionValue);
                 }
@@ -432,7 +432,7 @@ trait SqlUtilTrait
             if (in_array($transform->getType(), [FieldType::TEXT, FieldType::LARGE_TEXT, FieldType::DATETIME, FieldType::DATE])) {
                 $defaultValue = "'$defaultValue'";
             } elseif ($transform->getType() == FieldType::NUMBER) {
-                $defaultValue = intval(ceil($defaultValue));
+                $defaultValue = intval(round($defaultValue, 0));
             } elseif ($transform->getType() == FieldType::DECIMAL) {
                 $defaultValue = floatval($defaultValue);
             }
@@ -632,7 +632,7 @@ trait SqlUtilTrait
                 if (in_array($transform->getType(), [FieldType::TEXT, FieldType::LARGE_TEXT, FieldType::DATETIME, FieldType::DATE])) {
                     $value = "'$value'";
                 } elseif ($transform->getType() == FieldType::NUMBER) {
-                    $value = intval(ceil($value));
+                    $value = intval(round($value, 0));
                 } elseif ($transform->getType() == FieldType::DECIMAL) {
                     $value = floatval($value);
                 }
@@ -713,7 +713,7 @@ trait SqlUtilTrait
             if (in_array($transform->getType(), [FieldType::TEXT, FieldType::LARGE_TEXT, FieldType::DATETIME, FieldType::DATE])) {
                 $defaultValue = (null !== $defaultValue) ? "'$defaultValue'" : "NULL";
             } elseif ($transform->getType() == FieldType::NUMBER) {
-                $defaultValue = (null !== $defaultValue) ? intval(ceil($defaultValue)) : "NULL";
+                $defaultValue = (null !== $defaultValue) ? intval(round($defaultValue, 0)) : "NULL";
             } elseif ($transform->getType() == FieldType::DECIMAL) {
                 $defaultValue = (null !== $defaultValue) ? floatval($defaultValue) : "NULL";
             }
@@ -734,7 +734,7 @@ trait SqlUtilTrait
                 if (in_array($transform->getType(), [FieldType::TEXT, FieldType::LARGE_TEXT, FieldType::DATETIME, FieldType::DATE])) {
                     $addConditionValueDefaultValue = (null !== $addConditionValueDefaultValue) ? "'$addConditionValueDefaultValue'" : "NULL";
                 } elseif ($transform->getType() == FieldType::NUMBER) {
-                    $addConditionValueDefaultValue = (null !== $addConditionValueDefaultValue) ? intval(ceil($addConditionValueDefaultValue)) : "NULL";
+                    $addConditionValueDefaultValue = (null !== $addConditionValueDefaultValue) ? intval(round($addConditionValueDefaultValue, 0)) : "NULL";
                 } elseif ($transform->getType() == FieldType::DECIMAL) {
                     $addConditionValueDefaultValue = (null !== $addConditionValueDefaultValue) ? floatval($addConditionValueDefaultValue) : "NULL";
                 }
@@ -812,7 +812,7 @@ trait SqlUtilTrait
                     if (in_array($transform->getType(), [FieldType::TEXT, FieldType::LARGE_TEXT, FieldType::DATETIME, FieldType::DATE])) {
                         $conditionValue = (null !== $conditionValue) ? "'$conditionValue'" : "NULL";
                     } elseif ($transform->getType() == FieldType::NUMBER) {
-                        $conditionValue = (null !== $conditionValue) ? intval(ceil($conditionValue)) : "NULL";
+                        $conditionValue = (null !== $conditionValue) ? intval(round($conditionValue, 0)) : "NULL";
                     } elseif ($transform->getType() == FieldType::DECIMAL) {
                         $conditionValue = (null !== $conditionValue) ? floatval($conditionValue) : "NULL";
                     }
