@@ -92,7 +92,7 @@ class ReportViewFormatter implements ReportViewFormatterInterface
             }
         }
 
-        if (count($decimalFields) < 1) {
+        if (count($decimalFields) + count($numberFields) < 1) {
             return $reportResult;
         }
 
