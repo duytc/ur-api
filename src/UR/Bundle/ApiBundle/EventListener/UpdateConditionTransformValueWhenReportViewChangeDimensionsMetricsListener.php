@@ -26,10 +26,10 @@ class UpdateConditionTransformValueWhenReportViewChangeDimensionsMetricsListener
 		}
 
 		if ($args->hasChangedField(self::DIMENSIONS_KEY) || $args->hasChangedField(self::METRICS_KEY)) {
-            $newDimensions = $args->getNewValue(self::DIMENSIONS_KEY);
-            $newMetrics = $args->getNewValue(self::METRICS_KEY);
-            $oldDimensions = $args->getOldValue(self::DIMENSIONS_KEY);
-            $oldMetrics = $args->getOldValue(self::METRICS_KEY);
+            $newDimensions = ($args->hasChangedField(self::DIMENSIONS_KEY)) ? $args->getNewValue(self::DIMENSIONS_KEY) : [];
+            $newMetrics = ($args->hasChangedField(self::METRICS_KEY)) ? $args->getNewValue(self::METRICS_KEY) : [];
+            $oldDimensions = ($args->hasChangedField(self::DIMENSIONS_KEY)) ? $args->getOldValue(self::DIMENSIONS_KEY) : [];
+            $oldMetrics = ($args->hasChangedField(self::METRICS_KEY)) ? $args->getOldValue(self::METRICS_KEY) : [];
 
             $newDimensionsMetrics = array_merge($newDimensions, $newMetrics);
             $oldDimensionsMetrics = array_merge($oldMetrics, $oldDimensions);
