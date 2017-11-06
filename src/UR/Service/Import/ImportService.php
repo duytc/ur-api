@@ -77,9 +77,12 @@ class ImportService
 
             $convertResult = $this->convertToUtf8($filePath, $this->kernelRootDir);
             if ($convertResult) {
-                $dataSourceFile = $this->getDataSourceFile($dataSource->getFormat(), $dirItem . '/' . $name);
+                $fileName = sprintf('%s/%s', $dirItem, $name);
+                $fileFormat = $this->getUploadFileFormat($fileName);
+
+                $dataSourceFile = $this->getDataSourceFile($fileFormat, $fileName);
                 $newFields = $this->getNewFieldsFromFiles($dataSourceFile);
-                if (count($newFields) < 1) {
+                if (empty($newFields) && !empty($currentFields)) {
                     throw new \Exception(sprintf('Cannot detect header of File %s', $origin_name));
                 }
 
@@ -88,6 +91,31 @@ class ImportService
 
             return ['fields' => $currentFields, 'filePath' => $dirItem . '/' . $name, 'fileName' => $origin_name];
         }
+    }
+
+    /**
+     * Get format of upload file
+     * @param $filePath
+     * @return string
+     * @throws \Exception
+     */
+    private function getUploadFileFormat($filePath) {
+
+        $fileExtension = pathinfo($filePath, PATHINFO_EXTENSION);
+
+        if (in_array($fileExtension, DataSourceType::$EXCEL_TYPES )){
+            return DataSourceType::DS_EXCEL_FORMAT;
+        }
+
+        if (in_array($fileExtension, DataSourceType::$JSON_TYPES )){
+            return DataSourceType::DS_JSON_FORMAT;
+        }
+
+        if (in_array($fileExtension, DataSourceType::$CSV_TYPES )){
+            return DataSourceType::DS_CSV_FORMAT;
+        }
+
+        throw new \Exception(sprintf('Does not support file with extension %s'), $fileExtension);
     }
 
     /**

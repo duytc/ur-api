@@ -216,4 +216,26 @@ interface DataSourceEntryInterface extends ModelInterface
      * @return self
      */
     public function setRemoveHistory($removeHistory);
+
+    /**
+     * @return boolean
+     */
+    public function isSeparable(): bool;
+
+    /**
+     * @param boolean $separable
+     * @return self
+     */
+    public function setSeparable($separable);
+
+    /**
+     * @return array
+     */
+    public function getChunks(): array;
+
+    /**
+     * @param array $chunks
+     * @return self
+     */
+    public function setChunks($chunks);
 }

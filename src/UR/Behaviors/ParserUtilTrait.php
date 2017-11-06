@@ -153,36 +153,41 @@ trait ParserUtilTrait
         $rows = $collection->getRows();
 
         foreach ($rows as $report) {
-            $key = '';
-            foreach ($groupingFields as $groupField) {
-                if (!array_key_exists($groupField, $report)) {
-                    continue;
-                }
-
-                if (empty($report[$groupField])) {
-                    continue;
-                }
-
-                if ($collection->getTypeOf($groupField) == FieldType::DATETIME) {
-                    $normalizedDate = date_create($report[$groupField]);
-
-                    if ($normalizedDate instanceof \DateTime) {
-                        $report[$groupField] = $normalizedDate->format('Y-m-d');
-                        $key .= $normalizedDate->format('Y-m-d');
-                    } else {
-                        $key .= $report[$groupField];
-                    }
-
-                    continue;
-                }
-
-                $key .= is_array($report[$groupField]) ? json_encode($report[$groupField], JSON_UNESCAPED_UNICODE) : $report[$groupField];
-            }
-
-            $key = md5($key);
+            $key = $this->calculateUniqueKey($groupingFields, $report, $collection);
             $groupedArray[$key][] = $report;
         }
 
         return $groupedArray;
+    }
+
+    protected function calculateUniqueKey(array $groupingFields, array $data, Collection $collection)
+    {
+        $key = '';
+        foreach ($groupingFields as $groupField) {
+            if (!array_key_exists($groupField, $data)) {
+                continue;
+            }
+
+            if (empty($data[$groupField])) {
+                continue;
+            }
+
+            if ($collection->getTypeOf($groupField) == FieldType::DATETIME) {
+                $normalizedDate = date_create($data[$groupField]);
+
+                if ($normalizedDate instanceof \DateTime) {
+                    $data[$groupField] = $normalizedDate->format('Y-m-d');
+                    $key .= $normalizedDate->format('Y-m-d');
+                } else {
+                    $key .= $data[$groupField];
+                }
+
+                continue;
+            }
+
+            $key .= is_array($data[$groupField]) ? json_encode($data[$groupField], JSON_UNESCAPED_UNICODE) : $data[$groupField];
+        }
+
+        return md5($key);
     }
 }

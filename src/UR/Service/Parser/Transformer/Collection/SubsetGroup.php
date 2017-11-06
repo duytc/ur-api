@@ -70,7 +70,8 @@ class SubsetGroup implements CollectionTransformerInterface
         $groupedReports = $this->generateGroupedArray($this->groupFields, $collection);
         $newRows = new SplDoublyLinkedList();
 
-        foreach ($groupedReports as $groupedReport) {
+        $groupedMapValues = [];
+        foreach ($groupedReports as $key => $groupedReport) {
             $mapValuesAllRows = [];
             if (empty($sumFields)) {
                 $headerRow = reset($groupedReport);
@@ -81,8 +82,24 @@ class SubsetGroup implements CollectionTransformerInterface
                     $mapValuesAllRows = $this->mergeSubSetResult($mapValuesAllRows, $mapValuesOneRow, $collection);
                 }
             }
-            $this->addMapValuesToRows($newRows, $mapValuesAllRows, $groupedReport);
+
+            $groupedMapValues[$key] = $mapValuesAllRows;
+            unset($groupedReport, $mapValuesOneRow, $mapValuesAllRows);
         }
+
+        unset($groupedReports, $groupedReport, $mapValuesOneRow, $mapValuesAllRows);
+
+        foreach ($rows as $row) {
+            $key = $this->calculateUniqueKey($this->groupFields, $row, $collection);
+            $mappedValues = $groupedMapValues[$key];
+            foreach ($mappedValues as $field => $value) {
+                $row[$field] = $value;
+            }
+
+            $newRows->push($row);
+        }
+
+        unset($rows, $row);
 
         return new Collection($collection->getColumns(), $newRows, $collection->getTypes());
     }
@@ -238,25 +255,6 @@ class SubsetGroup implements CollectionTransformerInterface
         }
 
         return $mapValueOneRow;
-    }
-
-    /**
-     * @param SplDoublyLinkedList $newRows
-     * @param array $map
-     * @param array $groupedReport
-     * @return SplDoublyLinkedList
-     */
-    private function addMapValuesToRows(SplDoublyLinkedList $newRows, array $map, array $groupedReport)
-    {
-        foreach ($groupedReport as $row) {
-            foreach ($map as $field => $value) {
-                $row[$field] = $value;
-            }
-
-            $newRows->push($row);
-        }
-
-        return $newRows;
     }
 
     /**

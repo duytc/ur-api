@@ -615,8 +615,8 @@ class DataMappingService implements DataMappingServiceInterface
     public function importDataFromComponentDataSet(MapBuilderConfigInterface $config, \UR\Service\DTO\Collection $collection)
     {
         $this->insertRowsToDataSet($config, $collection->getRows(), false);
-        $this->manager->updateOverwriteDateForDataSet($config->getDataSet());
-        $this->manager->updateTotalRowsForDataSet($config->getDataSet());
+        $this->manager->updateOverwriteDateForDataSet($config->getDataSet()->getId());
+        $this->manager->updateTotalRowsForDataSet($config->getDataSet()->getId());
     }
 
     /**

@@ -36,13 +36,19 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
         }
 
         $data = $this->listener->getJson();
+        $header = [];
+        $i = 0;
+
+        if (empty($data)) {
+            $this->headers = $header;
+            return;
+        }
+
         if (array_key_exists('columns', $data) && array_key_exists('rows', $data)) {
             $this->headers = $data['columns'];
             return;
         }
 
-        $header = [];
-        $i = 0;
         foreach ($data as $row) {
             $row = $this->handleNestedColumns($row);
             $row = $this->removeInvalidColumns($row);
@@ -259,4 +265,30 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
     {
         return count($this->getRows());
     }
+
+    /**
+     * @return array
+     */
+    public function getHeaders(): array
+    {
+        return $this->headers;
+    }
+
+    /**
+     * Get body rows of CSV file
+     */
+    public function getBodyRows()
+    {
+        $rowValues = [];
+        $dll = $this->getRows();
+        $dll->rewind();
+
+        while ($dll->valid()) {
+            $rowValues[] = $dll->current();
+            $dll->next();
+        }
+
+        return $rowValues;
+    }
+
 }

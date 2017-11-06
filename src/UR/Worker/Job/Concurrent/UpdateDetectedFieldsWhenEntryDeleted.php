@@ -7,6 +7,7 @@ use Exception;
 use Monolog\Logger;
 use Pubvantage\Worker\Job\LockableJobInterface;
 use Pubvantage\Worker\JobParams;
+use Symfony\Component\Filesystem\Filesystem;
 use UR\DomainManager\DataSourceManagerInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Service\Import\ImportDataException;
@@ -18,6 +19,7 @@ class UpdateDetectedFieldsWhenEntryDeleted implements LockableJobInterface
 
     const PARAM_KEY_FORMAT = 'format';
     const PARAM_KEY_PATH = 'path';
+    const PARAM_KEY_CHUNK_PATHS = 'chunkPaths';
     const PARAM_KEY_DATA_SOURCE_ID = 'dataSourceId';
 
     /**
@@ -71,6 +73,7 @@ class UpdateDetectedFieldsWhenEntryDeleted implements LockableJobInterface
         // TODO: do not hardcode, use const instead
         $format = $params->getRequiredParam(self::PARAM_KEY_FORMAT);
         $path = $params->getRequiredParam(self::PARAM_KEY_PATH);
+        $chunkPaths = $params->getRequiredParam(self::PARAM_KEY_CHUNK_PATHS);
         $dataSourceId = $params->getRequiredParam(self::PARAM_KEY_DATA_SOURCE_ID);
 
         // important: data source entry may be deleted by cascade when data source is deleted
@@ -110,6 +113,32 @@ class UpdateDetectedFieldsWhenEntryDeleted implements LockableJobInterface
 
         if (file_exists($this->uploadFileDir . $path)) {
             unlink($this->uploadFileDir . $path);
+        }
+
+        if (empty($chunkPaths)) {
+            $this->logger->info('There is no chunks file to delete');
+            return;
+        }
+
+        foreach ($chunkPaths as $chunkPath) {
+            if (file_exists($this->uploadFileDir . $chunkPath)) {
+                $this->removeFileOrFolder($this->uploadFileDir . $chunkPath);
+            }
+        }
+    }
+
+    private function removeFileOrFolder($path)
+    {
+        if (!is_file($path) && !is_dir($path)) {
+            return;
+        }
+
+        $fs = new Filesystem();
+
+        try {
+            $fs->remove($path);
+        } catch (\Exception $e) {
+            $this->logger->notice($e);
         }
     }
 }

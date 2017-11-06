@@ -227,7 +227,7 @@ class AddCalculatedField extends AbstractAddField implements CollectionTransform
                 return $value >= $conditionValue;
 
             case self::CONDITION_COMPARISON_VALUE_IS_INVALID:
-                return $value == null || ($value != 0 && in_array($value, self::$INVALID_VALUES));
+                return is_null($value) || ($value != 0 && in_array($value, self::$INVALID_VALUES));
         }
 
         // default not match

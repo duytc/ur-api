@@ -7,14 +7,17 @@ use Pubvantage\Worker\Scheduler\ConcurrentJobScheduler;
 use Pubvantage\Worker\Scheduler\ConcurrentJobSchedulerInterface;
 use Pubvantage\Worker\Scheduler\DataSetJobScheduler;
 use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
+use Pubvantage\Worker\Scheduler\DataSourceEntryJobSchedulerInterface;
 use Pubvantage\Worker\Scheduler\LinearJobScheduler;
 use Pubvantage\Worker\Scheduler\LinearJobSchedulerInterface;
 use Redis;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DateUtilInterface;
+use UR\Worker\Job\Concurrent\ParseChunkFile;
 use UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource;
 use UR\Worker\Job\Concurrent\ProcessAlert;
+use UR\Worker\Job\Concurrent\SplitHugeFile;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
 use UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted;
@@ -31,6 +34,7 @@ use UR\Worker\Job\Linear\RemoveAllDataFromConnectedDataSource;
 use UR\Worker\Job\Linear\RemoveAllDataFromDataSet;
 use UR\Worker\Job\Linear\TruncateDataSetSubJob;
 use UR\Worker\Job\Linear\UndoImportHistories;
+use UR\Worker\Job\Linear\UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob;
 use UR\Worker\Job\Linear\UpdateDataSetTotalRowSubJob;
 use UR\Worker\Job\Linear\UpdateOverwriteDateInDataSetSubJob;
 
@@ -56,12 +60,11 @@ class Manager
     /** @var ConcurrentJobSchedulerInterface */
     protected $concurrentJobScheduler;
 
-    public function __construct(DateUtilInterface $dateUtil,
-                                Redis $redis,
-                                PheanstalkProxy $beanstalk,
-                                ConcurrentJobScheduler $concurrentJobScheduler,
-                                LinearJobScheduler $linearJobScheduler,
-                                DataSetJobScheduler $dataSetJobScheduler)
+    /** @var  DataSourceEntryJobSchedulerInterface */
+    protected $dataSourceEntryScheduler;
+
+    public function __construct(DateUtilInterface $dateUtil, Redis $redis, PheanstalkProxy $beanstalk, ConcurrentJobScheduler $concurrentJobScheduler,
+        LinearJobScheduler $linearJobScheduler, DataSetJobScheduler $dataSetJobScheduler, DataSourceEntryJobSchedulerInterface $dataSourceEntryScheduler)
     {
         $this->dateUtil = $dateUtil;
         $this->redis = $redis;
@@ -69,6 +72,7 @@ class Manager
         $this->concurrentJobScheduler = $concurrentJobScheduler;
         $this->linearJobScheduler = $linearJobScheduler;
         $this->dataSetJobScheduler = $dataSetJobScheduler;
+        $this->dataSourceEntryScheduler = $dataSourceEntryScheduler;
     }
 
     /**
@@ -155,27 +159,27 @@ class Manager
     }
 
     /**
-     * @param DataSetInterface $dataSet
+     * @param $dataSetId
      */
-    public function updateOverwriteDateForDataSet(DataSetInterface $dataSet)
+    public function updateOverwriteDateForDataSet($dataSetId)
     {
         $updateOverwriteDate = [
             'task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME
         ];
 
-        $this->dataSetJobScheduler->addJob($updateOverwriteDate, $dataSet->getId());
+        $this->dataSetJobScheduler->addJob($updateOverwriteDate, $dataSetId);
     }
 
     /**
-     * @param DataSetInterface $dataSet
+     * @param $dataSetId
      */
-    public function updateTotalRowsForDataSet(DataSetInterface $dataSet)
+    public function updateTotalRowsForDataSet($dataSetId)
     {
         $updateTotalRow = [
             'task' => UpdateDataSetTotalRowSubJob::JOB_NAME
         ];
 
-        $this->dataSetJobScheduler->addJob($updateTotalRow, $dataSet->getId());
+        $this->dataSetJobScheduler->addJob($updateTotalRow, $dataSetId);
     }
 
     /**
@@ -263,14 +267,16 @@ class Manager
     /**
      * @param string $format
      * @param string $path
+     * @param $chunkPaths
      * @param int $dataSourceId
      */
-    public function updateDetectedFieldsWhenEntryDeleted($format, $path, $dataSourceId)
+    public function updateDetectedFieldsWhenEntryDeleted($format, $path, $chunkPaths, $dataSourceId)
     {
         $jobData = [
             'task' => UpdateDetectedFieldsWhenEntryDeleted::JOB_NAME,
             UpdateDetectedFieldsWhenEntryDeleted::PARAM_KEY_FORMAT => $format,
             UpdateDetectedFieldsWhenEntryDeleted::PARAM_KEY_PATH => $path,
+            UpdateDetectedFieldsWhenEntryDeleted::PARAM_KEY_CHUNK_PATHS => $chunkPaths,
             UpdateDetectedFieldsWhenEntryDeleted::PARAM_KEY_DATA_SOURCE_ID => $dataSourceId
         ];
 
@@ -325,6 +331,45 @@ class Manager
 
         // concurrent job, we do not care what order it is processed in
         $this->dataSetJobScheduler->addJob($jobData, $dataSetId);
+    }
+
+    public function parseChunkFile($connectedDataSourceId, $dataSourceEntryId, $importHistoryId, $inputFile, $outputFile, $totalChunkKey, $chunksKey)
+    {
+        $jobData = [
+            'task' => ParseChunkFile::JOB_NAME,
+            ParseChunkFile::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId,
+            ParseChunkFile::INPUT_FILE_PATH => $inputFile,
+            ParseChunkFile::OUTPUT_FILE_PATH => $outputFile,
+            ParseChunkFile::DATA_SOURCE_ENTRY_ID => $dataSourceEntryId,
+            ParseChunkFile::TOTAL_CHUNK_KEY => $totalChunkKey,
+            ParseChunkFile::CHUNKS_KEY => $chunksKey,
+            ParseChunkFile::IMPORT_HISTORY_ID => $importHistoryId,
+        ];
+
+        // concurrent job, we do not care what order it is processed in
+        $this->dataSourceEntryScheduler->addJob($jobData, $dataSourceEntryId);
+    }
+
+    public function updateAllConnectedDataSourceTotalRowForDataSet($dataSetId)
+    {
+         $jobs = [
+             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+         ];
+
+         // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
+         // this will save a lot of execution time
+         $this->dataSetJobScheduler->addJob($jobs, $dataSetId);
+    }
+
+    public function splitHugeFile($dataSourceEntryId)
+    {
+        $jobData = [
+            'task' => SplitHugeFile::JOB_NAME,
+            ParseChunkFile::DATA_SOURCE_ENTRY_ID => $dataSourceEntryId,
+        ];
+
+        // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
     }
 
     public function removeDuplicatedDateEntries($dataSourceId)

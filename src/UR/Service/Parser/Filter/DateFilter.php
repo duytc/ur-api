@@ -7,10 +7,13 @@ use DateTime;
 use Exception;
 use UR\Model\Core\AlertInterface;
 use UR\Service\Import\ImportDataException;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class DateFilter extends AbstractFilter implements ColumnFilterInterface
 {
     const FORMAT_FILTER_KEY = 'format';
+    const TIMEZONE_KEY = 'timezone';
+    const FORMATS_FILTER_KEY = 'formats';
     const START_DATE_FILTER_KEY = 'startDate';
     const END_DATE_FILTER_KEY = 'endDate';
     const IS_PARTIAL_MATCH_KEY = 'isPartialMatch';
@@ -19,22 +22,26 @@ class DateFilter extends AbstractFilter implements ColumnFilterInterface
 
     /** @var DateTime */
     protected $startDate;
+
     /** @var DateTime */
     protected $endDate;
-    /** @var string */
+
+    /** @var array */
     protected $format;
-    /** @var boolean */
-    protected $isPartialMatch;
+
+    /** @var DateFormat */
+    protected $transform;
 
     /**
      * DateFilter constructor.
      * @param string $field
      * @param string $startDateString
      * @param string $endDateString
-     * @param string $format
-     * @param boolean $isPartialMatch
+     * @param array $formats
+     * @param string $timezone
+     * @throws Exception
      */
-    public function __construct($field, $startDateString, $endDateString, $format, $isPartialMatch = false)
+    public function __construct($field, $startDateString, $endDateString, array $formats, $timezone = 'UTC')
     {
         parent::__construct($field);
 
@@ -55,8 +62,8 @@ class DateFilter extends AbstractFilter implements ColumnFilterInterface
             $this->endDate->setTime(23, 59, 59);
         }
 
-        $this->format = '!' . $format;
-        $this->isPartialMatch = $isPartialMatch;
+
+        $this->transform = new DateFormat($field, $formats, $timezone, 'Y-m-d H:i:s');
     }
 
     /**
@@ -67,15 +74,14 @@ class DateFilter extends AbstractFilter implements ColumnFilterInterface
     public function filter($value)
     {
         // support partial match value
-        if ($this->isPartialMatch) {
-            $dateFormat = substr($this->format, 1); // remove prefix "!" (see __constructor)
-            $value = self::getPartialMatchValue($dateFormat, $value);
+        try {
+            $date  = $this->transform->getDate($value);
+        } catch (ImportDataException $ex) {
+            throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_DATE, 0, $this->getField());
         }
 
-        $date = DateTime::createFromFormat($this->format, $value);
-
-        if (!$date) {
-            throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILTER_ERROR_INVALID_DATE, 0, $this->getField());
+        if (empty($date)) {
+            return false;
         }
 
         if ($date <= $this->endDate && $date >= $this->startDate) {
@@ -123,11 +129,21 @@ class DateFilter extends AbstractFilter implements ColumnFilterInterface
     }
 
     /**
-     * @return boolean
+     * @return DateFormat
      */
-    public function isIsPartialMatch()
+    public function getTransform(): DateFormat
     {
-        return $this->isPartialMatch;
+        return $this->transform;
+    }
+
+    /**
+     * @param DateFormat $transform
+     * @return self
+     */
+    public function setTransform($transform)
+    {
+        $this->transform = $transform;
+        return $this;
     }
 
     /**

@@ -38,10 +38,8 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         $this->sheet = $objPHPExcel->getActiveSheet();
         $this->numOfColumns = $this->sheet->getHighestColumn();
 
-        $maxColumnsCount = 0;
-        $previousColumns = [];
-        $match = 0;
         $i = 0;
+        $max = 0;
 
         for ($rowIndex = 1, $highestDataRow = $this->sheet->getHighestDataRow(); $rowIndex <= $highestDataRow; $rowIndex++) {
             $highestDataColumnIndex = $this->sheet->getHighestDataColumn($rowIndex);
@@ -52,7 +50,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
                 $formatData = false, $returnCellRef = false
             );
 
-            $currentRow = array_filter($currentRows[0], function ($value) {
+            $cur_row = array_filter($currentRows[0], function ($value) {
                 if (is_numeric($value)) {
                     return true;
                 }
@@ -60,35 +58,19 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
                 return (!is_null($value) && !empty($value));
             });
 
-            if (count($currentRow) < 1) {
+            $cur_row = $this->removeInvalidColumns($cur_row);
+
+            if (count($cur_row) < 1) {
                 continue;
             }
 
             $i++;
 
-            if (count($currentRow) > $maxColumnsCount) {
-                $this->headers = $currentRow;
-                $this->ogiHeaders = $currentRows[0];
-                $maxColumnsCount = count($currentRow);
+            if ($this->isTextArray($cur_row) && !$this->isEmptyArray($cur_row) && count($cur_row) > $max) {
+                $this->headers = $cur_row;
+                $this->ogiHeaders = $cur_row;
+                $max = count($this->headers);
                 $this->headerRow = $rowIndex;
-            }
-
-            if ((count($currentRow) !== count($previousColumns)) && count($currentRow) > 0) {
-                $match = 0;
-                $previousColumns = $currentRow;
-                continue;
-            }
-
-            $match++;
-            if ($match === self::FIRST_MATCH) {
-                if ($rowIndex === self::SECOND_ROW)
-                    $this->dataRow = $rowIndex;
-                else
-                    $this->dataRow = $rowIndex - 1;
-            }
-
-            if ($match > self::ROW_MATCH && count($this->headers) > 0) {
-                break;
             }
 
             if ($i >= DataSourceInterface::DETECT_HEADER_ROWS) {
@@ -96,6 +78,9 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
             }
 
         }
+
+        $this->dataRow = $this->headerRow + 1;
+
         $objPHPExcel->disconnectWorksheets();
         unset($objPHPExcel, $this->sheet);
 
@@ -270,5 +255,39 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         $objPHPExcel->disconnectWorksheets();
         unset($objPHPExcel, $sheet);
         return $highestRow;
+    }
+
+    /**
+     * Get header row of excel file
+     * @return array
+     */
+    public function getHeaderRow()
+    {
+        return $this->headers;
+    }
+
+    /**
+     * Get body rows of excel file
+     */
+    public function getBodyRows()
+    {
+        $rowValues = [];
+        $dll =  $this->getRows();
+        $dll->rewind();
+
+        while($dll->valid()){
+             $rowValues[] = $dll->current();
+            $dll->next();
+        }
+
+        return $rowValues;
+    }
+
+    /**
+     * @return array
+     */
+    public function getHeaders()
+    {
+        return $this->headers;
     }
 }

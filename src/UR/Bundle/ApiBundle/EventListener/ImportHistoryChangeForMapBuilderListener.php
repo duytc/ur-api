@@ -56,7 +56,7 @@ class ImportHistoryChangeForMapBuilderListener
 
             $dataSet = $mapBuilderConfig->getDataSet();
             $this->removeImportHistoryFromMapBuilderDataSet($importHistory, $dataSet, $em);
-            $this->workerManager->updateTotalRowsForDataSet($dataSet);
+            $this->workerManager->updateTotalRowsForDataSet($dataSet->getId());
         }
     }
 

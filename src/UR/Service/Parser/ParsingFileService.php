@@ -70,14 +70,24 @@ class ParsingFileService
      * @param DataSourceEntryInterface $dataSourceEntry
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param int $limit
+     * @param string $parserType
+     * @param $chunkFilePath
      * @return Collection
      * @throws Exception
      * @throws ImportDataException
      */
-    public function doParser(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource, $limit = null)
+    public function doParser(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource, $limit = null, $parserType = ParserInterface::TYPE_DEFAULT, $chunkFilePath)
     {
         /** @var DataSourceInterface $dataSourceFileData */
-        $dataSourceFileData = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $dataSourceEntry->getPath());
+        $dataSourceFileData = null;
+
+        if (!empty($chunkFilePath)) {
+            $dataSourceFileData = $this->fileFactory->getFileForChunk($chunkFilePath);
+        }
+
+        if (!$dataSourceFileData instanceof DataSourceInterface ){
+            $dataSourceFileData = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $dataSourceEntry->getPath());
+        }
 
         $columnsInFile = $dataSourceFileData->getColumns();
         $columnsInFile = array_map("trim", $columnsInFile);
@@ -99,8 +109,10 @@ class ParsingFileService
             $rows = $dataSourceFileData->getRows();
         }
 
-        $columnsInFile = array_map('strtolower', $columnsInFile);
-        $this->addPrefixForColumnsFromFile($columnsInFile);
+        if ($parserType != ParserInterface::TYPE_POST_GROUPS) {
+            $columnsInFile = array_map('strtolower', $columnsInFile);
+            $this->addPrefixForColumnsFromFile($columnsInFile);
+        }
 
         /* mapping field */
         $this->createMapFieldsConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $columnsInFile);
@@ -113,16 +125,26 @@ class ParsingFileService
         //filter config
         $this->createFilterConfigForConnectedDataSource($connectedDataSource, $this->parserConfig);
 
-        $newRows = $this->parser->combineRowsWithColumns($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
+        if ($parserType == ParserInterface::TYPE_POST_GROUPS) {
+            $newRows = $this->parser->combineRowsWithColumnsForPostGroup($columnsInFile, $rows);
+        } else {
+            $newRows = $this->parser->combineRowsWithColumns($columnsInFile, $rows, $this->parserConfig, $connectedDataSource);
+        }
 
         $newRows = $this->removeInvalidRowsDependOnRequiredFields($newRows, $connectedDataSource);
 
         $newRows = $this->removeNullDateTimeRows($newRows, $connectedDataSource);
 
-        //transform config
-        $this->createTransformConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $dataSourceEntry);
+        $newRows = $this->parser->filterFormatField($columnsInFile, $newRows, $this->parserConfig, $parserType);
 
-        $collections = $this->parser->parse($columnsInFile, $newRows, $this->parserConfig, $connectedDataSource);
+        //transform config
+        $this->createTransformConfigForConnectedDataSource($connectedDataSource, $this->parserConfig, $dataSourceEntry, $parserType);
+
+        try {
+            $collections = $this->parser->parse($columnsInFile, $newRows, $this->parserConfig, $connectedDataSource, $parserType);
+        } catch (ImportDataException $ex) {
+            throw $ex;
+        }
 
         return $collections;
     }
@@ -199,15 +221,17 @@ class ParsingFileService
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param ParserConfig $parserConfig
      * @param DataSourceEntryInterface $dataSourceEntry
+     * @param $parserType
      */
-    private function createTransformConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, DataSourceEntryInterface $dataSourceEntry)
+    private function createTransformConfigForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ParserConfig $parserConfig, DataSourceEntryInterface $dataSourceEntry, $parserType)
     {
         $allDimensionMetrics = $connectedDataSource->getDataSet()->getAllDimensionMetrics();
         $tempFields = array_flip($connectedDataSource->getTemporaryFields());
         $allFields = array_merge($allDimensionMetrics, $tempFields);
 
         $allTransforms = [];
-
+        $transformCount = 0;
+        $groupPosition = 0;
         foreach ($connectedDataSource->getTransforms() as $transform) {
             if (!is_array($transform)) {
                 continue;
@@ -217,7 +241,7 @@ class ParsingFileService
 
             if ($transformObjects instanceof DateFormat) {
                 $allTransforms[] = $transformObjects;
-
+                $transformCount++;
                 continue;
             }
 
@@ -232,6 +256,11 @@ class ParsingFileService
                 $transformObjects->validate();
 
                 $allTransforms[] = $transformObjects;
+                $transformCount++;
+
+                if ($transformObjects instanceof GroupByColumns) {
+                    $groupPosition = $transformCount;
+                }
 
                 continue;
             }
@@ -260,10 +289,19 @@ class ParsingFileService
                 }
 
                 $allTransforms[] = $transformObject;
+                $transformCount++;
             }
         }
 
 //        $allTransforms = $this->transformOrdersService->orderTransforms($allTransforms, $connectedDataSource);
+        $internalTransforms = $this->parserConfig->getTransforms();
+        $internalTransforms = is_array($internalTransforms) ? $internalTransforms : [];
+        if ($parserType == ParserInterface::TYPE_POST_GROUPS) {
+            array_splice($allTransforms, $groupPosition, 0, $internalTransforms);
+        } else {
+            $allTransforms = array_merge($internalTransforms, $allTransforms);
+        }
+
         $this->parserConfig->setTransforms($allTransforms);
     }
 
@@ -516,35 +554,43 @@ class ParsingFileService
             if (in_array($field, $mapFields)) {
                 foreach ($mapFields as $fieldInFile => $fieldInDataSet) {
                     if ($field == $fieldInDataSet) {
-                        $fieldInFiles[$fieldInFile] = $type;
+                        $fieldInFiles[$fieldInFile] = $fieldInDataSet;
                     }
                 }
             }
         }
 
+        if (empty($fieldInFiles)) {
+            return $rows;
+        }
+
         /** Remove row if have invalid date, datetime value*/
         $newRows = new SplDoublyLinkedList();
         foreach ($rows as $row) {
+            $pass = true;
 
-            $invalidRow = false;
-            foreach ($fieldInFiles as $fieldInFile => $type) {
-                if (!array_key_exists($fieldInFile, $row)) {
-                    $invalidRow = true;
-                    break;
+            foreach ($fieldInFiles as $fieldInFile => $fieldInDataSet) {
+                $countNull = 0;
+                $groupByDataSetFields = array_filter($fieldInFiles, function ($field) use ($fieldInDataSet) {
+                    return $field == $fieldInDataSet;
+                });
+
+                foreach ($groupByDataSetFields as $filter) {
+                    if (array_key_exists($fieldInFile, $row) && empty($row[$fieldInFile])) {
+                        $countNull++;
+                    }
                 }
 
-                $value = $row[$fieldInFile];
-                if (empty($value)) {
-                    $invalidRow = true;
+                if ($countNull == count($groupByDataSetFields)) {
+                    $pass = false;
                     break;
                 }
             }
 
-            if ($invalidRow) {
-                continue;
+            if ($pass) {
+                $newRows->push($row);
             }
 
-            $newRows->push($row);
             unset($row);
         }
 

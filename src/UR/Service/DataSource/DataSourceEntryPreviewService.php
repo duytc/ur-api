@@ -8,7 +8,6 @@ use SplDoublyLinkedList;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
-use UR\Service\Alert\ConnectedDataSource\ImportFailureAlert;
 use UR\Service\DTO\Report\ReportResult;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Import\PublicImportDataException;
@@ -43,12 +42,18 @@ class DataSourceEntryPreviewService implements DataSourceEntryPreviewServiceInte
     public function preview(DataSourceEntryInterface $dataSourceEntry, $limit = 100)
     {
         $fileType = $dataSourceEntry->getDataSource()->getFormat();
-//        if ($fileType == DataSourceType::DS_EXCEL_FORMAT && filesize($filePath) >= $this->maxExcelFileSize){
-//            throw new \Exception(sprintf('We allow preview Excel file with size below %s MB', (int) $this->maxExcelFileSize/1000000));
-//        }
 
         /** @var \UR\Service\DataSource\DataSourceInterface $dataSourceFileData */
-        $dataSourceFileData = $this->fileFactory->getFile($fileType, $dataSourceEntry->getPath());
+        $dataSourceFileData = null;
+
+        $chunks = $dataSourceEntry->getChunks();
+        $chunkFilePath = $dataSourceEntry->isSeparable() && !empty($chunks) && is_array($chunks)? $this->fileFactory->getAbsolutePath(reset($chunks)) : "";
+
+        if (!empty($chunkFilePath) && is_file($chunkFilePath)) {
+            $dataSourceFileData = $this->fileFactory->getFileForChunk($chunkFilePath);
+        } else {
+            $dataSourceFileData = $this->fileFactory->getFile($fileType, $dataSourceEntry->getPath());
+        }
         $columns = $dataSourceFileData->getColumns();
 
         if (count($columns) < 1) {

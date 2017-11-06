@@ -113,4 +113,12 @@ class JsonNewFormat extends CommonDataSourceFile implements DataSourceInterface
     {
         return count($this->getRows());
     }
+
+    /**
+     * @return array
+     */
+    public function getHeaders()
+    {
+        return $this->headers;
+    }
 }

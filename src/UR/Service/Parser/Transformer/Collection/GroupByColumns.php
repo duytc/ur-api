@@ -74,6 +74,12 @@ class GroupByColumns implements CollectionTransformerInterface
                     $sumFieldKeys[] = $fieldInFile;
                 }
             }
+
+            foreach ($this->aggregationFields as $fieldInDataSet) {
+                if (in_array($fieldInDataSet, $columns)) {
+                    $sumFieldKeys[] = $fieldInDataSet;
+                }
+            }
         }
 
         $groupedReports = $this->generateGroupedArray($groupColumnKeys, $collection);

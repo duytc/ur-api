@@ -89,25 +89,27 @@ class FilterFactory
 
     private function getDateFilter($filter)
     {
-        if (!array_key_exists(DateFilter::FORMAT_FILTER_KEY, $filter)
+        if (!array_key_exists(DateFilter::FORMATS_FILTER_KEY, $filter)
             || !array_key_exists(DateFilter::START_DATE_FILTER_KEY, $filter)
             || !array_key_exists(DateFilter::END_DATE_FILTER_KEY, $filter)
         ) {
             throw new \Exception (sprintf('Either parameters: "%s", "%s" or "%s" does not exits in date filter',
-                DateFilter::FORMAT_FILTER_KEY,
+                DateFilter::FORMATS_FILTER_KEY,
                 DateFilter::START_DATE_FILTER_KEY,
                 DateFilter::END_DATE_FILTER_KEY));
         }
 
+        $timezone = array_key_exists(DateFilter::TIMEZONE_KEY, $filter) ? $filter[DateFilter::TIMEZONE_KEY] : 'UTC';
         return new DateFilter(
             $filter[DateFilter::FIELD_NAME_FILTER_KEY],
             $filter[DateFilter::START_DATE_FILTER_KEY],
             $filter[DateFilter::END_DATE_FILTER_KEY],
-            $filter[DateFilter::FORMAT_FILTER_KEY],
+            $filter[DateFilter::FORMATS_FILTER_KEY],
+            $timezone
             // support Partial Match,
             // backward compatibility for old filters that do not have isPartialMatch key
             // TODO: add migration command is better
-            array_key_exists(DateFilter::IS_PARTIAL_MATCH_KEY, $filter) ? $filter[DateFilter::IS_PARTIAL_MATCH_KEY] : false
+//            array_key_exists(DateFilter::IS_PARTIAL_MATCH_KEY, $filter) ? $filter[DateFilter::IS_PARTIAL_MATCH_KEY] : false
         );
     }
 }

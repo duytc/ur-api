@@ -3,7 +3,6 @@
 namespace UR\Entity\Core;
 
 use UR\Model\Core\DataSourceEntry as DataSourceEntryModel;
-use UR\Model\Core\DataSourceInterface;
 
 class DataSourceEntry extends DataSourceEntryModel
 {
@@ -27,6 +26,8 @@ class DataSourceEntry extends DataSourceEntryModel
     protected $endDate;
     protected $dates;
     protected $removeHistory;
+    protected $separable;
+    protected $chunks;
 
     /**
      * @inheritdoc

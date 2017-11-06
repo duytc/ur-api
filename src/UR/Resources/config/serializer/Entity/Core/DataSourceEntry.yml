@@ -42,3 +42,9 @@ UR\Entity\Core\DataSourceEntry:
         missingDate:
             expose: true
             groups: [dataSourceEntry.detail, dataSourceEntry.summary, dataSourceEntry.missingdate]
+        separable:
+            expose: true
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary, dataSourceEntry.missingdate]
+        chunks:
+            expose: true
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary, dataSourceEntry.missingdate]

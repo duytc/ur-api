@@ -19,6 +19,13 @@ class DataSourceEntry implements DataSourceEntryInterface
     protected $fileExtension;
     private $isDryRun = false;
     protected $removeHistory;
+
+    /** @var bool */
+    protected $separable;
+
+    /** @var array */
+    protected $chunks;
+
     /**
      * @var array
      */
@@ -59,6 +66,8 @@ class DataSourceEntry implements DataSourceEntryInterface
         $this->dateRangeBroken = false;
         $this->totalRow = 0;
         $this->missingDate = [];
+        $this->chunks = [];
+        $this->separable = false;
     }
 
     /**
@@ -417,6 +426,40 @@ class DataSourceEntry implements DataSourceEntryInterface
     public function setRemoveHistory($removeHistory)
     {
         $this->removeHistory = $removeHistory;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isSeparable(): bool
+    {
+        return $this->separable;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setSeparable($separable)
+    {
+        $this->separable = $separable;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getChunks(): array
+    {
+        return $this->chunks;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setChunks($chunks)
+    {
+        $this->chunks = $chunks;
         return $this;
     }
 }

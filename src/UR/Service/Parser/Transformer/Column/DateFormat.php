@@ -14,7 +14,7 @@ use UR\Service\Import\ImportDataException;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
 
-class DateFormat extends AbstractCommonColumnTransform implements ColumnTransformerInterface
+class DateFormat extends AbstractCommonColumnTransform implements DateFormatInterface
 {
     const DEFAULT_TIMEZONE = 'UTC';
     const FROM_KEY = 'from';
@@ -118,50 +118,61 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
             return $collection;
         }
 
-        $mapFields = array_flip($connectedDataSource->getMapFields());
         $dateFieldInDataSet = $this->getField();
+        $mapFields = array_filter($connectedDataSource->getMapFields(), function($field) use ($dateFieldInDataSet) {
+            return $field == $dateFieldInDataSet;
+        });
 
-        if (!array_key_exists($dateFieldInDataSet, $mapFields)) {
+        if (empty($mapFields)) {
             /** Extra fields is field not mapping with data source, they come from Transformation ad Add Field, Extract Pattern ... and need reformat in the end */
-            $dateFieldInFile = $this->getField();
+            $dateFieldInFiles[] = $this->getField();
         } else {
-            $dateFieldInFile = $mapFields[$dateFieldInDataSet];
+            $dateFieldInFiles = array_keys($mapFields);
         }
 
         $newRows = new SplDoublyLinkedList();
+        foreach ($dateFieldInFiles as $dateFieldInFile) {
+            $newRows->rewind();
+            foreach ($rows as $row) {
+                if (!array_key_exists($dateFieldInFile, $row)) {
+                    continue;
+                }
 
-        foreach ($rows as $row) {
-            if (!array_key_exists($dateFieldInFile, $row)) {
-                continue;
+                $row[$dateFieldInDataSet] = $this->transform($row[$dateFieldInFile]);
+                $row[$dateFieldInFile] = $row[$dateFieldInDataSet];
+                $newRows->push($row);
             }
 
-            $row[$dateFieldInFile] = $this->transform($row[$dateFieldInFile]);
-            $newRows->push($row);
+            if (($rows->count() == $newRows->count())) {
+                break;
+            }
         }
 
         $collection->setRows($newRows);
 
         return $collection;
     }
-    
+
     /**
-     * @inheritdoc
+     * @param $value
+     * @return DateTime|mixed|null|string
+     * @throws ImportDataException
      */
-    public function transform($value)
+    public function getDate($value)
     {
         if ($value instanceof DateTime) {
-            return $value->format($this->getToDateFormatInPHPFormat());
+            return $value;
         }
 
         $date = DateTime::createFromFormat(GroupByColumns::TEMPORARY_DATE_FORMAT, $value);
         if ($date instanceof DateTime) {
-            return $date->format($this->getToDateFormatInPHPFormat());
+            return $date;
         }
 
         $value = trim($value);
 
         if ($value === null || $value === "") {
-            return null;
+           return $value;
         }
 
         $resultDate = null;
@@ -197,6 +208,20 @@ class DateFormat extends AbstractCommonColumnTransform implements ColumnTransfor
         //throw exception when wrong date value or format
         if (!$resultDate instanceof DateTime) {
             throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE, 0, $this->getField());
+        }
+
+        return $resultDate;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function transform($value)
+    {
+        try {
+            $resultDate = $this->getDate($value);
+        } catch (ImportDataException $ex) {
+            throw $ex;
         }
 
         switch ($this->getToDateFormat()) {

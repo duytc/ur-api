@@ -9,6 +9,7 @@ use Doctrine\DBAL\Driver\Statement;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use SplDoublyLinkedList;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Params;
 use UR\DomainManager\DataSetManagerInterface;
@@ -98,12 +99,13 @@ class DataMappingManager implements DataMappingManagerInterface
         $reportParam->setOrderBy($param->getSortDirection());
 
         $result = $this->sqlBuilder->buildQueryForSingleDataSet($reportParam);
-        $stmt = $result[SqlBuilder::STATEMENT_KEY];
-
-        $rows = $stmt->fetchAll();
+        //$stmt = $result[SqlBuilder::STATEMENT_KEY];
+        //$rows = $stmt->fetchAll();
+        $rows = $result[SqlBuilder::ROWS];
         $rows = $this->removeDataSetIdFromFieldName($dataSet->getId(), $this->privateFields, $rows);
         $rows = $this->removeDataSetIdFromRows($dataSet->getId(), $rows);
         $rows = $this->removeHiddenFields($dataSet, $rows);
+        $rows = $this->generateReports($rows);
 
         $fieldTypes = $this->getFieldTypes($dataSet);
         $columns = $this->getColumns($fieldTypes);
@@ -148,12 +150,13 @@ class DataMappingManager implements DataMappingManagerInterface
      *         __unique_id_58 to __unique_id
      * @param $dataSetId
      * @param $fields
-     * @param array $rows
-     * @return array
+     * @param SplDoublyLinkedList $rows
+     * @return SplDoublyLinkedList
      */
-    private function removeDataSetIdFromFieldName($dataSetId, $fields, array $rows)
+    private function removeDataSetIdFromFieldName($dataSetId, $fields, SplDoublyLinkedList $rows)
     {
-        foreach ($rows as &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
             foreach ($fields as $field) {
                 $fieldWithDataSetId = sprintf('%s_%s', $field, $dataSetId);
                 if (isset($row[$fieldWithDataSetId])) {
@@ -161,8 +164,13 @@ class DataMappingManager implements DataMappingManagerInterface
                     unset($row[$fieldWithDataSetId]);
                 }
             }
+
+            $newRows->push($row);
+            unset($row);
         }
-        return $rows;
+
+        unset($rows);
+        return $newRows;
     }
 
     /**
@@ -173,13 +181,14 @@ class DataMappingManager implements DataMappingManagerInterface
      *         __is_left_side_58 to __is_left_side
      *         __unique_id_58 to __unique_id
      * @param $dataSetId
-     * @param array $rows
-     * @return array
+     * @param SplDoublyLinkedList $rows
+     * @return SplDoublyLinkedList
      */
-    private function removeDataSetIdFromRows($dataSetId, array $rows)
+    private function removeDataSetIdFromRows($dataSetId, SplDoublyLinkedList $rows)
     {
+        $newRows = new SplDoublyLinkedList();
         $endWith = sprintf('_%s', $dataSetId);
-        foreach ($rows as &$row) {
+        foreach ($rows as $row) {
             foreach ($row as $field => $value) {
                 $pos = strpos($field, $endWith);
                 if ($pos != false) {
@@ -188,18 +197,23 @@ class DataMappingManager implements DataMappingManagerInterface
                     unset($row[$field]);
                 }
             }
+
+            $newRows->push($row);
+            unset($row);
         }
-        return $rows;
+
+        unset($rows);
+        return $newRows;
     }
 
     /**
      * Remove hidden fields as __date_day, __date_month, __date_year
      *
      * @param DataSetInterface $dataSet
-     * @param array $rows
-     * @return array
+     * @param SplDoublyLinkedList $rows
+     * @return SplDoublyLinkedList
      */
-    private function removeHiddenFields(DataSetInterface $dataSet, array $rows)
+    private function removeHiddenFields(DataSetInterface $dataSet, SplDoublyLinkedList $rows)
     {
         $allDimensionMetrics = array_merge($dataSet->getMetrics(), $dataSet->getDimensions());
         $dateTimeFields = array_filter($allDimensionMetrics, function ($field) {
@@ -218,15 +232,21 @@ class DataMappingManager implements DataMappingManagerInterface
             $temporaryFields[] = sprintf($fieldPattern, $column, "year", $dataSet->getId());
         }
 
-        foreach ($rows as &$row) {
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
             foreach ($row as $key => $value) {
                 if (!in_array($key, $temporaryFields)) {
                     continue;
                 }
                 unset($row[$key]);
             }
+
+            $newRows->push($row);
+            unset($row);
         }
-        return $rows;
+
+        unset($rows);
+        return $newRows;
     }
 
     /**
@@ -302,5 +322,21 @@ class DataMappingManager implements DataMappingManagerInterface
         }
 
         return $columns;
+    }
+
+    /**
+     * @param SplDoublyLinkedList $rows
+     * @return array
+     */
+    private function generateReports(SplDoublyLinkedList $rows)
+    {
+        $reports = [];
+        foreach ($rows as $row) {
+            $reports[] = $row;
+            unset($row);
+        }
+
+        unset($rows);
+        return $reports;
     }
 }

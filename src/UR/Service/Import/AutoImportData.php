@@ -13,11 +13,12 @@ use UR\Model\Core\MapBuilderConfigInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\ArrayUtilTrait;
 use UR\Service\DataSet\DataMappingService;
-use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\ParsedDataImporter;
+use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\DTO\Collection;
 use UR\Service\Parser\DryRunReportFilterInterface;
 use UR\Service\Parser\DryRunReportSorterInterface;
+use UR\Service\Parser\ParserInterface;
 use UR\Service\Parser\ParsingFileService;
 
 class AutoImportData implements AutoImportDataInterface
@@ -54,7 +55,13 @@ class AutoImportData implements AutoImportDataInterface
     /** @var DataMappingService */
     protected $dataMappingService;
 
-    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, Logger $logger, DryRunReportSorterInterface $dryRunReportSorter, DryRunReportFilterInterface $dryRunReportFilter, MapBuilderConfigManager $mapBuilderConfigManager, DataMappingService $dataMappingService)
+    /** @var CsvWriterInterface  */
+    protected $csvWriter;
+
+    /** @var DataSourceFileFactory  */
+    private $dataSourceFileFactory;
+
+    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, Logger $logger, DryRunReportSorterInterface $dryRunReportSorter, DryRunReportFilterInterface $dryRunReportFilter, MapBuilderConfigManager $mapBuilderConfigManager, DataMappingService $dataMappingService, CsvWriterInterface $csvWriter, DataSourceFileFactory $dataSourceFileFactory)
     {
         $this->parsingFileService = $parsingFileService;
         $this->importer = $importer;
@@ -63,6 +70,8 @@ class AutoImportData implements AutoImportDataInterface
         $this->dryRunReportFilter = $dryRunReportFilter;
         $this->mapBuilderConfigManager = $mapBuilderConfigManager;
         $this->dataMappingService = $dataMappingService;
+        $this->csvWriter = $csvWriter;
+        $this->dataSourceFileFactory = $dataSourceFileFactory;
     }
 
     /**
@@ -94,10 +103,94 @@ class AutoImportData implements AutoImportDataInterface
     /**
      * @inheritdoc
      */
+    public function parseFileOnPreGroups(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, ImportHistoryInterface $importHistoryEntity, $chunkFilePath, $outputFilePath)
+    {
+        /* parsing data */
+        $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, null, $parserType = ParserInterface::TYPE_PRE_GROUPS, $chunkFilePath);
+        $this->csvWriter->insertCollection($outputFilePath, $collection);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function parseFileOnGroups(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, $chunkFilePath, $outputFilePath)
+    {
+        /* parsing data */
+        $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, null, $parserType = ParserInterface::TYPE_GROUPS, $chunkFilePath);
+
+        $this->csvWriter->insertCollection($outputFilePath, $collection);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function parseFileOnPostGroups(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, ImportHistoryInterface $importHistoryEntity, $chunkFilePath)
+    {
+        /* parsing data */
+        $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, null, $parserType = ParserInterface::TYPE_POST_GROUPS, $chunkFilePath);
+
+        /* import data to database */
+        $this->logger->notice(sprintf('begin loading file "%s" data to database "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
+        $collection = $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
+
+        if (!($collection instanceof Collection)) {
+            return;
+        }
+
+        /** Import collection to map builder configs */
+        $dataSet = $connectedDataSource->getDataSet();
+        $mapBuilderConfigs = $this->mapBuilderConfigManager->getByMapDataSet($dataSet);
+
+        foreach ($mapBuilderConfigs as $mapBuilderConfig) {
+            /** @var MapBuilderConfigInterface $mapBuilderConfig */
+            $this->dataMappingService->importDataFromComponentDataSet($mapBuilderConfig, $collection);
+        }
+    }
+
+    public function parseFileThenInsert(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, ImportHistoryInterface $importHistoryEntity, $chunkFilePath)
+    {
+        /* parsing data */
+        try {
+            $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, null, $parserType = ParserInterface::TYPE_DEFAULT, $chunkFilePath);
+        } catch (ImportDataException $ex) {
+            throw $ex;
+        }
+
+        /* import data to database */
+        $this->logger->notice(sprintf('begin loading chunk "%s" data to dataset "%s"', $chunkFilePath, $connectedDataSource->getDataSet()->getName()));
+        $collection = $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
+
+        if (!($collection instanceof Collection)) {
+            return;
+        }
+
+        /** Import collection to map builder configs */
+        $dataSet = $connectedDataSource->getDataSet();
+        $mapBuilderConfigs = $this->mapBuilderConfigManager->getByMapDataSet($dataSet);
+
+        foreach ($mapBuilderConfigs as $mapBuilderConfig) {
+            /** @var MapBuilderConfigInterface $mapBuilderConfig */
+            $this->dataMappingService->importDataFromComponentDataSet($mapBuilderConfig, $collection);
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function createDryRunImportData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, DryRunParamsInterface $dryRunParams)
     {
         try {
-            $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, $dryRunParams->getLimitRows());
+            /** @var \UR\Service\DataSource\DataSourceInterface $dataSourceFileData */
+            $dataSourceFileData = null;
+
+            $chunks = $dataSourceEntry->getChunks();
+            $chunkFilePath = $dataSourceEntry->isSeparable() && !empty($chunks) && is_array($chunks)? $this->dataSourceFileFactory->getAbsolutePath(reset($chunks)) : "";
+
+            if (!empty($chunkFilePath) && is_file($chunkFilePath)) {
+                $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, $dryRunParams->getLimitRows(), $parserType = ParserInterface::TYPE_DEFAULT, $chunkFilePath);
+            } else {
+                $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, $dryRunParams->getLimitRows());
+            }
 
             $collection = $this->parsingFileService->formatNumbersAfterParser($collection, $connectedDataSource);
 
@@ -160,19 +253,34 @@ class AutoImportData implements AutoImportDataInterface
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param DataSourceEntryInterface $dataSourceEntry
      * @param $limit
-     * @return \UR\Service\DTO\Collection
+     * @param string $parserType
+     * @param null $chunkFilePath
+     * @return Collection
      * @throws ImportDataException
      */
-    private function parsingData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, $limit = null)
+    private function parsingData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, $limit = null, $parserType = ParserInterface::TYPE_DEFAULT, $chunkFilePath = null)
     {
         /*
          * parsing data
          */
-        $this->logger->notice(sprintf('begin parsing file "%s"', $dataSourceEntry->getFileName()));
-        $this->parsingFileService->resetInjectParams();
-        $collection = $this->parsingFileService->doParser($dataSourceEntry, $connectedDataSource, $limit);
-        $this->logger->notice('parsing file completed');
+        if ($chunkFilePath) {
+            $this->logger->notice(sprintf('begin parsing chunk "%s"', $chunkFilePath));
+        } else {
+            $this->logger->notice(sprintf('begin parsing file "%s"', $dataSourceEntry->getFileName()));
+        }
 
-        return $this->parsingFileService->setDataOfColumnsNotMappedToNull($collection, $connectedDataSource);
+        $this->parsingFileService->resetInjectParams();
+        try {
+            $collection = $this->parsingFileService->doParser($dataSourceEntry, $connectedDataSource, $limit, $parserType, $chunkFilePath);
+        } catch (ImportDataException $ex) {
+            throw $ex;
+        }
+        $this->logger->notice('parsing completed');
+
+        if ($parserType != ParserInterface::TYPE_PRE_GROUPS) {
+            return $this->parsingFileService->setDataOfColumnsNotMappedToNull($collection, $connectedDataSource);
+        } else {
+            return $collection;
+        }
     }
 }

@@ -62,6 +62,14 @@ UR\Entity\Core\DataSourceEntry:
         dates:
             type: json_array
             nullable: true
+        separable:
+            type: boolean
+            nullable: true
+            options:
+                default: false
+        chunks:
+            type: json_array
+            nullable: true
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource

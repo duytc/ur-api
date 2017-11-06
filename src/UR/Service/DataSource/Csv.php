@@ -7,6 +7,9 @@ use League\Csv\Reader;
 use SplDoublyLinkedList;
 use UR\Behaviors\ParserUtilTrait;
 use UR\Exception\InvalidArgumentException;
+use UR\Model\Core\DataSourceEntryInterface;
+use UR\Service\DTO\Collection;
+use UR\Service\Import\CsvWriter;
 
 class Csv extends CommonDataSourceFile implements DataSourceInterface
 {
@@ -132,7 +135,6 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
             return $this->convertEncodingToASCII($this->headers);
         }
 
-        $max = 0;
         $all_rows = [];
         $i = 0;
 
@@ -185,10 +187,10 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
 
             $i++;
 
-            if ($this->isTextArray($cur_row) && !$this->isEmptyArray($cur_row) && count($cur_row) > $max) {
+            if ($this->isTextArray($cur_row) && !$this->isEmptyArray($cur_row)) {
                 $this->headers = $cur_row;
-                $max = count($this->headers);
                 $this->headerRow = $row;
+                break;
             }
 
             if ($i >= DataSourceInterface::DETECT_HEADER_ROWS) {
@@ -287,5 +289,111 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     public function getDataRow()
     {
         return $this->dataRow;
+    }
+
+    /**
+     * @return array
+     */
+    public function getHeaders(): array
+    {
+        return $this->headers;
+    }
+
+    /**
+     * Get body rows of CSV file
+     */
+    public function getBodyRows()
+    {
+        $rowValues = [];
+        $dll =  $this->getRows();
+        $dll->rewind();
+
+        while($dll->valid()){
+            $rowValues[] = $dll->current();
+            $dll->next();
+        }
+
+        return $rowValues;
+    }
+
+    public function splitHugeFile(DataSourceEntryInterface $dataSourceEntry, $chunkFilePath, $uploadFileDir, $numberOfRowToExport) {
+        $numberOfRows = !empty($numberOfRowToExport) && is_int($numberOfRowToExport) ? $numberOfRowToExport : 2000;
+        $writer = new CsvWriter();
+        $header = $this->getHeaders();
+        $rows = new SplDoublyLinkedList();
+
+        $rowCount = 0;  //count number of rows
+        $smallFileCount = 1; // count number of file is splitted
+        $index = 0;
+
+        $chunks = [];
+        gc_enable();
+
+        $iterator = $this->csv->getIterator();
+
+        while (!$iterator->eof()) {
+            if ($index < $this->dataRow) {
+                $index++;
+                $iterator->next();
+                continue;
+            }
+
+            $row = $iterator->current();
+            if (!is_array($row) || $this->isEmptyArray($row)) {
+                $index++;
+                $iterator->next();
+                continue;
+            }
+
+            $rows->push($this->removeNonUtf8CharactersForSingleRow($row));
+            $iterator->next();
+            $rowCount++;
+
+            if ($rowCount % $numberOfRows == 0) {
+                $collection = new Collection($header, $rows);
+                $outputFileName = sprintf('%s/subFile-%d.%s', $this->getSourceDirName($chunkFilePath), $smallFileCount, "csv");
+                $writer->insertCollection($outputFileName, $collection);
+
+                $smallFileCount++;
+                $outputFileNameToSave = str_replace($uploadFileDir, '', $outputFileName);
+                $chunks[] = $outputFileNameToSave;
+
+                // reset $newRows
+                $newRows = new SplDoublyLinkedList();
+                gc_collect_cycles();
+            }
+        }
+
+        // save
+        if (!empty($newRows) && is_array($newRows)) {
+            $collection = new Collection($header, $rows);
+
+            $outputFileName = sprintf('%s/subFile-%d.%s', $this->getSourceDirName($chunkFilePath), $smallFileCount, "csv");
+            $writer->insertCollection($outputFileName, $collection);
+
+            $outputFileNameToSave = str_replace($uploadFileDir, '', $outputFileName);
+            $chunks[] = $outputFileNameToSave;
+
+            // reset $newRows
+            $newRows = new SplDoublyLinkedList();
+            gc_collect_cycles();
+        }
+
+        $dataSourceEntry->setSeparable(true);
+        $dataSourceEntry->setChunks($chunks);
+        $dataSourceEntry->setTotalRow($rowCount);
+
+        return $dataSourceEntry;
+    }
+
+    /**
+     * @param $filePath
+     * @return mixed
+     */
+    private function getSourceDirName($filePath)
+    {
+        $sourceDir =  pathinfo($filePath, PATHINFO_DIRNAME);
+
+        return $sourceDir;
     }
 }

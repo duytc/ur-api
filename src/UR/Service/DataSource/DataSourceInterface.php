@@ -43,4 +43,9 @@ interface DataSourceInterface
      * @return int
      */
     public function getTotalRows();
+
+    /**
+     * @return array
+     */
+    public function getHeaders();
 }

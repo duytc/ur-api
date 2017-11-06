@@ -7,6 +7,7 @@ use Exception;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\Job\ExpirableJobInterface;
 use Pubvantage\Worker\JobParams;
+use Redis;
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
@@ -16,10 +17,12 @@ use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertFactory;
 use UR\Service\DataSource\DataSourceCleaningService;
+use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\Import\AutoImportDataInterface;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Import\ImportDataLogger;
 use UR\Service\Import\ImportHistoryService;
+use UR\Worker\Job\Concurrent\ParseChunkFile;
 use UR\Worker\Manager;
 
 class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterface
@@ -27,7 +30,9 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
     const JOB_NAME = 'loadFileIntoDataSetSubJob';
 
     const DATA_SET_ID = 'data_set_id';
-
+    const TOTAL_CHUNK_KEY_TEMPLATE = 'import_history_%d_total_chunk';
+    const CHUNKS_KEY_TEMPLATE = 'import_history_%d_chunks';
+    const CHUNK_FAILED_KEY_TEMPLATE = 'import_history_%d_failed';
     const CONNECTED_DATA_SOURCE_ID = 'connected_data_source_id';
     const ENTRY_ID = 'entry_id';
 
@@ -64,6 +69,14 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
 
     private $entityManager;
 
+    private $dataSourceFileFactory;
+
+    private $fileSizeThreshold;
+
+    private $tempFileDir;
+
+    private $redis;
+
     public function __construct(
         LoggerInterface $logger,
         DataSourceEntryManagerInterface $dataSourceEntryManager,
@@ -74,7 +87,11 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         Manager $workerManager,
         ImportDataLogger $importDataLogger,
         EntityManager $entityManager,
-        DataSourceCleaningService $dataSourceCleaningService
+        DataSourceCleaningService $dataSourceCleaningService,
+        DataSourceFileFactory $dataSourceFileFactory,
+        Redis $redis,
+        $fileSizeThreshold,
+        $tempFileDir
     )
     {
         $this->logger = $logger;
@@ -87,6 +104,10 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         $this->importDataLogger = $importDataLogger;
         $this->entityManager = $entityManager;
         $this->dataSourceCleaningService = $dataSourceCleaningService;
+        $this->dataSourceFileFactory = $dataSourceFileFactory;
+        $this->fileSizeThreshold = $fileSizeThreshold;
+        $this->tempFileDir = $tempFileDir;
+        $this->redis = $redis;
     }
 
     public function getName(): string
@@ -128,6 +149,49 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
             }
 
             $publisherId = $connectedDataSource->getDataSet()->getPublisherId();
+            $fileSize = filesize($this->dataSourceFileFactory->getAbsolutePath($dataSourceEntry->getPath()));
+            if ($fileSize > $this->fileSizeThreshold || $dataSourceEntry->isSeparable()) {
+                $this->logger->notice('File is too big, split into small chunks..');
+                $dataSourceEntry->setSeparable(true);
+                $chunks = $dataSourceEntry->getChunks();
+                if (empty($chunks)) {
+                    $chunks = $this->dataSourceFileFactory->splitHugeFile($dataSourceEntry);
+                    $this->logger->notice('Splitting completed');
+                }
+
+                if (empty($chunks)) {
+                    throw  new Exception(sprintf('Can not split data source entry %d', $dataSourceEntryId));
+                }
+
+                $dataSourceEntry->setChunks($chunks);
+                $this->dataSourceEntryManager->save($dataSourceEntry);
+
+                $totalChunkKey = sprintf(self::TOTAL_CHUNK_KEY_TEMPLATE, $importHistoryEntity->getId());
+                $this->redis->set($totalChunkKey, count($chunks));
+
+                $chunksKey = sprintf(self::CHUNKS_KEY_TEMPLATE, $importHistoryEntity->getId());
+                $chunkFailedKey = sprintf(self::CHUNK_FAILED_KEY_TEMPLATE, $importHistoryEntity->getId());
+                $this->logger->notice('create jobs for parsing chunks');
+                $this->redis->del(sprintf(ParseChunkFile::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId));
+                $this->redis->del($chunkFailedKey);
+                foreach ($chunks as $key => $chunk) {
+                    $randomName = sprintf("import_%s_part_%s_random_%s.csv", $importHistoryEntity->getId(), $key, uniqid((new \DateTime())->format('Y-m-d'), true));
+                    $outputFilePath = join('/', array($this->tempFileDir, $randomName));
+                    $this->redis->rPush($chunksKey, $outputFilePath);
+                    $this->workerManager->parseChunkFile($connectedDataSourceId, $dataSourceEntryId, $importHistoryEntity->getId(), $chunk, $outputFilePath, $totalChunkKey, $chunksKey);
+                }
+
+                $importHistories = $this->importHistoryManager->getImportHistoryByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource, $importHistoryEntity);
+
+                $importHistoryIds = array_map(function (ImportHistoryInterface $importHistory) {
+                    return $importHistory->getId();
+                }, $importHistories);
+
+                $this->importHistoryManager->deleteImportHistoriesByIds($importHistoryIds);
+                $this->importHistoryService->deleteImportedDataByImportHistories($importHistoryIds, $connectedDataSource->getDataSet()->getId());
+                return;
+            }
+
             $this->logger->notice(
                 sprintf('starting to import file "%s" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d)',
                     $dataSourceEntry->getFileName(),
@@ -253,7 +317,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
             }
 
             $newImportHistories = $this->importHistoryManager->findImportHistoriesByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource);
-            
+
             if (count($newImportHistories) < 1) {
                 /** Wait for other worker job load files in to data set */
                 return;

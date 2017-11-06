@@ -54,3 +54,6 @@ parameters:
     ur.worker.linear_job_priority_key_prefix: 'ur:linear_job_next_priority_tube_'
     ur.worker.pending_job_count_key_prefix: 'ur:pending_job_count_'
     ur.worker.expire_linear_job_prefix: 'ur:linear_tube_expire_job_'
+    ur.worker.entry_file_size_threshold: 5242880
+    data_source_entry_job_temp_file_dir: '%kernel.root_dir%/temp/data-source-entry'
+    number_of_rows_to_export_file: 2000 # int
