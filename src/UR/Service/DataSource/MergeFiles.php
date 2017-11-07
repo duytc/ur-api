@@ -15,27 +15,27 @@ class MergeFiles
     protected $importHistoryId;
 
     private $sourceFilePaths;
-    private $outputFilePath;
+    private $mergeFileDirectory;
 
     /**
      * MergeFiles constructor.
      * @param $sourceFilePaths
-     * @param $outputFilePath
+     * @param $mergeFileDirectory
      * @param $importHistoryId
      * @throws Exception
      */
-    public function __construct($sourceFilePaths, $outputFilePath = null, $importHistoryId)
+    public function __construct($sourceFilePaths, $mergeFileDirectory = null, $importHistoryId)
     {
         if (!$this->validateSourceFiles($sourceFilePaths)) {
             return;
         }
         $this->sourceFilePaths = $sourceFilePaths;
 
-        if (is_null($outputFilePath)) {
-            $this->outputFilePath = sprintf("%s/%s", $this->getSourceDirName(), 'MergedFiles');
+        if (is_null($mergeFileDirectory)) {
+            $this->mergeFileDirectory = sprintf("%s/%s", $this->getSourceDirName(), 'MergedFiles');
         } else {
-            $this->validateOutputFilePath($outputFilePath);
-            $this->outputFilePath = $outputFilePath;
+            $this->validateOutputFilePath($mergeFileDirectory);
+            $this->mergeFileDirectory = $mergeFileDirectory;
         }
 
         $this->importHistoryId = $importHistoryId;
@@ -251,13 +251,13 @@ class MergeFiles
      */
     private function getOutputFileName()
     {
-        if (!is_dir($this->outputFilePath)) {
-           if (!mkdir($this->outputFilePath, 0777, true)) {
-               new Exception(sprintf(' Can not create folder %s', $this->outputFilePath));
+        if (!is_dir($this->mergeFileDirectory)) {
+           if (!mkdir($this->mergeFileDirectory, 0777, true)) {
+               new Exception(sprintf(' Can not create folder %s', $this->mergeFileDirectory));
            };
         }
 
-        $fileName = sprintf('%s/import_%s_full.%s', $this->getOutputFilePath(), $this->importHistoryId, $this->getSourceExtensionFile());
+        $fileName = sprintf('%s/import_%s_full.%s', $this->getMergeFileDirectory(), $this->importHistoryId, $this->getSourceExtensionFile());
 
         return $fileName;
     }
@@ -281,17 +281,17 @@ class MergeFiles
     /**
      * @return null
      */
-    public function getOutputFilePath()
+    public function getMergeFileDirectory()
     {
-        return $this->outputFilePath;
+        return $this->mergeFileDirectory;
     }
 
     /**
-     * @param null $outputFilePath
+     * @param null $mergeFileDirectory
      */
-    public function setOutputFilePath($outputFilePath)
+    public function setMergeFileDirectory($mergeFileDirectory)
     {
-        $this->outputFilePath = $outputFilePath;
+        $this->mergeFileDirectory = $mergeFileDirectory;
     }
 
 }

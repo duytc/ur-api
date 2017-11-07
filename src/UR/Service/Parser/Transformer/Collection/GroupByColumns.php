@@ -65,6 +65,17 @@ class GroupByColumns implements CollectionTransformerInterface
         $columns = array_keys($rows[0]);
         $groupColumnKeys = array_intersect($columns, $this->groupByColumns);
 
+        $mapFields = $connectedDataSource->getMapFields();
+        if (is_array($mapFields) && is_array($this->groupByColumns)) {
+            foreach ($mapFields as $fieldInFile => $fieldInDataSet) {
+                if (in_array($fieldInDataSet, $this->groupByColumns)) {
+                    $groupColumnKeys[] = $fieldInFile;
+                }
+            }
+        }
+
+        $groupColumnKeys = array_unique($groupColumnKeys);
+
         $sumFieldKeys = [];
         if ($this->aggregateAll) {
             $sumFieldKeys = array_diff($columns, $groupColumnKeys);

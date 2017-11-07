@@ -5,13 +5,17 @@ namespace UR\Worker\Job\Concurrent;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Monolog\Logger;
+use Pubvantage\RedLock;
 use Pubvantage\Worker\Job\JobInterface;
+use Pubvantage\Worker\Job\LockableJobInterface;
 use Pubvantage\Worker\JobParams;
+use Redis;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\DataSource\DataSourceType;
 use UR\Service\Import\ImportService;
+use UR\Worker\Manager;
 
 class UpdateTotalRowWhenEntryInserted implements JobInterface
 {
@@ -45,7 +49,22 @@ class UpdateTotalRowWhenEntryInserted implements JobInterface
      */
     private $em;
 
-    public function __construct(Logger $logger, DataSourceManagerInterface $dataSourceManager, DataSourceEntryManagerInterface $dataSourceEntryManager, ImportService $importService, $uploadFileDir, EntityManagerInterface $em)
+    /** @var Manager  */
+    private $workerManager;
+
+    private $redis;
+
+    private $redLock;
+
+    public function __construct(
+        Logger $logger,
+        DataSourceManagerInterface $dataSourceManager,
+        DataSourceEntryManagerInterface $dataSourceEntryManager,
+        ImportService $importService,
+        $uploadFileDir,
+        EntityManagerInterface $em,
+        Manager $workerManager,
+        Redis $redis)
     {
         $this->logger = $logger;
         $this->dataSourceManager = $dataSourceManager;
@@ -53,6 +72,9 @@ class UpdateTotalRowWhenEntryInserted implements JobInterface
         $this->importService = $importService;
         $this->uploadFileDir = $uploadFileDir;
         $this->em = $em;
+        $this->workerManager = $workerManager;
+        $this->redis = $redis;
+        $this->redLock = new RedLock([$redis]);
     }
 
     /**
@@ -78,9 +100,25 @@ class UpdateTotalRowWhenEntryInserted implements JobInterface
                 throw new Exception(sprintf('Data Source Entry %d not found (may be deleted before)', $dataSourceEntryId));
             }
 
-            $dataSource = $dataSourceEntry->getDataSource();
-
             // update total rows
+            if (!empty($dataSourceEntry->getChunks()) && is_array($dataSourceEntry->getChunks())) {
+                $this->logger->notice('update total row with chunk files');
+                //Set total chunks for all job as share memory
+                $keyTotal = sprintf(CountChunkRow::TOTAL, $dataSourceEntryId);
+                $keyTotalChunks = sprintf(CountChunkRow::TOTAL_CHUNKS, $dataSourceEntryId);
+
+                $this->redis->set($keyTotalChunks, count($dataSourceEntry->getChunks()));
+                $this->redis->set($keyTotal, 1);
+
+                //Create jobs
+                foreach ($dataSourceEntry->getChunks() as $chunk) {
+                    $this->workerManager->createJobCountChunkRow($chunk, $dataSourceEntryId);
+                }
+
+                return;
+            }
+
+            $dataSource = $dataSourceEntry->getDataSource();
             $dataSourceFile = $this->importService->getDataSourceFile($dataSource->getFormat(), $dataSourceEntry->getPath());
 
             $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($dataSourceEntry->getFileExtension());

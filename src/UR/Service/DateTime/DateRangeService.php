@@ -169,6 +169,10 @@ class DateRangeService implements DateRangeServiceInterface
             return false;
         }
 
+        if (!$dataSourceEntry->getDataSource()->isDateRangeDetectionEnabled()) {
+            return false;
+        }
+
         $dataSource = $dataSourceEntry->getDataSource();
         $dateFields = $dataSource->getDateFields();
         $dateFieldsFromMetaData = $dataSource->getDateFieldsFromMetadata();
@@ -183,32 +187,65 @@ class DateRangeService implements DateRangeServiceInterface
         if (!empty($dateFields)) {
             try {
                 /* parsing data */
-                $dataSourceFileData = $this->fileFactory->getFile($dataSource->getFormat(), $dataSourceEntry->getPath());
-            } catch (\Exception $e) {
-                return false;
-            }
-
-            $columns = $dataSourceFileData->getColumns();
-            $rows = $dataSourceFileData->getRows();
-
-
-            foreach ($rows as $row) {
-                $row = array_combine($columns, $row);
-                foreach ($dateFields as $dateField) {
-                    if (!array_key_exists($dateField, $row)) {
-                        continue;
-                    }
-
-                    $value = $this->getDate($row[$dateField], $formats);
-                    if ($value instanceof DateTime) {
-                        $value = $value->format(DateFormat::DEFAULT_DATE_FORMAT);
-                        if (!in_array($value, $dates)) {
-                            $dates[] = $value;
+                if (!empty($dataSourceEntry->getChunks()) && is_array($dataSourceEntry->getChunks())) {
+                    foreach ($dataSourceEntry->getChunks() as $chunk) {
+                        try {
+                            $dataSourceFileData = $this->fileFactory->getFile('csv', $chunk);
+                            $columns = $dataSourceFileData->getColumns();
+                            $rows = $dataSourceFileData->getRows();
+                        } catch (\Exception $e) {
+                            continue;
                         }
 
-                        continue;
+                        foreach ($rows as $row) {
+                            $row = array_combine($columns, $row);
+                            foreach ($dateFields as $dateField) {
+                                if (!array_key_exists($dateField, $row)) {
+                                    continue;
+                                }
+
+                                $value = $this->getDate($row[$dateField], $formats);
+                                if ($value instanceof DateTime) {
+                                    $value = $value->format(DateFormat::DEFAULT_DATE_FORMAT);
+                                    if (!in_array($value, $dates)) {
+                                        $dates[] = $value;
+                                    }
+
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+
+                } else {
+                    $dataSourceFileData = $this->fileFactory->getFile($dataSource->getFormat(), $dataSourceEntry->getPath());
+
+                    $columns = $dataSourceFileData->getColumns();
+                    $rows = $dataSourceFileData->getRows();
+
+                    foreach ($rows as $row) {
+                        $row = array_combine($columns, $row);
+                        foreach ($dateFields as $dateField) {
+                            if (!array_key_exists($dateField, $row)) {
+                                continue;
+                            }
+
+                            $value = $this->getDate($row[$dateField], $formats);
+                            if ($value instanceof DateTime) {
+                                $value = $value->format(DateFormat::DEFAULT_DATE_FORMAT);
+                                if (!in_array($value, $dates)) {
+                                    $dates[] = $value;
+                                }
+
+                                continue;
+                            }
+                        }
                     }
                 }
+
+                unset($rows);
+            } catch (\Exception $e) {
+                return false;
             }
         }
 

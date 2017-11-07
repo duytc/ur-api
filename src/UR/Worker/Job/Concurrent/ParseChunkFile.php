@@ -173,8 +173,8 @@ class ParseChunkFile implements JobInterface
             if ($hasGroup) {
                 $this->logger->notice('All chunks parsed completely, merging result');
                 $chunks = $this->redis->lRange($params->getRequiredParam(self::CHUNKS_KEY), 0, -1);
-                $outputFilePath = $this->getMergedFileDirectory($dataSourceEntry);
-                $mergedFileObj = new MergeFiles($chunks, $outputFilePath, $importHistory->getId());
+                $mergeFileDirectory = $this->getMergedFileDirectory($dataSourceEntry);
+                $mergedFileObj = new MergeFiles($chunks, $mergeFileDirectory, $importHistory->getId());
                 $mergedFile = $mergedFileObj->mergeFiles();
                 $this->autoImportData->parseFileOnPostGroups($connectedDataSource, $dataSourceEntry, $importHistory, $mergedFile);
 
@@ -183,13 +183,11 @@ class ParseChunkFile implements JobInterface
 
                 foreach ($chunks as $chunk) {
                     if (file_exists($chunk)) {
-                        $this->logger->notice('delete temp chunk fle' . $chunk);
                         $this->removeFileOrFolder($chunk);
                     }
                 }
 
                 if (file_exists($mergedFile)) {
-                    $this->logger->notice('delete temp fle' . $mergedFile);
                     $this->removeFileOrFolder($mergedFile);
                 }
             }

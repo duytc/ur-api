@@ -8,8 +8,9 @@ use Pubvantage\Worker\JobParams;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\DataSource\DataSourceFileFactory;
+use UR\Worker\Manager;
 
-class SplitHugeFile  implements JobInterface
+class SplitHugeFile implements JobInterface
 {
     const JOB_NAME = 'split_huge_file';
     const DATA_SOURCE_ENTRY_ID = 'data_source_entry_id';
@@ -22,10 +23,13 @@ class SplitHugeFile  implements JobInterface
     /** @var DataSourceEntryManagerInterface */
     private $dataSourceEntryManager;
 
-    /** @var DataSourceFileFactory  */
+    /** @var DataSourceFileFactory */
     private $dataSourceFileFactory;
 
     private $fileSizeThreshold;
+
+    /** @var Manager */
+    private $manager;
 
     /**
      * SplitHugeFile constructor.
@@ -33,12 +37,13 @@ class SplitHugeFile  implements JobInterface
      * @param DataSourceEntryManagerInterface $dataSourceEntryManager
      * @param DataSourceFileFactory $dataSourceFileFactory
      */
-    public function __construct(LoggerInterface $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, DataSourceFileFactory $dataSourceFileFactory, $fileSizeThreshold)
+    public function __construct(LoggerInterface $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, DataSourceFileFactory $dataSourceFileFactory, $fileSizeThreshold, Manager $manager)
     {
         $this->logger = $logger;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
         $this->dataSourceFileFactory = $dataSourceFileFactory;
         $this->fileSizeThreshold = $fileSizeThreshold;
+        $this->manager = $manager;
     }
 
     public function getName(): string
@@ -59,13 +64,25 @@ class SplitHugeFile  implements JobInterface
         $fileSize = filesize($this->dataSourceFileFactory->getAbsolutePath($dataSourceEntry->getPath()));
 
         if ($fileSize > $this->fileSizeThreshold) {
-            $chunks = $this->dataSourceFileFactory->splitHugeFile($dataSourceEntry);
+            $dataSourceEntry = $this->dataSourceFileFactory->splitHugeFile($dataSourceEntry);
+            $this->dataSourceEntryManager->save($dataSourceEntry);
+        }
 
-            if (!empty($chunks)) {
-                $dataSourceEntry->setSeparable(true);
-                $dataSourceEntry->setChunks($chunks);
+        /** Update total row */
+        if (empty($dataSourceEntry->getTotalRow())) {
+            $this->manager->updateTotalRowWhenEntryInserted($dataSourceEntry->getId());
+        }
 
-                $this->dataSourceEntryManager->save($dataSourceEntry);
+        /** Detect date range */
+        if ($dataSourceEntry->getDataSource()->isDateRangeDetectionEnabled()) {
+            $this->manager->updateDateRangeForDataSourceEntry($dataSourceEntry->getDataSource()->getId(), $dataSourceEntry->getId());
+        }
+
+        /** Load to data sets */
+        if ($dataSourceEntry->getDataSource()->getEnable()) {
+            $dataSource = $dataSourceEntry->getDataSource();
+            foreach ($dataSource->getConnectedDataSources() as $connectedDataSource) {
+                $this->manager->loadingDataSourceEntriesToDataSetTable($connectedDataSource->getId(), [$dataSourceEntry->getId()], $connectedDataSource->getDataSet()->getId());
             }
         }
     }

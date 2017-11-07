@@ -133,7 +133,7 @@ class DataSourceFileFactory
      * @param DataSourceEntryInterface $dataSourceEntry
      * @throws Exception
      * @throws ImportDataException
-     * @return array
+     * @return DataSourceEntryInterface
      */
     public function splitHugeFile(DataSourceEntryInterface $dataSourceEntry)
     {
@@ -189,7 +189,17 @@ class DataSourceFileFactory
 
         unset($bodyRow, $bodyRows, $file, $newFile);
         gc_collect_cycles();
-        return $chunks;
+
+        if (!empty($chunks)) {
+            $dataSourceEntry->setSeparable(true);
+            $dataSourceEntry->setChunks($chunks);
+        }
+
+        if (!empty($rowCount)) {
+            $dataSourceEntry->setTotalRow($rowCount);
+        }
+
+        return $dataSourceEntry;
     }
 
     /**

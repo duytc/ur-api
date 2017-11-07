@@ -310,6 +310,16 @@ services:
             - '%data_source_entry_job_temp_file_dir%'
             - "%upload_file_dir%"
 
+    ur.worker.job.concurrent.count_chunk_row:
+        class: UR\Worker\Job\Concurrent\CountChunkRow
+        arguments:
+            - '@logger'
+            - '@ur.worker.manager'
+            - '@ur.redis.app_cache'
+            - '@ur.domain_manager.data_source_entry'
+            - '@ur.service.file_factory'
+            - "%upload_file_dir%"
+
     ur.worker.job.concurrent.split_huge_file:
         class: UR\Worker\Job\Concurrent\SplitHugeFile
         arguments:
@@ -317,6 +327,7 @@ services:
             - '@ur.domain_manager.data_source_entry'
             - '@ur.service.file_factory'
             - '%ur.worker.entry_file_size_threshold%'
+            - '@ur.worker.manager'
 
     ur.worker.job.concurrent.clean_up_time_series_for_data_source_subjob:
         class: UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource
@@ -494,6 +505,8 @@ services:
             - @ur.service.import
             - "%upload_file_dir%"
             - @doctrine.orm.entity_manager
+            - @ur.worker.manager
+            - '@ur.redis.app_cache'
 
     ur.worker.job.concurrent.update_detected_fields_when_entry_deleted:
         class: UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted
@@ -524,6 +537,7 @@ services:
                 - @ur.worker.job.concurrent.detect_mising_date_range_for_entry_subjob
                 - @ur.worker.job.concurrent.clean_up_time_series_for_data_source_subjob
                 - @ur.worker.job.concurrent.split_huge_file
+                - @ur.worker.job.concurrent.count_chunk_row
 
     ### end of concurrence worker pool
 

@@ -66,13 +66,13 @@ services:
         tags:
             - { name: doctrine.event_listener, event: postPersist }
 
-#    ur_api.event_listener.data_source_entry_change_for_huge_file_listener:
-#        class: UR\Bundle\ApiBundle\EventListener\DataSourceEntryChangeForHugeFileListener
-#        arguments:
-#            - '@logger'
-#            - '@ur.worker.manager'
-#        tags:
-#            - { name: doctrine.event_listener, event: postPersist }
+    ur_api.event_listener.data_source_entry_change_for_huge_file_listener:
+        class: UR\Bundle\ApiBundle\EventListener\DataSourceEntryChangeForHugeFileListener
+        arguments:
+            - '@logger'
+            - '@ur.worker.manager'
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
 
     ur_api.event_listener.data_set_change_for_map_builder_listener:
         class: UR\Bundle\ApiBundle\EventListener\DataSetChangeForMapBuilderListener

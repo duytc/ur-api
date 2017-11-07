@@ -175,6 +175,10 @@ class ParsedDataImporter
             $row[Synchronizer::getHiddenColumnDay($index)] = $day;
             $row[Synchronizer::getHiddenColumnMonth($index)] = $month;
             $row[Synchronizer::getHiddenColumnYear($index)] = $year;
+
+            if (empty($row[$index])) {
+                $row[$index] = null;
+            }
         }
     }
 

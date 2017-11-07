@@ -154,17 +154,17 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
                 $this->logger->notice('File is too big, split into small chunks..');
                 $dataSourceEntry->setSeparable(true);
                 $chunks = $dataSourceEntry->getChunks();
-                if (empty($chunks)) {
-                    $chunks = $this->dataSourceFileFactory->splitHugeFile($dataSourceEntry);
-                    $this->logger->notice('Splitting completed');
-                }
-
-                if (empty($chunks)) {
-                    throw  new Exception(sprintf('Can not split data source entry %d', $dataSourceEntryId));
-                }
-
-                $dataSourceEntry->setChunks($chunks);
-                $this->dataSourceEntryManager->save($dataSourceEntry);
+//                if (empty($chunks)) {
+//                    $chunks = $this->dataSourceFileFactory->splitHugeFile($dataSourceEntry);
+//                    $this->logger->notice('Splitting completed');
+//                }
+//
+//                if (empty($chunks)) {
+//                    throw  new Exception(sprintf('Can not split data source entry %d', $dataSourceEntryId));
+//                }
+//
+//                $dataSourceEntry->setChunks($chunks);
+//                $this->dataSourceEntryManager->save($dataSourceEntry);
 
                 $totalChunkKey = sprintf(self::TOTAL_CHUNK_KEY_TEMPLATE, $importHistoryEntity->getId());
                 $this->redis->set($totalChunkKey, count($chunks));

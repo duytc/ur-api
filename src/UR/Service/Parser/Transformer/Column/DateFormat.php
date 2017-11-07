@@ -218,7 +218,7 @@ class DateFormat extends AbstractCommonColumnTransform implements DateFormatInte
      */
     public function transform($value)
     {
-        if (is_null($value)) {
+        if (empty($value)) {
             return null;
         }
 
@@ -226,6 +226,10 @@ class DateFormat extends AbstractCommonColumnTransform implements DateFormatInte
             $resultDate = $this->getDate($value);
         } catch (ImportDataException $ex) {
             throw $ex;
+        }
+
+        if (!$resultDate instanceof DateTime){
+            return null;
         }
 
         switch ($this->getToDateFormat()) {

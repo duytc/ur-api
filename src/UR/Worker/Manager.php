@@ -14,6 +14,7 @@ use Redis;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DateUtilInterface;
+use UR\Worker\Job\Concurrent\CountChunkRow;
 use UR\Worker\Job\Concurrent\ParseChunkFile;
 use UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource;
 use UR\Worker\Job\Concurrent\ProcessAlert;
@@ -377,6 +378,18 @@ class Manager
         $jobData = [
             'task' => RemoveDuplicatedDateEntriesForDataSource::JOB_NAME,
             RemoveDuplicatedDateEntriesForDataSource::DATA_SOURCE_ID => $dataSourceId,
+        ];
+
+        // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    public function createJobCountChunkRow($chunkFilePath, $dataSourceEntryId)
+    {
+        $jobData = [
+            'task' => CountChunkRow::JOB_NAME,
+            CountChunkRow::CHUNK => $chunkFilePath,
+            CountChunkRow::ENTRY_ID => $dataSourceEntryId,
         ];
 
         // concurrent job, we do not care what order it is processed in
