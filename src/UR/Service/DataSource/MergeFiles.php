@@ -252,7 +252,9 @@ class MergeFiles
     private function getOutputFileName()
     {
         if (!is_dir($this->outputFilePath)) {
-            mkdir($this->outputFilePath, 0777, true);
+           if (!mkdir($this->outputFilePath, 0777, true)) {
+               new Exception(sprintf(' Can not create folder %s', $this->outputFilePath));
+           };
         }
 
         $fileName = sprintf('%s/import_%s_full.%s', $this->getOutputFilePath(), $this->importHistoryId, $this->getSourceExtensionFile());

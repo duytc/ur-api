@@ -22,7 +22,7 @@ use UR\Service\Import\ImportDataException;
 use UR\Worker\Job\Linear\LoadFileIntoDataSetSubJob;
 use UR\Worker\Manager;
 
-class ParseChunkFile  implements JobInterface
+class ParseChunkFile implements JobInterface
 {
     const DATA_SOURCE_ENTRY_ID = 'data_source_entry_id';
     const IMPORT_HISTORY_ID = 'import_history_id';
@@ -39,7 +39,7 @@ class ParseChunkFile  implements JobInterface
      */
     private $logger;
 
-    /** @var Manager  */
+    /** @var Manager */
     private $manager;
 
     /** @var RedLock */
@@ -131,6 +131,10 @@ class ParseChunkFile  implements JobInterface
             if (!$hasGroup) {
                 $this->autoImportData->parseFileThenInsert($connectedDataSource, $dataSourceEntry, $importHistory, $inputFile);
             } else {
+                $directory = pathinfo($outputFile, PATHINFO_DIRNAME);
+                if (!is_dir($directory)) {
+                    mkdir($directory, 0777, true);
+                }
                 $this->autoImportData->parseFileOnPreGroups($connectedDataSource, $dataSourceEntry, $importHistory, $inputFile, $outputFile);
             }
         } catch (ImportDataException $ex) {
@@ -224,9 +228,12 @@ class ParseChunkFile  implements JobInterface
      * @param DataSourceEntryInterface $dataSourceEntry
      * @return mixed
      */
-    private function getMergedFileDirectory (DataSourceEntryInterface $dataSourceEntry)
+    private function getMergedFileDirectory(DataSourceEntryInterface $dataSourceEntry)
     {
         $chunks = $dataSourceEntry->getChunks();
+
+        $this->logger->info(sprintf('Chunk path of merged file: %s', $chunks[0]));
+        $this->logger->info(sprintf('Upload file dir: %s', $this->uploadFileDirectory));
         $firstSourceFileFullPath = sprintf('%s%s', $this->uploadFileDirectory, $chunks[0]);
 
         $this->logger->info(sprintf('Full path of merged file: %s', $firstSourceFileFullPath));
@@ -237,7 +244,7 @@ class ParseChunkFile  implements JobInterface
      * @param $relativeFilePaths
      * @return array|bool|string
      */
-    private function  getChunkFileFullPaths($relativeFilePaths)
+    private function getChunkFileFullPaths($relativeFilePaths)
     {
         if (empty($relativeFilePaths) || !is_array($relativeFilePaths)) {
             return false;
