@@ -253,7 +253,7 @@ class MergeFiles
     {
         if (!is_dir($this->mergeFileDirectory)) {
            if (!mkdir($this->mergeFileDirectory, 0777, true)) {
-               new Exception(sprintf(' Can not create folder %s', $this->mergeFileDirectory));
+               throw new Exception(sprintf(' Can not create folder %s', $this->mergeFileDirectory));
            };
         }
 
