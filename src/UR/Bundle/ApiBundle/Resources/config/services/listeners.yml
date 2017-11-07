@@ -73,6 +73,7 @@ services:
             - '@ur.worker.manager'
         tags:
             - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: postFlush }
 
     ur_api.event_listener.data_set_change_for_map_builder_listener:
         class: UR\Bundle\ApiBundle\EventListener\DataSetChangeForMapBuilderListener

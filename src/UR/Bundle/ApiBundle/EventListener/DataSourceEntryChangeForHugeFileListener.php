@@ -3,6 +3,7 @@
 namespace UR\Bundle\ApiBundle\EventListener;
 
 use Doctrine\ORM\Event\LifecycleEventArgs;
+use Doctrine\ORM\Event\PostFlushEventArgs;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Worker\Manager;
@@ -14,6 +15,7 @@ class DataSourceEntryChangeForHugeFileListener
 
     /** @var Manager */
     protected $workerManager;
+    private $newDataSourceEntries = [];
 
     /**
      * MapBuilderChangeListener constructor.
@@ -37,6 +39,26 @@ class DataSourceEntryChangeForHugeFileListener
             return;
         }
 
-        $this->workerManager->splitHugeFile($entity->getId());
+        $this->newDataSourceEntries[] = $entity;
+    }
+
+    /**
+     * @param PostFlushEventArgs $args
+     */
+    public function postFlush(PostFlushEventArgs $args)
+    {
+        if (count($this->newDataSourceEntries) < 1) {
+            return;
+        }
+
+        $entries = $this->newDataSourceEntries;
+        $this->newDataSourceEntries = [];
+
+        foreach ($entries as $entry) {
+            if (!$entry instanceof DataSourceEntryInterface) {
+                continue;
+            }
+            $this->workerManager->splitHugeFile($entry->getId());
+        }
     }
 }
