@@ -61,7 +61,7 @@ class MergeFiles
         foreach ($sourceFilePaths as $sourceFilePath) {
 
             if (!file_exists($sourceFilePath)) {
-                throw new Exception(sprintf('Source file %s does not exits', $sourceFilePath));
+                throw new Exception(sprintf('Source file %s does not exist', $sourceFilePath));
             }
 
             $fileExtension = pathinfo($sourceFilePath, PATHINFO_EXTENSION);
@@ -100,7 +100,7 @@ class MergeFiles
     private function validateOutputFilePath($outputFilePath)
     {
         if (!is_null($outputFilePath) && !is_dir($outputFilePath)) {
-            throw new Exception('Output file path does not exits');
+            throw new Exception('Output file path does not exist');
         }
 
         return true;

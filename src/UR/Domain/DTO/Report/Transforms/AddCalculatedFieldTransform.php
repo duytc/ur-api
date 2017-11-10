@@ -32,7 +32,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
             || !array_key_exists(self::EXPRESSION_CALCULATED_FIELD, $addCalculatedField)
             || !array_key_exists(self::TYPE_KEY, $addCalculatedField)
         ) {
-            throw new \Exception(sprintf('either "field" or "expression" or "type" does not exits'));
+            throw new \Exception(sprintf('either "field" or "expression" or "type" does not exist'));
         }
 
         $this->language = $language;

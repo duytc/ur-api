@@ -139,7 +139,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             }
 
             if (!in_array($alert[DataSourceAlertInterface::ALERT_TIME_ZONE_KEY], timezone_identifiers_list())) {
-                throw new Exception(sprintf('Timezone %s does not exits', $alert[DataSourceAlertInterface::ALERT_TIME_ZONE_KEY]));
+                throw new Exception(sprintf('Timezone %s does not exist', $alert[DataSourceAlertInterface::ALERT_TIME_ZONE_KEY]));
             }
 
             $checkedAlertKeys[] = $alert;

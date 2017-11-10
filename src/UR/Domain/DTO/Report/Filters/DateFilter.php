@@ -74,7 +74,7 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 			|| !array_key_exists(self::DATE_TYPE_FILTER_KEY, $dateFilter)
 			|| !array_key_exists(self::DATE_VALUE_FILTER_KEY, $dateFilter)
 		) {
-			throw new \Exception (sprintf('Either parameters: %s, %s, %s, %s or %s not exits in date filter',
+			throw new \Exception (sprintf('Either parameters: %s, %s, %s, %s or %s not exist in date filter',
 				self::FIELD_TYPE_FILTER_KEY,
 				self::FILED_NAME_FILTER_KEY,
 				self::DATE_FORMAT_FILTER_KEY,

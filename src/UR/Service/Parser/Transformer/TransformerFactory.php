@@ -83,7 +83,7 @@ class TransformerFactory
         if (!array_key_exists(NumberFormat::DECIMALS, $jsonTransform)
             || !array_key_exists(NumberFormat::THOUSANDS_SEPARATOR, $jsonTransform)
         ) {
-            throw new \Exception (sprintf('Either parameters: "%s", "%s" or "%s" does not exits in "Number format" transform',
+            throw new \Exception (sprintf('Either parameters: "%s", "%s" or "%s" does not exist in "Number format" transform',
                 NumberFormat::FIELD_KEY,
                 NumberFormat::DECIMALS,
                 NumberFormat::THOUSANDS_SEPARATOR));
@@ -108,7 +108,7 @@ class TransformerFactory
         if (!array_key_exists(DateFormat::FROM_KEY, $jsonTransform)
             || !array_key_exists(DateFormat::TO_KEY, $jsonTransform)
         ) {
-            throw new \Exception (sprintf('Either parameters: "%s", "%s" or "%s" does not exits in "Date format" transform',
+            throw new \Exception (sprintf('Either parameters: "%s", "%s" or "%s" does not exist in "Date format" transform',
                 DateFormat::FIELD_KEY,
                 DateFormat::FROM_KEY,
                 DateFormat::TO_KEY));
@@ -136,7 +136,7 @@ class TransformerFactory
 
         if (!array_key_exists(CollectionTransformerInterface::FIELDS_KEY, $jsonTransform)
         ) {
-            throw new \Exception (sprintf('parameter "%s" does not exits in transform',
+            throw new \Exception (sprintf('parameter "%s" does not exist in transform',
                 CollectionTransformerInterface::FIELDS_KEY));
         }
 
@@ -578,7 +578,7 @@ class TransformerFactory
 
         if (!array_key_exists(ColumnTransformerInterface::TYPE_KEY, $jsonTransform)
         ) {
-            throw new \Exception (sprintf('parameter "%s" does not exits in transform',
+            throw new \Exception (sprintf('parameter "%s" does not exist in transform',
                 ColumnTransformerInterface::TYPE_KEY));
         }
     }

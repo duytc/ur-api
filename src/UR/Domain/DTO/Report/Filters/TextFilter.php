@@ -52,7 +52,7 @@ class TextFilter extends AbstractFilter implements TextFilterInterface
 			|| !array_key_exists(self::COMPARISON_TYPE_FILTER_KEY, $textFilter)
 			|| !array_key_exists(self::COMPARISON_VALUE_FILTER_KEY, $textFilter)
 		) {
-			throw new \Exception(sprintf('Either parameters: %s, %s, %s or %s does not exits in text filter',
+			throw new \Exception(sprintf('Either parameters: %s, %s, %s or %s does not exist in text filter',
 				self::FILED_NAME_FILTER_KEY, self::FIELD_TYPE_FILTER_KEY, self::COMPARISON_TYPE_FILTER_KEY, self::COMPARISON_VALUE_FILTER_KEY));
 		}
 

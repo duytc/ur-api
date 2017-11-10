@@ -23,7 +23,7 @@ class FilterFactory
         if (!array_key_exists(ColumnFilterInterface::FIELD_TYPE_FILTER_KEY, $jsonFilter)
             || !array_key_exists(ColumnFilterInterface::FIELD_NAME_FILTER_KEY, $jsonFilter)
         ) {
-            throw new \Exception (sprintf('Either parameters: "%s" or "%s" does not exits in filter',
+            throw new \Exception (sprintf('Either parameters: "%s" or "%s" does not exist in filter',
                 ColumnFilterInterface::FIELD_TYPE_FILTER_KEY,
                 ColumnFilterInterface::FIELD_NAME_FILTER_KEY));
         }
@@ -58,7 +58,7 @@ class FilterFactory
         if (!array_key_exists(NumberFilter::COMPARISON_TYPE_FILTER_KEY, $filter)
             || !array_key_exists(NumberFilter::COMPARISON_VALUE_FILTER_KEY, $filter)
         ) {
-            throw new \Exception (sprintf('Either parameters: "%s" or "%s" does not exits in number filter',
+            throw new \Exception (sprintf('Either parameters: "%s" or "%s" does not exist in number filter',
                 NumberFilter::COMPARISON_TYPE_FILTER_KEY,
                 NumberFilter::COMPARISON_VALUE_FILTER_KEY));
         }
@@ -75,7 +75,7 @@ class FilterFactory
         if (!array_key_exists(TextFilter::COMPARISON_TYPE_FILTER_KEY, $filter)
             || !array_key_exists(TextFilter::COMPARISON_VALUE_FILTER_KEY, $filter)
         ) {
-            throw new \Exception (sprintf('Either parameters: "%s" or "%s" does not exits in text filter',
+            throw new \Exception (sprintf('Either parameters: "%s" or "%s" does not exist in text filter',
                 TextFilter::COMPARISON_TYPE_FILTER_KEY,
                 TextFilter::COMPARISON_VALUE_FILTER_KEY));
         }
@@ -93,7 +93,7 @@ class FilterFactory
             || !array_key_exists(DateFilter::START_DATE_FILTER_KEY, $filter)
             || !array_key_exists(DateFilter::END_DATE_FILTER_KEY, $filter)
         ) {
-            throw new \Exception (sprintf('Either parameters: "%s", "%s" or "%s" does not exits in date filter',
+            throw new \Exception (sprintf('Either parameters: "%s", "%s" or "%s" does not exist in date filter',
                 DateFilter::FORMATS_FILTER_KEY,
                 DateFilter::START_DATE_FILTER_KEY,
                 DateFilter::END_DATE_FILTER_KEY));

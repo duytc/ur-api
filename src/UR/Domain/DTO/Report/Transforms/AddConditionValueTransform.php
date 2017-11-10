@@ -178,7 +178,7 @@ class AddConditionValueTransform extends NewFieldTransform implements TransformI
             || !array_key_exists(self::DEFAULT_VALUE_KEY, $addConditionValueTransformConfig)
             || !array_key_exists(self::VALUES_KEY, $addConditionValueTransformConfig)
         ) {
-            throw new InvalidArgumentException(sprintf('either "%s" or "%s" or "%s" or "%s" does not exits',
+            throw new InvalidArgumentException(sprintf('either "%s" or "%s" or "%s" or "%s" does not exist',
                 self::FIELD_NAME_KEY,
                 self::FIELD_TYPE_KEY,
                 self::DEFAULT_VALUE_KEY,
@@ -212,7 +212,7 @@ class AddConditionValueTransform extends NewFieldTransform implements TransformI
                     || !array_key_exists(self::VALUES_KEY_SHARED_CONDITIONS_EXPRESSION_COMPARATOR, $sharedCondition)
                     || !array_key_exists(self::VALUES_KEY_SHARED_CONDITIONS_EXPRESSION_VALUE, $sharedCondition)
                 ) {
-                    throw new InvalidArgumentException(sprintf('"%s" is not array or either "%s" or "%s" or "%s" or "%s" does not exits',
+                    throw new InvalidArgumentException(sprintf('"%s" is not array or either "%s" or "%s" or "%s" or "%s" does not exist',
                         'each element in sharedConfigs',
                         self::VALUES_KEY_SHARED_CONDITIONS_EXPRESSION_FIELD,
                         self::VALUES_KEY_SHARED_CONDITIONS_EXPRESSION_COMPARATOR,
@@ -234,7 +234,7 @@ class AddConditionValueTransform extends NewFieldTransform implements TransformI
                     || !array_key_exists(self::VALUES_KEY_CONDITIONS_EXPRESSIONS, $condition)
                     || !array_key_exists(self::VALUES_KEY_CONDITIONS_VALUE, $condition)
                 ) {
-                    throw new InvalidArgumentException(sprintf('"%s" is not array or either "%s" or "%s" does not exits',
+                    throw new InvalidArgumentException(sprintf('"%s" is not array or either "%s" or "%s" does not exist',
                         self::VALUES_KEY_CONDITIONS,
                         self::VALUES_KEY_CONDITIONS_EXPRESSIONS,
                         self::VALUES_KEY_CONDITIONS_VALUE
@@ -249,7 +249,7 @@ class AddConditionValueTransform extends NewFieldTransform implements TransformI
                         || !array_key_exists(self::VALUES_KEY_CONDITIONS_EXPRESSIONS_COMPARATOR, $expression)
                         || !array_key_exists(self::VALUES_KEY_CONDITIONS_EXPRESSIONS_VALUE, $expression)
                     ) {
-                        throw new InvalidArgumentException(sprintf('"%s" is not array or either "%s" or "%s" or "%s" or "%s" does not exits',
+                        throw new InvalidArgumentException(sprintf('"%s" is not array or either "%s" or "%s" or "%s" or "%s" does not exist',
                             self::VALUES_KEY_CONDITIONS_EXPRESSIONS_FIELD,
                             self::VALUES_KEY_CONDITIONS_EXPRESSIONS_COMPARATOR,
                             self::VALUES_KEY_CONDITIONS_EXPRESSIONS_VALUE
