@@ -8,10 +8,12 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\Statement;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Domain\DTO\Report\ParamsInterface;
-use UR\Domain\DTO\Report\Transforms\GroupByTransform;
+use UR\Service\SqlUtilTrait;
 
 class ReportSelector implements ReportSelectorInterface
 {
+    use SqlUtilTrait;
+
     /**
      * @var Connection
      */
@@ -54,5 +56,34 @@ class ReportSelector implements ReportSelectorInterface
         }
 
         return $this->sqlBuilder->buildQuery($params, $overridingFilters);
+    }
+
+    /**
+     * @param ParamsInterface $params
+     * @param $overridingFilters
+     * @return Statement
+     */
+    public function getTemporarySQL(ParamsInterface $params, $overridingFilters = null)
+    {
+        $dataSets = $params->getDataSets();
+
+        if (count($dataSets) < 2) {
+            return $this->sqlBuilder->buildSQLForSingleDataSet($params, $overridingFilters);
+        }
+
+        return $this->sqlBuilder->buildSQLForMultiDataSets($params, $overridingFilters);
+    }
+
+    /**
+     * @param ParamsInterface $params
+     * @param $overridingFilters
+     * @return Statement
+     */
+    public function getFullSQL(ParamsInterface $params, $overridingFilters = null)
+    {
+        $temporarySQL = $this->getTemporarySQL($params, $overridingFilters);
+        $queryBuilder = $this->sqlBuilder->createReturnSQl($params);
+
+        return sprintf("%s %s;", $temporarySQL, $queryBuilder->getSQL());
     }
 }

@@ -8,6 +8,7 @@ use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Types\Type;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
+use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Filters\DateFilterInterface;
@@ -18,6 +19,7 @@ use UR\Domain\DTO\Report\Filters\TextFilter;
 use UR\Domain\DTO\Report\Filters\TextFilterInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinConfig;
 use UR\Domain\DTO\Report\JoinBy\JoinField;
+use UR\Domain\DTO\Report\ParamsInterface;
 use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Domain\DTO\Report\Transforms\AddConditionValueTransform;
 use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
@@ -1080,6 +1082,13 @@ trait SqlUtilTrait
             }
         }
 
+        if (is_numeric($condition)) {
+            return array(
+                AbstractFilter::FILTER_COMPARISON_KEY => NumberFilter::COMPARISON_TYPE_EQUAL,
+                AbstractFilter::FILTER_COMPARED_VALUE_KEY => floatval($condition)
+            );
+        }
+
         return null;
     }
 
@@ -1137,6 +1146,73 @@ trait SqlUtilTrait
         }
 
         return $qb;
+    }
+
+    /**
+     * @param ParamsInterface $params
+     * @param $sql
+     * @param $filters
+     * @param null $dataSetId
+     * @return mixed
+     */
+    public function bindFilterParamForTemporaryTable(ParamsInterface $params, $sql, $filters, $dataSetId = null)
+    {
+        $replaces = [];
+        foreach ($filters as $key => $filter) {
+            if (!$filter instanceof FilterInterface) {
+                continue;
+            }
+
+            $filterField = str_replace(" ", "", $filter->getFieldName()) . $key;
+
+            if ($filter instanceof DateFilterInterface) {
+                $startDate = $filter->getStartDate();
+                if (!$startDate instanceof \DateTime) {
+                    $startDate = date_create_from_format('Y-m-d', $startDate);
+                }
+
+                if ($startDate instanceof \DateTime) {
+                    $startDate = $startDate->format('Y-m-d 00:00:00');
+                }
+
+                $endDate = $filter->getEndDate();
+                if (!$endDate instanceof \DateTime) {
+                    $endDate = date_create_from_format('Y-m-d', $endDate);
+                }
+
+                if ($endDate instanceof \DateTime) {
+                    $endDate = $endDate->format('Y-m-d 00:00:00');
+                }
+
+                $replaces[sprintf(':startDate%d%d', $filterField, $dataSetId ?? 0)] = sprintf('"%s"', $startDate);
+                $replaces[sprintf(':endDate%d%d', $filterField, $dataSetId ?? 0)] = sprintf('"%s"', $endDate);
+            } else if ($filter instanceof TextFilterInterface) {
+                if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN, TextFilter::COMPARISON_TYPE_CONTAINS, TextFilter::COMPARISON_TYPE_NOT_CONTAINS, TextFilter::COMPARISON_TYPE_START_WITH, TextFilter::COMPARISON_TYPE_END_WITH])) {
+                    continue;
+                }
+
+                $bindParamName = sprintf(':%s%d%d', $filterField, $filterField, $dataSetId ?? 0);
+                $replaces[$bindParamName] = sprintf('"%s"', $filter->getComparisonValue());
+            } else if ($filter instanceof NumberFilterInterface) {
+                if (in_array($filter->getComparisonType(), [NumberFilter::COMPARISON_TYPE_IN, NumberFilter::COMPARISON_TYPE_NOT_IN])) {
+                    continue;
+                }
+
+                $bindParamName = sprintf(':%s%d%d', $filterField, $filterField, $dataSetId ?? 0);
+                $replaces[$bindParamName] = $filter->getComparisonValue();
+            }
+        }
+
+        foreach ($replaces as $key => $value) {
+            $sql = str_replace($key, $value, $sql);
+        }
+
+        if (!empty($params->getSortField())) {
+            $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
+//            $sql = $sql . sprintf("CREATE INDEX idx_pname ON %s(%s);", $tempTable4th, $params->getSortField());
+        }
+
+        return $sql;
     }
 
     /**
@@ -1198,5 +1274,32 @@ trait SqlUtilTrait
         }
 
         return $filter;
+    }
+
+    /**
+     * @param ParamsInterface $params
+     * @return array
+     */
+    public function createMagicMaps(ParamsInterface $params)
+    {
+        $dataSets = is_array($params->getDataSets()) ? $params->getDataSets() : [];
+        $allDimensionMetrics = [];
+        foreach ($dataSets as $index => $dataSet) {
+            if (!$dataSet instanceof DataSetInterface) {
+                continue;
+            }
+
+            $dataSetId = $dataSet->getDataSetId();
+            $dimensions = is_array($dataSet->getDimensions()) ? $dataSet->getDimensions() : [];
+            $metrics = is_array($dataSet->getMetrics()) ? $dataSet->getMetrics() : [];
+
+            $localDimensionMetrics = array_merge($dimensions, $metrics);
+
+            foreach ($localDimensionMetrics as $field) {
+                $allDimensionMetrics[sprintf("%s_%s", $field, $dataSetId)] = sprintf("t%s.`%s`", count($dataSets) > 1 ? $index : "", $field);
+            }
+        }
+
+        return $allDimensionMetrics;
     }
 }

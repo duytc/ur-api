@@ -336,7 +336,6 @@ class ReportBuilder implements ReportBuilderInterface
 
         $params->setTransforms($transforms);
         $data = $this->reportSelector->getReportData($params, $overridingFilters);
-        $subQuery = $data[SqlBuilder::SUB_QUERY];
         $rows = $data[SqlBuilder::ROWS];
         $total = $data[SqlBuilder::TOTAl_ROWS];
 
@@ -372,11 +371,10 @@ class ReportBuilder implements ReportBuilderInterface
 
         $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
 
-        return $this->finalizeSingleReport($subQuery, $collection, $params, $metrics, $dimensions, $outputJoinFields, $isNeedFormatReport, $overridingFilters, $total);
+        return $this->finalizeSingleReport($collection, $params, $metrics, $dimensions, $outputJoinFields, $isNeedFormatReport, $overridingFilters, $total);
     }
 
     /**
-     * @param $subQuery
      * @param Collection $reportCollection
      * @param ParamsInterface $params
      * @param array $metrics
@@ -387,7 +385,7 @@ class ReportBuilder implements ReportBuilderInterface
      * @param int $totalReport
      * @return mixed|ReportResultInterface
      */
-    private function finalizeSingleReport($subQuery, Collection $reportCollection, ParamsInterface $params, array $metrics,
+    private function finalizeSingleReport(Collection $reportCollection, ParamsInterface $params, array $metrics,
                                           array $dimensions, array $outputJoinField = [], $isNeedFormatReport = true, $overridingFilters = [], $totalReport = 0)
     {
         $userProvidedDimensions = [];
@@ -458,7 +456,7 @@ class ReportBuilder implements ReportBuilderInterface
             $reportCollection->setRows($newReports);
         }
 
-        $reportResult = $this->reportGrouper->groupForSingleView($subQuery, $reportCollection, $params, $overridingFilters);
+        $reportResult = $this->reportGrouper->groupForSingleView($reportCollection, $params, $overridingFilters);
 
         /* Filter all non-selected fields from reports data */
         $nonSelectedFields = [];

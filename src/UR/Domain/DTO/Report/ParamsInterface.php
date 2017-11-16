@@ -290,4 +290,24 @@ interface ParamsInterface
      * @return self
      */
     public function setSubView($subview);
+
+    /**
+     * @return array
+     */
+    public function getMagicMaps();
+
+    /**
+     * @param array $magicMaps
+     */
+    public function setMagicMaps($magicMaps);
+
+    /**
+     * @return string
+     */
+    public function getTemporarySuffix();
+
+    /**
+     * @param string $temporarySuffix
+     */
+    public function setTemporarySuffix($temporarySuffix);
 }

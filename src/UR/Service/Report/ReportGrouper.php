@@ -46,7 +46,7 @@ class ReportGrouper implements ReportGrouperInterface
         $this->sqlBuilder = $sqlBuilder;
     }
 
-    public function groupForSingleView($subQuery, Collection $collection, ParamsInterface $params, $overridingFilters = null)
+    public function groupForSingleView(Collection $collection, ParamsInterface $params, $overridingFilters = null)
     {
         $dataSets = $params->getDataSets();
         $columns = $collection->getColumns();
@@ -59,9 +59,9 @@ class ReportGrouper implements ReportGrouperInterface
         }
         
         if (count($dataSets) < 2) {
-            $stmt = $this->sqlBuilder->buildGroupQueryForSingleDataSet($subQuery, $dataSets[0], $params->getTransforms(), $params->getSearches(), $params->getShowInTotal(), $overridingFilters);
+            $stmt = $this->sqlBuilder->buildGroupQueryForSingleDataSet($params, $dataSets[0], $params->getTransforms(), $params->getSearches(), $params->getShowInTotal(), $overridingFilters);
         } else {
-            $stmt = $this->sqlBuilder->buildGroupQuery($subQuery, $dataSets, $params->getJoinConfigs(), $params->getTransforms(), $params->getSearches(), $params->getShowInTotal(), $overridingFilters);
+            $stmt = $this->sqlBuilder->buildGroupQuery($params, $dataSets, $params->getJoinConfigs(), $params->getTransforms(), $params->getSearches(), $params->getShowInTotal(), $overridingFilters);
         }
 
         if ($stmt instanceof Statement) {
@@ -92,7 +92,10 @@ class ReportGrouper implements ReportGrouperInterface
                 $value = $total[$key] / $totalReport;
             }
         }
-
+        
+        $this->removeTemporaryTables($params);
+        gc_collect_cycles();
+        
         return new ReportResult($collection->getRows(), $total, $average, null, $headers, $collection->getTypes(), $totalReport);
     }
 
@@ -104,5 +107,10 @@ class ReportGrouper implements ReportGrouperInterface
     protected function isAssociativeArray($array)
     {
         return array_values($array) === $array;
+    }
+
+    private function removeTemporaryTables($params)
+    {
+        return $this->sqlBuilder->removeTemporaryTables($params);
     }
 }

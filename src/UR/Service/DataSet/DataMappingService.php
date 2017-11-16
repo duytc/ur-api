@@ -120,19 +120,27 @@ class DataMappingService implements DataMappingServiceInterface
         $params = new Params();
         $params->setDataSets([$dataSetDTO]);
         $result = $this->sqlBuilder->buildQueryForSingleDataSet($params);
-        /** @var Statement $stmt */
-        $stmt = $result[SqlBuilder::STATEMENT_KEY];
-        try {
-            $stmt->execute();
-        } catch (\Exception $ex) {
 
+        if (array_key_exists(SqlBuilder::ROWS, $result)) {
+            $rows = $result[SqlBuilder::ROWS];
+        } else {
+            /** @var Statement $stmt */
+            $stmt = $result[SqlBuilder::STATEMENT_KEY];
+            try {
+                $stmt->execute();
+            } catch (\Exception $ex) {
+
+            }
+
+            $rows = new SplDoublyLinkedList();
+            while ($row = $stmt->fetch()) {
+                $rows->push($row);
+            }
         }
 
-        $rows = new SplDoublyLinkedList();
-        while ($row = $stmt->fetch()) {
-            $rows->push($row);
-        }
-
+        $this->sqlBuilder->removeTemporaryTables($params);
+        gc_collect_cycles();
+        
         return $rows;
     }
 
@@ -606,7 +614,13 @@ class DataMappingService implements DataMappingServiceInterface
             } catch (Exception $e) {
                 $e->getMessage();
             }
+
+            unset($dataSetRow);
+            gc_collect_cycles();
         }
+
+        unset($dataSetRows);
+        gc_collect_cycles();
     }
 
     /**

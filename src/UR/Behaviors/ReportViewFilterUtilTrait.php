@@ -4,22 +4,25 @@ namespace UR\Behaviors;
 
 use Doctrine\DBAL\Query\QueryBuilder;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
+use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Domain\DTO\Report\Filters\FilterInterface;
+use UR\Domain\DTO\Report\ParamsInterface;
 
 trait ReportViewFilterUtilTrait
 {
     /**
      * @param QueryBuilder $qb
-     * @param array $types
      * @param array $dataSets
-     * @param array $joinConfig
      * @param array $searches
      * @param null $overridingFilters
+     * @param array $types
+     * @param array $joinConfig
+     * @param bool $forShowTotal
      * @return QueryBuilder
      */
-    private function applyFiltersForMultiDataSets(QueryBuilder $qb, array $dataSets, $searches = [], $overridingFilters = null, array $types, array $joinConfig)
+    private function applyFiltersForMultiDataSets(QueryBuilder $qb, array $dataSets, $searches = [], $overridingFilters = null, array $types, array $joinConfig, $forShowTotal = false)
     {
-        $allFilters = $this->getFiltersForMultiDataSets($dataSets, $searches, $overridingFilters, $types, $joinConfig);
+        $allFilters = $this->getFiltersForMultiDataSets($dataSets, $searches, $overridingFilters, $types, $joinConfig, $forShowTotal);
 
         /**
          * Apply filters = filters from report view + filters from data sets + search filters
@@ -67,16 +70,107 @@ trait ReportViewFilterUtilTrait
     }
 
     /**
+     * @param QueryBuilder $finalQb
+     * @param DataSetInterface $dataSet
+     * @param ParamsInterface $params
+     * @param array $searches
+     * @param $overridingFilters
+     * @param array $types
+     * @return mixed
+     */
+    private function applyFiltersForSingleDataSetForTemporaryTables(QueryBuilder $finalQb, DataSetInterface $dataSet, ParamsInterface $params, array $searches, $overridingFilters, array $types)
+    {
+        $filters = $this->getFiltersForSingleDataSet($searches, $overridingFilters, $types, $dataSet);
+
+        $allDimensionMetrics = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+
+        $filters = array_filter($filters, function ($filter) use ($allDimensionMetrics) {
+              return $filter instanceof FilterInterface && in_array($filter->getFieldName(), $allDimensionMetrics);
+        });
+
+        if (empty($filters)) {
+            $finalQb->where(sprintf('%s IS NULL', \UR\Model\Core\DataSetInterface::OVERWRITE_DATE));
+            return $finalQb;
+        }
+
+        $maps = $params->getMagicMaps();
+
+        $buildResult = $this->buildFilters($filters, null, $dataSet->getDataSetId());
+        $conditions = $buildResult[self::CONDITION_KEY];
+        foreach ($conditions as &$condition) {
+            foreach ($maps as $key => $fieldSQL) {
+                $condition = str_replace(sprintf("`%s`", $key), $fieldSQL, $condition);
+            }
+        }
+
+        $conditions[] = sprintf('%s IS NULL', \UR\Model\Core\DataSetInterface::OVERWRITE_DATE);
+
+        if (count($conditions) == 1) {
+            $finalQb->where($conditions[self::FIRST_ELEMENT]);
+        } else {
+            $finalQb->where(implode(' AND ', $conditions));
+        }
+
+
+        return $finalQb;
+    }
+
+    /**
+     * @param string $subQuery
+     * @param DataSetInterface $dataSet
+     * @param ParamsInterface $params
+     * @param $filters
+     * @return mixed
+     */
+    private function applyFiltersForMultiDataSetsForTemporaryTables(string  $subQuery, DataSetInterface $dataSet, ParamsInterface $params, $filters)
+    {
+        $allDimensionMetrics = array_merge($dataSet->getDimensions(), $dataSet->getMetrics());
+        $allDimensionMetrics = array_map(function ($field) use ($dataSet) {
+            return sprintf("%s_%s", $field, $dataSet->getDataSetId());
+        }, $allDimensionMetrics);
+
+        $filters = array_filter($filters, function($filter) use ($allDimensionMetrics){
+            return $filter instanceof AbstractFilter && in_array($filter->getFieldName(), $allDimensionMetrics);
+        });
+
+        if (empty($filters)) {
+            return $subQuery;
+        }
+
+        $buildResult = $this->buildFilters($filters);
+        $conditions = $buildResult[self::CONDITION_KEY];
+        foreach ($conditions as &$condition) {
+            $maps = $params->getMagicMaps();
+            foreach ($maps as $key => $field) {
+                $fieldReplace = "`" . str_replace(".", "`.", $field);
+                $condition = str_replace(sprintf("`%s`", $key), $fieldReplace, $condition);
+            }
+        }
+
+        $needWhere = strpos($subQuery, "WHERE") != false ? " AND " : " WHERE ";
+
+        if (count($conditions) == 1) {
+            $subQuery = $subQuery . $needWhere . ($conditions[self::FIRST_ELEMENT]);
+        } else {
+            $subQuery = $subQuery . $needWhere . (implode(' AND ', $conditions));
+        }
+
+        return $subQuery;
+    }
+
+    /**
      * @param array $dataSets
      * @param array $searches
      * @param $overridingFilters
      * @param array $types
      * @param array $joinConfig
+     * @param bool $forShowTotal
      * @return array
      */
-    private function getFiltersForMultiDataSets(array $dataSets, array $searches, $overridingFilters, array $types, array $joinConfig)
+    private function getFiltersForMultiDataSets(array $dataSets, array $searches, $overridingFilters, array $types, array $joinConfig, $forShowTotal = false)
     {
         $allFilters = [];
+        $newSearchFilters = [];
 
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
@@ -89,10 +183,30 @@ trait ReportViewFilterUtilTrait
                 $filters = [];
             }
 
+            foreach ($filters as &$filter) {
+                if (!$filter instanceof FilterInterface) {
+                    continue;
+                }
+
+                $fieldName = $filter->getFieldName();
+                if (strpos($fieldName, sprintf("_". $dataSet->getDataSetId())) == false) {
+                    $filter->setFieldName(sprintf("%s_%s", $fieldName, $dataSet->getDataSetId()));
+                }
+            }
+
             $allFilters = array_merge($allFilters, $filters);
         }
 
-        $newSearchFilters = [];
+        foreach ($allFilters as $filter) {
+            $field = $filter->getFieldName();
+            $idAndField = $this->getIdSuffixAndField($field);
+            if ($idAndField) {
+                $newSearchFilters[$idAndField['id']][] = $filter;
+            } else {
+                $newSearchFilters[0][] = $filter;
+            }
+        }
+
         if (!empty($searches)) {
             $searchFilters = $this->convertSearchToFilter($types, $searches, $joinConfig);
             /** @var FilterInterface $searchFilter */
@@ -100,7 +214,6 @@ trait ReportViewFilterUtilTrait
                 $field = $searchFilter->getFieldName();
                 $idAndField = $this->getIdSuffixAndField($field);
                 if ($idAndField) {
-                    $searchFilter->setFieldName($idAndField['field']);
                     $newSearchFilters[$idAndField['id']][] = $searchFilter;
                 } else {
                     $newSearchFilters[0][] = $searchFilter;
@@ -120,12 +233,12 @@ trait ReportViewFilterUtilTrait
                 if ($idAndField) {
                     /** @var FilterInterface $clonedFilter */
                     $clonedFilter = $this->cloneFilter($filter);
-                    $clonedFilter->setFieldName($idAndField['field']);
                     $newSearchFilters[$idAndField['id']][] = $clonedFilter;
                 }
             }
         }
 
+        $allFilters = [];
         foreach ($newSearchFilters as $field => $fieldFilters) {
             if (!is_array($fieldFilters)) {
                 continue;
@@ -134,7 +247,10 @@ trait ReportViewFilterUtilTrait
         }
 
         $allFilters = $this->normalizeFiltersWithDataSets($allFilters, $dataSets);
-        $allFilters = $this->normalizeFiltersWithJoinConfig($allFilters, $joinConfig);
+
+        if ($forShowTotal) {
+            $allFilters = $this->normalizeFiltersWithJoinConfig($allFilters, $joinConfig);
+        }
 
         return $allFilters;
     }

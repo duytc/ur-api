@@ -120,7 +120,7 @@ class DataMappingManager implements DataMappingManagerInterface
 
 
         /** @var Statement $counter */
-        $counter = $this->sqlBuilder->buildGroupQueryForSingleDataSet($result[SqlBuilder::SUB_QUERY], $reportDataSet);
+        $counter = $this->sqlBuilder->buildGroupQueryForSingleDataSet($reportParam, $reportDataSet);
         $totalReport = 0;
 
         if ($counter instanceof Statement) {
@@ -138,6 +138,9 @@ class DataMappingManager implements DataMappingManagerInterface
 
         $paginationDTO['totalRecord'] = $totalReport;
 
+        $this->sqlBuilder->removeTemporaryTables($reportParam);
+        gc_collect_cycles();
+        
         return $paginationDTO;
     }
 

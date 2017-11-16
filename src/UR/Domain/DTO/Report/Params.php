@@ -9,10 +9,12 @@ use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Service\DTO\Report\WeightedCalculationInterface;
+use UR\Service\SqlUtilTrait;
 
 
 class Params implements ParamsInterface
 {
+    use SqlUtilTrait;
     /**
      * @var array
      */
@@ -117,6 +119,12 @@ class Params implements ParamsInterface
 
     /** @var  array */
     protected $metricCalculations;
+
+    /** @var array  */
+    protected $magicMaps = [];
+
+    /** @var  string */
+    protected $temporarySuffix;
 
     function __construct()
     {
@@ -649,5 +657,45 @@ class Params implements ParamsInterface
     {
         $this->subView = $subView;
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMagicMaps()
+    {
+        if (empty($this->magicMaps)) {
+            $this->magicMaps = $this->createMagicMaps($this);
+        }
+
+        return $this->magicMaps;
+    }
+
+    /**
+     * @param array $magicMaps
+     */
+    public function setMagicMaps($magicMaps)
+    {
+        $this->magicMaps = $magicMaps;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getTemporarySuffix()
+    {
+        if (empty($this->temporarySuffix)) {
+            $this->temporarySuffix = mt_rand(0, 100000000);
+        }
+        
+        return $this->temporarySuffix;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setTemporarySuffix($temporarySuffix)
+    {
+        $this->temporarySuffix = $temporarySuffix;
     }
 }
