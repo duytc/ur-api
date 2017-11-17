@@ -509,11 +509,6 @@ class SqlBuilder implements SqlBuilderInterface
                 continue;
             }
 
-            if (array_key_exists($field, $types) && $types[$field] == FieldType::DATETIME) {
-                $qb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as `%s`", $fieldName, $timezone, $alias));
-                continue;
-            }
-
             $qb->addSelect(sprintf("%s as `%s`", $fieldName, $alias));
         }
 
@@ -1101,11 +1096,6 @@ class SqlBuilder implements SqlBuilderInterface
 
                 if (in_array($fieldWithId, $aggregationFields) && $hasGroup) {
                     $qb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($fieldWithId), $this->connection->quoteIdentifier($fieldWithId)));
-                    continue;
-                }
-
-                if (array_key_exists($fieldWithId, $types) && $types[$fieldWithId] == FieldType::DATETIME && $hasGroup) {
-                    $qb->addSelect(sprintf("DATE(CONVERT_TZ(%s, 'UTC', '%s')) as %s", $this->connection->quoteIdentifier($fieldWithId), $timezone, $fieldWithId));
                     continue;
                 }
 
