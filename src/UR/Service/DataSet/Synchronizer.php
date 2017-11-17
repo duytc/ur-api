@@ -606,22 +606,10 @@ class Synchronizer
     {
         $inUsedIndexes = [];
 
-        // add indexes for hidden fields
-        /*
-         * all dimensions To Be Created Indexes
-         * using this array to temporary store for batch execute sql "create index"
-         * We cannot use $dataSetImportTable->addIndex() directly because this does not support set length for text field
-         *
-         * format:
-         * [
-         *     // multiple columns if need create index for multiple columns
-         *     [ columnIndex1, columnIndex2, ... ],
-         *     ...
-         * ];
-         */
-        //$columnIndexDateField []  = new ColumnIndex(DataSetInterface::OVERWRITE_DATE, FieldType::NUMBER);
-
-        $dataSet = $reportViewDataSet->getDataSet();
+        // add indexes for fields is made filter
+        if (!$reportViewDataSet instanceof ReportViewDataSetInterface || $reportViewDataSet->getReportView() == null) {
+            return 0;
+        }
 
         foreach ($reportViewDataSet->getFilters() as $filter) {
 
@@ -631,12 +619,6 @@ class Synchronizer
                 $columnIndexAllField [] = new ColumnIndex($filter['field'], $filter['type']);
             }
         }
-
-        // add dimensions, also add indexes for all dimensions
-//        foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
-//            // add index for column
-//            $columnIndex [] = new ColumnIndex($fieldName, $fieldType);
-//        }
 
         $columnIndexes  = [];
         if (!empty($columnIndexDateField)) $columnIndexes [] = $columnIndexDateField;
