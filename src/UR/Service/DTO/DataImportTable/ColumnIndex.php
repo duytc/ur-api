@@ -33,7 +33,7 @@ class ColumnIndex
             $columnLength = $columnType === FieldType::LARGE_TEXT
                 ? Synchronizer::FIELD_LENGTH_LARGE_TEXT
                 : ($columnType === FieldType::TEXT
-                    ? Synchronizer::FIELD_LENGTH_TEXT
+                    ? Synchronizer::FIELD_LENGTH_TEXT_FOR_INDEX
                     : null // other types: not set length
                 );
         }

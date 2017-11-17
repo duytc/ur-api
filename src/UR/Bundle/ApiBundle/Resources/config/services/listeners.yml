@@ -181,3 +181,12 @@ services:
             - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: preRemove }
             - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.update_index_for_data_import_table_when_report_view_change_filter_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateIndexForDataImportTableWhenReportViewChangeFilterListener
+        arguments:
+            - '@ur.service.data_set.table_util'
+        tags:
+            - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postFlush }

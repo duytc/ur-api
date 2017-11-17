@@ -10,6 +10,7 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Service\DTO\DataImportTable\ColumnIndex;
 
 class Synchronizer
@@ -21,11 +22,14 @@ class Synchronizer
 
     const FIELD_LENGTH_LARGE_TEXT = 65535;
     const FIELD_LENGTH_TEXT = 512;
+    const FIELD_LENGTH_TEXT_FOR_INDEX = 20;
 
     // TODO: organize const to right place. Current constants are discrete
     const FIELD_LENGTH_COLUMN_UNIQUE_ID = 32; // current use md5(dimension1:dimension2:...) so that length is 32
 
     const DATA_IMPORT_TABLE_INDEX_PREFIX_TEMPLATE = '%s_index_%s'; // %s is data import table name, %s is field name
+    const DATA_IMPORT_TABLE_INDEX_PREFIX_FILTER = '%s_index_%d_%s'; // %s is data import table name, %s is field name
+    const DATA_IMPORT_TABLE_INDEX_PREFIX = '%s_index_%d'; // %s is data import table name, %s is field name
     const REQUIRED_INDEXES = ['primary', 'PRIMARY', 'unique_hash_idx'];
 
     /**
@@ -301,52 +305,17 @@ class Synchronizer
          *     ...
          * ];
          */
-        $columnIndexes = [
-            [
-                // index on single multiple column
-                new ColumnIndex(DataSetInterface::DATA_SOURCE_ID_COLUMN, FieldType::NUMBER)
-            ],
-            [
-                // index on single multiple column
-                new ColumnIndex(DataSetInterface::IMPORT_ID_COLUMN, FieldType::NUMBER)
-            ],
-            [
-                // index on single multiple column
-                new ColumnIndex(DataSetInterface::OVERWRITE_DATE, FieldType::NUMBER)
-            ],
-            [
-                // index on multiple columns
-                new ColumnIndex(DataSetInterface::UNIQUE_ID_COLUMN, FieldType::TEXT, Synchronizer::FIELD_LENGTH_COLUMN_UNIQUE_ID), // special for __unique_id
-                new ColumnIndex(DataSetInterface::OVERWRITE_DATE, FieldType::NUMBER)
-            ]
-        ];
+        $columnIndex = [];
+//        = new ColumnIndex(DataSetInterface::OVERWRITE_DATE, FieldType::NUMBER);
 
         // add dimensions, also add indexes for all dimensions
         foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
             // add index for column
-            $columnIndexes[] = [
-                new ColumnIndex($fieldName, $fieldType)
-            ];
-
-            // add indexes for hidden columns day/month/year if this column type is date|datetime
-            if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
-                $hiddenDayColumn = self::getHiddenColumnDay($fieldName);
-                $columnIndexes[] = [
-                    new ColumnIndex($hiddenDayColumn, FieldType::NUMBER)
-                ];
-
-                $hiddenMonthColumn = self::getHiddenColumnMonth($fieldName);
-                $columnIndexes[] = [
-                    new ColumnIndex($hiddenMonthColumn, FieldType::NUMBER)
-                ];
-
-                $hiddenYearColumn = self::getHiddenColumnYear($fieldName);
-                $columnIndexes[] = [
-                    new ColumnIndex($hiddenYearColumn, FieldType::NUMBER)
-                ];
-            }
+            $columnIndex [] = new ColumnIndex($fieldName, $fieldType);
         }
 
+        $columnIndexes  = [];
+        $columnIndexes [] = $columnIndex;
         $createdIndexesCount = 0;
 
         // execute prepared statement for creating indexes
@@ -358,7 +327,6 @@ class Synchronizer
                 continue;
             }
 
-            $columnNames = []; // for building index name
             $columnNamesAndLengths = []; // for building sql create index
 
             // build index for multiple columns
@@ -372,8 +340,6 @@ class Synchronizer
                     continue; // column not found
                 }
 
-                $columnNames[] = $columnName;
-
                 $columnLength = $singleColumnIndex->getColumnLength();
                 $columnNamesAndLengths[] = (null === $columnLength)
                     ? $columnName
@@ -381,11 +347,11 @@ class Synchronizer
             }
 
             // sure have columns to be created index
-            if (empty($columnNames) || empty($columnNamesAndLengths)) {
+            if (empty($columnNamesAndLengths)) {
                 continue;
             }
 
-            $indexName = self::getDataSetImportTableIndexName($dataSetImportTable->getName(), $columnNames);
+            $indexName = self::getDataSetImportTableIndexName($dataSetImportTable->getName());
 
             // update inUsedIndexes
             $inUsedIndexes[] = $indexName;
@@ -440,16 +406,30 @@ class Synchronizer
      * get DataSet Import Table Index Name
      *
      * @param string $dataImportTableName
-     * @param array|string[] $columnNames
      * @return string
      */
-    public static function getDataSetImportTableIndexName($dataImportTableName, array $columnNames)
+    public static function getDataSetImportTableIndexName($dataImportTableName)
     {
-        $concatenatedColumnNames = implode('_', $columnNames);
+        /** Can not create long index name */
+        $concatenatedColumnNames = new \DateTime();
 
-        return sprintf(self::DATA_IMPORT_TABLE_INDEX_PREFIX_TEMPLATE, $dataImportTableName, $concatenatedColumnNames);
+        return sprintf(self::DATA_IMPORT_TABLE_INDEX_PREFIX_TEMPLATE, $dataImportTableName, $concatenatedColumnNames->format('YmdHis'));
     }
 
+    /**
+     * get DataSet Import Table Index Name
+     *
+     * @param string $dataImportTableName
+     * @param $reportViewDataSetId
+     * @return string
+     */
+    public static function getDataSetImportTableIndexNameFilter($dataImportTableName, $reportViewDataSetId)
+    {
+        /** Can not create long index name */
+        $concatenatedColumnNames = new \DateTime();
+
+        return sprintf(self::DATA_IMPORT_TABLE_INDEX_PREFIX_FILTER, $dataImportTableName, $reportViewDataSetId, $concatenatedColumnNames->format('YmdHis'));
+    }
     /**
      * alter Type For Column
      *
@@ -611,5 +591,138 @@ class Synchronizer
             return false;
         }
         return $sm->listTableDetails($tableName);
+    }
+
+    /**
+     * update Indexes: create if index does not exist. Also remove non existing indexes.
+     *
+     * @param Connection $conn
+     * @param Table $dataSetImportTable
+     * @param ReportViewDataSetInterface $reportViewDataSet
+     * @param int $removedIndexesCount
+     * @return int number of created indexes
+     */
+    public static function updateIndexesByFilter(Connection $conn, Table $dataSetImportTable, ReportViewDataSetInterface $reportViewDataSet, &$removedIndexesCount = 0)
+    {
+        $inUsedIndexes = [];
+
+        // add indexes for hidden fields
+        /*
+         * all dimensions To Be Created Indexes
+         * using this array to temporary store for batch execute sql "create index"
+         * We cannot use $dataSetImportTable->addIndex() directly because this does not support set length for text field
+         *
+         * format:
+         * [
+         *     // multiple columns if need create index for multiple columns
+         *     [ columnIndex1, columnIndex2, ... ],
+         *     ...
+         * ];
+         */
+        //$columnIndexDateField []  = new ColumnIndex(DataSetInterface::OVERWRITE_DATE, FieldType::NUMBER);
+
+        $dataSet = $reportViewDataSet->getDataSet();
+
+        foreach ($reportViewDataSet->getFilters() as $filter) {
+
+            if ($filter['type'] == FieldType::DATE){
+                $columnIndexDateField [] = new ColumnIndex($filter['field'], $filter['type']);
+            } else {
+                $columnIndexAllField [] = new ColumnIndex($filter['field'], $filter['type']);
+            }
+        }
+
+        // add dimensions, also add indexes for all dimensions
+//        foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
+//            // add index for column
+//            $columnIndex [] = new ColumnIndex($fieldName, $fieldType);
+//        }
+
+        $columnIndexes  = [];
+        if (!empty($columnIndexDateField)) $columnIndexes [] = $columnIndexDateField;
+        if (!empty($columnIndexAllField)) $columnIndexes [] = $columnIndexAllField;
+        $createdIndexesCount = 0;
+
+        // execute prepared statement for creating indexes
+        $conn->beginTransaction();
+
+        foreach ($columnIndexes as $multipleColumnIndexes) {
+            /** @var ColumnIndex[] $multipleColumnIndexes */
+            if (!is_array($multipleColumnIndexes)) {
+                continue;
+            }
+
+            $columnNamesAndLengths = []; // for building sql create index
+
+            // build index for multiple columns
+            foreach ($multipleColumnIndexes as $singleColumnIndex) {
+                if (!$singleColumnIndex instanceof ColumnIndex) {
+                    continue;
+                }
+
+                $columnName = $singleColumnIndex->getColumnName();
+                if (!$dataSetImportTable->hasColumn($columnName)) {
+                    continue; // column not found
+                }
+
+                $columnLength = $singleColumnIndex->getColumnLength();
+                $columnNamesAndLengths[] = (null === $columnLength)
+                    ? $columnName
+                    : sprintf('%s(%s)', $columnName, $columnLength);
+            }
+
+            // sure have columns to be created index
+            if (empty($columnNamesAndLengths)) {
+                continue;
+            }
+
+            $indexName = self::getDataSetImportTableIndexNameFilter($dataSetImportTable->getName() , $reportViewDataSet->getReportView()->getId());
+
+            // update inUsedIndexes
+            $inUsedIndexes[] = $indexName;
+
+            if ($dataSetImportTable->hasIndex($indexName)) {
+                continue; // already has index
+            }
+
+            $createdIndexesCount++;
+
+            self::prepareStatementCreateIndex($conn, $indexName, $dataSetImportTable->getName(), $columnNamesAndLengths);
+        }
+
+        try {
+            $conn->commit();
+        } catch (\Exception $e) {
+
+        }
+
+        // remove non existing indexes
+        $conn->beginTransaction();
+
+        $allIndexObjects = $dataSetImportTable->getIndexes();
+        $allIndexes = array_map(function (Index $indexObject) {
+            return $indexObject->getName();
+        }, $allIndexObjects);
+
+        $nonExistingIndexes = array_diff($allIndexes, $inUsedIndexes);
+        $prefixIndexNameOld = sprintf(self::DATA_IMPORT_TABLE_INDEX_PREFIX, $dataSetImportTable->getName(), $reportViewDataSet->getReportView()->getId());
+        foreach ($nonExistingIndexes as $nonExistingIndex) {
+
+            $prefixIndexName = substr($nonExistingIndex, 0 ,-15);
+
+            if ($prefixIndexNameOld == $prefixIndexName){
+                self::prepareStatementDropIndex($conn, $nonExistingIndex, $dataSetImportTable->getName());
+            }
+
+            $removedIndexesCount++;
+        }
+
+        try {
+            $conn->commit();
+        } catch (\Exception $e) {
+
+        }
+
+        return $createdIndexesCount;
     }
 }

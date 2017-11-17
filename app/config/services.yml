@@ -641,6 +641,11 @@ services:
         class: UR\Service\DataSet\AugmentationMappingService
         arguments:
 
+    ur.service.data_set.table_util:
+        class: UR\Service\DataSet\DataSetTableUtil
+        arguments:
+            - '@doctrine.orm.entity_manager'
+
     ur.service.report_view_template.report_view_template_service:
         class: UR\Service\ReportViewTemplate\ReportViewTemplateService
         arguments:
