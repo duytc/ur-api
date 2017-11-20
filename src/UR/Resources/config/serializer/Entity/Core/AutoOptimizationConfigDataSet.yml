@@ -1,0 +1,18 @@
+UR\Entity\Core\AutoOptimizationConfigDataSet:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [auto_optimization_config_data_set.detail, auto_optimization_config_data_set.summary]
+        filters:
+            expose: true
+            groups: [auto_optimization_config_data_set.detail, auto_optimization_config_data_set.summary]
+        dimensions:
+            expose: true
+            groups: [auto_optimization_config_data_set.detail, auto_optimization_config_data_set.summary]
+        metrics:
+            expose: true
+            groups: [auto_optimization_config_data_set.detail, auto_optimization_config_data_set.summary]
+        dataSet:
+            expose: true
+            groups: [auto_optimization_config_data_set.detail, auto_optimization_config_data_set.summary]

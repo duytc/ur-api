@@ -1,0 +1,60 @@
+UR\Entity\Core\AutoOptimizationConfig:
+    type: entity
+    table: core_auto_optimzation_config
+    repositoryClass: UR\Repository\Core\AutoOptimizationConfigRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            nullable: false
+        transforms:
+            type: json_array
+            nullable: true
+        filters:
+            type: json_array
+            nullable: true
+        metrics:
+            type: json_array
+            nullable: true
+        dimensions:
+            type: json_array
+            nullable: true
+        fieldTypes:
+            type: json_array
+            nullable: false
+        joinBy:
+            type: json_array
+            nullable: true
+        factors:
+            type: json_array
+            nullable: true
+        objective:
+            type: string
+            nullable: true
+        dateRange:
+            type: json_array
+            nullable: true
+        active:
+            type: boolean
+            nullable: false
+            options:
+                default: false
+        createdDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+    manyToOne:
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
+    oneToMany:
+        autoOptimizationConfigDataSets:
+            targetEntity: UR\Entity\Core\AutoOptimizationConfigDataSet
+            mappedBy: autoOptimizationConfig
+            fetch: EXTRA_LAZY
+            cascade: ['persist', 'remove', 'detach']
+            orphanRemoval: true

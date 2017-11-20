@@ -1,0 +1,29 @@
+UR\Entity\Core\AutoOptimizationConfigDataSet:
+    type: entity
+    table: core_auto_optimization_config_data_set
+    repositoryClass: UR\Repository\Core\AutoOptimizationConfigDataSetRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    uniqueConstraints:
+        compound_primary_key:
+            columns:
+                - auto_optimization_config_id
+                - data_set_id
+    fields:
+        filters:
+            type: json_array
+            nullable: false
+        dimensions:
+            type: json_array
+            nullable: true
+        metrics:
+            type: json_array
+            nullable: true
+    manyToOne:
+        autoOptimizationConfig:
+            targetEntity: UR\Entity\Core\AutoOptimizationConfig
+        dataSet:
+            targetEntity: UR\Entity\Core\DataSet

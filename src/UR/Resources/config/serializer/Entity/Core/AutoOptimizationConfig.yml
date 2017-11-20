@@ -1,0 +1,48 @@
+UR\Entity\Core\AutoOptimizationConfig:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        name:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        transforms:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        filters:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        metrics:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        dimensions:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        fieldTypes:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        joinBy:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        factors:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        objective:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        dateRange:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        active:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        createdDate:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        publisher:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        autoOptimizationConfigDataSets:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]

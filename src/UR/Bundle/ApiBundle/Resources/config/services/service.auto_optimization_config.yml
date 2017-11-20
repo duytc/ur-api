@@ -1,0 +1,68 @@
+parameters:
+    # entity class
+    ur.entity.core.auto_optimization_config.class: UR\Entity\Core\AutoOptimizationConfig
+    # form class
+    ur.form.type.core.auto_optimization_config.class: UR\Form\Type\AutoOptimizationConfigFormType
+
+services:
+    ur_api.handler.auto_optimization_config:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.auto_optimization_config
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.auto_optimization_config:
+        class: UR\Repository\Core\AutoOptimizationConfigRepository
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.auto_optimization_config.class%
+
+    ur.domain_manager.auto_optimization_config:
+        class: UR\DomainManager\AutoOptimizationConfigManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.auto_optimization_config
+
+    ur.domain_manager.auto_optimization_config_data_set:
+        class: UR\DomainManager\AutoOptimizationConfigDataSetManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.auto_optimization_config_data_set
+
+    ur.form.type.auto_optimization_config:
+        class: %ur.form.type.core.auto_optimization_config.class%
+        arguments:
+            - @doctrine.orm.entity_manager
+        tags:
+            - { name: form.type, alias: ur_form_auto_optimization_config }
+
+    ur.handler.handlers.auto_optimization_config.abstract:
+        class: UR\Handler\Handlers\Core\AutoOptimizationConfigHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.auto_optimization_config
+            - @ur.domain_manager.auto_optimization_config
+
+    ur.handler.handlers.auto_optimization_config.admin:
+        class: UR\Handler\Handlers\Core\Admin\AutoOptimizationConfigHandler
+        parent: ur.handler.handlers.auto_optimization_config.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.auto_optimization_config.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\AutoOptimizationConfigHandler
+        parent: ur.handler.handlers.auto_optimization_config.abstract
+        public: false
+
+    ur.handler.handler_manager.auto_optimization_config:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.auto_optimization_config.class%
+            -
+                - @ur.handler.handlers.auto_optimization_config.admin
+                - @ur.handler.handlers.auto_optimization_config.publisher
