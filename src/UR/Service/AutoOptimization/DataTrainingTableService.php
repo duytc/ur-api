@@ -16,7 +16,7 @@ use UR\Service\DTO\Collection;
 
 class DataTrainingTableService
 {
-    const DATA_TRAINING_TABLE_NAME_PREFIX_TEMPLATE = '__data_training_%d'; // %d is report view id
+    const DATA_TRAINING_TABLE_NAME_PREFIX_TEMPLATE = '__data_training_%d'; // %d is auto optimization config id
 
     const COLUMN_ID = '__id';
 
