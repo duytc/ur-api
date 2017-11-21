@@ -71,18 +71,21 @@ class UpdateIndexForDataSetCommand extends ContainerAwareCommand
             }
         }
 
-        foreach ($reportViewDataSets as $reportViewDataSet) {
-            if (!$reportViewDataSet instanceof ReportViewDataSetInterface) {
-                continue;
-            }
 
-            $io->section(sprintf("Update index for data set %s, reportViewId: %s", $reportViewDataSet->getDataSet()->getName(), $reportViewDataSet->getDataSet()->getId()));
-            try {
-                $this->dataSetTableUtil->updateIndexesByFilter($reportViewDataSet);
-            } catch (\Exception $e) {
+        // for now don't do this, the created indexes are not optimal
 
-            }
-        }
+//        foreach ($reportViewDataSets as $reportViewDataSet) {
+//            if (!$reportViewDataSet instanceof ReportViewDataSetInterface) {
+//                continue;
+//            }
+//
+//            $io->section(sprintf("Update index for data set %s, reportViewId: %s", $reportViewDataSet->getDataSet()->getName(), $reportViewDataSet->getDataSet()->getId()));
+//            try {
+//                $this->dataSetTableUtil->updateIndexesByFilter($reportViewDataSet);
+//            } catch (\Exception $e) {
+//
+//            }
+//        }
         $io->success('Command run successfully. Quit command');
     }
 }

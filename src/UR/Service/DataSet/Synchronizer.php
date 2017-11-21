@@ -291,31 +291,21 @@ class Synchronizer
     public static function updateIndexes(Connection $conn, Table $dataSetImportTable, DataSetInterface $dataSet, &$removedIndexesCount = 0)
     {
         $inUsedIndexes = [];
+        $columnIndexes = [];
+        $overwriteDateIndex = new ColumnIndex(DataSetInterface::OVERWRITE_DATE, FieldType::DATETIME);
 
-        // add indexes for hidden fields
-        /*
-         * all dimensions To Be Created Indexes
-         * using this array to temporary store for batch execute sql "create index"
-         * We cannot use $dataSetImportTable->addIndex() directly because this does not support set length for text field
-         *
-         * format:
-         * [
-         *     // multiple columns if need create index for multiple columns
-         *     [ columnIndex1, columnIndex2, ... ],
-         *     ...
-         * ];
-         */
-        $columnIndex = [];
-//        = new ColumnIndex(DataSetInterface::OVERWRITE_DATE, FieldType::NUMBER);
-
-        // add dimensions, also add indexes for all dimensions
+        // only add indexes for date columns
         foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
-            // add index for column
-            $columnIndex [] = new ColumnIndex($fieldName, $fieldType);
+            if ($fieldType != "date") {
+                continue;
+            }
+
+            $columnIndexes[] = [
+                $overwriteDateIndex,
+                new ColumnIndex($fieldName, $fieldType),
+            ];
         }
 
-        $columnIndexes  = [];
-        $columnIndexes [] = $columnIndex;
         $createdIndexesCount = 0;
 
         // execute prepared statement for creating indexes

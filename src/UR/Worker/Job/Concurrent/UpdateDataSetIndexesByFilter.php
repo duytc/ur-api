@@ -39,6 +39,9 @@ class UpdateDataSetIndexesByFilter  implements JobInterface
 
     public function run(JobParams $params)
     {
+        // do not do anything, the created indexes are not optimal yet, better to have no indexes
+        return;
+
         /** Validate input */
         $reportViewDataSetId = $params->getRequiredParam(self::REPORT_VIEW_DATA_SET_ID);
         $reportViewDataSet = $this->reportViewDataSetManager->find($reportViewDataSetId);
