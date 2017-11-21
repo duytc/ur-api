@@ -484,7 +484,12 @@ class Synchronizer
     {
         $updateSql = self::createIndexSql($indexName, $tableName, $columnNamesAndLengths);
         $stmtCreateIndex = $conn->prepare($updateSql);
-        $stmtCreateIndex->execute();
+
+        try {
+            $stmtCreateIndex->execute();
+        } catch (\Exception $e) {
+
+        }
     }
 
     /**
@@ -498,7 +503,12 @@ class Synchronizer
     {
         $updateSql = self::dropIndexSql($indexName, $tableName);
         $stmtCreateIndex = $conn->prepare($updateSql);
-        $stmtCreateIndex->execute();
+
+        try {
+            $stmtCreateIndex->execute();
+        } catch (\Exception $e) {
+
+        }
     }
 
     /**
@@ -514,7 +524,12 @@ class Synchronizer
     {
         $updateSql = self::alterColumnTypeSql($columnName, $tableName, $columnType, $columnLength);
         $stmtCreateIndex = $conn->prepare($updateSql);
-        $stmtCreateIndex->execute();
+
+        try {
+            $stmtCreateIndex->execute();
+        } catch (\Exception $e) {
+
+        }
     }
 
     /**
