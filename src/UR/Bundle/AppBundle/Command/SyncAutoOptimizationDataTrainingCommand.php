@@ -8,6 +8,8 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use UR\DomainManager\AutoOptimizationConfigManagerInterface;
+use UR\Model\Core\AutoOptimizationConfigInterface;
 
 class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
 {
@@ -40,6 +42,15 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         }
 
         /* find AutoOptimizationConfig */
+        /** @var AutoOptimizationConfigManagerInterface $autoOptimizationConfigManager */
+        $autoOptimizationConfigManager = $container->get('ur.domain_manager.auto_optimization_config');
+
+        /** @var AutoOptimizationConfigInterface $autoOptimizationConfig */
+        $autoOptimizationConfig = $autoOptimizationConfigManager->find($autoOptimizationConfigId);
+        if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
+            $this->logger->warning(sprintf('AutoOptimizationConfig #%d not found', $autoOptimizationConfigId));
+            return;
+        }
 
         // TODO: do sync
     }
