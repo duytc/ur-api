@@ -32,9 +32,9 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         $this->logger->info('Starting command...');
 
         /* get inputs */
-        $dataSetId = $input->getArgument('autoOptimizationConfigId');
+        $autoOptimizationConfigId = $input->getArgument('autoOptimizationConfigId');
 
-        if (empty($dataSetId)) {
+        if (empty($autoOptimizationConfigId)) {
             $this->logger->warning('Missing autoOptimizationConfigId');
             return;
         }
