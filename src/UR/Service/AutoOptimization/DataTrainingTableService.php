@@ -8,8 +8,11 @@ use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\DataSet\FieldType;
+use UR\Service\DTO\Collection;
 
 class DataTrainingTableService
 {
@@ -23,10 +26,14 @@ class DataTrainingTableService
     /** @var Connection */
     protected $conn;
 
+    /** @var EntityManagerInterface */
+    private $em;
+    private $batchSize;
+
     /** @var Comparator */
     protected $comparator;
 
-    public function __construct(Connection $conn, Comparator $comparator)
+    public function __construct(Connection $conn, EntityManagerInterface $em, $batchSize, Comparator $comparator)
     {
         $this->conn = $conn;
         $this->comparator = $comparator;
@@ -38,6 +45,130 @@ class DataTrainingTableService
     public function getConn()
     {
         return $this->conn;
+    }
+
+    /**
+     * @param Collection $collection
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @return Collection
+     * @throws Exception
+     * @throws \Doctrine\DBAL\ConnectionException
+     */
+    public function importDataToDataTrainingTable(Collection $collection, AutoOptimizationConfigInterface $autoOptimizationConfig)
+    {
+        //create or get dataSet table
+        $table = $this->createEmptyDataTrainingTable($autoOptimizationConfig);
+        $tableName = $table->getName();
+
+        try {
+            $dimensions = $autoOptimizationConfig->getDimensions();
+            $metrics = $autoOptimizationConfig->getMetrics();
+
+            $rows = $collection->getRows();
+            $columns = $collection->getColumns();
+
+            foreach ($columns as $k => $column) {
+                if (!preg_match('#[_a-z]+#i', $column)) {
+                    throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
+                }
+            }
+
+            if ($rows->count() < 1) {
+                return true;
+            }
+
+            $insertValues = array();
+            $questionMarks = [];
+            $uniqueIds = [];
+            $preparedInsertCount = 0;
+            foreach ($rows as $index => $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $uniqueKeys = array_intersect_key($row, $dimensions);
+                $uniqueKeys = array_filter($uniqueKeys, function ($value) {
+                    return $value !== null;
+                });
+
+                $uniqueId = md5(implode(":", $uniqueKeys));
+                //update
+                $uniqueIds[] = $uniqueId;
+                $questionMarks[] = '(' . $this->placeholders('?', sizeof($row)) . ')';
+                $insertValues = array_merge($insertValues, array_values($row));
+                $preparedInsertCount++;
+                if ($preparedInsertCount === $this->batchSize) {
+                    $this->conn->beginTransaction();
+                    $this->executeInsert($tableName, $columns, $questionMarks, $insertValues);
+
+                    //commit update and insert
+                    $this->conn->commit();
+                    $insertValues = [];
+                    $questionMarks = [];
+                    $preparedInsertCount = 0;
+                }
+            }
+
+            if ($preparedInsertCount > 0 && is_array($columns) && is_array($questionMarks)) {
+                $this->conn->beginTransaction();
+                $this->executeInsert($tableName, $columns, $questionMarks, $insertValues);
+
+                //commit update and insert
+                $this->conn->commit();
+            }
+
+            return new Collection($columns, $rows);
+        } catch (Exception $exception) {
+            $this->conn->rollBack();
+            throw new Exception($exception->getMessage(), $exception->getCode(), $exception);
+        } finally {
+            $this->em->clear();
+            gc_collect_cycles();
+        }
+    }
+
+    /**
+     * @param $text
+     * @param int $count
+     * @param string $separator
+     * @return string
+     */
+    private function placeholders($text, $count = 0, $separator = ",")
+    {
+        $result = array();
+        if ($count > 0) {
+            for ($x = 0; $x < $count; $x++) {
+                $result[] = $text;
+            }
+        }
+
+        return implode($separator, $result);
+    }
+
+    /**
+     * @param $tableName
+     * @param array $columns
+     * @param array $question_marks
+     * @param array $insert_values
+     */
+    private function executeInsert($tableName, array $columns, array $question_marks, array $insert_values)
+    {
+        $insertSql = sprintf("INSERT INTO %s (`%s`) VALUES %s",
+            $tableName,
+            implode("`,`", $columns),
+            implode(',', $question_marks)
+        );
+
+        $stmt = $this->conn->prepare($insertSql);
+        $stmt->execute($insert_values);
+    }
+
+    /**
+     * @return EntityManagerInterface
+     */
+    protected function getEntityManager()
+    {
+        return $this->em;
     }
 
     /**
@@ -160,7 +291,7 @@ class DataTrainingTableService
             // truncate table
             $truncateSql = $this->conn->getDatabasePlatform()->getTruncateTableSQL(self::getDataTrainingTableName($autoOptimizationConfig->getId()));
             $this->conn->exec($truncateSql);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
 
