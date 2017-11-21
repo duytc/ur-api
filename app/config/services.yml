@@ -724,3 +724,9 @@ services:
 
     ur.services.dry_run_report_filter:
         class: UR\Service\Parser\DryRunReportFilter
+
+    ur.service.auto_optimization.data_training_table_service:
+        class: UR\Service\AutoOptimization\DataTrainingTableService
+        arguments:
+            - @doctrine.orm.entity_manager
+            - %ur_batch_size%

@@ -28,15 +28,18 @@ class DataTrainingTableService
 
     /** @var EntityManagerInterface */
     private $em;
+
     private $batchSize;
 
     /** @var Comparator */
     protected $comparator;
 
-    public function __construct(Connection $conn, EntityManagerInterface $em, $batchSize, Comparator $comparator)
+    public function __construct(EntityManagerInterface $em, $batchSize)
     {
-        $this->conn = $conn;
-        $this->comparator = $comparator;
+        $this->conn = $em->getConnection();
+        $this->em = $em;
+        $this->batchSize = $batchSize;
+        $this->comparator = new Comparator();
     }
 
     /**

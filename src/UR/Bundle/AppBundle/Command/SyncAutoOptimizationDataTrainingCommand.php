@@ -10,6 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\AutoOptimizationConfigManagerInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
+use UR\Service\AutoOptimization\DataTrainingTableService;
 
 class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
 {
@@ -52,6 +53,7 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
             return;
         }
 
-        // TODO: do sync
+        /** @var DataTrainingTableService $autoOptimizationSyncService */
+        $autoOptimizationSyncService = $container->get('ur.service.auto_optimization.data_training_table_service');
     }
 }
