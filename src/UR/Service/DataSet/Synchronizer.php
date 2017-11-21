@@ -685,6 +685,8 @@ class Synchronizer
             $createdIndexesCount++;
 
             self::prepareStatementCreateIndex($conn, $indexName, $dataSetImportTable->getName(), $columnNamesAndLengths);
+
+            sleep(5);
         }
 
         try {
