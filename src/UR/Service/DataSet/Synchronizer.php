@@ -296,7 +296,7 @@ class Synchronizer
 
         // only add indexes for date columns
         foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
-            if ($fieldType != "date") {
+            if ($fieldType != FieldType::DATE || $fieldType != FieldType::DATETIME) {
                 continue;
             }
 
