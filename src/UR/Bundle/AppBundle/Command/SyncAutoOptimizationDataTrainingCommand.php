@@ -9,6 +9,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\AutoOptimizationConfigManagerInterface;
+use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;
 use UR\Service\Report\ParamsBuilderInterface;
@@ -76,7 +77,15 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         $container = $this->getContainer();
 
         /* build request params */
+        /** @var AutoOptimizationConfigDataSetInterface[] $dataSets */
+        $autoOptimizationConfigDataSets = $autoOptimizationConfig->getAutoOptimizationConfigDataSets();
+        $dataSets = array_map(function ($a) {
+            /** @var AutoOptimizationConfigDataSetInterface $a */
+            return $a->getDataSet();
+        }, $autoOptimizationConfigDataSets);
+
         $requestParams = [
+            'dataSets' => $dataSets,
             'dimensions' => $autoOptimizationConfig->getDimensions(),
             'metrics' => $autoOptimizationConfig->getMetrics(),
             'fieldTypes' => $autoOptimizationConfig->getFieldTypes(),
