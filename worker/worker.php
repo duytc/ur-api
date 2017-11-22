@@ -3,6 +3,8 @@
 // needed for handling signals
 declare(ticks = 1);
 
+const WORKER_EXIT_CODE_REQUEST_STOP_SUCCESS = 99;
+
 use Leezy\PheanstalkBundle\Proxy\PheanstalkProxy;
 use Monolog\Logger;
 
@@ -34,11 +36,8 @@ $appShutdown = function () use (&$requestStop, $pid, &$logger) {
     $requestStop = true; // set reference value to true to stop worker loop after current job
 };
 
-// when TERM signal is sent to this process, we gracefully shutdown after current job is finished processing
-// when KILL signal is sent (i.e ctrl-c) we stop immediately
-// You can test this by calling "kill -TERM PID" where PID is the PID of this process, the process will end after the current job
-pcntl_signal(SIGINT, $appShutdown);
-pcntl_signal(SIGTERM, $appShutdown);
+// You can test this by calling "kill -USR1 PID" where PID is the PID of this process, the process will end after the current job
+pcntl_signal(SIGUSR1, $appShutdown);
 
 const RESERVE_TIMEOUT = 5; // seconds
 const RELEASE_JOB_DELAY_SECONDS = 5;
@@ -153,4 +152,8 @@ while (1) {
         $entityManager->clear();
         gc_collect_cycles();
     }
+}
+
+if ($requestStop) {
+    exit(WORKER_EXIT_CODE_REQUEST_STOP_SUCCESS); // otherwise use 0 status code
 }
