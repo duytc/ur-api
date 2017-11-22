@@ -11,6 +11,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\AutoOptimizationConfigManagerInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;
+use UR\Service\Report\ParamsBuilderInterface;
+use UR\Service\Report\ReportBuilderInterface;
 
 class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
 {
@@ -53,7 +55,49 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
             return;
         }
 
+        /* get data training for autoOptimizationConfig */
+        $data = $this->getDataForAutoOptimizationConfig($autoOptimizationConfig);
+
         /** @var DataTrainingTableService $autoOptimizationSyncService */
         $autoOptimizationSyncService = $container->get('ur.service.auto_optimization.data_training_table_service');
+        $autoOptimizationSyncService->importDataToDataTrainingTable($data, $autoOptimizationConfig);
+    }
+
+    /**
+     * getDataForAutoOptimizationConfig
+     * Similar to action '/reportview/data' in UR/Bundle/ReportApiBundle/Controller/ReportController.php
+     *
+     * @param $autoOptimizationConfig
+     * @return mixed
+     */
+    private function getDataForAutoOptimizationConfig(AutoOptimizationConfigInterface $autoOptimizationConfig)
+    {
+        /** @var ContainerInterface $container */
+        $container = $this->getContainer();
+
+        /* build request params */
+        $requestParams = [
+            'dimensions' => $autoOptimizationConfig->getDimensions(),
+            'metrics' => $autoOptimizationConfig->getMetrics(),
+            'fieldTypes' => $autoOptimizationConfig->getFieldTypes(),
+            'filters' => $autoOptimizationConfig->getFilters(),
+            'joinBy' => $autoOptimizationConfig->getJoinBy(),
+            'transforms' => $autoOptimizationConfig->getTransforms()
+        ];
+
+        /* create params object */
+        /** @var ParamsBuilderInterface $paramsBuilder */
+        $paramsBuilder = $container->get('ur.services.report.params_builder');
+        $params = $paramsBuilder->buildFromArray($requestParams);
+
+        /* get report */
+        /** @var ReportBuilderInterface $reportBuilder */
+        $reportBuilder = $container->get('ur.services.report.report_builder');
+        $result = $reportBuilder->getReport($params);
+
+        /* generate final report */
+        $result->generateReports();
+
+        return $result;
     }
 }
