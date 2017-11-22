@@ -19,6 +19,7 @@ use UR\Worker\Job\Concurrent\ParseChunkFile;
 use UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource;
 use UR\Worker\Job\Concurrent\ProcessAlert;
 use UR\Worker\Job\Concurrent\SplitHugeFile;
+use UR\Worker\Job\Concurrent\UpdateDataSetIndexesByFilter;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
 use UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted;
@@ -390,6 +391,17 @@ class Manager
             'task' => CountChunkRow::JOB_NAME,
             CountChunkRow::CHUNK => $chunkFilePath,
             CountChunkRow::ENTRY_ID => $dataSourceEntryId,
+        ];
+
+        // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    public function updateIndexesByFilter($reportViewDataSetId)
+    {
+        $jobData = [
+            'task' => UpdateDataSetIndexesByFilter::JOB_NAME,
+            UpdateDataSetIndexesByFilter::REPORT_VIEW_DATA_SET_ID => $reportViewDataSetId,
         ];
 
         // concurrent job, we do not care what order it is processed in

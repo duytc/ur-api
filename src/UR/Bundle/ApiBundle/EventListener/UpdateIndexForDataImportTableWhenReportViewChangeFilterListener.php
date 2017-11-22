@@ -6,21 +6,22 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Model\Core\ReportViewDataSetInterface;
-use UR\Service\DataSet\DataSetTableUtil;
+use UR\Worker\Manager;
 
 class UpdateIndexForDataImportTableWhenReportViewChangeFilterListener
 {
 	protected $changedReportViews;
 
-    protected $dataSetTableUtil;
+    /** @var Manager  */
+    protected $manager;
 
     /**
      * UpdateIndexForDataImportTAbleWhenReportViewListener constructor.
-     * @param DataSetTableUtil $dataSetTableUtil
+     * @param Manager $manager
      */
-	public function __construct(DataSetTableUtil $dataSetTableUtil)
+	public function __construct(Manager $manager)
 	{
-		$this->dataSetTableUtil = $dataSetTableUtil;
+		$this->manager = $manager;
 	}
 
 	public function prePersist(LifecycleEventArgs $args)
@@ -60,7 +61,7 @@ class UpdateIndexForDataImportTableWhenReportViewChangeFilterListener
                 continue;
             }
 
-			$this->dataSetTableUtil->updateIndexesByFilter($reportViewDataSet);
+			$this->manager->updateIndexesByFilter($reportViewDataSet->getId());
             // update index for data import table
 		}
 

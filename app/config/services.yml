@@ -320,6 +320,13 @@ services:
             - '@ur.service.file_factory'
             - "%upload_file_dir%"
 
+    ur.worker.job.concurrent.update_data_set_indexes_by_filter:
+        class: UR\Worker\Job\Concurrent\UpdateDataSetIndexesByFilter
+        arguments:
+            - '@logger'
+            - '@ur.domain_manager.report_view_data_set'
+            - '@ur.service.data_set.table_util'
+
     ur.worker.job.concurrent.split_huge_file:
         class: UR\Worker\Job\Concurrent\SplitHugeFile
         arguments:
@@ -538,6 +545,7 @@ services:
                 - @ur.worker.job.concurrent.clean_up_time_series_for_data_source_subjob
                 - @ur.worker.job.concurrent.split_huge_file
                 - @ur.worker.job.concurrent.count_chunk_row
+                - @ur.worker.job.concurrent.update_data_set_indexes_by_filter
 
     ### end of concurrence worker pool
 
