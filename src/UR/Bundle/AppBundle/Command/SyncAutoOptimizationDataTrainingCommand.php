@@ -12,6 +12,7 @@ use UR\DomainManager\AutoOptimizationConfigManagerInterface;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;
+use UR\Service\Report\ParamsBuilder;
 use UR\Service\Report\ParamsBuilderInterface;
 use UR\Service\Report\ReportBuilderInterface;
 
@@ -84,14 +85,20 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
             return $a->getDataSet();
         }, $autoOptimizationConfigDataSets);
 
+        $dateRange = $autoOptimizationConfig->getDateRange();
+        $startDate = $dateRange['startDate'];
+        $endDate = $dateRange['endDate'];
+
         $requestParams = [
-            'dataSets' => $dataSets,
-            'dimensions' => $autoOptimizationConfig->getDimensions(),
-            'metrics' => $autoOptimizationConfig->getMetrics(),
-            'fieldTypes' => $autoOptimizationConfig->getFieldTypes(),
-            'filters' => $autoOptimizationConfig->getFilters(),
-            'joinBy' => $autoOptimizationConfig->getJoinBy(),
-            'transforms' => $autoOptimizationConfig->getTransforms()
+            ParamsBuilder::DATA_SET_KEY => $dataSets,
+            ParamsBuilder::DIMENSIONS_KEY => $autoOptimizationConfig->getDimensions(),
+            ParamsBuilder::METRICS_KEY => $autoOptimizationConfig->getMetrics(),
+            ParamsBuilder::FIELD_TYPES_KEY => $autoOptimizationConfig->getFieldTypes(),
+            ParamsBuilder::FILTERS_KEY => $autoOptimizationConfig->getFilters(),
+            ParamsBuilder::JOIN_BY_KEY => $autoOptimizationConfig->getJoinBy(),
+            ParamsBuilder::TRANSFORM_KEY => $autoOptimizationConfig->getTransforms(),
+            ParamsBuilder::START_DATE => $startDate,
+            ParamsBuilder::END_DATE => $endDate,
         ];
 
         /* create params object */
