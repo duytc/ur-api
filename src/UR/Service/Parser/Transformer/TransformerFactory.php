@@ -4,6 +4,7 @@ namespace UR\Service\Parser\Transformer;
 
 use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
 use UR\Service\Parser\Transformer\Collection\AddField;
+use UR\Service\Parser\Transformer\Collection\AddFieldFromDate;
 use UR\Service\Parser\Transformer\Collection\Augmentation;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
@@ -27,6 +28,7 @@ class TransformerFactory
         CollectionTransformerInterface::AGGREGATION,
         CollectionTransformerInterface::SORT_BY,
         CollectionTransformerInterface::ADD_FIELD,
+        CollectionTransformerInterface::ADD_FIELD_FROM_DATE,
         CollectionTransformerInterface::ADD_CALCULATED_FIELD,
         CollectionTransformerInterface::ADD_CONCATENATED_FIELD,
         CollectionTransformerInterface::COMPARISON_PERCENT,
@@ -169,6 +171,10 @@ class TransformerFactory
                 $transformObject = $this->getAddFieldTransform($config);
                 break;
 
+            case CollectionTransformerInterface::ADD_FIELD_FROM_DATE:
+                $transformObject = $this->getAddFieldFromDateTransform($config);
+                break;
+
             case CollectionTransformerInterface::ADD_CALCULATED_FIELD:
                 $transformObject = $this->getAddCalculatedFieldTransforms($config);
                 break;
@@ -281,6 +287,34 @@ class TransformerFactory
         }
 
         return $addFieldTransforms;
+    }
+
+    /**
+     * @param array $addFieldFromDateConfigs
+     * @return array
+     */
+    private function getAddFieldFromDateTransform(array $addFieldFromDateConfigs)
+    {
+        $addFieldFromDateTransforms = [];
+        foreach ($addFieldFromDateConfigs as $addFieldFromDateConfig) {
+            if (!is_array($addFieldFromDateConfigs)
+                || !array_key_exists(AddFieldFromDate::FIELD_FROM, $addFieldFromDateConfig)
+                || !array_key_exists(AddFieldFromDate::FIELD_NAME, $addFieldFromDateConfig)
+                || !array_key_exists(AddFieldFromDate::FORMAT, $addFieldFromDateConfig)
+            ) {
+                continue;
+            }
+
+            $addFieldFromDateConfig[AddFieldFromDate::FORMAT] = DateFormat::convertCustomFromDateFormatToPHPDateFormat($addFieldFromDateConfig[AddFieldFromDate::FORMAT]);
+            $addFieldFromDateTransforms[] = new AddFieldFromDate(
+                $addFieldFromDateConfig[AddFieldFromDate::FIELD_NAME],
+                $addFieldFromDateConfig[AddFieldFromDate::FIELD_FROM],
+                $addFieldFromDateConfig[AddFieldFromDate::FORMAT],
+                null
+            );
+        }
+
+        return $addFieldFromDateTransforms;
     }
 
     /**

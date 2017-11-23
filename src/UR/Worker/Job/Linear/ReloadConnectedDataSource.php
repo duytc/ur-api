@@ -57,8 +57,17 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
 
         // remove data first
         $this->scheduler->addJob([
-            'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
-            RemoveDataFromConnectedDataSourceSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
+            [
+                'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
+                RemoveDataFromConnectedDataSourceSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
+            ],
+
+            // also update data set total row, after each entry done, to let UI does not make user confused
+            // i.e: last time, pending jobs changes from 90->60 but total rows still 0 in UI and only updated after all jobs are done
+            ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+
+            // also update connected data source total row similar above
+            ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
         ], $dataSetId, $params);
 
         $entries = $connectedDataSource->getDataSource()->getDataSourceEntries();
@@ -73,13 +82,20 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
                 LoadFileIntoDataSetSubJob::ENTRY_ID => $entryId,
                 self::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
             ];
+
+            // also update data set total row, after each entry done, to let UI does not make user confused
+            // i.e: last time, pending jobs changes from 90->60 but total rows still 0 in UI and only updated after all jobs are done
+            $jobs[] = ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME];
+
+            // also update connected data source total row similar above
+            $jobs[] = ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME];
         }
 
         if (count($jobs) > 0) {
             $jobs = array_merge($jobs, [
                 ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
-                ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
-                ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+                //['task' => UpdateDataSetTotalRowSubJob::JOB_NAME], // already update after each entry done!
+                //['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME] // already update after each entry done!
             ]);
         }
 

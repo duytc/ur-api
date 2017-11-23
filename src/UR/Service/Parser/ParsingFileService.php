@@ -20,6 +20,7 @@ use UR\Service\Metadata\Email\EmailMetadata;
 use UR\Service\Metadata\MetadataInterface;
 use UR\Service\Parser\Filter\FilterFactory;
 use UR\Service\Parser\Transformer\Collection\AddField;
+use UR\Service\Parser\Transformer\Collection\AddFieldFromDate;
 use UR\Service\Parser\Transformer\Collection\CollectionTransformerInterface;
 use UR\Service\Parser\Transformer\Collection\ExtractPattern;
 use UR\Service\Parser\Transformer\Collection\GroupByColumns;
@@ -284,6 +285,10 @@ class ParsingFileService
 
                     $type = array_key_exists($transformObject->getColumn(), $tempFields) ? FieldType::TEXT : $allFields[$transformObject->getColumn()];
                     $transformObject->setType($type);
+                } elseif ($transformObject instanceof AddFieldFromDate) {
+                    // replace by filename
+                    $type = 'text';
+                    $transformObject->setType($type);
                 } else if ($transformObject instanceof ReplaceText || $transformObject instanceof ExtractPattern) {
                     $this->addInternalVariableToTransform($transformObject->getField(), $transformObject->getTargetField(), $allFields, $parserConfig, $dataSourceEntry);
                 }
@@ -293,7 +298,7 @@ class ParsingFileService
             }
         }
 
-//        $allTransforms = $this->transformOrdersService->orderTransforms($allTransforms, $connectedDataSource);
+//      $allTransforms = $this->transformOrdersService->orderTransforms($allTransforms, $connectedDataSource);
         $internalTransforms = $this->parserConfig->getTransforms();
         $internalTransforms = is_array($internalTransforms) ? $internalTransforms : [];
         if ($parserType == ParserInterface::TYPE_POST_GROUPS) {
