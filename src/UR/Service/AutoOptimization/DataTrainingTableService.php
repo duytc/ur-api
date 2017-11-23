@@ -159,7 +159,7 @@ class DataTrainingTableService
     {
         $insertSql = sprintf("INSERT INTO %s (`%s`) VALUES %s",
             $tableName,
-            implode("`,`", $columns),
+            implode("`,`", array_keys($columns)),
             implode(',', $question_marks)
         );
 
