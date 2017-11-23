@@ -56,14 +56,13 @@ class UpdateIndexForDataSetCommand extends ContainerAwareCommand
         $this->dataSetTableUtil = $container->get('ur.service.data_set.table_util');
 
         $dataSets = $this->dataSetManager->all();
-        $reportViewDataSets = $this->reportViewDataSetManager->all();
 
         foreach ($dataSets as $dataSet) {
             if (!$dataSet instanceof DataSetInterface) {
                 continue;
             }
 
-            $io->section(sprintf("Delete old index for data set %s, id: %s", $dataSet->getName(), $dataSet->getId()));
+            $io->section(sprintf("Delete old and then update index for data set %s, id: %s", $dataSet->getName(), $dataSet->getId()));
             try {
                 $this->dataSetTableUtil->updateIndexes($dataSet);    
             } catch (\Exception $e) {
@@ -71,21 +70,6 @@ class UpdateIndexForDataSetCommand extends ContainerAwareCommand
             }
         }
 
-
-        // for now don't do this, the created indexes are not optimal
-
-//        foreach ($reportViewDataSets as $reportViewDataSet) {
-//            if (!$reportViewDataSet instanceof ReportViewDataSetInterface) {
-//                continue;
-//            }
-//
-//            $io->section(sprintf("Update index for data set %s, reportViewId: %s", $reportViewDataSet->getDataSet()->getName(), $reportViewDataSet->getDataSet()->getId()));
-//            try {
-//                $this->dataSetTableUtil->updateIndexesByFilter($reportViewDataSet);
-//            } catch (\Exception $e) {
-//
-//            }
-//        }
         $io->success('Command run successfully. Quit command');
     }
 }

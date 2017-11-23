@@ -8,7 +8,6 @@ use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Model\Core\ReportViewDataSetInterface;
 
 class DataSetTableUtil implements DataSetTableUtilInterface
 {
@@ -43,18 +42,6 @@ class DataSetTableUtil implements DataSetTableUtilInterface
         $this->getSync()->updateIndexes($this->getConnection(), $table, $dataSet);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function updateIndexesByFilter(ReportViewDataSetInterface $reportViewDataSet) {
-        $table = $this->getDataSetTable($reportViewDataSet->getDataSet());
-
-        if (!$table instanceof Table) {
-            return;
-        }
-
-        $this->getSync()->updateIndexesByFilter($this->getConnection(), $table, $reportViewDataSet);
-    }
     /**
      * @return \Doctrine\DBAL\Connection
      */
