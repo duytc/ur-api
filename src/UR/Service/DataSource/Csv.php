@@ -191,7 +191,7 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
 
             $i++;
 
-            if ($this->isTextArray($currentRow) && !$this->isEmptyArray($currentRow) && count($currentRow) == $maxColumns) {
+            if ($this->isTextArray($currentRow) && !$this->isEmptyArray($currentRow) && count(array_filter($currentRow)) == $maxColumns) {
                 $this->headers = $currentRow;
                 $this->headerRow = $row;
                 break;
@@ -207,7 +207,6 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         if ($this->headers === null) {
             return [];
         }
-
     }
 
     /**
