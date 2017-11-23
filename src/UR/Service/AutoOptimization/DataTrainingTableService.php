@@ -13,6 +13,7 @@ use Exception;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
+use UR\Service\DTO\Report\ReportResultInterface;
 
 class DataTrainingTableService
 {
@@ -51,13 +52,13 @@ class DataTrainingTableService
     }
 
     /**
-     * @param Collection $collection
+     * @param ReportResultInterface $collection
      * @param AutoOptimizationConfigInterface $autoOptimizationConfig
      * @return Collection
      * @throws Exception
      * @throws \Doctrine\DBAL\ConnectionException
      */
-    public function importDataToDataTrainingTable(Collection $collection, AutoOptimizationConfigInterface $autoOptimizationConfig)
+    public function importDataToDataTrainingTable(ReportResultInterface $collection, AutoOptimizationConfigInterface $autoOptimizationConfig)
     {
         //create or get dataSet table
         $table = $this->createEmptyDataTrainingTable($autoOptimizationConfig);

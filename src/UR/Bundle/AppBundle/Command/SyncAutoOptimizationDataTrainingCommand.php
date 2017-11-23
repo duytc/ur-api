@@ -14,6 +14,7 @@ use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;
+use UR\Service\DTO\Report\ReportResultInterface;
 use UR\Service\Report\ParamsBuilder;
 use UR\Service\Report\ParamsBuilderInterface;
 use UR\Service\Report\ReportBuilderInterface;
@@ -60,8 +61,9 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         }
 
         /* get data training for autoOptimizationConfig */
+        /** @var ReportResultInterface $data */
         $data = $this->getDataForAutoOptimizationConfig($autoOptimizationConfig);
-
+        
         /** @var DataTrainingTableService $autoOptimizationSyncService */
         $autoOptimizationSyncService = $container->get('ur.service.auto_optimization.data_training_table_service');
         $autoOptimizationSyncService->importDataToDataTrainingTable($data, $autoOptimizationConfig);
@@ -72,7 +74,7 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
      * Similar to action '/reportview/data' in UR/Bundle/ReportApiBundle/Controller/ReportController.php
      *
      * @param $autoOptimizationConfig
-     * @return mixed
+     * @return ReportResultInterface
      */
     private function getDataForAutoOptimizationConfig(AutoOptimizationConfigInterface $autoOptimizationConfig)
     {
