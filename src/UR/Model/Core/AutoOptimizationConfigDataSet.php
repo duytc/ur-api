@@ -115,4 +115,17 @@ class AutoOptimizationConfigDataSet implements AutoOptimizationConfigDataSetInte
     {
         $this->dataSet = $dataSet;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function toArray()
+    {
+        return [
+            'dataSet' => $this->dataSet->getId(),
+            'dimensions' => $this->dimensions,
+            'filters' => $this->filters,
+            'metrics' => $this->metrics
+        ];
+    }
 }

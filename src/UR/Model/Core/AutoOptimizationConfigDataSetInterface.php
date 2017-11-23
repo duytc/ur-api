@@ -68,4 +68,8 @@ interface AutoOptimizationConfigDataSetInterface extends ModelInterface
      */
     public function setDataSet($dataSet);
 
+    /**
+     * @return array
+     */
+    public function toArray();
 }

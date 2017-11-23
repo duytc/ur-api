@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\AppBundle\Command;
 
+use Doctrine\Common\Collections\Collection;
 use Symfony\Bridge\Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
@@ -11,6 +12,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\AutoOptimizationConfigManagerInterface;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;
 use UR\Service\Report\ParamsBuilder;
 use UR\Service\Report\ParamsBuilderInterface;
@@ -78,11 +80,15 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         $container = $this->getContainer();
 
         /* build request params */
-        /** @var AutoOptimizationConfigDataSetInterface[] $dataSets */
+        /** @var Collection|AutoOptimizationConfigDataSetInterface[] $dataSets */
         $autoOptimizationConfigDataSets = $autoOptimizationConfig->getAutoOptimizationConfigDataSets();
+        if ($autoOptimizationConfigDataSets instanceof Collection) {
+            $autoOptimizationConfigDataSets = $autoOptimizationConfigDataSets->toArray();
+        }
+
         $dataSets = array_map(function ($a) {
             /** @var AutoOptimizationConfigDataSetInterface $a */
-            return $a->getDataSet();
+            return $a->toArray();
         }, $autoOptimizationConfigDataSets);
 
         $dateRange = $autoOptimizationConfig->getDateRange();

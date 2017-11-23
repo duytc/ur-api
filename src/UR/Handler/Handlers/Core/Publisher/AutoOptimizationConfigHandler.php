@@ -47,7 +47,7 @@ class AutoOptimizationConfigHandler extends AutoOptimizationConfigHandlerAbstrac
     /**
      * @inheritdoc
      */
-    protected function processForm(ModelInterface $autoOptimizationConfigDataSetInterface, array $parameters, $method = "PUT")
+    protected function processForm(ModelInterface $autoOptimizationConfigDataSet, array $parameters, $method = "PUT")
     {
         /** @var AutoOptimizationConfigInterface $autoOptimizationConfigDataSet */
         if (null == $autoOptimizationConfigDataSet->getPublisher()) {
