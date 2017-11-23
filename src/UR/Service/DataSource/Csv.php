@@ -215,28 +215,24 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getRows()
     {
-        $iterator = $this->csv->getIterator();
+        $rows = $this->csv->fetch();
         $result = new SplDoublyLinkedList();
         $index = 0;
-        while (!$iterator->eof()) {
+
+        foreach($rows as $row) {
             if ($index < $this->dataRow) {
                 $index++;
-                $iterator->next();
                 continue;
             }
-            $row = $iterator->current();
+
             if (!is_array($row) || $this->isEmptyArray($row)) {
                 $index++;
-                $iterator->next();
                 continue;
             }
 
             $result->push($this->removeNonUtf8CharactersForSingleRow($row));
-            $iterator->next();
         }
 
-        //remove header
-        $result->shift();
         return $result;
     }
 
@@ -250,32 +246,29 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
             return $this->getRows();
         }
 
-        $iterator = $this->csv->getIterator();
-        $result = new SplDoublyLinkedList();
+        $rows = $this->csv->fetch();
         $index = 0;
-        while (!$iterator->eof()) {
+        $result = new SplDoublyLinkedList();
+
+        foreach ($rows as $row) {
             if ($index < $this->dataRow) {
                 $index++;
-                $iterator->next();
                 continue;
             }
-            $row = $iterator->current();
+
             if (!is_array($row) || $this->isEmptyArray($row)) {
                 $index++;
-                $iterator->next();
                 continue;
             }
 
             $result->push($this->removeNonUtf8CharactersForSingleRow($row));
             $index++;
+
             if ($index > $limit) {
                 break;
             }
-            $iterator->next();
         }
 
-        //remove header
-        $result->shift();
         return $result;
     }
 
