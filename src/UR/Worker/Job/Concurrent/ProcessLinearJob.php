@@ -108,7 +108,8 @@ class ProcessLinearJob implements LockableJobInterface
 
                 $this->logger->notice(
                     sprintf(
-                        'Linear job "%s" with priority %d has been completed',
+                        'Linear job (ID: %s) "%s" with priority %d has been completed',
+                        $linearJob->getId(),
                         $task,
                         $priority
                     )
