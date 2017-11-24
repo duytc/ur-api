@@ -145,14 +145,14 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
                         $dimension = sprintf('%s_%d', $dimension, $dataSet->getId());
                     }
 
-                    $columns[$dimension] = $this->convertColumn($dimension, $showDataSetName);
+                    $columns[$dimension] = $this->convertColumnForDataSet($dimension, $showDataSetName);
                 }
 
                 foreach ($dataSet->getMetrics() as $metric => $type) {
                     if ($showDataSetName) {
                         $metric = sprintf('%s_%d', $metric, $dataSet->getId());
                     }
-                    $columns[$metric] = $this->convertColumn($metric, $showDataSetName);
+                    $columns[$metric] = $this->convertColumnForDataSet($metric, $showDataSetName);
                 }
             }
 
