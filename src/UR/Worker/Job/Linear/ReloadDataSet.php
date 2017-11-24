@@ -113,7 +113,7 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
                 ];
 
                 // also update connected data source total row similar above
-                $jobs[] = ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME];
+                //$jobs[] = ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME];
             }
 
             // update connected data source that it is reload completed
