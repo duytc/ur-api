@@ -691,6 +691,7 @@ services:
             - @ur.service.data_mapping_service
             - @ur.service.csv_writer
             - @ur.service.file_factory
+            - @ur.service.data_set.update_total_row
 
     ur.service.csv_writer:
         class: UR\Service\Import\CsvWriter

@@ -4,6 +4,7 @@
 namespace UR\Service\DataSet;
 
 
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Comparator;
@@ -72,8 +73,6 @@ class UpdateDataSetTotalRowService
             }
 
             $tableName = $dataTable->getName();
-
-
             $qb = new QueryBuilder($this->conn);
             $totalRow = $qb->select("count(__id)")
                 ->from($tableName)
@@ -82,6 +81,7 @@ class UpdateDataSetTotalRowService
                 ->fetchColumn(0);
 
             // update
+            $this->logger->info(sprintf('Total rows in data set: %d', $totalRow));
             $dataSet->setTotalRow($totalRow);
             $this->dataSetManager->save($dataSet);
         } catch (Exception $exception) {
@@ -140,7 +140,12 @@ class UpdateDataSetTotalRowService
 
             $tableName = $dataTable->getName();
 
-            foreach ($dataSet->getConnectedDataSources() as $connectedDataSource) {
+            $connectedDataSources = $dataSet->getConnectedDataSources();
+            if ($connectedDataSources instanceof Collection) {
+                $connectedDataSources = $connectedDataSources->toArray();
+            }
+
+            foreach ($connectedDataSources as $connectedDataSource) {
                 $qb = new QueryBuilder($this->conn);
                 $totalRow = $qb->select("count(__id)")
                     ->from($tableName)

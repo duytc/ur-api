@@ -112,10 +112,6 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
                     LoadFileIntoDataSetSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId(),
                 ];
 
-                // also update data set total row, after each entry done, to let UI does not make user confused
-                // i.e: last time, pending jobs changes from 90->60 but total rows still 0 in UI and only updated after all jobs are done
-                $jobs[] = ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME];
-
                 // also update connected data source total row similar above
                 $jobs[] = ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME];
             }
@@ -130,9 +126,13 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
         if (count($jobs) > 0) {
             $jobs = array_merge($jobs, [
                 ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
-                //['task' => UpdateDataSetTotalRowSubJob::JOB_NAME], // already update after each entry done!
-                //['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME] // already update after each entry done!
+                // need update again because after overwriting date in data set the total rows may be change
+                ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+                ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
             ]);
+
+            // also update connected data source total row similar above
+            $jobs[] = ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME];
         }
 
         $jobs[] = ['task' => UpdateDataSetReloadCompleted::JOB_NAME];
