@@ -17,6 +17,7 @@ interface CollectionTransformerInterface extends TransformerInterface
     const POST_AGGREGATION = 'postAggregation';
     const SORT_BY = 'sortBy';
     const ADD_FIELD = 'addField';
+    const ADD_FIELD_FROM_DATE = 'addFieldFromDate';
     const ADD_CALCULATED_FIELD = 'addCalculatedField';
     const ADD_CONCATENATED_FIELD = 'addConcatenatedField';
     const COMPARISON = 'comparison';

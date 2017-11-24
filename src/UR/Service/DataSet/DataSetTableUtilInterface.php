@@ -12,9 +12,4 @@ interface DataSetTableUtilInterface
      * @param DataSetInterface $dataSet
      */
     public function updateIndexes(DataSetInterface $dataSet);
-
-    /**
-     * @param ReportViewDataSetInterface $reportViewDataSet
-     */
-    public function updateIndexesByFilter(ReportViewDataSetInterface $reportViewDataSet);
 }

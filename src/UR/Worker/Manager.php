@@ -396,15 +396,4 @@ class Manager
         // concurrent job, we do not care what order it is processed in
         $this->concurrentJobScheduler->addJob($jobData);
     }
-
-    public function updateIndexesByFilter($reportViewDataSetId)
-    {
-        $jobData = [
-            'task' => UpdateDataSetIndexesByFilter::JOB_NAME,
-            UpdateDataSetIndexesByFilter::REPORT_VIEW_DATA_SET_ID => $reportViewDataSetId,
-        ];
-
-        // concurrent job, we do not care what order it is processed in
-        $this->concurrentJobScheduler->addJob($jobData);
-    }
 }

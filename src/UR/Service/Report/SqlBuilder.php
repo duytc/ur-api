@@ -391,7 +391,7 @@ class SqlBuilder implements SqlBuilderInterface
         $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
         $qb->from($tempTable4th);
 
-        $qb = $this->applyFiltersForMultiDataSets($qb, $dataSets, $searches, $overridingFilters, $types, $joinConfig, true);
+        $qb = $this->applyFiltersForMultiDataSets($this->getSync(), $qb, $dataSets, $searches, $overridingFilters, $types, $joinConfig, true);
 
         return $qb->execute();
     }
@@ -438,7 +438,7 @@ class SqlBuilder implements SqlBuilderInterface
      * @internal param $hasGroup
      */
     protected function buildSelectQuery($aggregateAll, array $aggregationFields, QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex,
-                array $joinConfig, array &$selectedJoinFields, $hasGroup = false, $postAggregationFields = [], $timezone = 'UTC')
+                                        array $joinConfig, array &$selectedJoinFields, $hasGroup = false, $postAggregationFields = [], $timezone = 'UTC')
     {
         $metrics = $dataSet->getMetrics();
         $dimensions = $dataSet->getDimensions();
@@ -608,7 +608,7 @@ class SqlBuilder implements SqlBuilderInterface
                 $dateRanges[] = new DateRange($filter->getStartDate(), $filter->getEndDate());
             }
 
-            $sqlConditions[] = $this->buildSingleFilter($filter, $tableAlias, $dataSetId, $key);
+            $sqlConditions[] = $this->buildSingleFilter($filter, $tableAlias, $dataSetId);
         }
 
         return array(
@@ -620,47 +620,46 @@ class SqlBuilder implements SqlBuilderInterface
      * @param FilterInterface $filter
      * @param null $tableAlias
      * @param null $dataSetId
-     * @param $key
      * @return string
      */
-    protected function buildSingleFilter(FilterInterface $filter, $tableAlias = null, $dataSetId = null, $key)
+    protected function buildSingleFilter(FilterInterface $filter, $tableAlias = null, $dataSetId = null)
     {
         if (!empty($dataSetId) && $this->exitColumnInTable($filter->getFieldName(), $dataSetId)) {
-            $filterField = str_replace(" ", "", $filter->getFieldName()) . $key;
             $fieldName = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, $filter->getFieldName()) : $filter->getFieldName();
             $fieldName = empty($dataSetId) ? $this->connection->quoteIdentifier($fieldName) : $this->connection->quoteIdentifier($fieldName. "_" . $dataSetId);
         } else {
             $fieldName = $this->connection->quoteIdentifier($filter->getFieldName());
-            $filterField = str_replace(" ", "", $filter->getFieldName()) . $key;
         }
+
         if ($filter instanceof DateFilterInterface) {
             if (!$filter->getStartDate() || !$filter->getEndDate()) {
                 throw new InvalidArgumentException('invalid date range of filter');
             }
 
-            return sprintf('(%s BETWEEN %s AND %s)', $fieldName, sprintf(':startDate%d%d', $filterField, $dataSetId ?? 0), sprintf(':endDate%d%d', $filterField, $dataSetId ?? 0));
+            return sprintf('(%s BETWEEN "%s" AND "%s")', $fieldName, $filter->getStartDate(), $filter->getEndDate());
         }
 
-        $bindParamName = sprintf(':%s%d%d', $filterField, $filterField, $dataSetId ?? 0);
         if ($filter instanceof NumberFilterInterface) {
+            $comparisonValue = $filter->getComparisonValue();
+
             switch ($filter->getComparisonType()) {
                 case NumberFilter::COMPARISON_TYPE_EQUAL :
-                    return sprintf('%s = %s', $fieldName, $bindParamName);
+                    return sprintf('%s = %s', $fieldName, $comparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_NOT_EQUAL:
-                    return sprintf('%s <> %s', $fieldName, $bindParamName);
+                    return sprintf('%s <> %s', $fieldName, $comparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_GREATER:
-                    return sprintf('%s > %s', $fieldName, $bindParamName);
+                    return sprintf('%s > %s', $fieldName, $comparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_SMALLER:
-                    return sprintf('%s < %s', $fieldName, $bindParamName);
+                    return sprintf('%s < %s', $fieldName, $comparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_SMALLER_OR_EQUAL:
-                    return sprintf('%s <= %s', $fieldName, $bindParamName);
+                    return sprintf('%s <= %s', $fieldName, $comparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_GREATER_OR_EQUAL:
-                    return sprintf('%s >= %s', $fieldName, $bindParamName);
+                    return sprintf('%s >= %s', $fieldName, $comparisonValue);
 
                 case NumberFilter::COMPARISON_TYPE_IN:
                     return sprintf('%s IN (%s)', $fieldName, implode(',', $filter->getComparisonValue()));
@@ -680,53 +679,53 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         if ($filter instanceof TextFilterInterface) {
-            $textFilterComparisonValue = $filter->getComparisonValue();
+            $comparisonValue = $filter->getComparisonValue();
 
             switch ($filter->getComparisonType()) {
                 case TextFilter::COMPARISON_TYPE_EQUAL :
-                    return sprintf('%s = %s', $fieldName, $bindParamName);
+                    return sprintf('%s = %s', $fieldName, $comparisonValue);
 
                 case TextFilter::COMPARISON_TYPE_NOT_EQUAL:
-                    return sprintf('%s <> %s', $fieldName, $textFilterComparisonValue);
+                    return sprintf('%s <> %s', $fieldName, $comparisonValue);
 
                 case TextFilter::COMPARISON_TYPE_CONTAINS :
                     $contains = array_map(function ($tcv) use ($fieldName) {
                         return sprintf('%s LIKE \'%%%s%%\'', $fieldName, $tcv);
-                    }, $textFilterComparisonValue);
+                    }, $comparisonValue);
 
                     return sprintf("(%s)", implode(' OR ', $contains)); // cover conditions in "()" to keep inner AND/OR of conditions
 
                 case TextFilter::COMPARISON_TYPE_NOT_CONTAINS :
                     $notContains = array_map(function ($tcv) use ($fieldName) {
                         return sprintf('%s NOT LIKE \'%%%s%%\'', $fieldName, $tcv);
-                    }, $textFilterComparisonValue);
+                    }, $comparisonValue);
 
                     return sprintf("(%s IS NULL OR %s = '' OR %s)", $fieldName, $fieldName, implode(' AND ', $notContains)); // cover conditions in "()" to keep inner AND/OR of conditions
 
                 case TextFilter::COMPARISON_TYPE_START_WITH:
                     $startWiths = array_map(function ($tcv) use ($fieldName) {
                         return sprintf('%s LIKE \'%s%%\'', $fieldName, $tcv);
-                    }, $textFilterComparisonValue);
+                    }, $comparisonValue);
 
                     return sprintf("(%s)", implode(' OR ', $startWiths)); // cover conditions in "()" to keep inner AND/OR of conditions
 
                 case TextFilter::COMPARISON_TYPE_END_WITH:
                     $endWiths = array_map(function ($tcv) use ($fieldName) {
                         return sprintf('%s LIKE \'%%%s\'', $fieldName, $tcv);
-                    }, $textFilterComparisonValue);
+                    }, $comparisonValue);
 
                     return sprintf("(%s)", implode(' OR ', $endWiths)); // cover conditions in "()" to keep inner AND/OR of conditions
 
                 case TextFilter::COMPARISON_TYPE_IN:
                     $values = array_map(function ($value) {
                         return "'$value'";
-                    }, $filter->getComparisonValue());
+                    }, $comparisonValue);
                     return sprintf('%s IN (%s)', $fieldName, implode(',', $values));
 
                 case TextFilter::COMPARISON_TYPE_NOT_IN:
                     $values = array_map(function ($value) {
                         return "'$value'";
-                    }, $filter->getComparisonValue());
+                    }, $comparisonValue);
                     return sprintf('(%s IS NULL OR %s = \'\' OR %s NOT IN (%s))', $fieldName, $fieldName, $fieldName, implode(',', $values));
 
                 case TextFilter::COMPARISON_TYPE_NOT_NULL:
@@ -1070,7 +1069,7 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         $subQb->from($this->connection->quoteIdentifier($table->getName()), 't');
-        $subQb = $this->applyFiltersForSingleDataSetForTemporaryTables($subQb, $dataSet, $params, $searches, $overridingFilters, $types);
+        $subQb = $this->applyFiltersForSingleDataSetForTemporaryTables($subQb, $dataSet, $params, $searches, $overridingFilters, $types, $fields);
 
         $fromQuery = $subQb->getSQL();
         $finalSQLs[] = sprintf("CREATE TEMPORARY TABLE %s AS %s;", $tempTable1st, $fromQuery);
@@ -1195,8 +1194,8 @@ class SqlBuilder implements SqlBuilderInterface
             $finalSQLs[] = sprintf("DROP TABLE %s;", $tempTable2nd);
         }
 
-        $filters = $this->getFiltersForSingleDataSet($searches, $overridingFilters, $types, $dataSet);
-        $temporarySql = $this->bindFilterParamForTemporaryTable($params, implode(" ", $finalSQLs), $filters, $dataSet->getDataSetId());
+        $temporarySql = implode(" ", $finalSQLs);
+
         return $temporarySql;
     }
 
@@ -1295,7 +1294,7 @@ class SqlBuilder implements SqlBuilderInterface
         $types = array_merge($types, $params->getFieldTypes());
 
         unset($metrics, $dimensions);
-        $allFilters = $this->getFiltersForMultiDataSets($dataSets, $searches, $overridingFilters, $types, $joinConfig);
+        $allFilters = $this->getFiltersForMultiDataSets($this->getSync(), $dataSets, $searches, $overridingFilters, $types, $joinConfig);
 
         // Add SELECT clause
         $selectedJoinFields = [];
@@ -1349,8 +1348,11 @@ class SqlBuilder implements SqlBuilderInterface
 
         $subQuery = $this->buildJoinQueryForJoinConfig($subQb, $dataSetIds, $joinConfig);
 
+        $dataSetRepository = $this->em->getRepository(DataSet::class);
+
         foreach ($dataSets as $dataSetIndex => $dataSet) {
-            $subQuery = $this->applyFiltersForMultiDataSetsForTemporaryTables($subQuery, $dataSet, $params, $allFilters);
+            $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
+            $subQuery = $this->applyFiltersForMultiDataSetsForTemporaryTables($subQuery, $dataSet, $params, $allFilters, $dataSetEntity);
         }
 
         $conditions = [];
@@ -1459,7 +1461,7 @@ class SqlBuilder implements SqlBuilderInterface
             $finalQb->select("*");
             $finalQb->from($tempTable3rd);
 
-            $finalQb = $this->applyFiltersForMultiDataSets($finalQb, $dataSets, $searches, $overridingFilters, $types, $joinConfig, true);
+            $finalQb = $this->applyFiltersForMultiDataSets($this->getSync(), $finalQb, $dataSets, $searches, $overridingFilters, $types, $joinConfig, true);
 
             $finalQb->addOrderBy('NULL');
             $finalSQLs[] = sprintf("CREATE TEMPORARY TABLE %s AS %s;", $tempTable4th, $finalQb->getSQL());
@@ -1469,14 +1471,14 @@ class SqlBuilder implements SqlBuilderInterface
             $finalQb->select("*");
             $finalQb->from($tempTable2nd);
 
-            $finalQb = $this->applyFiltersForMultiDataSets($finalQb, $dataSets, $searches, $overridingFilters, $types, $joinConfig, true);
+            $finalQb = $this->applyFiltersForMultiDataSets($this->getSync(), $finalQb, $dataSets, $searches, $overridingFilters, $types, $joinConfig, true);
 
             $finalQb->addOrderBy('NULL');
             $finalSQLs[] = sprintf("CREATE TEMPORARY TABLE %s AS %s;", $tempTable4th, $finalQb->getSQL());
             $finalSQLs[] = sprintf("DROP TABLE %s;", $tempTable2nd);
         }
 
-        $temporarySql = $this->bindFilterParamForTemporaryTable($params, implode(" ", $finalSQLs), $allFilters);
+        $temporarySql = implode(" ", $finalSQLs);
 
         return $temporarySql;
     }

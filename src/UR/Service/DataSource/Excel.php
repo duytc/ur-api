@@ -34,12 +34,29 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
     {
         $this->chunkSize = $chunkSize;
         $this->filePath = $filePath;
-        $objPHPExcel = $this->getPhpExcelObj($filePath, 100, 1);
+        $this->detectColumns();
+    }
+
+    /**
+     * @return array
+     */
+    public function getColumns()
+    {
+        if (is_array($this->headers)) {
+            return $this->convertEncodingToASCII($this->headers);
+        }
+
+        return [];
+    }
+
+    public function detectColumns()
+    {
+        $objPHPExcel = $this->getPhpExcelObj($this->filePath, 100, 1);
         $this->sheet = $objPHPExcel->getActiveSheet();
         $this->numOfColumns = $this->sheet->getHighestColumn();
 
         $i = 0;
-        $max = 0;
+        $maxColumns = 0;
 
         for ($rowIndex = 1, $highestDataRow = $this->sheet->getHighestDataRow(); $rowIndex <= $highestDataRow; $rowIndex++) {
             $highestDataColumnIndex = $this->sheet->getHighestDataColumn($rowIndex);
@@ -50,7 +67,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
                 $formatData = false, $returnCellRef = false
             );
 
-            $cur_row = array_filter($currentRows[0], function ($value) {
+            $currentRow = array_filter($currentRows[0], function ($value) {
                 if (is_numeric($value)) {
                     return true;
                 }
@@ -58,18 +75,18 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
                 return (!is_null($value) && !empty($value));
             });
 
-            $cur_row = $this->removeInvalidColumns($cur_row);
+            $currentRow = $this->removeInvalidColumns($currentRow);
 
-            if (count($cur_row) < 1) {
+            if (count($currentRow) < 1) {
                 continue;
             }
 
             $i++;
 
-            if ($this->isTextArray($cur_row) && !$this->isEmptyArray($cur_row) && count($cur_row) > $max) {
-                $this->headers = $cur_row;
-                $this->ogiHeaders = $cur_row;
-                $max = count($this->headers);
+            if ($this->isTextArray($currentRow) && !$this->isEmptyArray($currentRow) && count($currentRow) > $maxColumns) {
+                $this->headers = $currentRow;
+                $this->ogiHeaders = $currentRow;
+                $maxColumns = count($this->headers);
                 $this->headerRow = $rowIndex;
             }
 
@@ -89,18 +106,6 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         if (is_array($this->headers)) {
             $this->headers = $this->setDefaultColumnValueForHeader($this->headers);
         }
-    }
-
-    /**
-     * @return array
-     */
-    public function getColumns()
-    {
-        if (is_array($this->headers)) {
-            return $this->convertEncodingToASCII($this->headers);
-        }
-
-        return [];
     }
 
     /**
