@@ -107,4 +107,18 @@ class TagRepository extends EntityRepository implements TagRepositoryInterface
     {
         return $this->createQueryBuilder('t');
     }
+
+    public function checkIfUserHasMatchingIntegrationTag(IntegrationInterface $integration, PublisherInterface $publisher)
+    {
+        return $this->createQueryBuilder('t')
+            ->innerJoin('t.integrationTags', 'it')
+            ->innerJoin('t.userTags', 'ut')
+            ->where('it.integration = :integration')
+            ->andWhere('ut.publisher = :publisher')
+            ->setParameter('integration', $integration)
+            ->setParameter('publisher', $publisher)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+    }
 }

@@ -11,10 +11,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\DomainManager\IntegrationManagerInterface;
 use UR\Entity\Core\IntegrationPublisher;
+use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\Integration;
 use UR\Model\Core\IntegrationInterface;
 use UR\Model\User\Role\PublisherInterface;
+use UR\Model\User\UserEntityInterface;
+use UR\Service\DataSource\IntegrationTagServiceInterface;
 use UR\Service\StringUtilTrait;
 
 class UpdateIntegrationCommand extends ContainerAwareCommand
@@ -76,6 +79,7 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         /** @var IntegrationManagerInterface $integrationManager */
         $integrationManager = $container->get('ur.domain_manager.integration');
         $integration = $integrationManager->findByCanonicalName($cName);
+        $integrationTagService = $container->get('ur.service.data_source.integration_tag_service');
 
         if (!$integration instanceof IntegrationInterface) {
             $output->writeln(sprintf('Could not found integration with cname %s. Please try other command ur:integration:create to create.', $cName));
@@ -130,7 +134,12 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
         if ($userIdsString || $isAllPublishers) {
             /** @var PublisherManagerInterface $publisherManager */
             $publisherManager = $container->get('ur_user.domain_manager.publisher');
-            $this->updatePublishers($integration, $isAllPublishers, $userIdsString, $publisherManager);
+            try {
+                $this->updatePublishers($integration, $isAllPublishers, $userIdsString, $publisherManager, $integrationTagService);
+            } catch (InvalidArgumentException $ex) {
+                $output->writeln(sprintf('<error>%s</error>', $ex->getMessage()));
+                return 0;
+            }
         }
 
         /* finally, save changes for Integration */
@@ -249,8 +258,9 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
      * @param bool $isAllPublisherOption
      * @param string $userIdsStringOption
      * @param PublisherManagerInterface $publisherManager
+     * @param IntegrationTagServiceInterface $integrationTagService
      */
-    private function updatePublishers(IntegrationInterface $integration, $isAllPublisherOption, $userIdsStringOption, PublisherManagerInterface $publisherManager)
+    private function updatePublishers(IntegrationInterface $integration, $isAllPublisherOption, $userIdsStringOption, PublisherManagerInterface $publisherManager, IntegrationTagServiceInterface $integrationTagService)
     {
         /* update enableForAllUsers for integration */
         $integration->setEnableForAllUsers($isAllPublisherOption);
@@ -262,6 +272,12 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
             $allActivePublishers = $publisherManager->all();
 
             $userIdsStringOption = explode(',', $userIdsStringOption);
+            foreach ($userIdsStringOption as $userId) {
+                $user = $publisherManager->find($userId);
+                if (!$user instanceof UserEntityInterface) {
+                    throw new InvalidArgumentException(sprintf('user "%s" does not exist', $userId));
+                }
+            }
 
             $updatePublisherIds = array_map(function ($userId) {
                 return trim($userId);
@@ -295,6 +311,8 @@ class UpdateIntegrationCommand extends ContainerAwareCommand
                     $integrationPublisher->setPublisher($publisher);
 
                     $currentIntegrationPublishers[] = $integrationPublisher;
+                    //create user tag
+                    $integration = $integrationTagService->updateIntegrationTagForUser($integration, $publisher);
                 }
             }
 

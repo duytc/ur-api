@@ -59,4 +59,10 @@ interface IntegrationInterface extends ModelInterface
      * @param mixed $integrationPublishers
      */
     public function setIntegrationPublishers($integrationPublishers);
+
+    /**
+     * @param mixed $integrationTags
+     * @return self
+     */
+    public function setIntegrationTags($integrationTags);
 }

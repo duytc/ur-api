@@ -54,3 +54,9 @@ services:
         class: UR\Service\Report\ReportViewUpdater
         arguments:
             - '@doctrine.orm.entity_manager'
+
+    ur.service.data_source.integration_tag_service:
+        class: UR\Service\DataSource\IntegrationTagService
+        arguments:
+            - '@ur.domain_manager.tag'
+            - '@ur.domain_manager.user_tag'

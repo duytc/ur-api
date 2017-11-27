@@ -45,4 +45,11 @@ interface TagRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getTagsForUserPaginationQuery(UserRoleInterface $user, PagerParam $Params);
+
+    /**
+     * @param IntegrationInterface $integration
+     * @param PublisherInterface $publisher
+     * @return mixed
+     */
+    public function checkIfUserHasMatchingIntegrationTag(IntegrationInterface $integration, PublisherInterface $publisher);
 }

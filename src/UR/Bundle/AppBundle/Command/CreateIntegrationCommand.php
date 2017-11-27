@@ -12,8 +12,13 @@ use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\DomainManager\IntegrationManagerInterface;
 use UR\Entity\Core\Integration;
 use UR\Entity\Core\IntegrationPublisher;
+use UR\Entity\Core\IntegrationTag;
+use UR\Entity\Core\Tag;
+use UR\Entity\Core\UserTag;
+use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\IntegrationInterface;
 use UR\Model\User\Role\PublisherInterface;
+use UR\Model\User\UserEntityInterface;
 use UR\Service\StringUtilTrait;
 
 class CreateIntegrationCommand extends ContainerAwareCommand
@@ -75,6 +80,7 @@ class CreateIntegrationCommand extends ContainerAwareCommand
         /* check if cname existed */
         /** @var IntegrationManagerInterface $integrationManager */
         $integrationManager = $container->get('ur.domain_manager.integration');
+        $integrationTagService = $container->get('ur.service.data_source.integration_tag_service');
         $integration = $integrationManager->findByCanonicalName($cName);
         $isFoundIntegration = ($integration instanceof IntegrationInterface);
 
@@ -104,6 +110,14 @@ class CreateIntegrationCommand extends ContainerAwareCommand
                 return trim($userId);
             }, $userIdsStringOption);
 
+            foreach ($updatePublisherIds as $userId) {
+                $user = $publisherManager->find($userId);
+                if (!$user instanceof UserEntityInterface) {
+                    $output->writeln(sprintf('<error>user "%s" does not exist</error>', $userId));
+                    return 0;
+                }
+            }
+
             $currentIntegrationPublishers = [];
 
             foreach ($updatePublisherIds as $publisherId) {
@@ -118,6 +132,10 @@ class CreateIntegrationCommand extends ContainerAwareCommand
                     $integrationPublisher->setIntegration($integration);
                     $integrationPublisher->setPublisher($publisher);
                     $currentIntegrationPublishers[] = $integrationPublisher;
+
+
+                    //create user tag
+                    $integration = $integrationTagService->createIntegrationTagForUser($integration, $publisher);
                 }
             }
 

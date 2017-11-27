@@ -109,4 +109,9 @@ class TagManager implements TagManagerInterface
     {
         return $this->repository->findByName($tagName);
     }
+
+    public function checkIfUserHasMatchingIntegrationTag(IntegrationInterface $integration, PublisherInterface $publisher)
+    {
+        return $this->repository->checkIfUserHasMatchingIntegrationTag($integration, $publisher);
+    }
 }

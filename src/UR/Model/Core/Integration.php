@@ -54,7 +54,7 @@ class Integration implements IntegrationInterface
     protected $enableForAllUsers;
     /** @var IntegrationPublisherInterface[] */
     protected $integrationPublishers;
-
+    protected $integrationTags;
     public function __construct()
     {
         $this->enableForAllUsers = false;
@@ -153,6 +153,16 @@ class Integration implements IntegrationInterface
     {
         $this->integrationPublishers = $integrationPublishers;
 
+        return $this;
+    }
+
+    /**
+     * @param mixed $integrationTags
+     * @return self
+     */
+    public function setIntegrationTags($integrationTags)
+    {
+        $this->integrationTags = $integrationTags;
         return $this;
     }
 }
