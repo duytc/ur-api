@@ -56,6 +56,9 @@ class DataSet implements DataSetInterface
      */
     protected $mapBuilderConfigs;
 
+    /** @var  AutoOptimizationConfigDataSetInterface[] */
+    protected $autoOptimizationConfigDataSets;
+
     public function __construct()
     {
         $this->totalRow = 0;
@@ -433,5 +436,22 @@ class DataSet implements DataSetInterface
         }
 
         return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getAutoOptimizationConfigDataSets()
+    {
+        return $this->autoOptimizationConfigDataSets;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setAutoOptimizationConfigDataSets($autoOptimizationConfigDataSets)
+    {
+        $this->autoOptimizationConfigDataSets = $autoOptimizationConfigDataSets;
+        return $this;
     }
 }

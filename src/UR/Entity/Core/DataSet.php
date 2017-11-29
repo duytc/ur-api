@@ -2,6 +2,7 @@
 
 namespace UR\Entity\Core;
 
+use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSet as DataSetModel;
 use UR\Model\Core\LinkedMapDataSetInterface;
@@ -41,6 +42,10 @@ class DataSet extends DataSetModel
      * @var MapBuilderConfigInterface[]
      */
     protected $mapBuilderConfigs;
+
+    /** @var AutoOptimizationConfigDataSetInterface[] */
+    protected $autoOptimizationConfigDataSets;
+
     /**
      * @inheritdoc
      *

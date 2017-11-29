@@ -210,7 +210,6 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
         $this->autoOptimizationConfigDataSets = $autoOptimizationConfigDataSets;
     }
 
-
     /**
      * @inheritdoc
      */
