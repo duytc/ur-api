@@ -77,6 +77,6 @@ UR\Entity\Core\DataSet:
             mappedBy: dataSet
             cascade: ['remove', 'detach']
         autoOptimizationConfigDataSets:
-            targetEntity: UR\Entity\Core\AutoOptimizationConfig
+            targetEntity: UR\Entity\Core\AutoOptimizationConfigDataSet
             mappedBy: dataSet
             cascade: ['persist', 'remove', 'detach']
