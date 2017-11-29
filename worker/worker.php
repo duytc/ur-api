@@ -151,6 +151,11 @@ while (1) {
 
         $entityManager->clear();
         gc_collect_cycles();
+
+        if (FALSE == $entityManager->getConnection()->ping()) {
+            $entityManager->getConnection()->close();
+            $entityManager->getConnection()->connect();
+        }
     }
 }
 
