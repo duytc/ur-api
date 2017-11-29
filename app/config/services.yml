@@ -310,6 +310,15 @@ services:
             - '%data_source_entry_job_temp_file_dir%'
             - "%upload_file_dir%"
 
+    ur.worker.job.concurrent.maintain_pre_calculate_table_for_large_report_view:
+        class: UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView
+        arguments:
+            - '@logger'
+            - '@ur.worker.manager'
+            - '@ur.domain_manager.report_view'
+            - '%ur.report_view.large_threshold%'
+            - '@ur.services.large_report.large_report_maintainer'
+
     ur.worker.job.concurrent.count_chunk_row:
         class: UR\Worker\Job\Concurrent\CountChunkRow
         arguments:
@@ -537,6 +546,7 @@ services:
                 - @ur.worker.job.concurrent.clean_up_time_series_for_data_source_subjob
                 - @ur.worker.job.concurrent.split_huge_file
                 - @ur.worker.job.concurrent.count_chunk_row
+                - @ur.worker.job.concurrent.maintain_pre_calculate_table_for_large_report_view
 
     ### end of concurrence worker pool
 

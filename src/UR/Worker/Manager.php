@@ -15,11 +15,11 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DateUtilInterface;
 use UR\Worker\Job\Concurrent\CountChunkRow;
+use UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView;
 use UR\Worker\Job\Concurrent\ParseChunkFile;
 use UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource;
 use UR\Worker\Job\Concurrent\ProcessAlert;
 use UR\Worker\Job\Concurrent\SplitHugeFile;
-use UR\Worker\Job\Concurrent\UpdateDataSetIndexesByFilter;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
 use UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted;
@@ -391,6 +391,17 @@ class Manager
             'task' => CountChunkRow::JOB_NAME,
             CountChunkRow::CHUNK => $chunkFilePath,
             CountChunkRow::ENTRY_ID => $dataSourceEntryId,
+        ];
+
+        // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    public function maintainPreCalculateTableForLargeReportView($reportViewId)
+    {
+        $jobData = [
+            'task' => MaintainPreCalculateTableForLargeReportView::JOB_NAME,
+            MaintainPreCalculateTableForLargeReportView::REPORT_VIEW_ID => $reportViewId,
         ];
 
         // concurrent job, we do not care what order it is processed in

@@ -136,6 +136,18 @@ class ReportView implements ReportViewInterface
      */
     protected $subView;
 
+    /** @var  bool */
+    protected $largeReport;
+
+    /** @var  bool */
+    protected $availableToRun;
+
+    /** @var  bool */
+    protected $availableToChange;
+
+    /** @var  string */
+    protected $preCalculateTable;
+
     /**
      * @return mixed
      */
@@ -155,6 +167,12 @@ class ReportView implements ReportViewInterface
         $this->enableCustomDimensionMetric = true;
         $this->subView = false;
         $this->filters = [];
+
+        /** Setup for large report */
+        $this->largeReport = false;
+        $this->availableToRun = true;
+        $this->availableToChange = true;
+        $this->preCalculateTable = null;
     }
 
     /**
@@ -524,6 +542,78 @@ class ReportView implements ReportViewInterface
     public function setSubView($subview)
     {
         $this->subView = $subview;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isLargeReport()
+    {
+        return $this->largeReport;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLargeReport($largeReport)
+    {
+        $this->largeReport = $largeReport;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isAvailableToRun()
+    {
+        return $this->availableToRun;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setAvailableToRun($availableToRun)
+    {
+        $this->availableToRun = $availableToRun;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isAvailableToChange()
+    {
+        return $this->availableToChange;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setAvailableToChange($availableToChange)
+    {
+        $this->availableToChange = $availableToChange;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getPreCalculateTable()
+    {
+        return $this->preCalculateTable;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setPreCalculateTable($preCalculateTable)
+    {
+        $this->preCalculateTable = $preCalculateTable;
+
         return $this;
     }
 }

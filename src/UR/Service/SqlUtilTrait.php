@@ -53,7 +53,7 @@ trait SqlUtilTrait
                 $timezone = $transform->getTimezone();
                 $fields = $transform->getFields();
                 $fields = array_map(function ($field) use ($types, $timezone, $removeSuffix) {
-                    if (array_key_exists($field, $types) && $types[$field] == FieldType::DATETIME) {
+                    if (!is_array($field) && array_key_exists($field, $types) && $types[$field] == FieldType::DATETIME) {
                         if ($removeSuffix === true) {
                             $field = $this->removeIdSuffix($field);
                         }
@@ -65,8 +65,10 @@ trait SqlUtilTrait
                         return sprintf("DATE(`$field`)");
                     }
 
-                    $field = $removeSuffix === true ? $this->removeIdSuffix($field) : $field;
-                    return "`$field`";
+                    if (!is_array($field)) {
+                        $field = $removeSuffix === true ? $this->removeIdSuffix($field) : $field;
+                        return "`$field`";
+                    }
                 }, $fields);
                 $qb->addGroupBy($fields);
                 return $qb;
@@ -1077,8 +1079,6 @@ trait SqlUtilTrait
                         AbstractFilter::FILTER_COMPARISON_KEY => NumberFilter::COMPARISON_TYPE_NOT_EQUAL,
                         AbstractFilter::FILTER_COMPARED_VALUE_KEY => $compareValue
                     );
-                default:
-                    return null;
             }
         }
 

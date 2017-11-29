@@ -252,4 +252,48 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setSubView($subview);
+
+    /**
+     * @return boolean
+     */
+    public function isLargeReport();
+
+    /**
+     * @param boolean $largeReport
+     * @return self
+     */
+    public function setLargeReport($largeReport);
+
+    /**
+     * @return boolean
+     */
+    public function isAvailableToRun();
+
+    /**
+     * @param boolean $availableToRun
+     * @return self
+     */
+    public function setAvailableToRun($availableToRun);
+
+    /**
+     * @return boolean
+     */
+    public function isAvailableToChange();
+
+    /**
+     * @param boolean $availableToChange
+     * @return self
+     */
+    public function setAvailableToChange($availableToChange);
+
+    /**
+     * @return string
+     */
+    public function getPreCalculateTable();
+
+    /**
+     * @param string $preCalculateTable
+     * @return self
+     */
+    public function setPreCalculateTable($preCalculateTable);
 }

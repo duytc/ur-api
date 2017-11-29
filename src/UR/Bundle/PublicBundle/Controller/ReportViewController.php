@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\PublicBundle\Controller;
 
+use Exception;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Controller\FOSRestController;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
@@ -13,6 +14,7 @@ use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\ColumnUtilTrait;
+use UR\Service\PublicSimpleException;
 
 /**
  * Class ReportController
@@ -51,6 +53,7 @@ class ReportViewController extends FOSRestController
      * @param Request $request
      * @param $id
      * @return array
+     * @throws Exception
      */
     public function getSharedReportsAction(Request $request, $id)
     {
@@ -67,6 +70,10 @@ class ReportViewController extends FOSRestController
         $sharedKeysConfig = $reportView->getSharedKeysConfig();
         if (!array_key_exists($token, $sharedKeysConfig)) {
             throw new BadRequestHttpException('Invalid token');
+        }
+
+        if (!$reportView->isAvailableToRun()) {
+            throw new PublicSimpleException(sprintf("We're building report for you. Please wait 5 minutes and retry"));
         }
 
         $shareConfig = $sharedKeysConfig[$token];

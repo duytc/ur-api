@@ -29,6 +29,17 @@ services:
             - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: postFlush }
 
+    ur_api.event_listener.report_view_change_for_large_report_listener:
+        class: UR\Bundle\ApiBundle\EventListener\ReportViewChangeForLargeReportListener
+        arguments:
+            - '@ur.worker.manager'
+            - '%ur.report_view.large_threshold%'
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: preRemove }
+            - { name: doctrine.event_listener, event: postFlush }
+
     ur_api.event_listener.map_builder_change_listener:
         class: UR\Bundle\ApiBundle\EventListener\MapBuilderChangeListener
         arguments:

@@ -65,7 +65,7 @@ trait ReportViewFilterUtilTrait
                 $finalQb->where(implode(' AND ', $conditions));
             }
         }
-        
+
         return $finalQb;
     }
 
@@ -119,13 +119,14 @@ trait ReportViewFilterUtilTrait
 
     /**
      * @param string $subQuery
+     * @param $key
      * @param DataSetInterface $dataSet
      * @param ParamsInterface $params
      * @param $filters
      * @param mixed $realDataSet
      * @return mixed
      */
-    private function applyFiltersForMultiDataSetsForTemporaryTables(string  $subQuery, DataSetInterface $dataSet, ParamsInterface $params, $filters, $realDataSet = null)
+    private function applyFiltersForMultiDataSetsForTemporaryTables(string $subQuery, $key, DataSetInterface $dataSet, ParamsInterface $params, $filters, $realDataSet = null)
     {
         if ($realDataSet instanceof \UR\Model\Core\DataSetInterface) {
             $allDimensionMetrics = array_merge($dataSet->getDimensions(), $dataSet->getMetrics(), array_values($realDataSet->getAllDimensionMetrics()));
@@ -137,7 +138,7 @@ trait ReportViewFilterUtilTrait
             return sprintf("%s_%s", $field, $dataSet->getDataSetId());
         }, $allDimensionMetrics);
 
-        $filters = array_filter($filters, function($filter) use ($allDimensionMetrics){
+        $filters = array_filter($filters, function ($filter) use ($allDimensionMetrics) {
             return $filter instanceof AbstractFilter && in_array($filter->getFieldName(), $allDimensionMetrics);
         });
 
@@ -149,6 +150,7 @@ trait ReportViewFilterUtilTrait
         $conditions = $buildResult[self::CONDITION_KEY];
         foreach ($conditions as &$condition) {
             $maps = $params->getMagicMaps();
+            $maps = $this->expandMapsForDataSets($maps, $key, $realDataSet, $maps);
             foreach ($maps as $key => $field) {
                 $fieldReplace = "`" . str_replace(".", "`.", $field);
                 $condition = str_replace(sprintf("`%s`", $key), $fieldReplace, $condition);
@@ -201,7 +203,7 @@ trait ReportViewFilterUtilTrait
 
                 $fieldName = $filter->getFieldName();
 
-                if ($dataSetTable instanceof Table && $dataSetTable->hasColumn($fieldName) && strpos($fieldName, sprintf("_". $dataSet->getDataSetId())) == false) {
+                if ($dataSetTable instanceof Table && $dataSetTable->hasColumn($fieldName) && strpos($fieldName, sprintf("_" . $dataSet->getDataSetId())) == false) {
                     $filter->setFieldName(sprintf("%s_%s", $fieldName, $dataSet->getDataSetId()));
                 }
             }
@@ -304,12 +306,38 @@ trait ReportViewFilterUtilTrait
      * @param array $fields
      * @return mixed
      */
-    private function expandMapsForSingleDataSet($maps, DataSetInterface $dataSet, $fields = []) {
+    private function expandMapsForSingleDataSet($maps, DataSetInterface $dataSet, $fields = [])
+    {
         $dataSetId = $dataSet->getDataSetId();
 
         foreach ($fields as $field) {
             $maps[sprintf("%s_%s", $field, $dataSetId)] = sprintf("t.`%s`", $field);
         }
+
+        return $maps;
+    }
+
+    /**
+     * @param $maps
+     * @param $key
+     * @param \UR\Model\Core\DataSetInterface $dataSet
+     * @param array $fields
+     * @return mixed
+     */
+    private function expandMapsForDataSets($maps, $key, \UR\Model\Core\DataSetInterface $dataSet, $fields = [])
+    {
+        $dataSetId = $dataSet->getId();
+
+        foreach ($fields as $field) {
+            $maps[sprintf("%s_%s", $field, $dataSetId)] = sprintf("t%s.`%s`", $key, $field);
+        }
+
+        $allDimensionsMetrics = array_keys($dataSet->getAllDimensionMetrics());
+
+        foreach ($allDimensionsMetrics as $field) {
+            $maps[sprintf("%s_%s", $field, $dataSetId)] = sprintf("t%s.`%s`", $key, $field);
+        }
+
 
         return $maps;
     }

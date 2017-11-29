@@ -90,4 +90,12 @@ interface ReportViewRepositoryInterface extends ObjectRepository
 	 * @return mixed
 	 */
 	public function removeAddConditionalTransformValue($id);
+
+    /**
+     * get Sub Report Views By Master Report View
+     *
+     * @param ReportViewInterface $subReportView
+     * @return ReportViewInterface[]
+     */
+    public function getSubViewsByReportView(ReportViewInterface $subReportView);
 }

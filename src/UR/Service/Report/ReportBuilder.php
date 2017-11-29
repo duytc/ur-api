@@ -518,7 +518,10 @@ class ReportBuilder implements ReportBuilderInterface
         if (count($transforms) > 0) {
             foreach ($transforms as $transform) {
                 if ($transform instanceof NewFieldTransform) {
-                    $columns[$transform->getFieldName()] = $transform->getFieldName();
+                    if (array_key_exists($transform->getFieldName(), $columns)) {
+                        continue;
+                    }
+                    $columns[$transform->getFieldName()] = $this->convertColumn($transform->getFieldName(), $params->getIsShowDataSetName());
                 }
             }
         }
@@ -595,6 +598,7 @@ class ReportBuilder implements ReportBuilderInterface
             $this->reportViewFormatter->formatReports($reportResult, $formats, $metrics, $dimensions);
         }
 
+        $totalReport = intval($totalReport);
         $reportResult->setTotalReport($totalReport);
 
         if (!empty($params->getPage()) && is_int($params->getPage())) {

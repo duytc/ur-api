@@ -532,7 +532,9 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      */
     public function patchAction(Request $request, $id)
     {
-        return $this->patch($request, $id);
+        $this->patch($request, $id);
+
+        return $this->one($id);
     }
 
     /**

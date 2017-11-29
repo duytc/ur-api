@@ -30,11 +30,13 @@ use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\NewFieldTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
+use UR\DomainManager\ReportViewManagerInterface;
 use UR\Entity\Core\DataSet;
 use UR\Entity\Core\ReportViewAddConditionalTransformValue;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\ReportViewAddConditionalTransformValueInterface;
+use UR\Model\Core\ReportViewInterface;
 use UR\Repository\Core\ReportViewAddConditionalTransformValueRepositoryInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\Synchronizer;
@@ -94,14 +96,19 @@ class SqlBuilder implements SqlBuilderInterface
     /** @var  Synchronizer */
     protected $sync;
 
+    /** @var ReportViewManagerInterface  */
+    private $reportViewManager;
+
     /**
      * SqlBuilder constructor.
      * @param EntityManagerInterface $em
+     * @param ReportViewManagerInterface $reportViewManager
      */
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(EntityManagerInterface $em, ReportViewManagerInterface $reportViewManager)
     {
         $this->em = $em;
         $this->connection = $this->em->getConnection();
+        $this->reportViewManager = $reportViewManager;
     }
 
     /**
@@ -124,31 +131,59 @@ class SqlBuilder implements SqlBuilderInterface
      */
     public function buildQueryForSingleDataSet(ParamsInterface $params, $overridingFilters = null)
     {
-        $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
-        $temporarySql = $this->buildSQLForSingleDataSet($params, $overridingFilters);
-
+        $stmt = null;
         $rows = new SplDoublyLinkedList();
         $total = 0;
-        try {
-            $this->connection->exec($temporarySql);
-            gc_collect_cycles();
-            $queryBuilder = $this->createReturnSQl($params);
-            $stmt = $queryBuilder->execute();
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $rows->push($row);
+
+        $reportView = $params->getReportView();
+        if (!$reportView instanceof ReportViewInterface && !empty($params->getReportViewId())) {
+            $reportView = $this->reportViewManager->find($params->getReportViewId());
+        }
+
+        if ($this->isSupportCalculateTable($reportView)) {
+            try {
+                $params->setReportView($reportView);
+                $queryBuilder = $this->createReturnSQlForPreCalculateTable($params, $overridingFilters, $reportView->getPreCalculateTable());
+                $stmt = $queryBuilder->execute();
+                while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $rows->push($row);
+                }
+                gc_collect_cycles();
+
+                $totalRowsQb = $this->createReturnSQlTotalForPreCalculateTable($params, $overridingFilters, $reportView->getPreCalculateTable());
+                $stmtAllRows = $totalRowsQb->execute();
+                while ($row = $stmtAllRows->fetch()) {
+                    $total = reset($row);
+                    break;
+                }
+            } catch (\Exception $e) {
+                throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
-            gc_collect_cycles();
-            $totalRowsQb = $this->connection->createQueryBuilder();
-            $totalRowsQb->select("count(*)");
-            $totalRowsQb->from($tempTable4th);
-            $totalRowsQb->addOrderBy('NULL');
-            $stmtAllRows = $totalRowsQb->execute();
-            while ($row = $stmtAllRows->fetch()) {
-                $total = reset($row);
-                break;
+        } else {
+            $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
+            $temporarySql = $this->buildSQLForSingleDataSet($params, $overridingFilters);
+
+            try {
+                $this->connection->exec($temporarySql);
+                gc_collect_cycles();
+                $queryBuilder = $this->createReturnSQl($params);
+                $stmt = $queryBuilder->execute();
+                while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $rows->push($row);
+                }
+                gc_collect_cycles();
+                $totalRowsQb = $this->connection->createQueryBuilder();
+                $totalRowsQb->select("count(*)");
+                $totalRowsQb->from($tempTable4th);
+                $totalRowsQb->addOrderBy('NULL');
+                $stmtAllRows = $totalRowsQb->execute();
+                while ($row = $stmtAllRows->fetch()) {
+                    $total = reset($row);
+                    break;
+                }
+            } catch (\Exception $e) {
+                throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
-        } catch (\Exception $e) {
-            throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
         }
 
         gc_collect_cycles();
@@ -243,8 +278,15 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         $qb->addSelect('COUNT(*) as total');
-        $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
-        $qb->from($tempTable4th);
+
+        $reportView = $params->getReportView();
+        if ($this->isSupportCalculateTable($reportView)) {
+            $tempTable4th = $reportView->getPreCalculateTable();
+            $qb->from($tempTable4th);
+        } else {
+            $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
+            $qb->from($tempTable4th);
+        }
 
         $qb = $this->applyFiltersForSingleDataSet($qb, $dataSet, $searches, $overridingFilters, $types);
 
@@ -259,32 +301,61 @@ class SqlBuilder implements SqlBuilderInterface
      */
     public function buildQuery(ParamsInterface $params, $overridingFilters = null)
     {
-        $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
-        $temporarySql = $this->buildSQLForMultiDataSets($params, $overridingFilters);
-
+        $stmt = null;
         $rows = new SplDoublyLinkedList();
         $total = 0;
 
-        try {
-            $this->connection->exec($temporarySql);
-            gc_collect_cycles();
-            $queryBuilder = $this->createReturnSQl($params);
-            $stmt = $queryBuilder->execute();
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $rows->push($row);
+        $reportView = $params->getReportView();
+        if (!$reportView instanceof ReportViewInterface && !empty($params->getReportViewId())) {
+            $reportView = $this->reportViewManager->find($params->getReportViewId());
+        }
+        if ($this->isSupportCalculateTable($reportView)) {
+            try {
+                $params->setReportView($reportView);
+                $queryBuilder = $this->createReturnSQlForPreCalculateTable($params, $overridingFilters, $reportView->getPreCalculateTable());
+                $stmt = $queryBuilder->execute();
+                while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $rows->push($row);
+                }
+                gc_collect_cycles();
+
+                $totalRowsQb = $this->createReturnSQlTotalForPreCalculateTable($params, $overridingFilters, $reportView->getPreCalculateTable());
+                $stmtAllRows = $totalRowsQb->execute();
+                while ($row = $stmtAllRows->fetch()) {
+                    $total = reset($row);
+                    break;
+                }
+            } catch (\Exception $e) {
+                throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
-            gc_collect_cycles();
-            $totalRowsQb = $this->connection->createQueryBuilder();
-            $totalRowsQb->select("count(*)");
-            $totalRowsQb->from($tempTable4th);
-            $totalRowsQb->addOrderBy('NULL');
-            $stmtAllRows = $totalRowsQb->execute();
-            while ($row = $stmtAllRows->fetch()) {
-                $total = reset($row);
-                break;
+        } else {
+            $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
+            $temporarySql = $this->buildSQLForMultiDataSets($params, $overridingFilters);
+
+            $rows = new SplDoublyLinkedList();
+            $total = 0;
+
+            try {
+                $this->connection->exec($temporarySql);
+                gc_collect_cycles();
+                $queryBuilder = $this->createReturnSQl($params);
+                $stmt = $queryBuilder->execute();
+                while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $rows->push($row);
+                }
+                gc_collect_cycles();
+                $totalRowsQb = $this->connection->createQueryBuilder();
+                $totalRowsQb->select("count(*)");
+                $totalRowsQb->from($tempTable4th);
+                $totalRowsQb->addOrderBy('NULL');
+                $stmtAllRows = $totalRowsQb->execute();
+                while ($row = $stmtAllRows->fetch()) {
+                    $total = reset($row);
+                    break;
+                }
+            } catch (\Exception $e) {
+                throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
             }
-        } catch (\Exception $e) {
-            throw new PublicSimpleException('You have an error in your SQL syntax when run report. Please recheck report view');
         }
 
         gc_collect_cycles();
@@ -388,9 +459,15 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         $qb->addSelect('COUNT(*) as total');
-        $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
-        $qb->from($tempTable4th);
 
+        $reportView = $params->getReportView();
+        if ($this->isSupportCalculateTable($reportView)) {
+            $tempTable4th = $reportView->getPreCalculateTable();
+            $qb->from($tempTable4th);
+        } else {
+            $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
+            $qb->from($tempTable4th);
+        }
         $qb = $this->applyFiltersForMultiDataSets($this->getSync(), $qb, $dataSets, $searches, $overridingFilters, $types, $joinConfig, true);
 
         return $qb->execute();
@@ -432,13 +509,10 @@ class SqlBuilder implements SqlBuilderInterface
      * @param array $selectedJoinFields
      * @param bool $hasGroup
      * @param array $postAggregationFields
-     * @param string $timezone
      * @return QueryBuilder
-     * @internal param ParamsInterface $params
-     * @internal param $hasGroup
      */
     protected function buildSelectQuery($aggregateAll, array $aggregationFields, QueryBuilder $qb, DataSetInterface $dataSet, $dataSetIndex,
-                                        array $joinConfig, array &$selectedJoinFields, $hasGroup = false, $postAggregationFields = [], $timezone = 'UTC')
+                                        array $joinConfig, array &$selectedJoinFields, $hasGroup = false, $postAggregationFields = [])
     {
         $metrics = $dataSet->getMetrics();
         $dimensions = $dataSet->getDimensions();
@@ -1003,7 +1077,6 @@ class SqlBuilder implements SqlBuilderInterface
         $subQb = $this->connection->createQueryBuilder();
 
         $postAggregationFields = [];
-        $timezone = 'UTC';
         $hasGroup = false;
         $aggregationFields = [];
         $isAggregateAll = false;
@@ -1011,7 +1084,6 @@ class SqlBuilder implements SqlBuilderInterface
         foreach ($transforms as $transform) {
             if ($transform instanceof GroupByTransform) {
                 $hasGroup = true;
-                $timezone = $transform->getTimezone();
 
                 $isAggregateAll = $transform->isAggregateAll();
                 if ($isAggregateAll) {
@@ -1253,14 +1325,12 @@ class SqlBuilder implements SqlBuilderInterface
         $dataSetIndexes = [];
         $hasGroup = false;
         $postAggregationFields = [];
-        $timezone = 'UTC';
         $aggregationFields = [];
         $isAggregateAll = false;
 
         foreach ($transforms as $transform) {
             if ($transform instanceof GroupByTransform) {
                 $hasGroup = true;
-                $timezone = $transform->getTimezone();
 
                 $isAggregateAll = $transform->isAggregateAll();
                 if ($isAggregateAll) {
@@ -1300,7 +1370,7 @@ class SqlBuilder implements SqlBuilderInterface
         $selectedJoinFields = [];
         /** @var DataSetInterface $dataSet */
         foreach ($dataSets as $dataSetIndex => $dataSet) {
-            $subQb = $this->buildSelectQuery($isAggregateAll, $aggregationFields, $subQb, $dataSet, $dataSetIndex, $joinConfig, $selectedJoinFields, false, [], $timezone);
+            $subQb = $this->buildSelectQuery($isAggregateAll, $aggregationFields, $subQb, $dataSet, $dataSetIndex, $joinConfig, $selectedJoinFields, false, []);
         }
 
         $newFields = [];
@@ -1352,7 +1422,7 @@ class SqlBuilder implements SqlBuilderInterface
 
         foreach ($dataSets as $dataSetIndex => $dataSet) {
             $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
-            $subQuery = $this->applyFiltersForMultiDataSetsForTemporaryTables($subQuery, $dataSet, $params, $allFilters, $dataSetEntity);
+            $subQuery = $this->applyFiltersForMultiDataSetsForTemporaryTables($subQuery, $dataSetIndex, $dataSet, $params, $allFilters, $dataSetEntity);
         }
 
         $conditions = [];
@@ -1379,7 +1449,7 @@ class SqlBuilder implements SqlBuilderInterface
             $selectedJoinFields = [];
             /** @var DataSetInterface $dataSet */
             foreach ($dataSets as $dataSetIndex => $dataSet) {
-                $qb = $this->buildSelectQuery($isAggregateAll, $aggregationFields, $qb, $dataSet, null, $joinConfig, $selectedJoinFields, true, [], $timezone);
+                $qb = $this->buildSelectQuery($isAggregateAll, $aggregationFields, $qb, $dataSet, null, $joinConfig, $selectedJoinFields, true, []);
             }
 
             foreach ($newFields as $newField) {
@@ -1441,7 +1511,7 @@ class SqlBuilder implements SqlBuilderInterface
             $selectedJoinFields = [];
             /** @var DataSetInterface $dataSet */
             foreach ($dataSets as $dataSetIndex => $dataSet) {
-                $outerQb = $this->buildSelectQuery($isAggregateAll, $aggregationFields, $outerQb, $dataSet, null, $joinConfig, $selectedJoinFields, false, $postAggregationFields, $timezone);
+                $outerQb = $this->buildSelectQuery($isAggregateAll, $aggregationFields, $outerQb, $dataSet, null, $joinConfig, $selectedJoinFields, false, $postAggregationFields);
             }
 
             foreach ($newFields as $newField) {
@@ -1490,9 +1560,56 @@ class SqlBuilder implements SqlBuilderInterface
     public function createReturnSQl(ParamsInterface $params)
     {
         $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
-        $queryBuilder = $this->connection->createQueryBuilder()->select("*")->from($tempTable4th);
+        $queryBuilder = $this->connection->createQueryBuilder()->select("*");
+        $queryBuilder = $this->addForceIndex($queryBuilder, $params, $tempTable4th);
+
         $queryBuilder = $this->addSortQuery($queryBuilder, $params->getTransforms(), $params->getSortField(), $params->getOrderBy());
         $queryBuilder = $this->addLimitQuery($queryBuilder, $params->getPage(), $params->getLimit());
+
+        return $queryBuilder;
+    }
+
+    /**
+     * @param ParamsInterface $params
+     * @param $overridingFilters
+     * @param $preCalculateTable
+     * @return QueryBuilder
+     */
+    public function createReturnSQlForPreCalculateTable(ParamsInterface $params, $overridingFilters, $preCalculateTable)
+    {
+        $queryBuilder = $this->connection->createQueryBuilder()->select("*");
+        $queryBuilder = $this->addForceIndex($queryBuilder, $params, $preCalculateTable);
+
+        $queryBuilder = $this->addSortQuery($queryBuilder, $params->getTransforms(), $params->getSortField(), $params->getOrderBy());
+        $queryBuilder = $this->addLimitQuery($queryBuilder, $params->getPage(), $params->getLimit());
+
+        $types = $this->getTypes($params);
+        if (count($params->getDataSets()) < 2) {
+            $queryBuilder = $this->applyFiltersForSingleDataSet($queryBuilder, $params->getDataSets()[0], $params->getSearches(), $overridingFilters, $types);
+        } else {
+            $queryBuilder = $this->applyFiltersForMultiDataSets($this->getSync(), $queryBuilder, $params->getDataSets(), $params->getSearches(), $overridingFilters, $types, $params->getJoinConfigs(), true);
+        }
+
+        return $queryBuilder;
+    }
+
+    /**
+     * @param ParamsInterface $params
+     * @param $overridingFilters
+     * @param $preCalculateTable
+     * @return QueryBuilder
+     */
+    public function createReturnSQlTotalForPreCalculateTable(ParamsInterface $params, $overridingFilters, $preCalculateTable)
+    {
+        $queryBuilder = $this->connection->createQueryBuilder()->select("count(*)")->from($preCalculateTable);
+        $queryBuilder = $this->addSortQuery($queryBuilder, $params->getTransforms(), $params->getSortField(), $params->getOrderBy());
+
+        $types = $this->getTypes($params);
+        if (count($params->getDataSets()) < 2) {
+            $queryBuilder = $this->applyFiltersForSingleDataSet($queryBuilder, $params->getDataSets()[0], $params->getSearches(), $overridingFilters, $types);
+        } else {
+            $queryBuilder = $this->applyFiltersForMultiDataSets($this->getSync(), $queryBuilder, $params->getDataSets(), $params->getSearches(), $overridingFilters, $types, $params->getJoinConfigs(), true);
+        }
 
         return $queryBuilder;
     }
@@ -1513,5 +1630,145 @@ class SqlBuilder implements SqlBuilderInterface
             } catch (\Exception $e) {
             }
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function buildSQLForPreCalculateTable(ParamsInterface $params, $preCalculateTable)
+    {
+        $this->getSync()->deleteTable($preCalculateTable);
+
+        $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
+        $sql[] = sprintf("CREATE TABLE %s AS SELECT * FROM %s;", $preCalculateTable, $tempTable4th);
+
+        return implode(" ", $sql);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function buildIndexSQLForPreCalculateTable(ParamsInterface $params, $preCalculateTable)
+    {
+        $sql = [];
+        /** Indexes for faster query */
+        $allFields = $this->getAllFieldsFromParams($params, $preCalculateTable);
+
+        foreach ($allFields as $field) {
+            $sql[] = sprintf("CREATE INDEX idx_%s ON %s(%s);", $field, $preCalculateTable, $field);
+        }
+
+        return implode(" ", $sql);
+    }
+
+    /**
+     * @param ParamsInterface $params
+     * @param $preCalculateTable
+     * @return array
+     */
+    private function getAllFieldsFromParams(ParamsInterface $params, $preCalculateTable)
+    {
+        $allFields = array_merge(
+            is_array($params->getDimensions()) ? $params->getDimensions() : [],
+            is_array($params->getMetrics()) ? $params->getMetrics() : [],
+            is_array($params->getUserDefinedDimensions()) ? $params->getUserDefinedDimensions() : [],
+            is_array($params->getUserDefinedMetrics()) ? $params->getUserDefinedMetrics() : []
+        );
+
+        $dataSets = $params->getDataSets();
+        foreach ($dataSets as $dataSet) {
+            if (!$dataSet instanceof DataSetInterface) {
+                continue;
+            }
+
+            $dimensions = is_array($dataSet->getDimensions()) ? $dataSet->getDimensions() : [];
+            $metrics = is_array($dataSet->getMetrics()) ? $dataSet->getMetrics() : [];
+            $allDimensionMetrics = array_merge($dimensions, $metrics);
+            $allDimensionMetricsWithId = array_map(function ($field) use ($dataSet) {
+                return sprintf("%s_%s", $field, $dataSet->getDataSetId());
+            }, $allDimensionMetrics);
+
+            $allFields = array_merge($allFields, $allDimensionMetricsWithId);
+        }
+
+        $joinConfigs = is_array($params->getJoinConfigs()) ? $params->getJoinConfigs() : [];
+        foreach ($joinConfigs as $joinConfig) {
+            if (!$joinConfig instanceof JoinConfigInterface) {
+                continue;
+            }
+
+            $allFields = array_merge($allFields, explode(",", $joinConfig->getOutputField()));
+        }
+
+
+        $table = $this->getSync()->getTable($preCalculateTable);
+        if (!$table instanceof Table) {
+            return [];
+        }
+
+        $allFields = array_filter($allFields, function ($field) use ($table) {
+            return $table->hasColumn($field);
+        });
+
+        return array_unique(array_values($allFields));
+    }
+
+    public function getTypes(ParamsInterface $params) {
+        $types = [];
+        $dataSetRepository = $this->em->getRepository(DataSet::class);
+        $dataSets = $params->getDataSets();
+
+        foreach ($dataSets as $dataSet) {
+            if (!$dataSet instanceof \UR\Domain\DTO\Report\DataSets\DataSet) {
+                continue;
+            }
+
+            $dataSetEntity = $dataSetRepository->find($dataSet->getDataSetId());
+            $realMetrics = $dataSetEntity->getMetrics();
+            foreach ($realMetrics as $metric => $type) {
+                $types[sprintf('%s_%d', $metric, $dataSet->getDataSetId())] = $type;
+            }
+
+            $realDimensions = $dataSetEntity->getDimensions();
+            foreach ($realDimensions as $dimension => $type) {
+                $types[sprintf('%s_%d', $dimension, $dataSet->getDataSetId())] = $type;
+            }
+
+            $types = array_merge($types, $params->getFieldTypes());
+        }
+
+        return $types;
+    }
+
+    /**
+     * @param QueryBuilder $queryBuilder
+     * @param ParamsInterface $params
+     * @param $dataTable
+     * @return $this|QueryBuilder
+     */
+    private function addForceIndex(QueryBuilder $queryBuilder, ParamsInterface $params, $dataTable)
+    {
+        if (empty($params->getSortField())) {
+            return$queryBuilder->from($dataTable);
+        }
+
+        $table = $this->getSync()->getTable($dataTable);
+        $index = sprintf("idx_%s", str_replace('"', "", $params->getSortField()));
+        if ($table instanceof Table && $table->hasIndex($index)){
+            return $queryBuilder->from(sprintf("%s FORCE INDEX (%s)", $dataTable, $index));
+        }
+
+        return $queryBuilder->from($dataTable);
+    }
+
+    /**
+     * @param $reportView
+     * @return bool
+     */
+    private function isSupportCalculateTable($reportView)
+    {
+        return $reportView instanceof ReportViewInterface &&
+                !empty($reportView->getPreCalculateTable()) &&
+                $this->getSync()->getTable($reportView->getPreCalculateTable()) instanceof Table;
     }
 }

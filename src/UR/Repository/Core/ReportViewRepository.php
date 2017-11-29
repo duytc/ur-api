@@ -207,6 +207,17 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
         return count($reportViews) > 0;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getSubViewsByReportView(ReportViewInterface $subReportView) {
+        $qb = $this->createQueryBuilder('rpv')
+            ->where('rpv.masterReportView = :masterReportView')
+            ->setParameter('masterReportView', $subReportView);
+
+        return $qb->getQuery()->getResult();
+    }
+
 	/**
 	 * @inheritdoc
 	 */

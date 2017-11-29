@@ -86,4 +86,17 @@ class ReportSelector implements ReportSelectorInterface
 
         return sprintf("%s %s;", $temporarySQL, $queryBuilder->getSQL());
     }
+
+    /**
+     * @param ParamsInterface $params
+     * @param $overridingFilters
+     * @param $preCalculateTable
+     * @return Statement
+     */
+    public function getFullSQLForPreCalculateTable(ParamsInterface $params, $preCalculateTable, $overridingFilters = null)
+    {
+        $queryBuilder = $this->sqlBuilder->createReturnSQlForPreCalculateTable($params, $overridingFilters, $preCalculateTable);
+
+        return $queryBuilder->getSQL();
+    }
 }

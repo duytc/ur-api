@@ -228,6 +228,21 @@ class Synchronizer
     }
 
     /**
+     * @param $tableName
+     * @return Table|false
+     */
+    public function deleteTable($tableName)
+    {
+        $sm = $this->conn->getSchemaManager();
+
+        if (!$sm->tablesExist([$tableName])) {
+            return false;
+        }
+
+        $sm->dropTable($tableName);
+    }
+
+    /**
      * get DataSet Import Table Name
      *
      * @param int $dataSetId

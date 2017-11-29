@@ -8,6 +8,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use UR\Behaviors\LargeReportViewUtilTrait;
 use UR\Entity\Core\ReportView;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\ReportViewDataSetInterface;
@@ -16,19 +17,26 @@ use UR\Model\User\Role\AdminInterface;
 
 class ReportViewFormType extends AbstractRoleSpecificFormType
 {
+    use LargeReportViewUtilTrait;
+
     private $originalReportViewDataSets;
     /**
      * @var EntityManagerInterface
      */
     private $em;
 
+    /** @var  int */
+    private $largeThreshold;
+
     /**
      * ReportViewFormType constructor.
      * @param EntityManagerInterface $em
+     * @param $largeThreshold
      */
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(EntityManagerInterface $em, $largeThreshold)
     {
         $this->em = $em;
+        $this->largeThreshold = $largeThreshold;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options)
@@ -46,6 +54,10 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             ->add('subView')
             ->add('masterReportView')
             ->add('filters')
+            ->add('largeReport')
+            ->add('availableToRun')
+            ->add('availableToChange')
+            ->add('preCalculateTable')
         ;
 
         $builder
@@ -78,17 +90,6 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
         );
 
         $builder->addEventListener(
-            FormEvents::PRE_SUBMIT,
-            function (FormEvent $event) {
-                foreach ($this->originalReportViewDataSets as $reportViewDataSet) {
-                    $this->em->remove($reportViewDataSet);
-                }
-
-                $this->em->flush();
-            }
-        );
-
-        $builder->addEventListener(
             FormEvents::POST_SUBMIT,
             function (FormEvent $event) {
                 /** @var ReportViewInterface $reportView */
@@ -117,6 +118,9 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
                 foreach ($reportViewDataSets as $reportViewDataSet) {
                     $reportViewDataSet->setReportView($reportView);
                 }
+
+                $largeReport = $this->isLargeReportView($reportView, $this->getLargeThreshold());
+                $reportView->setLargeReport($largeReport);
             }
         );
     }
@@ -164,5 +168,13 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
         // TODO: validate fieldTypes
 
         return true;
+    }
+
+    /**
+     * @return int
+     */
+    public function getLargeThreshold()
+    {
+        return $this->largeThreshold;
     }
 }

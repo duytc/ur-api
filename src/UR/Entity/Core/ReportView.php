@@ -28,6 +28,10 @@ class ReportView extends ReportViewModel
     protected $subView;
     protected $masterReportView;
     protected $filters;
+    protected $largeReport;
+    protected $availableToRun;
+    protected $availableToChange;
+    protected $preCalculateTable;
 
     /**
      * @inheritdoc
