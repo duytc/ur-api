@@ -76,7 +76,7 @@ UR\Entity\Core\DataSet:
             targetEntity: UR\Entity\Core\ImportHistory
             mappedBy: dataSet
             cascade: ['remove', 'detach']
-        autoOptimizationConfig:
+        autoOptimizationConfigDataSets:
             targetEntity: UR\Entity\Core\AutoOptimizationConfig
             mappedBy: dataSet
             cascade: ['persist', 'remove', 'detach']
