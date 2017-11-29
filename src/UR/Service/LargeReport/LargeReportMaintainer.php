@@ -2,11 +2,13 @@
 namespace UR\Service\LargeReport;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
 use UR\Behaviors\LargeReportViewUtilTrait;
 use UR\DomainManager\ReportViewManagerInterface;
 use UR\Entity\Core\ReportView;
 use UR\Model\Core\ReportViewInterface;
+use UR\Service\DataSet\Synchronizer;
 use UR\Service\Report\ParamsBuilderInterface;
 use UR\Service\Report\SqlBuilderInterface;
 use UR\Worker\Manager;
@@ -56,6 +58,9 @@ class LargeReportMaintainer implements LargeReportMaintainerInterface
             return;
         }
 
+        $preCalculateTable = sprintf(self::PRE_CALCULATE_TABLE_TEMPLATE, $reportView->getId());
+        $this->deleteCurrentTable($preCalculateTable);
+
         $this->setLockReportView($reportView, true);
 
         $params = $this->getParamsBuilder()->buildFromReportView($reportView);
@@ -67,7 +72,6 @@ class LargeReportMaintainer implements LargeReportMaintainerInterface
             $temporarySql = $this->getSqlBuilder()->buildSQLForMultiDataSets($params);
         }
 
-        $preCalculateTable = sprintf(self::PRE_CALCULATE_TABLE_TEMPLATE, $reportView->getId());
         $preCalculateSql = $this->getSqlBuilder()->buildSQLForPreCalculateTable($params, $preCalculateTable);
 
         try {
@@ -216,5 +220,14 @@ class LargeReportMaintainer implements LargeReportMaintainerInterface
         $currentReportView = $this->reportViewManager->find($reportView->getId());
 
         return !$currentReportView instanceof ReportViewInterface;
+    }
+
+    /**
+     * @param $tableName
+     */
+    private function deleteCurrentTable($tableName)
+    {
+        $sync = new Synchronizer($this->getConnection(), new Comparator());
+        $sync->deleteTable($tableName);
     }
 }

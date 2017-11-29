@@ -170,16 +170,20 @@ class ReportViewChangeForLargeReportListener
      */
     public function postFlush(PostFlushEventArgs $event)
     {
-        $em = $event->getEntityManager();
-        $this->em = $em;
+        $this->em = $event->getEntityManager();
 
-        $this->setConnection($em->getConnection());
+        $this->setConnection($this->getEm()->getConnection());
 
         /** @var ReportViewRepositoryInterface $reportViewRepository */
-        $reportViewRepository = $em->getRepository(ReportView::class);
+        $reportViewRepository = $this->getEm()->getRepository(ReportView::class);
 
         $deleteTables = array_unique($this->deletePreCalculatedTable);
         $this->deletePreCalculatedTable = [];
+
+        if (!is_array($deleteTables)) {
+            $deleteTables = [];
+        }
+
         foreach ($deleteTables as $table) {
             //Call service delete pre calculate table
             $this->getSynchronizer()->deleteTable($table);
@@ -188,7 +192,10 @@ class ReportViewChangeForLargeReportListener
         $reportViewIds = array_unique(array_values($this->updateReportViewIds));
         $this->updateReportViewIds = [];
 
-        $reportViewIds = array_unique(array_merge($reportViewIds, $this->getReportViewsByImportHistory($em)));
+        $reportViewIds = array_unique(array_merge($reportViewIds, $this->getReportViewsByUpdateDataSets()));
+        if (!is_array($reportViewIds)) {
+            $reportViewIds = [];
+        }
 
         foreach ($reportViewIds as $reportViewId) {
             $reportView = $reportViewRepository->find($reportViewId);
@@ -210,6 +217,10 @@ class ReportViewChangeForLargeReportListener
      */
     public function getConnection()
     {
+        if (!$this->connection instanceof Connection) {
+            $this->connection = $this->getEm()->getConnection();
+        }
+
         return $this->connection;
     }
 
@@ -245,8 +256,9 @@ class ReportViewChangeForLargeReportListener
         $this->synchronizer = $synchronizer;
     }
 
-    private function getReportViewsByImportHistory(EntityManagerInterface $em)
+    private function getReportViewsByUpdateDataSets()
     {
+        $em = $this->getEm();
         /** @var ReportViewDataSetRepositoryInterface $reportViewDataSetRepository */
         $reportViewDataSetRepository = $em->getRepository(ReportViewDataSet::class);
 
@@ -257,6 +269,10 @@ class ReportViewChangeForLargeReportListener
         $this->updateDataSets = [];
         $reportViewIds = [];
 
+        if (!is_array($updateDataSets)) {
+            $updateDataSets = [];
+        }
+
         foreach ($updateDataSets as $dataSetId) {
             $dataSet = $dataSetRepository->find($dataSetId);
             if (!$dataSet instanceof DataSetInterface) {
@@ -264,6 +280,10 @@ class ReportViewChangeForLargeReportListener
             }
 
             $rpDataSets = $reportViewDataSetRepository->getByDataSet($dataSet);
+            if (!is_array($rpDataSets)) {
+                $rpDataSets = [];
+            }
+
             foreach ($rpDataSets as $rpDataSet) {
                 if (!$rpDataSet instanceof ReportViewDataSetInterface) {
                     continue;
@@ -296,6 +316,9 @@ class ReportViewChangeForLargeReportListener
         $reportViewDataSetRepository = $this->getEm()->getRepository(ReportViewDataSet::class);
 
         $reportViewDataSets = $reportViewDataSetRepository->getByDataSet($dataSet);
+        if (!is_array($reportViewDataSets)) {
+            $reportViewDataSets = [];
+        }
 
         foreach ($reportViewDataSets as $reportViewDataSet) {
             if (!$reportViewDataSet instanceof ReportViewDataSetInterface) {
@@ -311,7 +334,10 @@ class ReportViewChangeForLargeReportListener
             /** Delete preCalculateTable and update report view*/
 
             $preCalculateTable = $reportView->getPreCalculateTable();
-            $this->getSynchronizer()->deleteTable($preCalculateTable);
+
+            if ($this->getSynchronizer() instanceof Synchronizer) {
+                $this->getSynchronizer()->deleteTable($preCalculateTable);
+            }
 
             $reportView->setPreCalculateTable(null);
             $reportView->setLargeReport(false);
