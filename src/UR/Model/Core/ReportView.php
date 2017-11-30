@@ -127,6 +127,11 @@ class ReportView implements ReportViewInterface
     protected $masterReportView;
 
     /**
+     * @var ReportViewInterface[]
+     */
+    protected $subReportViews;
+
+    /**
      * @var array
      */
     protected $filters;
@@ -506,6 +511,24 @@ class ReportView implements ReportViewInterface
     public function setMasterReportView($masterReportView)
     {
         $this->masterReportView = $masterReportView;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSubReportViews()
+    {
+        return $this->subReportViews;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setSubReportViews($subReportViews)
+    {
+        $this->subReportViews = $subReportViews;
+
         return $this;
     }
 

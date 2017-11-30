@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\ApiBundle\EventListener;
 
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
@@ -86,6 +87,19 @@ class ReportViewChangeForSharedKeysConfigListener
 			$this->shareableLinkUpdater->updateShareableLinks($reportView);
 
 			$em->persist($reportView);
+
+			// also update all subViews
+			/** @var ReportViewInterface[]|Collection $subReportViews */
+			$subReportViews = $reportView->getSubReportViews();
+			if ($subReportViews instanceof Collection) {
+				$subReportViews = $subReportViews->toArray();
+			}
+
+			foreach ($subReportViews as $subReportView) {
+				$this->shareableLinkUpdater->updateShareableLinks($subReportView);
+
+				$em->persist($subReportView);
+			}
 
 			$update = true;
 		}

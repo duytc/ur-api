@@ -232,6 +232,17 @@ interface ReportViewInterface extends ModelInterface
     public function setMasterReportView($masterReportView);
 
     /**
+     * @return ReportViewInterface[]
+     */
+    public function getSubReportViews();
+
+    /**
+     * @param ReportViewInterface[] $subReportViews
+     * @return self
+     */
+    public function setSubReportViews($subReportViews);
+
+    /**
      * @return array
      */
     public function getFilters();

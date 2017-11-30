@@ -104,3 +104,8 @@ UR\Entity\Core\ReportView:
             fetch: EXTRA_LAZY
             cascade: ['persist', 'remove', 'detach']
             orphanRemoval: true
+        subReportViews:
+            targetEntity: UR\Entity\Core\ReportView
+            mappedBy: masterReportView
+            cascade: ['remove', 'detach']
+            orphanRemoval: true
