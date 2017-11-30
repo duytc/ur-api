@@ -363,6 +363,22 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         return $stmt->execute();
     }
 
+    /**
+     * @param $connectedDataSourceId
+     * @param $dataSourceEntryId
+     * @return mixed
+     */
+    public function deleteImportHistoryByConnectedDataSourceAndEntry ($connectedDataSourceId, $dataSourceEntryId)
+    {
+        $conn = $this->_em->getConnection();
+        $query = sprintf('DELETE FROM core_import_history WHERE connected_data_source_id = ? and data_source_entry_id = ?');
+        $stmt = $conn->prepare($query);
+        $stmt->bindValue(1, $connectedDataSourceId);
+        $stmt->bindValue(2, $dataSourceEntryId);
+
+        return $stmt->execute();
+    }
+
     public function deletePreviousImports($importHistories, ConnectedDataSourceInterface $connectedDataSource)
     {
         $conn = $this->_em->getConnection();

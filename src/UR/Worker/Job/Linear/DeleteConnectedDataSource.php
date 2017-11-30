@@ -5,7 +5,9 @@ namespace UR\Worker\Job\Linear;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\JobParams;
 use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
+use UR\DomainManager\ConnectedDataSourceManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 
 class DeleteConnectedDataSource implements SplittableJobInterface
 {
@@ -29,12 +31,15 @@ class DeleteConnectedDataSource implements SplittableJobInterface
      */
     protected $importHistoryManager;
 
-    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger
+    /** @var ConnectedDataSourceManagerInterface  */
+    private $connectedDataSourceManager;
+
+    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger,  ConnectedDataSourceManagerInterface $connectedDataSourceManager
     )
     {
         $this->scheduler = $scheduler;
-
         $this->logger = $logger;
+        $this->connectedDataSourceManager = $connectedDataSourceManager;
     }
 
     public function getName(): string
@@ -47,6 +52,11 @@ class DeleteConnectedDataSource implements SplittableJobInterface
         // do create all linear jobs for each files
         $dataSetId = (int)$params->getRequiredParam(self::DATA_SET_ID);
         $connectedDataSourceId = (int)$params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
+        $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
+
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            return;
+        }
 
         $this->scheduler->addJob([
             [

@@ -3,7 +3,9 @@
 namespace UR\Service\Import;
 
 
+use DateTime;
 use Monolog\Logger;
+use SplDoublyLinkedList;
 use UR\Domain\DTO\ConnectedDataSource\DryRunParamsInterface;
 use UR\DomainManager\MapBuilderConfigManager;
 use UR\Model\Core\ConnectedDataSourceInterface;
@@ -13,6 +15,7 @@ use UR\Model\Core\MapBuilderConfigInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\ArrayUtilTrait;
 use UR\Service\DataSet\DataMappingService;
+use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\ParsedDataImporter;
 use UR\Service\DataSet\UpdateDataSetTotalRowService;
 use UR\Service\DataSource\DataSourceFileFactory;
@@ -249,15 +252,17 @@ class AutoImportData implements AutoImportDataInterface
      */
     private function importToDataBase(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, ImportHistoryInterface $importHistoryEntity, $collection)
     {
+        if (!$collection instanceof Collection) {
+            return;
+        }
+
+        $collection = $this->filterCollectionByDateRange($collection, $connectedDataSource);
+
         /* import data to database */
         $this->logger->notice(sprintf('begin loading file "%s" data to database "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
         $collection = $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
         $this->updateDataSetTotalRowService->updateDataSetTotalRow($connectedDataSource->getDataSet()->getId());
         $this->updateDataSetTotalRowService->updateAllConnectedDataSourcesTotalRowInOneDataSet($connectedDataSource->getDataSet()->getId());
-
-        if (!($collection instanceof Collection)) {
-            return;
-        }
 
         /** Import collection to map builder configs */
         $dataSet = $connectedDataSource->getDataSet();
@@ -267,5 +272,86 @@ class AutoImportData implements AutoImportDataInterface
             /** @var MapBuilderConfigInterface $mapBuilderConfig */
             $this->dataMappingService->importDataFromComponentDataSet($mapBuilderConfig, $collection);
         }
+    }
+
+    /**
+     * @param Collection $collection
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return Collection
+     */
+    protected function filterCollectionByDateRange(Collection $collection, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $startDate = $connectedDataSource->getReloadStartDate();
+        $endDate = $connectedDataSource->getReloadEndDate();
+
+        if (!$startDate instanceof DateTime ||
+            !$endDate instanceof DateTime) {
+            return $collection;
+        }
+
+        $rows = $collection->getRows();
+        $dateFields = $this->getDateTimeFields($collection);
+
+        if (empty($dateFields)) {
+            return $collection;
+        }
+
+        $filterRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
+            $dates = [];
+            $isValid = true;
+            foreach ($dateFields as $dateField) {
+                if (!array_key_exists($dateField, $row)) {
+                    continue;
+                }
+
+                $date = date_create_from_format('Y-m-d', $row[$dateField]);
+                if (!$date instanceof DateTime) {
+                    $date = date_create_from_format('Y-m-d H:i:s', $row[$dateField]);
+                }
+
+                if ($date instanceof DateTime) {
+                    $dates[] = $date;
+                }
+            }
+
+            foreach ($dates as $date) {
+                if ($date < $startDate || $date > $endDate) {
+                    $isValid = false;
+                    break;
+                }
+            }
+
+            if ($isValid) {
+                $filterRows->push($row);
+            }
+
+            unset($row);
+        }
+
+        $collection->setRows($filterRows);
+        unset($rows);
+        gc_collect_cycles();
+
+        return $collection;
+    }
+
+    /**
+     * @param Collection $collection
+     * @return array
+     */
+    protected function getDateTimeFields(Collection $collection)
+    {
+        $columns = $collection->getColumns();
+
+        if (!is_array($columns)) {
+            return [];
+        }
+
+        $dateFields = array_filter($columns, function ($column) use ($collection) {
+            return in_array($collection->getTypeOf($column), [FieldType::DATE, FieldType::DATETIME]);
+        });
+
+        return $dateFields;
     }
 }
