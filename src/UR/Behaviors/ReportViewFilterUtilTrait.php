@@ -148,9 +148,10 @@ trait ReportViewFilterUtilTrait
 
         $buildResult = $this->buildFilters($filters);
         $conditions = $buildResult[self::CONDITION_KEY];
+        $maps = $params->getMagicMaps();
+        $maps = $this->expandMapsForDataSets($maps, $key, $realDataSet, $maps);
+
         foreach ($conditions as &$condition) {
-            $maps = $params->getMagicMaps();
-            $maps = $this->expandMapsForDataSets($maps, $key, $realDataSet, $maps);
             foreach ($maps as $key => $field) {
                 $fieldReplace = "`" . str_replace(".", "`.", $field);
                 $condition = str_replace(sprintf("`%s`", $key), $fieldReplace, $condition);
@@ -196,7 +197,7 @@ trait ReportViewFilterUtilTrait
                 $filters = [];
             }
 
-            foreach ($filters as &$filter) {
+            foreach ($filters as $filter) {
                 if (!$filter instanceof FilterInterface) {
                     continue;
                 }
@@ -338,7 +339,13 @@ trait ReportViewFilterUtilTrait
             $maps[sprintf("%s_%s", $field, $dataSetId)] = sprintf("t%s.`%s`", $key, $field);
         }
 
+        $newMaps = [];
+        foreach ($maps as $key => $map) {
+            if (strpos($key, '`') == false) {
+                $newMaps[$key] = $map;
+            }
+        }
 
-        return $maps;
+        return $newMaps;
     }
 }
