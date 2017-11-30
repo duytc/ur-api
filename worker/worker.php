@@ -156,6 +156,10 @@ while (1) {
             $entityManager->getConnection()->close();
             $entityManager->getConnection()->connect();
         }
+
+        if (FALSE == $entityManager->getConnection()->ping()) {
+            $logger->warning("MySQL server has gone away. Contact system admin and restart worker");
+        }
     }
 }
 
