@@ -95,10 +95,14 @@ class ReportViewChangeForSharedKeysConfigListener
 				$subReportViews = $subReportViews->toArray();
 			}
 
-			foreach ($subReportViews as $subReportView) {
-				$this->shareableLinkUpdater->updateShareableLinks($subReportView);
+			if (is_array($subReportViews)) {
+				// above: make sure $subReportViews is array because it may be NULL if no subReportView was created before
 
-				$em->persist($subReportView);
+				foreach ($subReportViews as $subReportView) {
+					$this->shareableLinkUpdater->updateShareableLinks($subReportView);
+
+					$em->persist($subReportView);
+				}
 			}
 
 			$update = true;
