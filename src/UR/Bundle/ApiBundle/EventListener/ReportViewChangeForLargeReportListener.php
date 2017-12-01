@@ -103,8 +103,11 @@ class ReportViewChangeForLargeReportListener
                 $args->hasChangedField(ReportViewInterface::REPORT_VIEW_TRANSFORMS)
             ) {
                 $this->updateReportViewIds[] = $entity->getId();
-                $entity->setAvailableToRun(false);
-                $entity->setAvailableToChange(false);
+
+                // INVALID code here
+                // TODO: review and remove when stable...
+                //$entity->setAvailableToRun(false);
+                //$entity->setAvailableToChange(false);
 
                 if ($this->isLargeReportView($entity, $this->largeThreshold)) {
                     $entity->setPreCalculateTable(null);
