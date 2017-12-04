@@ -38,9 +38,6 @@ class DataSet extends DataSetModel
     protected $numChanges;
     protected $mapBuilderEnabled;
 
-    /** @var AutoOptimizationConfigDataSetInterface[] */
-    protected $autoOptimizationConfigDataSets;
-
     /**
      * @var MapBuilderConfigInterface[]
      */
