@@ -56,7 +56,7 @@ class DataSet implements DataSetInterface
      */
     protected $mapBuilderConfigs;
 
-    /** @var  AutoOptimizationConfigDataSetInterface[] */
+    /** @var AutoOptimizationConfigDataSetInterface[] */
     protected $autoOptimizationConfigDataSets;
 
     public function __construct()
@@ -452,6 +452,7 @@ class DataSet implements DataSetInterface
     public function setAutoOptimizationConfigDataSets($autoOptimizationConfigDataSets)
     {
         $this->autoOptimizationConfigDataSets = $autoOptimizationConfigDataSets;
+
         return $this;
     }
 }

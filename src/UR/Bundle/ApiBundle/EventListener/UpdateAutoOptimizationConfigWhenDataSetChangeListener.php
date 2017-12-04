@@ -1,5 +1,7 @@
 <?php
+
 namespace UR\Bundle\ApiBundle\EventListener;
+
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
@@ -13,42 +15,53 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
 {
     const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';
+
     public function preUpdate(PreUpdateEventArgs $args)
     {
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
+
         if (!$entity instanceof DataSetInterface) {
             return;
         }
+        
         // get changes
         if (!$args->hasChangedField(self::DIMENSIONS_KEY) && $args->hasChangedField(self::METRICS_KEY)) {
             return;
         }
+
         $newDimensions = $entity->getDimensions();
         $oldDimensions = $entity->getDimensions();
         $newMetrics = $entity->getMetrics();
         $oldMetrics = $entity->getMetrics();
+
         if ($args->hasChangedField(self::DIMENSIONS_KEY)) {
             $newDimensions = $args->getNewValue(self::DIMENSIONS_KEY);
             $oldDimensions = $args->getOldValue(self::DIMENSIONS_KEY);
         }
+
         if ($args->hasChangedField(self::METRICS_KEY)) {
             $newMetrics = $args->getNewValue(self::METRICS_KEY);
             $oldMetrics = $args->getOldValue(self::METRICS_KEY);
         }
+
         $dimensionsMapping = array_combine($oldDimensions, $newDimensions);
         $metricsMapping = array_combine($oldMetrics, $newMetrics);
+
         $dimensionsMetricsMapping = array_merge($dimensionsMapping, $metricsMapping);
+
         /** @var AutoOptimizationConfigDataSetInterface[]|Collection $autoOptimizationConfigDataSets */
         $autoOptimizationConfigDataSets = $entity->getAutoOptimizationConfigDataSets();
         if ($autoOptimizationConfigDataSets instanceof Collection) {
             $autoOptimizationConfigDataSets = $autoOptimizationConfigDataSets->toArray();
         }
+
         /** @var AutoOptimizationConfigInterface[] $autoOptimizationConfigDataSet */
         $autoOptimizationConfigs = array_map(function ($autoOptimizationConfigDataSet) {
             /** @var AutoOptimizationConfigDataSetInterface $autoOptimizationConfigDataSet */
             return $autoOptimizationConfigDataSet->getAutoOptimizationConfig();
         }, $autoOptimizationConfigDataSets);
+
         foreach ($autoOptimizationConfigs as $autoOptimizationConfig) {
             $autoOptimizationConfig = $this->updateOptimizationConfig($autoOptimizationConfig, $entity, $dimensionsMetricsMapping);
             $em->merge($autoOptimizationConfig);
@@ -86,15 +99,21 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 if ($dataSetId !== $dataSet->getId()) {
                     continue;
                 }
+
                 $field = $joinField[SqlBuilder::JOIN_CONFIG_FIELD];
                 $field = $this->mappingNewValue($field, $dimensionsMetricsMapping);
                 $joinField[SqlBuilder::JOIN_CONFIG_FIELD] = $field;
             }
+
             $joinBy_[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS] = $joinFields;
+
             unset($joinField);
         }
+
         unset($joinBy_);
+
         $autoOptimizationConfig->setJoinBy($joinBy);
+
         /*
          * transforms
          * [
@@ -120,14 +139,20 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 if ($dataSetIdFromField != $dataSet->getId()) {
                     continue;
                 }
+
                 $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
                 $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
             }
+
             $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
+
             unset($field);
         }
+
         unset($transform);
+
         $autoOptimizationConfig->setTransforms($transforms);
+
         /* filters */
         $filters = $autoOptimizationConfig->getFilters();
         foreach ($filters as &$filter) {
@@ -135,12 +160,16 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             if ($dataSetId !== $dataSet->getId()) {
                 continue;
             }
+
             $field = $filter[AbstractFilter::FILTER_FIELD_KEY];
             $field = $this->mappingNewValue($field, $dimensionsMetricsMapping);
             $filter[AbstractFilter::FILTER_FIELD_KEY] = $field;
         }
+
         unset($filter);
+
         $autoOptimizationConfig->setFilters($filters);
+
         /*
          * fieldTypes
          * [
@@ -157,11 +186,14 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 $newFieldTypes[$field] = $type;
                 continue;
             }
+
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
             $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
             $newFieldTypes[$field] = $type;
         }
+
         $autoOptimizationConfig->setFieldTypes($newFieldTypes);
+
         /*
          * dimensions
          * [
@@ -178,11 +210,14 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 $newDimensions[$field] = $type;
                 continue;
             }
+
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
             $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
             $newDimensions[$field] = $type;
         }
+
         $autoOptimizationConfig->setDimensions($newDimensions);
+
         /* metrics
          * [
          *      <field> => <type>,
@@ -198,11 +233,14 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 $newMetrics[$field] = $type;
                 continue;
             }
+
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
             $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
             $newMetrics[$field] = $type;
         }
+
         $autoOptimizationConfig->setMetrics($newMetrics);
+
         /* factors
          * [
          *      <field>
@@ -216,11 +254,15 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             if ($dataSetIdFromField != $dataSet->getId()) {
                 continue;
             }
+
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
             $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
+
         unset($field);
+
         $autoOptimizationConfig->setFactors($factors);
+
         /* objective
          * [
          *      <field>
@@ -233,6 +275,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         if ($dataSetIdFromField == $dataSet->getId()) {
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
             $objective = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+
             $autoOptimizationConfig->setObjective($objective);
         }
 
