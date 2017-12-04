@@ -266,7 +266,7 @@ class DataSet implements DataSetInterface
      */
     public function setTotalRow($totalRow)
     {
-        $this->totalRow = $totalRow;
+        $this->totalRow = (float) $totalRow;
         return $this;
     }
 

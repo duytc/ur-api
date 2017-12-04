@@ -179,4 +179,11 @@ class ReportViewManager implements ReportViewManagerInterface
     {
         return $this->repository->getSingleViews();
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getReportViewsForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null) {
+        return $this->repository->getReportViewsForPublisherQuery($publisher, $limit, $offset);
+    }
 }

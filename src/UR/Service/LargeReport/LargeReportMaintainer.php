@@ -52,17 +52,18 @@ class LargeReportMaintainer implements LargeReportMaintainerInterface
     /**
      * @inheritdoc
      */
-    public function maintainerLargeReport(ReportViewInterface $reportView)
+    public function maintainLargeReport(ReportViewInterface $reportView)
     {
         if (!$this->isLargeReportView($reportView, $this->getLargeThreshold())) {
             return;
         }
 
+        /** Pre maintain: Delete old data and lock report view */
         $preCalculateTable = sprintf(self::PRE_CALCULATE_TABLE_TEMPLATE, $reportView->getId());
         $this->deleteCurrentTable($preCalculateTable);
-
         $this->setLockReportView($reportView, true);
 
+        /** Build SQL for maintain large report */
         $params = $this->getParamsBuilder()->buildFromReportView($reportView);
         $dataSets = $params->getDataSets();
 
@@ -74,25 +75,26 @@ class LargeReportMaintainer implements LargeReportMaintainerInterface
 
         $preCalculateSql = $this->getSqlBuilder()->buildSQLForPreCalculateTable($params, $preCalculateTable);
 
+        /** Execute SQL. Handle exception here */
         try {
             $this->getConnection()->exec($temporarySql);
             gc_collect_cycles();
             $this->getConnection()->exec($preCalculateSql);
             gc_collect_cycles();
 
-            if ($this->needDeletePreCalculateTable($reportView)) {
-                $deleteSql = sprintf("DROP TABLE %s;", $preCalculateTable);
-                $this->getConnection()->exec($deleteSql);
-                $this->getConnection()->commit();
-            } else {
-                $this->updateLargeReportView($reportView, $preCalculateTable);
-                gc_collect_cycles();
-                $this->updateSubViews($reportView);
-            }
+            /** Notify UI to known this report is large and not allow user change User defined dimensions */
+            $this->updateLargeReportView($reportView, $preCalculateTable);
+            gc_collect_cycles();
+
+            $this->updateSubViews($reportView);
         } catch (\Exception $e) {
             $this->updateSmallReportView($reportView);
         }
 
+        /**
+         * Create indexes for using FORCE INDEX when query report on the future.
+         * Indexes is enhanced feature. Exception on creating indexes not affected to Pre Calculate Table.
+         * */
         $indexSql = $this->getSqlBuilder()->buildIndexSQLForPreCalculateTable($params, $preCalculateTable);
         try {
             $this->getConnection()->exec($indexSql);
@@ -101,7 +103,15 @@ class LargeReportMaintainer implements LargeReportMaintainerInterface
 
         }
 
-        $this->setLockReportView($reportView, false);
+        if ($this->isExistReportView($reportView)) {
+            /** Post Maintain: Unlock report view, allow user edit report view from UI */
+            $this->setLockReportView($reportView, false);
+        } else {
+            /** Some report views are deleted when maintaining report. We need remove Pre Calculate Table for deleted reports */
+            $deleteSql = sprintf("DROP TABLE %s;", $preCalculateTable);
+            $this->getConnection()->exec($deleteSql);
+            $this->getConnection()->commit();
+        }
     }
 
     /**
@@ -215,11 +225,11 @@ class LargeReportMaintainer implements LargeReportMaintainerInterface
      * @param ReportViewInterface $reportView
      * @return bool
      */
-    private function needDeletePreCalculateTable(ReportViewInterface $reportView)
+    private function isExistReportView(ReportViewInterface $reportView)
     {
         $currentReportView = $this->reportViewManager->find($reportView->getId());
 
-        return !$currentReportView instanceof ReportViewInterface;
+        return $currentReportView instanceof ReportViewInterface;
     }
 
     /**

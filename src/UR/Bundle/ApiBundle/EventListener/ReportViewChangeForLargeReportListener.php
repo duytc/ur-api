@@ -95,51 +95,50 @@ class ReportViewChangeForLargeReportListener
         $this->em = $args->getEntityManager();
         $entity = $args->getEntity();
 
-        if ($entity instanceof ReportViewInterface) {
-            if ($args->hasChangedField(ReportBuilder::DIMENSIONS_KEY) ||
-                $args->hasChangedField(ReportBuilder::METRICS_KEY) ||
+        /**
+         * Only listen for changes on join config, filters, number of data sets and transforms only
+         * Changes on dimensions/metrics are handled by changes on ReportViewDataSetInterface
+         */
+        if ($entity instanceof ReportViewInterface && $this->isLargeReportView($entity, $this->largeThreshold)) {
+            if ($args->hasChangedField(ReportViewInterface::REPORT_VIEW_JOIN_BY) ||
                 $args->hasChangedField(ReportViewInterface::REPORT_VIEW_FILTERS) ||
                 $args->hasChangedField(ParamsBuilder::DATA_SET_KEY) ||
                 $args->hasChangedField(ReportViewInterface::REPORT_VIEW_TRANSFORMS)
             ) {
                 $this->updateReportViewIds[] = $entity->getId();
+                $entity->setPreCalculateTable(null);
 
-                // INVALID code here
-                // TODO: review and remove when stable...
-                //$entity->setAvailableToRun(false);
-                //$entity->setAvailableToChange(false);
-
-                if ($this->isLargeReportView($entity, $this->largeThreshold)) {
-                    $entity->setPreCalculateTable(null);
-                }
+                /** Notify to UI to lock report view. We unlock after run maintain large report on worker*/
+                $entity->setAvailableToRun(false);
+                $entity->setAvailableToChange(false);
             }
         }
 
+        /** Listen for changes on dimensions/metrics in here */
         if ($entity instanceof ReportViewDataSetInterface) {
             $reportView = $entity->getReportView();
             if ($args->hasChangedField(ReportViewInterface::REPORT_VIEW_DIMENSIONS) ||
                 $args->hasChangedField(ReportViewInterface::REPORT_VIEW_METRICS) ||
                 $args->hasChangedField(ReportViewInterface::REPORT_VIEW_FILTERS)
             ) {
-                $this->updateReportViewIds[] = $reportView->getId();
-                $reportView->setPreCalculateTable(null);
+                if ($this->isLargeReportView($reportView, $this->largeThreshold)) {
+                    $this->updateReportViewIds[] = $reportView->getId();
+                    $reportView->setPreCalculateTable(null);
+                }
             }
         }
 
-        if ($entity instanceof DataSetInterface) {
-            if ($args->hasChangedField('totalRow') ||
-                $args->hasChangedField(DataSetInterface::DIMENSIONS_COLUMN) ||
-                $args->hasChangedField(DataSetInterface::METRICS_COLUMN)
-            ) {
-                if ($args->hasChangedField('totalRow')) {
-                    $oldTotalRow = floatval($args->getOldValue('totalRow'));
-                    $newTotalRow = floatval($args->getNewValue('totalRow'));
+        /**
+         * If data set changes dimensions/metrics, we already have listener update ReportViewDataSet
+         * So don't need to listen changes dimensions/metrics of data set
+         *
+         * Only listen for changes on totalRow (for new report coming every day).
+         * */
+        if ($entity instanceof DataSetInterface && $args->hasChangedField(DataSetInterface::TOTAL_ROW)) {
+            $oldTotalRow = floatval($args->getOldValue(DataSetInterface::TOTAL_ROW));
+            $newTotalRow = floatval($args->getNewValue(DataSetInterface::TOTAL_ROW));
 
-                    if ($oldTotalRow == $newTotalRow) {
-                        return;
-                    }
-                }
-
+            if ($oldTotalRow != $newTotalRow) {
                 $this->updateDataSets[] = $entity->getId();
                 $this->deletePreCalculatedTableByDataSet($entity);
             }

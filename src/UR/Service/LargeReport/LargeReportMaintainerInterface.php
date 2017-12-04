@@ -13,5 +13,5 @@ interface LargeReportMaintainerInterface
      * @param ReportViewInterface $reportView
      * @return mixed
      */
-    public function maintainerLargeReport(ReportViewInterface $reportView);
+    public function maintainLargeReport(ReportViewInterface $reportView);
 }

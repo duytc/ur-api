@@ -13,7 +13,7 @@ use UR\Model\User\Role\UserRoleInterface;
 
 class DataSetRepository extends EntityRepository implements DataSetRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name', 'lastActivity' => 'lastActivity', 'totalRow' => 'totalRow'];
+    protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name', 'lastActivity' => 'lastActivity', DataSetInterface::TOTAL_ROW => DataSetInterface::TOTAL_ROW];
 
     /**
      * @inheritdoc
@@ -87,7 +87,7 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
                 case $this->SORT_FIELDS['lastActivity']:
                     $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
                     break;
-                case $this->SORT_FIELDS['totalRow']:
+                case $this->SORT_FIELDS[DataSetInterface::TOTAL_ROW]:
                     $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 default:

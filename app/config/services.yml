@@ -676,7 +676,6 @@ services:
             - '@ur.domain_manager.report_view_data_set'
             - '@ur.domain_manager.data_set'
             - '@ur.domain_manager.report_view_add_conditional_transform_value'
-            - '@ur.worker.manager'
 
     ur.service.file_factory:
         class: UR\Service\DataSource\DataSourceFileFactory

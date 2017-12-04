@@ -106,6 +106,6 @@ class MaintainPreCalculateTableForLargeReportView implements JobInterface
             return;
         }
 
-        $this->largeReportMaintainer->maintainerLargeReport($reportView);
+        $this->largeReportMaintainer->maintainLargeReport($reportView);
     }
 }

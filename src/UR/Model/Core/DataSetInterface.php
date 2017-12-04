@@ -24,6 +24,8 @@ interface DataSetInterface extends ModelInterface
     const NAME_COLUMN = 'name';
     const DIMENSIONS_COLUMN = 'dimensions';
     const METRICS_COLUMN = 'metrics';
+    const TOTAL_ROW = 'totalRow';
+    
     /**
      * @param mixed $id
      */

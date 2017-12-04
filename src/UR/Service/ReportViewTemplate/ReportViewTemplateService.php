@@ -33,7 +33,6 @@ use UR\Model\User\Role\PublisherInterface;
 use UR\Service\Report\ParamsBuilderInterface;
 use UR\Service\Report\SqlBuilder;
 use UR\Service\ReportViewTemplate\DTO\CustomTemplateParamsInterface;
-use UR\Worker\Manager;
 
 class ReportViewTemplateService implements ReportViewTemplateServiceInterface
 {
@@ -69,9 +68,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
     /** @var ReportViewAddConditionalTransformValueManagerInterface  */
     protected $reportViewAddConditionalTransformValueManager;
 
-    /** @var Manager  */
-    private $manager;
-
     /**
      * ReportViewTemplateService constructor.
      * @param ReportViewManagerInterface $reportViewManager
@@ -83,11 +79,10 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
      * @param ReportViewDataSetManagerInterface $reportViewDataSetManager
      * @param DataSetManagerInterface $dataSetManager
      * @param ReportViewAddConditionalTransformValueManagerInterface $reportViewAddConditionalTransformValueManager
-     * @param Manager $manager
      */
     public function __construct(ReportViewManagerInterface $reportViewManager, ReportViewTemplateManagerInterface $reportViewTemplateManager,
     TagManagerInterface $tagManager, ReportViewTemplateTagManagerInterface $reportViewTemplateTagManager, EntityManagerInterface $em, ParamsBuilderInterface $paramsBuilder,
-    ReportViewDataSetManagerInterface $reportViewDataSetManager, DataSetManagerInterface $dataSetManager, ReportViewAddConditionalTransformValueManagerInterface $reportViewAddConditionalTransformValueManager, Manager $manager)
+    ReportViewDataSetManagerInterface $reportViewDataSetManager, DataSetManagerInterface $dataSetManager, ReportViewAddConditionalTransformValueManagerInterface $reportViewAddConditionalTransformValueManager)
     {
         $this->reportViewManager = $reportViewManager;
         $this->reportViewTemplateManager = $reportViewTemplateManager;
@@ -98,7 +93,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $this->reportViewDataSetManager = $reportViewDataSetManager;
         $this->dataSetManager = $dataSetManager;
         $this->reportViewAddConditionalTransformValueManager = $reportViewAddConditionalTransformValueManager;
-        $this->manager = $manager;
     }
 
     /**
@@ -170,13 +164,6 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $this->reportViewManager->save($reportView);
 
         $this->setReportViewForReportViewDataSets($reportView);
-        
-        $reportView->setAvailableToChange(true);
-        $reportView->setAvailableToRun(true);
-        $reportView->setLargeReport(false);
-        $this->reportViewManager->save($reportView);
-
-        $this->manager->maintainPreCalculateTableForLargeReportView($reportView->getId());
     }
 
     /**
