@@ -20,7 +20,7 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
     {
         $builder
             ->add('transforms')
-            ->add('filters')
+            //->add('filters')
             ->add('metrics')
             ->add('dimensions')
             ->add('name')
