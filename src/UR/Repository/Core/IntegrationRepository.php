@@ -38,6 +38,7 @@ class IntegrationRepository extends EntityRepository implements IntegrationRepos
             $qb->setFirstResult($offset);
         }
 
+
         return $qb;
     }
 
@@ -46,7 +47,9 @@ class IntegrationRepository extends EntityRepository implements IntegrationRepos
      */
     public function getIntegrationsForUserQuery(UserRoleInterface $user, PagerParam $param)
     {
-        return $user instanceof PublisherInterface ? $this->getIntegrationsForPublisherQuery($user) : $this->createQueryBuilder('a');
+        $qb =  $user instanceof PublisherInterface ? $this->getIntegrationsForPublisherQuery($user) : $this->createQueryBuilder('i');
+
+        return $qb->orderBy('i.name');
     }
 
     /**
