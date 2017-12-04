@@ -2,6 +2,7 @@
 
 namespace UR\Service\Report;
 
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\PersistentCollection;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Behaviors\JoinConfigUtilTrait;
@@ -29,6 +30,8 @@ use UR\Domain\DTO\Report\Transforms\ReplaceTextTransform;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Exception\InvalidArgumentException;
+use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
+use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\DTO\Report\WeightedCalculation;
@@ -377,6 +380,37 @@ class ParamsBuilder implements ParamsBuilderInterface
         return $reportViewData;
     }
 
+    public function autoOptimizationConfigDataSetObjectsToArray($autoOptimizationConfigDataSets)
+    {
+        if ($autoOptimizationConfigDataSets instanceof Collection) {
+            $autoOptimizationConfigDataSets = $autoOptimizationConfigDataSets->toArray();
+        }
+
+        if (!is_array($autoOptimizationConfigDataSets)) {
+            return [];
+        }
+
+        $reportViewData = [];
+
+        /**
+         * @var AutoOptimizationConfigDataSetInterface $autoOptimizationConfigDataSet
+         */
+        foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
+            if (!$autoOptimizationConfigDataSet instanceof ReportViewDataSetInterface) {
+                throw new InvalidArgumentException(sprintf('expect AutoOptimizationConfigDataSetInterface, got %s', get_class($autoOptimizationConfigDataSet)));
+            }
+
+            $reportViewData[] = array(
+                DataSet::DATA_SET_ID_KEY => $autoOptimizationConfigDataSet->getDataSet()->getId(),
+                DataSet::DIMENSIONS_KEY => $autoOptimizationConfigDataSet->getDimensions(),
+                DataSet::METRICS_KEY => $autoOptimizationConfigDataSet->getMetrics(),
+                DataSet::FILTERS_KEY => $autoOptimizationConfigDataSet->getFilters(),
+            );
+        }
+
+        return $reportViewData;
+    }
+
     /**
      * @param array $transforms
      * @return array
@@ -527,6 +561,32 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         $param->setPage(1)->setLimit(10);
+
+        return $param;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function buildFromAutoOptimizationConfig(AutoOptimizationConfigInterface $autoOptimizationConfig, ParamsInterface $multiParams = null)
+    {
+        $param = new Params();
+
+        $dataSetsRawData = $this->autoOptimizationConfigDataSetObjectsToArray($autoOptimizationConfig->getAutoOptimizationConfigDataSets());
+        $dataSets = $this->createDataSets($dataSetsRawData);
+        $joinConfigs = $this->createJoinConfigs($autoOptimizationConfig->getJoinBy(), $param->getDataSets());
+
+        $param
+            ->setDataSets($dataSets)
+            ->setJoinConfigs($joinConfigs);
+
+        $param
+            ->setTransforms($this->createTransforms($autoOptimizationConfig->getTransforms()))
+            ->setFieldTypes($autoOptimizationConfig->getFieldTypes());
+
+        $param
+            ->setPage(1)
+            ->setLimit(10);
 
         return $param;
     }

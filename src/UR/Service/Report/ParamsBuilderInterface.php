@@ -5,6 +5,7 @@ namespace UR\Service\Report;
 
 
 use UR\Domain\DTO\Report\ParamsInterface;
+use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Model\Core\ReportViewInterface;
 
 interface ParamsBuilderInterface
@@ -22,6 +23,13 @@ interface ParamsBuilderInterface
      * @return ParamsInterface
      */
     public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null, ParamsInterface $multiParams = null);
+
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param ParamsInterface $multiParams
+     * @return ParamsInterface
+     */
+    public function buildFromAutoOptimizationConfig(AutoOptimizationConfigInterface $autoOptimizationConfig, ParamsInterface $multiParams = null);
 
     /**
      * @param ReportViewInterface $reportView

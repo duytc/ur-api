@@ -40,7 +40,7 @@ class UpdateMetricsAndDimensionsForAutoOptimizationConfigListener
             return;
         }
 
-        $this->updateMetricsAndDimensionsForReportView($entity);
+        $this->updateMetricsAndDimensionsForAutoOptimizationConfig($entity);
     }
 
     public function preUpdate(PreUpdateEventArgs $args)
@@ -52,14 +52,14 @@ class UpdateMetricsAndDimensionsForAutoOptimizationConfigListener
         }
 
         if ($args->hasChangedField('transforms')) {
-            $this->updateMetricsAndDimensionsForReportView($entity);
+            $this->updateMetricsAndDimensionsForAutoOptimizationConfig($entity);
         }
     }
 
-    protected function updateMetricsAndDimensionsForReportView(AutoOptimizationConfigInterface $autoOptimizationConfig)
+    protected function updateMetricsAndDimensionsForAutoOptimizationConfig(AutoOptimizationConfigInterface $autoOptimizationConfig)
     {
         $param = $this->paramsBuilder->buildFromAutoOptimizationConfig($autoOptimizationConfig);
-        $columns = $this->getMetricsAndDimensionsForSingleView($param);
+        $columns = $this->getMetricsAndDimensionsForAutoOptimizationConfig($param);
 
         $autoOptimizationConfig->setMetrics($columns[self::METRICS_KEY]);
         $autoOptimizationConfig->setDimensions($columns[self::DIMENSIONS_KEY]);
