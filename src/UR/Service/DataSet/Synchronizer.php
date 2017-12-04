@@ -306,16 +306,43 @@ class Synchronizer
     public static function updateIndexes(Connection $conn, Table $dataSetImportTable, DataSetInterface $dataSet, &$removedIndexesCount = 0)
     {
         $inUsedIndexes = [];
+        $columnIndexes = [];
         $columnIndexesDatetime = [];
         //$overwriteDateIndex = new ColumnIndex(DataSetInterface::OVERWRITE_DATE, FieldType::DATETIME);
 
-        // only add indexes for date columns
-        foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
-            if (!in_array($fieldType, [FieldType::DATE, FieldType::DATETIME])) {
-                continue;
-            }
+        // get custom index config
+        $customIndexConfigs = $dataSet->getCustomIndexConfig();
+        $dimensionsAndMetrics = $dataSet->getAllDimensionMetrics();
 
-            $columnIndexesDatetime [] = new ColumnIndex($fieldName, $fieldType);
+        if (empty($customIndexConfigs)) {
+            // create default index
+            // only add indexes for date columns
+            foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
+                if (!in_array($fieldType, [FieldType::DATE, FieldType::DATETIME])) {
+                    continue;
+                }
+
+                $columnIndexesDatetime [] = new ColumnIndex($fieldName, $fieldType);
+
+            }
+            $columnIndexes [] = $columnIndexesDatetime;
+        } else {
+            // create custom index according config has already had before
+            foreach ($customIndexConfigs as $customIndexConfig) {
+                foreach ($customIndexConfig as $subField) {
+                    if ($dataSetImportTable->hasColumn($subField)) {
+                        if (array_key_exists($subField, $dimensionsAndMetrics)){
+                            $columnIndex [] = new ColumnIndex($subField, $dimensionsAndMetrics[$subField]);
+                        }
+                    }
+                }
+                if (isset($columnIndex) && !empty($columnIndex))
+                    $columnIndexes [] = $columnIndex;
+                $customIndexConfigs [] = $customIndexConfig;
+
+                //reset $columnIndex
+                $columnIndex = [];
+            }
         }
 
         $createdIndexesCount = 0;
@@ -323,7 +350,6 @@ class Synchronizer
         // execute prepared statement for creating indexes
         $conn->beginTransaction();
 
-        $columnIndexes [] = $columnIndexesDatetime;
         foreach ($columnIndexes as $multipleColumnIndexes) {
             /** @var ColumnIndex[] $multipleColumnIndexes */
             if (!is_array($multipleColumnIndexes)) {
@@ -366,6 +392,7 @@ class Synchronizer
             $createdIndexesCount++;
 
             self::prepareStatementCreateIndex($conn, $indexName, $dataSetImportTable->getName(), $columnNamesAndLengths);
+            sleep(1);
         }
 
         try {
@@ -521,7 +548,7 @@ class Synchronizer
 
     /**
      * createIndexSql
-     * e.g: CREATE INDEX __data_import_1_field1_field2 ON __data_import_1 (field1(512),field2)
+     * e.g: CREATE INDEX __data_import_1_YmdHis ON __data_import_1 (`field1`(512),`field2`)
      *
      * @param $indexName
      * @param $tableName
@@ -530,6 +557,16 @@ class Synchronizer
      */
     public static function createIndexSql($indexName, $tableName, array $columnNamesAndLengths)
     {
+        foreach ($columnNamesAndLengths as &$columnNamesAndLength) {
+            $separateColumnNameAndLengths = explode('(', $columnNamesAndLength);
+            $columnNamesAndLength = '`'.$columnNamesAndLength.'`';
+
+            if (count($separateColumnNameAndLengths) > 0) {
+                $separateColumnNameAndLengths[0] = '`'.$separateColumnNameAndLengths[0].'`';
+                $columnNamesAndLength = implode('(', $separateColumnNameAndLengths);
+            }
+        }
+
         $concatenatedColumnNamesAndLengths = implode(',', $columnNamesAndLengths);
 
         return sprintf('CREATE INDEX %s ON %s (%s)',

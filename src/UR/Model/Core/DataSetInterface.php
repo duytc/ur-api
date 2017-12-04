@@ -240,4 +240,14 @@ interface DataSetInterface extends ModelInterface
      * @return bool
      */
     public function hasNonUpToDateMappedDataSetsByConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource);
+
+    /**
+     * @return array
+     */
+    public function getCustomIndexConfig();
+
+    /**
+     * @param mixed $customIndexConfig
+     */
+    public function setCustomIndexConfig($customIndexConfig);
 }

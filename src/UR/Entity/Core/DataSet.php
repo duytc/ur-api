@@ -41,6 +41,8 @@ class DataSet extends DataSetModel
      * @var MapBuilderConfigInterface[]
      */
     protected $mapBuilderConfigs;
+
+    protected $customIndexConfig;
     /**
      * @inheritdoc
      *

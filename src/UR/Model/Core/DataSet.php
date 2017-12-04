@@ -56,6 +56,8 @@ class DataSet implements DataSetInterface
      */
     protected $mapBuilderConfigs;
 
+    protected $customIndexConfig;
+
     public function __construct()
     {
         $this->totalRow = 0;
@@ -433,5 +435,22 @@ class DataSet implements DataSetInterface
         }
 
         return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCustomIndexConfig()
+    {
+        return $this->customIndexConfig;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setCustomIndexConfig($customIndexConfig)
+    {
+        $this->customIndexConfig = $customIndexConfig;
+        return $this;
     }
 }
