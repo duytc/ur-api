@@ -615,7 +615,7 @@ trait SqlUtilTrait
             $fieldName = $transform->getFieldName();
             $expression = $transform->getExpression();
 
-            $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $newFields, $dataSetIndexes, $joinConfig, $removeSuffix);
+            $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $newFields, $dataSetIndexes, $joinConfig, $removeSuffix, $transform->isConvertEmptyValueToZero());
 
             if ($expressionForm === null) return $qb;
 
@@ -905,11 +905,12 @@ trait SqlUtilTrait
      * @param array $dataSetIndexes
      * @param array $joinConfig
      * @param bool $removeSuffix
+     * @param bool $isConvertEmptyValueToZero
      * @return mixed
      * @throws PublicSimpleException
      * @throws \Exception
      */
-    protected function normalizeExpression($transformType, $fieldName, $expression, array $newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = true)
+    protected function normalizeExpression($transformType, $fieldName, $expression, array $newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = true, $isConvertEmptyValueToZero = false)
     {
         if (is_null($expression)) {
             throw new \Exception(sprintf('Expression for calculated field can not be null'));
@@ -943,31 +944,41 @@ trait SqlUtilTrait
             }
 
             if ($removeSuffix === false) {
-                $expression = str_replace($fieldsInBracket[$index], "`$field`", $expression);
-                continue;
-            }
-
-            $alias = $this->convertOutputJoinFieldToAlias($field, $joinConfig, $dataSetIndexes);
-            if ($alias) {
-                $field = $alias;
+                $field = "`$field`";
             } else {
-                $tableAlias = null;
-                $fieldAndId = $this->getIdSuffixAndField($field);
-                if ($fieldAndId) {
-                    $field = $fieldAndId['field'];
-                    if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
-                        $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                $alias = $this->convertOutputJoinFieldToAlias($field, $joinConfig, $dataSetIndexes);
+                if ($alias) {
+                    $field = $alias;
+                } else {
+                    $tableAlias = null;
+                    $fieldAndId = $this->getIdSuffixAndField($field);
+                    if ($fieldAndId) {
+                        $field = $fieldAndId['field'];
+                        if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
+                            $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                        }
                     }
-                }
 
-                //$field = $tableAlias !== null ? "`$tableAlias`.`$field`" : (empty($joinConfig) ? "`t`.`$field`" : "`$field`");
-                $field = ($tableAlias !== null)
-                    ? "`$tableAlias`.`$field`"
-                    : (
+                    //$field = $tableAlias !== null ? "`$tableAlias`.`$field`" : (empty($joinConfig) ? "`t`.`$field`" : "`$field`");
+                    $field = ($tableAlias !== null)
+                        ? "`$tableAlias`.`$field`"
+                        : (
                         empty($joinConfig) && !in_array($field, $newFields)
                             ? "`t`.`$field`"
                             : "`$field`"
-                    );
+                        );
+                }
+            }
+
+            /*
+             * wrap IFNULL if isConvertEmptyValueToZero
+             * e.g: 1+2+null = null, but IFNULL(1,0)+IFNULL(2,0)+IFNULL(null,0) = 3
+             *
+             * now, we do convert to support IFNULL
+             * e.g: 1+2+null => IFNULL(1,0)+IFNULL(2,0)+IFNULL(null,0)
+             */
+            if ($isConvertEmptyValueToZero) {
+                $field = sprintf('IFNULL(%s, 0)', $field);
             }
 
             $expression = str_replace($fieldsInBracket[$index], $field, $expression);
