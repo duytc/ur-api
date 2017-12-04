@@ -23,7 +23,7 @@ class AutoOptimizationConfigController extends RestControllerAbstract implements
     /**
      * Get all auto optimization config
      *
-     * @Rest\View(serializerGroups={"auto_optimization_config.summary"})
+     * @Rest\View(serializerGroups={"auto_optimization_config.detail", "user.summary", "auto_optimization_config_data_set.summary", "dataset.summary"})
      *
      * @ApiDoc(
      *  section = "AutoOptimizationConfig",
