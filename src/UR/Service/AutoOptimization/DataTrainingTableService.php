@@ -241,7 +241,7 @@ class DataTrainingTableService
         $dataTrainingTable->setPrimaryKey(array(self::COLUMN_ID));
 
         // add dimensions
-        foreach ($autoOptimizationConfig->getDimensions() as $fieldName => $fieldType) {
+        foreach ($autoOptimizationConfig->getFieldTypes() as $fieldName => $fieldType) {
             if ($fieldType === FieldType::NUMBER) {
                 $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
@@ -261,28 +261,28 @@ class DataTrainingTableService
                 $dataTrainingTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
             }
         }
-
-        // add metrics
-        foreach ($autoOptimizationConfig->getMetrics() as $fieldName => $fieldType) {
-            if ($fieldType === FieldType::NUMBER) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
-            } else if ($fieldType === FieldType::DECIMAL) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                $dataTrainingTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
-            } else if ($fieldType === FieldType::LARGE_TEXT) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_LARGE_TEXT]);
-            } else if ($fieldType === FieldType::TEXT) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_TEXT]);
-            } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
-            } else {
-                $dataTrainingTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
-            }
-        }
+//
+//        // add metrics
+//        foreach ($autoOptimizationConfig->getMetrics() as $fieldName => $fieldType) {
+//            if ($fieldType === FieldType::NUMBER) {
+//                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+//                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
+//            } else if ($fieldType === FieldType::DECIMAL) {
+//                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+//                $dataTrainingTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
+//            } else if ($fieldType === FieldType::LARGE_TEXT) {
+//                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+//                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_LARGE_TEXT]);
+//            } else if ($fieldType === FieldType::TEXT) {
+//                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+//                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_TEXT]);
+//            } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
+//                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+//                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
+//            } else {
+//                $dataTrainingTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
+//            }
+//        }
 
         //// create table
         try {
