@@ -396,7 +396,7 @@ class ParamsBuilder implements ParamsBuilderInterface
          * @var AutoOptimizationConfigDataSetInterface $autoOptimizationConfigDataSet
          */
         foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
-            if (!$autoOptimizationConfigDataSet instanceof ReportViewDataSetInterface) {
+            if (!$autoOptimizationConfigDataSet instanceof AutoOptimizationConfigDataSetInterface) {
                 throw new InvalidArgumentException(sprintf('expect AutoOptimizationConfigDataSetInterface, got %s', get_class($autoOptimizationConfigDataSet)));
             }
 
