@@ -49,6 +49,15 @@ services:
             - { name: doctrine.event_listener, event: preRemove }
             - { name: doctrine.event_listener, event: postFlush }
 
+    ur_api.event_listener.report_view_change_for_sub_view_listener:
+        class: UR\Bundle\ApiBundle\EventListener\ReportViewChangeForSubViewListener
+        arguments:
+            - '%ur.report_view.large_threshold%'
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: preRemove }
+            - { name: doctrine.event_listener, event: postFlush }
+
     ur_api.event_listener.map_builder_change_listener:
         class: UR\Bundle\ApiBundle\EventListener\MapBuilderChangeListener
         arguments:
