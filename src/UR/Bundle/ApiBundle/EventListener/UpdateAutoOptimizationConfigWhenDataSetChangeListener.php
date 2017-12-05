@@ -146,7 +146,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                     if (array_key_exists('field', $field)) {
                         $field = $field['field'];
                     } elseif (array_key_exists('names', $field)) {
-                        $field = $field['names'][0];
+                        $field = $field['names'];
                     }
                 }
                 $fieldWithoutDataSetId = preg_replace('/^(.*)(_)(\d)$/', '$1', $field);
