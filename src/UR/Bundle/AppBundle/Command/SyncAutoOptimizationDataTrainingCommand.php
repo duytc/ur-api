@@ -21,6 +21,18 @@ use UR\Service\Report\ReportBuilderInterface;
 
 class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
 {
+    /* for date value in case "dateType" is customRange value */
+    const DATE_VALUE_FILTER_START_DATE_KEY = 'startDate';
+    const DATE_VALUE_FILTER_END_DATE_KEY = 'endDate';
+
+    /* dateRange value */
+    const DATE_DYNAMIC_VALUE_LAST_7_DAYS = 'last 7 days';
+    const DATE_DYNAMIC_VALUE_LAST_30_DAYS = 'last 30 days';
+    const DATE_DYNAMIC_VALUE_THIS_MONTH = 'this month';
+    const DATE_DYNAMIC_VALUE_LAST_MONTH = 'last month';
+    const DATE_DYNAMIC_VALUE_LAST_2_MONTH = 'last 2 months';
+    const DATE_DYNAMIC_VALUE_LAST__3_MONTH = 'last 3 months';
+
     /** @var Logger */
     private $logger;
 
@@ -48,6 +60,8 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
             $this->logger->warning('Missing autoOptimizationConfigId');
             return;
         }
+
+        $this->getDynamicDate('last month');
 
         /* find AutoOptimizationConfig */
         /** @var AutoOptimizationConfigManagerInterface $autoOptimizationConfigManager */
@@ -123,5 +137,39 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         $result->generateReports();
 
         return $result;
+    }
+
+    /**
+     * get startDate and endDate from dynamic date value
+     *
+     * @param string $dateValue
+     * @return array as [startDate, endDate], on fail => return ['', '']
+     */
+    public static function getDynamicDate($dateValue)
+    {
+        $startDate = '';
+        $endDate = '';
+
+        if (self::DATE_DYNAMIC_VALUE_LAST_7_DAYS == $dateValue) {
+            $startDate = date('Y-m-d', strtotime('-7 day'));
+            $endDate = date('Y-m-d', strtotime('-1 day'));
+        }
+
+        if (self::DATE_DYNAMIC_VALUE_LAST_30_DAYS == $dateValue) {
+            $startDate = date('Y-m-d', strtotime('-30 day'));
+            $endDate = date('Y-m-d', strtotime('-1 day'));
+        }
+
+        if (self::DATE_DYNAMIC_VALUE_THIS_MONTH == $dateValue) {
+            $startDate = date('Y-m-01', strtotime('this month'));
+            $endDate = date('Y-m-d', strtotime('now'));
+        }
+
+        if (self::DATE_DYNAMIC_VALUE_LAST_MONTH == $dateValue) {
+            $startDate = date('Y-m-01', strtotime('last month'));
+            $endDate = date('Y-m-t', strtotime('last month'));
+        }
+
+        return [$startDate, $endDate];
     }
 }
