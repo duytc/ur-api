@@ -36,7 +36,7 @@ UR\Entity\Core\AutoOptimizationConfig:
             type: string
             nullable: true
         dateRange:
-            type: json_array
+            type: string
             nullable: true
         active:
             type: boolean
