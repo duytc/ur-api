@@ -27,6 +27,7 @@ services:
         arguments:
             - '@doctrine.orm.entity_manager'
             - '@ur.domain_manager.report_view'
+            - '%ur.report_view.large_threshold%'
 
     ur.services.report.report_selector:
         class: UR\Service\Report\ReportSelector

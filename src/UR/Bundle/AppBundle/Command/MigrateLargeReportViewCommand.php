@@ -43,6 +43,10 @@ class MigrateLargeReportViewCommand extends ContainerAwareCommand
 
             if (!$this->isLargeReportView($reportView, $largeThreshold)) {
                 $io->text("Not large report. Skip check");
+
+                $reportView->setSmallReport();
+                $reportViewManager->save($reportView);
+
                 continue;
             }
 

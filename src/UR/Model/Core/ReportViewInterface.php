@@ -307,4 +307,9 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setPreCalculateTable($preCalculateTable);
+
+    /**
+     * @return self
+     */
+    public function setSmallReport();
 }

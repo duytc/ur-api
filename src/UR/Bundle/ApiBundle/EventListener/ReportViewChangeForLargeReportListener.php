@@ -20,7 +20,6 @@ use UR\Repository\Core\ReportViewDataSetRepositoryInterface;
 use UR\Repository\Core\ReportViewRepositoryInterface;
 use UR\Service\DataSet\Synchronizer;
 use UR\Service\Report\ParamsBuilder;
-use UR\Service\Report\ReportBuilder;
 use UR\Worker\Manager;
 
 class ReportViewChangeForLargeReportListener
@@ -158,7 +157,7 @@ class ReportViewChangeForLargeReportListener
         }
 
         if ($entity instanceof DataSetInterface) {
-            $this->updateDataSets = $entity->getId();
+            $this->updateDataSets[] = $entity->getId();
         }
 
         if ($entity instanceof ReportViewDataSetInterface) {

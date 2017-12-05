@@ -639,4 +639,18 @@ class ReportView implements ReportViewInterface
 
         return $this;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function setSmallReport()
+    {
+        $this->setLargeReport(false);
+        $this->setPreCalculateTable(null);
+
+        $this->setAvailableToChange(true);
+        $this->setAvailableToRun(true);
+
+        return $this;
+    }
 }

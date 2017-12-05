@@ -55,6 +55,8 @@ class LargeReportMaintainer implements LargeReportMaintainerInterface
     public function maintainLargeReport(ReportViewInterface $reportView)
     {
         if (!$this->isLargeReportView($reportView, $this->getLargeThreshold())) {
+            $reportView->setSmallReport();
+            $this->reportViewManager->save($reportView);
             return;
         }
 

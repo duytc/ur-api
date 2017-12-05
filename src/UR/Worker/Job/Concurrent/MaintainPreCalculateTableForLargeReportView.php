@@ -103,6 +103,8 @@ class MaintainPreCalculateTableForLargeReportView implements JobInterface
         }
 
         if (!$this->isLargeReportView($reportView, $this->largeThreshold)) {
+            $reportView->setSmallReport();
+            $this->reportViewManager->save($reportView);
             return;
         }
 

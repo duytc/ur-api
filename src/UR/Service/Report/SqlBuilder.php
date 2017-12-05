@@ -10,6 +10,7 @@ use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use SplDoublyLinkedList;
 use UR\Behaviors\JoinConfigUtilTrait;
+use UR\Behaviors\LargeReportViewUtilTrait;
 use UR\Behaviors\ReformatDataTrait;
 use UR\Behaviors\ReportViewFilterUtilTrait;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
@@ -49,6 +50,7 @@ class SqlBuilder implements SqlBuilderInterface
     use JoinConfigUtilTrait;
     use ReportViewFilterUtilTrait;
     use ReformatDataTrait;
+    use LargeReportViewUtilTrait;
 
     const STATEMENT_KEY = 'statement';
     const ROWS = 'rows';
@@ -99,16 +101,21 @@ class SqlBuilder implements SqlBuilderInterface
     /** @var ReportViewManagerInterface  */
     private $reportViewManager;
 
+    /** @var  int */
+    private $largeThreshold;
+
     /**
      * SqlBuilder constructor.
      * @param EntityManagerInterface $em
      * @param ReportViewManagerInterface $reportViewManager
+     * @param $largeThreshold
      */
-    public function __construct(EntityManagerInterface $em, ReportViewManagerInterface $reportViewManager)
+    public function __construct(EntityManagerInterface $em, ReportViewManagerInterface $reportViewManager, $largeThreshold)
     {
         $this->em = $em;
         $this->connection = $this->em->getConnection();
         $this->reportViewManager = $reportViewManager;
+        $this->largeThreshold = $largeThreshold;
     }
 
     /**
@@ -1768,6 +1775,7 @@ class SqlBuilder implements SqlBuilderInterface
     private function isSupportCalculateTable($reportView)
     {
         return $reportView instanceof ReportViewInterface &&
+                $this->isLargeReportView($reportView, $this->largeThreshold) &&
                 !empty($reportView->getPreCalculateTable()) &&
                 $this->getSync()->getTable($reportView->getPreCalculateTable()) instanceof Table;
     }
