@@ -20,6 +20,7 @@ parameters:
     ur.security.auth.voter.report_view_template.class: UR\Security\Authorization\Voter\ReportViewTemplateVoter
     ur.security.auth.voter.report_view_template_tag.class: UR\Security\Authorization\Voter\ReportViewTemplateTagVoter
     ur.security.auth.voter.report_view_add_conditional_transform_value.class: UR\Security\Authorization\Voter\ReportViewAddConditionalTransformValueVoter
+    ur.security.auth.voter.auto_optimization_config_voter.class: UR\Security\Authorization\Voter\AutoOptimizationConfigVoter
 
     # event dispatched on user action such as add, remove, delete
     ur.events.handler_event: 'ur.events.handler_event'
@@ -113,6 +114,12 @@ services:
 
     ur.security.auth.voter.report_view:
         class:  %ur.security.auth.voter.report_view.class%
+        public: false
+        tags:
+            - { name: security.voter }
+
+    ur.security.auth.voter.auto_optimization_config:
+        class:  %ur.security.auth.voter.auto_optimization_config_voter.class%
         public: false
         tags:
             - { name: security.voter }
