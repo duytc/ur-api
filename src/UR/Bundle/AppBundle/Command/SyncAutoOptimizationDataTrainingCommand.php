@@ -61,8 +61,6 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
             return;
         }
 
-        $this->getDynamicDate('last month');
-
         /* find AutoOptimizationConfig */
         /** @var AutoOptimizationConfigManagerInterface $autoOptimizationConfigManager */
         $autoOptimizationConfigManager = $container->get('ur.domain_manager.auto_optimization_config');
@@ -108,8 +106,9 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         }, $autoOptimizationConfigDataSets);
 
         $dateRange = $autoOptimizationConfig->getDateRange();
-        $startDate = $dateRange['startDate'];
-        $endDate = $dateRange['endDate'];
+        $startDateEndDateValue = $this->getDynamicDate($dateRange);
+        $startDate = $startDateEndDateValue[0];
+        $endDate = $startDateEndDateValue[1];
 
         $requestParams = [
             ParamsBuilder::DATA_SET_KEY => $dataSets,
