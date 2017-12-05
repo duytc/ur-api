@@ -21,17 +21,13 @@ use UR\Service\Report\ReportBuilderInterface;
 
 class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
 {
-    /* for date value in case "dateType" is customRange value */
-    const DATE_VALUE_FILTER_START_DATE_KEY = 'startDate';
-    const DATE_VALUE_FILTER_END_DATE_KEY = 'endDate';
-
     /* dateRange value */
     const DATE_DYNAMIC_VALUE_LAST_7_DAYS = 'last 7 days';
     const DATE_DYNAMIC_VALUE_LAST_30_DAYS = 'last 30 days';
     const DATE_DYNAMIC_VALUE_THIS_MONTH = 'this month';
     const DATE_DYNAMIC_VALUE_LAST_MONTH = 'last month';
     const DATE_DYNAMIC_VALUE_LAST_2_MONTH = 'last 2 months';
-    const DATE_DYNAMIC_VALUE_LAST__3_MONTH = 'last 3 months';
+    const DATE_DYNAMIC_VALUE_LAST_3_MONTH = 'last 3 months';
 
     /** @var Logger */
     private $logger;
@@ -167,6 +163,16 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         if (self::DATE_DYNAMIC_VALUE_LAST_MONTH == $dateValue) {
             $startDate = date('Y-m-01', strtotime('last month'));
             $endDate = date('Y-m-t', strtotime('last month'));
+        }
+
+        if (self::DATE_DYNAMIC_VALUE_LAST_2_MONTH == $dateValue) {
+            $startDate = date('Y-m-01', strtotime('-2 month'));
+            $endDate = date('Y-m-t', strtotime('-2 month'));
+        }
+
+        if (self::DATE_DYNAMIC_VALUE_LAST_3_MONTH == $dateValue) {
+            $startDate = date('Y-m-01', strtotime('-3 month'));
+            $endDate = date('Y-m-t', strtotime('-3 month'));
         }
 
         return [$startDate, $endDate];
