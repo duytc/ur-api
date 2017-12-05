@@ -145,8 +145,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 if (is_array($field)) {
                     if (array_key_exists('field', $field)) {
                         $field = $field['field'];
-                    }
-                    if (array_key_exists('names', $field)) {
+                    } elseif (array_key_exists('names', $field)) {
                         $field = $field['names'][0];
                     }
                 }
