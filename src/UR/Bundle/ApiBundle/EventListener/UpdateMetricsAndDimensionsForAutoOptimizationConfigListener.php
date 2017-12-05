@@ -31,7 +31,6 @@ class UpdateMetricsAndDimensionsForAutoOptimizationConfigListener
         $this->paramsBuilder = $paramsBuilder;
     }
 
-
     public function prePersist(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();

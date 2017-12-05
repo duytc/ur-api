@@ -56,7 +56,6 @@ class DataTrainingTableService
      * @param AutoOptimizationConfigInterface $autoOptimizationConfig
      * @return Collection
      * @throws Exception
-     * @throws \Doctrine\DBAL\ConnectionException
      */
     public function importDataToDataTrainingTable(ReportResultInterface $collection, AutoOptimizationConfigInterface $autoOptimizationConfig)
     {

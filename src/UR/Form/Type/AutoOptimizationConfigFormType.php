@@ -16,12 +16,10 @@ use UR\Model\User\Role\AdminInterface;
 
 class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
 {
-
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
             ->add('transforms')
-            //->add('filters')
             ->add('metrics')
             ->add('dimensions')
             ->add('name')
@@ -56,7 +54,6 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
                 $autoOptimizationConfig = $event->getData();
                 $form = $event->getForm();
 
-
                 $this->validateTransforms($form, $autoOptimizationConfig->getTransforms());
                 $this->validateFilters($form, $autoOptimizationConfig->getFilters());
                 $this->validateJoinBy($form, $autoOptimizationConfig->getJoinBy());
@@ -67,6 +64,7 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
                     $autoOptimizationConfig->setFieldTypes([]);
                 }
 
+                //check instance AutoOptimizationConfigDataSets
                 $autoOptimizationConfigDataSets = $autoOptimizationConfig->getAutoOptimizationConfigDataSets();
                 /**
                  * @var AutoOptimizationConfigDataSetInterface[] $autoOptimizationConfigDataSets
@@ -117,7 +115,7 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
     public function validateDateRange($form, $dateRange)
     {
         if (empty($dateRange) || !is_string($dateRange)) {
-            Throw New BadRequestHttpException('date range must be an array');
+            Throw New BadRequestHttpException('date range must be a string');
         }
 
         return true;
