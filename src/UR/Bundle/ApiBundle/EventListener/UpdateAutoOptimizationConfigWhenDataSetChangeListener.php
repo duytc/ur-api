@@ -26,7 +26,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         }
         
         // get changes
-        if (!$args->hasChangedField(self::DIMENSIONS_KEY) && $args->hasChangedField(self::METRICS_KEY)) {
+        if (!$args->hasChangedField(self::DIMENSIONS_KEY) && !$args->hasChangedField(self::METRICS_KEY)) {
             return;
         }
 
@@ -93,6 +93,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         /** @var array $joinBy */
         $joinBy = $autoOptimizationConfig->getJoinBy();
         foreach ($joinBy as &$joinBy_) {
+            // check array_key_exist()
             $joinFields = $joinBy_[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
             foreach ($joinFields as &$joinField) {
                 $dataSetId = $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
