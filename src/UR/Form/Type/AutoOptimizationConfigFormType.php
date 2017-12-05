@@ -6,6 +6,7 @@ namespace UR\Form\Type;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\AutoOptimizationConfig;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
@@ -60,6 +61,7 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
                 $this->validateFilters($form, $autoOptimizationConfig->getFilters());
                 $this->validateJoinBy($form, $autoOptimizationConfig->getJoinBy());
                 $this->validateFieldTypes($form, $autoOptimizationConfig->getFieldTypes());
+                $this->validateDateRange($form, $autoOptimizationConfig->getDateRange());
 
                 if (!is_array($autoOptimizationConfig->getFieldTypes())) {
                     $autoOptimizationConfig->setFieldTypes([]);
@@ -106,4 +108,18 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
         return true;
     }
 
+    /**
+     * validate $dateRange
+     *
+     * @param string $dateRange
+     * @return bool
+     */
+    public function validateDateRange($form, $dateRange)
+    {
+        if (empty($dateRange) || !is_string($dateRange)) {
+            Throw New BadRequestHttpException('date range must be an array');
+        }
+
+        return true;
+    }
 }
