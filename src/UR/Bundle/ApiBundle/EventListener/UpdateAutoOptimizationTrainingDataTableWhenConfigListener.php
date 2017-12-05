@@ -35,8 +35,8 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
             $newMetrics = $args->getNewValue(self::METRICS_KEY);
             $oldMetrics = $args->getOldValue(self::METRICS_KEY);
         }
-        $dimensionsMapping = array_combine($oldDimensions, $newDimensions);
-        $metricsMapping = array_combine($oldMetrics, $newMetrics);
+        $dimensionsMapping = array_merge($oldDimensions, $newDimensions);
+        $metricsMapping = array_merge($oldMetrics, $newMetrics);
         $dimensionsMetricsMapping = array_merge($dimensionsMapping, $metricsMapping);
         /** @var AutoOptimizationConfigDataSetInterface[]|Collection $autoOptimizationConfigDataSets */
         $autoOptimizationConfigDataSets = $entity->getAutoOptimizationConfigDataSets();

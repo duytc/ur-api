@@ -45,8 +45,8 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $oldMetrics = $args->getOldValue(self::METRICS_KEY);
         }
 
-        $dimensionsMapping = array_combine($oldDimensions, $newDimensions);
-        $metricsMapping = array_combine($oldMetrics, $newMetrics);
+        $dimensionsMapping = array_merge($oldDimensions, $newDimensions);
+        $metricsMapping = array_merge($oldMetrics, $newMetrics);
 
         $dimensionsMetricsMapping = array_merge($dimensionsMapping, $metricsMapping);
 
