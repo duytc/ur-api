@@ -142,6 +142,9 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         foreach ($transforms as &$transform) {
             $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
             foreach ($fields as &$field) {
+                if (is_array($field)) {
+                    $field = $field['field'];
+                }
                 $fieldWithoutDataSetId = preg_replace('/^(.*)(_)(\d)$/', '$1', $field);
                 $dataSetIdFromField = preg_replace('/^(.*)(_)(\d)$/', '$3', $field);
                 if ($dataSetIdFromField != $dataSet->getId()) {
