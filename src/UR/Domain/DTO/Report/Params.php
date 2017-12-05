@@ -8,6 +8,7 @@ use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
+use UR\Model\Core\ReportViewInterface;
 use UR\Service\DTO\Report\WeightedCalculationInterface;
 use UR\Service\SqlUtilTrait;
 
@@ -125,6 +126,9 @@ class Params implements ParamsInterface
 
     /** @var  string */
     protected $temporarySuffix;
+
+    /** @var  ReportViewInterface */
+    private $reportView;
 
     function __construct()
     {
@@ -697,5 +701,21 @@ class Params implements ParamsInterface
     public function setTemporarySuffix($temporarySuffix)
     {
         $this->temporarySuffix = $temporarySuffix;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getReportView()
+    {
+        return $this->reportView;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setReportView($reportView)
+    {
+        $this->reportView = $reportView;
     }
 }

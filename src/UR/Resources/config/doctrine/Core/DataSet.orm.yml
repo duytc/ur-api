@@ -50,6 +50,9 @@ UR\Entity\Core\DataSet:
             type: boolean
             options:
                 default: false
+        customIndexConfig:
+            type: json_array
+            nullable: true
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

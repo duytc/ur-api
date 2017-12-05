@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
@@ -15,6 +16,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
@@ -442,8 +444,22 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
 
         asort($entryIds);
 
+        $connectedDataSourceManager = $this->get('ur.domain_manager.connected_data_source');
         $workerManager = $this->get('ur.worker.manager');
-        foreach ($dataSource->getConnectedDataSources() as $connectedDataSource) {
+
+        $connectedDataSources = $dataSource->getConnectedDataSources();
+        if ($connectedDataSources instanceof Collection) {
+            $connectedDataSources = $connectedDataSources->toArray();
+        }
+
+        foreach ($connectedDataSources as $connectedDataSource) {
+            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+                continue;
+            }
+            $connectedDataSource->setReloadStartDate(null);
+            $connectedDataSource->setReloadEndDate(null);
+            $connectedDataSourceManager->save($connectedDataSource);
+
             $dataSetId = $connectedDataSource->getDataSet()->getId();
             $workerManager->loadingDataSourceEntriesToDataSetTable($connectedDataSource->getId(), $entryIds, $dataSetId);
         }

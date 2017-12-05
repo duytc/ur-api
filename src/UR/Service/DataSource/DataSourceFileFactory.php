@@ -137,6 +137,10 @@ class DataSourceFileFactory
      */
     public function splitHugeFile(DataSourceEntryInterface $dataSourceEntry)
     {
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+            throw new Exception('error occur: Data Source Entry not found (may be deleted before)');
+        }
+
         //create directory to store split file
         $filePath = $this->uploadFileDir . $dataSourceEntry->getPath();
         $splitDirectory = join('/', array($this->getSourceDirName($filePath) , 'SplitDirectory'));
@@ -190,10 +194,12 @@ class DataSourceFileFactory
         unset($bodyRow, $bodyRows, $file, $newFile);
         gc_collect_cycles();
 
-        if (!empty($chunks)) {
-            $dataSourceEntry->setSeparable(true);
-            $dataSourceEntry->setChunks($chunks);
+        if (empty($chunks)) {
+            throw  new Exception(sprintf('Can not split data source entry %d', $dataSourceEntry->getId()));
         }
+
+        $dataSourceEntry->setSeparable(true);
+        $dataSourceEntry->setChunks($chunks);
 
         if (!empty($rowCount)) {
             $dataSourceEntry->setTotalRow($rowCount);

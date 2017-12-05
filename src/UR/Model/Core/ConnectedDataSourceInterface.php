@@ -185,4 +185,24 @@ interface ConnectedDataSourceInterface extends ModelInterface
      * @return self
      */
     public function increaseNumChanges();
+
+    /**
+     * @return mixed
+     */
+    public function getReloadStartDate();
+
+    /**
+     * @param mixed $reloadStartDate
+     */
+    public function setReloadStartDate($reloadStartDate);
+
+    /**
+     * @return mixed
+     */
+    public function getReloadEndDate();
+
+    /**
+     * @param mixed $reloadEndDate
+     */
+    public function setReloadEndDate($reloadEndDate);
 }

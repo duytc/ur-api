@@ -10,6 +10,7 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Service\DTO\DataImportTable\ColumnIndex;
 
 class Synchronizer
@@ -21,11 +22,14 @@ class Synchronizer
 
     const FIELD_LENGTH_LARGE_TEXT = 65535;
     const FIELD_LENGTH_TEXT = 512;
+    const FIELD_LENGTH_TEXT_FOR_INDEX = 20;
 
     // TODO: organize const to right place. Current constants are discrete
     const FIELD_LENGTH_COLUMN_UNIQUE_ID = 32; // current use md5(dimension1:dimension2:...) so that length is 32
 
     const DATA_IMPORT_TABLE_INDEX_PREFIX_TEMPLATE = '%s_index_%s'; // %s is data import table name, %s is field name
+    const DATA_IMPORT_TABLE_INDEX_PREFIX_FILTER = '%s_index_%d_%s'; // %s is data import table name, %s is field name
+    const DATA_IMPORT_TABLE_INDEX_PREFIX = '%s_index_%d'; // %s is data import table name, %s is field name
     const REQUIRED_INDEXES = ['primary', 'PRIMARY', 'unique_hash_idx'];
 
     /**
@@ -224,6 +228,21 @@ class Synchronizer
     }
 
     /**
+     * @param $tableName
+     * @return Table|false
+     */
+    public function deleteTable($tableName)
+    {
+        $sm = $this->conn->getSchemaManager();
+
+        if (!$sm->tablesExist([$tableName])) {
+            return false;
+        }
+
+        $sm->dropTable($tableName);
+    }
+
+    /**
      * get DataSet Import Table Name
      *
      * @param int $dataSetId
@@ -287,63 +306,42 @@ class Synchronizer
     public static function updateIndexes(Connection $conn, Table $dataSetImportTable, DataSetInterface $dataSet, &$removedIndexesCount = 0)
     {
         $inUsedIndexes = [];
+        $columnIndexes = [];
+        $columnIndexesDatetime = [];
+        //$overwriteDateIndex = new ColumnIndex(DataSetInterface::OVERWRITE_DATE, FieldType::DATETIME);
 
-        // add indexes for hidden fields
-        /*
-         * all dimensions To Be Created Indexes
-         * using this array to temporary store for batch execute sql "create index"
-         * We cannot use $dataSetImportTable->addIndex() directly because this does not support set length for text field
-         *
-         * format:
-         * [
-         *     // multiple columns if need create index for multiple columns
-         *     [ columnIndex1, columnIndex2, ... ],
-         *     ...
-         * ];
-         */
-        $columnIndexes = [
-            [
-                // index on single multiple column
-                new ColumnIndex(DataSetInterface::DATA_SOURCE_ID_COLUMN, FieldType::NUMBER)
-            ],
-            [
-                // index on single multiple column
-                new ColumnIndex(DataSetInterface::IMPORT_ID_COLUMN, FieldType::NUMBER)
-            ],
-            [
-                // index on single multiple column
-                new ColumnIndex(DataSetInterface::OVERWRITE_DATE, FieldType::NUMBER)
-            ],
-            [
-                // index on multiple columns
-                new ColumnIndex(DataSetInterface::UNIQUE_ID_COLUMN, FieldType::TEXT, Synchronizer::FIELD_LENGTH_COLUMN_UNIQUE_ID), // special for __unique_id
-                new ColumnIndex(DataSetInterface::OVERWRITE_DATE, FieldType::NUMBER)
-            ]
-        ];
+        // get custom index config
+        $customIndexConfigs = $dataSet->getCustomIndexConfig();
+        $dimensionsAndMetrics = $dataSet->getAllDimensionMetrics();
 
-        // add dimensions, also add indexes for all dimensions
-        foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
-            // add index for column
-            $columnIndexes[] = [
-                new ColumnIndex($fieldName, $fieldType)
-            ];
+        if (empty($customIndexConfigs)) {
+            // create default index
+            // only add indexes for date columns
+            foreach ($dataSet->getDimensions() as $fieldName => $fieldType) {
+                if (!in_array($fieldType, [FieldType::DATE, FieldType::DATETIME])) {
+                    continue;
+                }
 
-            // add indexes for hidden columns day/month/year if this column type is date|datetime
-            if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
-                $hiddenDayColumn = self::getHiddenColumnDay($fieldName);
-                $columnIndexes[] = [
-                    new ColumnIndex($hiddenDayColumn, FieldType::NUMBER)
-                ];
+                $columnIndexesDatetime [] = new ColumnIndex($fieldName, $fieldType);
 
-                $hiddenMonthColumn = self::getHiddenColumnMonth($fieldName);
-                $columnIndexes[] = [
-                    new ColumnIndex($hiddenMonthColumn, FieldType::NUMBER)
-                ];
+            }
+            $columnIndexes [] = $columnIndexesDatetime;
+        } else {
+            // create custom index according config has already had before
+            foreach ($customIndexConfigs as $customIndexConfig) {
+                foreach ($customIndexConfig as $subField) {
+                    if ($dataSetImportTable->hasColumn($subField)) {
+                        if (array_key_exists($subField, $dimensionsAndMetrics)){
+                            $columnIndex [] = new ColumnIndex($subField, $dimensionsAndMetrics[$subField]);
+                        }
+                    }
+                }
+                if (isset($columnIndex) && !empty($columnIndex))
+                    $columnIndexes [] = $columnIndex;
+                $customIndexConfigs [] = $customIndexConfig;
 
-                $hiddenYearColumn = self::getHiddenColumnYear($fieldName);
-                $columnIndexes[] = [
-                    new ColumnIndex($hiddenYearColumn, FieldType::NUMBER)
-                ];
+                //reset $columnIndex
+                $columnIndex = [];
             }
         }
 
@@ -358,7 +356,6 @@ class Synchronizer
                 continue;
             }
 
-            $columnNames = []; // for building index name
             $columnNamesAndLengths = []; // for building sql create index
 
             // build index for multiple columns
@@ -372,8 +369,6 @@ class Synchronizer
                     continue; // column not found
                 }
 
-                $columnNames[] = $columnName;
-
                 $columnLength = $singleColumnIndex->getColumnLength();
                 $columnNamesAndLengths[] = (null === $columnLength)
                     ? $columnName
@@ -381,11 +376,11 @@ class Synchronizer
             }
 
             // sure have columns to be created index
-            if (empty($columnNames) || empty($columnNamesAndLengths)) {
+            if (empty($columnNamesAndLengths)) {
                 continue;
             }
 
-            $indexName = self::getDataSetImportTableIndexName($dataSetImportTable->getName(), $columnNames);
+            $indexName = self::getDataSetImportTableIndexName($dataSetImportTable->getName());
 
             // update inUsedIndexes
             $inUsedIndexes[] = $indexName;
@@ -397,6 +392,7 @@ class Synchronizer
             $createdIndexesCount++;
 
             self::prepareStatementCreateIndex($conn, $indexName, $dataSetImportTable->getName(), $columnNamesAndLengths);
+            sleep(1);
         }
 
         try {
@@ -404,7 +400,6 @@ class Synchronizer
         } catch (\Exception $e) {
 
         }
-
 
         // remove non existing indexes
         $conn->beginTransaction();
@@ -421,7 +416,6 @@ class Synchronizer
                 continue;
             }
 
-            // $dataSetImportTable->dropIndex($nonExistingIndex);
             self::prepareStatementDropIndex($conn, $nonExistingIndex, $dataSetImportTable->getName());
 
             $removedIndexesCount++;
@@ -440,14 +434,14 @@ class Synchronizer
      * get DataSet Import Table Index Name
      *
      * @param string $dataImportTableName
-     * @param array|string[] $columnNames
      * @return string
      */
-    public static function getDataSetImportTableIndexName($dataImportTableName, array $columnNames)
+    public static function getDataSetImportTableIndexName($dataImportTableName)
     {
-        $concatenatedColumnNames = implode('_', $columnNames);
+        /** Can not create long index name */
+        $concatenatedColumnNames = new \DateTime();
 
-        return sprintf(self::DATA_IMPORT_TABLE_INDEX_PREFIX_TEMPLATE, $dataImportTableName, $concatenatedColumnNames);
+        return sprintf(self::DATA_IMPORT_TABLE_INDEX_PREFIX_TEMPLATE, $dataImportTableName, $concatenatedColumnNames->format('YmdHis'));
     }
 
     /**
@@ -504,7 +498,12 @@ class Synchronizer
     {
         $updateSql = self::createIndexSql($indexName, $tableName, $columnNamesAndLengths);
         $stmtCreateIndex = $conn->prepare($updateSql);
-        $stmtCreateIndex->execute();
+
+        try {
+            $stmtCreateIndex->execute();
+        } catch (\Exception $e) {
+
+        }
     }
 
     /**
@@ -518,7 +517,12 @@ class Synchronizer
     {
         $updateSql = self::dropIndexSql($indexName, $tableName);
         $stmtCreateIndex = $conn->prepare($updateSql);
-        $stmtCreateIndex->execute();
+
+        try {
+            $stmtCreateIndex->execute();
+        } catch (\Exception $e) {
+
+        }
     }
 
     /**
@@ -534,12 +538,17 @@ class Synchronizer
     {
         $updateSql = self::alterColumnTypeSql($columnName, $tableName, $columnType, $columnLength);
         $stmtCreateIndex = $conn->prepare($updateSql);
-        $stmtCreateIndex->execute();
+
+        try {
+            $stmtCreateIndex->execute();
+        } catch (\Exception $e) {
+
+        }
     }
 
     /**
      * createIndexSql
-     * e.g: CREATE INDEX __data_import_1_field1_field2 ON __data_import_1 (field1(512),field2)
+     * e.g: CREATE INDEX __data_import_1_YmdHis ON __data_import_1 (`field1`(512),`field2`)
      *
      * @param $indexName
      * @param $tableName
@@ -548,6 +557,16 @@ class Synchronizer
      */
     public static function createIndexSql($indexName, $tableName, array $columnNamesAndLengths)
     {
+        foreach ($columnNamesAndLengths as &$columnNamesAndLength) {
+            $separateColumnNameAndLengths = explode('(', $columnNamesAndLength);
+            $columnNamesAndLength = '`'.$columnNamesAndLength.'`';
+
+            if (count($separateColumnNameAndLengths) > 0) {
+                $separateColumnNameAndLengths[0] = '`'.$separateColumnNameAndLengths[0].'`';
+                $columnNamesAndLength = implode('(', $separateColumnNameAndLengths);
+            }
+        }
+
         $concatenatedColumnNamesAndLengths = implode(',', $columnNamesAndLengths);
 
         return sprintf('CREATE INDEX %s ON %s (%s)',

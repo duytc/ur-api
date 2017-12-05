@@ -12,7 +12,9 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     protected $requires;
     protected $alertSetting;
     protected $lastActivity;
-    
+    protected $reloadStartDate;
+    protected $reloadEndDate;
+
     /*
      * this variable to know which linked type, currently we only have augmentation linked type
      * re import data base on linked type when connected data source has augmentation transform
@@ -352,5 +354,37 @@ class ConnectedDataSource implements ConnectedDataSourceInterface
     {
         ++$this->numChanges;
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getReloadStartDate()
+    {
+        return $this->reloadStartDate;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setReloadStartDate($reloadStartDate)
+    {
+        $this->reloadStartDate = $reloadStartDate;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getReloadEndDate()
+    {
+        return $this->reloadEndDate;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setReloadEndDate($reloadEndDate)
+    {
+        $this->reloadEndDate = $reloadEndDate;
     }
 }

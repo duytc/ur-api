@@ -14,22 +14,22 @@ UR\Entity\Core\Tag:
     fields:
         name:
             type: string
-            length: 20
+#            length: 20
             nullable: true
 
     oneToMany:
         userTags:
             targetEntity: UR\Entity\Core\UserTag
-            cascade: ['persist', 'detach', 'remove']
+            cascade: ['detach', 'remove', 'persist']
             mappedBy: tag
             orphanRemoval: true
         integrationTags:
             targetEntity: UR\Entity\Core\IntegrationTag
-            cascade: ['persist', 'detach', 'remove']
+            cascade: ['detach', 'remove', 'persist']
             mappedBy: tag
             orphanRemoval: true
         reportViewTemplateTags:
             targetEntity: UR\Entity\Core\ReportViewTemplateTag
-            cascade: ['persist', 'detach', 'remove']
+            cascade: ['detach', 'remove', 'persist']
             mappedBy: tag
             orphanRemoval: true

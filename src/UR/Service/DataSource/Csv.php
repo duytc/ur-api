@@ -135,7 +135,7 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
             return $this->convertEncodingToASCII($this->headers);
         }
 
-        $all_rows = [];
+        $allRows = [];
         $i = 0;
 
         // try fetchAll csv with current delimiters
@@ -145,16 +145,16 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
                 $this->csv->setDelimiter($delimiter);
                 $this->csv->setLimit(500);
                 $this->csv->stripBom(true);
-                $all_rows = $this->csv->fetchAll();
+                $allRows = $this->csv->fetchAll();
 
-                $numOfRows = count($all_rows);
-                if (is_array($all_rows) && count($all_rows) > 0) {
+                $numOfRows = count($allRows);
+                if (is_array($allRows) && count($allRows) > 0) {
                     for ($x = 0; $x < self::DETECT_HEADER_ROWS; $x++) {
                         if ($x >= $numOfRows) {
                             break;
                         }
                         // check the 20 first rows is array and has at least 2 columns
-                        $firstRow = $all_rows[$x];
+                        $firstRow = $allRows[$x];
                         if (is_array($firstRow) && count($firstRow) > 1) {
                             // found, so quit the loop
                             $validDelimiter = $delimiter;
@@ -178,17 +178,21 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
             }
         }
 
-        for ($row = 0; $row < count($all_rows); $row++) {
-            $cur_row = $this->removeInvalidColumns($all_rows[$row]);
+        $maxColumns = max(array_map(function(array $row) {
+            return count($row);
+        }, $allRows));
 
-            if (count($cur_row) < 1) {
+        for ($row = 0; $row < count($allRows); $row++) {
+            $currentRow = $this->removeInvalidColumns($allRows[$row]);
+
+            if (count($currentRow) < 1) {
                 continue;
             }
 
             $i++;
 
-            if ($this->isTextArray($cur_row) && !$this->isEmptyArray($cur_row)) {
-                $this->headers = $cur_row;
+            if ($this->isTextArray($currentRow) && !$this->isEmptyArray($currentRow) && count(array_filter($currentRow)) == $maxColumns) {
+                $this->headers = $currentRow;
                 $this->headerRow = $row;
                 break;
             }
@@ -203,7 +207,6 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         if ($this->headers === null) {
             return [];
         }
-
     }
 
     /**
@@ -211,28 +214,24 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getRows()
     {
-        $iterator = $this->csv->getIterator();
+        $rows = $this->csv->fetch();
         $result = new SplDoublyLinkedList();
         $index = 0;
-        while (!$iterator->eof()) {
+
+        foreach($rows as $row) {
             if ($index < $this->dataRow) {
                 $index++;
-                $iterator->next();
                 continue;
             }
-            $row = $iterator->current();
+
             if (!is_array($row) || $this->isEmptyArray($row)) {
                 $index++;
-                $iterator->next();
                 continue;
             }
 
             $result->push($this->removeNonUtf8CharactersForSingleRow($row));
-            $iterator->next();
         }
 
-        //remove header
-        $result->shift();
         return $result;
     }
 
@@ -246,32 +245,29 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
             return $this->getRows();
         }
 
-        $iterator = $this->csv->getIterator();
-        $result = new SplDoublyLinkedList();
+        $rows = $this->csv->fetch();
         $index = 0;
-        while (!$iterator->eof()) {
+        $result = new SplDoublyLinkedList();
+
+        foreach ($rows as $row) {
             if ($index < $this->dataRow) {
                 $index++;
-                $iterator->next();
                 continue;
             }
-            $row = $iterator->current();
+
             if (!is_array($row) || $this->isEmptyArray($row)) {
                 $index++;
-                $iterator->next();
                 continue;
             }
 
             $result->push($this->removeNonUtf8CharactersForSingleRow($row));
             $index++;
+
             if ($index > $limit) {
                 break;
             }
-            $iterator->next();
         }
 
-        //remove header
-        $result->shift();
         return $result;
     }
 

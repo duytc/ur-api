@@ -29,12 +29,11 @@ class RemoveAllDataFromConnectedDataSource implements SplittableJobInterface
      */
     protected $importHistoryManager;
 
-    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger
-    )
+    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger, ImportHistoryManagerInterface $importHistoryManager)
     {
         $this->scheduler = $scheduler;
-
         $this->logger = $logger;
+        $this->importHistoryManager = $importHistoryManager;
     }
 
     public function getName(): string
@@ -54,6 +53,7 @@ class RemoveAllDataFromConnectedDataSource implements SplittableJobInterface
             'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
             self::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
         ];
+        $this->importHistoryManager->deleteImportHistoryByConnectedDataSource($connectedDataSourceId);
 
         //update total rows for data set and connected data source
         $jobs = array_merge($jobs, [

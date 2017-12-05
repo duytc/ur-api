@@ -13,6 +13,7 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Behaviors\ReloadDataUtilTrait;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
@@ -27,11 +28,12 @@ use Psr\Log\LoggerInterface;
 class DataSetController extends RestControllerAbstract implements ClassResourceInterface
 {
     use GetEntityFromIdTrait;
+    use ReloadDataUtilTrait;
 
     /**
      * Get all data sets
      *
-     * @Rest\View(serializerGroups={"dataset.summary", "user.summary", "connectedDataSource.summary"})
+     * @Rest\View(serializerGroups={"dataset.summary", "user.summary", "connectedDataSource.summary", "datasource.dateRangeDetectionEnable"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
@@ -271,10 +273,15 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * @param $id
      * @return mixed
      */
-    public function postReloadalldataAction(Request $request, $id)
+    public function postReloadAction(Request $request, $id)
     {
         /** @var DataSetInterface $dataSet */
         $dataSet = $this->one($id);
+
+        $reloadStartDate = $request->request->get('startDate');
+        $reloadEndDate = $request->request->get('endDate');
+        $connectedDataSourceManager = $this->get('ur.domain_manager.connected_data_source');
+        $this->setReloadDateForConnectedDataSources($connectedDataSourceManager, $dataSet->getConnectedDataSources(), $reloadStartDate, $reloadEndDate);
 
         // check if this is augmentation data set and still has a non-up-to-date mapped data set
         if ($dataSet->hasNonUpToDateMappedDataSets()) {

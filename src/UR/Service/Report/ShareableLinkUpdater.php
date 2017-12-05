@@ -66,7 +66,7 @@ class ShareableLinkUpdater implements ShareableLinkUpdaterInterface
             $shareFields = $this->updateShareFields($reportView, $oldShareFields);
             $config[ReportViewInterface::SHARE_FIELDS] = $shareFields;
 
-            $config[ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE] = $userProvided;
+            $config[ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE] = $userProvided && !$reportView->isLargeReport();
 
             if (!empty($dateRange)) {
                 /** For dynamic filter date */

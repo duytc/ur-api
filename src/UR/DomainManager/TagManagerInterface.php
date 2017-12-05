@@ -31,4 +31,6 @@ interface TagManagerInterface extends ManagerInterface
      * @return mixed
      */
     public function findByReportViewTemplate(ReportViewTemplateInterface $reportViewTemplateInterface);
+
+    public function checkIfUserHasMatchingIntegrationTag(IntegrationInterface $integration, PublisherInterface $publisher);
 }

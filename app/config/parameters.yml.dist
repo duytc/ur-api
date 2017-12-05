@@ -29,7 +29,7 @@ parameters:
     log_file_dir: %kernel.root_dir%/../app/logs/import
     shared_report_view_link: http://localhost:9010/#/public/unifiedReport/report/detail?reportView=$$REPORT_VIEW_ID$$&token=$$SHARED_KEY$$
     ur_email_template: 'pub$PUBLISHER_ID$.$TOKEN$@unified-reports.dev'
-    ur_batch_size: 5000
+    ur_batch_size: 2000
     ur_reading_xls_chunk_size: 5000
 
     ur.events.custom_code_event.post_loaded_data: ur.events.custom_code_event.post_loaded_data
@@ -57,3 +57,4 @@ parameters:
     ur.worker.entry_file_size_threshold: 5242880
     data_source_entry_job_temp_file_dir: '%kernel.root_dir%/temp/data-source-entry'
     number_of_rows_to_export_file: 2000 # int
+    ur.report_view.large_threshold: 500000

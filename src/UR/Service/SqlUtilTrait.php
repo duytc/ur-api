@@ -53,7 +53,7 @@ trait SqlUtilTrait
                 $timezone = $transform->getTimezone();
                 $fields = $transform->getFields();
                 $fields = array_map(function ($field) use ($types, $timezone, $removeSuffix) {
-                    if (array_key_exists($field, $types) && $types[$field] == FieldType::DATETIME) {
+                    if (!is_array($field) && array_key_exists($field, $types) && $types[$field] == FieldType::DATETIME) {
                         if ($removeSuffix === true) {
                             $field = $this->removeIdSuffix($field);
                         }
@@ -65,8 +65,10 @@ trait SqlUtilTrait
                         return sprintf("DATE(`$field`)");
                     }
 
-                    $field = $removeSuffix === true ? $this->removeIdSuffix($field) : $field;
-                    return "`$field`";
+                    if (!is_array($field)) {
+                        $field = $removeSuffix === true ? $this->removeIdSuffix($field) : $field;
+                        return "`$field`";
+                    }
                 }, $fields);
                 $qb->addGroupBy($fields);
                 return $qb;
@@ -613,7 +615,7 @@ trait SqlUtilTrait
             $fieldName = $transform->getFieldName();
             $expression = $transform->getExpression();
 
-            $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $newFields, $dataSetIndexes, $joinConfig, $removeSuffix);
+            $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $newFields, $dataSetIndexes, $joinConfig, $removeSuffix, $transform->isConvertEmptyValueToZero());
 
             if ($expressionForm === null) return $qb;
 
@@ -903,11 +905,12 @@ trait SqlUtilTrait
      * @param array $dataSetIndexes
      * @param array $joinConfig
      * @param bool $removeSuffix
+     * @param bool $isConvertEmptyValueToZero
      * @return mixed
      * @throws PublicSimpleException
      * @throws \Exception
      */
-    protected function normalizeExpression($transformType, $fieldName, $expression, array $newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = true)
+    protected function normalizeExpression($transformType, $fieldName, $expression, array $newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = true, $isConvertEmptyValueToZero = false)
     {
         if (is_null($expression)) {
             throw new \Exception(sprintf('Expression for calculated field can not be null'));
@@ -941,31 +944,41 @@ trait SqlUtilTrait
             }
 
             if ($removeSuffix === false) {
-                $expression = str_replace($fieldsInBracket[$index], "`$field`", $expression);
-                continue;
-            }
-
-            $alias = $this->convertOutputJoinFieldToAlias($field, $joinConfig, $dataSetIndexes);
-            if ($alias) {
-                $field = $alias;
+                $field = "`$field`";
             } else {
-                $tableAlias = null;
-                $fieldAndId = $this->getIdSuffixAndField($field);
-                if ($fieldAndId) {
-                    $field = $fieldAndId['field'];
-                    if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
-                        $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                $alias = $this->convertOutputJoinFieldToAlias($field, $joinConfig, $dataSetIndexes);
+                if ($alias) {
+                    $field = $alias;
+                } else {
+                    $tableAlias = null;
+                    $fieldAndId = $this->getIdSuffixAndField($field);
+                    if ($fieldAndId) {
+                        $field = $fieldAndId['field'];
+                        if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
+                            $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                        }
                     }
-                }
 
-                //$field = $tableAlias !== null ? "`$tableAlias`.`$field`" : (empty($joinConfig) ? "`t`.`$field`" : "`$field`");
-                $field = ($tableAlias !== null)
-                    ? "`$tableAlias`.`$field`"
-                    : (
+                    //$field = $tableAlias !== null ? "`$tableAlias`.`$field`" : (empty($joinConfig) ? "`t`.`$field`" : "`$field`");
+                    $field = ($tableAlias !== null)
+                        ? "`$tableAlias`.`$field`"
+                        : (
                         empty($joinConfig) && !in_array($field, $newFields)
                             ? "`t`.`$field`"
                             : "`$field`"
-                    );
+                        );
+                }
+            }
+
+            /*
+             * wrap IFNULL if isConvertEmptyValueToZero
+             * e.g: 1+2+null = null, but IFNULL(1,0)+IFNULL(2,0)+IFNULL(null,0) = 3
+             *
+             * now, we do convert to support IFNULL
+             * e.g: 1+2+null => IFNULL(1,0)+IFNULL(2,0)+IFNULL(null,0)
+             */
+            if ($isConvertEmptyValueToZero) {
+                $field = sprintf('IFNULL(%s, 0)', $field);
             }
 
             $expression = str_replace($fieldsInBracket[$index], $field, $expression);
@@ -1077,8 +1090,6 @@ trait SqlUtilTrait
                         AbstractFilter::FILTER_COMPARISON_KEY => NumberFilter::COMPARISON_TYPE_NOT_EQUAL,
                         AbstractFilter::FILTER_COMPARED_VALUE_KEY => $compareValue
                     );
-                default:
-                    return null;
             }
         }
 
@@ -1090,129 +1101,6 @@ trait SqlUtilTrait
         }
 
         return null;
-    }
-
-    /**
-     * @param QueryBuilder $qb
-     * @param $filters
-     * @param null $dataSetId
-     * @return QueryBuilder
-     */
-    public function bindFilterParam(QueryBuilder $qb, $filters, $dataSetId = null)
-    {
-        foreach ($filters as $key => $filter) {
-            if (!$filter instanceof FilterInterface) {
-                continue;
-            }
-
-            $filterField = str_replace(" ", "", $filter->getFieldName()) . $key;
-
-            if ($filter instanceof DateFilterInterface) {
-                $startDate = $filter->getStartDate();
-                if (!$startDate instanceof \DateTime) {
-                    $startDate = date_create_from_format('Y-m-d', $startDate);
-                }
-
-                if ($startDate instanceof \DateTime) {
-                    $startDate = $startDate->format('Y-m-d 00:00:00');
-                }
-
-                $endDate = $filter->getEndDate();
-                if (!$endDate instanceof \DateTime) {
-                    $endDate = date_create_from_format('Y-m-d', $endDate);
-                }
-
-                if ($endDate instanceof \DateTime) {
-                    $endDate = $endDate->format('Y-m-d 00:00:00');
-                }
-
-                $qb->setParameter(sprintf('startDate%d%d', $filterField, $dataSetId ?? 0), $startDate, Type::STRING);
-                $qb->setParameter(sprintf('endDate%d%d', $filterField, $dataSetId ?? 0), $endDate, Type::STRING);
-            } else if ($filter instanceof TextFilterInterface) {
-                if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN])) {
-                    continue;
-                }
-
-                $bindParamName = sprintf(':%s%d%d', $filterField, $filterField, $dataSetId ?? 0);
-                $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::STRING);
-            } else if ($filter instanceof NumberFilterInterface) {
-                if (in_array($filter->getComparisonType(), [NumberFilter::COMPARISON_TYPE_IN, NumberFilter::COMPARISON_TYPE_NOT_IN])) {
-                    continue;
-                }
-
-                $bindParamName = sprintf(':%s%d%d', $filterField, $filterField, $dataSetId ?? 0);
-                $qb->setParameter($bindParamName, $filter->getComparisonValue(), Type::INTEGER);
-            }
-        }
-
-        return $qb;
-    }
-
-    /**
-     * @param ParamsInterface $params
-     * @param $sql
-     * @param $filters
-     * @param null $dataSetId
-     * @return mixed
-     */
-    public function bindFilterParamForTemporaryTable(ParamsInterface $params, $sql, $filters, $dataSetId = null)
-    {
-        $replaces = [];
-        foreach ($filters as $key => $filter) {
-            if (!$filter instanceof FilterInterface) {
-                continue;
-            }
-
-            $filterField = str_replace(" ", "", $filter->getFieldName()) . $key;
-
-            if ($filter instanceof DateFilterInterface) {
-                $startDate = $filter->getStartDate();
-                if (!$startDate instanceof \DateTime) {
-                    $startDate = date_create_from_format('Y-m-d', $startDate);
-                }
-
-                if ($startDate instanceof \DateTime) {
-                    $startDate = $startDate->format('Y-m-d 00:00:00');
-                }
-
-                $endDate = $filter->getEndDate();
-                if (!$endDate instanceof \DateTime) {
-                    $endDate = date_create_from_format('Y-m-d', $endDate);
-                }
-
-                if ($endDate instanceof \DateTime) {
-                    $endDate = $endDate->format('Y-m-d 00:00:00');
-                }
-
-                $replaces[sprintf(':startDate%d%d', $filterField, $dataSetId ?? 0)] = sprintf('"%s"', $startDate);
-                $replaces[sprintf(':endDate%d%d', $filterField, $dataSetId ?? 0)] = sprintf('"%s"', $endDate);
-            } else if ($filter instanceof TextFilterInterface) {
-                if (in_array($filter->getComparisonType(), [TextFilter::COMPARISON_TYPE_IN, TextFilter::COMPARISON_TYPE_NOT_IN, TextFilter::COMPARISON_TYPE_CONTAINS, TextFilter::COMPARISON_TYPE_NOT_CONTAINS, TextFilter::COMPARISON_TYPE_START_WITH, TextFilter::COMPARISON_TYPE_END_WITH])) {
-                    continue;
-                }
-
-                $bindParamName = sprintf(':%s%d%d', $filterField, $filterField, $dataSetId ?? 0);
-                $replaces[$bindParamName] = sprintf('"%s"', $filter->getComparisonValue());
-            } else if ($filter instanceof NumberFilterInterface) {
-                if (in_array($filter->getComparisonType(), [NumberFilter::COMPARISON_TYPE_IN, NumberFilter::COMPARISON_TYPE_NOT_IN])) {
-                    continue;
-                }
-
-                $bindParamName = sprintf(':%s%d%d', $filterField, $filterField, $dataSetId ?? 0);
-                $replaces[$bindParamName] = $filter->getComparisonValue();
-            }
-        }
-
-        foreach ($replaces as $key => $value) {
-            $sql = str_replace($key, $value, $sql);
-        }
-
-        if (!empty($params->getSortField())) {
-            $tempTable4th = sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix());
-//            $sql = $sql . sprintf("CREATE INDEX idx_pname ON %s(%s);", $tempTable4th, $params->getSortField());
-        }
-
-        return $sql;
     }
 
     /**

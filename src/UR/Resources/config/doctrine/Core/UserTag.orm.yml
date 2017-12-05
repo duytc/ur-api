@@ -13,3 +13,4 @@ UR\Entity\Core\UserTag:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
         tag:
             targetEntity: UR\Entity\Core\Tag
+            cascade: ['persist']

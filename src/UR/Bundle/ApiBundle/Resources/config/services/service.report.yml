@@ -26,6 +26,8 @@ services:
         class: UR\Service\Report\SqlBuilder
         arguments:
             - '@doctrine.orm.entity_manager'
+            - '@ur.domain_manager.report_view'
+            - '%ur.report_view.large_threshold%'
 
     ur.services.report.report_selector:
         class: UR\Service\Report\ReportSelector
@@ -54,3 +56,19 @@ services:
         class: UR\Service\Report\ReportViewUpdater
         arguments:
             - '@doctrine.orm.entity_manager'
+
+    ur.service.data_source.integration_tag_service:
+        class: UR\Service\DataSource\IntegrationTagService
+        arguments:
+            - '@ur.domain_manager.tag'
+            - '@ur.domain_manager.user_tag'
+
+    ur.services.large_report.large_report_maintainer:
+        class: UR\Service\LargeReport\LargeReportMaintainer
+        arguments:
+            - '@doctrine.orm.entity_manager'
+            - '@ur.domain_manager.report_view'
+            - '@ur.services.report.sql_builder'
+            - '%ur.report_view.large_threshold%'
+            - '@ur.services.report.params_builder'
+            - '@ur.worker.manager'

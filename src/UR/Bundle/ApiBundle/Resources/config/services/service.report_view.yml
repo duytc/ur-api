@@ -35,6 +35,7 @@ services:
         class: %ur.form.type.core.report_view.class%
         arguments:
             - @doctrine.orm.entity_manager
+            - %ur.report_view.large_threshold%
         tags:
             - { name: form.type, alias: ur_form_report_view }
 

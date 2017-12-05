@@ -534,6 +534,9 @@ class Parser implements ParserInterface
 
         $collection = $this->switchFieldInFileToFieldInDataSet($collection->getRows(), $columns, $parserConfig);
 
+        $types = $connectedDataSource->getDataSet()->getAllDimensionMetrics();
+        $collection->setTypes($types);
+
         return $collection;
     }
 

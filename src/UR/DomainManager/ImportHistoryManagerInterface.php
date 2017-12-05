@@ -66,6 +66,8 @@ interface ImportHistoryManagerInterface extends ManagerInterface
 
     public function deleteImportHistoriesByIds(array $importHistoryIds);
 
+    public function deleteImportHistoryByConnectedDataSourceAndEntry ($connectedDataSourceId, $dataSourceEntryId);
+
     /**
      * @param DataSourceEntryInterface $dataSourceEntry
      * @param ConnectedDataSourceInterface $connectedDataSource

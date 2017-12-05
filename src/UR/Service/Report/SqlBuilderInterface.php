@@ -72,7 +72,29 @@ interface SqlBuilderInterface
 
     /**
      * @param ParamsInterface $params
+     * @param $overridingFilters
+     * @param $preCalculateTable
+     * @return QueryBuilder
+     */
+    public function createReturnSQlForPreCalculateTable(ParamsInterface $params, $overridingFilters, $preCalculateTable);
+
+    /**
+     * @param ParamsInterface $params
      * @return mixed
      */
     public function removeTemporaryTables(ParamsInterface $params);
+
+    /**
+     * @param ParamsInterface $params
+     * @param $preCalculateTable
+     * @return mixed
+     */
+    public function buildSQLForPreCalculateTable(ParamsInterface $params, $preCalculateTable);
+
+    /**
+     * @param ParamsInterface $params
+     * @param $preCalculateTable
+     * @return mixed
+     */
+    public function buildIndexSQLForPreCalculateTable(ParamsInterface $params, $preCalculateTable);
 }

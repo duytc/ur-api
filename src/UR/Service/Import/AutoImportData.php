@@ -3,7 +3,9 @@
 namespace UR\Service\Import;
 
 
+use DateTime;
 use Monolog\Logger;
+use SplDoublyLinkedList;
 use UR\Domain\DTO\ConnectedDataSource\DryRunParamsInterface;
 use UR\DomainManager\MapBuilderConfigManager;
 use UR\Model\Core\ConnectedDataSourceInterface;
@@ -13,7 +15,9 @@ use UR\Model\Core\MapBuilderConfigInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\ArrayUtilTrait;
 use UR\Service\DataSet\DataMappingService;
+use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\ParsedDataImporter;
+use UR\Service\DataSet\UpdateDataSetTotalRowService;
 use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\DTO\Collection;
 use UR\Service\Parser\DryRunReportFilterInterface;
@@ -61,7 +65,10 @@ class AutoImportData implements AutoImportDataInterface
     /** @var DataSourceFileFactory  */
     private $dataSourceFileFactory;
 
-    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, Logger $logger, DryRunReportSorterInterface $dryRunReportSorter, DryRunReportFilterInterface $dryRunReportFilter, MapBuilderConfigManager $mapBuilderConfigManager, DataMappingService $dataMappingService, CsvWriterInterface $csvWriter, DataSourceFileFactory $dataSourceFileFactory)
+    /** @var UpdateDataSetTotalRowService  */
+    protected $updateDataSetTotalRowService;
+
+    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, Logger $logger, DryRunReportSorterInterface $dryRunReportSorter, DryRunReportFilterInterface $dryRunReportFilter, MapBuilderConfigManager $mapBuilderConfigManager, DataMappingService $dataMappingService, CsvWriterInterface $csvWriter, DataSourceFileFactory $dataSourceFileFactory, UpdateDataSetTotalRowService $updateDataSetTotalRowService)
     {
         $this->parsingFileService = $parsingFileService;
         $this->importer = $importer;
@@ -72,6 +79,7 @@ class AutoImportData implements AutoImportDataInterface
         $this->dataMappingService = $dataMappingService;
         $this->csvWriter = $csvWriter;
         $this->dataSourceFileFactory = $dataSourceFileFactory;
+        $this->updateDataSetTotalRowService = $updateDataSetTotalRowService;
     }
 
     /**
@@ -81,23 +89,7 @@ class AutoImportData implements AutoImportDataInterface
     {
         /* parsing data */
         $collection = $this->parsingData($connectedDataSource, $dataSourceEntry);
-
-        /* import data to database */
-        $this->logger->notice(sprintf('begin loading file "%s" data to database "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
-        $collection = $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
-
-        if (!($collection instanceof Collection)) {
-            return;
-        }
-
-        /** Import collection to map builder configs */
-        $dataSet = $connectedDataSource->getDataSet();
-        $mapBuilderConfigs = $this->mapBuilderConfigManager->getByMapDataSet($dataSet);
-
-        foreach ($mapBuilderConfigs as $mapBuilderConfig) {
-            /** @var MapBuilderConfigInterface $mapBuilderConfig */
-            $this->dataMappingService->importDataFromComponentDataSet($mapBuilderConfig, $collection);
-        }
+        $this->importToDataBase($connectedDataSource, $dataSourceEntry,$importHistoryEntity, $collection);
     }
 
     /**
@@ -128,23 +120,7 @@ class AutoImportData implements AutoImportDataInterface
     {
         /* parsing data */
         $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, null, $parserType = ParserInterface::TYPE_POST_GROUPS, $chunkFilePath);
-
-        /* import data to database */
-        $this->logger->notice(sprintf('begin loading file "%s" data to database "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
-        $collection = $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
-
-        if (!($collection instanceof Collection)) {
-            return;
-        }
-
-        /** Import collection to map builder configs */
-        $dataSet = $connectedDataSource->getDataSet();
-        $mapBuilderConfigs = $this->mapBuilderConfigManager->getByMapDataSet($dataSet);
-
-        foreach ($mapBuilderConfigs as $mapBuilderConfig) {
-            /** @var MapBuilderConfigInterface $mapBuilderConfig */
-            $this->dataMappingService->importDataFromComponentDataSet($mapBuilderConfig, $collection);
-        }
+        $this->importToDataBase($connectedDataSource, $dataSourceEntry,$importHistoryEntity, $collection);
     }
 
     public function parseFileThenInsert(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, ImportHistoryInterface $importHistoryEntity, $chunkFilePath)
@@ -155,23 +131,7 @@ class AutoImportData implements AutoImportDataInterface
         } catch (ImportDataException $ex) {
             throw $ex;
         }
-
-        /* import data to database */
-        $this->logger->notice(sprintf('begin loading chunk "%s" data to dataset "%s"', $chunkFilePath, $connectedDataSource->getDataSet()->getName()));
-        $collection = $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
-
-        if (!($collection instanceof Collection)) {
-            return;
-        }
-
-        /** Import collection to map builder configs */
-        $dataSet = $connectedDataSource->getDataSet();
-        $mapBuilderConfigs = $this->mapBuilderConfigManager->getByMapDataSet($dataSet);
-
-        foreach ($mapBuilderConfigs as $mapBuilderConfig) {
-            /** @var MapBuilderConfigInterface $mapBuilderConfig */
-            $this->dataMappingService->importDataFromComponentDataSet($mapBuilderConfig, $collection);
-        }
+        $this->importToDataBase($connectedDataSource, $dataSourceEntry,$importHistoryEntity, $collection);
     }
 
     /**
@@ -282,5 +242,116 @@ class AutoImportData implements AutoImportDataInterface
         } else {
             return $collection;
         }
+    }
+
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param DataSourceEntryInterface $dataSourceEntry
+     * @param ImportHistoryInterface $importHistoryEntity
+     * @param $collection
+     */
+    private function importToDataBase(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, ImportHistoryInterface $importHistoryEntity, $collection)
+    {
+        if (!$collection instanceof Collection) {
+            return;
+        }
+
+        $collection = $this->filterCollectionByDateRange($collection, $connectedDataSource);
+
+        /* import data to database */
+        $this->logger->notice(sprintf('begin loading file "%s" data to database "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
+        $collection = $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
+        $this->updateDataSetTotalRowService->updateDataSetTotalRow($connectedDataSource->getDataSet()->getId());
+        $this->updateDataSetTotalRowService->updateAllConnectedDataSourcesTotalRowInOneDataSet($connectedDataSource->getDataSet()->getId());
+
+        /** Import collection to map builder configs */
+        $dataSet = $connectedDataSource->getDataSet();
+        $mapBuilderConfigs = $this->mapBuilderConfigManager->getByMapDataSet($dataSet);
+
+        foreach ($mapBuilderConfigs as $mapBuilderConfig) {
+            /** @var MapBuilderConfigInterface $mapBuilderConfig */
+            $this->dataMappingService->importDataFromComponentDataSet($mapBuilderConfig, $collection);
+        }
+    }
+
+    /**
+     * @param Collection $collection
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return Collection
+     */
+    protected function filterCollectionByDateRange(Collection $collection, ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $startDate = $connectedDataSource->getReloadStartDate();
+        $endDate = $connectedDataSource->getReloadEndDate();
+
+        if (!$startDate instanceof DateTime ||
+            !$endDate instanceof DateTime) {
+            return $collection;
+        }
+
+        $rows = $collection->getRows();
+        $dateFields = $this->getDateTimeFields($collection);
+
+        if (empty($dateFields)) {
+            return $collection;
+        }
+
+        $filterRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
+            $dates = [];
+            $isValid = true;
+            foreach ($dateFields as $dateField) {
+                if (!array_key_exists($dateField, $row)) {
+                    continue;
+                }
+
+                $date = date_create_from_format('Y-m-d', $row[$dateField]);
+                if (!$date instanceof DateTime) {
+                    $date = date_create_from_format('Y-m-d H:i:s', $row[$dateField]);
+                }
+
+                if ($date instanceof DateTime) {
+                    $dates[] = $date;
+                }
+            }
+
+            foreach ($dates as $date) {
+                if ($date < $startDate || $date > $endDate) {
+                    $isValid = false;
+                    break;
+                }
+            }
+
+            if ($isValid) {
+                $filterRows->push($row);
+            }
+
+            unset($row);
+        }
+
+        $collection->setRows($filterRows);
+        unset($rows);
+        gc_collect_cycles();
+
+        return $collection;
+    }
+
+    /**
+     * @param Collection $collection
+     * @return array
+     */
+    protected function getDateTimeFields(Collection $collection)
+    {
+        $columns = $collection->getColumns();
+
+        if (!is_array($columns)) {
+            return [];
+        }
+
+        $dateFields = array_filter($columns, function ($column) use ($collection) {
+            return in_array($collection->getTypeOf($column), [FieldType::DATE, FieldType::DATETIME]);
+        });
+
+        return $dateFields;
     }
 }

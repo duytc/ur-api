@@ -24,6 +24,8 @@ interface DataSetInterface extends ModelInterface
     const NAME_COLUMN = 'name';
     const DIMENSIONS_COLUMN = 'dimensions';
     const METRICS_COLUMN = 'metrics';
+    const TOTAL_ROW = 'totalRow';
+
     /**
      * @param mixed $id
      */
@@ -238,6 +240,16 @@ interface DataSetInterface extends ModelInterface
      * @return bool
      */
     public function hasNonUpToDateMappedDataSetsByConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource);
+
+    /**
+     * @return array
+     */
+    public function getCustomIndexConfig();
+
+    /**
+     * @param mixed $customIndexConfig
+     */
+    public function setCustomIndexConfig($customIndexConfig);
 
     /**
      * @return array

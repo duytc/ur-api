@@ -16,6 +16,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
     const CONDITION_COMPARATOR_KEY = 'conditionComparator';
     const CONDITION_VALUE_KEY = 'conditionValue';
     const CONDITION_FIELD_CALCULATED_VALUE = '$$CALCULATED_VALUE$$';
+    const CONVERT_EMPTY_VALUE_TO_ZERO_KEY = 'convertEmptyValueToZero';
 
     /**
      * @var string
@@ -23,6 +24,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
     protected $expression;
     protected $defaultValue;
     protected $language;
+    protected $isConvertEmptyValueToZero;
 
     public function __construct(ExpressionLanguage $language, array $addCalculatedField, bool $isPostGroup = true)
     {
@@ -46,6 +48,10 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
         }
 
         $this->setIsPostGroup($isPostGroup);
+
+        $this->isConvertEmptyValueToZero = (array_key_exists(self::CONVERT_EMPTY_VALUE_TO_ZERO_KEY, $addCalculatedField))
+            ? (bool)$addCalculatedField[self::CONVERT_EMPTY_VALUE_TO_ZERO_KEY]
+            : false;
     }
 
     /**
@@ -172,5 +178,13 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
         };
 
         return $matches[1];
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isConvertEmptyValueToZero()
+    {
+        return $this->isConvertEmptyValueToZero;
     }
 }

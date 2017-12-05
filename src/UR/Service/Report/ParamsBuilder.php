@@ -597,6 +597,8 @@ class ParamsBuilder implements ParamsBuilderInterface
     public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $fieldsToBeShared, array $paginationParams)
     {
         $param = new Params();
+        $param->setReportView($reportView);
+        $param->setReportViewId($reportView->getId());  
         // important: the dimensions/metrics need re-calculate due to shared fields.
         // This makes sure group calculation is correct
         // e.g: dimensions are date-tag-country, if shared only date-tag => the shared report need be re-calculate base on

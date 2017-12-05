@@ -70,7 +70,6 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getImportHistoryByDataSourceEntryWithoutDataSet(DataSourceEntryInterface $dataSourceEntry);
-
     /**
      * @param ImportHistoryInterface[] $importHistories
      * @return mixed
@@ -80,6 +79,12 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
     public function deleteImportHistoryByDataSet(DataSetInterface $dataSet);
 
     public function deleteImportHistoriesByIds(array $importHistoryIds);
+    /**
+     * @param $connectedDataSourceId
+     * @param $dataSourceEntryId
+     * @return mixed
+     */
+    public function deleteImportHistoryByConnectedDataSourceAndEntry ($connectedDataSourceId, $dataSourceEntryId);
 
     /**
      * @param $importHistories

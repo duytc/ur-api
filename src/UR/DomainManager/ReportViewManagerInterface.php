@@ -6,6 +6,7 @@ use Doctrine\ORM\QueryBuilder;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\PagerParam;
+use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
 
 interface ReportViewManagerInterface extends ManagerInterface
@@ -41,4 +42,13 @@ interface ReportViewManagerInterface extends ManagerInterface
      * @return mixed
      */
     public function getSingleViews();
+
+
+    /**
+     * @param PublisherInterface $publisher
+     * @param null $limit
+     * @param null $offset
+     * @return QueryBuilder
+     */
+    public function getReportViewsForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null);
 }

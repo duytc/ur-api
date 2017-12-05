@@ -73,7 +73,25 @@ UR\Entity\Core\ReportView:
         filters:
             type: json_array
             nullable: true
-
+        largeReport:
+            type: boolean
+            options:
+                default: false
+            nullable: false
+        availableToRun:
+            type: boolean
+            options:
+                default: true
+            nullable: false
+        availableToChange:
+            type: boolean
+            options:
+                default: true
+            nullable: false
+        preCalculateTable:
+            type: string
+            length: 30
+            nullable: true
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
@@ -85,4 +103,9 @@ UR\Entity\Core\ReportView:
             mappedBy: reportView
             fetch: EXTRA_LAZY
             cascade: ['persist', 'remove', 'detach']
+            orphanRemoval: true
+        subReportViews:
+            targetEntity: UR\Entity\Core\ReportView
+            mappedBy: masterReportView
+            cascade: ['remove', 'detach']
             orphanRemoval: true

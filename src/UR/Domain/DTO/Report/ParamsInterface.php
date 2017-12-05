@@ -310,4 +310,15 @@ interface ParamsInterface
      * @param string $temporarySuffix
      */
     public function setTemporarySuffix($temporarySuffix);
+
+    /**
+     * @return mixed
+     */
+    public function getReportView();
+
+    /**
+     * @param mixed $reportView
+     * @return self
+     */
+    public function setReportView($reportView);
 }

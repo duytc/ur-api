@@ -12,7 +12,7 @@ UR\Entity\Core\ReportView:
             groups: [report_view.detail, report_view.summary, report_view.share]
         subView:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         joinBy:
             expose: true
             groups: [report_view.detail, report_view.summary, report_view.share]
@@ -30,7 +30,7 @@ UR\Entity\Core\ReportView:
             groups: [report_view.detail, report_view.summary, report_view.share]
         masterReportView:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         showInTotal:
             expose: true
             groups: [report_view.detail, report_view.summary]
@@ -71,3 +71,15 @@ UR\Entity\Core\ReportView:
         enableCustomDimensionMetric:
             expose: true
             groups: [report_view.detail, report_view.summary]
+        largeReport:
+            expose: true
+            groups: [report_view.detail, report_view.summary, report_view.share]
+        availableToRun:
+            expose: true
+            groups: [report_view.detail, report_view.summary, report_view.share]
+        availableToChange:
+            expose: true
+            groups: [report_view.detail, report_view.summary, report_view.share]
+        preCalculateTable:
+            expose: true
+            groups: [report_view.detail, report_view.summary, report_view.share]

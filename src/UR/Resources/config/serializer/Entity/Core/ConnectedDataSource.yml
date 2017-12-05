@@ -43,3 +43,12 @@ UR\Entity\Core\ConnectedDataSource:
         numChanges:
             expose: true
             groups: [connectedDataSource.summary]
+        reloadStartDate:
+            expose: true
+            groups: [connectedDataSource.summary, connectedDataSource.summary]
+        reloadEndDate:
+            expose: true
+            goups: [connectedDataSource.summary, connectedDataSource.summary]
+        datasource:
+            expose: true
+            goups: [connectedDataSource.summary, connectedDataSource.summary]
