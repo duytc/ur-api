@@ -3,6 +3,8 @@
 namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
+use UR\Entity\Core\AutoOptimizationConfig;
+use UR\Entity\Core\AutoOptimizationConfigDataSet;
 use UR\Entity\Core\LinkedMapDataSet;
 use UR\Entity\Core\ReportViewDataSet;
 use UR\Exception\InvalidArgumentException;
@@ -73,6 +75,13 @@ class DataSetManager implements DataSetManagerInterface
         $linkedMaps = $linkedMapDataSetRepository->getByMapDataSet($dataSet);
         if(count($linkedMaps) > 0){
             throw new PublicSimpleException("There are some connected data sources with data augmentation transforms that refer to this data set");
+        }
+
+        $autoOptimizationConfigDataSetRepository = $this->om->getRepository(AutoOptimizationConfigDataSet::class);
+        $autoOptimizationConfigDataSets = $autoOptimizationConfigDataSetRepository->findByDataSet($dataSet);
+
+        if(count($autoOptimizationConfigDataSets) > 0){
+            throw new PublicSimpleException("There are some Auto Optimization that refer to this data set");
         }
 
         $this->om->remove($dataSet);
