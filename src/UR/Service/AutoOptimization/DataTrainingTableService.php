@@ -65,8 +65,6 @@ class DataTrainingTableService
 
         try {
             $dimensions = $autoOptimizationConfig->getDimensions();
-            $metrics = $autoOptimizationConfig->getMetrics();
-
             $rows = $collection->getRows();
             $columns = $collection->getColumns();
 

@@ -380,6 +380,10 @@ class ParamsBuilder implements ParamsBuilderInterface
         return $reportViewData;
     }
 
+    /**
+     * @param $autoOptimizationConfigDataSets
+     * @return array
+     */
     public function autoOptimizationConfigDataSetObjectsToArray($autoOptimizationConfigDataSets)
     {
         if ($autoOptimizationConfigDataSets instanceof Collection) {

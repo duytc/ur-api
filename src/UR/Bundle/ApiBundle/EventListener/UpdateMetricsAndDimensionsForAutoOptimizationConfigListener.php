@@ -31,6 +31,9 @@ class UpdateMetricsAndDimensionsForAutoOptimizationConfigListener
         $this->paramsBuilder = $paramsBuilder;
     }
 
+    /**
+     * @param LifecycleEventArgs $args
+     */
     public function prePersist(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
@@ -42,6 +45,9 @@ class UpdateMetricsAndDimensionsForAutoOptimizationConfigListener
         $this->updateMetricsAndDimensionsForAutoOptimizationConfig($entity);
     }
 
+    /**
+     * @param PreUpdateEventArgs $args
+     */
     public function preUpdate(PreUpdateEventArgs $args)
     {
         $entity = $args->getEntity();
@@ -55,6 +61,9 @@ class UpdateMetricsAndDimensionsForAutoOptimizationConfigListener
         }
     }
 
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     */
     protected function updateMetricsAndDimensionsForAutoOptimizationConfig(AutoOptimizationConfigInterface $autoOptimizationConfig)
     {
         $param = $this->paramsBuilder->buildFromAutoOptimizationConfig($autoOptimizationConfig);

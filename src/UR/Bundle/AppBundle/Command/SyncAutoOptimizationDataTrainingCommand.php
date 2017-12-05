@@ -12,7 +12,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\AutoOptimizationConfigManagerInterface;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
-use UR\Model\Core\DataSetInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;
 use UR\Service\DTO\Report\ReportResultInterface;
 use UR\Service\Report\ParamsBuilder;
@@ -71,7 +70,7 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         /* get data training for autoOptimizationConfig */
         /** @var ReportResultInterface $data */
         $data = $this->getDataForAutoOptimizationConfig($autoOptimizationConfig);
-        
+
         /** @var DataTrainingTableService $autoOptimizationSyncService */
         $autoOptimizationSyncService = $container->get('ur.service.auto_optimization.data_training_table_service');
         $autoOptimizationSyncService->importDataToDataTrainingTable($data, $autoOptimizationConfig);

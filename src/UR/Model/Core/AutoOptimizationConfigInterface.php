@@ -4,9 +4,7 @@
 namespace UR\Model\Core;
 
 
-use Doctrine\ORM\PersistentCollection;
 use UR\Model\ModelInterface;
-use UR\Model\User\Role\PublisherInterface;
 
 interface AutoOptimizationConfigInterface extends ModelInterface
 {
@@ -118,7 +116,7 @@ interface AutoOptimizationConfigInterface extends ModelInterface
     /**
      * @param mixed $autoOptimizationConfigDataSets
      */
-   public function setAutoOptimizationConfigDataSets($autoOptimizationConfigDataSets);
+    public function setAutoOptimizationConfigDataSets($autoOptimizationConfigDataSets);
 
     /**
      * @return mixed

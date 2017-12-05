@@ -3,7 +3,7 @@
 
 namespace UR\Entity\Core;
 
-use \UR\Model\Core\AutoOptimizationConfigDataSet  as AutoOptimizationConfigDataSetModel;
+use \UR\Model\Core\AutoOptimizationConfigDataSet as AutoOptimizationConfigDataSetModel;
 
 class AutoOptimizationConfigDataSet extends AutoOptimizationConfigDataSetModel
 {
@@ -21,6 +21,4 @@ class AutoOptimizationConfigDataSet extends AutoOptimizationConfigDataSetModel
     {
         parent::__construct();
     }
-
-
 }

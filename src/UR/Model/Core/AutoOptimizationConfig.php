@@ -6,7 +6,6 @@ namespace UR\Model\Core;
 
 class AutoOptimizationConfig implements AutoOptimizationConfigInterface
 {
-
     protected $id;
     protected $transforms;
     protected $filters;

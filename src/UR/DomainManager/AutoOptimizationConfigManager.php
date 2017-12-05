@@ -21,6 +21,7 @@ class AutoOptimizationConfigManager implements AutoOptimizationConfigManagerInte
         $this->om = $om;
         $this->repository = $repository;
     }
+
     /**
      * @inheritdoc
      */

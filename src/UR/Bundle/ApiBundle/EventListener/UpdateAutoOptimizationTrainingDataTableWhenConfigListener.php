@@ -1,5 +1,6 @@
 <?php
 namespace UR\Bundle\ApiBundle\EventListener;
+
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
@@ -10,6 +11,7 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
 {
     const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';
+
     public function preUpdate(PreUpdateEventArgs $args)
     {
         $entity = $args->getEntity();
@@ -54,8 +56,14 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
         /* filters */
         $filters = $autoOptimizationConfigDataSet->getFilters();
         foreach ($filters as &$filter) {
+            if (!array_key_exists(AbstractFilter::FILTER_DATA_SET_KEY, $filter)) {
+                continue;
+            }
             $dataSetId = $filter[AbstractFilter::FILTER_DATA_SET_KEY];
             if ($dataSetId !== $autoOptimizationConfigDataSet->getDataSet()->getId()) {
+                continue;
+            }
+            if (!array_key_exists(AbstractFilter::FILTER_FIELD_KEY, $filter)) {
                 continue;
             }
             $field = $filter[AbstractFilter::FILTER_FIELD_KEY];

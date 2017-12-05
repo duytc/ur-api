@@ -24,7 +24,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         if (!$entity instanceof DataSetInterface) {
             return;
         }
-        
+
         // get changes
         if (!$args->hasChangedField(self::DIMENSIONS_KEY) && !$args->hasChangedField(self::METRICS_KEY)) {
             return;
@@ -93,14 +93,21 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         /** @var array $joinBy */
         $joinBy = $autoOptimizationConfig->getJoinBy();
         foreach ($joinBy as &$joinBy_) {
-            // check array_key_exist()
+            if (!array_key_exists(SqlBuilder::JOIN_CONFIG_JOIN_FIELDS, $joinBy_)) {
+                continue;
+            }
             $joinFields = $joinBy_[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
             foreach ($joinFields as &$joinField) {
+                if (!array_key_exists(SqlBuilder::JOIN_CONFIG_DATA_SET, $joinField)) {
+                    continue;
+                }
                 $dataSetId = $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
                 if ($dataSetId !== $dataSet->getId()) {
                     continue;
                 }
-
+                if (!array_key_exists(SqlBuilder::JOIN_CONFIG_FIELD, $joinField)) {
+                    continue;
+                }
                 $field = $joinField[SqlBuilder::JOIN_CONFIG_FIELD];
                 $field = $this->mappingNewValue($field, $dimensionsMetricsMapping);
                 $joinField[SqlBuilder::JOIN_CONFIG_FIELD] = $field;
@@ -157,11 +164,16 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         /* filters */
         $filters = $autoOptimizationConfig->getFilters();
         foreach ($filters as &$filter) {
+            if (!array_key_exists(AbstractFilter::FILTER_DATA_SET_KEY, $filter)) {
+                continue;
+            }
             $dataSetId = $filter[AbstractFilter::FILTER_DATA_SET_KEY];
             if ($dataSetId !== $dataSet->getId()) {
                 continue;
             }
-
+            if (!array_key_exists(AbstractFilter::FILTER_FIELD_KEY, $filter)) {
+                continue;
+            }
             $field = $filter[AbstractFilter::FILTER_FIELD_KEY];
             $field = $this->mappingNewValue($field, $dimensionsMetricsMapping);
             $filter[AbstractFilter::FILTER_FIELD_KEY] = $field;

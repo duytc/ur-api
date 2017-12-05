@@ -66,6 +66,10 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
 
                 //check instance AutoOptimizationConfigDataSets
                 $autoOptimizationConfigDataSets = $autoOptimizationConfig->getAutoOptimizationConfigDataSets();
+                if ($autoOptimizationConfigDataSets instanceof Collection) {
+                    $autoOptimizationConfigDataSets = $autoOptimizationConfigDataSets->toArray();
+                }
+                
                 /**
                  * @var AutoOptimizationConfigDataSetInterface[] $autoOptimizationConfigDataSets
                  */

@@ -6,7 +6,6 @@ namespace UR\Handler\Handlers\Core\Publisher;
 
 use UR\Exception\LogicException;
 use UR\Handler\Handlers\Core\AutoOptimizationConfigHandlerAbstract;
-use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Model\ModelInterface;
 use UR\Model\User\Role\PublisherInterface;
@@ -14,7 +13,6 @@ use UR\Model\User\Role\UserRoleInterface;
 
 class AutoOptimizationConfigHandler extends AutoOptimizationConfigHandlerAbstract
 {
-
     /**
      * @inheritdoc
      */
