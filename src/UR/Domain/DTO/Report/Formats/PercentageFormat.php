@@ -12,8 +12,13 @@ class PercentageFormat extends AbstractFormat implements PercentageFormatInterfa
     const DEFAULT_PRECISION = 2;
     const PERCENTAGE_FORMAT_SIGN = '%';
 
+    const CONVERT_EMPTY_VALUE_TO_ZERO_KEY = 'convertEmptyValueToZero';
+
     /** @var int */
     protected $precision;
+
+    /** @var bool */
+    protected $isConvertEmptyValueToZero;
 
     /**
      * PercentageFormat constructor.
@@ -23,6 +28,10 @@ class PercentageFormat extends AbstractFormat implements PercentageFormatInterfa
     {
         parent::__construct($data);
         $this->precision = $data[self::PRECISION_KEY];
+
+        $this->isConvertEmptyValueToZero = (array_key_exists(self::CONVERT_EMPTY_VALUE_TO_ZERO_KEY, $data))
+            ? (bool)$data[self::CONVERT_EMPTY_VALUE_TO_ZERO_KEY]
+            : false;
     }
 
     /**
@@ -106,8 +115,12 @@ class PercentageFormat extends AbstractFormat implements PercentageFormatInterfa
      */
     protected function formatPercentage($number, $precision)
     {
-        if (is_null($number)) {
-            return $number;
+        if ($number === null || $number === '') { // do not check by empty() because empty(0) return true
+            if ($this->isConvertEmptyValueToZero) {
+                $number = 0;
+            } else {
+                return $number;
+            }
         }
 
         $convertedNumber = number_format($number * 100, $precision);

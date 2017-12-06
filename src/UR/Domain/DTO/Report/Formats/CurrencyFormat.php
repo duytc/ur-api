@@ -14,6 +14,11 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
 
     const DEFAULT_CURRENCY = '$';
 
+    const CONVERT_EMPTY_VALUE_TO_ZERO_KEY = 'convertEmptyValueToZero';
+
+    /** @var bool */
+    protected $isConvertEmptyValueToZero;
+
     /** @var int */
     protected $currency;
 
@@ -26,6 +31,10 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
         }
 
         $this->currency = empty($data[self::CURRENCY_KEY]) ? self::DEFAULT_CURRENCY : $data[self::CURRENCY_KEY];
+
+        $this->isConvertEmptyValueToZero = (array_key_exists(self::CONVERT_EMPTY_VALUE_TO_ZERO_KEY, $data))
+            ? (bool)$data[self::CONVERT_EMPTY_VALUE_TO_ZERO_KEY]
+            : false;
     }
 
     /**
@@ -107,9 +116,12 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
      */
     private function formatOneCurrency($fieldValue)
     {
-        // do not format currency if value not set
-        if (is_null($fieldValue) || $fieldValue ==='') {
-            return $fieldValue;
+        if ($fieldValue === null || $fieldValue === '') { // do not check by empty() because empty(0) return true
+            if ($this->isConvertEmptyValueToZero) {
+                $fieldValue = 0;
+            } else {
+                return $fieldValue;
+            }
         }
 
         return $this->getCurrency() . ' ' . $fieldValue;
