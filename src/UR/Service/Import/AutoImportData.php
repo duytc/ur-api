@@ -256,7 +256,7 @@ class AutoImportData implements AutoImportDataInterface
             return;
         }
 
-        $collection = $this->filterCollectionByDateRange($collection, $connectedDataSource);
+//        $collection = $this->filterCollectionByDateRange($collection, $connectedDataSource);
 
         /* import data to database */
         $this->logger->notice(sprintf('begin loading file "%s" data to database "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
