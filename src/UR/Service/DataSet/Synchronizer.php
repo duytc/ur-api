@@ -239,7 +239,12 @@ class Synchronizer
             return false;
         }
 
-        $sm->dropTable($tableName);
+        /** Exception occur when run multi worker */
+        try {
+            $sm->dropTable($tableName);
+        } catch (\Exception $e) {
+
+        }
     }
 
     /**
