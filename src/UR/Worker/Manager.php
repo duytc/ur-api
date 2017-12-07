@@ -2,6 +2,7 @@
 
 namespace UR\Worker;
 
+use DateTime;
 use Leezy\PheanstalkBundle\Proxy\PheanstalkProxy;
 use Pubvantage\Worker\Scheduler\ConcurrentJobScheduler;
 use Pubvantage\Worker\Scheduler\ConcurrentJobSchedulerInterface;
@@ -13,7 +14,9 @@ use Pubvantage\Worker\Scheduler\LinearJobSchedulerInterface;
 use Redis;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Service\DataSet\ReloadParamsInterface;
 use UR\Service\DateUtilInterface;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Worker\Job\Concurrent\CountChunkRow;
 use UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView;
 use UR\Worker\Job\Concurrent\ParseChunkFile;
@@ -66,7 +69,7 @@ class Manager
     protected $dataSourceEntryScheduler;
 
     public function __construct(DateUtilInterface $dateUtil, Redis $redis, PheanstalkProxy $beanstalk, ConcurrentJobScheduler $concurrentJobScheduler,
-        LinearJobScheduler $linearJobScheduler, DataSetJobScheduler $dataSetJobScheduler, DataSourceEntryJobSchedulerInterface $dataSourceEntryScheduler)
+                                LinearJobScheduler $linearJobScheduler, DataSetJobScheduler $dataSetJobScheduler, DataSourceEntryJobSchedulerInterface $dataSourceEntryScheduler)
     {
         $this->dateUtil = $dateUtil;
         $this->redis = $redis;
@@ -105,14 +108,67 @@ class Manager
         $this->dataSetJobScheduler->addJob($reloadAllForDataSet, $dataSet->getId());
     }
 
+    public function reloadDataSetByDateRange(DataSetInterface $dataSet, ReloadParamsInterface $reloadParameter)
+    {
+        $reloadType = $reloadParameter->getType();
+        $reloadStartDate = $reloadParameter->getStartDate() instanceof DateTime
+            ? $reloadParameter->getStartDate()->format(DateFormat::DEFAULT_DATE_FORMAT)
+            : $reloadParameter->getStartDate();
+        $reloadEndDate = $reloadParameter->getEndDate() instanceof DateTime
+            ? $reloadParameter->getEndDate()->format(DateFormat::DEFAULT_DATE_FORMAT)
+            : $reloadParameter->getEndDate();
+
+        $reloadAllForDataSet = [
+            'task' => ReloadDataSet::JOB_NAME,
+            ReloadParamsInterface::RELOAD_TYPE => $reloadType,
+            ReloadParamsInterface::RELOAD_START_DATE => $reloadStartDate,
+            ReloadParamsInterface::RELOAD_END_DATE => $reloadEndDate
+        ];
+
+        $this->dataSetJobScheduler->addJob($reloadAllForDataSet, $dataSet->getId());
+    }
+
     /**
      * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param ReloadParamsInterface $reloadParameter
      */
-    public function reloadAllForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource)
+    public function reloadAllForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ReloadParamsInterface $reloadParameter = null)
     {
+        $reloadType = $reloadParameter instanceof ReloadParamsInterface ? $reloadParameter->getType() : ReloadParamsInterface::ALL_DATA_TYPE;
+        $reloadStartDate = null;
+        $reloadEndDate = null;
+
         $reloadAllForConnectedDataSource = [
             'task' => ReloadConnectedDataSource::JOB_NAME,
-            ReloadConnectedDataSource::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId()
+            ReloadConnectedDataSource::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId(),
+            ReloadParamsInterface::RELOAD_TYPE => $reloadType,
+            ReloadParamsInterface::RELOAD_START_DATE => $reloadStartDate,
+            ReloadParamsInterface::RELOAD_END_DATE => $reloadEndDate
+        ];
+
+        $this->dataSetJobScheduler->addJob($reloadAllForConnectedDataSource, $connectedDataSource->getDataSet()->getId());
+    }
+
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param ReloadParamsInterface $reloadParameter
+     */
+    public function reloadConnectedDataSourceByDateRange(ConnectedDataSourceInterface $connectedDataSource, ReloadParamsInterface $reloadParameter)
+    {
+        $reloadType = $reloadParameter->getType();
+        $reloadStartDate = $reloadParameter->getStartDate() instanceof DateTime
+            ? $reloadParameter->getStartDate()->format(DateFormat::DEFAULT_DATE_FORMAT)
+            : $reloadParameter->getStartDate();
+        $reloadEndDate = $reloadParameter->getEndDate() instanceof DateTime
+            ? $reloadParameter->getEndDate()->format(DateFormat::DEFAULT_DATE_FORMAT)
+            : $reloadParameter->getEndDate();
+
+        $reloadAllForConnectedDataSource = [
+            'task' => ReloadConnectedDataSource::JOB_NAME,
+            ReloadConnectedDataSource::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId(),
+            ReloadParamsInterface::RELOAD_TYPE => $reloadType,
+            ReloadParamsInterface::RELOAD_START_DATE => $reloadStartDate,
+            ReloadParamsInterface::RELOAD_END_DATE => $reloadEndDate
         ];
 
         $this->dataSetJobScheduler->addJob($reloadAllForConnectedDataSource, $connectedDataSource->getDataSet()->getId());
@@ -354,13 +410,13 @@ class Manager
 
     public function updateAllConnectedDataSourceTotalRowForDataSet($dataSetId)
     {
-         $jobs = [
-             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
-         ];
+        $jobs = [
+            ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+        ];
 
-         // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
-         // this will save a lot of execution time
-         $this->dataSetJobScheduler->addJob($jobs, $dataSetId);
+        // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
+        // this will save a lot of execution time
+        $this->dataSetJobScheduler->addJob($jobs, $dataSetId);
     }
 
     public function splitHugeFile($dataSourceEntryId)

@@ -58,20 +58,37 @@ class DataSetTableUtil implements DataSetTableUtilInterface
     /**
      * @inheritdoc
      */
-    public function getEntriesByDateRange(ConnectedDataSourceInterface $connectedDataSource, $startDate, $endDate)
+    public function getEntriesByReloadParameter(ConnectedDataSourceInterface $connectedDataSource, ReloadParams $reloadParameter)
     {
-        $entries = $this->getEntriesByCheckingEntries($connectedDataSource, $startDate, $endDate);
-        $entriesFromDataSetTable = [];
-        if ($startDate instanceof DateTime && $endDate instanceof DateTime) {
-            $entriesFromDataSetTable = $this->getEntriesByDataSetTable($connectedDataSource, $startDate, $endDate);
+        $reloadType = $reloadParameter->getType();
+        $reloadStartDate = $reloadParameter->getStartDate();
+        $reloadEndDate = $reloadParameter->getEndDate();
+
+        $dataSourceEntries = [];
+        switch ($reloadType) {
+            case ReloadParamsInterface::ALL_DATA_TYPE: {
+                $dataSourceEntries = $this->getAllDataSourceEntries($connectedDataSource);
+                break;
+            }
+            case ReloadParamsInterface::DETECTED_DATE_RANGE_TYPE: {
+                $dataSourceEntries = $this->getDataSourceEntriesByDetectedDateRange($connectedDataSource, $reloadStartDate, $reloadEndDate);
+                break;
+            }
+            case ReloadParamsInterface::IMPORTED_ON_TYPE: {
+                $dataSourceEntries = $this->getDataSourceEntriesByImportedDate($connectedDataSource, $reloadStartDate, $reloadEndDate);
+                break;
+            }
         }
 
-        $allEntries = array_merge($entries, $entriesFromDataSetTable);
+        if (empty($dataSourceEntries)) {
+            return [];
+        }
+
         $allEntriesId = array_map(function ($entry) {
             if ($entry instanceof DataSourceEntryInterface) {
                 return $entry->getId();
             }
-        }, $allEntries);
+        }, $dataSourceEntries);
 
         return array_unique(array_values($allEntriesId));
     }
@@ -111,24 +128,6 @@ class DataSetTableUtil implements DataSetTableUtilInterface
 
     /**
      * @param ConnectedDataSourceInterface $connectedDataSource
-     * @param DateTime $startDate
-     * @param DateTime $endDate
-     * @return mixed
-     */
-    private function getEntriesByCheckingEntries(ConnectedDataSourceInterface $connectedDataSource, $startDate, $endDate)
-    {
-        $dataSourceEntries = $this->getDataSourceEntries($connectedDataSource);
-
-        if (is_null($startDate) && is_null($endDate)) {
-            return $dataSourceEntries;
-        }
-
-        $dataSourceEntries = $this->filterDataSourceEntriesByDateRange($dataSourceEntries, $startDate, $endDate);
-        return $dataSourceEntries;
-    }
-
-    /**
-     * @param ConnectedDataSourceInterface $connectedDataSource
      * @param $startDate
      * @param $endDate
      * @return array
@@ -160,7 +159,7 @@ class DataSetTableUtil implements DataSetTableUtilInterface
      * @return mixed
      * @internal param DataSetInterface $dataSet
      */
-    private function getDataSourceEntries(ConnectedDataSourceInterface $connectedDataSource)
+    private function getAllDataSourceEntries(ConnectedDataSourceInterface $connectedDataSource)
     {
         $dataSource = $connectedDataSource->getDataSource();
 
@@ -177,15 +176,37 @@ class DataSetTableUtil implements DataSetTableUtilInterface
     }
 
     /**
-     * @param $dataSourceEntries
-     * @param DateTime $startDate
-     * @param DateTime $endDate
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param $startDate
+     * @param $endDate
      * @return mixed
      */
-    private function filterDataSourceEntriesByDateRange($dataSourceEntries, DateTime $startDate, DateTime $endDate)
+    private function getDataSourceEntriesByDetectedDateRange(ConnectedDataSourceInterface $connectedDataSource, $startDate, $endDate)
+    {
+        /** For date come from mapping fields */
+        $allEntries = $this->getAllDataSourceEntries($connectedDataSource);
+        $dataSourceEntriesFromMappingFields = $this->filterDataSourceEntriesByDetectedDateRange($allEntries, $startDate, $endDate);
+
+        /** For date come from transforms */
+        $dataSourceEntriesFromTransforms = $this->getEntriesByDataSetTable($connectedDataSource, $startDate, $endDate);
+
+        return array_merge($dataSourceEntriesFromMappingFields, $dataSourceEntriesFromTransforms);
+    }
+
+    /**
+     * @param $dataSourceEntries
+     * @param $startDate
+     * @param $endDate
+     * @return mixed
+     */
+    private function filterDataSourceEntriesByDetectedDateRange($dataSourceEntries, $startDate, $endDate)
     {
         if (!is_array($dataSourceEntries) || empty($dataSourceEntries)) {
             return [];
+        }
+
+        if (!$startDate instanceof DateTime || !$endDate instanceof DateTime) {
+            return $dataSourceEntries;
         }
 
         $entries = [];
@@ -197,6 +218,51 @@ class DataSetTableUtil implements DataSetTableUtilInterface
             if (($dataSourceEntry->getStartDate() >= $startDate && $dataSourceEntry->getStartDate() <= $endDate) ||
                 ($dataSourceEntry->getEndDate() >= $startDate && $dataSourceEntry->getEndDate() <= $endDate)
             ) {
+                $entries[] = $dataSourceEntry;
+            }
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param $startDate
+     * @param $endDate
+     * @return array|mixed
+     */
+    private function getDataSourceEntriesByImportedDate(ConnectedDataSourceInterface $connectedDataSource, $startDate, $endDate)
+    {
+        $allDataSourceEntries = $this->getAllDataSourceEntries($connectedDataSource);
+
+        if (!$startDate instanceof DateTime || !$endDate instanceof DateTime) {
+            return $allDataSourceEntries;
+        }
+
+        $dataSourceEntries = $this->filterDataSourceEntriesByImportedDate($allDataSourceEntries, $startDate, $endDate);
+
+        return $dataSourceEntries;
+    }
+
+    /**
+     * @param $dataSourceEntries
+     * @param DateTime $startDate
+     * @param DateTime $endDate
+     * @return array
+     */
+    private function filterDataSourceEntriesByImportedDate($dataSourceEntries, DateTime $startDate, DateTime $endDate)
+    {
+        if (!is_array($dataSourceEntries) || empty($dataSourceEntries)) {
+            return [];
+        }
+
+        $entries = [];
+        foreach ($dataSourceEntries as $dataSourceEntry) {
+            if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+                continue;
+            }
+            $importedDate = $dataSourceEntry->getReceivedDate()->setTime(0, 0, 0);
+            if ($importedDate >= $startDate && $importedDate <= $endDate) {
                 $entries[] = $dataSourceEntry;
             }
         }

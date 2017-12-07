@@ -456,8 +456,6 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
             if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
                 continue;
             }
-            $connectedDataSource->setReloadStartDate(null);
-            $connectedDataSource->setReloadEndDate(null);
             $connectedDataSourceManager->save($connectedDataSource);
 
             $dataSetId = $connectedDataSource->getDataSet()->getId();

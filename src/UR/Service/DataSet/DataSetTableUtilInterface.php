@@ -15,9 +15,8 @@ interface DataSetTableUtilInterface
 
     /**
      * @param ConnectedDataSourceInterface $connectedDataSource
-     * @param $startDate
-     * @param $endDate
+     * @param ReloadParams $reloadParameter
      * @return mixed
      */
-    public function getEntriesByDateRange(ConnectedDataSourceInterface $connectedDataSource, $startDate, $endDate);
+    public function getEntriesByReloadParameter(ConnectedDataSourceInterface $connectedDataSource, ReloadParams $reloadParameter);
 }

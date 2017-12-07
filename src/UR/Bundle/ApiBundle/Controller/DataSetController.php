@@ -13,7 +13,6 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use UR\Behaviors\ReloadDataUtilTrait;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
@@ -21,6 +20,7 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
+use UR\Service\DataSet\ReloadParams;
 
 /**
  * @Rest\RouteResource("DataSet")
@@ -28,7 +28,6 @@ use Psr\Log\LoggerInterface;
 class DataSetController extends RestControllerAbstract implements ClassResourceInterface
 {
     use GetEntityFromIdTrait;
-    use ReloadDataUtilTrait;
 
     /**
      * Get all data sets
@@ -278,10 +277,10 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         /** @var DataSetInterface $dataSet */
         $dataSet = $this->one($id);
 
+        $reloadType = $request->request->get('option');
         $reloadStartDate = $request->request->get('startDate');
         $reloadEndDate = $request->request->get('endDate');
-        $connectedDataSourceManager = $this->get('ur.domain_manager.connected_data_source');
-        $this->setReloadDateForConnectedDataSources($connectedDataSourceManager, $dataSet->getConnectedDataSources(), $reloadStartDate, $reloadEndDate);
+        $reloadParameter = new ReloadParams($reloadType, $reloadStartDate, $reloadEndDate);
 
         // check if this is augmentation data set and still has a non-up-to-date mapped data set
         if ($dataSet->hasNonUpToDateMappedDataSets()) {
@@ -297,7 +296,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
                 $workerManager->loadFilesIntoDataSetMapBuilder($dataSet->getId());
             }
         } else {
-            $workerManager->reloadAllForDataSet($dataSet);
+            $workerManager->reloadDataSetByDateRange($dataSet, $reloadParameter);
         }
 
         /** @var EntityManagerInterface $em */

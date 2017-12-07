@@ -10,7 +10,6 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use UR\Behaviors\ReloadDataUtilTrait;
 use UR\Domain\DTO\ConnectedDataSource\DryRunParamsInterface;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Handler\HandlerInterface;
@@ -19,6 +18,7 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
+use UR\Service\DataSet\ReloadParams;
 use UR\Service\Import\AutoImportDataInterface;
 use UR\Service\Import\PublicImportDataException;
 
@@ -27,8 +27,6 @@ use UR\Service\Import\PublicImportDataException;
  */
 class ConnectedDataSourceController extends RestControllerAbstract implements ClassResourceInterface
 {
-    use ReloadDataUtilTrait;
-
     /**
      * Get all connectedDataSource
      *
@@ -166,11 +164,10 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         /** @var ConnectedDataSourceInterface $connectedDataSource */
         $connectedDataSource = $this->one($id);
 
+        $reloadType = $request->request->get('option');
         $reloadStartDate = $request->request->get('startDate');
         $reloadEndDate = $request->request->get('endDate');
-
-        $connectedDataSourceManager = $this->get('ur.domain_manager.connected_data_source');
-        $this->setReloadDateForConnectedDataSources($connectedDataSourceManager, [$connectedDataSource], $reloadStartDate, $reloadEndDate);
+        $reloadParameter = new ReloadParams($reloadType, $reloadStartDate, $reloadEndDate);
 
         $manager = $this->get('ur.worker.manager');
         // check if this is augmentation data set and still has a non-up-to-date mapped data set
@@ -179,7 +176,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
             throw new BadRequestHttpException('There are some non-up-to-date mapped data sets relate to the data set of this connected data source. Please reload them before this connected data source.');
         }
 
-        $manager->reloadAllForConnectedDataSource($connectedDataSource);
+        $manager->reloadConnectedDataSourceByDateRange($connectedDataSource, $reloadParameter);
 
         return true;
     }
@@ -206,10 +203,6 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     {
         /** @var ConnectedDataSourceInterface $connectedDataSource */
         $connectedDataSource = $this->one($id);
-        // Removing all data means reloadStartDate and reloadEndDat is null
-        $connectedDataSourceManager = $this->get('ur.domain_manager.connected_data_source');
-        $this->setReloadDateForConnectedDataSources($connectedDataSourceManager, [$connectedDataSource], null, null);
-
         $manager = $this->get('ur.worker.manager');
         $manager->removeAllDataFromConnectedDataSource($connectedDataSource->getId(), $connectedDataSource->getDataSet()->getId());
 

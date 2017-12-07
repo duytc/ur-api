@@ -48,12 +48,6 @@ UR\Entity\Core\ConnectedDataSource:
             options:
                 default: 0
             nullable: true
-        reloadStartDate:
-            type: datetime
-            nullable: true
-        reloadEndDate:
-            type: datetime
-            nullable: true
     manyToOne:
         dataSource:
             targetEntity: UR\Entity\Core\DataSource
