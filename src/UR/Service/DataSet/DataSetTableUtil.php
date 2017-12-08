@@ -183,14 +183,10 @@ class DataSetTableUtil implements DataSetTableUtilInterface
      */
     private function getDataSourceEntriesByDetectedDateRange(ConnectedDataSourceInterface $connectedDataSource, $startDate, $endDate)
     {
-        /** For date come from mapping fields */
         $allEntries = $this->getAllDataSourceEntries($connectedDataSource);
-        $dataSourceEntriesFromMappingFields = $this->filterDataSourceEntriesByDetectedDateRange($allEntries, $startDate, $endDate);
+        $dataSourceEntries = $this->filterDataSourceEntriesByDetectedDateRange($allEntries, $startDate, $endDate);
 
-        /** For date come from transforms */
-        $dataSourceEntriesFromTransforms = $this->getEntriesByDataSetTable($connectedDataSource, $startDate, $endDate);
-
-        return array_merge($dataSourceEntriesFromMappingFields, $dataSourceEntriesFromTransforms);
+        return $dataSourceEntries;
     }
 
     /**
