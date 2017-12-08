@@ -67,6 +67,17 @@ class MaintainPreCalculateTableForLargeReportView implements JobInterface
 
         try {
             $reportView = $this->reportViewManager->find($reportViewId);
+            if (!$reportView instanceof ReportViewInterface) {
+                return;
+            }
+
+            if (!$this->isLargeReportView($reportView, $this->largeThreshold)) {
+                $reportView->setSmallReport();
+                $this->reportViewManager->save($reportView);
+                return;
+            }
+
+            $this->largeReportMaintainer->maintainLargeReport($reportView);
         } catch (\Exception $e) {
             /**
              * When MySQL server gone away. Noway to use SQL to remove lock from report view
@@ -97,17 +108,5 @@ class MaintainPreCalculateTableForLargeReportView implements JobInterface
 
             return;
         }
-
-        if (!$reportView instanceof ReportViewInterface) {
-            return;
-        }
-
-        if (!$this->isLargeReportView($reportView, $this->largeThreshold)) {
-            $reportView->setSmallReport();
-            $this->reportViewManager->save($reportView);
-            return;
-        }
-
-        $this->largeReportMaintainer->maintainLargeReport($reportView);
     }
 }
