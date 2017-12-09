@@ -615,7 +615,7 @@ trait SqlUtilTrait
             $fieldName = $transform->getFieldName();
             $expression = $transform->getExpression();
 
-            $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $newFields, $dataSetIndexes, $joinConfig, $removeSuffix, $transform->isConvertEmptyValueToZero());
+            $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $newFields, $dataSetIndexes, $joinConfig, $removeSuffix);
 
             if ($expressionForm === null) return $qb;
 
@@ -905,12 +905,11 @@ trait SqlUtilTrait
      * @param array $dataSetIndexes
      * @param array $joinConfig
      * @param bool $removeSuffix
-     * @param bool $isConvertEmptyValueToZero
      * @return mixed
      * @throws PublicSimpleException
      * @throws \Exception
      */
-    protected function normalizeExpression($transformType, $fieldName, $expression, array $newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = true, $isConvertEmptyValueToZero = false)
+    protected function normalizeExpression($transformType, $fieldName, $expression, array $newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = true)
     {
         if (is_null($expression)) {
             throw new \Exception(sprintf('Expression for calculated field can not be null'));
@@ -971,15 +970,10 @@ trait SqlUtilTrait
             }
 
             /*
-             * wrap IFNULL if isConvertEmptyValueToZero
+             * wrap IFNULL
              * e.g: 1+2+null = null, but IFNULL(1,0)+IFNULL(2,0)+IFNULL(null,0) = 3
-             *
-             * now, we do convert to support IFNULL
-             * e.g: 1+2+null => IFNULL(1,0)+IFNULL(2,0)+IFNULL(null,0)
              */
-            if ($isConvertEmptyValueToZero) {
-                $field = sprintf('IFNULL(%s, 0)', $field);
-            }
+            $field = sprintf('IFNULL(%s, 0)', $field);
 
             $expression = str_replace($fieldsInBracket[$index], $field, $expression);
         }

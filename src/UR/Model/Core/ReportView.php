@@ -645,7 +645,7 @@ class ReportView implements ReportViewInterface
      */
     public function setSmallReport()
     {
-        $this->setLargeReport(false);
+//        $this->setLargeReport(false);
         $this->setPreCalculateTable(null);
 
         $this->setAvailableToChange(true);

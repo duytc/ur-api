@@ -3,9 +3,11 @@
 namespace UR\Worker\Job\Concurrent;
 
 use Psr\Log\LoggerInterface;
-use Pubvantage\Worker\Job\JobInterface;
 use Pubvantage\Worker\Job\LockableJobInterface;
 use Pubvantage\Worker\JobParams;
+use UR\DomainManager\DataSourceEntryManagerInterface;
+use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Service\DateTime\DateRangeService;
 
 class DetectDateRangeForDataSourceEntry implements LockableJobInterface
@@ -23,10 +25,20 @@ class DetectDateRangeForDataSourceEntry implements LockableJobInterface
     /** @var DateRangeService */
     private $dateRangeService;
 
-    public function __construct(LoggerInterface $logger, DateRangeService $dateRangeService)
+    /** @var DataSourceEntryManagerInterface */
+    private $dataSourceEntryManager;
+
+    /**
+     * DetectDateRangeForDataSourceEntry constructor.
+     * @param LoggerInterface $logger
+     * @param DateRangeService $dateRangeService
+     * @param DataSourceEntryManagerInterface $dataSourceEntryManager
+     */
+    public function __construct(LoggerInterface $logger, DateRangeService $dateRangeService, DataSourceEntryManagerInterface $dataSourceEntryManager)
     {
         $this->logger = $logger;
         $this->dateRangeService = $dateRangeService;
+        $this->dataSourceEntryManager = $dataSourceEntryManager;
     }
 
     public function getName(): string
@@ -49,9 +61,19 @@ class DetectDateRangeForDataSourceEntry implements LockableJobInterface
         $entryId = $params->getRequiredParam(self::ENTRY_ID);
 
         if (!is_integer($entryId)) {
-            return;
+            return false;
+        }
+
+        $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
+
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+            return false;
         }
 
         $this->dateRangeService->calculateDateRangeForDataSourceEntry($entryId);
+
+        if ($dataSourceEntry->getDataSource() instanceof DataSourceInterface) {
+            $this->dateRangeService->calculateDateRangeForDataSource($dataSourceEntry->getDataSource()->getId());
+        }
     }
 }

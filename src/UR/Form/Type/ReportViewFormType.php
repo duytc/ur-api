@@ -120,7 +120,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
                 }
 
                 $largeReport = $this->isLargeReportView($reportView, $this->getLargeThreshold());
-                $reportView->setLargeReport($largeReport);
+//                $reportView->setLargeReport($largeReport);
             }
         );
     }

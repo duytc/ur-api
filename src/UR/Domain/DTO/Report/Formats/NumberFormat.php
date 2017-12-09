@@ -21,6 +21,8 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
     const DEFAULT_THOUSAND_SEPARATOR = self::SEPARATOR_NONE;
     const DEFAULT_PRECISION = 3;
 
+    const CONVERT_EMPTY_VALUE_TO_ZERO_KEY = 'convertEmptyValueToZero';
+
     static $SUPPORTED_THOUSAND_SEPARATORS = [
         self::SEPARATOR_COMMA,
         self::SEPARATOR_NONE
@@ -31,6 +33,9 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
 
     /** @var string */
     protected $thousandSeparator;
+
+    /** @var bool */
+    protected $isConvertEmptyValueToZero;
 
     function __construct(array $data)
     {
@@ -54,6 +59,10 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
 
         $this->precision = (0 != $data[self::PRECISION_KEY] && empty($data[self::PRECISION_KEY])) ? self::DEFAULT_PRECISION : $data[self::PRECISION_KEY];
         $this->thousandSeparator = empty($data[self::THOUSAND_SEPARATOR_KEY]) ? self::DEFAULT_THOUSAND_SEPARATOR : $data[self::THOUSAND_SEPARATOR_KEY];
+
+        $this->isConvertEmptyValueToZero = (array_key_exists(self::CONVERT_EMPTY_VALUE_TO_ZERO_KEY, $data))
+            ? (bool)$data[self::CONVERT_EMPTY_VALUE_TO_ZERO_KEY]
+            : false;
     }
 
     /**
@@ -148,9 +157,13 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
     {
         $thousandSeparator = $this->thousandSeparator === self::SEPARATOR_NONE ? '' : $this->thousandSeparator;
 
-	    if ($fieldValue ===  null) {
-		    return $fieldValue;
-	    }
+        if ($fieldValue === null || $fieldValue === '') { // do not check by empty() because empty(0) return true
+            if ($this->isConvertEmptyValueToZero) {
+                $fieldValue = 0;
+            } else {
+                return $fieldValue;
+            }
+        }
 
         return number_format($fieldValue, $this->precision, $decimalSeparator, $thousandSeparator);
     }

@@ -14,6 +14,7 @@ use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\FieldType;
+use UR\Service\DataSet\ReloadParamsInterface;
 use UR\Service\DataSet\Synchronizer;
 
 class RemoveDataFromConnectedDataSourceSubJob implements SubJobInterface
@@ -22,8 +23,6 @@ class RemoveDataFromConnectedDataSourceSubJob implements SubJobInterface
 
     const CONNECTED_DATA_SOURCE_ID = 'connected_data_source_id';
     const DATA_SET_ID = 'data_set_id';
-    const RELOAD_START_DATE = 'reloadStartDate';
-    const RELOAD_END_DATE = 'reloadEndDate';
 
     private $em;
 
@@ -71,6 +70,9 @@ class RemoveDataFromConnectedDataSourceSubJob implements SubJobInterface
     {
         $connectedDataSourceId = (int)$params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
         $dataSetId = (int)$params->getRequiredParam(self::DATA_SET_ID);
+        $startDate = $params->getParam(ReloadParamsInterface::RELOAD_START_DATE);
+        $endDate = $params->getParam(ReloadParamsInterface::RELOAD_END_DATE);
+
         $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
 
         if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
@@ -81,8 +83,7 @@ class RemoveDataFromConnectedDataSourceSubJob implements SubJobInterface
         /**
          * @var ConnectedDataSourceInterface $connectedDataSource ;
          */
-        $startDate = $connectedDataSource->getReloadStartDate();
-        $endDate = $connectedDataSource->getReloadEndDate();
+
         if ($startDate instanceof DateTime && $endDate instanceof DateTime) {
             $startDate = $startDate->format('Y-m-d');
             $endDate = $endDate->format('Y-m-d');

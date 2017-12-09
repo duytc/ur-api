@@ -304,6 +304,7 @@ services:
         arguments:
             - '@logger'
             - '@ur.service.date_time.date_range_service'
+            - '@ur.domain_manager.data_source_entry'
 
     ur.worker.job.concurrent.detect_mising_date_range_for_data_source_subjob:
         class: UR\Worker\Job\Concurrent\DetectDateRangeForDataSource

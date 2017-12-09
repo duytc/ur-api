@@ -261,8 +261,6 @@ class DateRangeService implements DateRangeServiceInterface
                 $this->dataSourceEntryManager->save($dataSourceEntry);
                 $this->logger->info(sprintf('Entry %s update %s missing dates', $dataSourceEntry->getId(), count($dataSourceEntry->getMissingDate())));
 
-                $this->calculateDateRangeForDataSource($dataSourceEntry->getDataSource()->getId());
-
                 return true;
             }
 
@@ -294,7 +292,6 @@ class DateRangeService implements DateRangeServiceInterface
         $this->dataSourceEntryManager->save($dataSourceEntry);
         $this->logger->info(sprintf('Entry %s update %s missing dates', $dataSourceEntry->getId(), count($dataSourceEntry->getMissingDate())));
 
-        $this->calculateDateRangeForDataSource($dataSourceEntry->getDataSource()->getId());
         return true;
     }
 

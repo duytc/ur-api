@@ -4,7 +4,6 @@ namespace UR\Service\Parser\Transformer\Collection;
 
 use Exception;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
-use UR\Service\DataSet\FieldType;
 use UR\Service\Parser\ReformatDataService;
 
 class AddCalculatedField extends AbstractAddField implements CollectionTransformerJsonConfigInterface
@@ -131,11 +130,12 @@ class AddCalculatedField extends AbstractAddField implements CollectionTransform
                 return null;
             }
 
-            if (!is_numeric($row[$field])) {
+            if (!empty($row[$field]) && !is_numeric($row[$field])) {
                 return null;
             }
 
-            $replaceString = sprintf('row[\'%s\']', $field);
+            // always convert empty value to zero
+            $replaceString = empty($row[$field]) ? '0' : sprintf('row[\'%s\']', $field);
             $expression = str_replace($fieldsInBracket[$index], $replaceString, $expression);
         }
 

@@ -4,6 +4,7 @@ namespace UR\Bundle\AppBundle\Command;
 
 use Symfony\Bridge\Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -13,15 +14,20 @@ use UR\DomainManager\ReportViewManagerInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Service\StringUtilTrait;
+use UR\Worker\Manager;
 
-class UnlockReportViewCommand extends ContainerAwareCommand
+class EnableLargeReportViewCommand extends ContainerAwareCommand
 {
     use StringUtilTrait;
 
-    const COMMAND_NAME = 'ur:report-view:unlock';
+    const COMMAND_NAME = 'ur:report-view:enable-large-report';
     const ALL_PUBLISHERS = 'all-publishers';
     const PUBLISHER = 'enables-user';
     const REPORT_VIEWS = 'report-views';
+
+    const IS_LARGE = 'isLarge';
+    const ENABLE = 'Enable';
+    const DISABLE = 'Disable';
 
     /** @var Logger */
     private $logger;
@@ -32,6 +38,9 @@ class UnlockReportViewCommand extends ContainerAwareCommand
     /** @var  PublisherManagerInterface */
     private $publisherManager;
 
+    /** @var  Manager */
+    private $manager;
+
     /**
      * @inheritdoc
      */
@@ -39,13 +48,14 @@ class UnlockReportViewCommand extends ContainerAwareCommand
     {
         $this
             ->setName(self::COMMAND_NAME)
+            ->addArgument(self::IS_LARGE, InputArgument::REQUIRED, '1 for large report, 0 for small report')
             ->addOption(self::ALL_PUBLISHERS, 'a', InputOption::VALUE_NONE,
-                'Unlock for all users')
+                'For all users')
             ->addOption(self::PUBLISHER, 'u', InputOption::VALUE_OPTIONAL,
-                'Unlock for special user')
+                'For special user')
             ->addOption(self::REPORT_VIEWS, 'r', InputOption::VALUE_OPTIONAL,
-                'Unlock for special report views. Allow multiple report views, separated by comma. Example 15,17,29')
-            ->setDescription('Lock report view not allow editing. We lock report view when building pre calculate table and auto unlock when finish. Use this command if you want to force unlock immediately');
+                'For special report views. Allow multiple report views, separated by comma. Example 15,17,29')
+            ->setDescription('Enable large report view');
     }
 
     /**
@@ -57,6 +67,7 @@ class UnlockReportViewCommand extends ContainerAwareCommand
         $this->logger = $container->get('logger');
         $this->reportViewManager = $container->get('ur.domain_manager.report_view');
         $this->publisherManager = $container->get('ur_user.domain_manager.publisher');
+        $this->manager = $container->get('ur.worker.manager');
         $io = new SymfonyStyle($input, $output);
 
         $reportViews = $this->getReportViewsFromInput($input, $output);
@@ -64,18 +75,25 @@ class UnlockReportViewCommand extends ContainerAwareCommand
             return;
         }
 
+        $isLarge = $input->getArgument(self::IS_LARGE);
+        $isLarge = empty($isLarge) ? false : true;
+        $action = $isLarge ? self::ENABLE : self::DISABLE;
+
         foreach ($reportViews as $reportView) {
             if (!$reportView instanceof ReportViewInterface) {
                 continue;
             }
 
-            $io->section(sprintf("Unlock for report view %s, id = %s", $reportView->getName(), $reportView->getId()));
-            $reportView->setAvailableToChange(true);
-            $reportView->setAvailableToRun(true);
+            $io->section(sprintf("%s large report for report view %s, id = %s", $action, $reportView->getName(), $reportView->getId()));
+            $reportView->setLargeReport($isLarge);
             $this->reportViewManager->save($reportView);
+
+            if ($isLarge) {
+                $this->manager->maintainPreCalculateTableForLargeReportView($reportView->getId());
+            }
         }
 
-        $io->success(sprintf("Unlock successfully for %s report views. Quit command", count($reportViews)));
+        $io->success(sprintf("%s large report successfully for %s report views. Quit command", $action, count($reportViews)));
     }
 
     /**

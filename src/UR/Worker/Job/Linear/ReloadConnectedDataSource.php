@@ -2,7 +2,6 @@
 
 namespace UR\Worker\Job\Linear;
 
-use DateTime;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\Job\ExpirableJobInterface;
 use Pubvantage\Worker\JobParams;
@@ -11,6 +10,8 @@ use UR\DomainManager\ConnectedDataSourceManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSet\DataSetTableUtilInterface;
+use UR\Service\DataSet\ReloadParams;
+use UR\Service\DataSet\ReloadParamsInterface;
 
 class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobInterface
 {
@@ -18,6 +19,7 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
 
     const DATA_SET_ID = 'data_set_id';
     const CONNECTED_DATA_SOURCE_ID = 'connected_data_source_id';
+
     /**
      * @var DataSetJobSchedulerInterface
      */
@@ -60,32 +62,38 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
     {
         $dataSetId = (int)$params->getRequiredParam(self::DATA_SET_ID);
         $connectedDataSourceId = (int)$params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
+        $reloadType = $params->getRequiredParam(ReloadParamsInterface::RELOAD_TYPE);
+        $reloadStartDate = $params->getParam(ReloadParamsInterface::RELOAD_START_DATE);
+        $reloadEndDate = $params->getParam(ReloadParamsInterface::RELOAD_END_DATE);
 
         $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
-
         if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
             return;
         }
 
-        $entryIds = $this->dataSetTableUtil->getEntriesByDateRange($connectedDataSource, $connectedDataSource->getReloadStartDate(), $connectedDataSource->getReloadEndDate());
+        $reloadParams = new ReloadParams($reloadType, $reloadStartDate, $reloadEndDate);
+        $entryIds = $this->dataSetTableUtil->getEntriesByReloadParameter($connectedDataSource, $reloadParams);
         if (empty($entryIds)) {
             $this->logger->notice(sprintf('No entry of connected data source %d reloads', $connectedDataSourceId));
             return;
         }
-        // remove data first
-        $this->scheduler->addJob([
-            [
-                'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
-                RemoveDataFromConnectedDataSourceSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
-            ],
 
-            // also update data set total row, after each entry done, to let UI does not make user confused
-            // i.e: last time, pending jobs changes from 90->60 but total rows still 0 in UI and only updated after all jobs are done
-            ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+        if ($reloadType == ReloadParamsInterface::ALL_DATA_TYPE) {
+            // remove data first
+            $this->scheduler->addJob([
+                [
+                    'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
+                    RemoveDataFromConnectedDataSourceSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
+                ],
 
-            // also update connected data source total row similar above
-            ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
-        ], $dataSetId, $params);
+                // also update data set total row, after each entry done, to let UI does not make user confused
+                // i.e: last time, pending jobs changes from 90->60 but total rows still 0 in UI and only updated after all jobs are done
+                ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+
+                // also update connected data source total row similar above
+                ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+            ], $dataSetId, $params);
+        }
 
         $jobs = [];
         foreach ($entryIds as $entryId) {

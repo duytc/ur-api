@@ -341,7 +341,7 @@ class ReportViewChangeForLargeReportListener
             }
 
             $reportView->setPreCalculateTable(null);
-            $reportView->setLargeReport(false);
+//            $reportView->setLargeReport(false);
             $this->em->merge($reportView);
         }
     }
