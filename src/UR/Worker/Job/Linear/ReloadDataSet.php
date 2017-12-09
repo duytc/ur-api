@@ -42,18 +42,18 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
      */
     private $connectedDataSourceRepository;
 
-	protected $dataSetTableUtil;
+    protected $dataSetTableUtil;
     protected $importHistoryManager;
 
     public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger,
                                 DataSetManagerInterface $dataSetManager, ConnectedDataSourceRepositoryInterface $connectedDataSourceRepository,
-                                DataSetTableUtilInterface $dataSetTableUtil, ImportHistoryManagerInterface $importHistoryManager )
+                                DataSetTableUtilInterface $dataSetTableUtil, ImportHistoryManagerInterface $importHistoryManager)
     {
         $this->scheduler = $scheduler;
         $this->logger = $logger;
         $this->dataSetManager = $dataSetManager;
         $this->connectedDataSourceRepository = $connectedDataSourceRepository;
-		$this->dataSetTableUtil = $dataSetTableUtil;
+        $this->dataSetTableUtil = $dataSetTableUtil;
         $this->importHistoryManager = $importHistoryManager;
     }
 
@@ -75,7 +75,7 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
         $reloadStartDate = $params->getParam(ReloadParamsInterface::RELOAD_START_DATE);
         $reloadEndDate = $params->getParam(ReloadParamsInterface::RELOAD_END_DATE);
 
-        $reloadParameter =  new ReloadParams($reloadType, $reloadStartDate, $reloadEndDate);
+        $reloadParameter = new ReloadParams($reloadType, $reloadStartDate, $reloadEndDate);
 
         if (!is_integer($dataSetId)) {
             return;
@@ -85,6 +85,21 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
         if (!$dataSet instanceof DataSetInterface) {
             return;
         }
+
+        if ($reloadType == ReloadParamsInterface::ALL_DATA_TYPE) {
+            // remove data first
+            $this->scheduler->addJob([
+                ['task' => TruncateDataSetSubJob::JOB_NAME],
+
+                // also update data set total row, after each entry done, to let UI does not make user confused
+                // i.e: last time, pending jobs changes from 90->60 but total rows still 0 in UI and only updated after all jobs are done
+                ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+
+                // also update connected data source total row similar above
+                ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+            ], $dataSetId, $params);
+        }
+
         /** @var ConnectedDataSourceInterface[] $connectedDataSources */
         $connectedDataSources = $this->connectedDataSourceRepository->getConnectedDataSourceByDataSet($dataSet);
         if ($connectedDataSources instanceof Collection) {
@@ -104,23 +119,6 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
             if (empty($entryIds)) {
                 $this->logger->notice(sprintf('No entry of connected data source %d reload', $connectedDataSource->getId()));
                 continue;
-            }
-
-            if ($reloadType == ReloadParamsInterface::ALL_DATA_TYPE) {
-                // remove data first
-                $this->scheduler->addJob([
-                    [
-                        'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
-                        RemoveDataFromConnectedDataSourceSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId()
-                    ],
-
-                    // also update data set total row, after each entry done, to let UI does not make user confused
-                    // i.e: last time, pending jobs changes from 90->60 but total rows still 0 in UI and only updated after all jobs are done
-                    ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
-
-                    // also update connected data source total row similar above
-                    ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
-                ], $dataSetId, $params);
             }
 
             foreach ($entryIds as $entryId) {
