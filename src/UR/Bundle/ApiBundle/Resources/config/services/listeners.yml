@@ -17,7 +17,6 @@ services:
             - '@ur.services.report.params_builder'
         tags:
             - { name: doctrine.event_listener, event: prePersist }
-            - { name: doctrine.event_listener, event: preUpdate }
 
     ur_api.event_listener.report_view_data_set_change_listener:
         class: UR\Bundle\ApiBundle\EventListener\ReportViewDataSetChangeListener

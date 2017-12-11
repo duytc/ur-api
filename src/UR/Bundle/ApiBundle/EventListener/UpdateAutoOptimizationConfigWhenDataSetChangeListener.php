@@ -371,7 +371,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         /*
          * dimensions
          * [
-         *      <field> => <type>,
+         *      0 => <field>,
          *      ...
          * ]
          */
@@ -390,27 +390,24 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
 
         /* metrics
          * [
-         *      <field> => <type>,
+         *      0 => <field>,
          *      ...
          * ]
          */
         $metrics = $autoOptimizationConfig->getMetrics();
         $newMetrics = [];
-        foreach ($metrics as $key => $value) {
-            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $value);
-            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $value);
+        foreach ($metrics as &$metric) {
+            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $metric);
+            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $metric);
             if ($dataSetIdFromField != $dataSet->getId()) {
                 continue;
             }
 
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);;
-            unset($metrics[$key]);
-            $value = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
-            $newMetrics[$value] = $value;
+            $metric = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
 
-        $newMetrics = array_merge($newMetrics, $metrics);
-        $autoOptimizationConfig->setMetrics($newMetrics);
+        $autoOptimizationConfig->setMetrics($metrics);
 
         /* factors
          * [

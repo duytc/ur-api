@@ -46,22 +46,6 @@ class UpdateMetricsAndDimensionsForAutoOptimizationConfigListener
     }
 
     /**
-     * @param PreUpdateEventArgs $args
-     */
-    public function preUpdate(PreUpdateEventArgs $args)
-    {
-        $entity = $args->getEntity();
-
-        if (!$entity instanceof AutoOptimizationConfigInterface) {
-            return;
-        }
-
-        if ($args->hasChangedField('transforms')) {
-            $this->updateMetricsAndDimensionsForAutoOptimizationConfig($entity);
-        }
-    }
-
-    /**
      * @param AutoOptimizationConfigInterface $autoOptimizationConfig
      */
     protected function updateMetricsAndDimensionsForAutoOptimizationConfig(AutoOptimizationConfigInterface $autoOptimizationConfig)
