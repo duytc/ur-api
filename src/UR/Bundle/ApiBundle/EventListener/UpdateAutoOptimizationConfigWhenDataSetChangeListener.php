@@ -5,10 +5,16 @@ namespace UR\Bundle\ApiBundle\EventListener;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
+use UR\Domain\DTO\Report\Transforms\AddConditionValueTransform;
+use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
+use UR\Service\Parser\Transformer\Collection\AddField;
+use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
+use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Report\SqlBuilder;
 
 class UpdateAutoOptimizationConfigWhenDataSetChangeListener
@@ -45,8 +51,8 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $oldMetrics = $args->getOldValue(self::METRICS_KEY);
         }
 
-        $dimensionsMapping = array_merge($oldDimensions, $newDimensions);
-        $metricsMapping = array_merge($oldMetrics, $newMetrics);
+        $dimensionsMapping = array_combine(array_keys($oldDimensions), array_keys($newDimensions));
+        $metricsMapping = array_combine(array_keys($oldMetrics), array_keys($newMetrics));
 
         $dimensionsMetricsMapping = array_merge($dimensionsMapping, $metricsMapping);
 
@@ -140,31 +146,159 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          */
         $transforms = $autoOptimizationConfig->getTransforms();
         foreach ($transforms as &$transform) {
-            $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
-            foreach ($fields as &$field) {
-                if (is_array($field)) {
-                    if (array_key_exists('field', $field)) {
-                        $field = $field['field'];
-                    } elseif (array_key_exists('names', $field)) {
-                        $field = $field['names'];
+            if ($transform instanceof GroupByTransform) {
+                $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+                foreach ($fields as &$field) {
+                    if (is_array($field)) {
+                        if (array_key_exists('field', $field)) {
+                            $field = $field['field'];
+                        } elseif (array_key_exists('names', $field)) {
+                            $field = $field['names'];
+                        }
                     }
-                }
-                $fieldWithoutDataSetId = preg_replace('/^(.*)(_)(\d)$/', '$1', $field);
-                $dataSetIdFromField = preg_replace('/^(.*)(_)(\d)$/', '$3', $field);
-                if ($dataSetIdFromField != $dataSet->getId()) {
-                    continue;
-                }
+                    $fieldWithoutDataSetId = preg_replace('/^(.*)(_)(\d)$/', '$1', $field);
+                    $dataSetIdFromField = preg_replace('/^(.*)(_)(\d)$/', '$3', $field);
+                    if ($dataSetIdFromField != $dataSet->getId()) {
+                        continue;
+                    }
 
-                $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
-                $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+                    $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+                    $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+
+                $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
+
+                unset($field);
             }
 
-            $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
+            }
 
-            unset($field);
+            if ($transform instanceof AddField) {
+                $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+                foreach ($fields as &$field) {
+                    if (is_array($field)) {
+                        if (array_key_exists('field', $field)) {
+                            $field = $field['field'];
+                        } elseif (array_key_exists('names', $field)) {
+                            $field = $field['names'];
+                        }
+                    }
+                    $fieldWithoutDataSetId = preg_replace('/^(.*)(_)(\d)$/', '$1', $field);
+                    $dataSetIdFromField = preg_replace('/^(.*)(_)(\d)$/', '$3', $field);
+                    if ($dataSetIdFromField != $dataSet->getId()) {
+                        continue;
+                    }
+
+                    $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+                    $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+
+                    $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
+
+                    unset($field);
+                }
+            }
+
+            if ($transform instanceof AddCalculatedField) {
+                $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+                foreach ($fields as &$field) {
+                    if (is_array($field)) {
+                        if (array_key_exists('field', $field)) {
+                            $field = $field['field'];
+                        } elseif (array_key_exists('names', $field)) {
+                            $field = $field['names'];
+                        }
+                    }
+                    $fieldWithoutDataSetId = preg_replace('/^(.*)(_)(\d)$/', '$1', $field);
+                    $dataSetIdFromField = preg_replace('/^(.*)(_)(\d)$/', '$3', $field);
+                    if ($dataSetIdFromField != $dataSet->getId()) {
+                        continue;
+                    }
+
+                    $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+                    $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+
+                    $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
+
+                    unset($field);
+                }
+            }
+
+            if ($transform instanceof AddConditionValueTransform) {
+                $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+                foreach ($fields as &$field) {
+                    if (is_array($field)) {
+                        if (array_key_exists('field', $field)) {
+                            $field = $field['field'];
+                        } elseif (array_key_exists('names', $field)) {
+                            $field = $field['names'];
+                        }
+                    }
+                    $fieldWithoutDataSetId = preg_replace('/^(.*)(_)(\d)$/', '$1', $field);
+                    $dataSetIdFromField = preg_replace('/^(.*)(_)(\d)$/', '$3', $field);
+                    if ($dataSetIdFromField != $dataSet->getId()) {
+                        continue;
+                    }
+
+                    $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+                    $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+
+                    $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
+
+                    unset($field);
+                }
+            }
+
+            if ($transform instanceof SortByColumns) {
+                $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+                foreach ($fields as &$field) {
+                    if (is_array($field)) {
+                        if (array_key_exists('field', $field)) {
+                            $field = $field['field'];
+                        } elseif (array_key_exists('names', $field)) {
+                            $field = $field['names'];
+                        }
+                    }
+                    $fieldWithoutDataSetId = preg_replace('/^(.*)(_)(\d)$/', '$1', $field);
+                    $dataSetIdFromField = preg_replace('/^(.*)(_)(\d)$/', '$3', $field);
+                    if ($dataSetIdFromField != $dataSet->getId()) {
+                        continue;
+                    }
+
+                    $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+                    $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+
+                    $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
+
+                    unset($field);
+                }
+            }
+
+            if ($transform instanceof ComparisonPercent) {
+                $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+                foreach ($fields as &$field) {
+                    if (is_array($field)) {
+                        if (array_key_exists('field', $field)) {
+                            $field = $field['field'];
+                        } elseif (array_key_exists('names', $field)) {
+                            $field = $field['names'];
+                        }
+                    }
+                    $fieldWithoutDataSetId = preg_replace('/^(.*)(_)(\d)$/', '$1', $field);
+                    $dataSetIdFromField = preg_replace('/^(.*)(_)(\d)$/', '$3', $field);
+                    if ($dataSetIdFromField != $dataSet->getId()) {
+                        continue;
+                    }
+
+                    $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+                    $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+
+                    $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
+
+                    unset($field);
+                }
+            }
+
+            unset($transform);
         }
-
-        unset($transform);
 
         $autoOptimizationConfig->setTransforms($transforms);
 
