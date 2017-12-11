@@ -8,6 +8,7 @@ use Pubvantage\Worker\Job\ExpirableJobInterface;
 use Pubvantage\Worker\JobParams;
 use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
 use UR\DomainManager\DataSetManagerInterface;
+use UR\DomainManager\DataSourceEntryManager;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
@@ -44,17 +45,21 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
 
     protected $dataSetTableUtil;
     protected $importHistoryManager;
+    protected $dataSourceEntryManager;
 
     public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger,
                                 DataSetManagerInterface $dataSetManager, ConnectedDataSourceRepositoryInterface $connectedDataSourceRepository,
-                                DataSetTableUtilInterface $dataSetTableUtil, ImportHistoryManagerInterface $importHistoryManager)
+                                DataSetTableUtilInterface $dataSetTableUtil,
+                                ImportHistoryManagerInterface $importHistoryManager,
+                                DataSourceEntryManager $dataSourceEntryManager)
     {
         $this->scheduler = $scheduler;
         $this->logger = $logger;
         $this->dataSetManager = $dataSetManager;
         $this->connectedDataSourceRepository = $connectedDataSourceRepository;
-        $this->dataSetTableUtil = $dataSetTableUtil;
+		$this->dataSetTableUtil = $dataSetTableUtil;
         $this->importHistoryManager = $importHistoryManager;
+        $this->dataSourceEntryManager = $dataSourceEntryManager;
     }
 
     /**
@@ -122,7 +127,10 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
             }
 
             foreach ($entryIds as $entryId) {
-                $this->importHistoryManager->deleteImportHistoryByConnectedDataSourceAndEntry($connectedDataSource->getId(), $entryId);
+                $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
+                if (ReloadParamsInterface::ALL_DATA_TYPE !== $reloadType) {
+                    $this->importHistoryManager->deleteImportHistoryByConnectedDataSourceAndEntry($connectedDataSource, $dataSourceEntry);
+                }
                 $jobs[] = [
                     'task' => LoadFileIntoDataSetSubJob::JOB_NAME,
                     LoadFileIntoDataSetSubJob::ENTRY_ID => $entryId,

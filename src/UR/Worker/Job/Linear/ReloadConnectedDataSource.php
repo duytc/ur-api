@@ -7,6 +7,7 @@ use Pubvantage\Worker\Job\ExpirableJobInterface;
 use Pubvantage\Worker\JobParams;
 use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
+use UR\DomainManager\DataSourceEntryManager;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Service\DataSet\DataSetTableUtilInterface;
@@ -39,15 +40,20 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
 
     private $importHistoryManager;
 
+    private $dataSourceEntryManager;
+
     public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger,
                                 ConnectedDataSourceManagerInterface $connectedDataSourceManager,
-                                DataSetTableUtilInterface $dataSetTableUtil, ImportHistoryManagerInterface $importHistoryManager)
+                                DataSetTableUtilInterface $dataSetTableUtil,
+                                ImportHistoryManagerInterface $importHistoryManager,
+                                DataSourceEntryManager $dataSourceEntryManager)
     {
         $this->scheduler = $scheduler;
         $this->logger = $logger;
         $this->connectedDataSourceManager = $connectedDataSourceManager;
         $this->dataSetTableUtil = $dataSetTableUtil;
         $this->importHistoryManager = $importHistoryManager;
+        $this->dataSourceEntryManager = $dataSourceEntryManager;
     }
 
     /**
@@ -78,26 +84,10 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
             return;
         }
 
-        if ($reloadType == ReloadParamsInterface::ALL_DATA_TYPE) {
-            // remove data first
-            $this->scheduler->addJob([
-                [
-                    'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
-                    RemoveDataFromConnectedDataSourceSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
-                ],
-
-                // also update data set total row, after each entry done, to let UI does not make user confused
-                // i.e: last time, pending jobs changes from 90->60 but total rows still 0 in UI and only updated after all jobs are done
-                ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
-
-                // also update connected data source total row similar above
-                ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
-            ], $dataSetId, $params);
-        }
-
         $jobs = [];
         foreach ($entryIds as $entryId) {
-            $this->importHistoryManager->deleteImportHistoryByConnectedDataSourceAndEntry($connectedDataSourceId, $entryId);
+            $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
+            $this->importHistoryManager->deleteImportHistoryByConnectedDataSourceAndEntry($connectedDataSource, $dataSourceEntry);
             $jobs[] = [
                 'task' => LoadFileIntoDataSetSubJob::JOB_NAME,
                 LoadFileIntoDataSetSubJob::ENTRY_ID => $entryId,

@@ -79,12 +79,6 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
     public function deleteImportHistoryByDataSet(DataSetInterface $dataSet);
 
     public function deleteImportHistoriesByIds(array $importHistoryIds);
-    /**
-     * @param $connectedDataSourceId
-     * @param $dataSourceEntryId
-     * @return mixed
-     */
-    public function deleteImportHistoryByConnectedDataSourceAndEntry ($connectedDataSourceId, $dataSourceEntryId);
 
     /**
      * @param $importHistories

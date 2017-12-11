@@ -2,6 +2,7 @@
 
 namespace UR\Repository\Core;
 
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
@@ -14,6 +15,7 @@ use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
 use UR\Service\DataSet\Synchronizer;
+
 
 class ImportHistoryRepository extends EntityRepository implements ImportHistoryRepositoryInterface
 {
@@ -363,21 +365,6 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         return $stmt->execute();
     }
 
-    /**
-     * @param $connectedDataSourceId
-     * @param $dataSourceEntryId
-     * @return mixed
-     */
-    public function deleteImportHistoryByConnectedDataSourceAndEntry ($connectedDataSourceId, $dataSourceEntryId)
-    {
-        $conn = $this->_em->getConnection();
-        $query = sprintf('DELETE FROM core_import_history WHERE connected_data_source_id = ? and data_source_entry_id = ?');
-        $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $connectedDataSourceId);
-        $stmt->bindValue(2, $dataSourceEntryId);
-
-        return $stmt->execute();
-    }
 
     public function deletePreviousImports($importHistories, ConnectedDataSourceInterface $connectedDataSource)
     {
