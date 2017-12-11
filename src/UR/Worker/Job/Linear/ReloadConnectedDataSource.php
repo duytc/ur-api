@@ -78,6 +78,23 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
             return;
         }
 
+        if ($reloadType == ReloadParamsInterface::ALL_DATA_TYPE) {
+            // remove data first
+            $this->scheduler->addJob([
+                [
+                    'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
+                    RemoveDataFromConnectedDataSourceSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
+                ],
+
+                // also update data set total row, after each entry done, to let UI does not make user confused
+                // i.e: last time, pending jobs changes from 90->60 but total rows still 0 in UI and only updated after all jobs are done
+                ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+
+                // also update connected data source total row similar above
+                ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+            ], $dataSetId, $params);
+        }
+
         $jobs = [];
         foreach ($entryIds as $entryId) {
             $this->importHistoryManager->deleteImportHistoryByConnectedDataSourceAndEntry($connectedDataSourceId, $entryId);

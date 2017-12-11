@@ -185,7 +185,7 @@ class LargeReportMaintainer implements LargeReportMaintainerInterface
      */
     private function updateLargeReportView(ReportViewInterface $reportView, $preCalculateTable)
     {
-        $reportView->setLargeReport(true);
+//        $reportView->setLargeReport(true);
         $reportView->setPreCalculateTable($preCalculateTable);
     }
 
@@ -194,7 +194,7 @@ class LargeReportMaintainer implements LargeReportMaintainerInterface
      */
     private function updateSmallReportView(ReportViewInterface $reportView)
     {
-        $reportView->setLargeReport(false);
+//        $reportView->setLargeReport(false);
         $reportView->setPreCalculateTable(null);
     }
 

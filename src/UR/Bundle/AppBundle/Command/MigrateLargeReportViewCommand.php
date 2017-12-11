@@ -19,7 +19,7 @@ class MigrateLargeReportViewCommand extends ContainerAwareCommand
     {
         $this
             ->setName('ur:migrate:large-report-view')
-            ->setDescription('Migrate large report view command. Need run worker to update this');
+            ->setDescription('Fire jobs maintaining pre calculate table for large reports. Run if changing ur.report_view.large_threshold');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)

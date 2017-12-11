@@ -18,6 +18,10 @@ trait LargeReportViewUtilTrait
      */
     public function isLargeReportView(ReportViewInterface $reportView, $largeThreshold)
     {
+        if (!$reportView->isLargeReport()) {
+            return false;
+        }
+        
         $rpDataSetsCollection = $reportView->getReportViewDataSets();
         if ($rpDataSetsCollection instanceof Collection) {
             $rpDataSetsCollection = $rpDataSetsCollection->toArray();
