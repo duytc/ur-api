@@ -178,8 +178,10 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
                 foreach ($fields as &$field) {
                     $conditions = [];
-                    if (array_key_exists(self::CONDITIONS_KEY, $field)) {
-                        $conditions = $field[self::CONDITIONS_KEY];
+                    if (is_array($field)) {
+                        if (array_key_exists(self::CONDITIONS_KEY, $field)) {
+                            $conditions = $field[self::CONDITIONS_KEY];
+                        }
                     }
                     foreach ($conditions as &$condition) {
                         $expressions = $condition[self::EXPRESSIONS_KEY];
@@ -230,8 +232,8 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                     $field[self::EXPRESSION_KEY] = $expressionData;
 
                     // check defaultValues
-                    $defaultValues = $field[self::DEFAULT_VALUES_KEY];
-                    if (is_array($defaultValues) && !empty($defaultValues)) {
+                    $defaultValues = [];
+                    if (array_key_exists(self::DEFAULT_VALUES_KEY, $field)) {
                         $defaultValues = $field[self::DEFAULT_VALUES_KEY];
                         foreach ($defaultValues as &$defaultValue) {
                             $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $defaultValue[self::CONDITION_FIELD_KEY]);
@@ -244,8 +246,11 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                             $fieldValue = sprintf('%s_%d', trim($fieldWithoutDataSetId), $dataSetIdFromField);
                             $defaultValue[self::CONDITION_FIELD_KEY] = $fieldValue;
                         }
+
+                        $field[self::DEFAULT_VALUES_KEY] = $defaultValues;
                     }
-                    $field[self::DEFAULT_VALUES_KEY] = $defaultValues;
+
+
                     $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
 
                     unset($field, $expressionData, $expression, $expressions, $expressionItems, $expressionItem, $fieldValue);
@@ -298,7 +303,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
 
                     //denominator
                     $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $field[self::DENOMINATOR_KEY]);
-                    $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $field[self::DEFAULT_VALUES_KEY]);
+                    $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $field[self::DENOMINATOR_KEY]);
                     if ($dataSetIdFromField != $dataSet->getId()) {
                         continue;
                     }
@@ -371,21 +376,17 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          * ]
          */
         $dimensions = $autoOptimizationConfig->getDimensions();
-        $newDimensions = [];
-        foreach ($dimensions as $field => $type) {
-            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $field);
-            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $field);
+        foreach ($dimensions as &$dimension) {
+            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $dimension);
+            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $dimension);
             if ($dataSetIdFromField != $dataSet->getId()) {
-                $newDimensions[$field] = $type;
                 continue;
             }
-
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
-            $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
-            $newDimensions[$field] = $type;
+            $dimension = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
 
-        $autoOptimizationConfig->setDimensions($newDimensions);
+        $autoOptimizationConfig->setDimensions($dimensions);
 
         /* metrics
          * [
@@ -395,19 +396,20 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          */
         $metrics = $autoOptimizationConfig->getMetrics();
         $newMetrics = [];
-        foreach ($metrics as $field => $type) {
-            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $field);
-            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $field);
+        foreach ($metrics as $key => $value) {
+            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $value);
+            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $value);
             if ($dataSetIdFromField != $dataSet->getId()) {
-                $newMetrics[$field] = $type;
                 continue;
             }
 
-            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
-            $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
-            $newMetrics[$field] = $type;
+            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);;
+            unset($metrics[$key]);
+            $value = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+            $newMetrics[$value] = $value;
         }
 
+        $newMetrics = array_merge($newMetrics, $metrics);
         $autoOptimizationConfig->setMetrics($newMetrics);
 
         /* factors
