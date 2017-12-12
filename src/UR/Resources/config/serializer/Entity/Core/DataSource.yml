@@ -76,6 +76,6 @@ UR\Entity\Core\DataSource:
         backfillMissingDateRunning:
             expose: true
             groups: [datasource.detail, datasource.edit]
-        timeSeries:
+        removeDuplicateDates:
             expose: true
             groups: [datasource.detail, datasource.edit]

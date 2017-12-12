@@ -33,7 +33,7 @@ class DataSource implements DataSourceInterface
      * @var bool
      */
     protected $fromMetadata;
-    protected $timeSeries;
+    protected $removeDuplicateDates;
 
     /**
      * @var string
@@ -628,18 +628,18 @@ class DataSource implements DataSourceInterface
     /**
      * @return mixed
      */
-    public function getTimeSeries()
+    public function getRemoveDuplicateDates()
     {
-        return $this->timeSeries;
+        return $this->removeDuplicateDates;
     }
 
     /**
-     * @param mixed $timeSeries
+     * @param mixed $removeDuplicateDates
      * @return self
      */
-    public function setTimeSeries($timeSeries)
+    public function setRemoveDuplicateDates($removeDuplicateDates)
     {
-        $this->timeSeries = $timeSeries;
+        $this->removeDuplicateDates = $removeDuplicateDates;
         return $this;
     }
 }

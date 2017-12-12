@@ -39,7 +39,7 @@ class DataSource extends DataSourceModel
     /** @var UserEntityInterface */
     protected $publisher;
 
-    protected $timeSeries;
+    protected $removeDuplicateDates;
     /**
      * @var DataSourceIntegrationInterface[]
      */

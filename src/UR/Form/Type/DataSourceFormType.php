@@ -53,7 +53,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             ->add('pattern')
             ->add('emailAnchorTexts')
             ->add('backfillMissingDateRunning')
-            ->add('timeSeries');
+            ->add('removeDuplicateDates');
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(
