@@ -7,39 +7,35 @@ use Leezy\PheanstalkBundle\Proxy\PheanstalkProxy;
 use Pubvantage\Worker\JobExpirerInterface;
 use Pubvantage\Worker\JobParams;
 use Redis;
-use UR\Worker\Job\Linear\LoadFileIntoDataSetSubJob;
-use UR\Worker\Job\Linear\UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob;
-use UR\Worker\Job\Linear\UpdateDataSetTotalRowSubJob;
-use UR\Worker\Job\Linear\UpdateOverwriteDateInDataSetSubJob;
 
 class LinearJobScheduler implements LinearJobSchedulerInterface
 {
     /**
      * @var PheanstalkProxy
      */
-    private $beanstalk;
+    protected $beanstalk;
     /**
      * @var Redis
      */
-    private $redis;
+    protected $redis;
     /**
      * @var ConcurrentJobSchedulerInterface
      */
-    private $concurrentJobScheduler;
+    protected $concurrentJobScheduler;
     /**
      * @var string
      */
-    private $processLinearJobName;
+    protected $processLinearJobName;
     /**
      * @var string
      */
-    private $priorityKeyPrefix;
+    protected $priorityKeyPrefix;
     /**
      * @var int
      */
-    private $jobTTR;
+    protected $jobTTR;
 
-    private $jobExpirer;
+    protected $jobExpirer;
 
     public function __construct(
         PheanstalkProxy $beanstalk,
@@ -63,7 +59,7 @@ class LinearJobScheduler implements LinearJobSchedulerInterface
     public function addJob($jobs, string $linearTubeName, array $extraJobData = [], JobParams $parentJobParams = null, int $jobTTR = null): array
     {
         if (empty($jobs)) {
-            return;
+            return [];
         }
 
         if (count(array_filter(array_keys($jobs), 'is_string')) > 0) {

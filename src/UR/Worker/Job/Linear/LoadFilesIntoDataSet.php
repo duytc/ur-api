@@ -27,7 +27,6 @@ class LoadFilesIntoDataSet implements SplittableJobInterface
     public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger)
     {
         $this->scheduler = $scheduler;
-
         $this->logger = $logger;
     }
 
@@ -54,14 +53,15 @@ class LoadFilesIntoDataSet implements SplittableJobInterface
         }
 
         $jobs = [];
-        foreach ($entryIds as $entryId) {
-            $jobs[] = [
-                'task' => LoadFileIntoDataSetSubJob::JOB_NAME,
-                LoadFileIntoDataSetSubJob::ENTRY_ID => $entryId,
-                LoadFileIntoDataSetSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
-            ];
-        }
 
+        // load files concurrently
+        $jobs[] = [
+            'task' => LoadFilesIntoDataSetLinearWithConcurrentSubJob::JOB_NAME,
+            LoadFilesIntoDataSetLinearWithConcurrentSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId,
+            LoadFilesIntoDataSetLinearWithConcurrentSubJob::ENTRY_IDS => $entryIds,
+        ];
+
+        // TODO: use big job...
         if (count($jobs) > 0) {
             $jobs = array_merge($jobs, [
                 ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],

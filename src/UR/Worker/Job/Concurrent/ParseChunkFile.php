@@ -26,6 +26,7 @@ class ParseChunkFile implements JobInterface
 {
     const DATA_SOURCE_ENTRY_ID = 'data_source_entry_id';
     const IMPORT_HISTORY_ID = 'import_history_id';
+    const CONCURRENT_LOCK_KEY = 'concurrent_lock_key';
     const JOB_NAME = 'parse_chunk_file';
     const INPUT_FILE_PATH = 'input_file_path';
     const OUTPUT_FILE_PATH = 'output_file_path';
@@ -85,30 +86,34 @@ class ParseChunkFile implements JobInterface
 
     public function run(JobParams $params)
     {
+        $importHistoryId = $params->getRequiredParam(self::IMPORT_HISTORY_ID);
+        $chunkFailedKey = sprintf(LoadFileIntoDataSetSubJob::CHUNK_FAILED_KEY_TEMPLATE, $importHistoryId);
         $connectedDataSourceId = $params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
         $dataSourceEntryId = $params->getRequiredParam(self::DATA_SOURCE_ENTRY_ID);
 
         $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
         if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
             $this->logger->error(sprintf('ConnectedDataSource %d not found or you do not have permission', $connectedDataSourceId));
+            $this->redis->set($chunkFailedKey, 1);
             return;
         }
 
         $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
         if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
             $this->logger->error(sprintf('DataSourceEntry %d not found or you do not have permission', $dataSourceEntryId));
+            $this->redis->set($chunkFailedKey, 1);
             return;
         }
 
-        $importHistoryId = $params->getRequiredParam(self::IMPORT_HISTORY_ID);
+
         $importHistory = $this->importHistoryManager->find($importHistoryId);
         if (!$importHistory instanceof ImportHistoryInterface) {
             $this->logger->error(sprintf('ImportHistory %d not found or you do not have permission', $importHistoryId));
+            $this->redis->set($chunkFailedKey, 1);
             return;
         }
 
         // if one failed, all failed
-        $chunkFailedKey = sprintf(LoadFileIntoDataSetSubJob::CHUNK_FAILED_KEY_TEMPLATE, $importHistoryId);
         $failed = $this->redis->exists($chunkFailedKey);
         if ($failed == true) {
             $this->redis->decr($params->getRequiredParam(self::TOTAL_CHUNK_KEY));
@@ -218,6 +223,10 @@ class ParseChunkFile implements JobInterface
             if ($importSuccessAlert !== null) {
                 $this->manager->processAlert($importSuccessAlert->getAlertCode(), $publisherId, $importSuccessAlert->getDetails(), $importSuccessAlert->getDataSourceId());
             }
+
+            //remove concurrent lock key
+            $concurrentLockKey = $params->getRequiredParam(self::CONCURRENT_LOCK_KEY);
+            $this->redis->del($concurrentLockKey);
         }
     }
 

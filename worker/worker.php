@@ -7,6 +7,8 @@ const WORKER_EXIT_CODE_REQUEST_STOP_SUCCESS = 99;
 
 use Leezy\PheanstalkBundle\Proxy\PheanstalkProxy;
 use Monolog\Logger;
+use UR\Worker\Job\Concurrent\LoadFilesConcurrentlyIntoDataSet;
+use UR\Worker\Job\Concurrent\ProcessLinearJob;
 
 $loader = require_once __DIR__ . '/../app/autoload.php';
 
@@ -107,8 +109,8 @@ while (1) {
 
     $rawJobData = $job->getData();
 
-    $jobLock = false;
-
+    $jobLocks = [];
+    $exitCode = LoadFilesConcurrentlyIntoDataSet::LOAD_FILE_CONCURRENT_EXIT_CODE_FAILED;
     try {
         $jobParams = new \Pubvantage\Worker\JobParams(json_decode($rawJobData, true));
         $task = $jobParams->getRequiredParam('task');
@@ -124,19 +126,32 @@ while (1) {
         }
 
         if ($jobWorker instanceof \Pubvantage\Worker\Job\LockableJobInterface) {
-            $jobLock = $redLock->lock($lockKeyPrefix . $jobWorker->getLockKey($jobParams), JOB_LOCK_TTL, [
-                'pid' => $pid
-            ]);
+            foreach ($jobWorker->getLockKeys($jobParams) as $lockKey) {
+                $jobLock = $redLock->lock($lockKeyPrefix . $lockKey, JOB_LOCK_TTL, [
+                    'pid' => $pid
+                ]);
 
-            if ($jobLock === false) {
-                $logger->debug(sprintf('Cannot acquire job lock. Job %s (ID: %s) will be retried later', $job->getId(), $rawJobData));
+                if ($jobLock === false) {
+                    break;
+                }
+
+                $jobLocks[] = $jobLock;
+            }
+
+            if (empty($jobLocks)) {
+                $logger->debug(sprintf('Cannot acquire job lock. Job %s (ID: %s) with params %s will be retried later', $task, $job->getId(), $rawJobData));
                 $beanstalk->release($job, PheanstalkProxy::DEFAULT_PRIORITY, RELEASE_JOB_DELAY_SECONDS);
                 continue;
             }
         }
 
-        $jobWorker->run($jobParams);
-        $beanstalk->delete($job);
+        $exitCode = $jobWorker->run($jobParams);
+
+        if ($exitCode === ProcessLinearJob::WORKER_EXIT_CODE_WAIT_FOR_LINEAR_WITH_CONCURRENT_JOB) {
+            $logger->notice(sprintf('Job %s (ID: %s) with params %s return exitCode %s, then will be retried later', $task, $job->getId(), $rawJobData, $exitCode));
+        } else {
+            $beanstalk->delete($job);
+        }
 
         $logger->notice(sprintf('Job %s (ID: %s) with params %s has been completed', $task, $job->getId(), $rawJobData));
     } catch (Exception $e) {
@@ -145,8 +160,10 @@ while (1) {
         $beanstalk->bury($job);
     } finally {
         // always release lock if it is set
-        if (is_array($jobLock)) {
-            $redLock->unlock($jobLock);
+        if (is_array($jobLocks) && $exitCode !== LoadFilesConcurrentlyIntoDataSet::LOAD_FILE_CONCURRENT_EXIT_CODE_WAITING) {
+            foreach ($jobLocks as $jobLock) {
+                $redLock->unlock($jobLock);
+            }
         }
 
         $entityManager->clear();

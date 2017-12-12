@@ -42,7 +42,8 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
 
     private $dataSourceEntryManager;
 
-    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger,
+    public function __construct(DataSetJobSchedulerInterface $scheduler,
+                                LoggerInterface $logger,
                                 ConnectedDataSourceManagerInterface $connectedDataSourceManager,
                                 DataSetTableUtilInterface $dataSetTableUtil,
                                 ImportHistoryManagerInterface $importHistoryManager,
@@ -84,28 +85,55 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
             return;
         }
 
+        if ($reloadType === ReloadParamsInterface::ALL_DATA_TYPE) {
+            // remove data first
+            $this->scheduler->addJob([
+                [
+                    'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
+                    RemoveDataFromConnectedDataSourceSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
+                ],
+
+                // also update data set total row, after each entry done, to let UI does not make user confused
+                // i.e: last time, pending jobs changes from 90->60 but total rows still 0 in UI and only updated after all jobs are done
+                ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+
+                // also update connected data source total row similar above
+                ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+            ], $dataSetId, $params);
+        }
+
         $jobs = [];
         foreach ($entryIds as $entryId) {
             $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
             $this->importHistoryManager->deleteImportHistoryByConnectedDataSourceAndEntry($connectedDataSource, $dataSourceEntry);
-            $jobs[] = [
-                'task' => LoadFileIntoDataSetSubJob::JOB_NAME,
-                LoadFileIntoDataSetSubJob::ENTRY_ID => $entryId,
-                self::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
-            ];
         }
 
-        if (count($jobs) > 0) {
-            $jobs = array_merge($jobs, [
-                ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
-                //['task' => UpdateDataSetTotalRowSubJob::JOB_NAME], // already update after each entry done!
-                //['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME] // already update after each entry done!
-            ]);
+        // load files concurrently
+        $jobs[] = [
+            'task' => LoadFilesIntoDataSetLinearWithConcurrentSubJob::JOB_NAME,
+            LoadFilesIntoDataSetLinearWithConcurrentSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId(),
+            LoadFilesIntoDataSetLinearWithConcurrentSubJob::ENTRY_IDS => $entryIds,
+        ];
 
-            // need update again because after overwriting total rows change
-            $jobs[] = ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME];
-            $jobs[] = ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME];
-        }
+        // also update data set total row, after each entry done, to let UI does not make user confused
+        // i.e: last time, pending jobs changes from 90->60 but total rows still 0 in UI and only updated after all jobs are done
+//        $jobs[] = ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME]; // TODO: use big job...
+
+        // also update connected data source total row similar above
+//        $jobs[] = ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]; // TODO: use big job...
+
+        // TODO: use big job...
+//        if (count($jobs) > 0) {
+//            $jobs = array_merge($jobs, [
+//                ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
+//                //['task' => UpdateDataSetTotalRowSubJob::JOB_NAME], // already update after each entry done!
+//                //['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME] // already update after each entry done!
+//            ]);
+//
+//            // need update again because after overwriting total rows change
+//            $jobs[] = ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME];
+//            $jobs[] = ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME];
+//        }
 
         // update connected data source that it is reload completed
         $jobs[] = [
