@@ -336,11 +336,11 @@ interface DataSourceInterface extends ModelInterface
     /**
      * @return mixed
      */
-    public function getTimeSeries();
+    public function getRemoveDuplicateDates();
 
     /**
-     * @param mixed $timeSeries
+     * @param mixed $removeDuplicateDates
      * @return self
      */
-    public function setTimeSeries($timeSeries);
+    public function setRemoveDuplicateDates($removeDuplicateDates);
 }

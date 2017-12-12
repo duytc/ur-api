@@ -33,7 +33,7 @@ class DataSourceCleaningService implements DataSourceCleaningServiceInterface
      */
     public function removeDuplicatedDateEntries(DataSourceInterface $dataSource)
     {
-        if (!$dataSource->getTimeSeries()) {
+        if (!$dataSource->getRemoveDuplicateDates()) {
             return;
         }
 
