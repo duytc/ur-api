@@ -259,6 +259,10 @@ class AutoImportData implements AutoImportDataInterface
         $this->updateDataSetTotalRowService->updateDataSetTotalRow($connectedDataSource->getDataSet()->getId());
         $this->updateDataSetTotalRowService->updateAllConnectedDataSourcesTotalRowInOneDataSet($connectedDataSource->getDataSet()->getId());
 
+        if (!$collection instanceof Collection) {
+            return;
+        }
+
         /** Import collection to map builder configs */
         $dataSet = $connectedDataSource->getDataSet();
         $mapBuilderConfigs = $this->mapBuilderConfigManager->getByMapDataSet($dataSet);
