@@ -82,6 +82,14 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
         $entryIds = $this->dataSetTableUtil->getEntriesByReloadParameter($connectedDataSource, $reloadParams);
         if (empty($entryIds)) {
             $this->logger->notice(sprintf('No entry of connected data source %d reloads', $connectedDataSourceId));
+            $jobs[] = [
+                'task' => UpdateConnectedDataSourceReloadCompleted::JOB_NAME,
+                UpdateConnectedDataSourceReloadCompleted::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
+            ];
+
+            $jobs[] = ['task' => UpdateAugmentedDataSetStatus::JOB_NAME];
+
+            $this->scheduler->addJob($jobs, $dataSetId, $params);
             return;
         }
 
@@ -140,6 +148,8 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
             'task' => UpdateConnectedDataSourceReloadCompleted::JOB_NAME,
             UpdateConnectedDataSourceReloadCompleted::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
         ];
+
+        $jobs[] = ['task' => UpdateAugmentedDataSetStatus::JOB_NAME];
 
         $this->scheduler->addJob($jobs, $dataSetId, $params);
     }

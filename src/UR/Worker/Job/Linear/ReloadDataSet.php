@@ -125,6 +125,10 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
             $entryIds = $this->dataSetTableUtil->getEntriesByReloadParameter($connectedDataSource, $reloadParameter);
             if (empty($entryIds)) {
                 $this->logger->notice(sprintf('No entry of connected data source %d reload', $connectedDataSource->getId()));
+                $jobs[] = [
+                    'task' => UpdateConnectedDataSourceReloadCompleted::JOB_NAME,
+                    UpdateConnectedDataSourceReloadCompleted::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId()
+                ];
                 continue;
             }
 
@@ -150,6 +154,7 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
         }
 
         $jobs[] = ['task' => UpdateDataSetReloadCompleted::JOB_NAME];
+        $jobs[] = ['task' => UpdateAugmentedDataSetStatus::JOB_NAME];
 
         // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
         // this will save a lot of execution time
