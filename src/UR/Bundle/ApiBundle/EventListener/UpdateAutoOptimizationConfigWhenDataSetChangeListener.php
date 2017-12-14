@@ -5,16 +5,11 @@ namespace UR\Bundle\ApiBundle\EventListener;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
-use UR\Domain\DTO\Report\Transforms\AddConditionValueTransform;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Service\Parser\Transformer\Collection\AddCalculatedField;
-use UR\Service\Parser\Transformer\Collection\AddField;
-use UR\Service\Parser\Transformer\Collection\ComparisonPercent;
-use UR\Service\Parser\Transformer\Collection\SortByColumns;
 use UR\Service\Report\SqlBuilder;
 
 class UpdateAutoOptimizationConfigWhenDataSetChangeListener
@@ -211,12 +206,10 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             if (is_array($transform) && $transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::ADD_CALCULATED_FIELD_TRANSFORM) {
                 $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
                 foreach ($fields as &$field) {
-
                     $expressionItems = explode('+', $field[self::EXPRESSION_KEY]);
                     $expressionData = [];
                     foreach ($expressionItems as $expressionItem) {
-                        $item = str_replace('[','', $expressionItem);
-                        $item = str_replace(']', '', $item);
+                        $item = substr(trim($expressionItem), 1, -1);
                         $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $item);
                         $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $item);
                         if ($dataSetIdFromField != $dataSet->getId()) {
@@ -232,7 +225,6 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                     $field[self::EXPRESSION_KEY] = $expressionData;
 
                     // check defaultValues
-                    $defaultValues = [];
                     if (array_key_exists(self::DEFAULT_VALUES_KEY, $field)) {
                         $defaultValues = $field[self::DEFAULT_VALUES_KEY];
                         foreach ($defaultValues as &$defaultValue) {
@@ -249,7 +241,6 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
 
                         $field[self::DEFAULT_VALUES_KEY] = $defaultValues;
                     }
-
 
                     $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
 
@@ -395,7 +386,6 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          * ]
          */
         $metrics = $autoOptimizationConfig->getMetrics();
-        $newMetrics = [];
         foreach ($metrics as &$metric) {
             $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $metric);
             $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $metric);
