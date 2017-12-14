@@ -23,20 +23,25 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
         if (!$args->hasChangedField(self::DIMENSIONS_KEY) && !$args->hasChangedField(self::METRICS_KEY)) {
             return;
         }
+
         $newDimensions = $entity->getDimensions();
         $oldDimensions = $entity->getDimensions();
         $newMetrics = $entity->getMetrics();
         $oldMetrics = $entity->getMetrics();
+
         if ($args->hasChangedField(self::DIMENSIONS_KEY)) {
             $newDimensions = $args->getNewValue(self::DIMENSIONS_KEY);
             $oldDimensions = $args->getOldValue(self::DIMENSIONS_KEY);
         }
+
         if ($args->hasChangedField(self::METRICS_KEY)) {
             $newMetrics = $args->getNewValue(self::METRICS_KEY);
             $oldMetrics = $args->getOldValue(self::METRICS_KEY);
         }
-        $dimensionsMapping = array_merge($oldDimensions, $newDimensions);
-        $metricsMapping = array_merge($oldMetrics, $newMetrics);
+
+        $dimensionsMapping = array_combine(array_keys($oldDimensions), array_keys($newDimensions));
+        $metricsMapping = array_combine(array_keys($oldMetrics), array_keys($newMetrics));
+
         $dimensionsMetricsMapping = array_merge($dimensionsMapping, $metricsMapping);
         /** @var AutoOptimizationConfigDataSetInterface[]|Collection $autoOptimizationConfigDataSets */
         $autoOptimizationConfigDataSets = $entity->getAutoOptimizationConfigDataSets();
@@ -75,44 +80,42 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
         /*
          * dimensions
          * [
-         *      <field> => <type>,
+         *      0 = <field>,
          *      ...
          * ]
          */
         $dimensions = $autoOptimizationConfigDataSet->getDimensions();
-        $newDimensions = [];
-        foreach ($dimensions as $field => $type) {
-            $fieldWithoutDataSetId = preg_replace('/^(.*)(_)(\d)$/', '$1', $field);
-            $dataSetIdFromField = preg_replace('/^(.*)(_)(\d)$/', '$3', $field);
+        foreach ($dimensions as &$dimension) {
+            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $dimension);
+            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $dimension);
             if ($dataSetIdFromField != $autoOptimizationConfigDataSet->getDataSet()->getId()) {
-                $newDimensions[$field] = $type;
                 continue;
             }
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
-            $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
-            $newDimensions[$field] = $type;
+            $dimension = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
-        $autoOptimizationConfigDataSet->setDimensions($newDimensions);
+
+        $autoOptimizationConfigDataSet->setDimensions($dimensions);
+
         /* metrics
          * [
-         *      <field> => <type>,
+         *      0 = <field>,
          *      ...
          * ]
          */
         $metrics = $autoOptimizationConfigDataSet->getMetrics();
-        $newMetrics = [];
-        foreach ($metrics as $field => $type) {
-            $fieldWithoutDataSetId = preg_replace('/^(.*)(_)(\d)$/', '$1', $field);
-            $dataSetIdFromField = preg_replace('/^(.*)(_)(\d)$/', '$3', $field);
+        foreach ($metrics as &$metric) {
+            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $metric);
+            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $metric);
             if ($dataSetIdFromField != $autoOptimizationConfigDataSet->getDataSet()->getId()) {
-                $newMetrics[$field] = $type;
                 continue;
             }
+
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
-            $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
-            $newMetrics[$field] = $type;
+            $metric = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
-        $autoOptimizationConfigDataSet->setMetrics($newMetrics);
+
+        $autoOptimizationConfigDataSet->setMetrics($metrics);
 
         return $autoOptimizationConfigDataSet;
     }

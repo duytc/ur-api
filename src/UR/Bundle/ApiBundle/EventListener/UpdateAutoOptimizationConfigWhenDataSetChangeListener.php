@@ -177,27 +177,29 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                         if (array_key_exists(self::CONDITIONS_KEY, $field)) {
                             $conditions = $field[self::CONDITIONS_KEY];
                         }
-                    }
-                    foreach ($conditions as &$condition) {
-                        $expressions = $condition[self::EXPRESSIONS_KEY];
-                        foreach ($expressions as &$expression) {
-                            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $expression[self::VAR_KEY]);
-                            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $expression[self::VAR_KEY]);
 
-                            if ($dataSetIdFromField != $dataSet->getId()) {
-                                continue;
+                        foreach ($conditions as &$condition) {
+                            $expressions = $condition[self::EXPRESSIONS_KEY];
+                            foreach ($expressions as &$expression) {
+                                $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $expression[self::VAR_KEY]);
+                                $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $expression[self::VAR_KEY]);
+
+                                if ($dataSetIdFromField != $dataSet->getId()) {
+                                    continue;
+                                }
+
+                                $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+                                $fieldNameInExpression = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+
+                                $expression[self::VAR_KEY] = $fieldNameInExpression;
+
+                                unset($fieldNameInExpression);
                             }
-
-                            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
-                            $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
-
-                            $expression[self::VAR_KEY] = $field;
-
-                            unset($field);
+                            $condition[self::EXPRESSIONS_KEY] = $expressions;
                         }
-                        $condition[self::EXPRESSIONS_KEY] = $expressions;
-                    }
 
+                        $field[self::CONDITIONS_KEY] = $conditions;
+                    }
                     $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
                     unset($field, $expression, $expressions, $conditions, $condition);
                 }
