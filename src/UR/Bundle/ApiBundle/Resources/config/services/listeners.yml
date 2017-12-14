@@ -224,11 +224,6 @@ services:
             - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: preRemove }
             - { name: doctrine.event_listener, event: postFlush }
-    ur_api.event_listener.update_auto_optimization_config_when_data_set_change_listener:
-            class: UR\Bundle\ApiBundle\EventListener\UpdateAutoOptimizationConfigWhenDataSetChangeListener
-            arguments:
-            tags:
-                - { name: doctrine.event_listener, event: preUpdate }
     ur_api.event_listener.update_auto_optimization_training_data_table_when_config_listener:
             class: UR\Bundle\ApiBundle\EventListener\UpdateAutoOptimizationTrainingDataTableWhenConfigListener
             arguments:
