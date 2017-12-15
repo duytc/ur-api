@@ -10,11 +10,14 @@ use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use UR\Domain\DTO\Report\Transforms\GroupByTransform;
+use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResultInterface;
+use UR\Service\Parser\Transformer\Collection\AddField;
 
 class DataTrainingTableService
 {
@@ -257,9 +260,28 @@ class DataTrainingTableService
             }
         }
 
-        unset($metrics, $dimensionsAndMetricsSelected, $fieldWithoutDataSetId);
-        // add dimensions and metrics columns
-        foreach ($dimensionsAndMetrics as $fieldName => $fieldType) {
+        // $dimensions from autoOptimizationConfig transforms
+        $fieldNameFromTransform = [];
+        foreach ($autoOptimizationConfig->getTransforms() as $transform) {
+            if (!is_array($transform)) {
+                continue;
+            }
+            if ($transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::GROUP_TRANSFORM) {
+                continue;
+            }
+            $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+            foreach ($fields as $field) {
+                if (isset($field['field']) && $field['type']) {
+                    $fieldNameFromTransform[$field['field']] = $field['type'];
+                }
+            }
+        }
+
+        // add dimensions, metrics columns and transform field
+        $dimensionsMetricsAndTransformField = array_merge($dimensionsAndMetrics, $fieldNameFromTransform);
+        unset($metrics, $dimensionsAndMetricsSelected, $fieldWithoutDataSetId, $fieldNameFromTransform, $dimensionsAndMetrics);
+
+        foreach ($dimensionsMetricsAndTransformField as $fieldName => $fieldType) {
             if ($fieldType === FieldType::NUMBER) {
                 $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
