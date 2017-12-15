@@ -40,25 +40,40 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             return;
         }
 
-        $newDimensions = $entity->getDimensions();
-        $oldDimensions = $entity->getDimensions();
-        $newMetrics = $entity->getMetrics();
-        $oldMetrics = $entity->getMetrics();
+        $uow = $em->getUnitOfWork();
+        $changedFields = $uow->getEntityChangeSet($entity);
 
-        if ($args->hasChangedField(self::DIMENSIONS_KEY)) {
-            $newDimensions = $args->getNewValue(self::DIMENSIONS_KEY);
-            $oldDimensions = $args->getOldValue(self::DIMENSIONS_KEY);
+        if (!array_key_exists('dimensions', $changedFields) && !array_key_exists('metrics', $changedFields)) {
+            return;
+        }
+        // detect changed metrics, dimensions
+        $renameFields = [];
+        $actions = $entity->getActions() === null ? [] : $entity->getActions();
+
+        if (array_key_exists('rename', $actions)) {
+            $renameFields = $actions['rename'];
         }
 
-        if ($args->hasChangedField(self::METRICS_KEY)) {
-            $newMetrics = $args->getNewValue(self::METRICS_KEY);
-            $oldMetrics = $args->getOldValue(self::METRICS_KEY);
+        $newDimensions = [];
+        $newMetrics = [];
+        $updateDimensions = [];
+        $updateMetrics = [];
+        $deletedMetrics = [];
+        $deletedDimensions = [];
+
+        foreach ($changedFields as $field => $values) {
+            if ($field === 'dimensions') {
+                $this->getChangedFields($values, $renameFields, $newDimensions, $updateDimensions, $deletedDimensions);
+            }
+
+            if ($field === 'metrics') {
+                $this->getChangedFields($values, $renameFields, $newMetrics, $updateMetrics, $deletedMetrics);
+            }
         }
 
-        $dimensionsMapping = array_combine(array_keys($oldDimensions), array_keys($newDimensions));
-        $metricsMapping = array_combine(array_keys($oldMetrics), array_keys($newMetrics));
-
-        $dimensionsMetricsMapping = array_merge($dimensionsMapping, $metricsMapping);
+        $newFields = array_merge($newDimensions, $newMetrics);
+        $updateFields = array_merge($updateDimensions, $updateMetrics);
+        $deleteFields = array_merge($deletedDimensions, $deletedMetrics);
 
         /** @var AutoOptimizationConfigDataSetInterface[]|Collection $autoOptimizationConfigDataSets */
         $autoOptimizationConfigDataSets = $entity->getAutoOptimizationConfigDataSets();
@@ -73,13 +88,13 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         }, $autoOptimizationConfigDataSets);
 
         foreach ($autoOptimizationConfigs as $autoOptimizationConfig) {
-            $autoOptimizationConfig = $this->updateOptimizationConfig($autoOptimizationConfig, $entity, $dimensionsMetricsMapping);
+            $autoOptimizationConfig = $this->updateOptimizationConfig($autoOptimizationConfig, $entity, $updateFields, $deleteFields);
             $em->merge($autoOptimizationConfig);
             $em->persist($autoOptimizationConfig);
         }
     }
 
-    private function updateOptimizationConfig(AutoOptimizationConfigInterface $autoOptimizationConfig, DataSetInterface $dataSet, array $dimensionsMetricsMapping)
+    private function updateOptimizationConfig(AutoOptimizationConfigInterface $autoOptimizationConfig, DataSetInterface $dataSet, array $updateFields, array $deleteFields)
     {
         /*
          * join by
@@ -119,7 +134,13 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                     continue;
                 }
                 $field = $joinField[SqlBuilder::JOIN_CONFIG_FIELD];
-                $field = $this->mappingNewValue($field, $dimensionsMetricsMapping);
+
+                if ($this->deleteFieldValue($field, $deleteFields)) {
+                    unset($joinField);
+                    continue;
+                }
+
+                $field = $this->mappingNewValue($field, $updateFields);
                 $joinField[SqlBuilder::JOIN_CONFIG_FIELD] = $field;
             }
 
@@ -160,7 +181,12 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                         continue;
                     }
 
-                    $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+                    if ($this->deleteFieldValue($field, $deleteFields)) {
+                        unset($field);
+                        continue;
+                    }
+
+                    $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
                     $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
 
                     $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
@@ -188,7 +214,12 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                                     continue;
                                 }
 
-                                $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+                                if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                                    unset($expression);
+                                    continue;
+                                }
+
+                                $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
                                 $fieldNameInExpression = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
 
                                 $expression[self::VAR_KEY] = $fieldNameInExpression;
@@ -218,7 +249,11 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                             continue;
                         }
 
-                        $fieldWithoutDataSetId = $this->mappingNewValue(trim($fieldWithoutDataSetId), $dimensionsMetricsMapping);
+                        if ($this->deleteFieldValue(trim($fieldWithoutDataSetId), $deleteFields)) {
+                            continue;
+                        }
+
+                        $fieldWithoutDataSetId = $this->mappingNewValue(trim($fieldWithoutDataSetId), $updateFields);
                         $fieldValue = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
                         $expressionData [] = '['. $fieldValue .']';
                     }
@@ -236,7 +271,12 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                                 continue;
                             }
 
-                            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+                            if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                                unset($defaultValue);
+                                continue;
+                            }
+
+                            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
                             $fieldValue = sprintf('%s_%d', trim($fieldWithoutDataSetId), $dataSetIdFromField);
                             $defaultValue[self::CONDITION_FIELD_KEY] = $fieldValue;
                         }
@@ -270,7 +310,12 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                             continue;
                         }
 
-                        $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+                        if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                            unset($fieldName);
+                            continue;
+                        }
+
+                        $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
                         $fieldName = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
                     }
                     $field[self::NAMES_KEY] = $fieldNames;
@@ -291,8 +336,13 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                         continue;
                     }
 
-                    $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
-                    $field[self::NUMERATOR_KEY] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+                    if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                        $field[self::NUMERATOR_KEY] = '';
+                        continue;
+                    } else {
+                        $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
+                        $field[self::NUMERATOR_KEY] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+                    }
 
                     //denominator
                     $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $field[self::DENOMINATOR_KEY]);
@@ -301,8 +351,13 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                         continue;
                     }
 
-                    $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
-                    $field[self::DENOMINATOR_KEY] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+                    if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                        $field[self::DENOMINATOR_KEY] = '';
+                        continue;
+                    } else {
+                        $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
+                        $field[self::DENOMINATOR_KEY] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+                    }
 
                     $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
 
@@ -329,7 +384,13 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 continue;
             }
             $field = $filter[AbstractFilter::FILTER_FIELD_KEY];
-            $field = $this->mappingNewValue($field, $dimensionsMetricsMapping);
+
+            if ($this->deleteFieldValue($field, $deleteFields)) {
+                unset($filter);
+                continue;
+            }
+
+            $field = $this->mappingNewValue($field, $updateFields);
             $filter[AbstractFilter::FILTER_FIELD_KEY] = $field;
         }
 
@@ -354,7 +415,11 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 continue;
             }
 
-            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+            if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                continue;
+            }
+
+            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
             $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
             $newFieldTypes[$field] = $type;
         }
@@ -375,7 +440,13 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             if ($dataSetIdFromField != $dataSet->getId()) {
                 continue;
             }
-            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+
+            if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                unset($dimension);
+                continue;
+            }
+
+            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
             $dimension = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
 
@@ -395,7 +466,12 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 continue;
             }
 
-            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);;
+            if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                unset($metric);
+                continue;
+            }
+
+            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);;
             $metric = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
 
@@ -415,7 +491,12 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 continue;
             }
 
-            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
+            if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                unset($field);
+                continue;
+            }
+
+            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
             $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
 
@@ -433,8 +514,13 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $objective);
         $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $objective);
         if ($dataSetIdFromField == $dataSet->getId()) {
-            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
-            $objective = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+
+            if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                $objective = '';
+            } else {
+                $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
+                $objective = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+            }
 
             $autoOptimizationConfig->setObjective($objective);
         }
@@ -442,8 +528,45 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         return $autoOptimizationConfig;
     }
 
-    private function mappingNewValue($field, array $mapping)
+    private function mappingNewValue($field, array $updateFields)
     {
-        return (array_key_exists($field, $mapping)) ? $mapping[$field] : $field;
+        return (array_key_exists($field, $updateFields)) ? $updateFields[$field] : $field;
+    }
+
+    private function deleteFieldValue($field, array $deleteFields)
+    {
+        return (array_key_exists($field, $deleteFields)) ? true : false;
+    }
+
+    /**
+     * @param array $values
+     * @param array $renameFields
+     * @param array $newFields
+     * @param array $updateFields
+     * @param array $deletedFields
+     */
+    private function getChangedFields(array $values, array $renameFields, array &$newFields, array &$updateFields, array &$deletedFields)
+    {
+        $deletedFields = array_diff_assoc($values[0], $values[1]);
+        foreach ($renameFields as $renameField) {
+            if (!array_key_exists('from', $renameField) || !array_key_exists('to', $renameField)) {
+                continue;
+            }
+
+            $oldFieldName = $renameField['from'];
+            $newFieldName = $renameField['to'];
+
+            if (array_key_exists($oldFieldName, $deletedFields)) {
+                $updateFields[$oldFieldName] = $newFieldName;
+                unset($deletedFields[$oldFieldName]);
+            }
+        }
+
+        $newFields = array_diff_assoc($values[1], $values[0]);
+        foreach ($updateFields as $updateDimension) {
+            if (array_key_exists($updateDimension, $newFields)) {
+                unset($newFields[$updateDimension]);
+            }
+        }
     }
 }
