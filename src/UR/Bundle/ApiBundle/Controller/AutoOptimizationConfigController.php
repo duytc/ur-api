@@ -3,7 +3,6 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
-
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
@@ -153,6 +152,11 @@ class AutoOptimizationConfigController extends RestControllerAbstract implements
      */
     public function deleteAction($id)
     {
+        // delete data_training_table
+        $autoOptimizationConfigRepository = $this->get('ur.repository.auto_optimization_config');
+        $autoOptimizationConfigRepository->deleteDataTrainingTableWhenDeleteAutoOptimizationConfig($id);
+
+        // delete AutoOptimizationConfig
         return $this->delete($id);
     }
 

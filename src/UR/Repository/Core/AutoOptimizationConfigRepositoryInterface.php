@@ -8,5 +8,9 @@ use Doctrine\Common\Persistence\ObjectRepository;
 
 interface AutoOptimizationConfigRepositoryInterface extends ObjectRepository
 {
+    /**
+     * @param int $autoOptimizationConfigId
+     */
+    public function deleteDataTrainingTableWhenDeleteAutoOptimizationConfig($autoOptimizationConfigId);
 
 }
