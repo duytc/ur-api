@@ -10,6 +10,7 @@ use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
@@ -237,8 +238,28 @@ class DataTrainingTableService
         $dataTrainingTable->addColumn(self::COLUMN_ID, Type::INTEGER, array('autoincrement' => true, 'unsigned' => true));
         $dataTrainingTable->setPrimaryKey(array(self::COLUMN_ID));
 
-        // add dimensions
-        foreach ($autoOptimizationConfig->getFieldTypes() as $fieldName => $fieldType) {
+        /** @var AutoOptimizationConfigDataSetInterface[]|Collection $autoOptimizationConfigDataSets */
+        $autoOptimizationConfigDataSets = $autoOptimizationConfig->getAutoOptimizationConfigDataSets();
+        $dimensionsAndMetricsSelected = [];
+        $dimensionsAndMetrics = [];
+
+        //$dimensions from autoOptimizationConfig
+        foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
+            $dimensions = $autoOptimizationConfigDataSet->getDimensions();
+            $metrics = $autoOptimizationConfigDataSet->getMetrics();
+            $dimensionsAndMetricsSelected = array_merge($dimensions, $metrics);
+        }
+
+        foreach ($autoOptimizationConfig->getFieldTypes() as $key => $value) {
+            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $key);
+            if (in_array($fieldWithoutDataSetId, $dimensionsAndMetricsSelected)) {
+                $dimensionsAndMetrics[$key] = $value;
+            }
+        }
+
+        unset($metrics, $dimensionsAndMetricsSelected, $fieldWithoutDataSetId);
+        // add dimensions and metrics columns
+        foreach ($dimensionsAndMetrics as $fieldName => $fieldType) {
             if ($fieldType === FieldType::NUMBER) {
                 $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
@@ -258,29 +279,6 @@ class DataTrainingTableService
                 $dataTrainingTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
             }
         }
-//
-//        // add metrics
-//        foreach ($autoOptimizationConfig->getMetrics() as $fieldName => $fieldType) {
-//            if ($fieldType === FieldType::NUMBER) {
-//                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-//                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
-//            } else if ($fieldType === FieldType::DECIMAL) {
-//                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-//                $dataTrainingTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
-//            } else if ($fieldType === FieldType::LARGE_TEXT) {
-//                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-//                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_LARGE_TEXT]);
-//            } else if ($fieldType === FieldType::TEXT) {
-//                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-//                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_TEXT]);
-//            } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
-//                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-//                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
-//            } else {
-//                $dataTrainingTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
-//            }
-//        }
-
         //// create table
         try {
             // sync schema
