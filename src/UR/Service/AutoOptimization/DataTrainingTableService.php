@@ -86,9 +86,17 @@ class DataTrainingTableService
             $questionMarks = [];
             $uniqueIds = [];
             $preparedInsertCount = 0;
+            $setOrderColumns = false;
             foreach ($rows as $index => $row) {
                 if (!is_array($row)) {
                     continue;
+                }
+
+                if ($setOrderColumns == false) {
+                    $orderColumns = array_keys($row);
+                    $columns = array_merge(array_flip($orderColumns), $columns);
+
+                    $setOrderColumns = true;
                 }
 
                 $uniqueKeys = array_intersect_key($row, $dimensions);
