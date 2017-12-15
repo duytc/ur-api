@@ -5,7 +5,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
-use UR\Model\Core\AutoOptimizationConfigInterface;
+use UR\Model\Core\DataSetInterface;
 
 class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
 {
@@ -16,7 +16,7 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
     {
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
-        if (!$entity instanceof AutoOptimizationConfigInterface) {
+        if (!$entity instanceof DataSetInterface) {
             return;
         }
         // get changes
@@ -86,13 +86,7 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
          */
         $dimensions = $autoOptimizationConfigDataSet->getDimensions();
         foreach ($dimensions as &$dimension) {
-            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $dimension);
-            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $dimension);
-            if ($dataSetIdFromField != $autoOptimizationConfigDataSet->getDataSet()->getId()) {
-                continue;
-            }
-            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
-            $dimension = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+            $dimension = $this->mappingNewValue($dimension, $dimensionsMetricsMapping);
         }
 
         $autoOptimizationConfigDataSet->setDimensions($dimensions);
@@ -105,14 +99,7 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
          */
         $metrics = $autoOptimizationConfigDataSet->getMetrics();
         foreach ($metrics as &$metric) {
-            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $metric);
-            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $metric);
-            if ($dataSetIdFromField != $autoOptimizationConfigDataSet->getDataSet()->getId()) {
-                continue;
-            }
-
-            $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $dimensionsMetricsMapping);
-            $metric = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+            $metric = $this->mappingNewValue($metric, $dimensionsMetricsMapping);
         }
 
         $autoOptimizationConfigDataSet->setMetrics($metrics);
