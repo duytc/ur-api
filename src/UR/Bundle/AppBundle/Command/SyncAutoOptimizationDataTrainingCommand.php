@@ -7,6 +7,7 @@ use Symfony\Bridge\Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\DomainManager\AutoOptimizationConfigManagerInterface;
@@ -27,6 +28,7 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
     const DATE_DYNAMIC_VALUE_LAST_MONTH = 'last month';
     const DATE_DYNAMIC_VALUE_LAST_2_MONTH = 'last 2 months';
     const DATE_DYNAMIC_VALUE_LAST_3_MONTH = 'last 3 months';
+    const INPUT_DATA_FORCE = 'force';
 
     /** @var Logger */
     private $logger;
@@ -36,6 +38,7 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         $this
             ->setName('ur:auto-optimization:data-training:sync')
             ->addArgument('autoOptimizationConfigId', InputArgument::REQUIRED, 'Auto Optimization Config Id')
+            ->addOption(self::INPUT_DATA_FORCE, 'f',InputOption::VALUE_NONE,'remove all old data')
             ->setDescription('Synchronization AutoOptimizationConfig with __auto_optimization_data_training table');
     }
 
@@ -50,7 +53,13 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
 
         /* get inputs */
         $autoOptimizationConfigId = $input->getArgument('autoOptimizationConfigId');
+        $forceRun = $input->getOption('force');
 
+        if (!empty($forceRun)) {
+            $removeOldData = true;
+        } else {
+            $removeOldData = false;
+        }
         if (empty($autoOptimizationConfigId)) {
             $this->logger->warning('Missing autoOptimizationConfigId');
             return;
@@ -73,7 +82,7 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
 
         /** @var DataTrainingTableService $autoOptimizationSyncService */
         $autoOptimizationSyncService = $container->get('ur.service.auto_optimization.data_training_table_service');
-        $autoOptimizationSyncService->importDataToDataTrainingTable($data, $autoOptimizationConfig);
+        $autoOptimizationSyncService->importDataToDataTrainingTable($data, $autoOptimizationConfig, $removeOldData);
     }
 
     /**

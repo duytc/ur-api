@@ -58,16 +58,22 @@ class DataTrainingTableService
     /**
      * @param ReportResultInterface $collection
      * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param boolean $removeOldData
      * @return Collection
      * @throws Exception
      */
-    public function importDataToDataTrainingTable(ReportResultInterface $collection, AutoOptimizationConfigInterface $autoOptimizationConfig)
+    public function importDataToDataTrainingTable(ReportResultInterface $collection, AutoOptimizationConfigInterface $autoOptimizationConfig, $removeOldData)
     {
         //create or get dataSet table
         $table = $this->createEmptyDataTrainingTable($autoOptimizationConfig);
         $tableName = $table->getName();
 
         try {
+            $this->conn->beginTransaction();
+            if ($removeOldData == true) {
+                $truncateSql = $this->conn->getDatabasePlatform()->getTruncateTableSQL($tableName);
+                $this->conn->exec($truncateSql);
+            }
             $dimensions = $autoOptimizationConfig->getDimensions();
             $rows = $collection->getRows();
             $columns = $collection->getColumns();
@@ -123,7 +129,6 @@ class DataTrainingTableService
             }
 
             if ($preparedInsertCount > 0 && is_array($columns) && is_array($questionMarks)) {
-                $this->conn->beginTransaction();
                 $this->executeInsert($tableName, $columns, $questionMarks, $insertValues);
 
                 //commit update and insert

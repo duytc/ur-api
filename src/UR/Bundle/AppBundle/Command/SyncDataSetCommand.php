@@ -22,7 +22,7 @@ use UR\Service\DataSet\Synchronizer;
 
 class SyncDataSetCommand extends ContainerAwareCommand
 {
-    Const INPUT_DATA_FORCE = 'force';
+    const INPUT_DATA_FORCE = 'force';
     /** @var Logger */
     private $logger;
 
