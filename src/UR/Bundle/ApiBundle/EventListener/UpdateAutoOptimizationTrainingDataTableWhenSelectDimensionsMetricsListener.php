@@ -3,73 +3,45 @@ namespace UR\Bundle\ApiBundle\EventListener;
 
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
-use Doctrine\ORM\Event\LifecycleEventArgs;
-use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
+use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;
 use UR\Service\DataSet\FieldType;
 
-class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
+class UpdateAutoOptimizationTrainingDataTableWhenSelectDimensionsMetricsListener
 {
     const DIMENSIONS_KEY = 'dimensions';
     const METRICS_KEY = 'metrics';
-    const TRANSFORMS_KEY = 'transforms';
 
     protected $changedAutoOptimizationConfigs;
-
-    /**
-     * @param LifecycleEventArgs $args
-     */
-    public function prePersist(LifecycleEventArgs $args)
-    {
-        $autoOptimizationConfig = $args->getEntity();
-
-
-        if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
-            return;
-        }
-
-        $this->changedAutoOptimizationConfigs[] = $autoOptimizationConfig;
-    }
 
     /**
      * @param PreUpdateEventArgs $args
      */
     public function preUpdate(PreUpdateEventArgs $args)
     {
-        $autoOptimizationConfig = $args->getEntity();
+        $optimizationConfigDataSet = $args->getEntity();
 
-        if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
+        if (!$optimizationConfigDataSet instanceof AutoOptimizationConfigDataSetInterface) {
             return;
         }
 
-        if ($args->hasChangedField(self::DIMENSIONS_KEY) || $args->hasChangedField(self::METRICS_KEY) || $args->hasChangedField(self::TRANSFORMS_KEY)) {
-            $this->changedAutoOptimizationConfigs[] = $autoOptimizationConfig;
-        }
-    }
+        if ($args->hasChangedField(self::DIMENSIONS_KEY) || $args->hasChangedField(self::METRICS_KEY)) {
+            $autoOptimizationConfig = $optimizationConfigDataSet->getAutoOptimizationConfig();
+            $this->changedAutoOptimizationConfigs[] = $optimizationConfigDataSet;
+            $em = $args->getEntityManager();
 
-    /**
-     * @param OnFlushEventArgs $args
-     */
-    public function onFlush(OnFlushEventArgs $args)
-    {
-        $em = $args->getEntityManager();
 
-        if (empty($this->changedAutoOptimizationConfigs)) {
-            return;
-        }
-
-        foreach($this->changedAutoOptimizationConfigs as $autoOptimizationConfig) {
             if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
-                continue;
+                return;
             }
 
             $dataTrainingTableService = new DataTrainingTableService($em, '');
             $dataTrainingTable = $dataTrainingTableService->getDataTrainingTable($autoOptimizationConfig->getId());
 
             if (!$dataTrainingTable instanceof Table) {
-                continue; // does not exist => do not sync data training table
+                return; // does not exist => do not sync data training table
             }
 
             // get all columns
@@ -114,12 +86,6 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
 
             // get query alter table
             $dataTrainingTableService->syncSchema($schema);
-
-            $em->persist($autoOptimizationConfig);
         }
-
-        $this->changedAutoOptimizationConfigs = [];
-
-        $em->flush();
     }
 }
