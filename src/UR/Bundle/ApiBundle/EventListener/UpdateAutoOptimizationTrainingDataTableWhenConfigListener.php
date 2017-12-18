@@ -60,7 +60,10 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
             return;
         }
 
-        foreach($this->changedAutoOptimizationConfigs as $autoOptimizationConfig) {
+        $changedAutoOptimizationConfigs = $this->changedAutoOptimizationConfigs;
+        $this->changedAutoOptimizationConfigs = [];
+
+        foreach($changedAutoOptimizationConfigs as $autoOptimizationConfig) {
             if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
                 continue;
             }
@@ -122,8 +125,6 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
 
             $em->persist($autoOptimizationConfig);
         }
-
-        $this->changedAutoOptimizationConfigs = [];
 
         $em->flush();
     }
