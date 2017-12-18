@@ -79,14 +79,21 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
             if (!$dataTrainingTable instanceof Table) {
                 continue; // does not exist => do not sync data training table
             }
+            // keep default columns(primary key), delete all current columns
+            $allColumnsCurrent = $dataTrainingTable->getColumns();
+            foreach ($allColumnsCurrent as $key => $value){
+                $columnName = $value->getName();
+                if ($columnName == DataTrainingTableService::COLUMN_ID) {
+                    continue;
+                }
+                $dataTrainingTable->dropColumn($columnName);
+            }
 
             // get all columns
             $allColumns = $dataTrainingTableService->getDimensionsMetricsAndTransformField($autoOptimizationConfig);
 
             foreach ($allColumns as $fieldName => $fieldType) {
-                if (!$dataTrainingTable->hasColumn($fieldName)) {
-                    $dataTrainingTable = $this->addFieldForTable($dataTrainingTable, $fieldName, $fieldType);
-                }
+                $dataTrainingTable = $this->addFieldForTable($dataTrainingTable, $fieldName, $fieldType);
             }
 
             $schema = new Schema([$dataTrainingTable]);
