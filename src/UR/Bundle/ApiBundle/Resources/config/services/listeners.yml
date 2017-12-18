@@ -228,4 +228,6 @@ services:
             class: UR\Bundle\ApiBundle\EventListener\UpdateAutoOptimizationTrainingDataTableWhenConfigListener
             arguments:
             tags:
+                - { name: doctrine.event_listener, event: prePersist }
                 - { name: doctrine.event_listener, event: preUpdate }
+                - { name: doctrine.event_listener, event: onFlush }

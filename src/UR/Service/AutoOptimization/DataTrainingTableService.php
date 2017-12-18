@@ -17,7 +17,6 @@ use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResultInterface;
-use UR\Service\Parser\Transformer\Collection\AddField;
 
 class DataTrainingTableService
 {
@@ -254,47 +253,10 @@ class DataTrainingTableService
         $dataTrainingTable->addColumn(self::COLUMN_ID, Type::INTEGER, array('autoincrement' => true, 'unsigned' => true));
         $dataTrainingTable->setPrimaryKey(array(self::COLUMN_ID));
 
-        /** @var AutoOptimizationConfigDataSetInterface[]|Collection $autoOptimizationConfigDataSets */
-        $autoOptimizationConfigDataSets = $autoOptimizationConfig->getAutoOptimizationConfigDataSets();
-        $dimensionsAndMetricsSelected = [];
-        $dimensionsAndMetrics = [];
-
-        //$dimensions from autoOptimizationConfig
-        foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
-            $dimensions = $autoOptimizationConfigDataSet->getDimensions();
-            $metrics = $autoOptimizationConfigDataSet->getMetrics();
-            $dimensionsAndMetricsSelected = array_merge($dimensions, $metrics);
-        }
-
-        foreach ($autoOptimizationConfig->getFieldTypes() as $key => $value) {
-            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $key);
-            if (in_array($fieldWithoutDataSetId, $dimensionsAndMetricsSelected)) {
-                $dimensionsAndMetrics[$key] = $value;
-            }
-        }
-
-        // $dimensions from autoOptimizationConfig transforms
-        $fieldNameFromTransform = [];
-        foreach ($autoOptimizationConfig->getTransforms() as $transform) {
-            if (!is_array($transform)) {
-                continue;
-            }
-            if ($transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::GROUP_TRANSFORM) {
-                continue;
-            }
-            $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
-            foreach ($fields as $field) {
-                if (isset($field['field']) && $field['type']) {
-                    $fieldNameFromTransform[$field['field']] = $field['type'];
-                }
-            }
-        }
-
-        // add dimensions, metrics columns and transform field
-        $dimensionsMetricsAndTransformField = array_merge($dimensionsAndMetrics, $fieldNameFromTransform);
-        unset($metrics, $dimensionsAndMetricsSelected, $fieldWithoutDataSetId, $fieldNameFromTransform, $dimensionsAndMetrics);
-
+        // get all columns
+        $dimensionsMetricsAndTransformField = $this->getDimensionsMetricsAndTransformField($autoOptimizationConfig);
         foreach ($dimensionsMetricsAndTransformField as $fieldName => $fieldType) {
+            $fieldName = '`'.$fieldName.'`';
             if ($fieldType === FieldType::NUMBER) {
                 $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
@@ -314,7 +276,7 @@ class DataTrainingTableService
                 $dataTrainingTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
             }
         }
-        //// create table
+        // alter table add columns
         try {
             // sync schema
             $this->syncSchema($schema);
@@ -473,5 +435,54 @@ class DataTrainingTableService
         }
 
         return $sm->listTableDetails($tableName);
+    }
+
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @return array
+     */
+    public function getDimensionsMetricsAndTransformField(AutoOptimizationConfigInterface $autoOptimizationConfig)
+    {
+        /** @var AutoOptimizationConfigDataSetInterface[]|Collection $autoOptimizationConfigDataSets */
+        $autoOptimizationConfigDataSets = $autoOptimizationConfig->getAutoOptimizationConfigDataSets();
+        $dimensionsAndMetricsSelected = [];
+        $dimensionsAndMetrics = [];
+
+        //$dimensions from autoOptimizationConfig
+        foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
+            $dimensions = $autoOptimizationConfigDataSet->getDimensions();
+            $metrics = $autoOptimizationConfigDataSet->getMetrics();
+            $dimensionsAndMetricsSelected = array_merge($dimensions, $metrics);
+        }
+
+        foreach ($autoOptimizationConfig->getFieldTypes() as $key => $value) {
+            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $key);
+            if (in_array($fieldWithoutDataSetId, $dimensionsAndMetricsSelected)) {
+                $dimensionsAndMetrics[$key] = $value;
+            }
+        }
+
+        // $dimensions from autoOptimizationConfig transforms
+        $fieldNameFromTransform = [];
+        foreach ($autoOptimizationConfig->getTransforms() as $transform) {
+            if (!is_array($transform)) {
+                continue;
+            }
+            if ($transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::GROUP_TRANSFORM) {
+                continue;
+            }
+            $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+            foreach ($fields as $field) {
+                if (isset($field['field']) && $field['type']) {
+                    $fieldNameFromTransform[$field['field']] = $field['type'];
+                }
+            }
+        }
+
+        // add dimensions, metrics columns and transform field
+        $dimensionsMetricsAndTransformField = array_merge($dimensionsAndMetrics, $fieldNameFromTransform);
+        unset($metrics, $dimensionsAndMetricsSelected, $fieldWithoutDataSetId, $fieldNameFromTransform, $dimensionsAndMetrics);
+
+        return $dimensionsMetricsAndTransformField ? $dimensionsMetricsAndTransformField : [];
     }
 }

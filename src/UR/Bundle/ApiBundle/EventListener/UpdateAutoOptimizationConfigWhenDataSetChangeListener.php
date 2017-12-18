@@ -81,6 +81,12 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $autoOptimizationConfigDataSets = $autoOptimizationConfigDataSets->toArray();
         }
 
+        foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
+            $autoOptimizationConfigDataSet = $this->updateOptimizationConfigDataSet($autoOptimizationConfigDataSet, $updateFields, $deleteFields);
+            $em->merge($autoOptimizationConfigDataSet);
+            $em->persist($autoOptimizationConfigDataSet);
+        }
+
         /** @var AutoOptimizationConfigInterface[] $autoOptimizationConfigDataSet */
         $autoOptimizationConfigs = array_map(function ($autoOptimizationConfigDataSet) {
             /** @var AutoOptimizationConfigDataSetInterface $autoOptimizationConfigDataSet */
@@ -91,12 +97,6 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $autoOptimizationConfig = $this->updateOptimizationConfig($autoOptimizationConfig, $entity, $updateFields, $deleteFields);
             $em->merge($autoOptimizationConfig);
             $em->persist($autoOptimizationConfig);
-        }
-
-        foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
-            $autoOptimizationConfigDataSet = $this->updateOptimizationConfigDataSet($autoOptimizationConfigDataSet, $updateFields, $deleteFields);
-            $em->merge($autoOptimizationConfigDataSet);
-            $em->persist($autoOptimizationConfigDataSet);
         }
     }
 

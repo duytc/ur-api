@@ -1,117 +1,124 @@
 <?php
 namespace UR\Bundle\ApiBundle\EventListener;
 
-use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\Table;
+use Doctrine\ORM\Event\LifecycleEventArgs;
+use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
-use UR\Domain\DTO\Report\Filters\AbstractFilter;
-use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
-use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\AutoOptimizationConfigInterface;
+use UR\Service\AutoOptimization\DataTrainingTableService;
+use UR\Service\DataSet\FieldType;
 
 class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
 {
-    const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';
+    const METRICS_KEY = 'metrics';
+    const TRANSFORMS_KEY = 'transforms';
 
-    public function preUpdate(PreUpdateEventArgs $args)
+    protected $changedAutoOptimizationConfigs;
+    /**
+     * @param LifecycleEventArgs $args
+     */
+    public function prePersist(LifecycleEventArgs $args)
     {
-        $entity = $args->getEntity();
-        $em = $args->getEntityManager();
-        if (!$entity instanceof DataSetInterface) {
+        $autoOptimizationConfig = $args->getEntity();
+
+
+        if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
             return;
         }
-        // get changes
-        if (!$args->hasChangedField(self::DIMENSIONS_KEY) && !$args->hasChangedField(self::METRICS_KEY)) {
-            return;
-        }
 
-        $uow = $em->getUnitOfWork();
-        $changedFields = $uow->getEntityChangeSet($entity);
-
-        if (!array_key_exists('dimensions', $changedFields) && !array_key_exists('metrics', $changedFields)) {
-            return;
-        }
-        // detect changed metrics, dimensions
-        $renameFields = [];
-        $actions = $entity->getActions() === null ? [] : $entity->getActions();
-
-        if (array_key_exists('rename', $actions)) {
-            $renameFields = $actions['rename'];
-        }
-
-        $newDimensions = [];
-        $newMetrics = [];
-        $updateDimensions = [];
-        $updateMetrics = [];
-        $deletedMetrics = [];
-        $deletedDimensions = [];
-
-        foreach ($changedFields as $field => $values) {
-            if ($field === 'dimensions') {
-                $this->getChangedFields($values, $renameFields, $newDimensions, $updateDimensions, $deletedDimensions);
-            }
-
-            if ($field === 'metrics') {
-                $this->getChangedFields($values, $renameFields, $newMetrics, $updateMetrics, $deletedMetrics);
-            }
-        }
-
-        $newFields = array_merge($newDimensions, $newMetrics);
-        $updateFields = array_merge($updateDimensions, $updateMetrics);
-        $deleteFields = array_merge($deletedDimensions, $deletedMetrics);
-//        /** @var AutoOptimizationConfigDataSetInterface[]|Collection $autoOptimizationConfigDataSets */
-//        $autoOptimizationConfigDataSets = $entity->getAutoOptimizationConfigDataSets();
-//        if ($autoOptimizationConfigDataSets instanceof Collection) {
-//            $autoOptimizationConfigDataSets = $autoOptimizationConfigDataSets->toArray();
-//        }
-//
-//        foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
-//            $autoOptimizationConfigDataSet = $this->updateOptimizationTrainingTable($autoOptimizationConfigDataSet, $updateFields, $deleteFields);
-//            $em->merge($autoOptimizationConfigDataSet);
-//            $em->persist($autoOptimizationConfigDataSet);
-//        }
-    }
-
-
-
-    private function mappingNewValue($field, array $updateFields)
-    {
-        return (array_key_exists($field, $updateFields)) ? $updateFields[$field] : $field;
-    }
-
-    private function deleteFieldValue($field, array $deleteFields)
-    {
-        return (array_key_exists($field, $deleteFields)) ? true : false;
+        $this->changedAutoOptimizationConfigs[] = $autoOptimizationConfig;
     }
 
     /**
-     * @param array $values
-     * @param array $renameFields
-     * @param array $newFields
-     * @param array $updateFields
-     * @param array $deletedFields
+     * @param PreUpdateEventArgs $args
      */
-    private function getChangedFields(array $values, array $renameFields, array &$newFields, array &$updateFields, array &$deletedFields)
+    public function preUpdate(PreUpdateEventArgs $args)
     {
-        $deletedFields = array_diff_assoc($values[0], $values[1]);
-        foreach ($renameFields as $renameField) {
-            if (!array_key_exists('from', $renameField) || !array_key_exists('to', $renameField)) {
+        $autoOptimizationConfig = $args->getEntity();
+
+        if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
+            return;
+        }
+
+        if ($args->hasChangedField(self::DIMENSIONS_KEY) || $args->hasChangedField(self::METRICS_KEY) || $args->hasChangedField(self::TRANSFORMS_KEY)) {
+            $this->changedAutoOptimizationConfigs[] = $autoOptimizationConfig;
+        }
+    }
+
+    /**
+     * @param OnFlushEventArgs $args
+     */
+    public function onFlush(OnFlushEventArgs $args)
+    {
+        $em = $args->getEntityManager();
+
+        if (empty($this->changedAutoOptimizationConfigs)) {
+            return;
+        }
+
+        foreach($this->changedAutoOptimizationConfigs as $autoOptimizationConfig) {
+            if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
                 continue;
             }
 
-            $oldFieldName = $renameField['from'];
-            $newFieldName = $renameField['to'];
+            $dataTrainingTableService = new DataTrainingTableService($em, '');
+            $dataTrainingTable = $dataTrainingTableService->getDataTrainingTable($autoOptimizationConfig->getId());
 
-            if (array_key_exists($oldFieldName, $deletedFields)) {
-                $updateFields[$oldFieldName] = $newFieldName;
-                unset($deletedFields[$oldFieldName]);
+            if (!$dataTrainingTable instanceof Table) {
+                continue; // does not exist => do not sync data training table
             }
+
+            // get all columns
+            $allColumnsCurrent = $dataTrainingTable->getColumns();
+            //keep default columns(primary key); remove columns of dimensions, metrics and the columns do not use
+            foreach ($allColumnsCurrent as $key => $value){
+                $columnName = $value->getName();
+                if (preg_match('/__/', $columnName)) {
+                    continue;
+                } else {
+                    $dataTrainingTable->dropColumn($columnName);
+                }
+            }
+
+            // get all columns
+            $dimensionsMetricsAndTransformField = $dataTrainingTableService->getDimensionsMetricsAndTransformField($autoOptimizationConfig);
+
+            foreach ($dimensionsMetricsAndTransformField as $fieldName => $fieldType) {
+                $fieldName = '`'.$fieldName.'`';
+                if ($fieldType === FieldType::NUMBER) {
+                    $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+                    $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
+                } else if ($fieldType === FieldType::DECIMAL) {
+                    $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+                    $dataTrainingTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
+                } else if ($fieldType === FieldType::LARGE_TEXT) {
+                    $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+                    $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => DataTrainingTableService::FIELD_LENGTH_LARGE_TEXT]);
+                } else if ($fieldType === FieldType::TEXT) {
+                    $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+                    $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => DataTrainingTableService::FIELD_LENGTH_TEXT]);
+                } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
+                    $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+                    $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
+                } else {
+                    $dataTrainingTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
+                }
+            }
+
+            $tables[] = $dataTrainingTable;
+            $schema = new Schema($tables);
+
+            // get query alter table
+            $dataTrainingTableService->syncSchema($schema);
+
+            $em->persist($autoOptimizationConfig);
         }
 
-        $newFields = array_diff_assoc($values[1], $values[0]);
-        foreach ($updateFields as $updateDimension) {
-            if (array_key_exists($updateDimension, $newFields)) {
-                unset($newFields[$updateDimension]);
-            }
-        }
+        $this->changedAutoOptimizationConfigs = [];
+
+        $em->flush();
     }
 }
