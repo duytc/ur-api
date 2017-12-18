@@ -65,6 +65,10 @@ class DataTrainingTableService
     {
         //create or get dataSet table
         $table = $this->createEmptyDataTrainingTable($autoOptimizationConfig);
+        if (!$table instanceof Table) {
+            return $collection;
+        }
+
         $tableName = $table->getName();
 
         try {
