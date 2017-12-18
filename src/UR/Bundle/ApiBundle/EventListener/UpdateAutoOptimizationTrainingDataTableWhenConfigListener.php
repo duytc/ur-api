@@ -43,9 +43,9 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
             return;
         }
 
-        if ($args->hasChangedField(self::DIMENSIONS_KEY) || $args->hasChangedField(self::METRICS_KEY) || $args->hasChangedField(self::TRANSFORMS_KEY)) {
+        //if ($args->hasChangedField(self::DIMENSIONS_KEY) || $args->hasChangedField(self::METRICS_KEY) || $args->hasChangedField(self::TRANSFORMS_KEY)) {
             $this->changedAutoOptimizationConfigs[] = $autoOptimizationConfig;
-        }
+        //}
     }
 
     /**
