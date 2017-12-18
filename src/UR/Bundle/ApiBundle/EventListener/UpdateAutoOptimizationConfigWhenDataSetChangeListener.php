@@ -92,6 +92,12 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $em->merge($autoOptimizationConfig);
             $em->persist($autoOptimizationConfig);
         }
+
+        foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
+            $autoOptimizationConfigDataSet = $this->updateOptimizationConfigDataSet($autoOptimizationConfigDataSet, $updateFields, $deleteFields);
+            $em->merge($autoOptimizationConfigDataSet);
+            $em->persist($autoOptimizationConfigDataSet);
+        }
     }
 
     private function updateOptimizationConfig(AutoOptimizationConfigInterface $autoOptimizationConfig, DataSetInterface $dataSet, array $updateFields, array $deleteFields)
@@ -526,6 +532,68 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         }
 
         return $autoOptimizationConfig;
+    }
+
+    private function updateOptimizationConfigDataSet(AutoOptimizationConfigDataSetInterface $autoOptimizationConfigDataSet, array $updateFields, array $deleteFields)
+    {
+        /* filters */
+        $filters = $autoOptimizationConfigDataSet->getFilters();
+        foreach ($filters as &$filter) {
+
+            if (!array_key_exists(AbstractFilter::FILTER_FIELD_KEY, $filter)) {
+                continue;
+            }
+            $field = $filter[AbstractFilter::FILTER_FIELD_KEY];
+
+            if ($this->deleteFieldValue($field, $deleteFields)) {
+                unset($field);
+                continue;
+            }
+
+            $field = $this->mappingNewValue($field, $updateFields);
+            $filter[AbstractFilter::FILTER_FIELD_KEY] = $field;
+        }
+        unset($filter);
+        $autoOptimizationConfigDataSet->setFilters($filters);
+        /*
+         * dimensions
+         * [
+         *      0 = <field>,
+         *      ...
+         * ]
+         */
+        $dimensions = $autoOptimizationConfigDataSet->getDimensions();
+        foreach ($dimensions as &$dimension) {
+
+            if ($this->deleteFieldValue($dimension, $deleteFields)) {
+                unset($dimension);
+                continue;
+            }
+
+            $dimension = $this->mappingNewValue($dimension, $updateFields);
+        }
+
+        $autoOptimizationConfigDataSet->setDimensions($dimensions);
+
+        /* metrics
+         * [
+         *      0 = <field>,
+         *      ...
+         * ]
+         */
+        $metrics = $autoOptimizationConfigDataSet->getMetrics();
+        foreach ($metrics as &$metric) {
+
+            if ($this->deleteFieldValue($metric, $deleteFields)) {
+                unset($metric);
+                continue;
+            }
+            $metric = $this->mappingNewValue($metric, $updateFields);
+        }
+
+        $autoOptimizationConfigDataSet->setMetrics($metrics);
+
+        return $autoOptimizationConfigDataSet;
     }
 
     private function mappingNewValue($field, array $updateFields)
