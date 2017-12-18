@@ -3,6 +3,7 @@ namespace UR\Bundle\ApiBundle\EventListener;
 
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
@@ -17,6 +18,9 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
     const TRANSFORMS_KEY = 'transforms';
 
     protected $changedAutoOptimizationConfigs;
+
+    /** @var  EntityManagerInterface */
+    private $em;
 
     /**
      * @param LifecycleEventArgs $args
@@ -55,6 +59,7 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
     public function onFlush(OnFlushEventArgs $args)
     {
         $em = $args->getEntityManager();
+        $this->em = $em;
 
         if (empty($this->changedAutoOptimizationConfigs)) {
             return;
@@ -63,7 +68,7 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
         $changedAutoOptimizationConfigs = $this->changedAutoOptimizationConfigs;
         $this->changedAutoOptimizationConfigs = [];
 
-        foreach($changedAutoOptimizationConfigs as $autoOptimizationConfig) {
+        foreach ($changedAutoOptimizationConfigs as $autoOptimizationConfig) {
             if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
                 continue;
             }
@@ -76,45 +81,15 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
             }
 
             // get all columns
-            $allColumnsCurrent = $dataTrainingTable->getColumns();
-            //keep default columns(primary key); remove columns of dimensions, metrics and the columns do not use
-            foreach ($allColumnsCurrent as $key => $value){
-                $columnName = $value->getName();
-                if (preg_match('/__/', $columnName)) {
-                    continue;
-                } else {
-                    $dataTrainingTable->dropColumn($columnName);
+            $allColumns = $dataTrainingTableService->getDimensionsMetricsAndTransformField($autoOptimizationConfig);
+
+            foreach ($allColumns as $fieldName => $fieldType) {
+                if (!$dataTrainingTable->hasColumn($fieldName)) {
+                    $dataTrainingTable = $this->addFieldForTable($dataTrainingTable, $fieldName, $fieldType);
                 }
             }
 
-            // get all columns
-            $dimensionsMetricsAndTransformField = $dataTrainingTableService->getDimensionsMetricsAndTransformField($autoOptimizationConfig);
-
-            foreach ($dimensionsMetricsAndTransformField as $fieldName => $fieldType) {
-                // TODO: Use quote $em->getConnection()->quoteIdentifier()
-                $fieldName = '`'.$fieldName.'`';
-                if ($fieldType === FieldType::NUMBER) {
-                    $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                    $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
-                } else if ($fieldType === FieldType::DECIMAL) {
-                    $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                    $dataTrainingTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
-                } else if ($fieldType === FieldType::LARGE_TEXT) {
-                    $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                    $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => DataTrainingTableService::FIELD_LENGTH_LARGE_TEXT]);
-                } else if ($fieldType === FieldType::TEXT) {
-                    $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                    $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => DataTrainingTableService::FIELD_LENGTH_TEXT]);
-                } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
-                    $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                    $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
-                } else {
-                    $dataTrainingTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
-                }
-            }
-
-            $tables[] = $dataTrainingTable;
-            $schema = new Schema($tables);
+            $schema = new Schema([$dataTrainingTable]);
 
             try {
                 // get query alter table
@@ -127,5 +102,37 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
         }
 
         $em->flush();
+    }
+
+    /**
+     * @param Table $dataTrainingTable
+     * @param $fieldName
+     * @param $fieldType
+     * @return Table
+     */
+    private function addFieldForTable(Table $dataTrainingTable, $fieldName, $fieldType)
+    {
+        $fieldName = $this->em->getConnection()->quoteIdentifier($fieldName);
+
+        if ($fieldType === FieldType::NUMBER) {
+            $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+            $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
+        } else if ($fieldType === FieldType::DECIMAL) {
+            $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+            $dataTrainingTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
+        } else if ($fieldType === FieldType::LARGE_TEXT) {
+            $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+            $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => DataTrainingTableService::FIELD_LENGTH_LARGE_TEXT]);
+        } else if ($fieldType === FieldType::TEXT) {
+            $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+            $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => DataTrainingTableService::FIELD_LENGTH_TEXT]);
+        } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
+            $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+            $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
+        } else {
+            $dataTrainingTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
+        }
+
+        return $dataTrainingTable;
     }
 }
