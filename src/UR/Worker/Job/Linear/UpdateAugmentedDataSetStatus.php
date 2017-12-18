@@ -7,12 +7,11 @@ use Pubvantage\Worker\Job\JobInterface;
 use Pubvantage\Worker\JobParams;
 use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
 
-class UpdateConnectedDataSourceReloadCompleted implements JobInterface
+class UpdateAugmentedDataSetStatus implements JobInterface
 {
-    const JOB_NAME = 'updateConnectedDataSourceReloadCompleted';
+    const JOB_NAME = 'UpdateAugmentedDataSetStatus';
 
     const DATA_SET_ID = 'data_set_id';
-    const CONNECTED_DATA_SOURCE_ID = 'connected_data_source_id';
 
     /**
      * @var DataSetJobSchedulerInterface
@@ -39,11 +38,9 @@ class UpdateConnectedDataSourceReloadCompleted implements JobInterface
     public function run(JobParams $params)
     {
         $dataSetId = (int)$params->getRequiredParam(self::DATA_SET_ID);
-        $connectedDataSourceId = (int)$params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
 
         $jobs[] = [
-            'task' => UpdateConnectedDataSourceReloadCompletedSubJob::JOB_NAME,
-            UpdateConnectedDataSourceReloadCompletedSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
+            'task' => UpdateAugmentedDataSetStatusSubJob::JOB_NAME
         ];
 
         // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once

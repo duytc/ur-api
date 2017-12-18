@@ -33,4 +33,9 @@ class JobParams
 
         return $this->params[$param];
     }
+
+    public function checkParamExist(string $param)
+    {
+        return array_key_exists($param, $this->params);
+    }
 }

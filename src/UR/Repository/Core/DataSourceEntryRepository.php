@@ -161,7 +161,7 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
             ->andWhere('qb1.endDate IS NOT NULL');
 
         $qb = $this->createQueryBuilder('de');
-        $timeSeriesEntries = $qb->where($qb->expr()->in('de.id', $qb1->getDQL()))
+        $removeDuplicateDatesEntries = $qb->where($qb->expr()->in('de.id', $qb1->getDQL()))
             ->setParameter('dataSource', $dataSource)
             ->getQuery()
             ->getResult();
@@ -173,7 +173,7 @@ class DataSourceEntryRepository extends EntityRepository implements DataSourceEn
             ->getQuery()
             ->getResult();
 
-        return array_merge($timeSeriesEntries, $emptyDateRangeEntries);
+        return array_merge($removeDuplicateDatesEntries, $emptyDateRangeEntries);
     }
 
 

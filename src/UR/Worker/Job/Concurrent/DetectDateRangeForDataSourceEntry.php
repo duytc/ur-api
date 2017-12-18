@@ -46,9 +46,9 @@ class DetectDateRangeForDataSourceEntry implements LockableJobInterface
         return self::JOB_NAME;
     }
 
-    public function getLockKey(JobParams $params): string
+    public function getLockKeys(JobParams $params): array
     {
-        return sprintf('ur-data-source-date-range-%d', $params->getRequiredParam(self::DATA_SOURCE_ID));
+        return [sprintf('ur-data-source-date-range-%d', $params->getRequiredParam(self::DATA_SOURCE_ID))];
     }
 
 

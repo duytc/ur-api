@@ -2,6 +2,7 @@
 
 namespace UR\DomainManager;
 
+use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
 use UR\Entity\Core\ImportHistory;
@@ -137,10 +138,16 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     }
 
 
-    public function deleteImportHistoryByConnectedDataSourceAndEntry ($connectedDataSourceId, $dataSourceEntryId)
+    public function deleteImportHistoryByConnectedDataSourceAndEntry ($connectedDataSource, $dataSourceEntry)
     {
-        return $this->repository->deleteImportHistoryByConnectedDataSourceAndEntry ($connectedDataSourceId, $dataSourceEntryId);
+        $importHistories = $this->findImportHistoriesByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource);
+        if ($importHistories instanceof Collection) {
+            $importHistories->toArray();
+        }
 
+        foreach ($importHistories as $importHistory) {
+            $this->delete($importHistory);
+        }
     }
 
     /**

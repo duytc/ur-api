@@ -391,7 +391,7 @@ class Manager
         $this->dataSetJobScheduler->addJob($jobData, $dataSetId);
     }
 
-    public function parseChunkFile($connectedDataSourceId, $dataSourceEntryId, $importHistoryId, $inputFile, $outputFile, $totalChunkKey, $chunksKey)
+    public function parseChunkFile($connectedDataSourceId, $dataSourceEntryId, $importHistoryId, $inputFile, $outputFile, $totalChunkKey, $chunksKey, $concurrentLockKey)
     {
         $jobData = [
             'task' => ParseChunkFile::JOB_NAME,
@@ -402,6 +402,7 @@ class Manager
             ParseChunkFile::TOTAL_CHUNK_KEY => $totalChunkKey,
             ParseChunkFile::CHUNKS_KEY => $chunksKey,
             ParseChunkFile::IMPORT_HISTORY_ID => $importHistoryId,
+            ParseChunkFile::CONCURRENT_LOCK_KEY => $concurrentLockKey,
         ];
 
         // concurrent job, we do not care what order it is processed in

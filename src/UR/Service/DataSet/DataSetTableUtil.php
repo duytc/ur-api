@@ -9,6 +9,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
@@ -64,7 +65,6 @@ class DataSetTableUtil implements DataSetTableUtilInterface
         $reloadStartDate = $reloadParameter->getStartDate();
         $reloadEndDate = $reloadParameter->getEndDate();
 
-        $dataSourceEntries = [];
         switch ($reloadType) {
             case ReloadParamsInterface::ALL_DATA_TYPE: {
                 $dataSourceEntries = $this->getAllDataSourceEntries($connectedDataSource);
@@ -78,6 +78,8 @@ class DataSetTableUtil implements DataSetTableUtilInterface
                 $dataSourceEntries = $this->getDataSourceEntriesByImportedDate($connectedDataSource, $reloadStartDate, $reloadEndDate);
                 break;
             }
+            default:
+                throw new Exception('Not support this type of reloading, type =%s', $reloadType);
         }
 
         if (empty($dataSourceEntries)) {
@@ -183,14 +185,10 @@ class DataSetTableUtil implements DataSetTableUtilInterface
      */
     private function getDataSourceEntriesByDetectedDateRange(ConnectedDataSourceInterface $connectedDataSource, $startDate, $endDate)
     {
-        /** For date come from mapping fields */
         $allEntries = $this->getAllDataSourceEntries($connectedDataSource);
-        $dataSourceEntriesFromMappingFields = $this->filterDataSourceEntriesByDetectedDateRange($allEntries, $startDate, $endDate);
+        $dataSourceEntries = $this->filterDataSourceEntriesByDetectedDateRange($allEntries, $startDate, $endDate);
 
-        /** For date come from transforms */
-        $dataSourceEntriesFromTransforms = $this->getEntriesByDataSetTable($connectedDataSource, $startDate, $endDate);
-
-        return array_merge($dataSourceEntriesFromMappingFields, $dataSourceEntriesFromTransforms);
+        return $dataSourceEntries;
     }
 
     /**
@@ -215,9 +213,21 @@ class DataSetTableUtil implements DataSetTableUtilInterface
                 continue;
             }
 
-            if (($dataSourceEntry->getStartDate() >= $startDate && $dataSourceEntry->getStartDate() <= $endDate) ||
-                ($dataSourceEntry->getEndDate() >= $startDate && $dataSourceEntry->getEndDate() <= $endDate)
+            $entryStartDate = $dataSourceEntry->getStartDate();
+            $entryEndDate = $dataSourceEntry->getEndDate();
+
+            if (!$entryStartDate instanceof DateTime && !$entryEndDate instanceof DateTime) {
+                continue;
+            }
+
+            $entryStartDate->setTime(0, 0, 0);
+            $entryEndDate->setTime(0, 0, 0);
+
+            if (($entryStartDate >= $startDate && $entryStartDate <= $endDate) ||
+                ($entryEndDate >= $startDate && $entryEndDate <= $endDate) ||
+                ($startDate >= $entryStartDate && $endDate <= $entryEndDate)
             ) {
+
                 $entries[] = $dataSourceEntry;
             }
         }
@@ -354,7 +364,7 @@ class DataSetTableUtil implements DataSetTableUtilInterface
 
                 $imports[] = $row[DataSetInterface::IMPORT_ID_COLUMN];
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
 
         }
 

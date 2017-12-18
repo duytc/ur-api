@@ -86,7 +86,7 @@ class ParsedDataImporter
             }
 
             if ($rows->count() < 1) {
-                return true;
+                return new Collection($columns, $rows);
             }
 
             $insert_values = array();

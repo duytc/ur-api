@@ -65,7 +65,8 @@ class DeleteConnectedDataSource implements SplittableJobInterface
             ],
             ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
             ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
-            ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
+            ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
+            ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
         ], $dataSetId, $params);
     }
 }
