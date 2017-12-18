@@ -69,7 +69,7 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
             }
 
             $dataTrainingTableService = new DataTrainingTableService($em, '');
-            $dataTrainingTable = $dataTrainingTableService->getDataTrainingTable($autoOptimizationConfig->getId());
+            $dataTrainingTable = $dataTrainingTableService->createEmptyDataTrainingTable($autoOptimizationConfig);
 
             if (!$dataTrainingTable instanceof Table) {
                 continue; // does not exist => do not sync data training table
