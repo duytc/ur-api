@@ -88,6 +88,7 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
             $dimensionsMetricsAndTransformField = $dataTrainingTableService->getDimensionsMetricsAndTransformField($autoOptimizationConfig);
 
             foreach ($dimensionsMetricsAndTransformField as $fieldName => $fieldType) {
+                // TODO: Use quote $em->getConnection()->quoteIdentifier()
                 $fieldName = '`'.$fieldName.'`';
                 if ($fieldType === FieldType::NUMBER) {
                     $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
@@ -112,8 +113,12 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
             $tables[] = $dataTrainingTable;
             $schema = new Schema($tables);
 
-            // get query alter table
-            $dataTrainingTableService->syncSchema($schema);
+            try {
+                // get query alter table
+                $dataTrainingTableService->syncSchema($schema);
+            } catch (\Exception $e) {
+                // TODO 
+            }
 
             $em->persist($autoOptimizationConfig);
         }

@@ -43,6 +43,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         $uow = $em->getUnitOfWork();
         $changedFields = $uow->getEntityChangeSet($entity);
 
+        // TODO: do not hardcode, use const instead: dimensions, metrics, rename
         if (!array_key_exists('dimensions', $changedFields) && !array_key_exists('metrics', $changedFields)) {
             return;
         }

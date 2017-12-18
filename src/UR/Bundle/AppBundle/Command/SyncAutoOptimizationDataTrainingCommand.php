@@ -111,6 +111,7 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
 
         $dateRange = $autoOptimizationConfig->getDateRange();
         $startDateEndDateValue = $this->getDynamicDate($dateRange);
+        //TODO: Checking condition for array
         $startDate = $startDateEndDateValue[0];
         $endDate = $startDateEndDateValue[1];
 
