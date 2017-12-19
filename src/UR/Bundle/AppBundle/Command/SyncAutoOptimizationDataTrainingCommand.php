@@ -131,9 +131,6 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         $reportBuilder = $container->get('ur.services.report.report_builder');
         $result = $reportBuilder->getReport($params);
 
-        /* generate final report */
-        $result->generateReports();
-
         return $result;
     }
 }
