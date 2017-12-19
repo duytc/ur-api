@@ -29,6 +29,8 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	const DATE_DYNAMIC_VALUE_LAST_30_DAYS = 'last 30 days';
 	const DATE_DYNAMIC_VALUE_THIS_MONTH = 'this month';
 	const DATE_DYNAMIC_VALUE_LAST_MONTH = 'last month';
+    const DATE_DYNAMIC_VALUE_LAST_2_MONTH = 'last 2 months';
+    const DATE_DYNAMIC_VALUE_LAST_3_MONTH = 'last 3 months';
 
 	/* supported date types */
 	public static $SUPPORTED_DATE_TYPES = [
@@ -324,6 +326,16 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 			$startDate = date('Y-m-01', strtotime('last month'));
 			$endDate = date('Y-m-t', strtotime('last month'));
 		}
+
+        if (self::DATE_DYNAMIC_VALUE_LAST_2_MONTH == $dateValue) {
+            $startDate = date('Y-m-01', strtotime('-2 month'));
+            $endDate = date('Y-m-t', strtotime('-2 month'));
+        }
+
+        if (self::DATE_DYNAMIC_VALUE_LAST_3_MONTH == $dateValue) {
+            $startDate = date('Y-m-01', strtotime('-3 month'));
+            $endDate = date('Y-m-t', strtotime('-3 month'));
+        }
 
 		return [$startDate, $endDate];
 	}

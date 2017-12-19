@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\DomainManager\AutoOptimizationConfigManagerInterface;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
@@ -21,13 +22,7 @@ use UR\Service\Report\ReportBuilderInterface;
 
 class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
 {
-    /* dateRange value */
-    const DATE_DYNAMIC_VALUE_LAST_7_DAYS = 'last 7 days';
-    const DATE_DYNAMIC_VALUE_LAST_30_DAYS = 'last 30 days';
-    const DATE_DYNAMIC_VALUE_THIS_MONTH = 'this month';
-    const DATE_DYNAMIC_VALUE_LAST_MONTH = 'last month';
-    const DATE_DYNAMIC_VALUE_LAST_2_MONTH = 'last 2 months';
-    const DATE_DYNAMIC_VALUE_LAST_3_MONTH = 'last 3 months';
+    const COMMAND_NAME = 'ur:auto-optimization:data-training:sync';
     const INPUT_DATA_FORCE = 'force';
 
     /** @var Logger */
@@ -36,9 +31,9 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('ur:auto-optimization:data-training:sync')
+            ->setName(self::COMMAND_NAME)
             ->addArgument('autoOptimizationConfigId', InputArgument::REQUIRED, 'Auto Optimization Config Id')
-            ->addOption(self::INPUT_DATA_FORCE, 'f',InputOption::VALUE_NONE,'remove all old data')
+            ->addOption(self::INPUT_DATA_FORCE, 'f', InputOption::VALUE_NONE, 'Remove all old data')
             ->setDescription('Synchronization AutoOptimizationConfig with __auto_optimization_data_training table');
     }
 
@@ -109,10 +104,10 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
             return $a->toArray();
         }, $autoOptimizationConfigDataSets);
 
-        $dateRange = $autoOptimizationConfig->getDateRange();
-        $startDateEndDateValue = $this->getDynamicDate($dateRange);
-        $startDate = isset($startDateEndDateValue[0]) ? $startDateEndDateValue[0] : '';
-        $endDate = isset($startDateEndDateValue[1]) ? $startDateEndDateValue[1] : '';
+        $dateFilter = new DateFilter();
+        $dateRange = $dateFilter->getDynamicDate(DateFilter::DATE_TYPE_DYNAMIC, $autoOptimizationConfig->getDateRange());
+        $startDate = reset($dateRange);
+        $endDate = end($dateRange);
 
         $requestParams = [
             ParamsBuilder::DATA_SET_KEY => $dataSets,
@@ -140,49 +135,5 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         $result->generateReports();
 
         return $result;
-    }
-
-    /**
-     * get startDate and endDate from dynamic date value
-     *
-     * @param string $dateValue
-     * @return array as [startDate, endDate], on fail => return ['', '']
-     */
-    public static function getDynamicDate($dateValue)
-    {
-        $startDate = '';
-        $endDate = '';
-
-        if (self::DATE_DYNAMIC_VALUE_LAST_7_DAYS == $dateValue) {
-            $startDate = date('Y-m-d', strtotime('-7 day'));
-            $endDate = date('Y-m-d', strtotime('-1 day'));
-        }
-
-        if (self::DATE_DYNAMIC_VALUE_LAST_30_DAYS == $dateValue) {
-            $startDate = date('Y-m-d', strtotime('-30 day'));
-            $endDate = date('Y-m-d', strtotime('-1 day'));
-        }
-
-        if (self::DATE_DYNAMIC_VALUE_THIS_MONTH == $dateValue) {
-            $startDate = date('Y-m-01', strtotime('this month'));
-            $endDate = date('Y-m-d', strtotime('now'));
-        }
-
-        if (self::DATE_DYNAMIC_VALUE_LAST_MONTH == $dateValue) {
-            $startDate = date('Y-m-01', strtotime('last month'));
-            $endDate = date('Y-m-t', strtotime('last month'));
-        }
-
-        if (self::DATE_DYNAMIC_VALUE_LAST_2_MONTH == $dateValue) {
-            $startDate = date('Y-m-01', strtotime('-2 month'));
-            $endDate = date('Y-m-t', strtotime('-2 month'));
-        }
-
-        if (self::DATE_DYNAMIC_VALUE_LAST_3_MONTH == $dateValue) {
-            $startDate = date('Y-m-01', strtotime('-3 month'));
-            $endDate = date('Y-m-t', strtotime('-3 month'));
-        }
-
-        return [$startDate, $endDate];
     }
 }
