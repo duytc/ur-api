@@ -489,4 +489,36 @@ class DataTrainingTableService
 
         return $dimensionsMetricsAndTransformField ? $dimensionsMetricsAndTransformField : [];
     }
+
+    /**
+     * @param Table $dataTrainingTable
+     * @param $fieldName
+     * @param $fieldType
+     * @return Table
+     */
+    public function addFieldForTable(Table $dataTrainingTable, $fieldName, $fieldType)
+    {
+        $fieldName = $this->em->getConnection()->quoteIdentifier($fieldName);
+
+        if ($fieldType === FieldType::NUMBER) {
+            $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+            $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
+        } else if ($fieldType === FieldType::DECIMAL) {
+            $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+            $dataTrainingTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
+        } else if ($fieldType === FieldType::LARGE_TEXT) {
+            $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+            $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => DataTrainingTableService::FIELD_LENGTH_LARGE_TEXT]);
+        } else if ($fieldType === FieldType::TEXT) {
+            $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+            $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => DataTrainingTableService::FIELD_LENGTH_TEXT]);
+        } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
+            $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
+            $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
+        } else {
+            $dataTrainingTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
+        }
+
+        return $dataTrainingTable;
+    }
 }
