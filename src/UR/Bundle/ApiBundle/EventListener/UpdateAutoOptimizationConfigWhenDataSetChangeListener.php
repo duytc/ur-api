@@ -16,6 +16,9 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
 {
     const METRICS_KEY = 'metrics';
     const DIMENSIONS_KEY = 'dimensions';
+    const RENAME_KEY = 'rename';
+    const FROM_KEY = 'from';
+    const TO_KEY = 'to';
     const EXPRESSIONS_KEY = 'expressions';
     const EXPRESSION_KEY = 'expression';
     const CONDITIONS_KEY = 'conditions';
@@ -43,16 +46,15 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         $uow = $em->getUnitOfWork();
         $changedFields = $uow->getEntityChangeSet($entity);
 
-        // TODO: do not hardcode, use const instead: dimensions, metrics, rename
-        if (!array_key_exists('dimensions', $changedFields) && !array_key_exists('metrics', $changedFields)) {
+        if (!array_key_exists(self::DIMENSIONS_KEY, $changedFields) && !array_key_exists(self::METRICS_KEY, $changedFields)) {
             return;
         }
         // detect changed metrics, dimensions
         $renameFields = [];
         $actions = $entity->getActions() === null ? [] : $entity->getActions();
 
-        if (array_key_exists('rename', $actions)) {
-            $renameFields = $actions['rename'];
+        if (array_key_exists(self::RENAME_KEY, $actions)) {
+            $renameFields = $actions[self::RENAME_KEY];
         }
 
         $newDimensions = [];
@@ -63,16 +65,16 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         $deletedDimensions = [];
 
         foreach ($changedFields as $field => $values) {
-            if ($field === 'dimensions') {
+            if ($field === self::DIMENSIONS_KEY) {
                 $this->getChangedFields($values, $renameFields, $newDimensions, $updateDimensions, $deletedDimensions);
             }
 
-            if ($field === 'metrics') {
+            if ($field === self::METRICS_KEY) {
                 $this->getChangedFields($values, $renameFields, $newMetrics, $updateMetrics, $deletedMetrics);
             }
         }
 
-        $newFields = array_merge($newDimensions, $newMetrics);
+        //$newFields = array_merge($newDimensions, $newMetrics);
         $updateFields = array_merge($updateDimensions, $updateMetrics);
         $deleteFields = array_merge($deletedDimensions, $deletedMetrics);
 
@@ -618,12 +620,12 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
     {
         $deletedFields = array_diff_assoc($values[0], $values[1]);
         foreach ($renameFields as $renameField) {
-            if (!array_key_exists('from', $renameField) || !array_key_exists('to', $renameField)) {
+            if (!array_key_exists(self::FROM_KEY, $renameField) || !array_key_exists(self::TO_KEY, $renameField)) {
                 continue;
             }
 
-            $oldFieldName = $renameField['from'];
-            $newFieldName = $renameField['to'];
+            $oldFieldName = $renameField[self::FROM_KEY];
+            $newFieldName = $renameField[self::TO_KEY];
 
             if (array_key_exists($oldFieldName, $deletedFields)) {
                 $updateFields[$oldFieldName] = $newFieldName;
