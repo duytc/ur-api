@@ -69,7 +69,7 @@ class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
         $this->changedAutoOptimizationConfigs = [];
 
         foreach ($changedAutoOptimizationConfigs as $autoOptimizationConfig) {
-            if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
+            if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface || empty($autoOptimizationConfig->getId())) {
                 continue;
             }
 
