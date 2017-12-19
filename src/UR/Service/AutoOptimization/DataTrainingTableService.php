@@ -85,6 +85,12 @@ class DataTrainingTableService
                 if (!preg_match('#[_a-z]+#i', $column)) {
                     throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
                 }
+
+                if(preg_match('/\s/',$k)) {
+                    $newKey = str_replace(' ', '_', $k);
+                    unset($columns[$k]);
+                    $columns[$newKey] = $column;
+                }
             }
 
             if ($rows->count() < 1) {
@@ -99,6 +105,14 @@ class DataTrainingTableService
             foreach ($rows as $index => $row) {
                 if (!is_array($row)) {
                     continue;
+                }
+
+                foreach ($row as $key => $value) {
+                    if(preg_match('/\s/',$key)) {
+                        $newKey = str_replace(' ', '_', $key);
+                        unset($row[$key]);
+                        $row[$newKey] = $value;
+                    }
                 }
 
                 if ($setOrderColumns == false) {
@@ -478,7 +492,8 @@ class DataTrainingTableService
             $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
             foreach ($fields as $field) {
                 if (isset($field['field']) && $field['type']) {
-                    $fieldNameFromTransform[$field['field']] = $field['type'];
+                    $fieldNameTransform = str_replace(' ', '_', $field['field']);
+                    $fieldNameFromTransform[$fieldNameTransform] = $field['type'];
                 }
             }
         }
