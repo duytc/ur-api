@@ -17,6 +17,7 @@ use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
 use UR\Service\DTO\Report\ReportResultInterface;
+use UR\Service\Report\SqlBuilder;
 
 class DataTrainingTableService
 {
@@ -258,7 +259,7 @@ class DataTrainingTableService
         $table = $this->getDataTrainingTable($autoOptimizationConfig->getId());
 
         if ($table instanceof Table) {
-            return $table; // existed => return current table
+            //return $table; // existed => return current table
         }
 
         // not existed => create new
@@ -274,7 +275,7 @@ class DataTrainingTableService
         // get all columns
         $dimensionsMetricsAndTransformField = $this->getDimensionsMetricsAndTransformField($autoOptimizationConfig);
         foreach ($dimensionsMetricsAndTransformField as $fieldName => $fieldType) {
-            $fieldName = '`'.$fieldName.'`';
+            $fieldName = $this->em->getConnection()->quoteIdentifier($fieldName);
             if ($fieldType === FieldType::NUMBER) {
                 $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
                 $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
@@ -474,7 +475,33 @@ class DataTrainingTableService
         foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
             $dimensions = $autoOptimizationConfigDataSet->getDimensions();
             $metrics = $autoOptimizationConfigDataSet->getMetrics();
-            $dimensionsAndMetricsSelected = array_merge($dimensions, $metrics);
+            $dimensionsAndMetricsSelected = array_merge($dimensionsAndMetricsSelected, $dimensions);
+            $dimensionsAndMetricsSelected = array_merge($dimensionsAndMetricsSelected, $metrics);
+        }
+
+        // joinBy
+        $joinBy = $autoOptimizationConfig->getJoinBy();
+        if (is_array($joinBy) && !empty($joinBy)) {
+            foreach ($joinBy as &$joinBy_) {
+                if (!array_key_exists(SqlBuilder::JOIN_CONFIG_JOIN_FIELDS, $joinBy_)) {
+                    continue;
+                }
+                $joinFields = $joinBy_[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
+                foreach ($joinFields as &$joinField) {
+                    if (!array_key_exists(SqlBuilder::JOIN_CONFIG_DATA_SET, $joinField)) {
+                        continue;
+                    }
+
+                    if (!array_key_exists(SqlBuilder::JOIN_CONFIG_FIELD, $joinField)) {
+                        continue;
+                    }
+                    $field = $joinField[SqlBuilder::JOIN_CONFIG_FIELD];
+                    $dimensionsAndMetricsSelected = array_values(array_diff($dimensionsAndMetricsSelected, array($field)));
+                    }
+
+                $dimensionsAndMetricsSelected = array_merge(array($joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]), $dimensionsAndMetricsSelected);
+            }
+            unset($joinBy, $joinField, $field);
         }
 
         foreach ($autoOptimizationConfig->getFieldTypes() as $key => $value) {
