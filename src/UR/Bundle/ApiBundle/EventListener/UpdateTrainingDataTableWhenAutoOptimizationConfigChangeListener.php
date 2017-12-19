@@ -10,7 +10,7 @@ use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;
 
-class UpdateAutoOptimizationTrainingDataTableWhenConfigListener
+class UpdateTrainingDataTableWhenAutoOptimizationConfigChangeListener
 {
     const DIMENSIONS_KEY = 'dimensions';
     const METRICS_KEY = 'metrics';
