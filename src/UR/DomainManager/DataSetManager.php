@@ -3,7 +3,6 @@
 namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
-use UR\Entity\Core\AutoOptimizationConfig;
 use UR\Entity\Core\AutoOptimizationConfigDataSet;
 use UR\Entity\Core\LinkedMapDataSet;
 use UR\Entity\Core\ReportViewDataSet;

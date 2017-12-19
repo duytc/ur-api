@@ -341,7 +341,11 @@ class DataTrainingTableService
             return false;
         }
 
-        $sm->dropTable($tableName);
+        try {
+            $sm->dropTable($tableName);
+        } catch (Exception $e) {
+
+        }
 
         return true;
     }

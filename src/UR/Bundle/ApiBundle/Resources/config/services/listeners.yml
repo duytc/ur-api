@@ -210,13 +210,6 @@ services:
         arguments:
         tags:
             - { name: doctrine.event_listener, event: preUpdate }
-
-    ur_api.event_listener.update_auto_optimization_config_when_data_set_change_listener:
-        class: UR\Bundle\ApiBundle\EventListener\UpdateAutoOptimizationConfigWhenDataSetChangeListener
-        arguments:
-        tags:
-            - { name: doctrine.event_listener, event: preUpdate }
-
     ur_api.event_listener.delete_condition_transform_value_when_report_view_remove_ransform:
         class: UR\Bundle\ApiBundle\EventListener\DeleteConditionTransformValueWhenReportViewRemoveTransformListener
         arguments:
@@ -224,6 +217,12 @@ services:
             - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: preRemove }
             - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.update_auto_optimization_config_when_data_set_change_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateAutoOptimizationConfigWhenDataSetChangeListener
+        arguments:
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
 
     ur_api.event_listener.update_training_data_table_when_auto_optimization_config_change_listener:
         class: UR\Bundle\ApiBundle\EventListener\UpdateTrainingDataTableWhenAutoOptimizationConfigChangeListener
@@ -238,6 +237,7 @@ services:
         arguments:
         tags:
             - { name: doctrine.event_listener, event: preUpdate }
+
     ur_api.event_listener.delete_data_training_table_listener:
         class: UR\Bundle\ApiBundle\EventListener\DeleteDataTrainingTableListener
         arguments:

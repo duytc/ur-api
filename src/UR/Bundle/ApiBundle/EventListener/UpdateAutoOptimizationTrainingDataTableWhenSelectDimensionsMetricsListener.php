@@ -14,8 +14,6 @@ class UpdateAutoOptimizationTrainingDataTableWhenSelectDimensionsMetricsListener
     const DIMENSIONS_KEY = 'dimensions';
     const METRICS_KEY = 'metrics';
 
-    protected $changedAutoOptimizationConfigs;
-
     /** @var  EntityManagerInterface */
     private $em;
 
@@ -34,7 +32,6 @@ class UpdateAutoOptimizationTrainingDataTableWhenSelectDimensionsMetricsListener
 
         if ($args->hasChangedField(self::DIMENSIONS_KEY) || $args->hasChangedField(self::METRICS_KEY)) {
             $autoOptimizationConfig = $optimizationConfigDataSet->getAutoOptimizationConfig();
-            $this->changedAutoOptimizationConfigs[] = $optimizationConfigDataSet;
 
             if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
                 return;
