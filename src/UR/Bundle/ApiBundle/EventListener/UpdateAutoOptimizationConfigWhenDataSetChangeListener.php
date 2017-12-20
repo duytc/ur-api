@@ -74,7 +74,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             }
         }
 
-        //$newFields = array_merge($newDimensions, $newMetrics);
+        $newFields = array_merge($newDimensions, $newMetrics);
         $updateFields = array_merge($updateDimensions, $updateMetrics);
         $deleteFields = array_merge($deletedDimensions, $deletedMetrics);
 
@@ -434,19 +434,19 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          * ]
          */
         $dimensions = $autoOptimizationConfig->getDimensions();
-        foreach ($dimensions as &$dimension) {
+        foreach ($dimensions as $key => $dimension) {
             list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($dimension);
             if ($dataSetIdFromField != $dataSet->getId()) {
                 continue;
             }
 
             if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
-                unset($dimension);
+                unset($dimensions[$key]);
                 continue;
             }
 
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
-            $dimension = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+            $dimensions[$key] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
 
         $autoOptimizationConfig->setDimensions($dimensions);
@@ -458,19 +458,19 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          * ]
          */
         $metrics = $autoOptimizationConfig->getMetrics();
-        foreach ($metrics as &$metric) {
+        foreach ($metrics as $key => $metric) {
             list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($metric);
             if ($dataSetIdFromField != $dataSet->getId()) {
                 continue;
             }
 
             if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
-                unset($metric);
+                unset($metrics[$key]);
                 continue;
             }
 
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);;
-            $metric = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+            $metrics[$key] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
 
         $autoOptimizationConfig->setMetrics($metrics);
@@ -522,6 +522,12 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         return $autoOptimizationConfig;
     }
 
+    /**
+     * @param AutoOptimizationConfigDataSetInterface $autoOptimizationConfigDataSet
+     * @param array $updateFields
+     * @param array $deleteFields
+     * @return AutoOptimizationConfigDataSetInterface
+     */
     private function updateOptimizationConfigDataSet(AutoOptimizationConfigDataSetInterface $autoOptimizationConfigDataSet, array $updateFields, array $deleteFields)
     {
         /* filters */
@@ -551,14 +557,14 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          * ]
          */
         $dimensions = $autoOptimizationConfigDataSet->getDimensions();
-        foreach ($dimensions as &$dimension) {
+        foreach ($dimensions as $key => $dimension) {
 
             if ($this->deleteFieldValue($dimension, $deleteFields)) {
-                unset($dimension);
+                unset($dimensions[$key]);
                 continue;
             }
 
-            $dimension = $this->mappingNewValue($dimension, $updateFields);
+            $dimensions[$key] = $this->mappingNewValue($dimension, $updateFields);
         }
 
         $autoOptimizationConfigDataSet->setDimensions($dimensions);
@@ -570,13 +576,13 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          * ]
          */
         $metrics = $autoOptimizationConfigDataSet->getMetrics();
-        foreach ($metrics as &$metric) {
+        foreach ($metrics as $key => $metric) {
 
             if ($this->deleteFieldValue($metric, $deleteFields)) {
-                unset($metric);
+                unset($metrics[$key]);
                 continue;
             }
-            $metric = $this->mappingNewValue($metric, $updateFields);
+            $metrics[$key] = $this->mappingNewValue($metric, $updateFields);
         }
 
         $autoOptimizationConfigDataSet->setMetrics($metrics);
