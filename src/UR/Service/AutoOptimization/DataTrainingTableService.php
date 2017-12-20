@@ -483,6 +483,11 @@ class DataTrainingTableService
             unset($dimensions, $metrics, $dimensionsAndMetricsSelectedDataSet);
         }
 
+        foreach ($dimensionsAndMetrics as $fieldName => $fieldType) {
+            if (!in_array($fieldName, $dimensionsAndMetricsSelected)) {
+                unset($dimensionsAndMetrics[$fieldName]);
+            }
+        }
         // joinBy
         $joinBy = $autoOptimizationConfig->getJoinBy();
         if (is_array($joinBy) && !empty($joinBy)) {
@@ -500,18 +505,12 @@ class DataTrainingTableService
                         continue;
                     }
                     $field = $joinField[SqlBuilder::JOIN_CONFIG_FIELD].'_'.$joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
-                    $dimensionsAndMetricsSelected = array_values(array_diff($dimensionsAndMetricsSelected, array($field)));
+                    $dimensionsAndMetrics = array_values(array_diff($dimensionsAndMetrics, array($field)));
                 }
                 $fieldNameOutPutJoin = str_replace(' ', '_', $joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]);
-                $dimensionsAndMetricsSelected = array_merge(array($fieldNameOutPutJoin), $dimensionsAndMetricsSelected);
+                $dimensionsAndMetrics = array_merge(array($fieldNameOutPutJoin), $dimensionsAndMetrics);
             }
             unset($joinBy, $joinField, $field);
-        }
-
-        foreach ($dimensionsAndMetrics as $fieldName => $fieldType) {
-            if (!in_array($fieldName, $dimensionsAndMetricsSelected)) {
-                unset($dimensionsAndMetrics[$fieldName]);
-            }
         }
 
         // $dimensions from autoOptimizationConfig transforms
