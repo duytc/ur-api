@@ -502,8 +502,8 @@ class DataTrainingTableService
                     $field = $joinField[SqlBuilder::JOIN_CONFIG_FIELD].'_'.$joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
                     $dimensionsAndMetricsSelected = array_values(array_diff($dimensionsAndMetricsSelected, array($field)));
                 }
-
-                $dimensionsAndMetricsSelected = array_merge(array($joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]), $dimensionsAndMetricsSelected);
+                $fieldNameOutPutJoin = str_replace(' ', '_', $joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]);
+                $dimensionsAndMetricsSelected = array_merge(array($fieldNameOutPutJoin), $dimensionsAndMetricsSelected);
             }
             unset($joinBy, $joinField, $field);
         }
