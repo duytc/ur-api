@@ -517,7 +517,13 @@ class DataTrainingTableService
         foreach ($dimensionsAndMetrics as $fieldName => $fieldType) {
 
             if(preg_match('/\s/', $fieldName)) {
-                $fieldName = str_replace(' ', '_', $fieldName);
+                $newFieldName = str_replace(' ', '_', $fieldName);
+                if (in_array($newFieldName, $dimensionsAndMetricsSelected)) {
+                    unset($dimensionsAndMetrics[$fieldName]);
+                    $dimensionsAndMetrics[$newFieldName] = $fieldType;
+
+                    continue;
+                }
             }
 
             if (!in_array($fieldName, $dimensionsAndMetricsSelected)) {
