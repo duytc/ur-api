@@ -483,11 +483,6 @@ class DataTrainingTableService
             unset($dimensions, $metrics, $dimensionsAndMetricsSelectedDataSet);
         }
 
-        foreach ($dimensionsAndMetrics as $fieldName => $fieldType) {
-            if (!in_array($fieldName, $dimensionsAndMetricsSelected)) {
-                unset($dimensionsAndMetrics[$fieldName]);
-            }
-        }
         // joinBy
         $joinBy = $autoOptimizationConfig->getJoinBy();
         if (is_array($joinBy) && !empty($joinBy)) {
@@ -505,12 +500,29 @@ class DataTrainingTableService
                         continue;
                     }
                     $field = $joinField[SqlBuilder::JOIN_CONFIG_FIELD].'_'.$joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
-                    $dimensionsAndMetrics = array_values(array_diff($dimensionsAndMetrics, array($field)));
+                    $dimensionsAndMetricsSelected = array_values(array_diff($dimensionsAndMetricsSelected, array($field)));
                 }
-                $fieldNameOutPutJoin = str_replace(' ', '_', $joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]);
-                $dimensionsAndMetrics = array_merge(array($fieldNameOutPutJoin), $dimensionsAndMetrics);
+
+                if(preg_match('/\s/', $joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD])) {
+                    $fieldNameOutPutJoin = str_replace(' ', '_', $joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]);
+                    $dimensionsAndMetricsSelected = array_merge(array($fieldNameOutPutJoin), $dimensionsAndMetricsSelected);
+                } else {
+                    $dimensionsAndMetricsSelected = array_merge(array($joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]), $dimensionsAndMetricsSelected);
+                }
+
             }
             unset($joinBy, $joinField, $field);
+        }
+
+        foreach ($dimensionsAndMetrics as $fieldName => $fieldType) {
+
+            if(preg_match('/\s/', $fieldName)) {
+                $fieldName = str_replace(' ', '_', $fieldName);
+            }
+
+            if (!in_array($fieldName, $dimensionsAndMetricsSelected)) {
+                unset($dimensionsAndMetrics[$fieldName]);
+            }
         }
 
         // $dimensions from autoOptimizationConfig transforms
