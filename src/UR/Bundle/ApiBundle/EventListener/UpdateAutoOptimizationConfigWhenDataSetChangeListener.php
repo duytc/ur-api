@@ -183,8 +183,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             if (is_array($transform) && $transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::GROUP_TRANSFORM) {
                 $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
                 foreach ($fields as &$field) {
-                    $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $field);
-                    $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $field);
+                    list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($field);
 
                     if ($dataSetIdFromField != $dataSet->getId()) {
                         continue;
@@ -216,9 +215,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                         foreach ($conditions as &$condition) {
                             $expressions = $condition[self::EXPRESSIONS_KEY];
                             foreach ($expressions as &$expression) {
-                                $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $expression[self::VAR_KEY]);
-                                $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $expression[self::VAR_KEY]);
-
+                                list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($expression[self::VAR_KEY]);
                                 if ($dataSetIdFromField != $dataSet->getId()) {
                                     continue;
                                 }
@@ -252,8 +249,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                     $expressionData = [];
                     foreach ($expressionItems as $expressionItem) {
                         $item = substr(trim($expressionItem), 1, -1);
-                        $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $item);
-                        $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $item);
+                        list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($item);
                         if ($dataSetIdFromField != $dataSet->getId()) {
                             continue;
                         }
@@ -274,8 +270,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                     if (array_key_exists(self::DEFAULT_VALUES_KEY, $field)) {
                         $defaultValues = $field[self::DEFAULT_VALUES_KEY];
                         foreach ($defaultValues as &$defaultValue) {
-                            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $defaultValue[self::CONDITION_FIELD_KEY]);
-                            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $defaultValue[self::CONDITION_FIELD_KEY]);
+                            list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($defaultValue[self::CONDITION_FIELD_KEY]);
                             if ($dataSetIdFromField != $dataSet->getId()) {
                                 continue;
                             }
@@ -313,8 +308,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                         }
                     }
                     foreach ($fieldNames as &$fieldName) {
-                        $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $fieldName);
-                        $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $fieldName);
+                        list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($fieldName);
                         if ($dataSetIdFromField != $dataSet->getId()) {
                             continue;
                         }
@@ -339,8 +333,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
                 foreach ($fields as &$field) {
                     //numerator
-                    $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $field[self::NUMERATOR_KEY]);
-                    $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $field[self::NUMERATOR_KEY]);
+                    list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($field[self::NUMERATOR_KEY]);
                     if ($dataSetIdFromField != $dataSet->getId()) {
                         continue;
                     }
@@ -354,8 +347,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                     }
 
                     //denominator
-                    $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $field[self::DENOMINATOR_KEY]);
-                    $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $field[self::DENOMINATOR_KEY]);
+                    list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($field[self::DENOMINATOR_KEY]);
                     if ($dataSetIdFromField != $dataSet->getId()) {
                         continue;
                     }
@@ -417,8 +409,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         $fieldTypes = $autoOptimizationConfig->getFieldTypes();
         $newFieldTypes = [];
         foreach ($fieldTypes as $field => $type) {
-            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $field);
-            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $field);
+            list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($field);
             if ($dataSetIdFromField != $dataSet->getId()) {
                 $newFieldTypes[$field] = $type;
                 continue;
@@ -444,8 +435,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          */
         $dimensions = $autoOptimizationConfig->getDimensions();
         foreach ($dimensions as &$dimension) {
-            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $dimension);
-            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $dimension);
+            list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($dimension);
             if ($dataSetIdFromField != $dataSet->getId()) {
                 continue;
             }
@@ -469,8 +459,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          */
         $metrics = $autoOptimizationConfig->getMetrics();
         foreach ($metrics as &$metric) {
-            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $metric);
-            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $metric);
+            list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($metric);
             if ($dataSetIdFromField != $dataSet->getId()) {
                 continue;
             }
@@ -493,24 +482,21 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          * ]
          */
         $factors = $autoOptimizationConfig->getFactors();
-        foreach ($factors as &$field) {
-            $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $field);
-            $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $field);
+        foreach ($factors as $key => $field) {
+            list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($field);
             if ($dataSetIdFromField != $dataSet->getId()) {
                 continue;
             }
 
             if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
-                unset($field);
+                unset($factors[$key]);
                 continue;
             }
 
             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
-            $field = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+            $updateField = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+            $factors[$key] = $updateField;
         }
-
-        unset($field);
-
         $autoOptimizationConfig->setFactors($factors);
 
         /* objective
@@ -520,8 +506,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          * ]
          */
         $objective = $autoOptimizationConfig->getObjective();
-        $fieldWithoutDataSetId = preg_replace('(_[0-9]+)', '', $objective);
-        $dataSetIdFromField = preg_replace('/^(.*)(_)/', '', $objective);
+        list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($objective);
         if ($dataSetIdFromField == $dataSet->getId()) {
 
             if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
@@ -639,5 +624,14 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 unset($newFields[$updateDimension]);
             }
         }
+    }
+
+    private function getFieldNameAndDataSetId($field)
+    {
+        $fieldItems = explode('_', $field);
+        $dataSetIdFromField = $fieldItems[count($fieldItems)-1];
+        $fieldWithoutDataSetId = substr($field, 0, -(strlen($dataSetIdFromField) + 1));
+
+        return [$fieldWithoutDataSetId, $dataSetIdFromField];
     }
 }
