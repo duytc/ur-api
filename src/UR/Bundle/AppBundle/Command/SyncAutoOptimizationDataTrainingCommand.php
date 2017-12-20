@@ -124,7 +124,7 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         /* create params object */
         /** @var ParamsBuilderInterface $paramsBuilder */
         $paramsBuilder = $container->get('ur.services.report.params_builder');
-        $params = $paramsBuilder->buildFromArray($requestParams);
+        $params = $paramsBuilder->buildFromAutoOptimizationConfig($autoOptimizationConfig);
 
         /* get report */
         /** @var ReportBuilderInterface $reportBuilder */
