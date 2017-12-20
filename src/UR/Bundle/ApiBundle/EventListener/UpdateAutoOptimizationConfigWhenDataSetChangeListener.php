@@ -3,13 +3,17 @@
 namespace UR\Bundle\ApiBundle\EventListener;
 
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
+use UR\Entity\Core\ReportViewAddConditionalTransformValue;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\ReportViewAddConditionalTransformValueInterface;
+use UR\Repository\Core\ReportViewAddConditionalTransformValueRepositoryInterface;
 use UR\Service\Report\SqlBuilder;
 
 class UpdateAutoOptimizationConfigWhenDataSetChangeListener
@@ -29,10 +33,14 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
     const VAR_KEY = 'var';
     const DEFAULT_VALUES_KEY = 'defaultValues';
 
+    /** @var  EntityManagerInterface */
+    private $em;
+
     public function preUpdate(PreUpdateEventArgs $args)
     {
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
+        $this->em = $em;
 
         if (!$entity instanceof DataSetInterface) {
             return;
@@ -100,6 +108,8 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $autoOptimizationConfig = $this->updateOptimizationConfig($autoOptimizationConfig, $entity, $updateFields, $deleteFields);
             $em->merge($autoOptimizationConfig);
             $em->persist($autoOptimizationConfig);
+            //addTransformVAlue
+            $this->updateOptimizationConfigTransformAddConditionValue($autoOptimizationConfig, $updateFields, $deleteFields);
         }
     }
 
@@ -590,6 +600,106 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         return $autoOptimizationConfigDataSet;
     }
 
+    private function updateOptimizationConfigTransformAddConditionValue(AutoOptimizationConfigInterface $autoOptimizationConfig, array $updateFields, array $deleteFields)
+    {
+        /*
+         *  {
+        "fields":[
+            {
+                "values":[
+                    4
+                ],
+                "field":"addConditionalValue",
+                "defaultValue":"abc",
+                "type":"text"
+            }
+        ],
+        "type":"addConditionValue",
+        "isPostGroup":true
+        }
+         */
+        $transforms = $autoOptimizationConfig->getTransforms();
+        foreach ($transforms as $transform) {
+            if (is_array($transform) && $transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::ADD_CONDITION_VALUE_TRANSFORM) {
+
+                $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+                foreach ($fields as $field) {
+                    // $ids = [1, 2, 3];
+                    $ids = $field['values'];
+
+                    // foreach $ids -> get addConditionValueTransformValue
+                    foreach ($ids as $id){
+                        /** @var ReportViewAddConditionalTransformValueRepositoryInterface $reportViewAddConditionalTransformValueRepository */
+                        $reportViewAddConditionalTransformValueRepository = $this->em->getRepository(ReportViewAddConditionalTransformValue::class);
+
+                        $reportViewAddConditionalTransformValue = $reportViewAddConditionalTransformValueRepository->find($id);
+
+                        if (!$reportViewAddConditionalTransformValue instanceof ReportViewAddConditionalTransformValueInterface) {
+                            continue;
+                        }
+                        // -> and then change field name according the changes dimensions and metric of reportView
+                        //replace sharedConditionals
+                        $sharedConditionals = $reportViewAddConditionalTransformValue->getSharedConditions();
+                        if (!empty($sharedConditionals) && is_array($sharedConditionals)) {
+                            foreach ($sharedConditionals as &$sharedConditional) {
+                                //if ($sharedConditional['conditionField'] )
+                                if (!is_array($sharedConditional) || !array_key_exists('field', $sharedConditional)) {
+                                    continue;
+                                }
+                                $valueField = $sharedConditional['field'];
+                                list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($valueField);
+                                if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                                    unset($sharedConditional);
+                                    continue;
+                                }
+
+                                $valueFieldUpdate = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
+                                $valueFieldUpdate = sprintf('%s_%d', $valueFieldUpdate, $dataSetIdFromField);
+                                $sharedConditional['field'] = $valueFieldUpdate;
+                            }
+                        }
+
+                        $reportViewAddConditionalTransformValue->setSharedConditions($sharedConditionals);
+                        unset($sharedConditional, $sharedConditionals);
+
+                        // replace conditions
+                        $conditions = $reportViewAddConditionalTransformValue->getConditions();
+                        if (!empty($conditions) && is_array($conditions)) {
+                            foreach ($conditions as &$condition) {
+                                //if ($sharedConditional['conditionField'] )
+                                if(!empty($condition[self::EXPRESSIONS_KEY]) && is_array($condition[self::EXPRESSIONS_KEY])){
+                                    foreach ($condition[self::EXPRESSIONS_KEY] as &$expression) {
+                                        if (!is_array($expression) || !array_key_exists('field', $expression)) {
+                                            continue;
+                                        }
+                                        $valueField =  $expression['field'];
+                                        list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($valueField);
+                                        if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                                            unset($sharedConditional);
+                                            continue;
+                                        }
+
+                                        $valueFieldUpdate = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
+                                        $valueFieldUpdate = sprintf('%s_%d', $valueFieldUpdate, $dataSetIdFromField);
+                                        $expression['field'] = $valueFieldUpdate;
+                                    }
+                                }
+
+                            }
+                        }
+                        $reportViewAddConditionalTransformValue->setConditions($conditions);
+                        unset($conditions, $condition, $expression);
+
+                        // save addConditionValuewTransformValue
+                        $this->em->merge($reportViewAddConditionalTransformValue);
+                        $this->em->persist($reportViewAddConditionalTransformValue);
+                    }
+                }
+
+            }
+        }
+    }
+
     private function mappingNewValue($field, array $updateFields)
     {
         return (array_key_exists($field, $updateFields)) ? $updateFields[$field] : $field;
@@ -632,6 +742,10 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         }
     }
 
+    /**
+     * @param $field
+     * @return array
+     */
     private function getFieldNameAndDataSetId($field)
     {
         $fieldItems = explode('_', $field);
