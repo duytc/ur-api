@@ -675,7 +675,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                                         $valueField =  $expression['field'];
                                         list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($valueField);
                                         if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
-                                            unset($sharedConditional);
+                                            unset($expression);
                                             continue;
                                         }
 
