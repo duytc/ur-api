@@ -642,6 +642,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                         $sharedConditionals = $reportViewAddConditionalTransformValue->getSharedConditions();
                         if (!empty($sharedConditionals) && is_array($sharedConditionals)) {
                             foreach ($sharedConditionals as &$sharedConditional) {
+                                $key = 0;
                                 //if ($sharedConditional['conditionField'] )
                                 if (!is_array($sharedConditional) || !array_key_exists('field', $sharedConditional)) {
                                     continue;
@@ -649,13 +650,14 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                                 $valueField = $sharedConditional['field'];
                                 list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($valueField);
                                 if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
-                                    unset($sharedConditional);
+                                    unset($sharedConditionals[$key]);
                                     continue;
                                 }
 
                                 $valueFieldUpdate = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
                                 $valueFieldUpdate = sprintf('%s_%d', $valueFieldUpdate, $dataSetIdFromField);
                                 $sharedConditional['field'] = $valueFieldUpdate;
+                                $key ++;
                             }
                         }
 
@@ -669,24 +671,27 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                                 //if ($sharedConditional['conditionField'] )
                                 if(!empty($condition[self::EXPRESSIONS_KEY]) && is_array($condition[self::EXPRESSIONS_KEY])){
                                     foreach ($condition[self::EXPRESSIONS_KEY] as &$expression) {
+                                        $key = 0;
                                         if (!is_array($expression) || !array_key_exists('field', $expression)) {
                                             continue;
                                         }
                                         $valueField =  $expression['field'];
                                         list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($valueField);
                                         if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
-                                            unset($expression);
+                                            unset($condition[self::EXPRESSIONS_KEY][$key]);
                                             continue;
                                         }
 
                                         $valueFieldUpdate = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
                                         $valueFieldUpdate = sprintf('%s_%d', $valueFieldUpdate, $dataSetIdFromField);
                                         $expression['field'] = $valueFieldUpdate;
+                                        $key++;
                                     }
                                 }
 
                             }
                         }
+
                         $reportViewAddConditionalTransformValue->setConditions($conditions);
                         unset($conditions, $condition, $expression);
 
