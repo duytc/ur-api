@@ -2,7 +2,6 @@
 
 namespace UR\Bundle\ApiBundle\EventListener;
 
-
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;

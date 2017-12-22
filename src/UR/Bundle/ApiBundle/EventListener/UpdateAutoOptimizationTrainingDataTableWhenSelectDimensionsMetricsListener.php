@@ -3,7 +3,6 @@ namespace UR\Bundle\ApiBundle\EventListener;
 
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
@@ -14,9 +13,6 @@ class UpdateAutoOptimizationTrainingDataTableWhenSelectDimensionsMetricsListener
     const DIMENSIONS_KEY = 'dimensions';
     const METRICS_KEY = 'metrics';
 
-    /** @var  EntityManagerInterface */
-    private $em;
-
     /**
      * @param PreUpdateEventArgs $args
      */
@@ -24,7 +20,6 @@ class UpdateAutoOptimizationTrainingDataTableWhenSelectDimensionsMetricsListener
     {
         $optimizationConfigDataSet = $args->getEntity();
         $em = $args->getEntityManager();
-        $this->em = $em;
 
         if (!$optimizationConfigDataSet instanceof AutoOptimizationConfigDataSetInterface) {
             return;

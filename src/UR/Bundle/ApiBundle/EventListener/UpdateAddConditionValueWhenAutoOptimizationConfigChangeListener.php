@@ -86,10 +86,15 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
         }
     }
 
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param array $updateFields
+     * @param array $deleteFields
+     */
     private function updateOptimizationConfigTransformAddConditionValue(AutoOptimizationConfigInterface $autoOptimizationConfig, array $updateFields, array $deleteFields)
     {
         /*
-         *  {
+        {
         "fields":[
             {
                 "values":[
@@ -103,9 +108,8 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
         "type":"addConditionValue",
         "isPostGroup":true
         }
-         */
+        */
         $transforms = $autoOptimizationConfig->getTransforms();
-        $deleteAddConditionValue = false;
         foreach ($transforms as $transform) {
             if (is_array($transform) && $transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::ADD_CONDITION_VALUE_TRANSFORM) {
                 $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
@@ -121,7 +125,6 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                         if (!$reportViewAddConditionalTransformValue instanceof ReportViewAddConditionalTransformValueInterface) {
                             continue;
                         }
-                        // -> and then change field name according the changes dimensions and metric
                         //replace sharedConditionals
                         $sharedConditionals = $reportViewAddConditionalTransformValue->getSharedConditions();
                         $newSharedConditionals = [];
@@ -144,12 +147,6 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                                 $newSharedConditionals []= $sharedConditional;
                             }
                         }
-                        // if $shareConditionals is empty -> delete ReportViewAddConditionalTransformValue
-//                        if (empty($newSharedConditionals)) {
-//                            $this->em->remove($reportViewAddConditionalTransformValue);
-//                            $deleteAddConditionValue = true;
-//                            continue;
-//                        }
                         $reportViewAddConditionalTransformValue->setSharedConditions($newSharedConditionals);
                         unset($sharedConditional, $sharedConditionals, $newSharedConditionals);
 
@@ -200,8 +197,6 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                 }
             }
         }
-
-        return $deleteAddConditionValue ? $deleteAddConditionValue : false;
     }
 
     private function mappingNewValue($field, array $updateFields)

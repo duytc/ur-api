@@ -3,17 +3,13 @@
 namespace UR\Bundle\ApiBundle\EventListener;
 
 use Doctrine\Common\Collections\Collection;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Domain\DTO\Report\Transforms\GroupByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
-use UR\Entity\Core\ReportViewAddConditionalTransformValue;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Model\Core\DataSetInterface;
-use UR\Model\Core\ReportViewAddConditionalTransformValueInterface;
-use UR\Repository\Core\ReportViewAddConditionalTransformValueRepositoryInterface;
 use UR\Service\Report\SqlBuilder;
 
 class UpdateAutoOptimizationConfigWhenDataSetChangeListener
@@ -33,14 +29,10 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
     const VAR_KEY = 'var';
     const DEFAULT_VALUES_KEY = 'defaultValues';
 
-    /** @var  EntityManagerInterface */
-    private $em;
-
     public function preUpdate(PreUpdateEventArgs $args)
     {
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
-        $this->em = $em;
 
         if (!$entity instanceof DataSetInterface) {
             return;
@@ -107,8 +99,6 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $autoOptimizationConfig = $this->updateOptimizationConfig($autoOptimizationConfig, $entity, $updateFields, $deleteFields);
             $em->merge($autoOptimizationConfig);
             $em->persist($autoOptimizationConfig);
-            //addTransformVAlue
-            //$this->updateOptimizationConfigTransformAddConditionValue($autoOptimizationConfig, $updateFields, $deleteFields);
         }
     }
 
