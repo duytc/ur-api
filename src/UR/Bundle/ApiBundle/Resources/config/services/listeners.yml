@@ -17,6 +17,7 @@ services:
             - '@ur.services.report.params_builder'
         tags:
             - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: preUpdate }
 
     ur_api.event_listener.report_view_data_set_change_listener:
         class: UR\Bundle\ApiBundle\EventListener\ReportViewDataSetChangeListener
@@ -243,3 +244,8 @@ services:
         arguments:
         tags:
             - { name: doctrine.event_listener, event: preRemove }
+    ur_api.event_listener.update_add_condition_value_when_auto_optimization_config_change_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
+        arguments:
+        tags:
+            - { name: doctrine.event_listener, event: postUpdate }
