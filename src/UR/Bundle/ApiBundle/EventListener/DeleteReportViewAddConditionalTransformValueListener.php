@@ -5,7 +5,9 @@ namespace UR\Bundle\ApiBundle\EventListener;
 
 
 use Doctrine\ORM\Event\LifecycleEventArgs;
+use UR\Entity\Core\AutoOptimizationConfig;
 use UR\Entity\Core\ReportView;
+use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Model\Core\ReportViewAddConditionalTransformValueInterface;
 use UR\Repository\Core\ReportViewRepositoryInterface;
 
@@ -30,6 +32,10 @@ class DeleteReportViewAddConditionalTransformValueListener
 		/** @var ReportViewRepositoryInterface $reportViewRepository */
 		$reportViewRepository = $em->getRepository(ReportView::class);
 
-		return $reportViewRepository->removeAddConditionalTransformValue($id);
+        /** @var AutoOptimizationConfigInterface $autoOptimizationConfig */
+        $autoOptimizationConfigRepository = $em->getRepository(AutoOptimizationConfig::class);
+
+		$reportViewRepository->removeAddConditionalTransformValue($id);
+        $autoOptimizationConfigRepository->removeAddConditionalTransformValue($id);
 	}
 }
