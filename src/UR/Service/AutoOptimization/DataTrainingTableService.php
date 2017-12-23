@@ -544,16 +544,14 @@ class DataTrainingTableService
             foreach ($fields as $field) {
                 if (isset($field['field']) && $field['type']) {
                     $fieldNameTransform = str_replace(' ', '_', $field['field']);
-                    $fieldNameFromTransform[$fieldNameTransform] = $field['type'];
+                    $dimensionsAndMetrics[$fieldNameTransform] = $field['type'];
                 }
             }
         }
 
-        // add dimensions, metrics columns and transform field
-        $dimensionsMetricsAndTransformField = array_merge($dimensionsAndMetrics, $fieldNameFromTransform);
-        unset($metrics, $dimensionsAndMetricsSelected, $fieldWithoutDataSetId, $fieldNameFromTransform, $dimensionsAndMetrics);
+        unset($metrics, $dimensionsAndMetricsSelected, $fieldWithoutDataSetId, $fieldNameFromTransform);
 
-        return $dimensionsMetricsAndTransformField ? $dimensionsMetricsAndTransformField : [];
+        return $dimensionsAndMetrics ? $dimensionsAndMetrics : [];
     }
 
     /**
