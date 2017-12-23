@@ -83,9 +83,10 @@ class DataTrainingTableService
             $columns = $collection->getColumns();
 
             foreach ($columns as $k => $column) {
-                if (!preg_match('#[_a-z]+#i', $column)) {
-                    throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
-                }
+                // allow user enter only numeric
+//                if (!preg_match('#[_a-z]+#i', $column)) {
+//                    throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
+//                }
 
                 if(preg_match('/\s/',$k)) {
                     $newKey = str_replace(' ', '_', $k);
@@ -117,9 +118,7 @@ class DataTrainingTableService
                 }
 
                 if ($setOrderColumns == false) {
-                    $orderColumns = array_keys($row);
-                    $columns = array_merge(array_flip($orderColumns), $columns);
-
+                    $columns = array_intersect_key($row, $columns);
                     $setOrderColumns = true;
                 }
 
