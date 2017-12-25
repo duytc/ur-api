@@ -127,6 +127,9 @@ class Params implements ParamsInterface
     /** @var  string */
     protected $temporarySuffix;
 
+    /** @var  boolean */
+    protected $autoOptimizationConfig;
+
     /** @var  ReportViewInterface */
     private $reportView;
 
@@ -717,5 +720,23 @@ class Params implements ParamsInterface
     public function setReportView($reportView)
     {
         $this->reportView = $reportView;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isAutoOptimizationConfig()
+    {
+        return $this->autoOptimizationConfig;
+    }
+
+    /**
+     * @param boolean $autoOptimizationConfig
+     * @return self
+     */
+    public function setAutoOptimizationConfig($autoOptimizationConfig)
+    {
+        $this->autoOptimizationConfig = $autoOptimizationConfig;
+        return $this;
     }
 }

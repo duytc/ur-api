@@ -321,4 +321,15 @@ interface ParamsInterface
      * @return self
      */
     public function setReportView($reportView);
+
+    /**
+     * @return boolean
+     */
+    public function isAutoOptimizationConfig();
+
+    /**
+     * @param $utoOptimizationConfig
+     * @return ParamsInterface
+     */
+    public function setAutoOptimizationConfig($utoOptimizationConfig);
 }
