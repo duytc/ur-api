@@ -587,7 +587,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         $param
             ->setTransforms($this->createTransforms($autoOptimizationConfig->getTransforms()))
             ->setFieldTypes($autoOptimizationConfig->getFieldTypes());
-
+        $param->setAutoOptimizationConfig(true);
 //        $param
 //            ->setPage(1)
 //            ->setLimit(10);

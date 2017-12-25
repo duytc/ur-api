@@ -422,6 +422,12 @@ class SqlBuilder implements SqlBuilderInterface
                 unset($dimensions[$key]);
             }
             $types = array_merge($types, $metrics, $dimensions);
+
+            if ($params->isAutoOptimizationConfig()) {
+                $showInTotal = [];
+                continue;
+            }
+
             if ($showInTotal === null) {
                 if ($dataSetEntity instanceof \UR\Model\Core\DataSetInterface) {
                     $metrics = $dataSetEntity->getMetrics();
