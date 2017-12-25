@@ -73,6 +73,10 @@ class AlterDataSetTableJob implements SplittableJobInterface
             ReportViewUpdaterInterface::DELETED_FIELDS => $deletedColumns,
         );
 
+        $jobs[] = array (
+            'task' => RefreshAddConditionalTransformValueWhenAlterDataSetSubJob::JOB_NAME
+        );
+
         // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
         // this will save a lot of execution time
         $this->scheduler->addJob($jobs, $dataSetId, $params);
