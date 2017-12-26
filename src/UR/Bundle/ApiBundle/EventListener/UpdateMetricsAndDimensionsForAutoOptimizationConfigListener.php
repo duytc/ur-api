@@ -57,7 +57,7 @@ class UpdateMetricsAndDimensionsForAutoOptimizationConfigListener
         }
 
         if ($args->hasChangedField('transform')) {
-            $this->updateMetricsAndDimensionsForAutoOptimizationConfig($entity);
+            //$this->updateMetricsAndDimensionsForAutoOptimizationConfig($entity);
         }
     }
 
