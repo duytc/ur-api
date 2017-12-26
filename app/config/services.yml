@@ -311,6 +311,12 @@ services:
             - @ur.worker.scheduler.data_set_job_scheduler
             - @monolog.logger
 
+    ur.worker.job.linear.refresh_add_onditional_transform_value_when_alter_data_set_sub_job:
+            class: UR\Worker\Job\Linear\RefreshAddConditionalTransformValueWhenAlterDataSetSubJob
+            arguments:
+                - '@monolog.logger'
+                - '@doctrine.orm.entity_manager'
+
     ur.worker.job.concurrent.detect_mising_date_range_for_entry_subjob:
         class: UR\Worker\Job\Concurrent\DetectDateRangeForDataSourceEntry
         arguments:
@@ -543,6 +549,7 @@ services:
                 - @ur.worker.job.concurrent.parse_chunk_file
                 - @ur.worker.job.linear.update_augmented_data_set_status
                 - @ur.worker.job.linear.update_augmented_data_set_status_sub_job
+                - @ur.worker.job.linear.refresh_add_onditional_transform_value_when_alter_data_set_sub_job
 
     ### end of linear worker pool
 

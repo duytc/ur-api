@@ -153,42 +153,37 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                         // replace conditions
                         $conditions = $reportViewAddConditionalTransformValue->getConditions();
 
-                        if (!empty($conditions) && is_array($conditions)) {
-                            foreach ($conditions as $keyCondition => $condition) {
-                                $newCondition = [];
-                                if(!empty($condition[self::EXPRESSIONS_KEY]) && is_array($condition[self::EXPRESSIONS_KEY])){
-                                    foreach ($condition[self::EXPRESSIONS_KEY] as $key => $expression) {
-                                        if (!is_array($expression) || !array_key_exists('field', $expression)) {
-                                            continue;
-                                        }
-                                        $valueField =  $expression['field'];
-                                        list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($valueField);
-                                        if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
-                                            unset($condition[self::EXPRESSIONS_KEY][$key]);
-                                            continue;
-                                        }
-
-                                        $valueFieldUpdate = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
-                                        $valueFieldUpdate = sprintf('%s_%d', $valueFieldUpdate, $dataSetIdFromField);
-                                        $expression['field'] = $valueFieldUpdate;
-
-                                        $condition[self::EXPRESSIONS_KEY][$key] = $expression;
-                                    }
-
-                                    if (!empty($condition[self::EXPRESSIONS_KEY])) {
-                                        $newCondition[] = $condition;
-                                    }
+                        foreach ($conditions as $keyCon => $condition) {
+                            $conExpressions = $condition[self::EXPRESSIONS_KEY];
+                            foreach ($conExpressions as $key => $conExpression) {
+                                //field in $delete -> $conExpressions unset $key
+		                        //field in update -> update $newConExpressions [] =  conExpression;
+                                if (!is_array($conExpression) || !array_key_exists('field', $conExpression)) {
+                                    continue;
                                 }
-                                if (!empty($newCondition)) {
-                                    $conditions[$keyCondition] = $newCondition;
-                                } else {
-                                    unset($conditions[$keyCondition]);
+                                $valueField =  $conExpression['field'];
+                                list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($valueField);
+                                if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                                    continue;
                                 }
+
+                                $valueFieldUpdate = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
+                                $valueFieldUpdate = sprintf('%s_%d', $valueFieldUpdate, $dataSetIdFromField);
+                                $conExpression['field'] = $valueFieldUpdate;
+
+                                $newConExpressions [] = $conExpression;
+	                        }
+
+                            if (!isset($newConExpressions)) {
+                                unset($conditions[$keyCon]);
+                                continue;
                             }
-                        }
 
+                            $condition[self::EXPRESSIONS_KEY] = $newConExpressions;
+                            $conditions[$keyCon] = $condition;
+                        }
                         $reportViewAddConditionalTransformValue->setConditions($conditions);
-                        unset($conditions, $condition, $expression);
+                        unset($conditions, $condition, $newConExpressions, $valueFieldUpdate);
 
                         // save addConditionValuewTransformValue
                         $this->em->merge($reportViewAddConditionalTransformValue);
