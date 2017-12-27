@@ -22,7 +22,9 @@ trait ReportViewUtilTrait
     {
         /** Get all filters from report view */
         $filters = [];
-        $rpDataSets = ($reportView->isSubView()) ? $reportView->getMasterReportView()->getReportViewDataSets() : $reportView->getReportViewDataSets();
+        $rpDataSets = ($reportView->isSubView() && $reportView->getMasterReportView() instanceof ReportViewInterface)
+                        ? $reportView->getMasterReportView()->getReportViewDataSets()
+                        : $reportView->getReportViewDataSets();
         if ($rpDataSets instanceof Collection) {
             $rpDataSets = $rpDataSets->toArray();
         }
