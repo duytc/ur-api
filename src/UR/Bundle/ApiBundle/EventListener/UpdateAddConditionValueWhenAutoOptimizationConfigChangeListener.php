@@ -110,6 +110,10 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                     $ids = $field[AddConditionValueTransform::VALUES_KEY]; // $ids = [1, 2, 3];
                     // foreach $ids -> get addConditionValueTransformValue
                     foreach ($ids as $id){
+
+                        if ($id != 8) {
+                            continue;
+                        }
                         /** @var ReportViewAddConditionalTransformValueRepositoryInterface $reportViewAddConditionalTransformValueRepository */
                         $reportViewAddConditionalTransformValueRepository = $this->em->getRepository(ReportViewAddConditionalTransformValue::class);
 
@@ -149,8 +153,6 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                         foreach ($conditions as $keyCon => $condition) {
                             $conExpressions = $condition[AddConditionValueTransform::VALUES_KEY_CONDITIONS_EXPRESSIONS];
                             foreach ($conExpressions as $key => $conExpression) {
-                                //field in $delete -> $conExpressions unset $key
-		                        //field in update -> update $newConExpressions [] =  conExpression;
                                 if (!is_array($conExpression) || !array_key_exists('field', $conExpression)) {
                                     continue;
                                 }
@@ -159,7 +161,6 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                                 if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
                                     continue;
                                 }
-
                                 $valueFieldUpdate = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
                                 $valueFieldUpdate = sprintf('%s_%d', $valueFieldUpdate, $dataSetIdFromField);
                                 $conExpression['field'] = $valueFieldUpdate;
@@ -174,6 +175,7 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
 
                             $condition[AddConditionValueTransform::VALUES_KEY_CONDITIONS_EXPRESSIONS] = $newConExpressions;
                             $conditions[$keyCon] = $condition;
+                            unset($newConExpressions);
                         }
                         $reportViewAddConditionalTransformValue->setConditions($conditions);
                         unset($conditions, $condition, $newConExpressions, $valueFieldUpdate);
