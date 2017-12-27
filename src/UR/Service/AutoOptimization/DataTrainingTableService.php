@@ -502,6 +502,10 @@ class DataTrainingTableService
                     $dimensionsAndMetricsSelected = array_values(array_diff($dimensionsAndMetricsSelected, array($field)));
                 }
 
+                if ($joinBy_[SqlBuilder::JOIN_CONFIG_VISIBLE] == false) {
+                    continue;
+                }
+
                 if(preg_match('/\s/', $joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD])) {
                     $fieldNameOutPutJoin = str_replace(' ', '_', $joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]);
                     $dimensionsAndMetricsSelected = array_merge(array($fieldNameOutPutJoin), $dimensionsAndMetricsSelected);
