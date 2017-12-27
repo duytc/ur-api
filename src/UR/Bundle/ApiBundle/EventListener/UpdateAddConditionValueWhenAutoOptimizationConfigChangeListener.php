@@ -155,6 +155,7 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                                 $valueField =  $conExpression['field'];
                                 list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($valueField);
                                 if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
+                                    unset($conExpression[$key]);
                                     continue;
                                 }
                                 $valueFieldUpdate = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
@@ -173,7 +174,7 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                             $conditions[$keyCon] = $condition;
                             unset($newConExpressions);
                         }
-                        $reportViewAddConditionalTransformValue->setConditions($conditions);
+                        $reportViewAddConditionalTransformValue->setConditions(array_values($conditions));
                         unset($conditions, $condition, $newConExpressions, $valueFieldUpdate);
 
                         // save addConditionValuewTransformValue
