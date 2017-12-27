@@ -8,12 +8,11 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Model\Core\AutoOptimizationConfigInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;
 
 class UpdateTrainingDataTableWhenAutoOptimizationConfigChangeListener
 {
-    const DIMENSIONS_KEY = 'dimensions';
-    const METRICS_KEY = 'metrics';
     const TRANSFORMS_KEY = 'transforms';
 
     protected $changedAutoOptimizationConfigs;
@@ -46,7 +45,7 @@ class UpdateTrainingDataTableWhenAutoOptimizationConfigChangeListener
             return;
         }
 
-        if ($args->hasChangedField(self::DIMENSIONS_KEY) || $args->hasChangedField(self::METRICS_KEY) || $args->hasChangedField(self::TRANSFORMS_KEY)) {
+        if ($args->hasChangedField(DataSetInterface::DIMENSIONS_COLUMN) || $args->hasChangedField(DataSetInterface::METRICS_COLUMN) || $args->hasChangedField(self::TRANSFORMS_KEY)) {
             $this->changedAutoOptimizationConfigs[] = $autoOptimizationConfig;
         }
     }

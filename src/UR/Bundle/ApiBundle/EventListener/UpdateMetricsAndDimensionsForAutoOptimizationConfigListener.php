@@ -6,15 +6,13 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Bundle\ApiBundle\Behaviors\CalculateMetricsAndDimensionsTrait;
 use UR\Model\Core\AutoOptimizationConfigInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Service\Report\ParamsBuilderInterface;
 use UR\Worker\Manager;
 
 class UpdateMetricsAndDimensionsForAutoOptimizationConfigListener
 {
     use CalculateMetricsAndDimensionsTrait;
-
-    const METRICS_KEY = 'metrics';
-    const DIMENSIONS_KEY = 'dimensions';
 
     /**
      * @var ParamsBuilderInterface
@@ -69,17 +67,17 @@ class UpdateMetricsAndDimensionsForAutoOptimizationConfigListener
         $param = $this->paramsBuilder->buildFromAutoOptimizationConfig($autoOptimizationConfig);
         $columns = $this->getMetricsAndDimensionsForAutoOptimizationConfig($param);
 
-        $autoOptimizationConfig->setMetrics(array_values($columns[self::METRICS_KEY]));
-        $autoOptimizationConfig->setDimensions(array_values($columns[self::DIMENSIONS_KEY]));
+        $autoOptimizationConfig->setMetrics(array_values($columns[DataSetInterface::METRICS_COLUMN]));
+        $autoOptimizationConfig->setDimensions(array_values($columns[DataSetInterface::DIMENSIONS_COLUMN]));
     }
 
     protected function getMetricsKey()
     {
-        return self::METRICS_KEY;
+        return DataSetInterface::METRICS_COLUMN;
     }
 
     protected function getDimensionsKey()
     {
-        return self::DIMENSIONS_KEY;
+        return DataSetInterface::DIMENSIONS_COLUMN;
     }
 }

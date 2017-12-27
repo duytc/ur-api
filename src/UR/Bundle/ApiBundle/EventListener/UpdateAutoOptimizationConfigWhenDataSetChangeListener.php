@@ -5,7 +5,9 @@ namespace UR\Bundle\ApiBundle\EventListener;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
-use UR\Domain\DTO\Report\Transforms\GroupByTransform;
+use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
+use UR\Domain\DTO\Report\Transforms\AddFieldTransform;
+use UR\Domain\DTO\Report\Transforms\ComparisonPercentTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
@@ -14,21 +16,6 @@ use UR\Service\Report\SqlBuilder;
 
 class UpdateAutoOptimizationConfigWhenDataSetChangeListener
 {
-    const METRICS_KEY = 'metrics';
-    const DIMENSIONS_KEY = 'dimensions';
-    const RENAME_KEY = 'rename';
-    const FROM_KEY = 'from';
-    const TO_KEY = 'to';
-    const EXPRESSIONS_KEY = 'expressions';
-    const EXPRESSION_KEY = 'expression';
-    const CONDITIONS_KEY = 'conditions';
-    const CONDITION_FIELD_KEY = 'conditionField';
-    const NAMES_KEY = 'names';
-    const DENOMINATOR_KEY = 'denominator';
-    const NUMERATOR_KEY = 'numerator';
-    const VAR_KEY = 'var';
-    const DEFAULT_VALUES_KEY = 'defaultValues';
-
     public function preUpdate(PreUpdateEventArgs $args)
     {
         $entity = $args->getEntity();
@@ -39,22 +26,22 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         }
 
         // get changes
-        if (!$args->hasChangedField(self::DIMENSIONS_KEY) && !$args->hasChangedField(self::METRICS_KEY)) {
+        if (!$args->hasChangedField(DataSetInterface::DIMENSIONS_COLUMN) && !$args->hasChangedField(DataSetInterface::METRICS_COLUMN)) {
             return;
         }
 
         $uow = $em->getUnitOfWork();
         $changedFields = $uow->getEntityChangeSet($entity);
 
-        if (!array_key_exists(self::DIMENSIONS_KEY, $changedFields) && !array_key_exists(self::METRICS_KEY, $changedFields)) {
+        if (!array_key_exists(DataSetInterface::DIMENSIONS_COLUMN, $changedFields) && !array_key_exists(DataSetInterface::METRICS_COLUMN, $changedFields)) {
             return;
         }
         // detect changed metrics, dimensions
         $renameFields = [];
         $actions = $entity->getActions() === null ? [] : $entity->getActions();
 
-        if (array_key_exists(self::RENAME_KEY, $actions)) {
-            $renameFields = $actions[self::RENAME_KEY];
+        if (array_key_exists('rename', $actions)) {
+            $renameFields = $actions['rename'];
         }
 
         $newDimensions = [];
@@ -65,11 +52,11 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
         $deletedDimensions = [];
 
         foreach ($changedFields as $field => $values) {
-            if ($field === self::DIMENSIONS_KEY) {
+            if ($field === DataSetInterface::DIMENSIONS_COLUMN) {
                 $this->getChangedFields($values, $renameFields, $newDimensions, $updateDimensions, $deletedDimensions);
             }
 
-            if ($field === self::METRICS_KEY) {
+            if ($field === DataSetInterface::METRICS_COLUMN) {
                 $this->getChangedFields($values, $renameFields, $newMetrics, $updateMetrics, $deletedMetrics);
             }
         }
@@ -181,7 +168,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
          */
         $transforms = $autoOptimizationConfig->getTransforms();
         foreach ($transforms as &$transform) {
-            if (is_array($transform) && $transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::GROUP_TRANSFORM) {
+            if (is_array($transform) && $transform[TransformInterface::TRANSFORM_TYPE_KEY] == TransformInterface::GROUP_TRANSFORM) {
                 $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
                 foreach ($fields as &$field) {
                     list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($field);
@@ -204,19 +191,19 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 }
             }
 
-            if (is_array($transform) && $transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::ADD_FIELD_TRANSFORM) {
+            if (is_array($transform) && $transform[TransformInterface::TRANSFORM_TYPE_KEY] == TransformInterface::ADD_FIELD_TRANSFORM) {
                 $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
                 foreach ($fields as &$field) {
                     $conditions = [];
                     if (is_array($field)) {
-                        if (array_key_exists(self::CONDITIONS_KEY, $field)) {
-                            $conditions = $field[self::CONDITIONS_KEY];
+                        if (array_key_exists(AddFieldTransform::FIELD_CONDITIONS, $field)) {
+                            $conditions = $field[AddFieldTransform::FIELD_CONDITIONS];
                         }
 
                         foreach ($conditions as &$condition) {
-                            $expressions = $condition[self::EXPRESSIONS_KEY];
+                            $expressions = $condition[AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS];
                             foreach ($expressions as &$expression) {
-                                list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($expression[self::VAR_KEY]);
+                                list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($expression[AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS_VAR]);
                                 if ($dataSetIdFromField != $dataSet->getId()) {
                                     continue;
                                 }
@@ -229,24 +216,24 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                                 $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
                                 $fieldNameInExpression = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
 
-                                $expression[self::VAR_KEY] = $fieldNameInExpression;
+                                $expression[AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS_VAR] = $fieldNameInExpression;
 
                                 unset($fieldNameInExpression);
                             }
-                            $condition[self::EXPRESSIONS_KEY] = $expressions;
+                            $condition[AddFieldTransform::FIELD_CONDITIONS_EXPRESSIONS] = $expressions;
                         }
 
-                        $field[self::CONDITIONS_KEY] = $conditions;
+                        $field[AddFieldTransform::FIELD_CONDITIONS] = $conditions;
                     }
                     $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
                     unset($field, $expression, $expressions, $conditions, $condition);
                 }
             }
 
-            if (is_array($transform) && $transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::ADD_CALCULATED_FIELD_TRANSFORM) {
+            if (is_array($transform) && $transform[TransformInterface::TRANSFORM_TYPE_KEY] == TransformInterface::ADD_CALCULATED_FIELD_TRANSFORM) {
                 $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
                 foreach ($fields as &$field) {
-                    $expressionItems = explode('+', $field[self::EXPRESSION_KEY]);
+                    $expressionItems = explode('+', $field[AddCalculatedFieldTransform::EXPRESSION_CALCULATED_FIELD]);
                     $expressionData = [];
                     foreach ($expressionItems as $expressionItem) {
                         $item = substr(trim($expressionItem), 1, -1);
@@ -265,13 +252,13 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                     }
 
                     $expressionData = implode(' + ', $expressionData);
-                    $field[self::EXPRESSION_KEY] = $expressionData;
+                    $field[AddCalculatedFieldTransform::EXPRESSION_CALCULATED_FIELD] = $expressionData;
 
                     // check defaultValues
-                    if (array_key_exists(self::DEFAULT_VALUES_KEY, $field)) {
-                        $defaultValues = $field[self::DEFAULT_VALUES_KEY];
+                    if (array_key_exists(AddCalculatedFieldTransform::DEFAULT_VALUE_CALCULATED_FIELD, $field)) {
+                        $defaultValues = $field[AddCalculatedFieldTransform::DEFAULT_VALUE_CALCULATED_FIELD];
                         foreach ($defaultValues as &$defaultValue) {
-                            list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($defaultValue[self::CONDITION_FIELD_KEY]);
+                            list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($defaultValue[AddCalculatedFieldTransform::CONDITION_FIELD_KEY]);
                             if ($dataSetIdFromField != $dataSet->getId()) {
                                 continue;
                             }
@@ -283,10 +270,10 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
 
                             $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
                             $fieldValue = sprintf('%s_%d', trim($fieldWithoutDataSetId), $dataSetIdFromField);
-                            $defaultValue[self::CONDITION_FIELD_KEY] = $fieldValue;
+                            $defaultValue[AddCalculatedFieldTransform::CONDITION_FIELD_KEY] = $fieldValue;
                         }
 
-                        $field[self::DEFAULT_VALUES_KEY] = $defaultValues;
+                        $field[AddCalculatedFieldTransform::DEFAULT_VALUE_CALCULATED_FIELD] = $defaultValues;
                     }
 
                     $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
@@ -295,17 +282,17 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 }
             }
 
-            if (is_array($transform) && $transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::ADD_CONDITION_VALUE_TRANSFORM) {
+            if (is_array($transform) && $transform[TransformInterface::TRANSFORM_TYPE_KEY] == TransformInterface::ADD_CONDITION_VALUE_TRANSFORM) {
                 continue;
             }
 
-            if (is_array($transform) && $transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::SORT_TRANSFORM) {
+            if (is_array($transform) && $transform[TransformInterface::TRANSFORM_TYPE_KEY] == TransformInterface::SORT_TRANSFORM) {
                 $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
                 foreach ($fields as &$field) {
                     $fieldNames = [];
                     if (is_array($field)) {
-                        if (array_key_exists(self::NAMES_KEY, $field)) {
-                            $fieldNames = $field[self::NAMES_KEY];
+                        if (array_key_exists('names', $field)) {
+                            $fieldNames = $field['names'];
                         }
                     }
                     foreach ($fieldNames as &$fieldName) {
@@ -322,7 +309,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                         $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
                         $fieldName = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
                     }
-                    $field[self::NAMES_KEY] = $fieldNames;
+                    $field['names'] = $fieldNames;
 
                     $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
 
@@ -330,35 +317,35 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
                 }
             }
 
-            if (is_array($transform) && $transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::COMPARISON_PERCENT_TRANSFORM) {
+            if (is_array($transform) && $transform[TransformInterface::TRANSFORM_TYPE_KEY] == TransformInterface::COMPARISON_PERCENT_TRANSFORM) {
                 $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
                 foreach ($fields as &$field) {
                     //numerator
-                    list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($field[self::NUMERATOR_KEY]);
+                    list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($field[ComparisonPercentTransform::NUMERATOR_KEY]);
                     if ($dataSetIdFromField != $dataSet->getId()) {
                         continue;
                     }
 
                     if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
-                        $field[self::NUMERATOR_KEY] = '';
+                        $field[ComparisonPercentTransform::NUMERATOR_KEY] = '';
                         continue;
                     } else {
                         $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
-                        $field[self::NUMERATOR_KEY] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+                        $field[ComparisonPercentTransform::NUMERATOR_KEY] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
                     }
 
                     //denominator
-                    list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($field[self::DENOMINATOR_KEY]);
+                    list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($field[ComparisonPercentTransform::DENOMINATOR_KEY]);
                     if ($dataSetIdFromField != $dataSet->getId()) {
                         continue;
                     }
 
                     if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
-                        $field[self::DENOMINATOR_KEY] = '';
+                        $field[ComparisonPercentTransform::DENOMINATOR_KEY] = '';
                         continue;
                     } else {
                         $fieldWithoutDataSetId = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
-                        $field[self::DENOMINATOR_KEY] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
+                        $field[ComparisonPercentTransform::DENOMINATOR_KEY] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
                     }
 
                     $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
@@ -612,12 +599,12 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
     {
         $deletedFields = array_diff_assoc($values[0], $values[1]);
         foreach ($renameFields as $renameField) {
-            if (!array_key_exists(self::FROM_KEY, $renameField) || !array_key_exists(self::TO_KEY, $renameField)) {
+            if (!array_key_exists('from', $renameField) || !array_key_exists('to', $renameField)) {
                 continue;
             }
 
-            $oldFieldName = $renameField[self::FROM_KEY];
-            $newFieldName = $renameField[self::TO_KEY];
+            $oldFieldName = $renameField['from'];
+            $newFieldName = $renameField['to'];
 
             if (array_key_exists($oldFieldName, $deletedFields)) {
                 $updateFields[$oldFieldName] = $newFieldName;

@@ -6,13 +6,11 @@ use Doctrine\DBAL\Schema\Table;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;
 
 class UpdateAutoOptimizationTrainingDataTableWhenSelectDimensionsMetricsListener
 {
-    const DIMENSIONS_KEY = 'dimensions';
-    const METRICS_KEY = 'metrics';
-
     /**
      * @param PreUpdateEventArgs $args
      */
@@ -25,7 +23,7 @@ class UpdateAutoOptimizationTrainingDataTableWhenSelectDimensionsMetricsListener
             return;
         }
 
-        if ($args->hasChangedField(self::DIMENSIONS_KEY) || $args->hasChangedField(self::METRICS_KEY)) {
+        if ($args->hasChangedField(DataSetInterface::DIMENSIONS_COLUMN) || $args->hasChangedField(DataSetInterface::METRICS_COLUMN)) {
             $autoOptimizationConfig = $optimizationConfigDataSet->getAutoOptimizationConfig();
 
             if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {

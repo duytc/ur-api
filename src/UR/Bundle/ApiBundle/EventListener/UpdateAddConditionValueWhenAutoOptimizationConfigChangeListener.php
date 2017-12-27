@@ -5,7 +5,7 @@ namespace UR\Bundle\ApiBundle\EventListener;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LifecycleEventArgs;
-use UR\Domain\DTO\Report\Transforms\GroupByTransform;
+use UR\Domain\DTO\Report\Transforms\AddConditionValueTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Entity\Core\ReportViewAddConditionalTransformValue;
 use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
@@ -16,13 +16,6 @@ use UR\Repository\Core\ReportViewAddConditionalTransformValueRepositoryInterface
 
 class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
 {
-    const METRICS_KEY = 'metrics';
-    const DIMENSIONS_KEY = 'dimensions';
-    const RENAME_KEY = 'rename';
-    const FROM_KEY = 'from';
-    const TO_KEY = 'to';
-    const EXPRESSIONS_KEY = 'expressions';
-
     /** @var  EntityManagerInterface */
     private $em;
 
@@ -39,15 +32,15 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
         $uow = $em->getUnitOfWork();
         $changedFields = $uow->getEntityChangeSet($entity);
 
-        if (!array_key_exists(self::DIMENSIONS_KEY, $changedFields) && !array_key_exists(self::METRICS_KEY, $changedFields)) {
+        if (!array_key_exists(DataSetInterface::DIMENSIONS_COLUMN, $changedFields) && !array_key_exists(DataSetInterface::METRICS_COLUMN, $changedFields)) {
             return;
         }
         // detect changed metrics, dimensions
         $renameFields = [];
         $actions = $entity->getActions() === null ? [] : $entity->getActions();
 
-        if (array_key_exists(self::RENAME_KEY, $actions)) {
-            $renameFields = $actions[self::RENAME_KEY];
+        if (array_key_exists('rename', $actions)) {
+            $renameFields = $actions['rename'];
         }
 
         $newDimensions = [];
@@ -58,11 +51,11 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
         $deletedDimensions = [];
 
         foreach ($changedFields as $field => $values) {
-            if ($field === self::DIMENSIONS_KEY) {
+            if ($field === DataSetInterface::DIMENSIONS_COLUMN) {
                 $this->getChangedFields($values, $renameFields, $newDimensions, $updateDimensions, $deletedDimensions);
             }
 
-            if ($field === self::METRICS_KEY) {
+            if ($field === DataSetInterface::METRICS_COLUMN) {
                 $this->getChangedFields($values, $renameFields, $newMetrics, $updateMetrics, $deletedMetrics);
             }
         }
@@ -111,10 +104,10 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
         */
         $transforms = $autoOptimizationConfig->getTransforms();
         foreach ($transforms as $transform) {
-            if (is_array($transform) && $transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::ADD_CONDITION_VALUE_TRANSFORM) {
+            if (is_array($transform) && $transform[TransformInterface::TRANSFORM_TYPE_KEY] == TransformInterface::ADD_CONDITION_VALUE_TRANSFORM) {
                 $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
                 foreach ($fields as $field) {
-                    $ids = $field['values']; // $ids = [1, 2, 3];
+                    $ids = $field[AddConditionValueTransform::VALUES_KEY]; // $ids = [1, 2, 3];
                     // foreach $ids -> get addConditionValueTransformValue
                     foreach ($ids as $id){
                         /** @var ReportViewAddConditionalTransformValueRepositoryInterface $reportViewAddConditionalTransformValueRepository */
@@ -154,7 +147,7 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                         $conditions = $reportViewAddConditionalTransformValue->getConditions();
 
                         foreach ($conditions as $keyCon => $condition) {
-                            $conExpressions = $condition[self::EXPRESSIONS_KEY];
+                            $conExpressions = $condition[AddConditionValueTransform::VALUES_KEY_CONDITIONS_EXPRESSIONS];
                             foreach ($conExpressions as $key => $conExpression) {
                                 //field in $delete -> $conExpressions unset $key
 		                        //field in update -> update $newConExpressions [] =  conExpression;
@@ -179,7 +172,7 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                                 continue;
                             }
 
-                            $condition[self::EXPRESSIONS_KEY] = $newConExpressions;
+                            $condition[AddConditionValueTransform::VALUES_KEY_CONDITIONS_EXPRESSIONS] = $newConExpressions;
                             $conditions[$keyCon] = $condition;
                         }
                         $reportViewAddConditionalTransformValue->setConditions($conditions);
@@ -215,12 +208,12 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
     {
         $deletedFields = array_diff_assoc($values[0], $values[1]);
         foreach ($renameFields as $renameField) {
-            if (!array_key_exists(self::FROM_KEY, $renameField) || !array_key_exists(self::TO_KEY, $renameField)) {
+            if (!array_key_exists('from', $renameField) || !array_key_exists('to', $renameField)) {
                 continue;
             }
 
-            $oldFieldName = $renameField[self::FROM_KEY];
-            $newFieldName = $renameField[self::TO_KEY];
+            $oldFieldName = $renameField['from'];
+            $newFieldName = $renameField['to'];
 
             if (array_key_exists($oldFieldName, $deletedFields)) {
                 $updateFields[$oldFieldName] = $newFieldName;
