@@ -450,7 +450,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $dimensions[$key] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
 
-        $autoOptimizationConfig->setDimensions($dimensions);
+        $autoOptimizationConfig->setDimensions(array_values($dimensions));
 
         /* metrics
          * [
@@ -474,7 +474,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $metrics[$key] = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
         }
 
-        $autoOptimizationConfig->setMetrics($metrics);
+        $autoOptimizationConfig->setMetrics(array_values($metrics));
 
         /* factors
          * [

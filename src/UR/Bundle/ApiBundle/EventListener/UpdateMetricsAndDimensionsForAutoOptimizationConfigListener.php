@@ -69,8 +69,8 @@ class UpdateMetricsAndDimensionsForAutoOptimizationConfigListener
         $param = $this->paramsBuilder->buildFromAutoOptimizationConfig($autoOptimizationConfig);
         $columns = $this->getMetricsAndDimensionsForAutoOptimizationConfig($param);
 
-        $autoOptimizationConfig->setMetrics($columns[self::METRICS_KEY]);
-        $autoOptimizationConfig->setDimensions($columns[self::DIMENSIONS_KEY]);
+        $autoOptimizationConfig->setMetrics(array_values($columns[self::METRICS_KEY]));
+        $autoOptimizationConfig->setDimensions(array_values($columns[self::DIMENSIONS_KEY]));
     }
 
     protected function getMetricsKey()
