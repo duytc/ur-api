@@ -359,34 +359,6 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
 
         $autoOptimizationConfig->setTransforms(array_values($transforms));
 
-        /* filters */
-        $filters = $autoOptimizationConfig->getFilters();
-        foreach ($filters as &$filter) {
-            if (!array_key_exists(AbstractFilter::FILTER_DATA_SET_KEY, $filter)) {
-                continue;
-            }
-            $dataSetId = $filter[AbstractFilter::FILTER_DATA_SET_KEY];
-            if ($dataSetId !== $dataSet->getId()) {
-                continue;
-            }
-            if (!array_key_exists(AbstractFilter::FILTER_FIELD_KEY, $filter)) {
-                continue;
-            }
-            $field = $filter[AbstractFilter::FILTER_FIELD_KEY];
-
-            if ($this->deleteFieldValue($field, $deleteFields)) {
-                unset($filter);
-                continue;
-            }
-
-            $field = $this->mappingNewValue($field, $updateFields);
-            $filter[AbstractFilter::FILTER_FIELD_KEY] = $field;
-        }
-
-        unset($filter);
-
-        $autoOptimizationConfig->setFilters(array_values($filters));
-
         /*
          * fieldTypes
          * [
