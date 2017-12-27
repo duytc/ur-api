@@ -161,7 +161,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
 
         unset($joinBy_);
 
-        $autoOptimizationConfig->setJoinBy($joinBy);
+        $autoOptimizationConfig->setJoinBy(array_values($joinBy));
 
         /*
          * transforms
@@ -370,7 +370,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             unset($transform);
         }
 
-        $autoOptimizationConfig->setTransforms($transforms);
+        $autoOptimizationConfig->setTransforms(array_values($transforms));
 
         /* filters */
         $filters = $autoOptimizationConfig->getFilters();
@@ -398,7 +398,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
 
         unset($filter);
 
-        $autoOptimizationConfig->setFilters($filters);
+        $autoOptimizationConfig->setFilters(array_values($filters));
 
         /*
          * fieldTypes
@@ -498,7 +498,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $updateField = sprintf('%s_%d', $fieldWithoutDataSetId, $dataSetIdFromField);
             $factors[$key] = $updateField;
         }
-        $autoOptimizationConfig->setFactors($factors);
+        $autoOptimizationConfig->setFactors(array_values($factors));
 
         /* objective
          * [
@@ -549,7 +549,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $filter[AbstractFilter::FILTER_FIELD_KEY] = $field;
         }
         unset($filter);
-        $autoOptimizationConfigDataSet->setFilters($filters);
+        $autoOptimizationConfigDataSet->setFilters(array_values($filters));
         /*
          * dimensions
          * [
@@ -568,7 +568,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $dimensions[$key] = $this->mappingNewValue($dimension, $updateFields);
         }
 
-        $autoOptimizationConfigDataSet->setDimensions($dimensions);
+        $autoOptimizationConfigDataSet->setDimensions(array_values($dimensions));
 
         /* metrics
          * [
@@ -586,7 +586,7 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             $metrics[$key] = $this->mappingNewValue($metric, $updateFields);
         }
 
-        $autoOptimizationConfigDataSet->setMetrics($metrics);
+        $autoOptimizationConfigDataSet->setMetrics(array_values($metrics));
 
         return $autoOptimizationConfigDataSet;
     }
