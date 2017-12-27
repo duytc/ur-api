@@ -110,10 +110,6 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                     $ids = $field[AddConditionValueTransform::VALUES_KEY]; // $ids = [1, 2, 3];
                     // foreach $ids -> get addConditionValueTransformValue
                     foreach ($ids as $id){
-
-                        if ($id != 8) {
-                            continue;
-                        }
                         /** @var ReportViewAddConditionalTransformValueRepositoryInterface $reportViewAddConditionalTransformValueRepository */
                         $reportViewAddConditionalTransformValueRepository = $this->em->getRepository(ReportViewAddConditionalTransformValue::class);
 
