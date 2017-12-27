@@ -95,6 +95,8 @@ class UpdateAutoOptimizationConfigWhenDataSetChangeListener
             return $autoOptimizationConfigDataSet->getAutoOptimizationConfig();
         }, $autoOptimizationConfigDataSets);
 
+        //@jennyphuong: Duplicate optimization configs in here
+
         foreach ($autoOptimizationConfigs as $autoOptimizationConfig) {
             $autoOptimizationConfig = $this->updateOptimizationConfig($autoOptimizationConfig, $entity, $updateFields, $deleteFields);
             $em->merge($autoOptimizationConfig);
