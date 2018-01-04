@@ -17,6 +17,7 @@ class Integration implements IntegrationInterface
     const PARAM_TYPE_PLAIN_TEXT = 'plainText'; // e.g username, url, ...
     const PARAM_TYPE_DATE = 'date'; // e.g startDate, ...
     const PARAM_TYPE_DYNAMIC_DATE_RANGE = 'dynamicDateRange'; // e.g dateRange, ...
+    const PARAM_TYPE_VIDEO_DYNAMIC_DATE_RANGE = 'videoDynamicDateRange'; // e.g dateRange, ...
     const PARAM_TYPE_SECURE = 'secure'; // e.g password, token, key, ...
     const PARAM_TYPE_REGEX = 'regex'; // e.g pattern, ...
     const PARAM_TYPE_OPTION = 'option'; // e.g Suply;Demand;Suply by Demand;Demand by Suply, ...
@@ -29,6 +30,7 @@ class Integration implements IntegrationInterface
         self::PARAM_TYPE_PLAIN_TEXT,
         self::PARAM_TYPE_DATE,
         self::PARAM_TYPE_DYNAMIC_DATE_RANGE,
+        self::PARAM_TYPE_VIDEO_DYNAMIC_DATE_RANGE,
         self::PARAM_TYPE_SECURE,
         self::PARAM_TYPE_REGEX,
         self::PARAM_TYPE_OPTION,
@@ -44,6 +46,14 @@ class Integration implements IntegrationInterface
         'last 5 days',
         'last 6 days',
         'last week'
+    ];
+
+    public static $SUPPORTED_PARAM_VALUE_VIDEO_DYNAMIC_DATE_RANGES = [
+        'today',
+        'yesterday',
+        'last 2 days',
+        'last 3 days',
+        'last 7 days'
     ];
 
     protected $id;
