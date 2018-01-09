@@ -194,13 +194,15 @@ class MergeFiles
         $outputFileName = $this->getOutputFileName();
 
         $header = null;
-        $rows = null;
+        $rows = [];
 
         foreach ($this->sourceFilePaths as $sourceFilePath) {
             $csvObj = new Csv($sourceFilePath);
-            if (is_null($header)) {
+            if (empty($header)) {
                 $header = $csvObj->getHeaders();
-                $rows[] = $header;
+                if (!empty($header)) {
+                    $rows[] = $header;
+                }
             }
             $bodyRows = $csvObj->getBodyRows();
             $rows = array_merge($rows, $bodyRows);

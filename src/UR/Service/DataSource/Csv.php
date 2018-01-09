@@ -161,6 +161,10 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
                             break;
                         }
                     }
+                } else {
+                    $this->headers = [];
+
+                    return [];
                 }
 
                 if ($validDelimiter) {
