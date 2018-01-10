@@ -853,11 +853,13 @@ services:
             - @ur.services.report.report_builder
             - @ur.service.auto_optimization.data_training_table_service
 
-    ur.service.auto_optimization.cache_training_model:
-        class: UR\Service\AutoOptimization\CacheTrainingModel
-        arguments:
-            - @ur.redis.app_cache
     ur.service.auto_optimization.scoring_service:
         class: UR\Service\AutoOptimization\ScoringService
+        arguments:
+            - @ur.domain_manager.learner
+            - @ur.service.auto_optimization.conditions_generator
+
+    ur.service.auto_optimization.conditions_generator:
+        class: UR\Service\AutoOptimization\ConditionsGenerator
         arguments:
             - @ur.domain_manager.learner

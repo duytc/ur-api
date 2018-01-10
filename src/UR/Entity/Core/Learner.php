@@ -15,4 +15,5 @@ class Learner extends LearnerModel
     protected $autoOptimizationConfig;
     protected $updatedDate;
     protected $forecastFactorValues;
+    protected $categoricalFieldWeights;
 }

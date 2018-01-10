@@ -24,6 +24,9 @@ UR\Entity\Core\Learner:
         forecastFactorValues:
             type: json_array
             nullable: true
+        categoricalFieldWeights:
+            type: json_array
+            nullable: true
     manyToOne:
         autoOptimizationConfig:
             targetEntity: UR\Entity\Core\AutoOptimizationConfig

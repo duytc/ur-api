@@ -72,4 +72,15 @@ interface LearnerInterface extends ModelInterface
      * @return self
      */
     public function setForecastFactorValues($forecastFactorValues);
+
+    /**
+     * @return mixed
+     */
+    public function getCategoricalFieldWeights();
+    
+    /**
+     * @param mixed $categoricalFieldWeights
+     * @return self
+     */
+    public function setCategoricalFieldWeights($categoricalFieldWeights);
 }

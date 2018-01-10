@@ -6,19 +6,19 @@ use UR\Model\Core\AutoOptimizationConfigInterface;
 
 interface ScoringServiceInterface
 {
-    /**
-     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
-     * @param $identifiers
-     * @param $condition
-     * @return mixed
-     */
-    public function makeOnePrediction(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifiers, $condition);
+    const REGRESSION_LINEAR_MODEL = 'LinearRegression';
+    const COEFFICIENT_KEY = 'coefficient';
+    const INTERCEPT_KEY = 'intercept';
+    const ALL_FACTORS_KEY = 'all';
+    const OBJECTIVE_DEFAULT_VALUE = 0;
 
     /**
+     * Score for multiple identifiers and conditions
+     *
      * @param AutoOptimizationConfigInterface $autoOptimizationConfig
      * @param $identifiers
      * @param $conditions
      * @return mixed
      */
-    public function makeMultiplePredictions(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifiers, $conditions);
+    public function predict(AutoOptimizationConfigInterface $autoOptimizationConfig, array $identifiers, array $conditions);
 }

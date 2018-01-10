@@ -85,47 +85,32 @@ class AutoOptimizationConfigController extends RestControllerAbstract implements
     }
 
     /**
-     * Get score (predict result)
-     *
-     * @Rest\View(serializerGroups={"auto_optimization_config.detail", "user.summary", "auto_optimization_config_data_set.summary", "dataset.summary"})
-     *
-     * @Rest\QueryParam(name="identifiers", nullable=true, description="identifier of ad tag")
-     * @Rest\QueryParam(name="conditions", nullable=true, description="conditions of request")
-     * @Rest\QueryParam(name="multiple", nullable=true, description="single predict or multiple predict")
-     *
-     * @ApiDoc(
-     *  section = "AutoOptimizationConfig",
-     *  resource = true,
-     *  statusCodes = {
-     *      200 = "Returned when successful"
-     *  }
-     * )
-     *
-     * @param int $id the resource id
-     *
+     *  predict the score for many identifiers of one auto optimization config
      * @param Request $request
-     * @return AutoOptimizationConfigInterface
+     * @return array|mixed
      */
-    public function getScoreAction($id, Request $request)
+    public function postScoreAction(Request $request)
     {
-        $autoOptimizationConfig =  $this->one($id);
+        $autoOptimizationConfigId = $request->request->get('id');
+        $identifiers = $request->request->get('identifiers');
+        $conditions = $request->request->get('conditions');
+
+        if (!is_numeric($autoOptimizationConfigId)) {
+            return [];
+        }
+        $autoOptimizationConfig = $this->one($autoOptimizationConfigId);
+
         if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
+            return [];
+        }
+        if (!is_array($identifiers) || !is_array($conditions)) {
             return [];
         }
 
         /** @var ScoringServiceInterface $scoringService */
         $scoringService = $this->get('ur.service.auto_optimization.scoring_service');
-        $params = array_merge($request->query->all(), $request->attributes->all());
 
-        $identifiers = array_key_exists('identifiers', $params) ? $params['identifiers'] : "";
-        $conditions = array_key_exists('conditions', $params) ? $params['conditions'] : "";
-        $multiple = array_key_exists('multiple', $params) ? $params['multiple'] : false;
-
-        if ($multiple) {
-            return $scoringService->makeMultiplePredictions($autoOptimizationConfig, $identifiers, $conditions);
-        }
-
-        return $scoringService->makeOnePrediction($autoOptimizationConfig, $identifiers, $conditions);
+        return $scoringService->predict($autoOptimizationConfig, $identifiers, $conditions);
     }
 
     /**

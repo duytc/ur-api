@@ -11,7 +11,24 @@ interface LearnerManagerInterface extends ManagerInterface
     /**
      * @param AutoOptimizationConfigInterface $autoOptimizationConfig
      * @param $identifier
+     * @param $type
      * @return mixed
      */
-    public function getLearnerModel(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier);
+    public function getLearnerModelByParams(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier, $type);
+
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param $identifier
+     * @param $type
+     * @return mixed
+     */
+    public function getForecastFactorsValuesByByParams(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier, $type);
+
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param $identifier
+     * @param $type
+     * @return mixed
+     */
+    public function getCategoricalFieldWeightsByParams(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier, $type);
 }

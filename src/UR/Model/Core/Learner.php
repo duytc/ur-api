@@ -13,6 +13,7 @@ class Learner implements LearnerInterface
     protected $autoOptimizationConfig;
     protected $updatedDate;
     protected $forecastFactorValues;
+    protected $categoricalFieldWeights;
 
     /**
      * @inheritdoc
@@ -126,6 +127,24 @@ class Learner implements LearnerInterface
     public function setForecastFactorValues($forecastFactorValues)
     {
         $this->forecastFactorValues = $forecastFactorValues;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCategoricalFieldWeights()
+    {
+        return $this->categoricalFieldWeights;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setCategoricalFieldWeights($categoricalFieldWeights): void
+    {
+        $this->categoricalFieldWeights = $categoricalFieldWeights;
 
         return $this;
     }

@@ -5,118 +5,162 @@ namespace UR\Service\AutoOptimization;
 
 use UR\DomainManager\LearnerManagerInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
-use UR\Model\Core\LearnerInterface;
 
 class ScoringService implements ScoringServiceInterface
 {
-    const CURRENT_MODEL = 'LINEAR_REGRESSION_MODEL';
-    const CURRENT_CONVERTER = 'LINEAR_REGRESSION_CONVERTER';
-    /**
-     * @var array
-     */
-    private $learnerModels;
+    const MAX_DECIMAL = 5;
 
-    /** @var  array */
-    private $trainingDataConverters;
-
-    /** @var LearnerManagerInterface  */
+    /** @var LearnerManagerInterface */
     private $learnerManager;
+
+    /** @var ConditionsGeneratorInterface */
+    private $conditionsGenerator;
 
     /**
      * ScoringService constructor.
      * @param LearnerManagerInterface $learnerManager
+     * @param ConditionsGeneratorInterface $conditionsGenerator
      */
-    function __construct(LearnerManagerInterface $learnerManager)
+    function __construct(LearnerManagerInterface $learnerManager, ConditionsGeneratorInterface $conditionsGenerator)
     {
         $this->learnerManager = $learnerManager;
+        $this->conditionsGenerator = $conditionsGenerator;
     }
 
     /**
      * @inheritdoc
      */
-    public function makeOnePrediction(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifiers, $condition)
+    public function predict(AutoOptimizationConfigInterface $autoOptimizationConfig, array $identifiers, array $conditions)
     {
-        // Step 1: Get model from data base
-        $learnerModals = [];
-        foreach ($identifiers as $identifier) {
-            $learnerModals[] = $this->getLearnerModelFromDataBase($autoOptimizationConfig, $identifier);
-        }
-        // Step 2: Make a prediction
+        $multipleConditions = $this->conditionsGenerator->generateMultipleConditions($autoOptimizationConfig, $conditions);
+        $predictions = $this->makeMultiplePredictionsWithManyConditions($autoOptimizationConfig, $identifiers, $multipleConditions);
+
+        return $predictions;
     }
 
     /**
-     * @inheritdoc
-     */
-    public function makeMultiplePredictions(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifiers, $conditions)
-    {
-        // Step 1: Get model from data base
-        $learnerModals = [];
-        foreach ($identifiers as $identifier) {
-            $learnerModals[] = $this->getLearnerModelFromDataBase($autoOptimizationConfig, $identifier);
-        }
-        // Step 2: Convert conditions to multiple sub condition. Each condition is the input for predicting of model
-        $conditions = $this->createMultipleConditions($conditions);
-        
-        // Step 3: make prediction for multiple sub condition
-    }
-
-
-    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param array $identifiers
+     * @param array $conditions
      * @return array
+     * @throws \Exception
      */
-    public function getLearnerModels()
+    private function makeMultiplePredictionsWithManyConditions(AutoOptimizationConfigInterface $autoOptimizationConfig, array $identifiers, array $conditions)
     {
-        return $this->learnerModels;
+        $predictions = [];
+        foreach ($conditions as $condition) {
+            $keyOfPrediction = $this->getKeyOfPrediction($condition);
+            $predictions[$keyOfPrediction] = $this->makeMultiplePredictionsWithOneCondition($autoOptimizationConfig, $identifiers, $condition);
+        }
+
+        return $predictions;
     }
 
     /**
-     * @param array $learnerModels
+     * @param $condition
+     * @return string
      */
-    public function setLearnerModels($learnerModels)
+    private function getKeyOfPrediction($condition)
     {
-        if (!is_array($learnerModels)) {
-            $learnerModels = [$learnerModels];
+        if (!is_array($condition) || empty($condition)) {
+            return ScoringServiceInterface::ALL_FACTORS_KEY;
         }
 
-        foreach ($learnerModels as $learnerModel) {
-            if (!$learnerModel instanceof LearnerInterface) {
-                continue;
-            }
-            $this->learnerModels[] = $learnerModel;
-        }
+        return implode(",", $condition);
     }
 
     /**
-     * @return mixed|LearnerInterface
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param array $identifiers
+     * @param $condition
+     * @return array
+     * @throws \Exception
      */
-    public function getTrainingDataConverters()
+    private function makeMultiplePredictionsWithOneCondition(AutoOptimizationConfigInterface $autoOptimizationConfig, array $identifiers, $condition)
     {
-        return $this->trainingDataConverters;
+        $predictions = [];
+
+        foreach ($identifiers as $identifier) {
+            $predictions[$identifier] = $this->makeOnePredictionWithOneCondition($autoOptimizationConfig, $identifier, $condition);
+        }
+
+        $normalizePredictions = $this->normalizePredictions($predictions);
+
+        return $normalizePredictions;
     }
 
     /**
-     * @param mixed|LearnerInterface $trainingDataConverters
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param $identifier
+     * @param $condition
+     * @return float|int|mixed
+     * @throws \Exception
      */
-    public function setTrainingDataConverters($trainingDataConverters)
+    private function makeOnePredictionWithOneCondition(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier, $condition)
     {
-        if (!is_array($trainingDataConverters)) {
-            $trainingDataConverters = [$trainingDataConverters];
+        $learnerModel = $this->getLearnerModelFromDataBase($autoOptimizationConfig, $identifier);
+        if (!is_array($learnerModel) || !array_key_exists('' . ScoringServiceInterface::COEFFICIENT_KEY . '', $learnerModel) || !array_key_exists('' . ScoringServiceInterface::INTERCEPT_KEY . '', $learnerModel)) {
+            return ScoringServiceInterface::OBJECTIVE_DEFAULT_VALUE;
         }
+        $oneInputOfLearnerModel = $this->createInputForLearnerModel($autoOptimizationConfig, $identifier, $condition);
 
-        foreach ($trainingDataConverters as $trainingDataConverter) {
-            if (!$trainingDataConverter instanceof LearnerInterface) {
-                continue;
-            }
-            $this->$trainingDataConverters[] = $trainingDataConverter;
-        }
+        return $this->calculateOneObjective($learnerModel, $oneInputOfLearnerModel);
     }
 
     /**
-     * @inheritdoc
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param $identifier
+     * @return mixed
      */
     private function getLearnerModelFromDataBase(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier)
     {
-        return $this->learnerManager->getLearnerModel($autoOptimizationConfig, $identifier);
+        $type = $this->getBestFitLearnerModel($autoOptimizationConfig, $identifier);
+        return $this->learnerManager->getLearnerModelByParams($autoOptimizationConfig, $identifier, $type);
+    }
+
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param $identifier
+     * @return string
+     */
+    private function getBestFitLearnerModel(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier)
+    {
+        return ScoringServiceInterface::REGRESSION_LINEAR_MODEL;
+    }
+
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param $identifier
+     * @param $condition
+     * @return array
+     */
+    private function createInputForLearnerModel(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier, $condition)
+    {
+        $inputForLearnerModel = [];
+
+        $forecastFactorValues = $this->getForecastFactorValues($autoOptimizationConfig, $identifier);
+        $categoricalFieldWeights = $this->getCategoricalFieldWeights($autoOptimizationConfig, $identifier);
+        $factors = $autoOptimizationConfig->getFactors();
+
+        foreach ($factors as $factor) {
+            if (array_key_exists($factor, $condition)) {
+                $inputForLearnerModel[$factor] = $condition[$factor];
+            } else if (array_key_exists($factor, $forecastFactorValues)) {
+                $inputForLearnerModel[$factor] = $forecastFactorValues[$factor];
+            } else {
+
+            }
+        }
+
+        // Get categorical field value
+        foreach ($inputForLearnerModel as $factor => $value) {
+            if (array_key_exists($factor, $categoricalFieldWeights)) {
+                $allWeight = $categoricalFieldWeights[$factor];
+                $inputForLearnerModel[$factor] = $this->getWeightOfOneField($allWeight, $value);
+            }
+        }
+
+        return $inputForLearnerModel;
     }
 
     /**
@@ -124,19 +168,99 @@ class ScoringService implements ScoringServiceInterface
      * @param $identifier
      * @return array
      */
-    private function forecastFactorValues(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier)
+    private function getForecastFactorValues(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier)
     {
-        $forecastValues = [];
-
-        return $forecastValues;
+        $type = $this->getBestFitLearnerModel($autoOptimizationConfig, $identifier);
+        return $this->learnerManager->getForecastFactorsValuesByByParams($autoOptimizationConfig, $identifier, $type);
     }
 
     /**
-     * return an array which an element is a condition for predicting
-     * @param array $conditions
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param $identifier
+     * @return mixed
      */
-    private function createMultipleConditions(array $conditions)
+    private function getCategoricalFieldWeights(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier)
     {
+        $type = $this->getBestFitLearnerModel($autoOptimizationConfig, $identifier);
 
+        return $this->learnerManager->getCategoricalFieldWeightsByParams($autoOptimizationConfig, $identifier, $type);
+    }
+
+    /**
+     * @param array $weights
+     * @param $stringValues
+     * @return mixed
+     */
+    private function getWeightOfOneField(array $weights, $stringValues)
+    {
+        if (array_key_exists($stringValues, $weights)) {
+            return $weights[$stringValues];
+        }
+
+        $maxValues = max($weights);
+        if (is_array($maxValues)) {
+            return array_shift($maxValues);
+        }
+
+        return $maxValues;
+    }
+
+    /**
+     * @param array $learnerModel
+     * @param array $input
+     * @return float|int|mixed
+     * @throws \Exception
+     */
+    private function calculateOneObjective(array $learnerModel, array $input)
+    {
+        $coefficients = $learnerModel[ScoringServiceInterface::COEFFICIENT_KEY];
+        $intercept = $learnerModel[ScoringServiceInterface::INTERCEPT_KEY];
+
+        $coefficients = $this->arrayFlatten($coefficients);
+
+        $total = ScoringServiceInterface::OBJECTIVE_DEFAULT_VALUE;
+        foreach ($coefficients as $factor => $coefficient) {
+            if (!array_key_exists($factor, $input)) {
+                throw new \Exception(sprintf('Input vector is not valid, key = %s does not exist', $factor));
+            }
+            $total += $coefficient * $input[$factor];
+        }
+        $objective = $total + $intercept;
+
+        return $objective;
+    }
+
+    /**
+     * @param array $array
+     * @return array
+     */
+    private function arrayFlatten(array $array)
+    {
+        $flatten = array();
+        array_walk_recursive($array, function ($value, $key) use (&$flatten) {
+            $flatten[$key] = $value;
+        });
+
+        return $flatten;
+    }
+
+    /**
+     * Convert objective to [0,1]
+     * @param array $predictions
+     * @return array
+     */
+    private function normalizePredictions(array $predictions)
+    {
+        $normalizePredictions = [];
+
+        $totalPredictions = array_sum($predictions);
+        $totalPredictions = $totalPredictions == 0 ? 1 : $totalPredictions;
+
+        foreach ($predictions as $identifier => $prediction) {
+            $rawPrediction = $prediction / $totalPredictions;
+            $normalizePredictions[$identifier] = number_format($rawPrediction, self::MAX_DECIMAL);
+        }
+
+        return $normalizePredictions;
     }
 }
