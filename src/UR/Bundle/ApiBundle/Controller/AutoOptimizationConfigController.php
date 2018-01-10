@@ -8,21 +8,32 @@ use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use FOS\RestBundle\Controller\Annotations as Rest;
+use UR\Service\AutoOptimization\ScoringServiceInterface;
 
 /**
  * @Rest\RouteResource("autoOptimizationConfig")
  */
 class AutoOptimizationConfigController extends RestControllerAbstract implements ClassResourceInterface
 {
+    use GetEntityFromIdTrait;
 
     /**
      * Get all auto optimization config
      *
      * @Rest\View(serializerGroups={"auto_optimization_config.detail", "user.summary", "auto_optimization_config_data_set.summary", "dataset.summary"})
+     *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
      *
      * @ApiDoc(
      *  section = "AutoOptimizationConfig",
@@ -32,11 +43,22 @@ class AutoOptimizationConfigController extends RestControllerAbstract implements
      *  }
      * )
      *
+     * @param Request $request
      * @return AutoOptimizationConfigInterface[]
      */
-    public function cgetAction()
+    public function cgetAction(Request $request)
     {
-        return $this->all();
+        $user = $this->getUserDueToQueryParamPublisher($request, 'publisher');
+
+        $AutoOptimizationConfigRepository = $this->get('ur.repository.auto_optimization_config');
+        $qb = $AutoOptimizationConfigRepository->getAutoOptimizationConfigsForUserQuery($user, $this->getParams());
+
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['page']) && !isset($params['sortField']) && !isset($params['orderBy']) && !isset($params['searchKey'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
     }
 
     /**
@@ -60,6 +82,121 @@ class AutoOptimizationConfigController extends RestControllerAbstract implements
     public function getAction($id)
     {
         return $this->one($id);
+    }
+
+    /**
+     * Get score (predict result)
+     *
+     * @Rest\View(serializerGroups={"auto_optimization_config.detail", "user.summary", "auto_optimization_config_data_set.summary", "dataset.summary"})
+     *
+     * @Rest\QueryParam(name="identifiers", nullable=true, description="identifier of ad tag")
+     * @Rest\QueryParam(name="conditions", nullable=true, description="conditions of request")
+     * @Rest\QueryParam(name="multiple", nullable=true, description="single predict or multiple predict")
+     *
+     * @ApiDoc(
+     *  section = "AutoOptimizationConfig",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @param Request $request
+     * @return AutoOptimizationConfigInterface
+     */
+    public function getScoreAction($id, Request $request)
+    {
+        $autoOptimizationConfig =  $this->one($id);
+        if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
+            return [];
+        }
+
+        /** @var ScoringServiceInterface $scoringService */
+        $scoringService = $this->get('ur.service.auto_optimization.scoring_service');
+        $params = array_merge($request->query->all(), $request->attributes->all());
+
+        $identifiers = array_key_exists('identifiers', $params) ? $params['identifiers'] : "";
+        $conditions = array_key_exists('conditions', $params) ? $params['conditions'] : "";
+        $multiple = array_key_exists('multiple', $params) ? $params['multiple'] : false;
+
+        if ($multiple) {
+            return $scoringService->makeMultiplePredictions($autoOptimizationConfig, $identifiers, $conditions);
+        }
+
+        return $scoringService->makeOnePrediction($autoOptimizationConfig, $identifiers, $conditions);
+    }
+
+    /**
+     * Get identifiers belong to an Auto Optimization Config
+     *
+     * @Rest\View(serializerGroups={"auto_optimization_config.detail", "user.summary", "auto_optimization_config_data_set.summary", "dataset.summary"})
+     *
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     * @ApiDoc(
+     *  section = "AutoOptimizationConfig",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @param Request $request
+     * @return AutoOptimizationConfigInterface
+     */
+    public function getIdentifiersAction($id, Request $request)
+    {
+        $autoOptimizationConfig =  $this->one($id);
+        if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
+            return [];
+        }
+
+        $dataTrainingTableService = $this->get('ur.service.auto_optimization.data_training_table_service');
+        $params = array_merge($request->query->all(), $request->attributes->all());
+
+        return $dataTrainingTableService->getIdentifiersForAutoOptimizationConfig($autoOptimizationConfig, $params);
+    }
+
+    /**
+     * Get training data belong to an Auto Optimization Config
+     *
+     * @Rest\QueryParam(name="identifiers", nullable=true, description="the identifiers of ad tags")
+     * @ApiDoc(
+     *  section = "AutoOptimizationConfig",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @param Request $request
+     * @return array
+     */
+    public function getDataAction($id, Request $request)
+    {
+        $autoOptimizationConfig = $this->one($id);
+        if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
+            return [];
+        }
+        $params = array_merge($request->query->all(), $request->attributes->all());
+
+        $identifiers = [];
+        if (array_key_exists('identifiers', $params)) {
+            $identifiers = $params['identifiers'];
+            $identifiers = explode(',', $identifiers);
+        }
+
+        $dataTrainingTableService = $this->get('ur.service.auto_optimization.data_training_table_service');
+
+        return $dataTrainingTableService->getDataByIdentifiers($autoOptimizationConfig, $identifiers);
     }
 
     /**

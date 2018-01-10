@@ -109,7 +109,7 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                 foreach ($fields as $field) {
                     $ids = $field[AddConditionValueTransform::VALUES_KEY]; // $ids = [1, 2, 3];
                     // foreach $ids -> get addConditionValueTransformValue
-                    foreach ($ids as $id){
+                    foreach ($ids as $id) {
                         /** @var ReportViewAddConditionalTransformValueRepositoryInterface $reportViewAddConditionalTransformValueRepository */
                         $reportViewAddConditionalTransformValueRepository = $this->em->getRepository(ReportViewAddConditionalTransformValue::class);
 
@@ -137,7 +137,7 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                                 $valueFieldUpdate = $this->mappingNewValue($fieldWithoutDataSetId, $updateFields);
                                 $valueFieldUpdate = sprintf('%s_%d', $valueFieldUpdate, $dataSetIdFromField);
                                 $sharedConditional['field'] = $valueFieldUpdate;
-                                $newSharedConditionals []= $sharedConditional;
+                                $newSharedConditionals [] = $sharedConditional;
                             }
                         }
                         $reportViewAddConditionalTransformValue->setSharedConditions($newSharedConditionals);
@@ -152,7 +152,7 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                                 if (!is_array($conExpression) || !array_key_exists('field', $conExpression)) {
                                     continue;
                                 }
-                                $valueField =  $conExpression['field'];
+                                $valueField = $conExpression['field'];
                                 list($fieldWithoutDataSetId, $dataSetIdFromField) = $this->getFieldNameAndDataSetId($valueField);
                                 if ($this->deleteFieldValue($fieldWithoutDataSetId, $deleteFields)) {
                                     unset($conExpression[$key]);
@@ -163,7 +163,7 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
                                 $conExpression['field'] = $valueFieldUpdate;
 
                                 $newConExpressions [] = $conExpression;
-	                        }
+                            }
 
                             if (!isset($newConExpressions)) {
                                 unset($conditions[$keyCon]);
@@ -235,7 +235,7 @@ class UpdateAddConditionValueWhenAutoOptimizationConfigChangeListener
     private function getFieldNameAndDataSetId($field)
     {
         $fieldItems = explode('_', $field);
-        $dataSetIdFromField = $fieldItems[count($fieldItems)-1];
+        $dataSetIdFromField = $fieldItems[count($fieldItems) - 1];
         $fieldWithoutDataSetId = substr($field, 0, -(strlen($dataSetIdFromField) + 1));
 
         return [$fieldWithoutDataSetId, $dataSetIdFromField];

@@ -4,8 +4,12 @@
 namespace UR\Model\Core;
 
 
+use UR\Behaviors\AutoOptimizationUtilTrait;
+
 class AutoOptimizationConfig implements AutoOptimizationConfigInterface
 {
+    use AutoOptimizationUtilTrait;
+
     protected $id;
     protected $transforms;
     protected $filters;
@@ -22,7 +26,21 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     protected $publisher;
     protected $autoOptimizationConfigDataSets;
 
+    /** @var  array */
+    protected $identifiers;
 
+    /** @var  array */
+    protected $identifierObjects;
+
+    /** @var  array */
+    protected $positiveFactors;
+
+    /** @var  array */
+    protected $negativeFactors;
+
+    /** @var  LearnerInterface */
+    protected $learners;
+    
     public function __construct()
     {
         $this->transforms = [];
@@ -31,6 +49,7 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
         $this->dimensions = [];
         $this->fieldTypes = [];
         $this->joinBy = [];
+        $this->identifiers = [];
     }
 
     /**
@@ -271,5 +290,85 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setActive($active)
     {
         $this->active = $active;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getIdentifiers()
+    {
+        return $this->identifiers;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setIdentifiers($identifiers)
+    {
+        $this->identifiers = $identifiers;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getIdentifierObjects()
+    {
+        if (empty($this->identifierObjects) && is_array($this->getIdentifiers())) {
+            $this->identifierObjects = $this->createIdentifierObjectsFromJsonArray($this->getIdentifiers());
+        }
+
+        return $this->identifierObjects;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getPositiveFactors()
+    {
+        return $this->positiveFactors;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setPositiveFactors($positiveFactors)
+    {
+        $this->positiveFactors = $positiveFactors;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getNegativeFactors()
+    {
+        return $this->negativeFactors;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setNegativeFactors($negativeFactors)
+    {
+        $this->negativeFactors = $negativeFactors;
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function getLearners()
+    {
+        return $this->learners;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLearners($learners) 
+    {
+        $this->learners = $learners;
+        
+        return $this;
     }
 }

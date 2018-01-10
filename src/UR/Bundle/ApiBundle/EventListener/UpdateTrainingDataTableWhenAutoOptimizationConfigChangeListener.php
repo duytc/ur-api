@@ -10,6 +10,7 @@ use Doctrine\ORM\Event\PreUpdateEventArgs;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\AutoOptimization\DataTrainingTableService;
+use UR\Service\DataSet\FieldType;
 
 class UpdateTrainingDataTableWhenAutoOptimizationConfigChangeListener
 {
@@ -50,6 +51,21 @@ class UpdateTrainingDataTableWhenAutoOptimizationConfigChangeListener
         }
     }
 
+    /**
+     * @param LifecycleEventArgs $args
+     */
+    public function preRemove(LifecycleEventArgs $args)
+    {
+        $autoOptimizationConfig = $args->getEntity();
+        $em = $args->getEntityManager();
+        if (!$autoOptimizationConfig instanceof AutoOptimizationConfigInterface) {
+            return;
+        }
+
+        $synchronize = new DataTrainingTableService($em, '');
+        $synchronize->deleteDataTrainingTable($autoOptimizationConfig->getId());
+    }
+
     public function postFlush(PostFlushEventArgs $args)
     {
         $em = $args->getEntityManager();
@@ -75,7 +91,7 @@ class UpdateTrainingDataTableWhenAutoOptimizationConfigChangeListener
             }
             // keep default columns(primary key), delete all current columns
             $allColumnsCurrent = $dataTrainingTable->getColumns();
-            foreach ($allColumnsCurrent as $key => $value){
+            foreach ($allColumnsCurrent as $key => $value) {
                 $columnName = $value->getName();
                 if ($columnName == DataTrainingTableService::COLUMN_ID) {
                     continue;
@@ -85,6 +101,7 @@ class UpdateTrainingDataTableWhenAutoOptimizationConfigChangeListener
 
             // get all columns
             $allColumns = $dataTrainingTableService->getDimensionsMetricsAndTransformField($autoOptimizationConfig);
+            $allColumns[AutoOptimizationConfigInterface::IDENTIFIER_COLUMN] = FieldType::TEXT;
 
             foreach ($allColumns as $fieldName => $fieldType) {
                 $dataTrainingTable = $dataTrainingTableService->addFieldForTable($dataTrainingTable, $fieldName, $fieldType);

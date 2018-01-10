@@ -1,0 +1,29 @@
+UR\Entity\Core\Learner:
+    type: entity
+    table: core_learner_model
+    repositoryClass: UR\Repository\Core\LearnerRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        identifier:
+            type: string
+            nullable: true
+        model:
+            type: json_array
+            nullable: true
+        type:
+            type: string
+        updatedDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                on: create
+        forecastFactorValues:
+            type: json_array
+            nullable: true
+    manyToOne:
+        autoOptimizationConfig:
+            targetEntity: UR\Entity\Core\AutoOptimizationConfig

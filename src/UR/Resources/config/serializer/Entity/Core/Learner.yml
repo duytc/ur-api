@@ -1,0 +1,21 @@
+UR\Entity\Core\Learner:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [learner.detail, learner.summary]
+        identifier:
+            expose: true
+            groups: [learner.detail, learner.summary]
+        model:
+            expose: true
+            groups: [learner.detail, learner.summary]
+        type:
+            expose: true
+            groups: [learner.detail, learner.summary]
+        forecastFactorValues:
+            expose: true
+            groups: [learner.detail, learner.summary]
+        autoOptimizationConfig:
+            expose: true
+            groups: [learner.detail, learner.summary]

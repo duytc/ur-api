@@ -46,3 +46,12 @@ UR\Entity\Core\AutoOptimizationConfig:
         autoOptimizationConfigDataSets:
             expose: true
             groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        identifiers:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        positiveFactors:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        negativeFactors:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]

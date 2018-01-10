@@ -3,6 +3,7 @@
 
 namespace UR\Form\Type;
 
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -28,7 +29,10 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
             ->add('factors')
             ->add('objective')
             ->add('dateRange')
-            ->add('active');
+            ->add('active')
+            ->add('identifiers')
+            ->add('positiveFactors')
+            ->add('negativeFactors');
 
         $builder
             ->add('autoOptimizationConfigDataSets', 'collection', array(
@@ -69,7 +73,7 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
                 if ($autoOptimizationConfigDataSets instanceof Collection) {
                     $autoOptimizationConfigDataSets = $autoOptimizationConfigDataSets->toArray();
                 }
-                
+
                 /**
                  * @var AutoOptimizationConfigDataSetInterface[] $autoOptimizationConfigDataSets
                  */

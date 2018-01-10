@@ -9,6 +9,7 @@ use Doctrine\Instantiator\Exception\InvalidArgumentException;
 use ReflectionClass;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Model\ModelInterface;
+use UR\Model\User\Role\PublisherInterface;
 use UR\Repository\Core\AutoOptimizationConfigRepositoryInterface;
 
 class AutoOptimizationConfigManager implements AutoOptimizationConfigManagerInterface
@@ -77,6 +78,13 @@ class AutoOptimizationConfigManager implements AutoOptimizationConfigManagerInte
         return $this->repository->find($id);
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function findByPublisher(PublisherInterface $publisher)
+    {
+        return $this->repository->findByPublisher($publisher);
+    }
     /**
      * @inheritdoc
      */

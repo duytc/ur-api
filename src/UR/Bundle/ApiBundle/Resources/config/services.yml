@@ -25,6 +25,7 @@ imports:
     - { resource: services/service.report_view_add_conditional_transform_value.yml}
     - { resource: services/service.auto_optimization_config.yml}
     - { resource: services/serivce.auto_optimization_config_data_set.yml}
+    - { resource: services/service.learner.yml}
 
 
 parameters:

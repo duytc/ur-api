@@ -6,20 +6,15 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\JobParams;
-use UR\Entity\Core\DataSet;
-use UR\Entity\Core\ReportView;
 use UR\Entity\Core\ReportViewAddConditionalTransformValue;
-use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewAddConditionalTransformValueInterface;
-use UR\Model\Core\ReportViewInterface;
-use UR\Service\Report\ReportViewUpdaterInterface;
 
 class RefreshAddConditionalTransformValueWhenAlterDataSetSubJob implements SubJobInterface
 {
     const JOB_NAME = 'refreshAddConditionalTransformValueWhenAlterDataSetSubJob';
     const DATA_SET_ID = 'data_set_id';
 
-	/**
+    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -53,7 +48,7 @@ class RefreshAddConditionalTransformValueWhenAlterDataSetSubJob implements SubJo
         $deleted = false;
 
         /** @var ReportViewAddConditionalTransformValueInterface $reportViewAddConditionalTransformValue */
-        foreach($reportViewAddConditionalTransformValues as $reportViewAddConditionalTransformValue) {
+        foreach ($reportViewAddConditionalTransformValues as $reportViewAddConditionalTransformValue) {
             try {
 
                 if (!$reportViewAddConditionalTransformValue instanceof ReportViewAddConditionalTransformValueInterface) {

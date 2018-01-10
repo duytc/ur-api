@@ -22,6 +22,10 @@ class AutoOptimizationConfig extends AutoOptimizationConfigModel
     protected $createdDate;
     protected $publisher;
     protected $autoOptimizationConfigDataSets;
+    protected $identifiers;
+    protected $positiveFactors;
+    protected $negativeFactors;
+    protected $learners;
 
     /**
      * AutoOptimizationConfig constructor.

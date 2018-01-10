@@ -39,7 +39,7 @@ trait CalculateMetricsAndDimensionsTrait
 //            $transform->getMetricsAndDimensions($metrics, $dimensions);
 //        }
 
-        return array (
+        return array(
             $this->getMetricsKey() => $metrics,
             $this->getDimensionsKey() => $dimensions
         );
@@ -61,11 +61,11 @@ trait CalculateMetricsAndDimensionsTrait
             }
             $dataSetId = $dataSet->getDataSetId();
 
-            $subDimensions = array_map(function ($field) use ($dataSetId){
+            $subDimensions = array_map(function ($field) use ($dataSetId) {
                 return sprintf("%s_%s", $field, $dataSetId);
             }, $dataSet->getDimensions());
 
-            $subMetrics = array_map(function ($field) use ($dataSetId){
+            $subMetrics = array_map(function ($field) use ($dataSetId) {
                 return sprintf("%s_%s", $field, $dataSetId);
             }, $dataSet->getMetrics());
 
@@ -125,5 +125,6 @@ trait CalculateMetricsAndDimensionsTrait
     }
 
     protected abstract function getMetricsKey();
+
     protected abstract function getDimensionsKey();
 }

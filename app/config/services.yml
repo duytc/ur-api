@@ -846,3 +846,18 @@ services:
         arguments:
             - @doctrine.orm.entity_manager
             - %ur_batch_size%
+    ur.service.auto_optimization.data_training_collector:
+        class: UR\Service\AutoOptimization\DataTrainingCollector
+        arguments:
+            - @ur.services.report.params_builder
+            - @ur.services.report.report_builder
+            - @ur.service.auto_optimization.data_training_table_service
+
+    ur.service.auto_optimization.cache_training_model:
+        class: UR\Service\AutoOptimization\CacheTrainingModel
+        arguments:
+            - @ur.redis.app_cache
+    ur.service.auto_optimization.scoring_service:
+        class: UR\Service\AutoOptimization\ScoringService
+        arguments:
+            - @ur.domain_manager.learner

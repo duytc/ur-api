@@ -121,7 +121,7 @@ class Params implements ParamsInterface
     /** @var  array */
     protected $metricCalculations;
 
-    /** @var array  */
+    /** @var array */
     protected $magicMaps = [];
 
     /** @var  string */
@@ -694,7 +694,7 @@ class Params implements ParamsInterface
         if (empty($this->temporarySuffix)) {
             $this->temporarySuffix = mt_rand(0, 100000000);
         }
-        
+
         return $this->temporarySuffix;
     }
 

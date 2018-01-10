@@ -8,6 +8,7 @@ use UR\Model\ModelInterface;
 
 interface AutoOptimizationConfigInterface extends ModelInterface
 {
+    const IDENTIFIER_COLUMN = '__identifier_column';
     /**
      * @inheritdoc
      */
@@ -157,4 +158,53 @@ interface AutoOptimizationConfigInterface extends ModelInterface
      * @param mixed $active
      */
     public function setActive($active);
+
+    /**
+     * @return array
+     */
+    public function getIdentifiers();
+
+    /**
+     * @param array $identifiers
+     * @return self
+     */
+    public function setIdentifiers($identifiers);
+
+    /**
+     * @return array
+     */
+    public function getIdentifierObjects();
+
+    /**
+     * @return array
+     */
+    public function getPositiveFactors();
+
+    /**
+     * @param array $positiveFactors
+     * @return self
+     */
+    public function setPositiveFactors($positiveFactors);
+
+    /**
+     * @return array
+     */
+    public function getNegativeFactors();
+
+    /**
+     * @param array $negativeFactors
+     * @return self
+     */
+    public function setNegativeFactors($negativeFactors);
+    
+    /**
+     * @return mixed
+     */
+    public function getLearners();
+
+    /**
+     * @param mixed $learners
+     * @return self
+     */
+    public function setLearners($learners);
 }

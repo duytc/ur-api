@@ -261,6 +261,31 @@ class UserController extends RestControllerAbstract implements ClassResourceInte
     }
 
     /**
+     * Get all Auto Optimization Config of a publisher
+     *
+     * @Rest\Get("/users/{id}/autooptimizationconfigs" )
+     * @Rest\View(serializerGroups={"auto_optimization_config.detail", "user.summary", "auto_optimization_config_data_set.summary", "dataset.summary"})
+     *
+     * @ApiDoc(
+     *  section = "admin",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  },
+     * )
+     *
+     * @param int $id the resource id
+     * @return string
+     * @throws \Exception
+     */
+    public function getAutoOptimizationConfigByUserAction($id)
+    {
+        /** @var PublisherInterface $publisher */
+        $publisher = $this->one($id);
+        return $this->get('ur.domain_manager.auto_optimization_config')->findByPublisher($publisher);
+    }
+
+    /**
      * Delete an existing publisher
      *
      * @ApiDoc(

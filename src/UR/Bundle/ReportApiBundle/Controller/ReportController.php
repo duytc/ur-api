@@ -149,6 +149,7 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
         header('Content-Type: application/octet-stream');
         header('Content-Disposition: attachment; filename="' . $filename . '.csv";');
         header('Content-Transfer-Encoding: binary');
+        header('Access-Control-Allow-Origin: *'); // manually allow cors when remove xdomain lib
 
         // Open the output stream
         $fh = fopen('php://output', 'w');

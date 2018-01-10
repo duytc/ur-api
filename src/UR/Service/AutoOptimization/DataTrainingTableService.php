@@ -10,17 +10,17 @@ use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
-use UR\Domain\DTO\Report\Transforms\GroupByTransform;
-use UR\Domain\DTO\Report\Transforms\TransformInterface;
-use UR\Model\Core\AutoOptimizationConfigDataSetInterface;
+use UR\Behaviors\AutoOptimizationUtilTrait;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
+use UR\Service\DTO\Report\ReportResult;
 use UR\Service\DTO\Report\ReportResultInterface;
-use UR\Service\Report\SqlBuilder;
 
-class DataTrainingTableService
+class DataTrainingTableService implements DataTrainingTableServiceInterface
 {
+    use AutoOptimizationUtilTrait;
+
     const DATA_TRAINING_TABLE_NAME_PREFIX_TEMPLATE = '__data_training_%d'; // %d is auto optimization config id
 
     const COLUMN_ID = '__id';
@@ -48,19 +48,113 @@ class DataTrainingTableService
     }
 
     /**
-     * @return Connection
+     * @inheritdoc
      */
-    public function getConn()
+    public function getDataByIdentifiers(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifiers)
     {
-        return $this->conn;
+        $rows = new \SplDoublyLinkedList();
+
+        $table = $this->createEmptyDataTrainingTable($autoOptimizationConfig);
+        if (!$table instanceof Table) {
+            return $rows;
+        }
+
+        $qb = $this->conn->createQueryBuilder();
+        $qb
+            ->select("*")
+            ->from($table->getName(), "a");
+
+        if (!empty($identifiers)) {
+            $qb
+                ->andWhere(sprintf('a.%s IN ("%s")', AutoOptimizationConfigInterface::IDENTIFIER_COLUMN, implode('","', $identifiers)));
+        }
+
+        try {
+            $stmt = $qb->execute();
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                if (empty($row) || !is_array($row)) {
+                    continue;
+                }
+
+                $rows->push($row);
+            }
+        } catch (Exception $e) {
+
+        }
+
+        $fieldTypes = $autoOptimizationConfig->getFieldTypes();
+        $columns = array_keys($fieldTypes);
+        $columns = array_combine($columns, $columns);
+
+        $reportResult = new ReportResult($rows, [], [], []);
+        $reportResult->setColumns($columns);
+        $reportResult->setTypes($fieldTypes);
+        $reportResult->setTotalReport($rows->count());
+
+        $reportResult->generateReports();
+
+        return $reportResult;
     }
 
     /**
-     * @param ReportResultInterface $collection
-     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
-     * @param boolean $removeOldData
-     * @return Collection
-     * @throws Exception
+     * @inheritdoc
+     */
+    public function syncSchema(Schema $schema)
+    {
+        $saveQueries = $this->getSyncSchemaQuery($schema);
+
+        foreach ($saveQueries as $sql) {
+            $this->conn->exec($sql);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getIdentifiersForAutoOptimizationConfig(AutoOptimizationConfigInterface $autoOptimizationConfig, $params) {
+        //create or get dataSet table
+        $table = $this->createEmptyDataTrainingTable($autoOptimizationConfig);
+        if (!$table instanceof Table) {
+            return [];
+        }
+
+        $page = isset($params['page']) ? intval($params['page']) : 1;
+        $limit = isset($params['limit']) ? intval($params['limit']) : 100;
+        $orderBy = isset($params['orderBy']) ? $params['orderBy'] : "ASC";
+        $searchKey = isset($params['searchKey']) ? $params['searchKey'] : "";
+
+        $tableName = $table->getName();
+        $selectSql = sprintf("SELECT DISTINCT(%s) FROM %s WHERE %s LIKE '%%%s%%' ORDER BY %s %s LIMIT %s OFFSET %s;",
+            AutoOptimizationConfigInterface::IDENTIFIER_COLUMN,
+            $tableName,
+            AutoOptimizationConfigInterface::IDENTIFIER_COLUMN,
+            $searchKey,
+            AutoOptimizationConfigInterface::IDENTIFIER_COLUMN,
+            $orderBy,
+            $limit,
+            ($page - 1) * $limit
+        );
+
+        $identifiers = [];
+        try {
+            $rows = $this->conn->executeQuery($selectSql)->fetchAll();
+            foreach ($rows as $row) {
+                if (!array_key_exists(AutoOptimizationConfigInterface::IDENTIFIER_COLUMN, $row) || empty($row[AutoOptimizationConfigInterface::IDENTIFIER_COLUMN])) {
+                    continue;
+                }
+                $identifiers[] = $row[AutoOptimizationConfigInterface::IDENTIFIER_COLUMN];
+            }
+        } catch (Exception $e) {
+
+        }
+
+        return $identifiers;
+    }
+
+    /**
+     * @inheritdoc
      */
     public function importDataToDataTrainingTable(ReportResultInterface $collection, AutoOptimizationConfigInterface $autoOptimizationConfig, $removeOldData)
     {
@@ -88,7 +182,7 @@ class DataTrainingTableService
 //                    throw new \InvalidArgumentException(sprintf('column names can only contain alpha characters and underscores'));
 //                }
 
-                if(preg_match('/\s/',$k)) {
+                if (preg_match('/\s/', $k)) {
                     $newKey = str_replace(' ', '_', $k);
                     unset($columns[$k]);
                     $columns[$newKey] = $column;
@@ -110,7 +204,7 @@ class DataTrainingTableService
                 }
 
                 foreach ($row as $key => $value) {
-                    if(preg_match('/\s/',$key)) {
+                    if (preg_match('/\s/', $key)) {
                         $newKey = str_replace(' ', '_', $key);
                         unset($row[$key]);
                         $row[$newKey] = $value;
@@ -163,6 +257,52 @@ class DataTrainingTableService
     }
 
     /**
+     * @inheritdoc
+     */
+    public function createEmptyDataTrainingTable(AutoOptimizationConfigInterface $autoOptimizationConfig)
+    {
+        /* check if data import table existed */
+        $table = $this->getDataTrainingTable($autoOptimizationConfig->getId());
+
+        if ($table instanceof Table) {
+            return $table; // existed => return current table
+        }
+
+        // not existed => create new
+        $schema = new Schema();
+
+        /* create data import table with hidden fields */
+        // create and add hidden fields
+        $dataTrainingTableName = self::getDataTrainingTableName($autoOptimizationConfig->getId());
+        $dataTrainingTable = $schema->createTable($dataTrainingTableName);
+        $dataTrainingTable->addColumn(self::COLUMN_ID, Type::INTEGER, array('autoincrement' => true, 'unsigned' => true));
+        $dataTrainingTable->setPrimaryKey(array(self::COLUMN_ID));
+
+        // get all columns
+        $dimensionsMetricsAndTransformField = $this->getDimensionsMetricsAndTransformField($autoOptimizationConfig);
+        $dimensionsMetricsAndTransformField[AutoOptimizationConfigInterface::IDENTIFIER_COLUMN] = FieldType::TEXT;
+        foreach ($dimensionsMetricsAndTransformField as $fieldName => $fieldType) {
+            $dataTrainingTable = $this->addFieldForTable($dataTrainingTable, $fieldName, $fieldType);
+        }
+        // alter table add columns
+        try {
+            // sync schema
+            $this->syncSchema($schema);
+
+            $this->conn->beginTransaction();
+            $this->conn->commit();
+
+            // truncate table
+            $truncateSql = $this->conn->getDatabasePlatform()->getTruncateTableSQL(self::getDataTrainingTableName($autoOptimizationConfig->getId()));
+            $this->conn->exec($truncateSql);
+        } catch (Exception $e) {
+            return false;
+        }
+
+        return $dataTrainingTable;
+    }
+
+    /**
      * @param $text
      * @param int $count
      * @param string $separator
@@ -209,32 +349,12 @@ class DataTrainingTableService
     /**
      * 1
      *
-     * Synchronize the schema with the database
-     *
-     * @param Schema $schema
-     * @return $this
-     * @throws DBALException
-     */
-    public function syncSchema(Schema $schema)
-    {
-        $saveQueries = $this->getSyncSchemaQuery($schema);
-
-        foreach ($saveQueries as $sql) {
-            $this->conn->exec($sql);
-        }
-
-        return $this;
-    }
-
-    /**
-     * 1
-     *
      * Get query: Synchronize the schema with the database
      *
      * @param Schema $schema
      * @return $this
      */
-    public function getSyncSchemaQuery(Schema $schema)
+    private function getSyncSchemaQuery(Schema $schema)
     {
         $sm = $this->conn->getSchemaManager();
         $fromSchema = $sm->createSchema();
@@ -244,72 +364,6 @@ class DataTrainingTableService
         $saveQueries = $schemaDiff->toSaveSql($this->conn->getDatabasePlatform());
 
         return $saveQueries;
-    }
-
-    /**
-     * 1
-     *
-     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
-     * @return Table|false
-     */
-    public function createEmptyDataTrainingTable(AutoOptimizationConfigInterface $autoOptimizationConfig)
-    {
-        /* check if data import table existed */
-        $table = $this->getDataTrainingTable($autoOptimizationConfig->getId());
-
-        if ($table instanceof Table) {
-            return $table; // existed => return current table
-        }
-
-        // not existed => create new
-        $schema = new Schema();
-
-        /* create data import table with hidden fields */
-        // create and add hidden fields
-        $dataTrainingTableName = self::getDataTrainingTableName($autoOptimizationConfig->getId());
-        $dataTrainingTable = $schema->createTable($dataTrainingTableName);
-        $dataTrainingTable->addColumn(self::COLUMN_ID, Type::INTEGER, array('autoincrement' => true, 'unsigned' => true));
-        $dataTrainingTable->setPrimaryKey(array(self::COLUMN_ID));
-
-        // get all columns
-        $dimensionsMetricsAndTransformField = $this->getDimensionsMetricsAndTransformField($autoOptimizationConfig);
-        foreach ($dimensionsMetricsAndTransformField as $fieldName => $fieldType) {
-            $fieldName = $this->em->getConnection()->quoteIdentifier($fieldName);
-            if ($fieldType === FieldType::NUMBER) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
-            } else if ($fieldType === FieldType::DECIMAL) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                $dataTrainingTable->addColumn($fieldName, $colType, ['precision' => 25, 'scale' => 12, 'notnull' => false, 'default' => null]);
-            } else if ($fieldType === FieldType::LARGE_TEXT) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_LARGE_TEXT]);
-            } else if ($fieldType === FieldType::TEXT) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null, 'length' => self::FIELD_LENGTH_TEXT]);
-            } else if ($fieldType === FieldType::DATE || $fieldType === FieldType::DATETIME) {
-                $colType = FieldType::$MAPPED_FIELD_TYPE_DBAL_TYPE[$fieldType];
-                $dataTrainingTable->addColumn($fieldName, $colType, ['notnull' => false, 'default' => null]);
-            } else {
-                $dataTrainingTable->addColumn($fieldName, $fieldType, ['notnull' => false, 'default' => null]);
-            }
-        }
-        // alter table add columns
-        try {
-            // sync schema
-            $this->syncSchema($schema);
-
-            $this->conn->beginTransaction();
-            $this->conn->commit();
-
-            // truncate table
-            $truncateSql = $this->conn->getDatabasePlatform()->getTruncateTableSQL(self::getDataTrainingTableName($autoOptimizationConfig->getId()));
-            $this->conn->exec($truncateSql);
-        } catch (Exception $e) {
-            return false;
-        }
-
-        return $dataTrainingTable;
     }
 
     /**
@@ -460,104 +514,6 @@ class DataTrainingTableService
     }
 
     /**
-     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
-     * @return array
-     */
-    public function getDimensionsMetricsAndTransformField(AutoOptimizationConfigInterface $autoOptimizationConfig)
-    {
-        /** @var AutoOptimizationConfigDataSetInterface[]|Collection $autoOptimizationConfigDataSets */
-        $autoOptimizationConfigDataSets = $autoOptimizationConfig->getAutoOptimizationConfigDataSets();
-        $dimensionsAndMetricsSelected = [];
-
-        $dimensionsAndMetrics = $autoOptimizationConfig->getFieldTypes();
-        //$dimensions from autoOptimizationConfig
-        foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
-            $dimensions = $autoOptimizationConfigDataSet->getDimensions();
-            $metrics = $autoOptimizationConfigDataSet->getMetrics();
-            $dimensionsAndMetricsSelectedDataSet = array_merge($dimensions, $metrics);
-            foreach ($dimensionsAndMetricsSelectedDataSet as &$item) {
-                $item = $item.'_'.$autoOptimizationConfigDataSet->getDataSet()->getId();
-            }
-            $dimensionsAndMetricsSelected = array_merge($dimensionsAndMetricsSelected, $dimensionsAndMetricsSelectedDataSet);
-            unset($dimensions, $metrics, $dimensionsAndMetricsSelectedDataSet);
-        }
-
-        // joinBy
-        $joinBy = $autoOptimizationConfig->getJoinBy();
-        if (is_array($joinBy) && !empty($joinBy)) {
-            foreach ($joinBy as &$joinBy_) {
-                if (!array_key_exists(SqlBuilder::JOIN_CONFIG_JOIN_FIELDS, $joinBy_)) {
-                    continue;
-                }
-                $joinFields = $joinBy_[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
-                foreach ($joinFields as &$joinField) {
-                    if (!array_key_exists(SqlBuilder::JOIN_CONFIG_DATA_SET, $joinField)) {
-                        continue;
-                    }
-
-                    if (!array_key_exists(SqlBuilder::JOIN_CONFIG_FIELD, $joinField)) {
-                        continue;
-                    }
-                    $field = $joinField[SqlBuilder::JOIN_CONFIG_FIELD].'_'.$joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
-                    $dimensionsAndMetricsSelected = array_values(array_diff($dimensionsAndMetricsSelected, array($field)));
-                }
-
-                if ($joinBy_[SqlBuilder::JOIN_CONFIG_VISIBLE] == false) {
-                    continue;
-                }
-
-                if(preg_match('/\s/', $joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD])) {
-                    $fieldNameOutPutJoin = str_replace(' ', '_', $joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]);
-                    $dimensionsAndMetricsSelected = array_merge(array($fieldNameOutPutJoin), $dimensionsAndMetricsSelected);
-                } else {
-                    $dimensionsAndMetricsSelected = array_merge(array($joinBy_[SqlBuilder::JOIN_CONFIG_OUTPUT_FIELD]), $dimensionsAndMetricsSelected);
-                }
-
-            }
-            unset($joinBy, $joinField, $field);
-        }
-
-        foreach ($dimensionsAndMetrics as $fieldName => $fieldType) {
-
-            if(preg_match('/\s/', $fieldName)) {
-                $newFieldName = str_replace(' ', '_', $fieldName);
-                if (in_array($newFieldName, $dimensionsAndMetricsSelected)) {
-                    unset($dimensionsAndMetrics[$fieldName]);
-                    $dimensionsAndMetrics[$newFieldName] = $fieldType;
-
-                    continue;
-                }
-            }
-
-            if (!in_array($fieldName, $dimensionsAndMetricsSelected)) {
-                unset($dimensionsAndMetrics[$fieldName]);
-            }
-        }
-
-        // $dimensions from autoOptimizationConfig transforms
-        $fieldNameFromTransform = [];
-        foreach ($autoOptimizationConfig->getTransforms() as $transform) {
-            if (!is_array($transform)) {
-                continue;
-            }
-            if ($transform[GroupByTransform::TRANSFORM_TYPE_KEY] == GroupByTransform::GROUP_TRANSFORM) {
-                continue;
-            }
-            $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
-            foreach ($fields as $field) {
-                if (isset($field['field']) && $field['type']) {
-                    $fieldNameTransform = str_replace(' ', '_', $field['field']);
-                    $dimensionsAndMetrics[$fieldNameTransform] = $field['type'];
-                }
-            }
-        }
-
-        unset($metrics, $dimensionsAndMetricsSelected, $fieldWithoutDataSetId, $fieldNameFromTransform);
-
-        return $dimensionsAndMetrics ? $dimensionsAndMetrics : [];
-    }
-
-    /**
      * @param Table $dataTrainingTable
      * @param $fieldName
      * @param $fieldType
@@ -587,5 +543,13 @@ class DataTrainingTableService
         }
 
         return $dataTrainingTable;
+    }
+
+    /**
+     * @return Connection
+     */
+    public function getConn()
+    {
+        return $this->conn;
     }
 }

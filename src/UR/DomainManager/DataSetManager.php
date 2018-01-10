@@ -72,14 +72,14 @@ class DataSetManager implements DataSetManagerInterface
 
         $linkedMapDataSetRepository = $this->om->getRepository(LinkedMapDataSet::class);
         $linkedMaps = $linkedMapDataSetRepository->getByMapDataSet($dataSet);
-        if(count($linkedMaps) > 0){
+        if (count($linkedMaps) > 0) {
             throw new PublicSimpleException("There are some connected data sources with data augmentation transforms that refer to this data set");
         }
 
         $autoOptimizationConfigDataSetRepository = $this->om->getRepository(AutoOptimizationConfigDataSet::class);
         $autoOptimizationConfigDataSets = $autoOptimizationConfigDataSetRepository->findByDataSet($dataSet);
 
-        if(count($autoOptimizationConfigDataSets) > 0){
+        if (count($autoOptimizationConfigDataSets) > 0) {
             throw new PublicSimpleException("There are some Auto Optimization that refer to this data set");
         }
 
