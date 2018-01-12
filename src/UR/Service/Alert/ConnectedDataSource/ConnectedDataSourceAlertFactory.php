@@ -6,6 +6,8 @@ namespace UR\Service\Alert\ConnectedDataSource;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\ImportHistoryInterface;
+use UR\Service\Import\ImportDataException;
 
 class ConnectedDataSourceAlertFactory
 {
@@ -73,5 +75,65 @@ class ConnectedDataSourceAlertFactory
         }
 
         return new ImportFailureAlert($importId, $alertCode, $fileName, $dataSourceName, $dataSetName, $column, $row, $content);
+    }
+
+    /**
+     * @param ImportHistoryInterface $importHistory
+     * @param $ex
+     * @return null|DataAddedAlert|ImportFailureAlert
+     */
+    public function getAlertByException(ImportHistoryInterface $importHistory, $ex)
+    {
+        $connectedDataSource = $importHistory->getConnectedDataSource();
+        $dataSourceEntry = $importHistory->getDataSourceEntry();
+
+        $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
+
+        /** Import success alert */
+        if (!$ex instanceof \Exception) {
+            return $connectedDataSourceAlertFactory->getAlert(
+                $importHistory->getId(),
+                $connectedDataSource->getAlertSetting(),
+                AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORTED_SUCCESSFULLY,
+                $dataSourceEntry->getFileName(),
+                $connectedDataSource->getDataSource(),
+                $connectedDataSource->getDataSet(),
+                null,
+                null,
+                null
+            );
+        }
+
+        /** Import fail alert*/
+        if ($ex instanceof ImportDataException) {
+            return $connectedDataSourceAlertFactory->getAlert(
+                $importHistory->getId(),
+                $connectedDataSource->getAlertSetting(),
+                $ex->getAlertCode(),
+                $dataSourceEntry->getFileName(),
+                $connectedDataSource->getDataSource(),
+                $connectedDataSource->getDataSet(),
+                $ex->getColumn(),
+                $ex->getRow(),
+                $ex->getContent()
+            );
+        }
+
+        /** Import fail alert with unexpected error*/
+        if ($ex instanceof \Exception) {
+            return $alert = $connectedDataSourceAlertFactory->getAlert(
+                $importHistory->getId(),
+                $connectedDataSource->getAlertSetting(),
+                AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_UN_EXPECTED_ERROR,
+                $dataSourceEntry->getFileName(),
+                $connectedDataSource->getDataSource(),
+                $connectedDataSource->getDataSet(),
+                null,
+                null,
+                null
+            );
+        }
+
+        return null;
     }
 }

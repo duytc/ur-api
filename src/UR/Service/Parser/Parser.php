@@ -68,6 +68,9 @@ class Parser implements ParserInterface
         }
 
         if ($parserType == ParserInterface::TYPE_PRE_GROUPS) {
+            if (!$collection instanceof Collection) {
+                $collection  = new Collection([], new SplDoublyLinkedList());
+            }
             if ($collection->getRows()->count() > 0) {
                 $collection->setColumns(array_keys($collection->getRows()[0]));
             } else {

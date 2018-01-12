@@ -6,6 +6,7 @@ namespace UR\Service\Import;
 use Monolog\Logger;
 use UR\Domain\DTO\ConnectedDataSource\DryRunParamsInterface;
 use UR\DomainManager\MapBuilderConfigManager;
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
@@ -123,11 +124,7 @@ class AutoImportData implements AutoImportDataInterface
     public function parseFileThenInsert(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, ImportHistoryInterface $importHistoryEntity, $chunkFilePath)
     {
         /* parsing data */
-        try {
-            $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, null, $parserType = ParserInterface::TYPE_DEFAULT, $chunkFilePath);
-        } catch (ImportDataException $ex) {
-            throw $ex;
-        }
+        $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, null, $parserType = ParserInterface::TYPE_DEFAULT, $chunkFilePath);
         $this->importToDataBase($connectedDataSource, $dataSourceEntry,$importHistoryEntity, $collection);
     }
 
@@ -203,6 +200,16 @@ class AutoImportData implements AutoImportDataInterface
             ];
 
             throw new PublicImportDataException($details, $e);
+        } catch (\Exception $e) {
+            $details = [
+                AbstractConnectedDataSourceAlert::CODE => AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_UN_EXPECTED_ERROR,
+                AbstractConnectedDataSourceAlert::DETAILS => [
+                    AbstractConnectedDataSourceAlert::KEY_COLUMN => "",
+                    AbstractConnectedDataSourceAlert::KEY_CONTENT => ""
+                ]
+            ];
+
+            throw new PublicImportDataException($details, $e);
         }
     }
 
@@ -214,6 +221,7 @@ class AutoImportData implements AutoImportDataInterface
      * @param null $chunkFilePath
      * @return Collection
      * @throws ImportDataException
+     * @throws \Exception
      */
     private function parsingData(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, $limit = null, $parserType = ParserInterface::TYPE_DEFAULT, $chunkFilePath = null)
     {
@@ -231,6 +239,8 @@ class AutoImportData implements AutoImportDataInterface
             $collection = $this->parsingFileService->doParser($dataSourceEntry, $connectedDataSource, $limit, $parserType, $chunkFilePath);
         } catch (ImportDataException $ex) {
             throw $ex;
+        } catch (\Exception $e) {
+            throw $e;
         }
         $this->logger->notice('parsing completed');
 
