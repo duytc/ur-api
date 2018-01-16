@@ -1,6 +1,6 @@
 parameters:
     # entity class
-    ur.entity.core.map_builder_config.class: UR\Entity\Core\Learner
+    ur.entity.core.learner.class: UR\Entity\Core\Learner
 
 services:
     # integration publisher
@@ -9,7 +9,7 @@ services:
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.map_builder_config.class%
+            - %ur.entity.core.learner.class%
 
     ur.domain_manager.learner:
         class: UR\DomainManager\LearnerManager

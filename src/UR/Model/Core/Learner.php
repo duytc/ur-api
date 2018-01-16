@@ -142,7 +142,7 @@ class Learner implements LearnerInterface
     /**
      * @inheritdoc
      */
-    public function setCategoricalFieldWeights($categoricalFieldWeights): void
+    public function setCategoricalFieldWeights($categoricalFieldWeights)
     {
         $this->categoricalFieldWeights = $categoricalFieldWeights;
 
