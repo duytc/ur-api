@@ -104,7 +104,7 @@ class IdentifierGenerator implements IdentifierGeneratorInterface
             $value = $row[AutoOptimizationConfigInterface::IDENTIFIER_COLUMN];
             $value = trim($value);
 
-            if (empty($value) && $value != 0) {
+            if (empty($value) && $value !== 0) {
                 $value = null;
             }
 
