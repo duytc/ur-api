@@ -2,6 +2,7 @@
 
 namespace UR\Service\AutoOptimization\DTO;
 
+use SplDoublyLinkedList;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\DataSet\FieldType;
 use UR\Service\DTO\Collection;
@@ -32,6 +33,8 @@ class IdentifierGenerator implements IdentifierGeneratorInterface
     public function generateIdentifiers(Collection $collection)
     {
         $collection = $this->getAddField()->transform($collection);
+
+        $collection = $this->updateEmptyIdentifier($collection);
 
         $collection = $this->updateColumnsAndTypes($collection);
 
@@ -79,5 +82,40 @@ class IdentifierGenerator implements IdentifierGeneratorInterface
         $collection->setTypes($types);
 
         return $collection;
+    }
+
+    /**
+     * @param Collection $collection
+     * @return null|Collection
+     */
+    private function updateEmptyIdentifier(Collection $collection)
+    {
+        $rows = $collection->getRows();
+        if ($rows->count() < 1) {
+            return $collection;
+        }
+
+        $newRows = new SplDoublyLinkedList();
+        foreach ($rows as $row) {
+            if (!array_key_exists(AutoOptimizationConfigInterface::IDENTIFIER_COLUMN, $row)) {
+                continue;
+            }
+
+            $value = $row[AutoOptimizationConfigInterface::IDENTIFIER_COLUMN];
+            $value = trim($value);
+
+            if (empty($value) && $value != 0) {
+                $value = null;
+            }
+
+            $row[AutoOptimizationConfigInterface::IDENTIFIER_COLUMN] = $value;
+
+            $newRows->push($row);
+            unset($row);
+        }
+
+        unset($rows, $row);
+
+        return new Collection($collection->getColumns(), $newRows, $collection->getTypes());
     }
 }
