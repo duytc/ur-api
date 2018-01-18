@@ -34,7 +34,7 @@ class IdentifierGenerator implements IdentifierGeneratorInterface
     {
         $collection = $this->getAddField()->transform($collection);
 
-        $collection = $this->updateEmptyIdentifier($collection);
+        $collection = $this->normalizeIdentifier($collection);
 
         $collection = $this->updateColumnsAndTypes($collection);
 
@@ -88,7 +88,7 @@ class IdentifierGenerator implements IdentifierGeneratorInterface
      * @param Collection $collection
      * @return null|Collection
      */
-    private function updateEmptyIdentifier(Collection $collection)
+    private function normalizeIdentifier(Collection $collection)
     {
         $rows = $collection->getRows();
         if ($rows->count() < 1) {
@@ -103,6 +103,7 @@ class IdentifierGenerator implements IdentifierGeneratorInterface
 
             $value = $row[AutoOptimizationConfigInterface::IDENTIFIER_COLUMN];
             $value = trim($value);
+            $value = str_replace(" ", "_", $value);
 
             if (empty($value) && $value !== 0) {
                 $value = null;
