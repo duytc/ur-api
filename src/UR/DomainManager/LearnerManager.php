@@ -92,47 +92,16 @@ class LearnerManager implements LearnerManagerInterface
     /**
      * @inheritdoc
      */
-    public function getLearnerModelByParams(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier, $type)
+    public function getLearnerByParams(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier, $type)
     {
         /** @var LearnerInterface $learner */
-        $learners = $this->repository->getLearnerByAutoOptimizationAndIdentifier($autoOptimizationConfig, $identifier);
+        $learners = $this->repository->getLearnerByParams($autoOptimizationConfig, $identifier);
 
         $learner = array_shift($learners);
         if (!$learner instanceof LearnerInterface) {
             return [];
         }
 
-        return $learner->getModel();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getForecastFactorsValuesByByParams(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier, $type)
-    {
-        /** @var LearnerInterface $learner */
-        $learners = $this->repository->getLearnerByAutoOptimizationAndIdentifier($autoOptimizationConfig, $identifier);
-
-        $learner = array_shift($learners);
-        if (!$learner instanceof LearnerInterface) {
-            return [];
-        }
-
-        return $learner->getForecastFactorValues();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getCategoricalFieldWeightsByParams(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier, $type)
-    {
-        /** @var LearnerInterface $learner */
-        $learners = $this->repository->getLearnerByAutoOptimizationAndIdentifier($autoOptimizationConfig, $identifier);
-        $learner = array_shift($learners);
-        if (!$learner instanceof LearnerInterface) {
-            return [];
-        }
-
-        return $learner->getCategoricalFieldWeights();
+        return $learner;
     }
 }

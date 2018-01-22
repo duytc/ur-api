@@ -12,7 +12,7 @@ class LearnerRepository extends EntityRepository implements LearnerRepositoryInt
     /**
      * @inheritdoc
      */
-    public function getLearnerByAutoOptimizationAndIdentifier(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier)
+    public function getLearnerByParams(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier)
     {
         $qb = $this->createQueryBuilder("l")
             ->andWhere('l.autoOptimizationConfig = :autoOptimizationConfig')

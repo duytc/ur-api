@@ -6,12 +6,6 @@ use UR\Model\Core\AutoOptimizationConfigInterface;
 
 interface ScoringServiceInterface
 {
-    const REGRESSION_LINEAR_MODEL = 'LinearRegression';
-    const COEFFICIENT_KEY = 'coefficient';
-    const INTERCEPT_KEY = 'intercept';
-    const ALL_FACTORS_KEY = 'all';
-    const OBJECTIVE_DEFAULT_VALUE = 0;
-
     /**
      * Score for multiple identifiers and conditions
      *

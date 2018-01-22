@@ -41,7 +41,7 @@ interface LearnerInterface extends ModelInterface
     public function setType($type);
 
     /**
-     * @return mixed
+     * @return AutoOptimizationConfigInterface
      */
     public function getAutoOptimizationConfig();
 

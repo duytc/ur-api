@@ -546,6 +546,54 @@ class DataTrainingTableService implements DataTrainingTableServiceInterface
     }
 
     /**
+     * @inheritdoc
+     */
+    public function getAllValuesOfOneColumn(AutoOptimizationConfigInterface $autoOptimizationConfig, $columnName)
+    {
+        $allUniqueValues = [];
+
+        $table  = $this->getDataTrainingTable($autoOptimizationConfig->getId());
+        if (!$table instanceof Table) {
+            return [];
+        }
+
+        $columns =  $table->getColumns();
+        if (!in_array($columnName, array_keys($columns))) {
+            return [];
+        }
+
+        $selectSql = sprintf("SELECT DISTINCT(%s) FROM %s;",
+            $columnName,
+            $table->getName()
+        );
+
+        try {
+            $allUniqueValues = $this->conn->executeQuery($selectSql)->fetchAll();
+        } catch (Exception $e) {
+
+        }
+
+        $allUniqueValues = $this->arrayFlatten($allUniqueValues);
+
+        return $allUniqueValues;
+    }
+
+    /**
+     * @param array $array
+     * @return array
+     */
+    private function arrayFlatten(array $array)
+    {
+        $flatten = array();
+        array_walk_recursive($array, function ($value) use (&$flatten) {
+            $flatten[] = $value;
+        });
+
+        return $flatten;
+    }
+
+
+    /**
      * @return Connection
      */
     public function getConn()

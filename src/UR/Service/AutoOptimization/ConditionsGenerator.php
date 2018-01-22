@@ -3,21 +3,143 @@
 
 namespace UR\Service\AutoOptimization;
 
+use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Model\Core\AutoOptimizationConfigInterface;
 
 class ConditionsGenerator implements ConditionsGeneratorInterface
 {
     /**
+     * @var DataTrainingTableServiceInterface
+     */
+    private $dataTrainingTableService;
+
+    /**
+     * ConditionsGenerator constructor.
+     * @param DataTrainingTableServiceInterface $dataTrainingTableService
+     */
+    public function __construct(DataTrainingTableServiceInterface $dataTrainingTableService)
+    {
+        $this->dataTrainingTableService = $dataTrainingTableService;
+    }
+
+    /**
      * @inheritdoc
      */
     public function generateMultipleConditions(AutoOptimizationConfigInterface $autoOptimizationConfig, array $conditions)
     {
+        //Todo: This function should refactor in next version
+        $conditions = $this->changeStructureOfConditions($conditions, $autoOptimizationConfig);
+
         $this->validateConditions($autoOptimizationConfig, $conditions);
+        $conditions = $this->replaceNullByAllValuesForOneFactor($autoOptimizationConfig, $conditions);
+
         $multiConditions = [];
         $vector = [];
         $this->createRecursiveCondition($multiConditions, $vector, $conditions);
 
         return $multiConditions;
+    }
+
+    /**
+     * @param $conditions
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @return array
+     * @throws \Exception
+     */
+    private function changeStructureOfConditions($conditions, AutoOptimizationConfigInterface $autoOptimizationConfig)
+    {
+        $newConditions = [];
+        foreach ($conditions as $condition) {
+            if (!is_array($condition)) {
+                continue;
+            }
+            if (array_key_exists('' . self::FACTOR_KEY . '', $condition)) {
+                $factor = $condition[self::FACTOR_KEY];
+            } else {
+                $factor = null;
+            }
+
+            if (array_key_exists('' . self::VALUES_KEY . '', $condition)) {
+                $values = $condition[self::VALUES_KEY];
+            } else {
+                $values = null;
+            }
+
+            if (array_key_exists('' . self::IS_ALL_KEY . '', $condition)) {
+                $allValues = $condition[self::IS_ALL_KEY];
+            } else {
+                $allValues = null;
+            }
+
+
+            if ($allValues && $this->isTextField($autoOptimizationConfig, $factor)) {
+                $newConditions[$factor] = $allValues ? null : $values;
+            } else {
+                $newConditions[$factor] = $values;
+            }
+        }
+
+        return $newConditions;
+    }
+
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param $factor
+     * @return bool
+     * @throws \Exception
+     */
+    private function isTextField(AutoOptimizationConfigInterface $autoOptimizationConfig, $factor)
+    {
+        $allFieldTypes = $autoOptimizationConfig->getFieldTypes();
+        if (!array_key_exists($factor, $allFieldTypes)) {
+            throw new \Exception("Field %s does not exit in Auto Optimization Config with id =%d", $factor, $autoOptimizationConfig->getId());
+        }
+
+        if ($allFieldTypes[$factor] != DataSet::TEXT_FIELD_TYPE_FILTER_KEY) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param $conditions
+     * @throws \Exception
+     */
+    private function validateConditions(AutoOptimizationConfigInterface $autoOptimizationConfig, $conditions)
+    {
+        $factors = $autoOptimizationConfig->getFactors();
+
+        if (empty($factors)) {
+            throw new \Exception(sprintf('Optimization Config = %d do not have any factors ', $autoOptimizationConfig->getId()));
+        }
+
+        foreach ($conditions as $key => $condition) {
+            if (!in_array($key, $factors)) {
+                throw new \Exception(sprintf('Invalid conditions, factor %s does not supported by auto optimization config = %d', $key, $autoOptimizationConfig->getId()));
+            }
+        }
+    }
+
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param array $conditions
+     * @return array
+     * @throws \Exception
+     */
+    private function replaceNullByAllValuesForOneFactor(AutoOptimizationConfigInterface $autoOptimizationConfig, array $conditions)
+    {
+        foreach ($conditions as $factor => $condition) {
+            if (!empty($condition) || !$this->isTextField($autoOptimizationConfig, $factor)) {
+                continue;
+            }
+
+            $conditions[$factor] = $this->dataTrainingTableService->getAllValuesOfOneColumn($autoOptimizationConfig, $factor);
+        }
+
+        return $conditions;
+
     }
 
     /**
@@ -68,26 +190,6 @@ class ConditionsGenerator implements ConditionsGeneratorInterface
 
             /** Process next field by call recursive */
             $this->createRecursiveCondition($conditions, $newVector, $remainConditions);
-        }
-    }
-
-    /**
-     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
-     * @param $conditions
-     * @throws \Exception
-     */
-    private function validateConditions(AutoOptimizationConfigInterface $autoOptimizationConfig, $conditions)
-    {
-        $factors = $autoOptimizationConfig->getFactors();
-
-        if (empty($factors)) {
-            throw new \Exception(sprintf('Optimization Config = %d do not have any factors ', $autoOptimizationConfig->getId()));
-        }
-
-        foreach ($conditions as $key => $condition) {
-            if (!in_array($key, $factors)) {
-                throw new \Exception(sprintf('Invalid conditions, factor %s does not supported by auto optimization config = %d', $key, $autoOptimizationConfig->getId()));
-            }
         }
     }
 

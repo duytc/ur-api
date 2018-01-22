@@ -856,10 +856,16 @@ services:
     ur.service.auto_optimization.scoring_service:
         class: UR\Service\AutoOptimization\ScoringService
         arguments:
-            - @ur.domain_manager.learner
             - @ur.service.auto_optimization.conditions_generator
+            -
+                - @ur.service.auto_optimization.learner_model.linear_regression_learner.linear_regression
 
     ur.service.auto_optimization.conditions_generator:
         class: UR\Service\AutoOptimization\ConditionsGenerator
+        arguments:
+            - @ur.service.auto_optimization.data_training_table_service
+
+    ur.service.auto_optimization.learner_model.linear_regression_learner.linear_regression:
+        class: UR\Service\AutoOptimization\LearnerModel\LinearRegressionLearner\LinearRegression
         arguments:
             - @ur.domain_manager.learner

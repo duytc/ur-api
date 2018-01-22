@@ -2,6 +2,12 @@ UR\Entity\Core\Learner:
     type: entity
     table: core_learner_model
     repositoryClass: UR\Repository\Core\LearnerRepository
+    uniqueConstraints:
+        Learner_unique_key:
+            columns:
+                - identifier
+                - auto_optimization_config_id
+                - type
     id:
         id:
             type: integer

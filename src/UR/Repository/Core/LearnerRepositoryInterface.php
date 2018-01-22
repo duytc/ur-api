@@ -13,5 +13,5 @@ interface LearnerRepositoryInterface extends ObjectRepository
      * @param $identifier
      * @return mixed
      */
-    public function getLearnerByAutoOptimizationAndIdentifier(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier);
+    public function getLearnerByParams(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifier);
 }

@@ -51,4 +51,12 @@ interface DataTrainingTableServiceInterface
      * @return ReportResultInterface
      */
     public function getDataByIdentifiers(AutoOptimizationConfigInterface $autoOptimizationConfig, $identifiers);
+
+    /**
+     * @param AutoOptimizationConfigInterface $autoOptimizationConfig
+     * @param $columnName
+     * @return mixed
+     */
+    public function getAllValuesOfOneColumn(AutoOptimizationConfigInterface $autoOptimizationConfig, $columnName);
+
 }

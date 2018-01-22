@@ -17,6 +17,7 @@ class AutoOptimizationConfigRepository extends EntityRepository implements AutoO
     const ADD_CONDITION_VALUE_TRANSFORM_TYPE = 'addConditionValue';
     const ADD_CONDITION_VALUE_TRANSFORM_VALUE_KEY = 'values';
     protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name'];
+
     /**
      * @inheritdoc
      */
@@ -99,15 +100,6 @@ class AutoOptimizationConfigRepository extends EntityRepository implements AutoO
     /**
      * @inheritdoc
      */
-    public function findByPublisher(PublisherInterface $publisher)
-    {
-        $qb = $this->getAutoOptimizationConfigsForPublisherQuery($publisher);
-
-        return $qb->getQuery()->getResult();
-    }
-    /**
-     * @inheritdoc
-     */
     public function getAutoOptimizationConfigsForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null)
     {
         $qb = $this->createQueryBuilder('aoc')
@@ -123,5 +115,15 @@ class AutoOptimizationConfigRepository extends EntityRepository implements AutoO
         }
 
         return $qb;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByPublisher(PublisherInterface $publisher)
+    {
+        $qb = $this->getAutoOptimizationConfigsForPublisherQuery($publisher);
+
+        return $qb->getQuery()->getResult();
     }
 }

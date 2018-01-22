@@ -8,7 +8,7 @@ use UR\Model\ModelInterface;
 
 interface AutoOptimizationConfigInterface extends ModelInterface
 {
-    const IDENTIFIER_COLUMN = '__identifier_column';
+    const IDENTIFIER_COLUMN = '__identifier';
     /**
      * @inheritdoc
      */
