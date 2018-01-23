@@ -156,7 +156,7 @@ class DataTrainingTableService implements DataTrainingTableServiceInterface
     /**
      * @inheritdoc
      */
-    public function importDataToDataTrainingTable(ReportResultInterface $collection, AutoOptimizationConfigInterface $autoOptimizationConfig, $removeOldData)
+    public function importDataToDataTrainingTable(ReportResultInterface $collection, AutoOptimizationConfigInterface $autoOptimizationConfig)
     {
         //create or get dataSet table
         $table = $this->createEmptyDataTrainingTable($autoOptimizationConfig);
@@ -167,11 +167,6 @@ class DataTrainingTableService implements DataTrainingTableServiceInterface
         $tableName = $table->getName();
 
         try {
-            $this->conn->beginTransaction();
-            if ($removeOldData == true) {
-                $truncateSql = $this->conn->getDatabasePlatform()->getTruncateTableSQL($tableName);
-                $this->conn->exec($truncateSql);
-            }
             $dimensions = $autoOptimizationConfig->getDimensions();
             $rows = $collection->getRows();
             $columns = $collection->getColumns();
@@ -233,6 +228,7 @@ class DataTrainingTableService implements DataTrainingTableServiceInterface
 
                     //commit update and insert
                     $this->conn->commit();
+                    $this->conn->close();
                     $insertValues = [];
                     $questionMarks = [];
                     $preparedInsertCount = 0;
@@ -240,10 +236,12 @@ class DataTrainingTableService implements DataTrainingTableServiceInterface
             }
 
             if ($preparedInsertCount > 0 && is_array($columns) && is_array($questionMarks)) {
+                $this->conn->beginTransaction();
                 $this->executeInsert($tableName, $columns, $questionMarks, $insertValues);
 
                 //commit update and insert
                 $this->conn->commit();
+                $this->conn->close();
             }
 
             return new Collection($columns, $rows);

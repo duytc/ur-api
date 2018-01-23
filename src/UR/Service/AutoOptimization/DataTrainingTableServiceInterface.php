@@ -39,11 +39,10 @@ interface DataTrainingTableServiceInterface
     /**
      * @param ReportResultInterface $collection
      * @param AutoOptimizationConfigInterface $autoOptimizationConfig
-     * @param boolean $removeOldData
      * @return Collection
      * @throws Exception
      */
-    public function importDataToDataTrainingTable(ReportResultInterface $collection, AutoOptimizationConfigInterface $autoOptimizationConfig, $removeOldData);
+    public function importDataToDataTrainingTable(ReportResultInterface $collection, AutoOptimizationConfigInterface $autoOptimizationConfig);
 
     /**
      * @param AutoOptimizationConfigInterface $autoOptimizationConfig

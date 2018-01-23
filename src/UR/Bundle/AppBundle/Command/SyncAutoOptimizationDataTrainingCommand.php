@@ -25,7 +25,6 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
         $this
             ->setName(self::COMMAND_NAME)
             ->addArgument('autoOptimizationConfigId', InputArgument::REQUIRED, 'Auto Optimization Config Id')
-            ->addOption(self::INPUT_DATA_FORCE, 'f', InputOption::VALUE_NONE, 'Remove all old data')
             ->setDescription('Synchronization AutoOptimizationConfig with __auto_optimization_data_training table');
     }
 
@@ -39,13 +38,7 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
 
         /* get inputs */
         $autoOptimizationConfigId = $input->getArgument('autoOptimizationConfigId');
-        $forceRun = $input->getOption('force');
 
-        if (!empty($forceRun)) {
-            $removeOldData = true;
-        } else {
-            $removeOldData = false;
-        }
         if (empty($autoOptimizationConfigId)) {
             $io->warning('Missing autoOptimizationConfigId');
             return;
@@ -76,7 +69,7 @@ class SyncAutoOptimizationDataTrainingCommand extends ContainerAwareCommand
 
         $autoOptimizationSyncService->deleteDataTrainingTable($autoOptimizationConfigId);
         $autoOptimizationSyncService->createEmptyDataTrainingTable($autoOptimizationConfig);
-        $autoOptimizationSyncService->importDataToDataTrainingTable($data, $autoOptimizationConfig, $removeOldData);
+        $autoOptimizationSyncService->importDataToDataTrainingTable($data, $autoOptimizationConfig);
         $io->success(sprintf('Finish sync data for AutoOptimizationConfig #%d', $autoOptimizationConfigId));
     }
 }
