@@ -512,6 +512,8 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     }
 
     /**
+     * @Rest\View(serializerGroups={"report_view.detail", "user.summary", "report_view_data_set.summary", "report_view_multi_view.summary", "dataset.summary"})
+     *
      * Update an existing report view from the submitted data or create a new report view at a specific location
      *
      * @ApiDoc(
