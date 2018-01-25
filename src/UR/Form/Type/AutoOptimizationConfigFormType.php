@@ -28,6 +28,7 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
             ->add('joinBy')
             ->add('factors')
             ->add('objective')
+            ->add('expectedObjective')
             ->add('dateRange')
             ->add('active')
             ->add('identifiers')
@@ -63,6 +64,7 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
                 $this->validateJoinBy($form, $autoOptimizationConfig->getJoinBy());
                 $this->validateFieldTypes($form, $autoOptimizationConfig->getFieldTypes());
                 $this->validateDateRange($form, $autoOptimizationConfig->getDateRange());
+                $this->validateExpectedObjective($form, $autoOptimizationConfig->getExpectedObjective());
 
                 if (!is_array($autoOptimizationConfig->getFieldTypes())) {
                     $autoOptimizationConfig->setFieldTypes([]);
@@ -82,16 +84,6 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
                 }
             }
         );
-    }
-
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
-    {
-        $resolver->setDefaults(['data_class' => AutoOptimizationConfig::class]);
-    }
-
-    public function getName()
-    {
-        return 'ur_form_auto_optimization_config';
     }
 
     private function validateTransforms($form, $transforms)
@@ -127,5 +119,30 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
         }
 
         return true;
+    }
+
+    /**
+     * @param $form
+     * @param $fieldTypes
+     * @return bool
+     * @throws \Exception
+     */
+    private function validateExpectedObjective($form, $fieldTypes)
+    {
+        if (!in_array($fieldTypes, ['min', 'max'])) {
+            throw  new  \Exception(sprintf('Value %s is not valid for expected objective', $fieldTypes));
+        }
+
+        return true;
+    }
+
+    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    {
+        $resolver->setDefaults(['data_class' => AutoOptimizationConfig::class]);
+    }
+
+    public function getName()
+    {
+        return 'ur_form_auto_optimization_config';
     }
 }

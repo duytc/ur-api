@@ -37,13 +37,21 @@ class ScoringService implements ScoringServiceInterface
     public function predict(AutoOptimizationConfigInterface $autoOptimizationConfig, array $identifiers, array $conditions)
     {
         $conditions = $this->conditionsGenerator->generateMultipleConditions($autoOptimizationConfig, $conditions);
+        $expectedObjective = $autoOptimizationConfig->getExpectedObjective();
+
         $fitModels = $this->getLearnerModels($autoOptimizationConfig, $identifiers);
 
         if (!is_array($fitModels)) {
             return [];
         }
 
-        return $this->makeMultiplePredictionsWithManyConditions($fitModels, $conditions);
+        $normalizePredictions = $this->makeMultiplePredictionsWithManyConditions($fitModels, $conditions);
+
+        foreach ($normalizePredictions as $key => $normalizePrediction) {
+            $normalizePredictions[$key] = $this->sortByExpectedObjective($expectedObjective, $normalizePrediction);
+        }
+
+        return $normalizePredictions;
     }
 
     /**
@@ -135,7 +143,21 @@ class ScoringService implements ScoringServiceInterface
             $normalizePredictions[$identifier] = number_format($rawPrediction, LearnerModelInterface::MAX_DECIMAL);
         }
 
-        arsort($normalizePredictions);
+        return $normalizePredictions;
+    }
+
+    /**
+     * @param $expectedObjective
+     * @param $normalizePredictions
+     * @return mixed
+     */
+    private function sortByExpectedObjective($expectedObjective, $normalizePredictions)
+    {
+        if (AutoOptimizationConfigInterface::MIN_OBJECTIVE === $expectedObjective) {
+            asort($normalizePredictions);
+        } else {
+            arsort($normalizePredictions);
+        }
 
         return $normalizePredictions;
     }

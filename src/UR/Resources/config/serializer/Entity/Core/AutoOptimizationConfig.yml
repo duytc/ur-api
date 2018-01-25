@@ -31,6 +31,9 @@ UR\Entity\Core\AutoOptimizationConfig:
         objective:
             expose: true
             groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        expectedObjective:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]
         dateRange:
             expose: true
             groups: [auto_optimization_config.detail, auto_optimization_config.summary]

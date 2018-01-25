@@ -20,6 +20,7 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     protected $joinBy;
     protected $factors;
     protected $objective;
+    protected $expectedObjective;
     protected $dateRange;
     protected $active;
     protected $createdDate;
@@ -66,6 +67,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setId($id)
     {
         $this->id = $id;
+
+        return $this;
     }
 
     /**
@@ -82,6 +85,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setTransforms($transforms)
     {
         $this->transforms = $transforms;
+
+        return $this;
     }
 
     /**
@@ -98,6 +103,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setFilters($filters)
     {
         $this->filters = $filters;
+
+        return $this;
     }
 
     /**
@@ -114,6 +121,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setMetrics($metrics)
     {
         $this->metrics = $metrics;
+
+        return $this;
     }
 
     /**
@@ -130,6 +139,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setDimensions($dimensions)
     {
         $this->dimensions = $dimensions;
+
+        return $this;
     }
 
     /**
@@ -146,6 +157,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setName($name)
     {
         $this->name = $name;
+
+        return $this;
     }
 
     /**
@@ -162,6 +175,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setFieldTypes($fieldTypes)
     {
         $this->fieldTypes = $fieldTypes;
+
+        return $this;
     }
 
     /**
@@ -178,6 +193,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setJoinBy($joinBy)
     {
         $this->joinBy = $joinBy;
+
+        return $this;
     }
 
     /**
@@ -194,6 +211,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setCreatedDate($createdDate)
     {
         $this->createdDate = $createdDate;
+
+        return $this;
     }
 
     /**
@@ -210,6 +229,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setPublisher($publisher)
     {
         $this->publisher = $publisher;
+
+        return $this;
     }
 
     /**
@@ -226,6 +247,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setAutoOptimizationConfigDataSets($autoOptimizationConfigDataSets)
     {
         $this->autoOptimizationConfigDataSets = $autoOptimizationConfigDataSets;
+
+        return $this;
     }
 
     /**
@@ -242,6 +265,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setFactors($factors)
     {
         $this->factors = $factors;
+
+        return $this;
     }
 
     /**
@@ -258,6 +283,26 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setObjective($objective)
     {
         $this->objective = $objective;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getExpectedObjective()
+    {
+        return $this->expectedObjective;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setExpectedObjective($expectedObjective)
+    {
+        $this->expectedObjective = $expectedObjective;
+
+        return $this;
     }
 
     /**
@@ -290,6 +335,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setActive($active)
     {
         $this->active = $active;
+
+        return $this;
     }
 
     /**
@@ -336,6 +383,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setPositiveFactors($positiveFactors)
     {
         $this->positiveFactors = $positiveFactors;
+
+        return $this;
     }
 
     /**
@@ -352,6 +401,8 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     public function setNegativeFactors($negativeFactors)
     {
         $this->negativeFactors = $negativeFactors;
+
+        return $this;
     }
     
     /**

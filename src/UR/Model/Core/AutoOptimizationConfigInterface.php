@@ -9,6 +9,8 @@ use UR\Model\ModelInterface;
 interface AutoOptimizationConfigInterface extends ModelInterface
 {
     const IDENTIFIER_COLUMN = '__identifier';
+    const MIN_OBJECTIVE = 'min';
+    const MAX_OBJECTIVE =  'max';
     /**
      * @inheritdoc
      */
@@ -138,6 +140,17 @@ interface AutoOptimizationConfigInterface extends ModelInterface
      * @param mixed $objective
      */
     public function setObjective($objective);
+
+    /**
+     * @return mixed
+     */
+    public function getExpectedObjective();
+
+    /**
+     * @param $expectedObjective
+     * @return $this
+     */
+    public function setExpectedObjective($expectedObjective);
 
     /**
      * @return mixed

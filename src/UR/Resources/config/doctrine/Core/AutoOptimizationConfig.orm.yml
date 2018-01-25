@@ -35,6 +35,9 @@ UR\Entity\Core\AutoOptimizationConfig:
         objective:
             type: string
             nullable: true
+        expectedObjective:
+            type: string
+            nullable: true
         dateRange:
             type: string
             nullable: true

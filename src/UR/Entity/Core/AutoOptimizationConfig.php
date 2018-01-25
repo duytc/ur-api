@@ -17,6 +17,7 @@ class AutoOptimizationConfig extends AutoOptimizationConfigModel
     protected $joinBy;
     protected $factors;
     protected $objective;
+    protected $expectedObjective;
     protected $dateRange;
     protected $active;
     protected $createdDate;
