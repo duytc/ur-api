@@ -16,6 +16,7 @@ class ConvertCase implements CollectionTransformerInterface, CollectionTransform
     const TARGET_FIELD_KEY = 'targetField';
     const IS_OVERRIDE_KEY = 'isOverride';
     const CONVERT_TYPE_KEY = 'type';
+    const AUTO_NORMALIZE_TEXT = 'autoNormalizeText';
 
     /**
      * @var string
@@ -36,21 +37,32 @@ class ConvertCase implements CollectionTransformerInterface, CollectionTransform
      */
     protected $targetField;
 
+    protected $autoNormalizeText;
+    protected $preTransforms = [];
+
     /**
      * ConvertCase constructor.
      * @param string $field
      * @param string $convertType
      * @param bool $isOverride
      * @param string $targetField
+     * @param bool $autoNormalizeText
      */
-    public function __construct($field, $convertType, $isOverride = true, $targetField = null)
+    public function __construct($field, $convertType, $isOverride = true, $targetField = null, $autoNormalizeText = false)
     {
         $this->field = $field;
         $this->convertType = $convertType;
         $this->isOverride = $isOverride;
         $this->targetField = $targetField;
-    }
+        $this->autoNormalizeText = $autoNormalizeText;
 
+        if ($this->autoNormalizeText) {
+            $normalizeTextTransformConfig = [];
+            $normalizeTextTransform = new NormalizeText($this->field, true, null, false, false, false, true);
+            $normalizeTextTransformConfig[] = $normalizeTextTransform;
+            $this->preTransforms = $normalizeTextTransformConfig;
+        }
+    }
 
     /**
      * @param Collection $collection
@@ -62,6 +74,9 @@ class ConvertCase implements CollectionTransformerInterface, CollectionTransform
      */
     public function transform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
     {
+        // to do Normalize text to remove non alphanumeric first and then do convert case
+        $collection = $this->preTransform($collection, $em, $connectedDataSource, $fromDateFormats, $mapFields);
+
         $rows = $collection->getRows();
         $columns = $collection->getColumns();
         $types = $collection->getTypes();
@@ -94,8 +109,23 @@ class ConvertCase implements CollectionTransformerInterface, CollectionTransform
         return new Collection($columns, $newRows, $types);
     }
 
+    private function preTransform(Collection $collection, EntityManagerInterface $em = null, ConnectedDataSourceInterface $connectedDataSource = null, $fromDateFormats = [], $mapFields = [])
+    {
+        foreach ($this->preTransforms as $transform) {
+            $collection = $transform->transform($collection, $em , $connectedDataSource, $fromDateFormats, $mapFields);
+        }
+
+         return $collection;
+    }
+
     private function getValue(array $row)
     {
+        if (!array_key_exists($this->field, $row) || is_null($row[$this->field])) {
+            return null;
+        }
+
+        //$value = $row[$this->field];
+
         if ($this->convertType == self::LOWER_CASE_CONVERT) {
             return isset($row[$this->field]) ? strtolower($row[$this->field]) : null;
         }

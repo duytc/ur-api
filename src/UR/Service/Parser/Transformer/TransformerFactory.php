@@ -455,11 +455,17 @@ class TransformerFactory
                 continue;
             }
 
+            $autoNormalizeText = false;
+            if (isset($convertCaseConfig[ConvertCase::AUTO_NORMALIZE_TEXT]) && $convertCaseConfig[ConvertCase::AUTO_NORMALIZE_TEXT] == true) {
+                $autoNormalizeText = true;
+            }
+
             $extractPatternTransforms[] = new ConvertCase(
                 $convertCaseConfig[ConvertCase::FIELD_KEY],
                 $convertType,
                 $isOverride,
-                $convertCaseConfig[ConvertCase::TARGET_FIELD_KEY]
+                $convertCaseConfig[ConvertCase::TARGET_FIELD_KEY],
+                $autoNormalizeText
             );
         }
 
