@@ -53,11 +53,6 @@ class Parser implements ParserInterface
         $collection = $this->createCollection($rows, $fileCols, $parserConfig, $connectedDataSource);
         $collection = $this->addTemporaryFields($collection, $connectedDataSource);
 
-        /** Check before fire any UR event to custom transform bundle */
-        if ($rows->count() < 1) {
-            return $collection;
-        }
-
         $collection = $this->urEventDispatcher->postLoadDataEvent($connectedDataSource, $collection);
 
         $collection = $this->urEventDispatcher->preFilterDataEvent($connectedDataSource, $collection);
@@ -73,7 +68,14 @@ class Parser implements ParserInterface
         }
 
         if ($parserType == ParserInterface::TYPE_PRE_GROUPS) {
-            $collection->setColumns(array_keys($collection->getRows()[0]));
+            if (!$collection instanceof Collection) {
+                $collection  = new Collection([], new SplDoublyLinkedList());
+            }
+            if ($collection->getRows()->count() > 0) {
+                $collection->setColumns(array_keys($collection->getRows()[0]));
+            } else {
+                $collection->setColumns([]);
+            }
         } else {
             $collection = $this->getFinalCollection($parserConfig, $connectedDataSource, $collection);
             $collection = $this->urEventDispatcher->postParseDataEvent($connectedDataSource, $collection);

@@ -16,6 +16,7 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
     const NUMBER_REMOVED_KEY = 'numberRemoved';
     const NON_ALPHA_NUMERIC_REMOVED_KEY = 'alphabetCharacterRemoved';
     const WHITE_SPACE_REMOVED_KEY = 'dashesRemoved';
+    const NON_ASCII_REMOVED_KEY = 'nonAsciiRemoved';
 
     /**
      * @var string
@@ -47,6 +48,11 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
     protected $dashesRemoved;
 
     /**
+     * @var bool
+     */
+    protected $nonAsciiRemoved;
+
+    /**
      * NormalizeText constructor.
      * @param string $field
      * @param bool $isOverride
@@ -54,8 +60,9 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
      * @param bool $numbersRemoved
      * @param bool $alphabetCharacterRemoved
      * @param bool $dashesRemoved
+     * @param bool $nonAsciiRemoved
      */
-    public function __construct($field, $isOverride, $targetField, $numbersRemoved = false, $alphabetCharacterRemoved = false, $dashesRemoved = false)
+    public function __construct($field, $isOverride, $targetField, $numbersRemoved = false, $alphabetCharacterRemoved = false, $dashesRemoved = false, $nonAsciiRemoved = false)
     {
         $this->field = $field;
         $this->isOverride = $isOverride;
@@ -63,8 +70,8 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
         $this->numbersRemoved = $numbersRemoved;
         $this->alphabetCharacterRemoved = $alphabetCharacterRemoved;
         $this->dashesRemoved = $dashesRemoved;
+        $this->nonAsciiRemoved = $nonAsciiRemoved;
     }
-
 
     /**
      * @param Collection $collection
@@ -126,6 +133,11 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
 
         if ($this->alphabetCharacterRemoved) {
             $result = preg_replace('/[^a-z0-9]/', '', $result);
+        }
+
+        if ($this->nonAsciiRemoved) {
+            //remove all non asscii charactor
+            $result = preg_replace("/[^A-Za-z0-9 ]/", '', $result);
         }
 
         return $result;
@@ -243,6 +255,22 @@ class NormalizeText implements CollectionTransformerInterface, CollectionTransfo
     public function setDashesRemoved(bool $dashesRemoved)
     {
         $this->dashesRemoved = $dashesRemoved;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isNonAsciiRemoved(): bool
+    {
+        return $this->nonAsciiRemoved;
+    }
+
+    /**
+     * @param boolean $nonAsciiRemoved
+     */
+    public function setNonAsciiRemoved(bool $nonAsciiRemoved)
+    {
+        $this->nonAsciiRemoved = $nonAsciiRemoved;
     }
 
     public function getJsonTransformFieldsConfig()

@@ -27,14 +27,27 @@ class DateTimeUtil
         if (!array_key_exists(DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_HOUR, $checkValue)) {
             return $nextExecuteAt;
         }
-        $hours = $checkValue[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_HOUR];
 
-        /** Add hour from user provided*/
-        $dateInterval = new \DateInterval(sprintf('PT%dH', $hours)); // e.g PT2H = period time 2 hours
-        $nextExecuteAt->add($dateInterval);
+        /** Add hour from user provided */
+        $hourInterval = null;
+        if (array_key_exists(DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_HOUR, $checkValue)) {
+            $hours = $checkValue[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_HOUR];
+            $hourInterval = new \DateInterval(sprintf('PT%dH', $hours)); // e.g PT2H = period time 2 hours
+        }
+
+        /** Add minute from user provided */
+        $minuteInterval = null;
+        if (array_key_exists(DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_MINUTES, $checkValue)) {
+            $minutes = $checkValue[DataSourceIntegration::SCHEDULE_KEY_CHECK_AT_KEY_MINUTES];
+            $minuteInterval = new \DateInterval(sprintf('PT%dM', $minutes)); // e.g PT30M = period time 30 minutes
+        }
+
+        $nextExecuteAt->add($hourInterval);
+        $nextExecuteAt->add($minuteInterval);
 
         while (date_create() > $nextExecuteAt) {
-            $nextExecuteAt->add($dateInterval);
+            $nextExecuteAt->add($hourInterval);
+            $nextExecuteAt->add($minuteInterval);
         }
 
         return $nextExecuteAt;

@@ -30,7 +30,8 @@ class CsvWriter implements CsvWriterInterface
     private function initFrom($path)
     {
         $csv = Writer::createFromPath($path, "w");
-        $csv->setDelimiter("\t"); //the delimiter will be the tab character
+        /** We receive bug if use tab (\t) as delimiter, switch to comma separator */
+        $csv->setDelimiter(",");
         $csv->setNewline("\r\n"); //use windows line endings for compatibility with some csv libraries
         return $csv;
     }

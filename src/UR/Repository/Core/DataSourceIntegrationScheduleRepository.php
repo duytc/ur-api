@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class DataSourceIntegrationScheduleRepository extends EntityRepository implements DataSourceIntegrationScheduleRepositoryInterface
 {
@@ -15,6 +16,7 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
     public function findToBeExecuted()
     {
         $currentDate = new \DateTime();
+        $currentDate->setTimezone(new \DateTimeZone(DateFormat::DEFAULT_TIMEZONE));
 
         $qb = $this->createQueryBuilder('dis');
         $qb

@@ -161,6 +161,10 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
                             break;
                         }
                     }
+                } else {
+                    $this->headers = [];
+
+                    return [];
                 }
 
                 if ($validDelimiter) {
@@ -292,7 +296,7 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getHeaders(): array
     {
-        return $this->headers;
+        return is_array($this->headers) ? $this->headers : [];
     }
 
     /**

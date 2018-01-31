@@ -37,6 +37,7 @@ class Integration implements IntegrationInterface
     ];
 
     public static $SUPPORTED_PARAM_VALUE_DYNAMIC_DATE_RANGES = [
+        'today',
         'yesterday',
         'last 2 days',
         'last 3 days',

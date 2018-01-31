@@ -11,11 +11,11 @@ use Redis;
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
-use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertFactory;
+use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertInterface;
 use UR\Service\DataSource\DataSourceCleaningService;
 use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\Import\AutoImportDataInterface;
@@ -118,10 +118,6 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
     public function run(JobParams $params)
     {
         $isImportFail = false;
-        $errorCode = AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORTED_SUCCESSFULLY;
-        $errorRow = null;
-        $errorColumn = null;
-        $errorContent = null;
         $importHistoryEntity = null;
         // do something here
         $dataSourceEntryId = (int)$params->getRequiredParam(self::ENTRY_ID);
@@ -131,6 +127,8 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
         $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
         $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
+        $alert = null;
+
         try {
             if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
                 throw new Exception(sprintf('error occur: Data Source Entry %d not found (may be deleted before)', $dataSourceEntryId));
@@ -203,21 +201,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
             $this->importData->loadingDataFromFileToDatabase($connectedDataSource, $dataSourceEntry, $importHistoryEntity);
 
             /* alert when successful*/
-            $importSuccessAlert = $connectedDataSourceAlertFactory->getAlert(
-                $importHistoryEntity->getId(),
-                $connectedDataSource->getAlertSetting(),
-                AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORTED_SUCCESSFULLY,
-                $dataSourceEntry->getFileName(),
-                $connectedDataSource->getDataSource(),
-                $connectedDataSource->getDataSet(),
-                null,
-                null,
-                null
-            );
-
-            if ($importSuccessAlert !== null) {
-                $this->workerManager->processAlert($importSuccessAlert->getAlertCode(), $publisherId, $importSuccessAlert->getDetails(), $importSuccessAlert->getDataSourceId());
-            }
+            $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistoryEntity, null);
 
 //             delete all previous import histories that have same data source entry id and data set
 //             get import histories by data source entry and data set
@@ -244,48 +228,22 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
             $this->removeDuplicatedDateEntries($dataSourceEntry);
 
         } catch (ImportDataException $e) { /* exception */
-            $errorCode = $e->getAlertCode();
             $isImportFail = true;
-            $this->importDataLogger->doImportLogging($errorCode, $publisherId, $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getRow(), $e->getColumn());
-            $errorRow = $e->getRow();
-            $errorColumn = $e->getColumn();
-            $errorContent = $e->getContent();
+            $this->importDataLogger->doImportLogging($e->getAlertCode(), $publisherId, $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getRow(), $e->getColumn());
+            $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistoryEntity, $e);
         } catch (\Exception $exception) {
-            $errorCode = AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_UN_EXPECTED_ERROR;
             $isImportFail = true;
-            if ($dataSourceEntry instanceof DataSourceEntryInterface) {
-                $message = sprintf('failed to import file "%" into data set "%s" (entry: %d, data set %d, connected data source: %d, data source: %d, message: %s)',
-                    $dataSourceEntry->getFileName(),
-                    $connectedDataSource->getDataSet()->getName(),
-                    $dataSourceEntry->getId(),
-                    $connectedDataSource->getDataSet()->getId(),
-                    $connectedDataSource->getId(),
-                    $connectedDataSource->getDataSource()->getId(),
-                    $exception->getMessage()
-                );
-            }
-            $this->logger->error($message);
+            $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistoryEntity, $exception);
         } finally {
             $this->logger->notice('----------------------------LOADING COMPLETED-------------------------------------------------------------');
 
             if ($isImportFail && $importHistoryEntity instanceof ImportHistoryInterface) {
-                $failureAlert = $connectedDataSourceAlertFactory->getAlert(
-                    $importHistoryEntity->getId(),
-                    $connectedDataSource->getAlertSetting(),
-                    $errorCode, $dataSourceEntry->getFileName(),
-                    $connectedDataSource->getDataSource(),
-                    $connectedDataSource->getDataSet(),
-                    $errorColumn,
-                    $errorRow,
-                    $errorContent
-                );
-
-                /*delete import history when fail*/
+                /*delete import history when fail, rollback data*/
                 $this->importHistoryManager->deleteImportHistoriesByIds([$importHistoryEntity->getId()]);
+            }
 
-                if ($failureAlert != null) {
-                    $this->workerManager->processAlert($errorCode, $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails(), $failureAlert->getDataSourceId());
-                }
+            if ($alert instanceof ConnectedDataSourceAlertInterface) {
+                $this->workerManager->processAlert($alert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $alert->getDetails(), $alert->getDataSourceId());
             }
 
             $this->entityManager->clear();

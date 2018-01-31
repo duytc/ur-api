@@ -16,12 +16,12 @@ use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
-use UR\Model\Core\DataSourceIntegrationBackfillHistory;
 use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\FetcherSchedule;
 use UR\Repository\Core\DataSourceIntegrationScheduleRepositoryInterface;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 
 /**
  * @Rest\RouteResource("datasourceintegrationschedules")
@@ -244,7 +244,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
         // the fetcher activator may call again and get this data source integration schedule again
         $nextExecutedUtil = $this->get('ur.service.date_time.next_executed_at');
         $dataSourceIntegrationSchedule = $nextExecutedUtil->updateDataSourceIntegrationSchedule($dataSourceIntegrationSchedule);
-        $dataSourceIntegrationSchedule->setFinishedAt(date_create('now', new \DateTimeZone('UTC')));
+        $dataSourceIntegrationSchedule->setFinishedAt(date_create('now')->setTimezone(new \DateTimeZone(DateFormat::DEFAULT_TIMEZONE)));
         $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
 
         /** Reset status to NOT-RUN */
@@ -311,6 +311,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
             $queuedAt = new \DateTime(); // not throw exception to continue updating schedule
         }
 
+        $queuedAt->setTimezone(new \DateTimeZone(DateFormat::DEFAULT_TIMEZONE));
         $dataSourceIntegrationSchedule->setQueuedAt($queuedAt);
 
         // reset finishedAt

@@ -16,6 +16,7 @@ use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
 use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertFactory;
+use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertInterface;
 use UR\Service\DataSource\MergeFiles;
 use UR\Service\Import\AutoImportDataInterface;
 use UR\Service\Import\ImportDataException;
@@ -145,25 +146,29 @@ class ParseChunkFile implements JobInterface
         } catch (ImportDataException $ex) {
             $this->logger->error($ex->getMessage(), $ex->getTrace());
             $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
-            $errorCode = $ex->getAlertCode();
-            $failureAlert = $connectedDataSourceAlertFactory->getAlert(
-                $importHistory->getId(),
-                $connectedDataSource->getAlertSetting(),
-                AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_TRANSFORM_ERROR_INVALID_DATE,
-                $dataSourceEntry->getFileName(),
-                $connectedDataSource->getDataSource(),
-                $connectedDataSource->getDataSet(),
-                $ex->getColumn(),
-                $ex->getRow(),
-                $ex->getContent()
-            );
+            $failureAlert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
 
             $this->redis->set($chunkFailedKey, 1);
             $this->redis->del($params->getRequiredParam(self::CHUNKS_KEY));
 
             $alertProcessed = $this->redis->exists(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId));
-            if ($failureAlert != null && $alertProcessed == false) {
-                $this->manager->processAlert($errorCode, $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails(), $failureAlert->getDataSourceId());
+            if ($failureAlert instanceof ConnectedDataSourceAlertInterface && $alertProcessed == false) {
+                $this->manager->processAlert($failureAlert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails(), $failureAlert->getDataSourceId());
+                $this->redis->set(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId), 1);
+            }
+
+            return;
+        } catch (\Exception $ex) {
+            $this->logger->error($ex->getMessage(), $ex->getTrace());
+            $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
+            $failureAlert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
+
+            $this->redis->set($chunkFailedKey, 1);
+            $this->redis->del($params->getRequiredParam(self::CHUNKS_KEY));
+
+            $alertProcessed = $this->redis->exists(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId));
+            if ($failureAlert instanceof ConnectedDataSourceAlertInterface && $alertProcessed == false) {
+                $this->manager->processAlert(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_UN_EXPECTED_ERROR, $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails(), $failureAlert->getDataSourceId());
                 $this->redis->set(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId), 1);
             }
 
@@ -175,27 +180,31 @@ class ParseChunkFile implements JobInterface
 
         //all chunk parsed
         if ($totalChunk <= 0) {
+            $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
+            $alert = null;
+            $chunks = null;
+            $mergedFile = null;
+
             if ($hasGroup) {
                 $this->logger->notice('All chunks parsed completely, merging result');
                 $chunks = $this->redis->lRange($params->getRequiredParam(self::CHUNKS_KEY), 0, -1);
                 $mergeFileDirectory = $this->getMergedFileDirectory($dataSourceEntry);
                 $mergedFileObj = new MergeFiles($chunks, $mergeFileDirectory, $importHistory->getId());
-                $mergedFile = $mergedFileObj->mergeFiles();
-                $this->autoImportData->parseFileOnPostGroups($connectedDataSource, $dataSourceEntry, $importHistory, $mergedFile);
 
-                // Delete temp file
-                $this->logger->notice('Delete temp file');
-
-                foreach ($chunks as $chunk) {
-                    if (file_exists($chunk)) {
-                        $this->removeFileOrFolder($chunk);
-                    }
-                }
-
-                if (file_exists($mergedFile)) {
-                    $this->removeFileOrFolder($mergedFile);
+                try {
+                    $mergedFile = $mergedFileObj->mergeFiles();
+                    $this->autoImportData->parseFileOnPostGroups($connectedDataSource, $dataSourceEntry, $importHistory, $mergedFile);
+                    $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, null);
+                } catch (ImportDataException $ex) {
+                    $this->logger->error($ex->getMessage(), $ex->getTrace());
+                    $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
+                } catch (\Exception $ex) {
+                    $this->logger->error($ex->getMessage(), $ex->getTrace());
+                    $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
                 }
             }
+
+            $this->deleteTemporaryFiles($chunks, $mergedFile);
 
             $dataSetId = $connectedDataSource->getDataSet()->getId();
             $this->manager->updateOverwriteDateForDataSet($dataSetId);
@@ -205,23 +214,9 @@ class ParseChunkFile implements JobInterface
             $this->redis->del($params->getRequiredParam(self::TOTAL_CHUNK_KEY));
             $this->redis->del($params->getRequiredParam(self::CHUNKS_KEY));
 
-            $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
-            /* alert when successful*/
-            $importSuccessAlert = $connectedDataSourceAlertFactory->getAlert(
-                $importHistory->getId(),
-                $connectedDataSource->getAlertSetting(),
-                AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORTED_SUCCESSFULLY,
-                $dataSourceEntry->getFileName(),
-                $connectedDataSource->getDataSource(),
-                $connectedDataSource->getDataSet(),
-                null,
-                null,
-                null
-            );
-
-            $publisherId = $connectedDataSource->getDataSet()->getPublisherId();
-            if ($importSuccessAlert !== null) {
-                $this->manager->processAlert($importSuccessAlert->getAlertCode(), $publisherId, $importSuccessAlert->getDetails(), $importSuccessAlert->getDataSourceId());
+            $alertProcessed = $this->redis->exists(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId));
+            if ($alert instanceof ConnectedDataSourceAlertInterface && $alertProcessed == false) {
+                $this->manager->processAlert($alert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $alert->getDetails(), $alert->getDataSourceId());
             }
 
             //remove concurrent lock key
@@ -247,25 +242,6 @@ class ParseChunkFile implements JobInterface
         return pathinfo($firstSourceFileFullPath, PATHINFO_DIRNAME);
     }
 
-    /**
-     * @param $relativeFilePaths
-     * @return array|bool|string
-     */
-    private function getChunkFileFullPaths($relativeFilePaths)
-    {
-        if (empty($relativeFilePaths) || !is_array($relativeFilePaths)) {
-            return false;
-        }
-
-        $fullPaths = [];
-        foreach ($relativeFilePaths as $relativeFilePath) {
-            $fullPaths = sprintf('%s%s', $this->tempFileDirectory, $relativeFilePath);
-            $this->logger->info(sprintf('Full path of a file: %s', $fullPaths));
-        }
-
-        return $fullPaths;
-    }
-
     private function removeFileOrFolder($path)
     {
         if (!is_file($path) && !is_dir($path)) {
@@ -278,6 +254,30 @@ class ParseChunkFile implements JobInterface
             $fs->remove($path);
         } catch (\Exception $e) {
             $this->logger->notice($e);
+        }
+    }
+
+    /**
+     * @param $chunks
+     * @param $mergedFile
+     */
+    private function deleteTemporaryFiles($chunks, $mergedFile)
+    {
+        $chunks = is_array($chunks) ? $chunks : [$chunks];
+        $mergedFile = is_array($mergedFile) ? $mergedFile : [$mergedFile];
+        $tempFiles = array_merge($chunks, $mergedFile);
+
+        // Delete temp file
+        $this->logger->notice('Delete temp file');
+
+        try {
+            foreach ($tempFiles as $tempFile) {
+                if (file_exists($tempFile)) {
+                    $this->removeFileOrFolder($tempFile);
+                }
+            }
+        } catch (\Exception $e) {
+
         }
     }
 }
