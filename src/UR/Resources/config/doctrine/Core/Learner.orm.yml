@@ -20,6 +20,9 @@ UR\Entity\Core\Learner:
         model:
             type: json_array
             nullable: true
+        modelPath:
+            type: string
+            nullable: true
         type:
             type: string
         updatedDate:

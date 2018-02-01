@@ -26,6 +26,7 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     protected $createdDate;
     protected $publisher;
     protected $autoOptimizationConfigDataSets;
+    protected $token;
 
     /** @var  array */
     protected $identifiers;
@@ -41,7 +42,7 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
 
     /** @var  LearnerInterface */
     protected $learners;
-    
+
     public function __construct()
     {
         $this->transforms = [];
@@ -342,6 +343,18 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     /**
      * @inheritdoc
      */
+    public function getIdentifierObjects()
+    {
+        if (empty($this->identifierObjects) && is_array($this->getIdentifiers())) {
+            $this->identifierObjects = $this->createIdentifierObjectsFromJsonArray($this->getIdentifiers());
+        }
+
+        return $this->identifierObjects;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getIdentifiers()
     {
         return $this->identifiers;
@@ -355,18 +368,6 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
         $this->identifiers = $identifiers;
 
         return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getIdentifierObjects()
-    {
-        if (empty($this->identifierObjects) && is_array($this->getIdentifiers())) {
-            $this->identifierObjects = $this->createIdentifierObjectsFromJsonArray($this->getIdentifiers());
-        }
-
-        return $this->identifierObjects;
     }
 
     /**
@@ -404,7 +405,7 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
 
         return $this;
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -416,10 +417,28 @@ class AutoOptimizationConfig implements AutoOptimizationConfigInterface
     /**
      * @inheritdoc
      */
-    public function setLearners($learners) 
+    public function setLearners($learners)
     {
         $this->learners = $learners;
-        
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getToken()
+    {
+        return $this->token;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setToken($token)
+    {
+        $this->token = $token;
+
         return $this;
     }
 }

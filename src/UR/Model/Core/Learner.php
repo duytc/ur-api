@@ -9,6 +9,7 @@ class Learner implements LearnerInterface
     protected $id;
     protected $identifier;
     protected $model;
+    protected $modelPath;
     protected $type;
     protected $autoOptimizationConfig;
     protected $updatedDate;
@@ -55,6 +56,24 @@ class Learner implements LearnerInterface
     public function setModel($model)
     {
         $this->model = $model;
+
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getModelPath()
+    {
+        return $this->modelPath;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setModelPath($modelPath)
+    {
+        $this->modelPath = $modelPath;
 
         return $this;
     }

@@ -5,9 +5,11 @@ namespace UR\Service\AutoOptimization;
 
 use UR\Model\Core\AutoOptimizationConfigInterface;
 use UR\Service\AutoOptimization\LearnerModel\LearnerModelInterface;
+use UR\Service\RestClientTrait;
 
 class ScoringService implements ScoringServiceInterface
 {
+    use RestClientTrait;
 
     /** @var LearnerModelInterface[] $learnerModels */
     private $learnerModels = [];
@@ -15,13 +17,14 @@ class ScoringService implements ScoringServiceInterface
      * @var ConditionsGenerator
      */
     private $conditionsGenerator;
+    private $scoringServiceLink;
 
     /**
      * ScoringService constructor.
      * @param ConditionsGenerator $conditionsGenerator
      * @param array $learnerModels
      */
-    function __construct(ConditionsGenerator $conditionsGenerator, array $learnerModels)
+    function __construct(ConditionsGenerator $conditionsGenerator, array $learnerModels, $scoringServiceLink)
     {
         foreach ($learnerModels as $learnerModel) {
             if ($learnerModel instanceof LearnerModelInterface) {
@@ -29,12 +32,42 @@ class ScoringService implements ScoringServiceInterface
             }
         }
         $this->conditionsGenerator = $conditionsGenerator;
+        $this->scoringServiceLink = $scoringServiceLink;
     }
 
     /**
+     * Predict the score by call rest api
      * @inheritdoc
      */
     public function predict(AutoOptimizationConfigInterface $autoOptimizationConfig, array $identifiers, array $conditions)
+    {
+        $autoOptimizationConfigId = $autoOptimizationConfig->getId();
+        $token = $autoOptimizationConfig->getToken();
+        $conditions = $this->conditionsGenerator->setValuesToArray($conditions);
+
+        $data = [
+            '' . self::AUTO_OPTIMIZATION_CONFIG_ID_KEY . '' =>$autoOptimizationConfigId,
+            '' . self::TOKEN_KEY . '' =>$token,
+            '' . self::IDENTIFIERS_KEY . '' =>$identifiers,
+            '' . self::CONDITIONS_KEY . '' =>$conditions
+        ];
+
+        $predictions =  $this->callRestAPI('POST', $this->scoringServiceLink, json_encode($data));
+
+        if (!$predictions) {
+            return [];
+        }
+
+        return json_decode($predictions, true);
+
+    }
+
+    /**
+     * This function predict the score by use php code
+     * @inheritdoc
+     *
+     */
+    public function predictUseCoefficient(AutoOptimizationConfigInterface $autoOptimizationConfig, array $identifiers, array $conditions)
     {
         $conditions = $this->conditionsGenerator->generateMultipleConditions($autoOptimizationConfig, $conditions);
         $expectedObjective = $autoOptimizationConfig->getExpectedObjective();

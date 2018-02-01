@@ -83,4 +83,15 @@ interface LearnerInterface extends ModelInterface
      * @return self
      */
     public function setCategoricalFieldWeights($categoricalFieldWeights);
+
+    /**
+     * @return mixed
+     */
+    public function getModelPath();
+
+    /**
+     * @param $modelPath
+     * @return this
+     */
+    public function setModelPath($modelPath);
 }

@@ -11,6 +11,7 @@ class Learner extends LearnerModel
     protected $id;
     protected $identifier;
     protected $model;
+    protected $modelPath;
     protected $type;
     protected $autoOptimizationConfig;
     protected $updatedDate;

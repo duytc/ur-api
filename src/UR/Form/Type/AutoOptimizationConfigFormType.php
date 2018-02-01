@@ -82,6 +82,9 @@ class AutoOptimizationConfigFormType extends AbstractRoleSpecificFormType
                 foreach ($autoOptimizationConfigDataSets as $autoOptimizationConfigDataSet) {
                     $autoOptimizationConfigDataSet->setAutoOptimizationConfig($autoOptimizationConfig);
                 }
+
+                $token = bin2hex(random_bytes(15));
+                $autoOptimizationConfig->setToken($token);
             }
         );
     }

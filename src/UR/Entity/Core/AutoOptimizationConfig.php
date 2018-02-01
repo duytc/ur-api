@@ -26,6 +26,7 @@ class AutoOptimizationConfig extends AutoOptimizationConfigModel
     protected $identifiers;
     protected $positiveFactors;
     protected $negativeFactors;
+    protected $token;
     protected $learners;
 
     /**

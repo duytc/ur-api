@@ -82,6 +82,35 @@ class ConditionsGenerator implements ConditionsGeneratorInterface
         return $newConditions;
     }
 
+
+    /**
+     * Change the structure values: 10 to values:[10]
+     * @param $conditions
+     * @return mixed
+     */
+    public function setValuesToArray($conditions)
+    {
+        foreach ($conditions as $key => $condition) {
+            if (!is_array($condition)) {
+                continue;
+            }
+
+            if (array_key_exists('' . self::VALUES_KEY . '', $condition)) {
+                $values = $condition[self::VALUES_KEY];
+            } else {
+                $values = null;
+            }
+
+            if (!is_array($values)) {
+                $condition[self::VALUES_KEY] = [$values];
+                $conditions[$key] = $condition;
+            }
+
+        }
+
+        return $conditions;
+    }
+
     /**
      * @param AutoOptimizationConfigInterface $autoOptimizationConfig
      * @param $factor

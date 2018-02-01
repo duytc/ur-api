@@ -58,3 +58,6 @@ UR\Entity\Core\AutoOptimizationConfig:
         negativeFactors:
             expose: true
             groups: [auto_optimization_config.detail, auto_optimization_config.summary]
+        token:
+            expose: true
+            groups: [auto_optimization_config.detail, auto_optimization_config.summary]

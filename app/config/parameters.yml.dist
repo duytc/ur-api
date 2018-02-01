@@ -58,3 +58,5 @@ parameters:
     data_source_entry_job_temp_file_dir: '%kernel.root_dir%/temp/data-source-entry'
     number_of_rows_to_export_file: 2000 # int
     ur.report_view.large_threshold: 500000 #estimate by multiply total row from component data sets
+    activate_learner_link: 'http://192.168.100.26:8086/api/learner'
+    scoring_service_link: 'http://192.168.100.26:8086/api/scores'

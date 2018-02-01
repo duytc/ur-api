@@ -220,4 +220,16 @@ interface AutoOptimizationConfigInterface extends ModelInterface
      * @return self
      */
     public function setLearners($learners);
+
+    /**
+     * @return mixed
+     */
+    public function getToken();
+
+    /**
+     * @param $token
+     * @return $this
+     */
+    public function setToken($token);
+
 }
