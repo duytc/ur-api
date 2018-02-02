@@ -97,7 +97,8 @@ class UploadFileService
             if (DataSourceEntry::RECEIVED_VIA_API === $receivedVia) {
                 $name = $originName;
             } else {
-                $name = $filename . '_' . round(microtime(true)) . '.' . $file->getClientOriginalExtension();
+                $randomString =   bin2hex(random_bytes(16));
+                $name = $filename . '_' . $randomString . '.' . $file->getClientOriginalExtension();
             }
 
             if (strlen($name) > 230) {
