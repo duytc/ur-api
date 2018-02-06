@@ -2,19 +2,20 @@
 
 namespace UR\Service\DataSource;
 
+use Iterator;
 use League\Csv\AbstractCsv;
 use League\Csv\Reader;
 use SplDoublyLinkedList;
 use UR\Behaviors\ParserUtilTrait;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Service\DataSource\CSV\FilterReplace;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\CsvWriter;
 
 class Csv extends CommonDataSourceFile implements DataSourceInterface
 {
     use ParserUtilTrait;
-
     const DELIMITER_COMMA = ",";
     const DELIMITER_TAB = "\t"; // important: using double quote instead of single quote for special characters!!!
 
@@ -46,6 +47,11 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     {
         // todo validate $filePath
         $this->csv = Reader::createFromPath($filePath, 'r');
+        stream_filter_register(FilterReplace::FILTER_NAME."*", FilterReplace::class);
+        if ($this->csv->isActiveStreamFilter()) {
+            $this->csv->appendStreamFilter(FilterReplace::FILTER_NAME. "*");
+        }
+        $this->csv->setEscape('"');
 
         $delimiters = null === $delimiters ? self::$SUPPORTED_DELIMITERS : $delimiters;
         $this->setDelimiters($delimiters);
@@ -182,9 +188,12 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
             }
         }
 
-        $maxColumns = max(array_map(function(array $row) {
-            return count($row);
-        }, $allRows));
+        $maxColumns = 0;
+        if (!empty($allRows)) {
+            $maxColumns = max(array_map(function(array $row) {
+                return count(array_filter($row));
+            }, $allRows));
+        }
 
         for ($row = 0; $row < count($allRows); $row++) {
             $currentRow = $this->removeInvalidColumns($allRows[$row]);
