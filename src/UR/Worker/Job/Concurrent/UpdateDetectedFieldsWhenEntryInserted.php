@@ -8,10 +8,13 @@ use Pubvantage\Worker\Job\LockableJobInterface;
 use Pubvantage\Worker\JobParams;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Service\Alert\DataSource\DataSourceAlertInterface;
 use UR\Service\DataSource\DataSourceType;
 use UR\Service\Import\ImportService;
+use UR\Worker\Manager;
 
 class UpdateDetectedFieldsWhenEntryInserted implements LockableJobInterface
 {
@@ -41,13 +44,19 @@ class UpdateDetectedFieldsWhenEntryInserted implements LockableJobInterface
     /** @var string */
     private $uploadFileDir;
 
-    public function __construct(Logger $logger, DataSourceManagerInterface $dataSourceManager, DataSourceEntryManagerInterface $dataSourceEntryManager, ImportService $importService, $uploadFileDir)
+    /**
+     * @var Manager
+     */
+    private $manager;
+    public function __construct(Logger $logger, DataSourceManagerInterface $dataSourceManager, DataSourceEntryManagerInterface $dataSourceEntryManager,
+            ImportService $importService, $uploadFileDir, $manager)
     {
         $this->logger = $logger;
         $this->dataSourceManager = $dataSourceManager;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
         $this->importService = $importService;
         $this->uploadFileDir = $uploadFileDir;
+        $this->manager = $manager;
     }
 
     /**
@@ -100,6 +109,16 @@ class UpdateDetectedFieldsWhenEntryInserted implements LockableJobInterface
                 $this->logger->error(sprintf('Data Source Entry format %s and Data Source format %s not match => skip update detected fields', $dataSourceEntry->getFileExtension(), $dataSource->getFormat()));
             }
         } catch (Exception $exception) {
+            $this->manager->processAlert(
+                AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT,
+                $dataSource->getPublisherId(),
+                [
+                    DataSourceAlertInterface::DATA_SOURCE_ID => $dataSourceId,
+                    DataSourceAlertInterface::DATA_SOURCE_NAME => $dataSource->getName(),
+                    DataSourceAlertInterface::FILE_NAME => $dataSourceEntry->getPath()
+                ],
+                $dataSourceId
+            );
             $this->logger->error($exception->getMessage());
         }
     }

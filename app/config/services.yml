@@ -525,11 +525,12 @@ services:
     ur.worker.job.concurrent.update_detected_fields_when_entry_inserted:
         class: UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted
         arguments:
-            - @monolog.logger
-            - @ur.domain_manager.data_source
-            - @ur.domain_manager.data_source_entry
-            - @ur.service.import
+            - '@monolog.logger'
+            - '@ur.domain_manager.data_source'
+            - '@ur.domain_manager.data_source_entry'
+            - '@ur.service.import'
             - "%upload_file_dir%"
+            - '@ur.worker.manager'
 
     ur.worker.job.concurrent.update_total_row_when_entry_inserted:
         class: UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted

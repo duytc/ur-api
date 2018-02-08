@@ -76,7 +76,11 @@ class CountChunkRow  implements JobInterface
         $keyTotalChunks = sprintf(self::TOTAL_CHUNKS, $dataSourceEntryId);
 
         /** Count */
-        $file = $this->dataSourceFileFactory->getFile('csv', $chunk);
+        try {
+            $file = $this->dataSourceFileFactory->getFile('csv', $chunk);
+        } catch (\Exception $exception) {
+            throw $exception;
+        }
         $count = count($file->getRows());
         $this->redis->incrBy($keyTotal, $count);
 

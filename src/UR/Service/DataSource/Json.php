@@ -50,6 +50,9 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
         }
 
         foreach ($data as $row) {
+            if (!is_array($row)) {
+                throw new \Exception(sprintf('Does not support this JSON format'));
+            }
             $row = $this->handleNestedColumns($row);
             $row = $this->removeInvalidColumns($row);
 

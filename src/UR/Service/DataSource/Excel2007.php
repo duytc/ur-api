@@ -37,10 +37,11 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         $this->excel->setShouldFormatDates(true);
         $this->excel->open($filePath);
 
+        $headerLength = $this->getHeaderLength();
         foreach ($this->excel->getSheetIterator() as $sheet) {
             /**@var Sheet $sheet */
             foreach ($sheet->getRowIterator() as $rowIndex2 => $row) {
-                if ($this->isTextArray($row) && !$this->isEmptyArray($row) && count($row) > 1) {
+                if ($this->isTextArray($row) && !$this->isEmptyArray($row) && count($this->trimArray($row)) == $headerLength) {
                     $this->headers = $row;
                     $this->headerRow = $rowIndex2;
                     break;
@@ -56,6 +57,57 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         if (is_array($this->headers)) {
             $this->headers = $this->setDefaultColumnValueForHeader($this->headers);
         }
+    }
+
+    public function getHeaderLength()
+    {
+        $rowLength = [];
+        foreach ($this->excel->getSheetIterator() as $sheet) {
+            /**@var Sheet $sheet */
+            foreach ($sheet->getRowIterator() as $rowIndex2 => $row) {
+                if (is_array($row)) {
+                    $row = $this->trimArray($row);
+                    if (isset($rowLength[count($row)])) {
+                        $rowLength[count($row)] += 1;
+                    } else $rowLength[count($row)] = 1;
+                }
+            }
+
+            break;
+        }
+
+        $maxLength = -1;
+        $mostFrequent = -1;
+        foreach ($rowLength as $key => $value) {
+            if ($maxLength == -1) {
+                $maxLength = $key;
+                $mostFrequent = $value;
+                continue;
+            }
+
+            if ($mostFrequent < $value) {
+                $mostFrequent = $value;
+                $maxLength = $key;
+            } else if ($mostFrequent == $value && $maxLength < $key) {
+                $maxLength = $key;
+            }
+        }
+
+        return $maxLength;
+    }
+
+    public function trimArray(array $data)
+    {
+        $data = array_reverse($data);
+        foreach ($data as $index => $item) {
+            if (!empty($item)) {
+                break;
+            }
+
+            unset($data[$index]);
+        }
+
+        return array_reverse($data);
     }
 
     /**

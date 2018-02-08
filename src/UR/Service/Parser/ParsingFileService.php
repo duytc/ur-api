@@ -87,7 +87,11 @@ class ParsingFileService
         }
 
         if (!$dataSourceFileData instanceof DataSourceInterface ){
-            $dataSourceFileData = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $dataSourceEntry->getPath());
+            try {
+                $dataSourceFileData = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $dataSourceEntry->getPath());
+            } catch (\Exception $ex) {
+                throw $ex;
+            }
         }
 
         $columnsInFile = $dataSourceFileData->getColumns();

@@ -229,12 +229,17 @@ class ImportService
     /**
      * @param $format
      * @param $entryPath
-     * @return \UR\Service\DataSource\DataSourceInterface
+     * @return \UR\Service\DataSource\Csv|\UR\Service\DataSource\Excel|\UR\Service\DataSource\Excel2007|\UR\Service\DataSource\Json|\UR\Service\DataSource\JsonNewFormat
+     * @throws \Exception
      */
     public function getDataSourceFile($format, $entryPath)
     {
-        /**@var \UR\Service\DataSource\DataSourceInterface $file */
-        return $this->fileFactory->getFile($format, $entryPath);
+        try {
+            /**@var \UR\Service\DataSource\DataSourceInterface $file */
+            return $this->fileFactory->getFile($format, $entryPath);
+        } catch (\Exception $ex) {
+            throw $ex;
+        }
     }
 
     public function fixCSVLineFeed($filePath)

@@ -9,6 +9,7 @@ use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\Import\ImportDataException;
 use UR\Service\PublicSimpleException;
+use UR\Worker\Manager;
 
 class DataSourceFileFactory
 {
@@ -56,7 +57,11 @@ class DataSourceFileFactory
             throw new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_FILE_NOT_FOUND);
         }
 
-        return $this->getEntryFile($fileType, $filePath);
+        try {
+            return $this->getEntryFile($fileType, $filePath);
+        } catch (\Exception $ex) {
+            throw $ex;
+        }
     }
 
     /**
