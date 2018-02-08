@@ -3,9 +3,7 @@
 namespace UR\Bundle\AppBundle\EventListener;
 
 use Doctrine\ORM\Event\LifecycleEventArgs;
-use Doctrine\ORM\Event\PostFlushEventArgs;
 use UR\Model\Core\DataSourceEntryInterface;
-use UR\Model\Core\DataSourceInterface;
 use UR\Worker\Manager;
 
 class UpdateDateRangeForDataSourceEntryListener
@@ -25,46 +23,6 @@ class UpdateDateRangeForDataSourceEntryListener
     {
         $this->workerManager = $workerManager;
         $this->newEntries = [];
-    }
-
-    /**
-     * @param LifecycleEventArgs $args
-     */
-    public function postPersist(LifecycleEventArgs $args)
-    {
-        $entity = $args->getEntity();
-
-        if (!$entity instanceof DataSourceEntryInterface) {
-            return;
-        }
-
-        $this->newEntries[] = $entity;
-    }
-
-    /**
-     * @param PostFlushEventArgs $args
-     */
-    public function postFlush(PostFlushEventArgs $args)
-    {
-        if (count($this->newEntries) < 1) {
-            return;
-        }
-
-        $newEntries = $this->newEntries;
-        $this->newEntries = [];
-
-        /** @var DataSourceEntryInterface $entity */
-        foreach ($newEntries as $entity) {
-            $changedDataSource = $entity->getDataSource();
-
-            if (!$changedDataSource instanceof DataSourceInterface) {
-                continue;
-            }
-
-            if ($changedDataSource->isDateRangeDetectionEnabled()) {
-                $this->workerManager->updateDateRangeForDataSourceEntry($changedDataSource->getId(), $entity->getId());
-            }
-        }
     }
 
     /**

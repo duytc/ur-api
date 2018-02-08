@@ -63,8 +63,6 @@ services:
         arguments:
             - @ur.worker.manager
         tags:
-            - { name: doctrine.event_listener, event: postPersist }
-            - { name: doctrine.event_listener, event: postFlush }
             - { name: doctrine.event_listener, event: postRemove }
 
     ur_app.event_listener.auto_switch_format_for_data_source_listener:

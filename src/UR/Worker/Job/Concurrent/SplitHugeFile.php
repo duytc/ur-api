@@ -51,6 +51,13 @@ class SplitHugeFile implements JobInterface
         return static::JOB_NAME;
     }
 
+    /**
+     * @param JobParams $params
+     * @throws \Exception
+     * @throws \Pubvantage\Worker\Exception\MissingJobParamException
+     * @throws \UR\Service\Import\ImportDataException
+     * @throws \UR\Service\PublicSimpleException
+     */
     public function run(JobParams $params)
     {
         $dataSourceEntryId = $params->getRequiredParam(self::DATA_SOURCE_ENTRY_ID);

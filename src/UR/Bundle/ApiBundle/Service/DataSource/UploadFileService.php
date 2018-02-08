@@ -57,6 +57,20 @@ class UploadFileService
         $this->alertFactory = new DataSourceAlertFactory();
     }
 
+    /**
+     * @param UploadedFile $file
+     * @param $path
+     * @param $dirItem
+     * @param DataSourceInterface $dataSource
+     * @param string $receivedVia
+     * @param bool $alsoMoveFile
+     * @param null $metadata
+     * @param null $startDate
+     * @param null $endDate
+     * @param bool $removeHistory
+     * @return array
+     * @throws Exception
+     */
     public function uploadDataSourceEntryFile(UploadedFile $file, $path, $dirItem, DataSourceInterface $dataSource, $receivedVia = DataSourceEntry::RECEIVED_VIA_UPLOAD, $alsoMoveFile = true, $metadata = null, $startDate = null, $endDate = null, $removeHistory = false)
     {
         /* validate via type */
@@ -147,8 +161,9 @@ class UploadFileService
                 $startDate = new DateTime($startDate);
                 $endDate = new DateTime($endDate);
 
-                $dataSourceEntry->setStartDate($startDate)
-                                ->setEndDate($endDate);
+                $dataSourceEntry
+                    ->setStartDate($startDate)
+                    ->setEndDate($endDate);
             }
 
             // persist and flush

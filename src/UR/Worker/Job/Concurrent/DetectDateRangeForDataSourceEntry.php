@@ -51,7 +51,12 @@ class DetectDateRangeForDataSourceEntry implements LockableJobInterface
         return sprintf('ur-data-source-date-range-%d', $params->getRequiredParam(self::DATA_SOURCE_ID));
     }
 
-
+    /**
+     * @param JobParams $params
+     * @return bool
+     * @throws \Pubvantage\Worker\Exception\MissingJobParamException
+     * @throws \UR\Service\PublicSimpleException
+     */
     public function run(JobParams $params)
     {
         // do something here
@@ -72,8 +77,20 @@ class DetectDateRangeForDataSourceEntry implements LockableJobInterface
 
         $this->dateRangeService->calculateDateRangeForDataSourceEntry($entryId);
 
-        if ($dataSourceEntry->getDataSource() instanceof DataSourceInterface) {
-            $this->dateRangeService->calculateDateRangeForDataSource($dataSourceEntry->getDataSource()->getId());
+        $dataSource = $dataSourceEntry->getDataSource();
+        if (!$dataSource instanceof DataSourceInterface) {
+            return false;
+        }
+
+        $this->dateRangeService->calculateDateRangeForDataSource($dataSource->getId());
+
+        if (!$dataSource->getRemoveDuplicateDates()) {
+            return true;
+        }
+
+        $duplicatedEntries = $this->dataSourceEntryManager->getCleanUpEntries($dataSource);
+        foreach ($duplicatedEntries as $duplicatedEntry) {
+            $this->dataSourceEntryManager->delete($duplicatedEntry);
         }
     }
 }
