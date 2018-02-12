@@ -58,17 +58,17 @@ class RefreshDetectedFieldsForDataSourceCommand extends ContainerAwareCommand
         // make sure file extension is supported by data source
         $fileExtension = (new \SplFileInfo($file))->getExtension();
         $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($fileExtension);
-        if ($dataSource->getFormat() != $dataSourceTypeExtension) {
-            $output->writeln(sprintf('<error>Data source only support format "%s", got file extension "%s"</error>', $dataSource->getFormat(), $fileExtension));
-            exit(1);
-        }
+//        if ($dataSource->getFormat() != $dataSourceTypeExtension) {
+//            $output->writeln(sprintf('<error>Data source only support format "%s", got file extension "%s"</error>', $dataSource->getFormat(), $fileExtension));
+//            exit(1);
+//        }
 
         $force = filter_var($input->getOption('force'), FILTER_VALIDATE_BOOLEAN);
         /** @var ImportService */
         $importService = $this->getContainer()->get('ur.service.import');
 
         $dataSourceFile = null;
-        switch ($dataSource->getFormat()) {
+        switch ($dataSourceTypeExtension) {
             case DataSourceType::DS_CSV_FORMAT:
                 $dataSourceFile = new Csv($file);
                 break;

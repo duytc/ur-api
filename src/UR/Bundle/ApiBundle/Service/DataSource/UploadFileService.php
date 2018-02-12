@@ -101,11 +101,22 @@ class UploadFileService
             //    $dataSource->setFormat($format);
             //    $this->dataSourceManager->save($dataSource);
             //}
+            /** Cause we will accept all file with the same headers -> no need to check validateUploadFile
+             * TODO: ignore this later
+             */
+//            $isValidExtension = $this->importService->validateUploadedFile($file, $dataSource);
+//            if (!$isValidExtension) {
+//                throw new ImportDataException(AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT);
+//            }
 
-            $isValidExtension = $this->importService->validateUploadedFile($file, $dataSource);
-            if (!$isValidExtension) {
-                throw new ImportDataException(AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT);
-            }
+            /**
+             * Check if have no entry before -> continue
+             * else check headers with file before.
+             *      -> if they are the same headers -> upload file
+             *      -> else -> do not upload file
+             *
+             */
+
 
             // save file to upload dir
             if (DataSourceEntry::RECEIVED_VIA_API === $receivedVia) {
@@ -189,7 +200,7 @@ class UploadFileService
                 $this->workerManager->processAlert($alert->getAlertCode(), $publisherId, $alert->getDetails(), $alert->getDataSourceId());
             }
 
-            throw new Exception(sprintf('Cannot upload file because the file is in the wrong format. Data sources can only have one type of file and format.', $originName));
+            throw new Exception(sprintf('Cannot upload file because the file is in the wrong format.', $originName));
         }
 
         $result = [

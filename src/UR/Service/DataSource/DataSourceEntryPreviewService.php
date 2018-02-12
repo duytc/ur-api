@@ -41,7 +41,7 @@ class DataSourceEntryPreviewService implements DataSourceEntryPreviewServiceInte
      */
     public function preview(DataSourceEntryInterface $dataSourceEntry, $limit = 100)
     {
-        $fileType = $dataSourceEntry->getDataSource()->getFormat();
+        $fileType = DataSourceType::getOriginalDataSourceType($this->fileFactory->getSourceExtension($dataSourceEntry->getPath()));
 
         /** @var \UR\Service\DataSource\DataSourceInterface $dataSourceFileData */
         $dataSourceFileData = null;

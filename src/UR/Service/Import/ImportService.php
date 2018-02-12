@@ -59,11 +59,11 @@ class ImportService
             /**@var UploadedFile $file */
             $file = $files->get($key);
 
-            $isValidFile = $this->validateUploadedFile($file, $dataSource);
             $origin_name = $file->getClientOriginalName();
-            if (!$isValidFile) {
-                throw new \Exception(sprintf('File %s is not valid - wrong format', $origin_name));
-            }
+//            $isValidFile = $this->validateUploadedFile($file, $dataSource);
+//            if (!$isValidFile) {
+//                throw new \Exception(sprintf('File %s is not valid - wrong format', $origin_name));
+//            }
 
             $filename = basename($origin_name, '.' . $file->getClientOriginalExtension());
 

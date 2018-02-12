@@ -154,7 +154,8 @@ class DataSourceFileFactory
         }
 
         gc_enable();
-        $file = $this->getFile($dataSourceEntry->getDataSource()->getFormat(), $dataSourceEntry->getPath());
+        $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($this->getSourceExtension($dataSourceEntry->getPath()));
+        $file = $this->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
 
         $chunks = [];
         $bodyRows = $file->getRows();
@@ -222,5 +223,16 @@ class DataSourceFileFactory
         $sourceDir =  pathinfo($filePath, PATHINFO_DIRNAME);
 
         return $sourceDir;
+    }
+
+    /**
+     * @param $filePath
+     * @return mixed
+     */
+    public function getSourceExtension($filePath)
+    {
+        $sourceExtension =  pathinfo($filePath, PATHINFO_EXTENSION);
+
+        return $sourceExtension;
     }
 }

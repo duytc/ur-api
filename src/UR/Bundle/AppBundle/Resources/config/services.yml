@@ -65,11 +65,11 @@ services:
         tags:
             - { name: doctrine.event_listener, event: postRemove }
 
-    ur_app.event_listener.auto_switch_format_for_data_source_listener:
-        class: UR\Bundle\AppBundle\EventListener\AutoSwitchFormatForDataSourceListener
-        tags:
-            - { name: doctrine.event_listener, event: prePersist }
-            - { name: doctrine.event_listener, event: postFlush }
+#    ur_app.event_listener.auto_switch_format_for_data_source_listener:
+#        class: UR\Bundle\AppBundle\EventListener\AutoSwitchFormatForDataSourceListener
+#        tags:
+#            - { name: doctrine.event_listener, event: prePersist }
+#            - { name: doctrine.event_listener, event: postFlush }
 
     ur_app.event_listener.create_job_delete_data_when_entry_deleted:
         class: UR\Bundle\AppBundle\EventListener\CreateJobsDeleteDataFromImportTableWhenImportHistoriesDeleted

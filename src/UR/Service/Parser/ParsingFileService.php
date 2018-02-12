@@ -13,6 +13,7 @@ use UR\Service\DataSet\FieldType;
 use UR\Service\DataSet\TransformOrdersServiceInterface;
 use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\DataSource\DataSourceInterface;
+use UR\Service\DataSource\DataSourceType;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Metadata\DataSourceEntryMetadataFactory;
@@ -88,7 +89,8 @@ class ParsingFileService
 
         if (!$dataSourceFileData instanceof DataSourceInterface ){
             try {
-                $dataSourceFileData = $this->fileFactory->getFile($connectedDataSource->getDataSource()->getFormat(), $dataSourceEntry->getPath());
+                $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($this->fileFactory->getSourceExtension($dataSourceEntry->getPath()));
+                $dataSourceFileData = $this->fileFactory->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
             } catch (\Exception $ex) {
                 throw $ex;
             }

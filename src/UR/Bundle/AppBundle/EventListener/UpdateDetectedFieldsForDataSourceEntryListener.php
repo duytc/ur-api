@@ -7,6 +7,7 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\ModelInterface;
+use UR\Service\DataSource\DataSourceType;
 use UR\Worker\Manager;
 
 /**
@@ -76,8 +77,8 @@ class UpdateDetectedFieldsForDataSourceEntryListener
             if (!empty($dataSourceEntry->getChunks()) && is_array($dataSourceEntry->getChunks())) {
                 $chunkPaths = $dataSourceEntry->getChunks();
             }
-
-            $this->workerManager->updateDetectedFieldsWhenEntryDeleted($dataSource->getFormat(), $dataSourceEntry->getPath(), $chunkPaths, $dataSource->getId());
+            $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType(pathinfo($dataSourceEntry->getPath(), PATHINFO_EXTENSION));
+            $this->workerManager->updateDetectedFieldsWhenEntryDeleted($dataSourceTypeExtension, $dataSourceEntry->getPath(), $chunkPaths, $dataSource->getId());
         }
 
         $em = $args->getEntityManager();

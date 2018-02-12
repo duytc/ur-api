@@ -48,3 +48,6 @@ UR\Entity\Core\DataSourceEntry:
         chunks:
             expose: true
             groups: [dataSourceEntry.detail, dataSourceEntry.summary, dataSourceEntry.missingdate]
+        fileExtension:
+            expose: true
+            groups: [dataSourceEntry.detail, dataSourceEntry.summary]

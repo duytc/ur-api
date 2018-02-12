@@ -13,6 +13,7 @@ use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Service\DataSource\DataSourceFileFactory;
+use UR\Service\DataSource\DataSourceType;
 use UR\Service\StringUtilTrait;
 
 class MigrateTotalRowDataSourceEntryCommand extends ContainerAwareCommand
@@ -94,8 +95,8 @@ class MigrateTotalRowDataSourceEntryCommand extends ContainerAwareCommand
                     if (!$dataSource instanceof DataSourceInterface) {
                         continue;
                     }
-
-                    $dataSourceFile = $this->dataSourceFileFactory->getFile($dataSource->getFormat(), $dataSourceEntry->getPath());
+                    $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($this->dataSourceFileFactory->getSourceExtension($dataSourceEntry->getPath()));
+                    $dataSourceFile = $this->dataSourceFileFactory->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
                     $totalRow = $dataSourceFile->getTotalRows();
                     $dataSourceEntry->setTotalRow($totalRow);
                     $this->dataSourceEntryManager->save($dataSourceEntry);

@@ -7,7 +7,6 @@ use Exception;
 use Monolog\Logger;
 use Pubvantage\RedLock;
 use Pubvantage\Worker\Job\JobInterface;
-use Pubvantage\Worker\Job\LockableJobInterface;
 use Pubvantage\Worker\JobParams;
 use Redis;
 use UR\DomainManager\DataSourceEntryManagerInterface;
@@ -49,7 +48,7 @@ class UpdateTotalRowWhenEntryInserted implements JobInterface
      */
     private $em;
 
-    /** @var Manager  */
+    /** @var Manager */
     private $workerManager;
 
     private $redis;
@@ -118,18 +117,18 @@ class UpdateTotalRowWhenEntryInserted implements JobInterface
                 return;
             }
 
-            $dataSource = $dataSourceEntry->getDataSource();
-            $dataSourceFile = $this->importService->getDataSourceFile($dataSource->getFormat(), $dataSourceEntry->getPath());
-
             $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($dataSourceEntry->getFileExtension());
-            if ($dataSourceTypeExtension === $dataSource->getFormat()) {
-                $totalRow = $dataSourceFile->getTotalRows();
-                $dataSourceEntry->setTotalRow($totalRow);
+            $dataSourceFile = $this->importService->getDataSourceFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
 
-                $this->dataSourceEntryManager->save($dataSourceEntry);
-            } else {
-                $this->logger->error(sprintf('Data Source Entry format %s and Data Source format %s not match => skip update total rows', $dataSourceEntry->getFileExtension(), $dataSource->getFormat()));
-            }
+            /** skip check dataSource->getFormat. This will be removed later */
+            //if ($dataSourceTypeExtension === $dataSource->getFormat()) {
+            $totalRow = $dataSourceFile->getTotalRows();
+            $dataSourceEntry->setTotalRow($totalRow);
+
+            $this->dataSourceEntryManager->save($dataSourceEntry);
+            //} else {
+            //    $this->logger->error(sprintf('Data Source Entry format %s and Data Source format %s not match => skip update total rows', $dataSourceEntry->getFileExtension(), $dataSource->getFormat()));
+            //}
         } catch (Exception $exception) {
             $this->logger->error(sprintf('could not update detected fields when entry insert, error occur: %s', $exception->getMessage()));
         } finally {

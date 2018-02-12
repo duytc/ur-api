@@ -15,6 +15,7 @@ use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Service\DataSource\DataSourceFileFactory;
+use UR\Service\DataSource\DataSourceType;
 use UR\Service\DTO\Collection;
 use UR\Service\Metadata\Email\EmailMetadata;
 use UR\Service\Parser\Transformer\Collection\ExtractPattern;
@@ -218,7 +219,8 @@ class DateRangeService implements DateRangeServiceInterface
                     }
 
                 } else {
-                    $dataSourceFileData = $this->fileFactory->getFile($dataSource->getFormat(), $dataSourceEntry->getPath());
+                    $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($this->fileFactory->getSourceExtension($dataSourceEntry->getPath()));
+                    $dataSourceFileData = $this->fileFactory->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
 
                     $columns = $dataSourceFileData->getColumns();
                     $rows = $dataSourceFileData->getRows();
