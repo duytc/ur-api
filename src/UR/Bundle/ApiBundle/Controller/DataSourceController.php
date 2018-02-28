@@ -1098,9 +1098,15 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
         }
 
         $missingDateRanges = $dataSource->getMissingDate();
+        sort($missingDateRanges);
+
         $startMissingDate = $missingDateRanges[0];
         $lastestMissingDate = '';
         $createBackfill = false;
+        $endDateBackfill = '';
+
+        //If missing dates = ["2017-02-20", "2017-02-21","2017-02-23", "2017-02-25"]
+        //We need create 3 back fill 20-21, 23-23 and 25-25
         for ($i = 0; $i < count($missingDateRanges); $i++) {
             if ($i == 0) {
                 $lastestMissingDate = $missingDateRanges[0];
@@ -1129,6 +1135,13 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
                 }
             }
         }
+
+        if ($lastestMissingDate > $endDateBackfill) {
+            //Current $lastestMissingDate = "2017-02-25", $endDateBackfill = "2017-02-23"
+            //Create back fill from "2017-02-25" to "2017-02-25"
+            $this->createBackfill($lastestMissingDate, $lastestMissingDate, $dataSourceIntegration);
+        }
+
         if ($createBackfill == false) {
             //set start and end date
             $startDateBackfill = $startMissingDate;
