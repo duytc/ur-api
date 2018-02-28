@@ -2,10 +2,12 @@
 
 namespace UR\Repository\Core;
 
+use DateInterval;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository implements DataSourceIntegrationBackfillHistoryRepositoryInterface
 {
@@ -55,6 +57,25 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
      */
     public function findByBackFillNotExecuted()
     {
+        $currentDate = new \DateTime();
+        $currentDate->setTimezone(new \DateTimeZone(DateFormat::DEFAULT_TIMEZONE));
+        $yesterday = new \DateTime();
+        $yesterday = $yesterday->sub(new DateInterval('P1D'))->setTimezone(new \DateTimeZone(DateFormat::DEFAULT_TIMEZONE));
+
+        // get all schedule have status = 1, nextExecuted < currentDate, queueAt < yesterday
+        //Ensure an unexpected exception will occur such as shutdown redis before running the fetcher worker
+        $qbStatusIsPending = $this->createQueryBuilder('dibh')
+            ->join('dibh.dataSourceIntegration', 'di')
+            ->join('di.dataSource', 'ds')
+            ->andWhere('ds.enable = true')
+            ->andWhere('dibh.queuedAt <= :yesterday')
+            ->andWhere('dibh.status = :status')
+            ->andWhere('dibh.finishedAt is null')
+            ->setParameter('yesterday', $yesterday)
+            ->setParameter('status', DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_PENDING);
+
+        $backFillsStatusIsPending = $qbStatusIsPending->getQuery()->getResult();
+
         $qb = $this->createQueryBuilder('dibh')
             ->join('dibh.dataSourceIntegration', 'di')
             ->join('di.dataSource', 'ds')
@@ -64,7 +85,9 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
             ->andWhere('dibh.finishedAt is null')
             ->setParameter('status', DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_NOT_RUN);
 
-        return $qb->getQuery()->getResult();
+        $backFills = $qb->getQuery()->getResult();
+
+        return array_merge($backFills, $backFillsStatusIsPending);
     }
 
     /**

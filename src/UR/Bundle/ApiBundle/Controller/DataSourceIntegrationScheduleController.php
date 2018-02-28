@@ -288,6 +288,19 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
 
         // check permission
         $this->checkUserPermission($dataSourceIntegrationSchedule, 'edit');
+        $dataSourceIntegrationScheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
+        /* case: status = 1 (has an unexpected exception will occur, status = 1, nextExecuted < currentDate, queueAt < yesterday ) */
+        if ($dataSourceIntegrationSchedule->getStatus() == DataSourceIntegrationScheduleInterface::FETCHER_STATUS_PENDING) {
+            $queuedAt = new \DateTime();
+            $queuedAt->setTimezone(new \DateTimeZone(DateFormat::DEFAULT_TIMEZONE));
+            $dataSourceIntegrationSchedule->setQueuedAt($queuedAt);
+
+            // reset finishedAt
+            $dataSourceIntegrationSchedule->setFinishedAt(null);
+            $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
+
+            return $this->view(true, Codes::HTTP_OK);
+        }
 
         /*
          * important: only update executedAt if pending. This is for avoiding race condition between fetcher and ur api
@@ -317,7 +330,6 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
         // reset finishedAt
         $dataSourceIntegrationSchedule->setFinishedAt(null);
 
-        $dataSourceIntegrationScheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
         $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
 
         return $this->view(true, Codes::HTTP_OK);
