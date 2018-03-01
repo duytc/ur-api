@@ -65,8 +65,14 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         foreach ($this->excel->getSheetIterator() as $sheet) {
             /**@var Sheet $sheet */
             foreach ($sheet->getRowIterator() as $rowIndex2 => $row) {
+                if ($rowIndex2 > 200) {
+                    break;
+                }
                 if (is_array($row)) {
                     $row = $this->trimArray($row);
+                    if (empty($row)) {
+                        continue;
+                    }
                     if (isset($rowLength[count($row)])) {
                         $rowLength[count($row)] += 1;
                     } else $rowLength[count($row)] = 1;
@@ -77,19 +83,14 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         }
 
         $maxLength = -1;
-        $mostFrequent = -1;
-        foreach ($rowLength as $key => $value) {
+        foreach ($rowLength as $length => $frequency) {
             if ($maxLength == -1) {
-                $maxLength = $key;
-                $mostFrequent = $value;
+                $maxLength = $length;
                 continue;
             }
 
-            if ($mostFrequent < $value) {
-                $mostFrequent = $value;
-                $maxLength = $key;
-            } else if ($mostFrequent == $value && $maxLength < $key) {
-                $maxLength = $key;
+            if ($frequency > 1 && $maxLength < $length) {
+                $maxLength = $length;
             }
         }
 
@@ -98,16 +99,10 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
 
     public function trimArray(array $data)
     {
-        $data = array_reverse($data);
-        foreach ($data as $index => $item) {
-            if (!empty($item)) {
-                break;
-            }
-
-            unset($data[$index]);
-        }
-
-        return array_reverse($data);
+        //Ignore empty cell (null, ""). Do not ignore zero values as 0, 0%
+        return array_filter($data, function ($cell) {
+            return !is_null($cell) && $cell !== "";
+        });
     }
 
     /**
