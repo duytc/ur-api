@@ -208,17 +208,20 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
 
         $columnsHeaders = [];
         try {
+            $this->ogiHeaders = is_array($this->ogiHeaders) ? $this->ogiHeaders : [$this->ogiHeaders];
             $columnsHeaders = array_combine($columns, $this->ogiHeaders);
         } catch (\Exception $e) {
 
         }
 
+        $columnsHeaders = is_array($columnsHeaders) ? $columnsHeaders : [$columnsHeaders];
         $columnsHeaders = array_filter($columnsHeaders, function ($value) {
             return (!is_null($value) && !empty($value)) || $value === '0';
         });
 
         for ($row = $beginRowsReadRange; $row <= $highestRow; $row++) {
             $rowData = [];
+            $columnsHeaders = is_array($columnsHeaders) ? $columnsHeaders : [$columnsHeaders];
             foreach ($columnsHeaders as $column => $header) {
                 $cell = $this->sheet->getCell($column . $row);
 

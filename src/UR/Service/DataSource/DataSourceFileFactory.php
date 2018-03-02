@@ -173,17 +173,21 @@ class DataSourceFileFactory
                 $outputFileName = sprintf("entry_%s_part_%s_random_%s.csv", $dataSourceEntry->getId(), $chunkCount, uniqid((new \DateTime())->format('Y-m-d'), true));
                 $outputFileName = join('/', array($splitDirectory, $outputFileName));
                 $newFile = fopen($outputFileName, 'w');
+                $header = is_array($header) ? $header : [$header];
                 fputcsv($newFile, $header);
             }
 
             if (is_resource($newFile)) {
+                $bodyRow = is_array($bodyRow) ? $bodyRow : [$bodyRow];
                 fputcsv($newFile, $bodyRow);
             }
 
             if ($rowCount % $this->rowThreshold == $this->rowThreshold - 1) {
                 fclose($newFile);
                 $outputFileName = str_replace($this->uploadFileDir, '', $outputFileName);
-                $chunks[] = $outputFileName;
+                if (!empty($outputFileName)) {
+                    $chunks[] = $outputFileName;
+                }
                 $fileClosed = true;
             }
 
@@ -191,14 +195,19 @@ class DataSourceFileFactory
         }
 
         if (!$fileClosed) {
-            fclose($newFile);
+            if ($newFile) {
+                fclose($newFile);
+            }
             unset($newFile);
             $outputFileName = str_replace($this->uploadFileDir, '', $outputFileName);
-            $chunks[] = $outputFileName;
+            if (!empty($outputFileName)) {
+                $chunks[] = $outputFileName;
+            }
         }
 
         unset($bodyRow, $bodyRows, $file, $newFile);
         gc_collect_cycles();
+        $chunks = array_filter($chunks);
 
         if (empty($chunks)) {
             throw  new Exception(sprintf('Can not split data source entry %d', $dataSourceEntry->getId()));

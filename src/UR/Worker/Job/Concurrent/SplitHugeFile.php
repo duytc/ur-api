@@ -2,6 +2,7 @@
 
 namespace UR\Worker\Job\Concurrent;
 
+use Exception;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\Job\JobInterface;
 use Pubvantage\Worker\JobParams;
@@ -71,8 +72,12 @@ class SplitHugeFile implements JobInterface
         $fileSize = filesize($this->dataSourceFileFactory->getAbsolutePath($dataSourceEntry->getPath()));
 
         if ($fileSize > $this->fileSizeThreshold) {
-            $dataSourceEntry = $this->dataSourceFileFactory->splitHugeFile($dataSourceEntry);
-            $this->dataSourceEntryManager->save($dataSourceEntry);
+            try {
+                $dataSourceEntry = $this->dataSourceFileFactory->splitHugeFile($dataSourceEntry);
+                $this->dataSourceEntryManager->save($dataSourceEntry);
+            } catch (Exception $e) {
+
+            }
         }
 
         /** Update total row */

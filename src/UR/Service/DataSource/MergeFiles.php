@@ -210,6 +210,7 @@ class MergeFiles
 
         $csvFile = fopen($outputFileName, 'w');
         foreach ($rows as $row) {
+            $row = is_array($row) ? $row : [$row];
             if (!fputcsv($csvFile, $row)) {
                 return false;
             }
