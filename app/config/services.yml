@@ -319,6 +319,7 @@ services:
             - '@ur.domain_manager.import_history'
             - '%data_source_entry_job_temp_file_dir%'
             - "%upload_file_dir%"
+            - "@ur.pubvantage.worker.job_counter"
 
     ur.worker.job.concurrent.maintain_pre_calculate_table_for_large_report_view:
         class: UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView
@@ -372,6 +373,7 @@ services:
             - '@ur.redis.app_cache'
             - '%ur.worker.entry_file_size_threshold%'
             - '%data_source_entry_job_temp_file_dir%'
+            - '@ur.pubvantage.worker.job_counter'
 
     ur.worker.job.linear.load_file_into_data_set_map_builder_sub_job:
         class: UR\Worker\Job\Linear\LoadFileIntoDataSetMapBuilderSubJob

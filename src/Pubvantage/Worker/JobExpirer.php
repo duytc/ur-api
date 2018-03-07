@@ -13,7 +13,9 @@ class JobExpirer implements JobExpirerInterface
      */
     private $linearTubeExpireJobPrefix;
 
-    public function __construct(\Redis $redis, string $linearTubeExpireJobPrefix = 'ur:linear_tube_expire_job_')
+    private $jobTTR;
+
+    public function __construct(\Redis $redis, string $linearTubeExpireJobPrefix = 'ur:linear_tube_expire_job_', int $jobTTR = 3600)
     {
         $this->redis = $redis;
 
@@ -22,6 +24,7 @@ class JobExpirer implements JobExpirerInterface
         }
 
         $this->linearTubeExpireJobPrefix = $linearTubeExpireJobPrefix;
+        $this->jobTTR = $jobTTR;
     }
 
     // this needs to get run via UI so it is immediate
@@ -33,7 +36,7 @@ class JobExpirer implements JobExpirerInterface
     public function isExpired(string $linearTube, int $time)
     {
         $expireTime = intval($this->redis->get($this->getExpireKey($linearTube)));
-        return $time < $expireTime;
+        return $time + $this->jobTTR < $expireTime;
     }
 
     protected function getExpireKey(string $linearTube)

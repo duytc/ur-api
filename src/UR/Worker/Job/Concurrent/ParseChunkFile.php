@@ -5,7 +5,9 @@ namespace UR\Worker\Job\Concurrent;
 use Psr\Log\LoggerInterface;
 use Pubvantage\RedLock;
 use Pubvantage\Worker\Job\JobInterface;
+use Pubvantage\Worker\JobCounterInterface;
 use Pubvantage\Worker\JobParams;
+use Pubvantage\Worker\Scheduler\DataSetJobScheduler;
 use Redis;
 use Symfony\Component\Filesystem\Filesystem;
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
@@ -62,9 +64,25 @@ class ParseChunkFile implements JobInterface
     private $autoImportData;
     private $tempFileDirectory;
     private $uploadFileDirectory;
+    
+    /** @var JobCounterInterface */
+    private $jobCounter;
 
+    /**
+     * ParseChunkFile constructor.
+     * @param LoggerInterface $logger
+     * @param Manager $manager
+     * @param Redis $redis
+     * @param DataSourceEntryManagerInterface $dataSourceEntryManager
+     * @param ConnectedDataSourceManagerInterface $connectedDataSourceManager
+     * @param AutoImportDataInterface $autoImportData
+     * @param ImportHistoryManagerInterface $importHistoryManager
+     * @param $tempFileDirectory
+     * @param $uploadFileDirectory
+     * @param JobCounterInterface $jobCounter
+     */
     public function __construct(LoggerInterface $logger, Manager $manager, Redis $redis, DataSourceEntryManagerInterface $dataSourceEntryManager,
-                                ConnectedDataSourceManagerInterface $connectedDataSourceManager, AutoImportDataInterface $autoImportData, ImportHistoryManagerInterface $importHistoryManager, $tempFileDirectory, $uploadFileDirectory)
+                                ConnectedDataSourceManagerInterface $connectedDataSourceManager, AutoImportDataInterface $autoImportData, ImportHistoryManagerInterface $importHistoryManager, $tempFileDirectory, $uploadFileDirectory, JobCounterInterface $jobCounter)
     {
         $this->logger = $logger;
         $this->manager = $manager;
@@ -76,7 +94,7 @@ class ParseChunkFile implements JobInterface
         $this->importHistoryManager = $importHistoryManager;
         $this->tempFileDirectory = $tempFileDirectory;
         $this->uploadFileDirectory = $uploadFileDirectory;
-
+        $this->jobCounter = $jobCounter;
     }
 
     public function getName(): string
@@ -116,7 +134,13 @@ class ParseChunkFile implements JobInterface
         // if one failed, all failed
         $failed = $this->redis->exists($chunkFailedKey);
         if ($failed == true) {
-            $this->redis->decr($params->getRequiredParam(self::TOTAL_CHUNK_KEY));
+            //all chunk parsed
+            if ($this->redis->decr($params->getRequiredParam(self::TOTAL_CHUNK_KEY)) == 0) {
+                //Decrease pending job count
+                $linearTubeName = DataSetJobScheduler::getDataSetTubeName($connectedDataSource->getDataSet()->getId());
+                $this->jobCounter->decrementPendingJobCount($linearTubeName);
+            }
+            
             return;
         }
 
@@ -210,6 +234,10 @@ class ParseChunkFile implements JobInterface
             if ($alert instanceof ConnectedDataSourceAlertInterface && $alertProcessed == false) {
                 $this->manager->processAlert($alert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $alert->getDetails(), $alert->getDataSourceId());
             }
+         
+            //Decrease pending job count
+            $linearTubeName = DataSetJobScheduler::getDataSetTubeName($dataSetId);
+            $this->jobCounter->decrementPendingJobCount($linearTubeName);
         }
     }
 

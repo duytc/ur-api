@@ -6,7 +6,9 @@ use Doctrine\ORM\EntityManager;
 use Exception;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\Job\ExpirableJobInterface;
+use Pubvantage\Worker\JobCounterInterface;
 use Pubvantage\Worker\JobParams;
+use Pubvantage\Worker\Scheduler\DataSetJobScheduler;
 use Redis;
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
 use UR\DomainManager\DataSourceEntryManagerInterface;
@@ -77,6 +79,9 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
 
     private $redis;
 
+    /** @var  JobCounterInterface */
+    private $jobCounter;
+
     public function __construct(
         LoggerInterface $logger,
         DataSourceEntryManagerInterface $dataSourceEntryManager,
@@ -91,7 +96,8 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         DataSourceFileFactory $dataSourceFileFactory,
         Redis $redis,
         $fileSizeThreshold,
-        $tempFileDir
+        $tempFileDir,
+        JobCounterInterface $jobCounter
     )
     {
         $this->logger = $logger;
@@ -108,6 +114,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         $this->fileSizeThreshold = $fileSizeThreshold;
         $this->tempFileDir = $tempFileDir;
         $this->redis = $redis;
+        $this->jobCounter = $jobCounter;
     }
 
     public function getName(): string
@@ -128,6 +135,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
         $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
         $alert = null;
+        $isLargeFile = false;
 
         try {
             if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
@@ -146,9 +154,9 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
                 throw new Exception(sprintf('Cannot create importHistory, error occur: %s', $exception->getMessage()));
             }
 
-            $publisherId = $connectedDataSource->getDataSet()->getPublisherId();
             $fileSize = filesize($this->dataSourceFileFactory->getAbsolutePath($dataSourceEntry->getPath()));
             if ($fileSize > $this->fileSizeThreshold || $dataSourceEntry->isSeparable()) {
+                $isLargeFile = true;
                 $this->logger->notice('File is too big, split into small chunks..');
                 $dataSourceEntry->setSeparable(true);
                 $chunks = $dataSourceEntry->getChunks();
@@ -229,13 +237,18 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
 
         } catch (ImportDataException $e) { /* exception */
             $isImportFail = true;
-            $this->importDataLogger->doImportLogging($e->getAlertCode(), $publisherId, $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getRow(), $e->getColumn());
+            $this->importDataLogger->doImportLogging($e->getAlertCode(),  $connectedDataSource->getDataSet()->getPublisherId(), $connectedDataSource->getDataSource()->getId(), $dataSourceEntry->getId(), $e->getRow(), $e->getColumn());
             $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistoryEntity, $e);
         } catch (\Exception $exception) {
             $isImportFail = true;
             $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistoryEntity, $exception);
         } finally {
             $this->logger->notice('----------------------------LOADING COMPLETED-------------------------------------------------------------');
+
+            if (!$isLargeFile) {
+                $linearTubeName = DataSetJobScheduler::getDataSetTubeName($connectedDataSource->getDataSet()->getId());
+                $this->jobCounter->decrementPendingJobCount($linearTubeName);
+            }
 
             if ($isImportFail && $importHistoryEntity instanceof ImportHistoryInterface) {
                 /*delete import history when fail, rollback data*/

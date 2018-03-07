@@ -2,9 +2,9 @@
 
 namespace Pubvantage\Worker\Scheduler;
 
-use DateTime;
 use Pubvantage\Worker\JobCounterInterface;
 use Pubvantage\Worker\JobParams;
+use UR\Worker\Job\Linear\LoadFileIntoDataSetSubJob;
 
 class DataSetJobScheduler implements DataSetJobSchedulerInterface
 {
@@ -33,10 +33,19 @@ class DataSetJobScheduler implements DataSetJobSchedulerInterface
         ];
 
         $processedJobs = $this->linearJobScheduler->addJob($jobs, $linearTubeName, $extraData, $parentJobParams);
-        $numJobs = count($processedJobs);
 
-        for ($i = 0; $i < $numJobs; $i++) {
-            $this->jobCounter->countPendingJob($linearTubeName);
+        $jobs = is_array($jobs) ? $jobs : [$jobs];
+
+        foreach ($jobs as $job) {
+            if (!is_array($job) || !array_key_exists('task', $job) || !array_key_exists(LoadFileIntoDataSetSubJob::ENTRY_ID, $job)) {
+                continue;
+            }
+
+            $entryId = $job[LoadFileIntoDataSetSubJob::ENTRY_ID];
+
+            if (!empty($entryId)) {
+                $this->jobCounter->increasePendingJob($linearTubeName);
+            }
         }
     }
 

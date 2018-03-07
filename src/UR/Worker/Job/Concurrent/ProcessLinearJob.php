@@ -123,7 +123,6 @@ class ProcessLinearJob implements LockableJobInterface
                 $beanstalk->bury($linearJob);
             } finally {
                 // this should get executed even there is exception or a continue statement above
-                $this->jobCounter->decrementPendingJobCount($linearTubeName);
 
                 $this->entityManager->clear();
                 gc_collect_cycles();

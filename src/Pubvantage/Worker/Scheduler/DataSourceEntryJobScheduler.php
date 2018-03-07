@@ -32,11 +32,6 @@ class DataSourceEntryJobScheduler implements DataSourceEntryJobSchedulerInterfac
         ];
 
         $processedJobs = $this->linearJobScheduler->addJob($jobs, $linearTubeName, $extraData, $parentJobParams);
-        $numJobs = count($processedJobs);
-
-        for ($i = 0; $i < $numJobs; $i++) {
-            $this->jobCounter->countPendingJob($linearTubeName);
-        }
     }
 
     public static function getDataSetTubeName($dataSourceEntryId)

@@ -6,7 +6,11 @@ use Redis;
 
 class JobCounter implements JobCounterInterface
 {
+    /**
+     * @var Redis
+     */
     private $redis;
+
     /**
      * @var string
      */
@@ -18,7 +22,7 @@ class JobCounter implements JobCounterInterface
         $this->pendingJobCountKeyPrefix = $pendingJobCountKeyPrefix;
     }
 
-    public function countPendingJob(string $key)
+    public function increasePendingJob(string $key)
     {
         $this->redis->incr($this->getCountKey($key));
     }
@@ -36,7 +40,23 @@ class JobCounter implements JobCounterInterface
 
     public function decrementPendingJobCount(string $key)
     {
-        $this->redis->decr($this->getCountKey($key));
+        $counterKey = $this->getCountKey($key);
+        if ($this->redis->exists($counterKey)) {
+            $this->redis->decr($counterKey);
+        }
+    }
+
+    public function setPendingJobCount(string $key, int $count)
+    {
+        $this->redis->set($this->getCountKey($key), $count);
+    }
+
+    public function delPendingJobCount(string $key)
+    {
+        $counterKey = $this->getCountKey($key);
+        if ($this->redis->exists($counterKey)) {
+            $this->redis->del($counterKey);
+        }
     }
 
     protected function getCountKey(string $key): string
