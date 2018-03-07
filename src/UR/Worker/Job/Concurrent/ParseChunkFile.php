@@ -86,30 +86,34 @@ class ParseChunkFile implements JobInterface
 
     public function run(JobParams $params)
     {
+        $importHistoryId = $params->getRequiredParam(self::IMPORT_HISTORY_ID);
+        $chunkFailedKey = sprintf(LoadFileIntoDataSetSubJob::CHUNK_FAILED_KEY_TEMPLATE, $importHistoryId);
         $connectedDataSourceId = $params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
         $dataSourceEntryId = $params->getRequiredParam(self::DATA_SOURCE_ENTRY_ID);
 
         $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
         if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
             $this->logger->error(sprintf('ConnectedDataSource %d not found or you do not have permission', $connectedDataSourceId));
+            $this->redis->set($chunkFailedKey, 1);
             return;
         }
 
         $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
         if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
             $this->logger->error(sprintf('DataSourceEntry %d not found or you do not have permission', $dataSourceEntryId));
+            $this->redis->set($chunkFailedKey, 1);
             return;
         }
 
-        $importHistoryId = $params->getRequiredParam(self::IMPORT_HISTORY_ID);
+
         $importHistory = $this->importHistoryManager->find($importHistoryId);
         if (!$importHistory instanceof ImportHistoryInterface) {
             $this->logger->error(sprintf('ImportHistory %d not found or you do not have permission', $importHistoryId));
+            $this->redis->set($chunkFailedKey, 1);
             return;
         }
 
         // if one failed, all failed
-        $chunkFailedKey = sprintf(LoadFileIntoDataSetSubJob::CHUNK_FAILED_KEY_TEMPLATE, $importHistoryId);
         $failed = $this->redis->exists($chunkFailedKey);
         if ($failed == true) {
             $this->redis->decr($params->getRequiredParam(self::TOTAL_CHUNK_KEY));
@@ -151,8 +155,6 @@ class ParseChunkFile implements JobInterface
                 $this->manager->processAlert($failureAlert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails(), $failureAlert->getDataSourceId());
                 $this->redis->set(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId), 1);
             }
-
-            return;
         } catch (\Exception $ex) {
             $this->logger->error($ex->getMessage(), $ex->getTrace());
             $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
@@ -166,15 +168,10 @@ class ParseChunkFile implements JobInterface
                 $this->manager->processAlert(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_UN_EXPECTED_ERROR, $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails(), $failureAlert->getDataSourceId());
                 $this->redis->set(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId), 1);
             }
-
-            return;
         }
 
-        $this->redis->decr($params->getRequiredParam(self::TOTAL_CHUNK_KEY));
-        $totalChunk = (int)$this->redis->get($params->getRequiredParam(self::TOTAL_CHUNK_KEY));
-
         //all chunk parsed
-        if ($totalChunk <= 0) {
+        if ($this->redis->decr($params->getRequiredParam(self::TOTAL_CHUNK_KEY)) == 0) {
             $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
             $alert = null;
             $chunks = null;
@@ -183,10 +180,10 @@ class ParseChunkFile implements JobInterface
             if ($hasGroup) {
                 $this->logger->notice('All chunks parsed completely, merging result');
                 $chunks = $this->redis->lRange($params->getRequiredParam(self::CHUNKS_KEY), 0, -1);
-                $mergeFileDirectory = $this->getMergedFileDirectory($dataSourceEntry);
-                $mergedFileObj = new MergeFiles($chunks, $mergeFileDirectory, $importHistory->getId());
 
                 try {
+                    $mergeFileDirectory = $this->getMergedFileDirectory($dataSourceEntry);
+                    $mergedFileObj = new MergeFiles($chunks, $mergeFileDirectory, $importHistory->getId());
                     $mergedFile = $mergedFileObj->mergeFiles();
                     $this->autoImportData->parseFileOnPostGroups($connectedDataSource, $dataSourceEntry, $importHistory, $mergedFile);
                     $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, null);
