@@ -1,4 +1,5 @@
 <?php
+
 namespace UR\Service\Report;
 
 use Doctrine\ORM\EntityManagerInterface;
@@ -33,34 +34,39 @@ class ReportViewUpdater implements ReportViewUpdaterInterface
 		$this->reportViewDataSetRepository = $this->em->getRepository(ReportViewDataSet::class);
 	}
 
-
 	/**
 	 * @inheritdoc
 	 */
-	public function refreshSingleReportView(ReportViewInterface $reportView, DataSetInterface $changedDataSet)
+	public function refreshSingleReportView(ReportViewInterface $reportView, DataSetInterface $changedDataSet, array $newFields = [], array $updatedFields = [], array $deletedFields = [])
 	{
-		//calculate metrics
+		// get dimensions/metrics of changedDataSet
 		$metrics = $this->getMetrics($changedDataSet);
-		$updatedMetrics = $this->removeDimensionMetricSuffix($metrics);
+		//$metricsWithoutSuffix = $this->removeDimensionMetricSuffix($metrics);
+
 		$dimensions = $this->getDimensions($changedDataSet);
-		$updatedDimensions = $this->removeDimensionMetricSuffix($dimensions);
-		$fieldTypes = $reportView->getFieldTypes();
+		//$dimensionsWithoutSuffix = $this->removeDimensionMetricSuffix($dimensions);
+		
+        $fieldTypes = $reportView->getFieldTypes();
 		$reportViewDataSets = $this->reportViewDataSetRepository->getByReportView($reportView);
 
 		/** @var ReportViewDataSetInterface $reportViewDataSet */
 		foreach ($reportViewDataSets as $reportViewDataSet) {
 			if ($reportViewDataSet->getDataSet()->getId() === $changedDataSet->getId()) {
+                // update fieldTypes
 				$fieldTypes = $this->getFieldTypes($changedDataSet, $fieldTypes);
-				$reportViewDataSet->setDimensions($updatedDimensions);
-				$reportViewDataSet->setMetrics($updatedMetrics);
-				$this->em->merge($reportViewDataSet);
+
+                // update reportViewDataSet
+				$this->updateReportViewDataSet($reportViewDataSet, $newFields, $updatedFields, $deletedFields);
+
 				continue;
 			}
 
+			// merge dimensions/metrics from other data sets
 			$metrics = array_merge($metrics, $this->getMetrics($reportViewDataSet->getDataSet()));
 			$dimensions = array_merge($dimensions, $this->getDimensions($reportViewDataSet->getDataSet()));
 		}
 
+		// update report view
 		$allDimensionsMetrics = array_merge($metrics, $dimensions);
 		$transforms = $this->refreshTransformsForSingleReportView($reportView, $allDimensionsMetrics);
 		$formats = $this->refreshFormatsForSingleReportView($reportView, $allDimensionsMetrics);
@@ -188,6 +194,8 @@ class ReportViewUpdater implements ReportViewUpdaterInterface
 	{
 		foreach ($dataSet->getMetrics() as $metric => $type) {
 			$metric = sprintf('%s_%d', $metric, $dataSet->getId());
+
+            // add new fieldType mapping if not existed
 			if (!array_key_exists($metric, $fieldTypes)) {
 				$fieldTypes[$metric] = $type;
 			}
@@ -195,6 +203,8 @@ class ReportViewUpdater implements ReportViewUpdaterInterface
 
 		foreach ($dataSet->getDimensions() as $dimension => $type) {
 			$dimension = sprintf('%s_%d', $dimension, $dataSet->getId());
+
+            // add new fieldType mapping if not existed
 			if (!array_key_exists($dimension, $fieldTypes)) {
 				$fieldTypes[$dimension] = $type;
 			}
@@ -227,5 +237,80 @@ class ReportViewUpdater implements ReportViewUpdaterInterface
 		$showInTotals = $this->removeItemsFromArray($showInTotals, $missingFields);
 
 		return array_values($showInTotals);
+	}
+
+	/**
+	 * @param ReportViewDataSetInterface $reportViewDataSet
+	 * @param array $newFields
+	 * @param array $updatedFields
+	 * @param array $deletedFields
+	 */
+	private function updateReportViewDataSet(ReportViewDataSetInterface $reportViewDataSet, array $newFields, array $updatedFields, array $deletedFields)
+	{
+		$newDimensions = $reportViewDataSet->getDimensions();
+		$newMetrics = $reportViewDataSet->getMetrics();
+		$changed = false;
+
+		// Update when have newFields
+		// => No need update dimensions, metrics for reportViewDataSet if new fields
+		// Because this should be selected manually from UI
+
+		// Update when have updatedFields
+		if (!empty($updatedFields)) {
+			foreach ($updatedFields as $from => $to) {
+				if (in_array($from, $newDimensions)) {
+					$changed = true;
+
+					// add new
+					$newDimensions[] = $to;
+
+					// remove old
+					if (($idx = array_search($from, $newDimensions)) !== false) {
+						unset($newDimensions[$idx]);
+					}
+				}
+
+				if (in_array($from, $newMetrics)) {
+					$changed = true;
+
+					// add new
+					$newMetrics[] = $to;
+
+					// remove old
+					if (($idx = array_search($from, $newMetrics)) !== false) {
+						unset($newMetrics[$idx]);
+					}
+				}
+			}
+		}
+
+		// Update when have deletedFields
+		if (!empty($deletedFields)) {
+			foreach ($deletedFields as $deletedField => $type) {
+				if (in_array($deletedField, $newDimensions)) {
+					$changed = true;
+
+					// remove old
+					if (($idx = array_search($deletedField, $newDimensions)) !== false) {
+						unset($newDimensions[$idx]);
+					}
+				}
+
+				if (in_array($deletedField, $newMetrics)) {
+					$changed = true;
+
+					// remove old
+					if (($idx = array_search($deletedField, $newMetrics)) !== false) {
+						unset($newMetrics[$idx]);
+					}
+				}
+			}
+		}
+
+		if ($changed) {
+			$reportViewDataSet->setDimensions(array_values($newDimensions));
+			$reportViewDataSet->setMetrics(array_values($newMetrics));
+			$this->em->merge($reportViewDataSet);
+		}
 	}
 }

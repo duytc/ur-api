@@ -17,6 +17,10 @@ class UpdateReportViewWhenAlterDataSetSubJob implements SubJobInterface
     const JOB_NAME = 'updateReportViewWhenAlterDataSetSubJob';
     const DATA_SET_ID = 'data_set_id';
 
+    const NEW_FIELDS = AlterDataSetTableSubJob::NEW_FIELDS;
+    const UPDATE_FIELDS = AlterDataSetTableSubJob::UPDATE_FIELDS;
+    const DELETED_FIELDS = AlterDataSetTableSubJob::DELETED_FIELDS;
+
 	/** @var ReportViewUpdaterInterface  */
 	protected $reportViewUpdater;
 
@@ -52,6 +56,10 @@ class UpdateReportViewWhenAlterDataSetSubJob implements SubJobInterface
     {
         $dataSetId = $params->getRequiredParam(self::DATA_SET_ID);
 
+        $newFields = $params->getRequiredParam(self::NEW_FIELDS);
+        $updatedFields = $params->getRequiredParam(self::UPDATE_FIELDS);
+        $deletedFields = $params->getRequiredParam(self::DELETED_FIELDS);
+
         $dataSetRepository = $this->em->getRepository(DataSet::class);
         $reportViewRepository = $this->em->getRepository(ReportView::class);
         $dataSet = $dataSetRepository->find($dataSetId);
@@ -63,7 +71,7 @@ class UpdateReportViewWhenAlterDataSetSubJob implements SubJobInterface
         $reportViews = $reportViewRepository->getReportViewThatUseDataSet($dataSet);
         /** @var ReportViewInterface $reportView */
         foreach($reportViews as $reportView) {
-			$this->reportViewUpdater->refreshSingleReportView($reportView, $dataSet);
+			$this->reportViewUpdater->refreshSingleReportView($reportView, $dataSet, $newFields, $updatedFields, $deletedFields);
         }
 
         return true;
