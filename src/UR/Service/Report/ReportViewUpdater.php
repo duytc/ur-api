@@ -70,7 +70,7 @@ class ReportViewUpdater implements ReportViewUpdaterInterface
 		$allDimensionsMetrics = array_merge($metrics, $dimensions);
 		$transforms = $this->refreshTransformsForSingleReportView($reportView, $allDimensionsMetrics);
 		$formats = $this->refreshFormatsForSingleReportView($reportView, $allDimensionsMetrics);
-		$joinConfigs = $this->refreshJoinConfigsForSingleReportView($reportView, $allDimensionsMetrics);
+		$joinConfigs = $this->refreshJoinConfigsForSingleReportView($reportView, $allDimensionsMetrics, $updatedFields, $changedDataSet);
 		$showInTotal = $this->refreshShowInTotalsForSingleReportView($reportView, $allDimensionsMetrics);
 
 		$reportView->setDimensions($metrics);
@@ -130,13 +130,15 @@ class ReportViewUpdater implements ReportViewUpdaterInterface
 	/**
 	 * @param ReportViewInterface $reportView
 	 * @param array $allDimensionsMetrics
+	 * @param $updatedFields
+	 * @param DataSetInterface $changedDataSet
 	 * @return array
 	 */
-	private function refreshJoinConfigsForSingleReportView(ReportViewInterface $reportView, array $allDimensionsMetrics)
+	private function refreshJoinConfigsForSingleReportView(ReportViewInterface $reportView, array $allDimensionsMetrics, $updatedFields, DataSetInterface $changedDataSet)
 	{
 		$joinConfigs = $reportView->getJoinBy();
 		foreach ($joinConfigs as $i => $joinConfig) {
-			$joinConfigs[$i] = $this->refreshJoinConfig($joinConfig, $allDimensionsMetrics);
+			$joinConfigs[$i] = $this->refreshJoinConfig($joinConfig, $allDimensionsMetrics, $updatedFields, $changedDataSet);
 		}
 
 		return $joinConfigs;
@@ -145,13 +147,28 @@ class ReportViewUpdater implements ReportViewUpdaterInterface
 	/**
 	 * @param array $joinConfig
 	 * @param $allDimensionsMetrics
+	 * @param $updatedFields
+	 * @param DataSetInterface $changedDataSet
 	 * @return array
 	 */
-	private function refreshJoinConfig(array $joinConfig, $allDimensionsMetrics)
+	private function refreshJoinConfig(array $joinConfig, $allDimensionsMetrics, $updatedFields, DataSetInterface $changedDataSet)
 	{
 		$joinFields = $joinConfig[SqlBuilder::JOIN_CONFIG_JOIN_FIELDS];
+		$updatedFields = is_array($updatedFields) ? $updatedFields : [$updatedFields];
+		
 		foreach ($joinFields as $i => &$joinField) {
+			if (!array_key_exists(SqlBuilder::JOIN_CONFIG_FIELD, $joinField) || !array_key_exists(SqlBuilder::JOIN_CONFIG_DATA_SET, $joinField)) {
+				continue;
+			}
 			$field = sprintf('%s_%d', $joinField[SqlBuilder::JOIN_CONFIG_FIELD], $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET]);
+			
+			foreach ($updatedFields as $oldField => $newField) {
+				if ($joinField[SqlBuilder::JOIN_CONFIG_DATA_SET] == $changedDataSet->getId() && $joinField[SqlBuilder::JOIN_CONFIG_FIELD] == $oldField) {
+					$joinField[SqlBuilder::JOIN_CONFIG_FIELD] = $newField;
+					$field = sprintf('%s_%d', $newField, $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET]);
+				}
+			}
+
 			if (!in_array($field, $allDimensionsMetrics)) {
 				$joinField[SqlBuilder::JOIN_CONFIG_FIELD] = null;
 			}
