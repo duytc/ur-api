@@ -390,6 +390,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
 
     /**
      * Create a report view from the submitted data
+     * @Rest\View(serializerGroups={"report_view.detail", "user.summary", "report_view_data_set.summary", "report_view_multi_view.summary", "dataset.summary"})
      *
      * @ApiDoc(
      *  section = "ReportView",
@@ -406,7 +407,20 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      */
     public function postAction(Request $request)
     {
-        return $this->postAndReturnEntityData($request);
+        $view = $this->post($request);
+        $statusCode = $view->getStatusCode();
+        if (!in_array($statusCode, [200, 201])){
+            return $view;
+        }
+
+        $routeParameters = $view->getRouteParameters();
+        if (!array_key_exists('id', $routeParameters)) {
+            return $view;
+        }
+
+        $id = $routeParameters['id'];
+
+        return $this->getAction($id);
     }
 
     /**
