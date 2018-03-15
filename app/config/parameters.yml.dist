@@ -58,3 +58,4 @@ parameters:
     data_source_entry_job_temp_file_dir: '%kernel.root_dir%/temp/data-source-entry'
     number_of_rows_to_export_file: 2000 # int
     ur.report_view.large_threshold: 500000 #estimate by multiply total row from component data sets
+    ur.worker.lock.delay_time_on_release: 5 #seconds

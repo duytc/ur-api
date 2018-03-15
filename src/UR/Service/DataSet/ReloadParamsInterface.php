@@ -3,50 +3,47 @@
 
 namespace UR\Service\DataSet;
 
+use DateTime;
+
 interface ReloadParamsInterface
 {
     const ALL_DATA_TYPE = 'allData';
     const DETECTED_DATE_RANGE_TYPE = 'detectedDateRange';
     const IMPORTED_ON_TYPE = 'importedDate';
-    
+
     const RELOAD_TYPE = 'reloadType';
     const RELOAD_START_DATE = 'reloadStartDate';
     const RELOAD_END_DATE = 'reloadEndDate';
 
     /**
-     * @return mixed
+     * @return string
      */
     public function getType();
 
-
     /**
-     * @param mixed $type
+     * @param string $type
      */
     public function setType($type);
 
-
     /**
-     * @return mixed
+     * @return DateTime|null
      */
     public function getStartDate();
 
-
     /**
-     * @param mixed $startDate
+     * @param DateTime|null $startDate
      * @return self
      */
     public function setStartDate($startDate);
 
-
     /**
-     * @return mixed
+     * @return DateTime|null
      */
     public function getEndDate();
 
     /**
-     * @param mixed $endDate
+     * @param DateTime|null $endDate
      * @return self
      */
     public function setEndDate($endDate);
-
 }

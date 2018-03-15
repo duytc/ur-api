@@ -4,7 +4,7 @@ namespace Pubvantage\Worker\Scheduler;
 
 use Pubvantage\Worker\JobCounterInterface;
 use Pubvantage\Worker\JobParams;
-use UR\Worker\Job\Linear\LoadFileIntoDataSetSubJob;
+use UR\Worker\Job\Linear\LoadFilesIntoDataSetLinearWithConcurrentSubJob;
 
 class DataSetJobScheduler implements DataSetJobSchedulerInterface
 {
@@ -37,13 +37,13 @@ class DataSetJobScheduler implements DataSetJobSchedulerInterface
         $jobs = is_array($jobs) ? $jobs : [$jobs];
 
         foreach ($jobs as $job) {
-            if (!is_array($job) || !array_key_exists('task', $job) || !array_key_exists(LoadFileIntoDataSetSubJob::ENTRY_ID, $job)) {
+            if (!is_array($job) || !array_key_exists('task', $job) || !array_key_exists(LoadFilesIntoDataSetLinearWithConcurrentSubJob::ENTRY_IDS, $job)) {
                 continue;
             }
 
-            $entryId = $job[LoadFileIntoDataSetSubJob::ENTRY_ID];
+            $entryIds = $job[LoadFilesIntoDataSetLinearWithConcurrentSubJob::ENTRY_IDS];
 
-            if (!empty($entryId)) {
+            foreach ($entryIds as $entryId) {
                 $this->jobCounter->increasePendingJob($linearTubeName);
             }
         }

@@ -16,7 +16,7 @@ class CountChunkRow  implements JobInterface
 {
     const CHUNK = 'path_chunk_file';
     const JOB_NAME = 'count_total_chunk_file';
-    const ENTRY_ID = 'parse_chunk_file';
+    const ENTRY_ID = 'entry_id';
     const TOTAL = 'entry_%s_total';
     const TOTAL_CHUNKS = 'entry_%s_total_chunks';
 

@@ -13,6 +13,7 @@ use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Repository\Core\ConnectedDataSourceRepositoryInterface;
+use UR\Repository\Core\LinkedMapDataSetRepositoryInterface;
 use UR\Service\DataSet\DataSetTableUtilInterface;
 use UR\Service\DataSet\ReloadParams;
 use UR\Service\DataSet\ReloadParamsInterface;
@@ -47,19 +48,26 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
     protected $importHistoryManager;
     protected $dataSourceEntryManager;
 
-    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger,
-                                DataSetManagerInterface $dataSetManager, ConnectedDataSourceRepositoryInterface $connectedDataSourceRepository,
+    /** @var LinkedMapDataSetRepositoryInterface */
+    private $linkedMapDataSetRepository;
+
+    public function __construct(DataSetJobSchedulerInterface $scheduler,
+                                LoggerInterface $logger,
+                                DataSetManagerInterface $dataSetManager,
+                                ConnectedDataSourceRepositoryInterface $connectedDataSourceRepository,
                                 DataSetTableUtilInterface $dataSetTableUtil,
                                 ImportHistoryManagerInterface $importHistoryManager,
-                                DataSourceEntryManager $dataSourceEntryManager)
+                                DataSourceEntryManager $dataSourceEntryManager,
+                                LinkedMapDataSetRepositoryInterface $linkedMapDataSetRepository)
     {
         $this->scheduler = $scheduler;
         $this->logger = $logger;
         $this->dataSetManager = $dataSetManager;
         $this->connectedDataSourceRepository = $connectedDataSourceRepository;
-		$this->dataSetTableUtil = $dataSetTableUtil;
+        $this->dataSetTableUtil = $dataSetTableUtil;
         $this->importHistoryManager = $importHistoryManager;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
+        $this->linkedMapDataSetRepository = $linkedMapDataSetRepository;
     }
 
     /**
@@ -83,15 +91,19 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
         $reloadParameter = new ReloadParams($reloadType, $reloadStartDate, $reloadEndDate);
 
         if (!is_integer($dataSetId)) {
+            $this->logger->warning(sprintf('[ReloadDataSet] ReloadDataSet Job contains invalid dataSetId'));
             return;
         }
 
         $dataSet = $this->dataSetManager->find($dataSetId);
         if (!$dataSet instanceof DataSetInterface) {
+            $this->logger->warning(sprintf('[ReloadDataSet] Could not found Data Set with dataSetId %d', $dataSetId));
             return;
         }
 
         if ($reloadType == ReloadParamsInterface::ALL_DATA_TYPE) {
+            $this->logger->notice(sprintf('[ReloadDataSet] Reload Data Set %d with ReloadType is %s, so adding job TruncateDataSetSubJob to truncate before loading', $dataSetId, ReloadParamsInterface::ALL_DATA_TYPE));
+
             // remove data first
             $this->scheduler->addJob([
                 ['task' => TruncateDataSetSubJob::JOB_NAME],
@@ -105,7 +117,7 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
             ], $dataSetId, $params);
         }
 
-        /** @var ConnectedDataSourceInterface[] $connectedDataSources */
+        /** @var ConnectedDataSourceInterface[]|Collection $connectedDataSources */
         $connectedDataSources = $this->connectedDataSourceRepository->getConnectedDataSourceByDataSet($dataSet);
         if ($connectedDataSources instanceof Collection) {
             $connectedDataSources = $connectedDataSources->toArray();
@@ -122,7 +134,7 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
         foreach ($connectedDataSources as $connectedDataSource) {
             $entryIds = $this->dataSetTableUtil->getEntriesByReloadParameter($connectedDataSource, $reloadParameter);
             if (empty($entryIds)) {
-                $this->logger->notice(sprintf('No entry of connected data source %d reload', $connectedDataSource->getId()));
+                $this->logger->notice(sprintf('[ReloadDataSet] No entry of connected data source %d reload', $connectedDataSource->getId()));
                 $jobs[] = [
                     'task' => UpdateConnectedDataSourceReloadCompleted::JOB_NAME,
                     UpdateConnectedDataSourceReloadCompleted::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId()
@@ -130,39 +142,14 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
                 continue;
             }
 
-            foreach ($entryIds as $entryId) {
-                $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
-                if (ReloadParamsInterface::ALL_DATA_TYPE !== $reloadType) {
-                    $this->importHistoryManager->deleteImportHistoryByConnectedDataSourceAndEntry($connectedDataSource, $dataSourceEntry);
-                }
-                $jobs[] = [
-                    'task' => LoadFileIntoDataSetSubJob::JOB_NAME,
-                    LoadFileIntoDataSetSubJob::ENTRY_ID => $entryId,
-                    LoadFileIntoDataSetSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId(),
-                ];
-            }
-
-            // update connected data source that it is reload completed
+            // load files concurrently big job
+            // then this job will put concurrent loading file jobs to concurrent tube after this
             $jobs[] = [
-                'task' => UpdateConnectedDataSourceReloadCompleted::JOB_NAME,
-                UpdateConnectedDataSourceReloadCompleted::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId()
+                'task' => LoadFilesIntoDataSetLinearWithConcurrentSubJob::JOB_NAME,
+                LoadFilesIntoDataSetLinearWithConcurrentSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId(),
+                LoadFilesIntoDataSetLinearWithConcurrentSubJob::ENTRY_IDS => $entryIds,
             ];
         }
-
-        if (count($jobs) > 0) {
-            $jobs = array_merge($jobs, [
-                ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
-                // need update again because after overwriting date in data set the total rows may be change
-                ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
-                ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME]
-            ]);
-
-            // also update connected data source total row similar above
-            $jobs[] = ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME];
-        }
-
-        $jobs[] = ['task' => UpdateDataSetReloadCompleted::JOB_NAME];
-        $jobs[] = ['task' => UpdateAugmentedDataSetStatus::JOB_NAME];
 
         // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
         // this will save a lot of execution time

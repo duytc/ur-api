@@ -2,14 +2,13 @@
 
 namespace UR\Worker\Job\Linear;
 
-use Doctrine\Common\Collections\Collection;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\Job\JobInterface;
 use Pubvantage\Worker\JobParams;
 use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
 use UR\DomainManager\DataSetManagerInterface;
-use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Repository\Core\LinkedMapDataSetRepositoryInterface;
 
 class RemoveAllDataFromDataSet implements JobInterface
 {
@@ -32,11 +31,15 @@ class RemoveAllDataFromDataSet implements JobInterface
      */
     protected $dataSetManager;
 
-    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger, DataSetManagerInterface $dataSetManager)
+    /** @var LinkedMapDataSetRepositoryInterface */
+    private $linkedMapDataSetRepository;
+
+    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger, DataSetManagerInterface $dataSetManager, LinkedMapDataSetRepositoryInterface $linkedMapDataSetRepository)
     {
         $this->scheduler = $scheduler;
         $this->logger = $logger;
         $this->dataSetManager = $dataSetManager;
+        $this->linkedMapDataSetRepository = $linkedMapDataSetRepository;
     }
 
     public function getName(): string
@@ -54,11 +57,19 @@ class RemoveAllDataFromDataSet implements JobInterface
             return;
         }
 
-        $this->scheduler->addJob([
+        $jobs = [
             ['task' => TruncateDataSetSubJob::JOB_NAME],
             ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
-            ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
-        ], $dataSetId, $params);
+            ['task' => UpdateDataSetReloadCompletedSubJob::JOB_NAME],
+        ];
+
+        $linkedMapDataSets = $this->linkedMapDataSetRepository->getByMapDataSetId($dataSetId);
+        if (!empty($linkedMapDataSets)) {
+            // only add job if has augmentedDataSet
+            $jobs[] = ['task' => UpdateAugmentedDataSetStatus::JOB_NAME];
+        }
+
+        $this->scheduler->addJob($jobs, $dataSetId, $params);
     }
 }

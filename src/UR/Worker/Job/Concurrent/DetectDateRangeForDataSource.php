@@ -3,7 +3,6 @@
 namespace UR\Worker\Job\Concurrent;
 
 use Psr\Log\LoggerInterface;
-use Pubvantage\Worker\Job\JobInterface;
 use Pubvantage\Worker\Job\LockableJobInterface;
 use Pubvantage\Worker\JobParams;
 use UR\Service\DateTime\DateRangeService;
@@ -33,9 +32,9 @@ class DetectDateRangeForDataSource  implements LockableJobInterface
         return self::JOB_NAME;
     }
 
-    public function getLockKey(JobParams $params): string
+    public function getLockKeys(JobParams $params): array
     {
-        return sprintf('ur-data-source-date-range-%d', $params->getRequiredParam(self::DATA_SOURCE_ID));
+        return [sprintf('ur-data-source-date-range-%d', $params->getRequiredParam(self::DATA_SOURCE_ID))];
     }
 
 

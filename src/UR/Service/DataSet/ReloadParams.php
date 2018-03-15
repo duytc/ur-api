@@ -9,10 +9,19 @@ use UR\Service\PublicSimpleException;
 
 class ReloadParams implements ReloadParamsInterface
 {
-    private $supportedReloadTypes = [ReloadParamsInterface::ALL_DATA_TYPE, ReloadParamsInterface::DETECTED_DATE_RANGE_TYPE, ReloadParamsInterface::IMPORTED_ON_TYPE];
+    private $SUPPORTED_RELOAD_TYPES = [
+        ReloadParamsInterface::ALL_DATA_TYPE,
+        ReloadParamsInterface::DETECTED_DATE_RANGE_TYPE,
+        ReloadParamsInterface::IMPORTED_ON_TYPE
+    ];
 
+    /** @var string */
     private $type;
+
+    /** @var DateTime|null */
     private $startDate;
+
+    /** @var DateTime|null */
     private $endDate;
 
     /**
@@ -99,7 +108,7 @@ class ReloadParams implements ReloadParamsInterface
             return false;
         }
 
-        return in_array($reloadType, $this->supportedReloadTypes);
+        return in_array($reloadType, $this->SUPPORTED_RELOAD_TYPES);
     }
 
     /**

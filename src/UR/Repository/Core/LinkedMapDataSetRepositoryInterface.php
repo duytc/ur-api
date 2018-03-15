@@ -15,6 +15,12 @@ interface LinkedMapDataSetRepositoryInterface extends ObjectRepository
     public function getByMapDataSet(DataSetInterface $dataSet);
 
     /**
+     * @param int $dataSetId
+     * @return mixed
+     */
+    public function getByMapDataSetId($dataSetId);
+
+    /**
      * @param $mapDataSet
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param array $mappedFields

@@ -18,28 +18,30 @@ use UR\Service\DataSet\ReloadParamsInterface;
 use UR\Service\DateUtilInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Worker\Job\Concurrent\CountChunkRow;
-use UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView;
-use UR\Worker\Job\Concurrent\ParseChunkFile;
-use UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource;
-use UR\Worker\Job\Concurrent\ProcessAlert;
-use UR\Worker\Job\Concurrent\SplitHugeFile;
-use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
-use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
-use UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted;
 use UR\Worker\Job\Concurrent\DetectDateRangeForDataSource;
 use UR\Worker\Job\Concurrent\DetectDateRangeForDataSourceEntry;
+use UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView;
+use UR\Worker\Job\Concurrent\ParseChunkFile;
+use UR\Worker\Job\Concurrent\ProcessAlert;
+use UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource;
+use UR\Worker\Job\Concurrent\SplitHugeFile;
+use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
+use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
+use UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted;
 use UR\Worker\Job\Linear\AlterDataSetTableJob;
 use UR\Worker\Job\Linear\AlterDataSetTableSubJob;
 use UR\Worker\Job\Linear\DeleteConnectedDataSource;
-use UR\Worker\Job\Linear\LoadFilesIntoDataSet;
+use UR\Worker\Job\Concurrent\LoadFileIntoDataSetMapBuilderSubJob;
+use UR\Worker\Job\Linear\LoadFilesIntoDataSetLinearWithConcurrentSubJob;
 use UR\Worker\Job\Linear\LoadFilesIntoDataSetMapBuilder;
 use UR\Worker\Job\Linear\ReloadConnectedDataSource;
 use UR\Worker\Job\Linear\ReloadDataSet;
 use UR\Worker\Job\Linear\RemoveAllDataFromConnectedDataSource;
 use UR\Worker\Job\Linear\RemoveAllDataFromDataSet;
 use UR\Worker\Job\Linear\TruncateDataSetSubJob;
-use UR\Worker\Job\Linear\UndoImportHistories;
+use UR\Worker\Job\Linear\UndoImportHistorySubJob;
 use UR\Worker\Job\Linear\UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob;
+use UR\Worker\Job\Linear\UpdateAugmentedDataSetStatusSubJob;
 use UR\Worker\Job\Linear\UpdateDataSetTotalRowSubJob;
 use UR\Worker\Job\Linear\UpdateOverwriteDateInDataSetSubJob;
 
@@ -81,19 +83,34 @@ class Manager
     }
 
     /**
-     * @param int $connectedDataSourceId
+     * @param int|array $connectedDataSourceIds
      * @param array $entryIds
      * @param int $dataSetId
      */
-    public function loadingDataSourceEntriesToDataSetTable($connectedDataSourceId, $entryIds, $dataSetId)
+    public function loadingDataSourceEntriesToDataSetTable($connectedDataSourceIds, $entryIds, $dataSetId)
     {
-        $loadFilesToDataSet = [
-            'task' => LoadFilesIntoDataSet::JOB_NAME,
-            LoadFilesIntoDataSet::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId,
-            LoadFilesIntoDataSet::ENTRY_IDS => $entryIds
-        ];
+        // support $connectedDataSourceIds as both int and array
+        if (!is_array($connectedDataSourceIds)) {
+            $connectedDataSourceIds = [$connectedDataSourceIds];
+        }
 
-        $this->dataSetJobScheduler->addJob($loadFilesToDataSet, $dataSetId);
+        if (empty($connectedDataSourceIds)) {
+            return;
+        }
+
+        // Notice: use arrays of jobs to save process liner jobs when use dataSetJobScheduler
+
+        $jobs = [];
+        foreach ($connectedDataSourceIds as $connectedDataSourceId) {
+            $jobs[] = [
+                'task' => LoadFilesIntoDataSetLinearWithConcurrentSubJob::JOB_NAME,
+                LoadFilesIntoDataSetLinearWithConcurrentSubJob::DATA_SET_ID => $dataSetId,
+                LoadFilesIntoDataSetLinearWithConcurrentSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId,
+                LoadFilesIntoDataSetLinearWithConcurrentSubJob::ENTRY_IDS => $entryIds
+            ];
+        }
+
+        $this->dataSetJobScheduler->addJob($jobs, $dataSetId);
     }
 
     /**
@@ -208,12 +225,25 @@ class Manager
      */
     public function undoImportHistories($importHistoryIds, $dataSetId)
     {
-        $undoImportHistories = [
-            'task' => UndoImportHistories::JOB_NAME,
-            UndoImportHistories::IMPORT_HISTORY_IDS => $importHistoryIds
+        // do create all linear jobs for each files
+        if (!is_array($importHistoryIds)) {
+            return;
+        }
+
+        $jobs = [];
+        $jobs[] = [
+            'task' => UndoImportHistorySubJob::JOB_NAME,
+            UndoImportHistorySubJob::IMPORT_HISTORY_IDS => $importHistoryIds
         ];
 
-        $this->dataSetJobScheduler->addJob($undoImportHistories, $dataSetId);
+        $jobs = array_merge($jobs, [
+            ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
+            ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
+            ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
+            ['task' => UpdateAugmentedDataSetStatusSubJob::JOB_NAME],
+        ]);
+
+        $this->dataSetJobScheduler->addJob($jobs, $dataSetId);
     }
 
     /**
@@ -391,21 +421,26 @@ class Manager
         $this->dataSetJobScheduler->addJob($jobData, $dataSetId);
     }
 
-    public function parseChunkFile($connectedDataSourceId, $dataSourceEntryId, $importHistoryId, $inputFile, $outputFile, $totalChunkKey, $chunksKey)
+    /**
+     * @param int $dataSetId
+     * @param $mapBuilderConfigId
+     */
+    public function loadDataSetMapBuilder($dataSetId, $mapBuilderConfigId)
     {
         $jobData = [
-            'task' => ParseChunkFile::JOB_NAME,
-            ParseChunkFile::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId,
-            ParseChunkFile::INPUT_FILE_PATH => $inputFile,
-            ParseChunkFile::OUTPUT_FILE_PATH => $outputFile,
-            ParseChunkFile::DATA_SOURCE_ENTRY_ID => $dataSourceEntryId,
-            ParseChunkFile::TOTAL_CHUNK_KEY => $totalChunkKey,
-            ParseChunkFile::CHUNKS_KEY => $chunksKey,
-            ParseChunkFile::IMPORT_HISTORY_ID => $importHistoryId,
+            'task' => LoadFileIntoDataSetMapBuilderSubJob::JOB_NAME,
+            LoadFileIntoDataSetMapBuilderSubJob::DATA_SET_ID => $dataSetId,
+            LoadFileIntoDataSetMapBuilderSubJob::MAP_BUILDER_CONFIG_ID => $mapBuilderConfigId,
         ];
 
         // concurrent job, we do not care what order it is processed in
-        $this->dataSourceEntryScheduler->addJob($jobData, $dataSourceEntryId);
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    public function parseChunkFile($jobData)
+    {
+        // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
     }
 
     public function updateAllConnectedDataSourceTotalRowForDataSet($dataSetId)

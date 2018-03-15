@@ -50,6 +50,12 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
     public function getImportedHistoryByDataSet(DataSetInterface $dataSet);
 
     /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @return mixed
+     */
+    public function getImportedHistoryByConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource);
+
+    /**
      * @param DataSourceEntryInterface $dataSourceEntry
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param ImportHistoryInterface $importHistory
@@ -64,6 +70,13 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function findImportHistoriesByDataSourceEntryAndConnectedDataSource(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource);
+
+
+    /**
+     * @param ImportHistoryInterface $newImportHistory
+     * @return mixed
+     */
+    public function findOldImportHistories(ImportHistoryInterface $newImportHistory);
 
     /**
      * @param DataSourceEntryInterface $dataSourceEntry
@@ -88,4 +101,17 @@ interface ImportHistoryRepositoryInterface extends ObjectRepository
     public function deletePreviousImports($importHistories, ConnectedDataSourceInterface $connectedDataSource);
 
     public function deleteImportHistoryByConnectedDataSource($connectedDataSourceId);
+
+    /**
+     * @param ImportHistoryInterface $newImportHistory
+     * @param $importHistoryIds
+     * @return mixed
+     */
+    public function deleteImportedDataByImportHistoryIds(ImportHistoryInterface $newImportHistory, $importHistoryIds);
+
+    /**
+     * @param DataSetInterface $dataSet
+     * @return mixed
+     */
+    public function getAllImportIdsFromDataSetTable(DataSetInterface $dataSet);
 }

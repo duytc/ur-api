@@ -306,7 +306,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
         $augmentationMappingService->noticeChangesInLeftRightMapBuilder($dataSet, $em);
         $augmentationMappingService->noticeChangesInDataSetMapBuilder($dataSet, $em);
 
-        return ['pendingLoads' => $this->getPendingLoadFilesForDataSet($dataSet)];
+        return ['pendingLoads' => $this->getPendingLoadFilesForDataSet($dataSet, $reloadParameter)];
     }
 
 
@@ -592,20 +592,29 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
      * Get a pending load files for data sets
      *
      * @param DataSetInterface $dataSet
+     * @param ReloadParams $reloadParams
      * @return int
+     * @throws \Exception
      */
-    private function getPendingLoadFilesForDataSet(DataSetInterface $dataSet)
+    private function getPendingLoadFilesForDataSet(DataSetInterface $dataSet, ReloadParams $reloadParams)
     {
-        $pendingLoadFiles = 0;
-
-        /** @var Collection|ConnectedDataSourceInterface[] $connectedDataSources */
+        $dataSetTableUtil = $this->get('ur.service.data_set.table_util');
         $connectedDataSources = $dataSet->getConnectedDataSources();
-        foreach ($connectedDataSources as $connectedDataSource) {
-            $dataSource = $connectedDataSource->getDataSource();
-
-            $pendingLoadFiles += $dataSource->getNumOfFiles();
+        if ($connectedDataSources instanceof Collection) {
+            $connectedDataSources = $connectedDataSources->toArray();
         }
 
-        return $pendingLoadFiles;
+        $pendingLoads = 0;
+
+        foreach ($connectedDataSources as $connectedDataSource) {
+            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+                continue;
+            }
+
+            $entryIds = $dataSetTableUtil->getEntriesByReloadParameter($connectedDataSource, $reloadParams);
+            $pendingLoads += count($entryIds);
+        }
+
+        return $pendingLoads;
     }
 }

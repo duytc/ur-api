@@ -2,7 +2,6 @@
 
 namespace UR\Repository\Core;
 
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
@@ -120,6 +119,19 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
     /**
      * @inheritdoc
      */
+    public function getImportedHistoryByConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource)
+    {
+        $qb = $this->createQueryBuilder('ih')
+            ->distinct()
+            ->where('ih.connectedDataSource=:connectedDataSource')
+            ->setParameter('connectedDataSource', $connectedDataSource);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getImportHistoryByDataSourceEntryAndConnectedDataSource(DataSourceEntryInterface $dataSourceEntry, ConnectedDataSourceInterface $connectedDataSource, ImportHistoryInterface $importHistory)
     {
         $qb = $this->createQueryBuilder('ih')
@@ -142,6 +154,25 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
             ->andWhere('ih.connectedDataSource=:connectedDataSource')
             ->setParameter('dataSourceEntry', $dataSourceEntry)
             ->setParameter('connectedDataSource', $connectedDataSource);
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function findOldImportHistories(ImportHistoryInterface $newImportHistory)
+    {
+        $dataSourceEntry = $newImportHistory->getDataSourceEntry();
+        $connectedDataSource = $newImportHistory->getConnectedDataSource();
+
+        $qb = $this->createQueryBuilder('ih')
+            ->where('ih.dataSourceEntry=:dataSourceEntry')
+            ->andWhere('ih.connectedDataSource=:connectedDataSource')
+            ->andWhere('ih.id <:id')
+            ->setParameter('dataSourceEntry', $dataSourceEntry)
+            ->setParameter('connectedDataSource', $connectedDataSource)
+            ->setParameter('id', $newImportHistory->getId());
+
         return $qb->getQuery()->getResult();
     }
 
@@ -180,6 +211,31 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
 
         $this->_em->flush();
         $conn->close();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function deleteImportedDataByImportHistoryIds(ImportHistoryInterface $newImportHistory, $importHistoryIds)
+    {
+        $importHistoryIds = is_array($importHistoryIds) ? $importHistoryIds : [$importHistoryIds];
+        if (empty($importHistoryIds)) {
+            return;
+        }
+
+        $conn = $this->_em->getConnection();
+        $tableName = sprintf(Synchronizer::DATA_IMPORT_TABLE_NAME_PREFIX_TEMPLATE, $newImportHistory->getDataSet()->getId());
+        $query = sprintf('DELETE FROM %s WHERE %s in (%s)', $conn->quoteIdentifier($tableName), $conn->quoteIdentifier('__import_id'), implode(',', $importHistoryIds));
+
+        try {
+            $stmt = $conn->prepare($query);
+            $stmt->execute();
+
+            $this->_em->flush();
+            $conn->close();
+        } catch (\Exception $e) {
+
+        }
     }
 
     private function createQueryBuilderForUser(UserRoleInterface $user)
@@ -385,5 +441,31 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
 
         $this->_em->flush();
         $conn->close();
+    }
+
+    /**
+     * @param DataSetInterface $dataSet
+     * @return mixed
+     */
+    public function getAllImportIdsFromDataSetTable(DataSetInterface $dataSet)
+    {
+        $conn = $this->_em->getConnection();
+        $tableName = sprintf(Synchronizer::DATA_IMPORT_TABLE_NAME_PREFIX_TEMPLATE, $dataSet->getId());
+        $query = sprintf('SELECT DISTINCT (%s) FROM %s', $conn->quoteIdentifier('__import_id'), $conn->quoteIdentifier($tableName));
+
+        $rows = [];
+        try {
+            $stmt = $conn->executeQuery($query);
+            $rows = $stmt->fetchAll();
+        } catch (\Exception $e) {
+
+        }
+
+        $importIds = [];
+        foreach ($rows as $row) {
+            $importIds[] = reset($row);
+        }
+
+        return $importIds;
     }
 }

@@ -6,6 +6,7 @@ use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\JobParams;
 use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
+use UR\Repository\Core\LinkedMapDataSetRepositoryInterface;
 
 class RemoveAllDataFromConnectedDataSource implements SplittableJobInterface
 {
@@ -29,11 +30,15 @@ class RemoveAllDataFromConnectedDataSource implements SplittableJobInterface
      */
     protected $importHistoryManager;
 
-    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger, ImportHistoryManagerInterface $importHistoryManager)
+    /** @var LinkedMapDataSetRepositoryInterface */
+    private $linkedMapDataSetRepository;
+
+    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger, ImportHistoryManagerInterface $importHistoryManager, LinkedMapDataSetRepositoryInterface $linkedMapDataSetRepository)
     {
         $this->scheduler = $scheduler;
         $this->logger = $logger;
         $this->importHistoryManager = $importHistoryManager;
+        $this->linkedMapDataSetRepository = $linkedMapDataSetRepository;
     }
 
     public function getName(): string
@@ -60,8 +65,14 @@ class RemoveAllDataFromConnectedDataSource implements SplittableJobInterface
             ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
             ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
-            ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
+            ['task' => UpdateConnectedDataSourceReloadCompleted::JOB_NAME],
         ]);
+
+        $linkedMapDataSets = $this->linkedMapDataSetRepository->getByMapDataSetId($dataSetId);
+        if (!empty($linkedMapDataSets)) {
+            // only add job if has augmentedDataSet
+            $jobs[] = ['task' => UpdateAugmentedDataSetStatus::JOB_NAME];
+        }
 
         $this->scheduler->addJob($jobs, $dataSetId, $params);
     }

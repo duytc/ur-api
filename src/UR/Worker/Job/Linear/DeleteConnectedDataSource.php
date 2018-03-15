@@ -8,6 +8,7 @@ use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Repository\Core\LinkedMapDataSetRepositoryInterface;
 
 class DeleteConnectedDataSource implements SplittableJobInterface
 {
@@ -31,15 +32,19 @@ class DeleteConnectedDataSource implements SplittableJobInterface
      */
     protected $importHistoryManager;
 
-    /** @var ConnectedDataSourceManagerInterface  */
+    /** @var ConnectedDataSourceManagerInterface */
     private $connectedDataSourceManager;
 
-    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger,  ConnectedDataSourceManagerInterface $connectedDataSourceManager
+    /** @var LinkedMapDataSetRepositoryInterface */
+    private $linkedMapDataSetRepository;
+
+    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger, ConnectedDataSourceManagerInterface $connectedDataSourceManager, LinkedMapDataSetRepositoryInterface $linkedMapDataSetRepository
     )
     {
         $this->scheduler = $scheduler;
         $this->logger = $logger;
         $this->connectedDataSourceManager = $connectedDataSourceManager;
+        $this->linkedMapDataSetRepository = $linkedMapDataSetRepository;
     }
 
     public function getName(): string
@@ -58,7 +63,7 @@ class DeleteConnectedDataSource implements SplittableJobInterface
             return;
         }
 
-        $this->scheduler->addJob([
+        $jobs = [
             [
                 'task' => RemoveDataFromConnectedDataSourceSubJob::JOB_NAME,
                 self::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
@@ -66,7 +71,14 @@ class DeleteConnectedDataSource implements SplittableJobInterface
             ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
             ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
-            ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
-        ], $dataSetId, $params);
+        ];
+
+        $linkedMapDataSets = $this->linkedMapDataSetRepository->getByMapDataSetId($dataSetId);
+        if (!empty($linkedMapDataSets)) {
+            // only add job if has augmentedDataSet
+            $jobs[] = ['task' => UpdateAugmentedDataSetStatus::JOB_NAME];
+        }
+
+        $this->scheduler->addJob($jobs, $dataSetId, $params);
     }
 }

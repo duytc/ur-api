@@ -126,6 +126,14 @@ services:
             - { name: kernel.event_listener, event: ur.event.data_set_reload_completed, method: onDataSetReloadCompleted }
             - { name: kernel.event_listener, event: ur.event.connected_data_source_reload_completed, method: onConnectedDataSourceReloadCompleted }
 
+    ur_api.event_listener.reset_loading_redis_keys_listener:
+        class: UR\Bundle\ApiBundle\EventListener\ResetLoadingRedisKeysListener
+        arguments:
+            - '@doctrine.orm.entity_manager'
+            - '@ur.redis.app_cache'
+        tags:
+            - { name: kernel.event_listener, event: ur.event.data_set_reload_completed, method: onDataSetReloadCompleted }
+
     ur_api.event_listener.update_next_alert_time_for_data_source_listener:
         class: UR\Bundle\ApiBundle\EventListener\UpdateNextAlertTimeForDataSourceListener
         arguments:

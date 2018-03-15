@@ -14,6 +14,7 @@ use UR\Model\Core\MapBuilderConfigInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\ArrayUtilTrait;
 use UR\Service\DataSet\DataMappingService;
+use UR\Service\DataSet\OverwriteDateUpdaterInterface;
 use UR\Service\DataSet\ParsedDataImporter;
 use UR\Service\DataSet\UpdateDataSetTotalRowService;
 use UR\Service\DataSource\DataSourceFileFactory;
@@ -66,7 +67,10 @@ class AutoImportData implements AutoImportDataInterface
     /** @var UpdateDataSetTotalRowService  */
     protected $updateDataSetTotalRowService;
 
-    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, Logger $logger, DryRunReportSorterInterface $dryRunReportSorter, DryRunReportFilterInterface $dryRunReportFilter, MapBuilderConfigManager $mapBuilderConfigManager, DataMappingService $dataMappingService, CsvWriterInterface $csvWriter, DataSourceFileFactory $dataSourceFileFactory, UpdateDataSetTotalRowService $updateDataSetTotalRowService)
+    /** @var  OverwriteDateUpdaterInterface */
+    private $overwriteDateUpdater;
+
+    function __construct(ParsingFileService $parsingFileService, ParsedDataImporter $importer, Logger $logger, DryRunReportSorterInterface $dryRunReportSorter, DryRunReportFilterInterface $dryRunReportFilter, MapBuilderConfigManager $mapBuilderConfigManager, DataMappingService $dataMappingService, CsvWriterInterface $csvWriter, DataSourceFileFactory $dataSourceFileFactory, UpdateDataSetTotalRowService $updateDataSetTotalRowService, OverwriteDateUpdaterInterface $overwriteDateUpdater)
     {
         $this->parsingFileService = $parsingFileService;
         $this->importer = $importer;
@@ -78,6 +82,7 @@ class AutoImportData implements AutoImportDataInterface
         $this->csvWriter = $csvWriter;
         $this->dataSourceFileFactory = $dataSourceFileFactory;
         $this->updateDataSetTotalRowService = $updateDataSetTotalRowService;
+        $this->overwriteDateUpdater = $overwriteDateUpdater;
     }
 
     /**
@@ -124,6 +129,7 @@ class AutoImportData implements AutoImportDataInterface
     public function parseFileThenInsert(ConnectedDataSourceInterface $connectedDataSource, DataSourceEntryInterface $dataSourceEntry, ImportHistoryInterface $importHistoryEntity, $chunkFilePath)
     {
         /* parsing data */
+        $this->logger->notice(sprintf('Loading chunk to database without merge file, import %s', $importHistoryEntity->getId()));
         $collection = $this->parsingData($connectedDataSource, $dataSourceEntry, null, $parserType = ParserInterface::TYPE_DEFAULT, $chunkFilePath);
         $this->importToDataBase($connectedDataSource, $dataSourceEntry,$importHistoryEntity, $collection);
     }
@@ -264,10 +270,15 @@ class AutoImportData implements AutoImportDataInterface
         }
 
         /* import data to database */
-        $this->logger->notice(sprintf('begin loading file "%s" data to database "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
+        $this->logger->notice(sprintf('Begin loading file "%s" data to data set "%s"', $dataSourceEntry->getFileName(), $connectedDataSource->getDataSet()->getName()));
         $collection = $this->importer->importParsedDataFromFileToDatabase($collection, $importHistoryEntity->getId(), $connectedDataSource, $dataSourceEntry->getReceivedDate());
+        $this->logger->notice(sprintf('Finish loading file to data set, import %s', $importHistoryEntity->getId()));
+
+        //updateOverwriteDate, updateDataSetTotalRow, updateAllConnectedDataSourcesTotalRowInOneDataSet are needed steps and not need to be run as separated job
+        $this->overwriteDateUpdater->updateOverwriteDate($connectedDataSource->getDataSet()->getId());
         $this->updateDataSetTotalRowService->updateDataSetTotalRow($connectedDataSource->getDataSet()->getId());
         $this->updateDataSetTotalRowService->updateAllConnectedDataSourcesTotalRowInOneDataSet($connectedDataSource->getDataSet()->getId());
+        $this->logger->notice(sprintf('Finish update loading status'));
 
         if (!$collection instanceof Collection) {
             return;
@@ -277,9 +288,17 @@ class AutoImportData implements AutoImportDataInterface
         $dataSet = $connectedDataSource->getDataSet();
         $mapBuilderConfigs = $this->mapBuilderConfigManager->getByMapDataSet($dataSet);
 
+        if (!empty($mapBuilderConfigs)) {
+            $this->logger->notice(sprintf('Begin update map builder data sets'));
+        }
+
         foreach ($mapBuilderConfigs as $mapBuilderConfig) {
             /** @var MapBuilderConfigInterface $mapBuilderConfig */
             $this->dataMappingService->importDataFromComponentDataSet($mapBuilderConfig, $collection);
+        }
+
+        if (!empty($mapBuilderConfigs)) {
+            $this->logger->notice(sprintf('Finish update map builder data sets'));
         }
     }
 }

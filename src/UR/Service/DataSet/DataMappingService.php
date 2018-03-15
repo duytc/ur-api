@@ -13,9 +13,12 @@ use SplDoublyLinkedList;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Params;
 use UR\DomainManager\DataSetManagerInterface;
+use UR\Entity\Core\MapBuilderConfig;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\MapBuilderConfigInterface;
+use UR\Repository\Core\MapBuilderConfigRepositoryInterface;
+use UR\Service\Import\LoadingStatusChecker;
 use UR\Service\PublicSimpleException;
 use UR\Service\Report\SqlBuilder;
 use UR\Service\StringUtilTrait;
@@ -60,6 +63,9 @@ class DataMappingService implements DataMappingServiceInterface
     /** @var AugmentationMappingService */
     protected $augmentationMappingService;
 
+    /** @var LoadingStatusChecker */
+    private $loadingStatusChecker;
+
     /**
      * DataMappingService constructor.
      * @param EntityManagerInterface $em
@@ -67,8 +73,9 @@ class DataMappingService implements DataMappingServiceInterface
      * @param SqlBuilder $sqlBuilder
      * @param Manager $manager
      * @param AugmentationMappingService $augmentationMappingService
+     * @param LoadingStatusChecker $loadingStatusChecker
      */
-    public function __construct(EntityManagerInterface $em, DataSetManagerInterface $dataSetManager, SqlBuilder $sqlBuilder, Manager $manager, AugmentationMappingService $augmentationMappingService)
+    public function __construct(EntityManagerInterface $em, DataSetManagerInterface $dataSetManager, SqlBuilder $sqlBuilder, Manager $manager, AugmentationMappingService $augmentationMappingService, LoadingStatusChecker $loadingStatusChecker)
     {
         $this->em = $em;
         $this->conn = $em->getConnection();
@@ -76,29 +83,40 @@ class DataMappingService implements DataMappingServiceInterface
         $this->sqlBuilder = $sqlBuilder;
         $this->manager = $manager;
         $this->augmentationMappingService = $augmentationMappingService;
+        $this->loadingStatusChecker = $loadingStatusChecker;
     }
 
 
     /**
      * @param $dataSetId
+     * @param $mapBuilderConfigId
      * @return bool
      */
-    public function importDataFromMapBuilderConfig($dataSetId)
+    public function importDataFromMapBuilderConfig($dataSetId, $mapBuilderConfigId)
     {
         $dataSet = $this->dataSetManager->find($dataSetId);
         if (!$dataSet instanceof DataSetInterface) {
             return false;
         }
 
-        /** @var MapBuilderConfigInterface $config */
-        foreach ($dataSet->getMapBuilderConfigs() as $config) {
-            $dataSetRows = $this->getDataFromMapBuilderConfig($config);
-            $this->insertRowsToDataSet($config, $dataSetRows);
+        /** @var MapBuilderConfigRepositoryInterface $mapBuilderConfigRepository */
+        $mapBuilderConfigRepository = $this->em->getRepository(MapBuilderConfig::class);
+        $mapBuilderConfig = $mapBuilderConfigRepository->find($mapBuilderConfigId);
+
+        if (!$mapBuilderConfig instanceof MapBuilderConfigInterface) {
+            $this->loadingStatusChecker->postFileLoadingCompletedForDataSet($dataSet);
+            
+            return false;
         }
 
-        $dataSet->setNumChanges(0);
-        $this->em->merge($dataSet);
-        $this->em->flush();
+        try {
+            $dataSetRows = $this->getDataFromMapBuilderConfig($mapBuilderConfig);
+            $this->insertRowsToDataSet($mapBuilderConfig, $dataSetRows);
+        } catch (Exception $e) {
+
+        }
+
+        $this->loadingStatusChecker->postFileLoadingCompletedForDataSet($dataSet);
 
         return true;
     }
@@ -119,11 +137,18 @@ class DataMappingService implements DataMappingServiceInterface
         $dataSetDTO = new DataSet($data);
         $params = new Params();
         $params->setDataSets([$dataSetDTO]);
-        $result = $this->sqlBuilder->buildQueryForSingleDataSet($params);
+        $result = [];
+        $rows = new SplDoublyLinkedList();
+        
+        try {
+            $result = $this->sqlBuilder->buildQueryForSingleDataSet($params);
+        } catch (Exception $e) {
+
+        }
 
         if (array_key_exists(SqlBuilder::ROWS, $result)) {
             $rows = $result[SqlBuilder::ROWS];
-        } else {
+        } elseif (array_key_exists(SqlBuilder::STATEMENT_KEY, $result)) {
             /** @var Statement $stmt */
             $stmt = $result[SqlBuilder::STATEMENT_KEY];
             try {
@@ -553,6 +578,10 @@ class DataMappingService implements DataMappingServiceInterface
      */
     private function insertRowsToDataSet(MapBuilderConfigInterface $config, SplDoublyLinkedList $dataSetRows, $showDataSetId = true)
     {
+        if ($dataSetRows->count() < 1) {
+            return;
+        }
+
         $dataSet = $config->getDataSet();
         $mapDataSet = $config->getMapDataSet();
 

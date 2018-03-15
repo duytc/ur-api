@@ -6,5 +6,5 @@ use Pubvantage\Worker\JobParams;
 
 interface LockableJobInterface extends JobInterface
 {
-    public function getLockKey(JobParams $params): string;
+    public function getLockKeys(JobParams $params): array;
 }

@@ -2,9 +2,17 @@
 
 namespace UR\Worker\Job\Linear;
 
+use Doctrine\Common\Collections\Collection;
 use Psr\Log\LoggerInterface;
+use Pubvantage\Worker\JobCounterInterface;
 use Pubvantage\Worker\JobParams;
 use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
+use Pubvantage\Worker\Scheduler\DataSetLoadFilesConcurrentJobScheduler;
+use UR\DomainManager\DataSetManagerInterface;
+use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\MapBuilderConfigInterface;
+use UR\Repository\Core\LinkedMapDataSetRepositoryInterface;
+use UR\Worker\Manager;
 
 class LoadFilesIntoDataSetMapBuilder implements SplittableJobInterface
 {
@@ -22,11 +30,27 @@ class LoadFilesIntoDataSetMapBuilder implements SplittableJobInterface
      */
     private $logger;
 
-    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger)
+    /** @var LinkedMapDataSetRepositoryInterface */
+    private $linkedMapDataSetRepository;
+
+    /** @var Manager */
+    private $manager;
+
+    /** @var DataSetManagerInterface */
+    private $dataSetManager;
+
+    /** @var JobCounterInterface */
+    private $jobCounter;
+
+    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger, LinkedMapDataSetRepositoryInterface $linkedMapDataSetRepository, Manager $manager, DataSetManagerInterface $dataSetManager, JobCounterInterface $jobCounter)
     {
         $this->scheduler = $scheduler;
 
         $this->logger = $logger;
+        $this->linkedMapDataSetRepository = $linkedMapDataSetRepository;
+        $this->manager = $manager;
+        $this->dataSetManager = $dataSetManager;
+        $this->jobCounter = $jobCounter;
     }
 
     /**
@@ -45,22 +69,26 @@ class LoadFilesIntoDataSetMapBuilder implements SplittableJobInterface
         // do create all linear jobs for data set
         $dataSetId = (int)$params->getRequiredParam(self::DATA_SET_ID);
 
-        $jobs = [];
-        $jobs[] = [
-            'task' => LoadFileIntoDataSetMapBuilderSubJob::JOB_NAME,
-            LoadFileIntoDataSetMapBuilderSubJob::DATA_SET_ID => $dataSetId,
-        ];
+        $dataSet = $this->dataSetManager->find($dataSetId);
+        if (!$dataSet instanceof DataSetInterface) {
+            return false;
+        }
 
-        if (count($jobs) > 0) {
-            $jobs = array_merge($jobs, [
-                ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
-                ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
-                ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
-            ]);
+        $linearTubeName = DataSetLoadFilesConcurrentJobScheduler::getDataSetTubeName($dataSetId);
+        $mapBuilderConfigs = $dataSet->getMapBuilderConfigs();
+        $mapBuilderConfigs = $mapBuilderConfigs instanceof Collection ? $mapBuilderConfigs->toArray() : $mapBuilderConfigs;
 
-            // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
-            // this will save a lot of execution time
-            $this->scheduler->addJob($jobs, $dataSetId, $params);
+        if (count($mapBuilderConfigs) < 1) {
+            return false;
+        }
+
+        foreach ($mapBuilderConfigs as $config) {
+            if (!$config instanceof MapBuilderConfigInterface) {
+                continue;
+            }
+
+            $this->jobCounter->increasePendingJob($linearTubeName);
+            $this->manager->loadDataSetMapBuilder($dataSetId, $config->getId());
         }
     }
 }

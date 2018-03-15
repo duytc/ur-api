@@ -12,9 +12,14 @@ class LinkedMapDataSetRepository extends EntityRepository implements LinkedMapDa
 {
     public function getByMapDataSet(DataSetInterface $dataSet)
     {
+        return $this->getByMapDataSetId($dataSet->getId());
+    }
+
+    public function getByMapDataSetId($dataSetId)
+    {
         return $this->createQueryBuilder('l')
             ->where('l.mapDataSet = :dataSet')
-            ->setParameter('dataSet', $dataSet)->getQuery()->getResult();
+            ->setParameter('dataSet', $dataSetId)->getQuery()->getResult();
     }
 
     public function override($mapDataSet, ConnectedDataSourceInterface $connectedDataSource, array $mappedFields)

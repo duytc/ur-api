@@ -86,7 +86,7 @@ class TruncateDataSetSubJob implements SubJobInterface
 
             $this->importHistoryManager->deleteImportHistoryByDataSet($dataSet);
 
-            $dataSet->increaseNumChanges();
+//            $dataSet->increaseNumChanges();
             $this->entityManager->persist($dataSet);
             $this->entityManager->flush();
 

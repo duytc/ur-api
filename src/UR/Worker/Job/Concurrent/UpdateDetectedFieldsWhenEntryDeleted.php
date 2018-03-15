@@ -60,9 +60,9 @@ class UpdateDetectedFieldsWhenEntryDeleted implements LockableJobInterface
         return self::JOB_NAME;
     }
 
-    public function getLockKey(JobParams $params): string
+    public function getLockKeys(JobParams $params): array
     {
-        return sprintf('ur-data-source-%d', $params->getRequiredParam(self::PARAM_KEY_DATA_SOURCE_ID));
+        return [sprintf('ur-data-source-%d', $params->getRequiredParam(self::PARAM_KEY_DATA_SOURCE_ID))];
     }
 
     /**

@@ -2,11 +2,15 @@
 
 namespace UR\Worker\Job\Concurrent;
 
+use Doctrine\Common\Collections\Collection;
 use Exception;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\Job\JobInterface;
 use Pubvantage\Worker\JobParams;
+use Pubvantage\Worker\Scheduler\DataSetLoadFilesConcurrentJobScheduler;
 use UR\DomainManager\DataSourceEntryManagerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Worker\Manager;
@@ -32,19 +36,30 @@ class SplitHugeFile implements JobInterface
     /** @var Manager */
     private $manager;
 
+    /** @var \Redis */
+    private $redis;
+
+    private $lockKeyPrefix;
+
     /**
      * SplitHugeFile constructor.
      * @param LoggerInterface $logger
      * @param DataSourceEntryManagerInterface $dataSourceEntryManager
      * @param DataSourceFileFactory $dataSourceFileFactory
+     * @param $fileSizeThreshold
+     * @param Manager $manager
+     * @param \Redis $redis
+     * @param $lockKeyPrefix
      */
-    public function __construct(LoggerInterface $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, DataSourceFileFactory $dataSourceFileFactory, $fileSizeThreshold, Manager $manager)
+    public function __construct(LoggerInterface $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, DataSourceFileFactory $dataSourceFileFactory, $fileSizeThreshold, Manager $manager, \Redis $redis, $lockKeyPrefix)
     {
         $this->logger = $logger;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
         $this->dataSourceFileFactory = $dataSourceFileFactory;
         $this->fileSizeThreshold = $fileSizeThreshold;
         $this->manager = $manager;
+        $this->redis = $redis;
+        $this->lockKeyPrefix = $lockKeyPrefix;
     }
 
     public function getName(): string
@@ -52,16 +67,9 @@ class SplitHugeFile implements JobInterface
         return static::JOB_NAME;
     }
 
-    /**
-     * @param JobParams $params
-     * @throws \Exception
-     * @throws \Pubvantage\Worker\Exception\MissingJobParamException
-     * @throws \UR\Service\Import\ImportDataException
-     * @throws \UR\Service\PublicSimpleException
-     */
     public function run(JobParams $params)
     {
-        $dataSourceEntryId = $params->getRequiredParam(self::DATA_SOURCE_ENTRY_ID);
+        $dataSourceEntryId = (int)$params->getRequiredParam(self::DATA_SOURCE_ENTRY_ID);
         $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
 
         if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
@@ -93,9 +101,40 @@ class SplitHugeFile implements JobInterface
         /** Load to data sets */
         if ($dataSourceEntry->getDataSource()->getEnable()) {
             $dataSource = $dataSourceEntry->getDataSource();
-            foreach ($dataSource->getConnectedDataSources() as $connectedDataSource) {
-                $this->manager->loadingDataSourceEntriesToDataSetTable($connectedDataSource->getId(), [$dataSourceEntry->getId()], $connectedDataSource->getDataSet()->getId());
+            $connectedDataSources = $dataSource->getConnectedDataSources();
+            if ($connectedDataSources instanceof Collection) {
+                $connectedDataSources = $connectedDataSources->toArray();
             }
+
+            // advance: group connected data sources by data set id
+            // then we could add jobs for each data set id by only one action, this reduces process linear jobs!!!
+            $filterConnectedDataSourceByDataSetIds = [];
+            foreach ($connectedDataSources as $connectedDataSource) {
+                if (!$connectedDataSource instanceof ConnectedDataSourceInterface || !$connectedDataSource->getDataSet() instanceof DataSetInterface) {
+                    continue;
+                }
+
+                $filterConnectedDataSourceByDataSetIds[$connectedDataSource->getDataSet()->getId()][] = $connectedDataSource;
+            }
+
+            foreach ($filterConnectedDataSourceByDataSetIds as $dataSetId => $mapConnectedDataSources) {
+                if (!is_array($mapConnectedDataSources)) {
+                    continue;
+                }
+
+                /** Unlock data set */
+                $linearTubeName = DataSetLoadFilesConcurrentJobScheduler::getDataSetTubeName($dataSetId);
+                $dataSetLockKey = sprintf("%s%s", $this->lockKeyPrefix, $linearTubeName);
+                $this->redis->del($dataSetLockKey);
+
+                $connectedDataSourceIds = array_map(function ($mapConnectedDataSource) {
+                    /** @var ConnectedDataSourceInterface $mapConnectedDataSource */
+                    return $mapConnectedDataSource->getId();
+                }, $mapConnectedDataSources);
+
+                /* Create jobs import to database */
+                $this->manager->loadingDataSourceEntriesToDataSetTable($connectedDataSourceIds, [$dataSourceEntry->getId()], $dataSetId);
+           }
         }
     }
 }

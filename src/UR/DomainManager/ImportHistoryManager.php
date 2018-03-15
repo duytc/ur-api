@@ -15,7 +15,6 @@ use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
 use UR\Repository\Core\ImportHistoryRepositoryInterface;
-use UR\Worker\Manager;
 
 class ImportHistoryManager implements ImportHistoryManagerInterface
 {
@@ -124,6 +123,14 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
         return $this->repository->findImportHistoriesByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource);
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function findOldImportHistories(ImportHistoryInterface $importHistory)
+    {
+        return $this->repository->findOldImportHistories($importHistory);
+    }
+
     public function deleteImportHistoriesByIds(array $importHistoryIds)
     {
         return $this->repository->deleteImportHistoriesByIds($importHistoryIds);
@@ -150,6 +157,32 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
         }
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function deleteOldImportHistories(ImportHistoryInterface $newImportHistory)
+    {
+        $oldImportHistories = $this->findOldImportHistories($newImportHistory);
+        $oldImportHistories = $oldImportHistories instanceof Collection ? $oldImportHistories->toArray() : $oldImportHistories;
+
+        foreach ($oldImportHistories as $oldImportHistory) {
+            $this->delete($oldImportHistory);
+        }
+
+        $deleteIds = [];
+        $allImportIds = $this->repository->getAllImportIdsFromDataSetTable($newImportHistory->getDataSet());
+        foreach ($allImportIds as $importId) {
+            $importHistory = $this->repository->find($importId);
+            if ($importHistory instanceof ImportHistoryInterface) {
+                continue;
+            }
+
+            $deleteIds[] = $importId;
+        }
+
+        $this->repository->deleteImportedDataByImportHistoryIds($newImportHistory, $deleteIds);
+    }
+    
     /**
      * @inheritdoc
      */

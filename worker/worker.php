@@ -7,6 +7,8 @@ const WORKER_EXIT_CODE_REQUEST_STOP_SUCCESS = 99;
 
 use Leezy\PheanstalkBundle\Proxy\PheanstalkProxy;
 use Monolog\Logger;
+use UR\Worker\Job\Concurrent\LoadFilesConcurrentlyIntoDataSet;
+use UR\Worker\Job\Concurrent\ProcessLinearJob;
 
 $loader = require_once __DIR__ . '/../app/autoload.php';
 
@@ -27,6 +29,9 @@ $container = $kernel->getContainer();
 
 $concurrentTubeName = $container->getParameter('ur.worker.concurrent_tube_name');
 $lockKeyPrefix = $container->getParameter('ur.worker.lock_key_prefix');
+$releaseJobOnLockedDelaySeconds = $container->getParameter('ur.worker.lock.delay_time_on_release');
+$releaseJobOnLockedDelaySeconds = filter_var($releaseJobOnLockedDelaySeconds, FILTER_VALIDATE_INT); // to int
+$releaseJobOnLockedDelaySeconds = $releaseJobOnLockedDelaySeconds === false || $releaseJobOnLockedDelaySeconds < 0 ? false : $releaseJobOnLockedDelaySeconds; // make sure positive int
 
 $pid = getmypid();
 $requestStop = false;
@@ -39,7 +44,7 @@ $appShutdown = function () use (&$requestStop, $pid, &$logger) {
 // You can test this by calling "kill -USR1 PID" where PID is the PID of this process, the process will end after the current job
 pcntl_signal(SIGUSR1, $appShutdown);
 
-const RESERVE_TIMEOUT = 5; // seconds
+const RESERVE_TIMEOUT = 1; // seconds
 const RELEASE_JOB_DELAY_SECONDS = 5;
 const JOB_LOCK_TTL = 3 * (60 * 60 * 1000); // 3 hour expiry time for lock
 const WORKER_TIME_LIMIT = 10800; // 3 hours
@@ -56,7 +61,7 @@ $logHandler->pushProcessor(new \Monolog\Processor\TagProcessor([
 ]));
 $logger->pushHandler($logHandler);
 
-
+/** @var PheanstalkProxy $beanstalk */
 $beanstalk = $container->get('leezy.pheanstalk');
 
 $redis = $container->get('ur.redis.app_cache');
@@ -95,11 +100,21 @@ while (1) {
 
     $newJobArrived = false;
 
+    //If none job in `ready` state, it's take 5 seconds to wait (RESERVE_TIMEOUT).
+    //We need reduce timeout to 1 second
     $job = $beanstalk->watch($concurrentTubeName)
         ->ignore('default')
         ->reserve(RESERVE_TIMEOUT);
 
-    if (!$job) {
+    if (!$job instanceof \Pheanstalk\Job) {
+        //Now none job in `ready` state
+        //But `delay` state have 100+ jobs. We need move those jobs from `delay` to `ready`.
+        try {
+            $beanstalk->kick(100);
+        } catch (Exception $e) {
+        
+        }
+
         continue;
     }
 
@@ -107,8 +122,10 @@ while (1) {
 
     $rawJobData = $job->getData();
 
-    $jobLock = false;
-
+    $task = null;
+    $jobWorker = false;
+    $jobLocks = [];
+    $exitCode = LoadFilesConcurrentlyIntoDataSet::LOAD_FILE_CONCURRENT_EXIT_CODE_FAILED;
     try {
         $jobParams = new \Pubvantage\Worker\JobParams(json_decode($rawJobData, true));
         $task = $jobParams->getRequiredParam('task');
@@ -123,20 +140,36 @@ while (1) {
             continue;
         }
 
-        if ($jobWorker instanceof \Pubvantage\Worker\Job\LockableJobInterface) {
-            $jobLock = $redLock->lock($lockKeyPrefix . $jobWorker->getLockKey($jobParams), JOB_LOCK_TTL, [
-                'pid' => $pid
-            ]);
+        if ($jobWorker instanceof \Pubvantage\Worker\Job\LockableJobInterface && count($jobWorker->getLockKeys($jobParams)) > 0) {
+            $currentLockKey = '';
+            foreach ($jobWorker->getLockKeys($jobParams) as $lockKey) {
+                $jobLock = $redLock->lock($lockKeyPrefix . $lockKey, JOB_LOCK_TTL, [
+                    'pid' => $pid
+                ]);
 
-            if ($jobLock === false) {
-                $logger->debug(sprintf('Cannot acquire job lock. Job %s (ID: %s) will be retried later', $job->getId(), $rawJobData));
-                $beanstalk->release($job, PheanstalkProxy::DEFAULT_PRIORITY, RELEASE_JOB_DELAY_SECONDS);
+                if ($jobLock === false) {
+                    $currentLockKey = $lockKeyPrefix . $lockKey;
+                    break;
+                }
+
+                $jobLocks[] = $jobLock;
+            }
+
+            if (empty($jobLocks)) {
+                $logger->debug(sprintf('Cannot acquire job lock [lockKey=%s]. Job %s (ID: %s) with params %s will be retried later', $currentLockKey, $task, $job->getId(), $rawJobData));
+                $beanstalk->release($job, PheanstalkProxy::DEFAULT_PRIORITY, $releaseJobOnLockedDelaySeconds ? $releaseJobOnLockedDelaySeconds : RELEASE_JOB_DELAY_SECONDS);
                 continue;
             }
         }
 
-        $jobWorker->run($jobParams);
-        $beanstalk->delete($job);
+        $exitCode = $jobWorker->run($jobParams);
+
+        if ($jobWorker instanceof ProcessLinearJob && $exitCode === ProcessLinearJob::WORKER_EXIT_CODE_WAIT_FOR_LINEAR_WITH_CONCURRENT_JOB) {
+            $logger->notice(sprintf('Job %s (ID: %s) with params %s return exitCode %s, then will be retried later', $task, $job->getId(), $rawJobData, $exitCode));
+            $beanstalk->release($job, PheanstalkProxy::DEFAULT_PRIORITY, $releaseJobOnLockedDelaySeconds ? $releaseJobOnLockedDelaySeconds : RELEASE_JOB_DELAY_SECONDS);
+        } else {
+            $beanstalk->delete($job);
+        }
 
         $logger->notice(sprintf('Job %s (ID: %s) with params %s has been completed', $task, $job->getId(), $rawJobData));
     } catch (Exception $e) {
@@ -145,8 +178,11 @@ while (1) {
         $beanstalk->bury($job);
     } finally {
         // always release lock if it is set
-        if (is_array($jobLock)) {
-            $redLock->unlock($jobLock);
+        if (is_array($jobLocks)) {
+            foreach ($jobLocks as $jobLock) {
+                $logger->debug(sprintf('Unlocking job lock %s for Job %s (ID: %s)', implode('-', $jobLock), $task, $job->getId()));
+                $redLock->unlock($jobLock);
+            }
         }
 
         $entityManager->clear();

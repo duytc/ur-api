@@ -4,23 +4,23 @@ namespace UR\Bundle\ApiBundle\Controller;
 
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
-use \Exception;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Exception\InvalidArgumentException;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\Response;
 use UR\Model\Core\DataSourceInterface;
 use UR\Service\PublicSimpleException;
 
@@ -444,7 +444,6 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
 
         asort($entryIds);
 
-        $connectedDataSourceManager = $this->get('ur.domain_manager.connected_data_source');
         $workerManager = $this->get('ur.worker.manager');
 
         $connectedDataSources = $dataSource->getConnectedDataSources();
@@ -452,14 +451,29 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
             $connectedDataSources = $connectedDataSources->toArray();
         }
 
+        // advance: group connected data sources by data set id
+        // then we could add jobs for each data set id by only one action, this reduces process linear jobs!!!
+        $filterConnectedDataSourceByDataSetIds = [];
         foreach ($connectedDataSources as $connectedDataSource) {
-            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            if (!$connectedDataSource instanceof ConnectedDataSourceInterface || !$connectedDataSource->getDataSet() instanceof DataSetInterface) {
                 continue;
             }
-            $connectedDataSourceManager->save($connectedDataSource);
 
-            $dataSetId = $connectedDataSource->getDataSet()->getId();
-            $workerManager->loadingDataSourceEntriesToDataSetTable($connectedDataSource->getId(), $entryIds, $dataSetId);
+            $filterConnectedDataSourceByDataSetIds[$connectedDataSource->getDataSet()->getId()][] = $connectedDataSource;
+        }
+
+        foreach ($filterConnectedDataSourceByDataSetIds as $dataSetId => $mapConnectedDataSources) {
+            /** @var ConnectedDataSourceInterface[] $mapConnectedDataSources */
+            if (!is_array($mapConnectedDataSources)) {
+                continue;
+            }
+
+            $connectedDataSourceIds = array_map(function ($mapConnectedDataSource) {
+                /** @var ConnectedDataSourceInterface $mapConnectedDataSource */
+                return $mapConnectedDataSource->getId();
+            }, $mapConnectedDataSources);
+
+            $workerManager->loadingDataSourceEntriesToDataSetTable($connectedDataSourceIds, $entryIds, $dataSetId);
         }
     }
 }

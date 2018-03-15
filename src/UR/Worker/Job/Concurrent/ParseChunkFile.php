@@ -7,13 +7,11 @@ use Pubvantage\RedLock;
 use Pubvantage\Worker\Job\JobInterface;
 use Pubvantage\Worker\JobCounterInterface;
 use Pubvantage\Worker\JobParams;
-use Pubvantage\Worker\Scheduler\DataSetJobScheduler;
 use Redis;
 use Symfony\Component\Filesystem\Filesystem;
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
 use UR\DomainManager\DataSourceEntryManagerInterface;
 use UR\DomainManager\ImportHistoryManagerInterface;
-use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\ImportHistoryInterface;
@@ -22,11 +20,12 @@ use UR\Service\Alert\ConnectedDataSource\ConnectedDataSourceAlertInterface;
 use UR\Service\DataSource\MergeFiles;
 use UR\Service\Import\AutoImportDataInterface;
 use UR\Service\Import\ImportDataException;
-use UR\Worker\Job\Linear\LoadFileIntoDataSetSubJob;
+use UR\Service\Import\LoadingStatusCheckerInterface;
 use UR\Worker\Manager;
 
 class ParseChunkFile implements JobInterface
 {
+    const DATA_SET_ID = 'data_set_id';
     const DATA_SOURCE_ENTRY_ID = 'data_source_entry_id';
     const IMPORT_HISTORY_ID = 'import_history_id';
     const JOB_NAME = 'parse_chunk_file';
@@ -34,8 +33,10 @@ class ParseChunkFile implements JobInterface
     const OUTPUT_FILE_PATH = 'output_file_path';
     const CONNECTED_DATA_SOURCE_ID = 'connected_data_source_id';
     const TOTAL_CHUNK_KEY = 'parse_chunk_file:total';
+    const CHUNK_FAILED_KEY_TEMPLATE = 'import_history_%d_failed';
     const CHUNKS_KEY = 'parse_chunk_file:chunks';
     const PROCESS_ALERT_KEY_TEMPLATE = 'data_source_entry_%d_alert';
+    const FLAG_IMPORT_COMPLETED_CHUNKS = "import_history_%s_chunks_finish";
 
     /**
      * @var LoggerInterface
@@ -64,25 +65,30 @@ class ParseChunkFile implements JobInterface
     private $autoImportData;
     private $tempFileDirectory;
     private $uploadFileDirectory;
-    
-    /** @var JobCounterInterface */
-    private $jobCounter;
+
+    private $lockKeyPrefix;
 
     /**
-     * ParseChunkFile constructor.
-     * @param LoggerInterface $logger
-     * @param Manager $manager
-     * @param Redis $redis
-     * @param DataSourceEntryManagerInterface $dataSourceEntryManager
-     * @param ConnectedDataSourceManagerInterface $connectedDataSourceManager
-     * @param AutoImportDataInterface $autoImportData
-     * @param ImportHistoryManagerInterface $importHistoryManager
-     * @param $tempFileDirectory
-     * @param $uploadFileDirectory
-     * @param JobCounterInterface $jobCounter
+     * @var JobCounterInterface
      */
-    public function __construct(LoggerInterface $logger, Manager $manager, Redis $redis, DataSourceEntryManagerInterface $dataSourceEntryManager,
-                                ConnectedDataSourceManagerInterface $connectedDataSourceManager, AutoImportDataInterface $autoImportData, ImportHistoryManagerInterface $importHistoryManager, $tempFileDirectory, $uploadFileDirectory, JobCounterInterface $jobCounter)
+    private $jobCounter;
+
+    /** @var LoadingStatusCheckerInterface */
+    private $loadingStatusChecker;
+
+    public function __construct(LoggerInterface $logger,
+                                Manager $manager,
+                                Redis $redis,
+                                DataSourceEntryManagerInterface $dataSourceEntryManager,
+                                ConnectedDataSourceManagerInterface $connectedDataSourceManager,
+                                AutoImportDataInterface $autoImportData,
+                                ImportHistoryManagerInterface $importHistoryManager,
+                                $tempFileDirectory,
+                                $uploadFileDirectory,
+                                $lockKeyPrefix,
+                                JobCounterInterface $jobCounter,
+                                LoadingStatusCheckerInterface $loadingStatusChecker
+    )
     {
         $this->logger = $logger;
         $this->manager = $manager;
@@ -94,7 +100,9 @@ class ParseChunkFile implements JobInterface
         $this->importHistoryManager = $importHistoryManager;
         $this->tempFileDirectory = $tempFileDirectory;
         $this->uploadFileDirectory = $uploadFileDirectory;
+        $this->lockKeyPrefix = $lockKeyPrefix;
         $this->jobCounter = $jobCounter;
+        $this->loadingStatusChecker = $loadingStatusChecker;
     }
 
     public function getName(): string
@@ -104,43 +112,45 @@ class ParseChunkFile implements JobInterface
 
     public function run(JobParams $params)
     {
-        $importHistoryId = $params->getRequiredParam(self::IMPORT_HISTORY_ID);
-        $chunkFailedKey = sprintf(LoadFileIntoDataSetSubJob::CHUNK_FAILED_KEY_TEMPLATE, $importHistoryId);
-        $connectedDataSourceId = $params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
-        $dataSourceEntryId = $params->getRequiredParam(self::DATA_SOURCE_ENTRY_ID);
+        /* get params from jobParams */
+        $importHistoryId = (int)$params->getRequiredParam(self::IMPORT_HISTORY_ID);
+        $chunkFailedKey = sprintf(self::CHUNK_FAILED_KEY_TEMPLATE, $importHistoryId);
+        $connectedDataSourceId = (int)$params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
+        $dataSourceEntryId = (int)$params->getRequiredParam(self::DATA_SOURCE_ENTRY_ID);
+        $concurrentLoadingFilesCountRedisKey = $params->getRequiredParam(LoadFilesConcurrentlyIntoDataSet::CONCURRENT_LOADING_FILE_COUNT_REDIS_KEY);
 
-        $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
-        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
-            $this->logger->error(sprintf('ConnectedDataSource %d not found or you do not have permission', $connectedDataSourceId));
-            $this->redis->set($chunkFailedKey, 1);
-            return;
-        }
-
-        $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
-        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
-            $this->logger->error(sprintf('DataSourceEntry %d not found or you do not have permission', $dataSourceEntryId));
-            $this->redis->set($chunkFailedKey, 1);
-            return;
-        }
-
-
-        $importHistory = $this->importHistoryManager->find($importHistoryId);
-        if (!$importHistory instanceof ImportHistoryInterface) {
-            $this->logger->error(sprintf('ImportHistory %d not found or you do not have permission', $importHistoryId));
-            $this->redis->set($chunkFailedKey, 1);
-            return;
-        }
-
-        // if one failed, all failed
+        // if one failed previously, all failed
         $failed = $this->redis->exists($chunkFailedKey);
         if ($failed == true) {
-            //all chunk parsed
-            if ($this->redis->decr($params->getRequiredParam(self::TOTAL_CHUNK_KEY)) == 0) {
-                //Decrease pending job count
-                $linearTubeName = DataSetJobScheduler::getDataSetTubeName($connectedDataSource->getDataSet()->getId());
-                $this->jobCounter->decrementPendingJobCount($linearTubeName);
+            $this->handleParseChunkFileFailed($params);
+
+            return;
+        }
+
+        try {
+            $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
+            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+                throw new \Exception(sprintf('[ParseChunkFile] ConnectedDataSource %d not found or you do not have permission', $connectedDataSourceId));
             }
-            
+
+            $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
+            if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+                throw new \Exception(sprintf('[ParseChunkFile] DataSourceEntry %d not found or you do not have permission', $dataSourceEntryId));
+            }
+
+            $importHistory = $this->importHistoryManager->find($importHistoryId);
+            if (!$importHistory instanceof ImportHistoryInterface) {
+                throw new \Exception(sprintf('[ParseChunkFile] ImportHistory %d not found or you do not have permission', $importHistoryId));
+            }
+        } catch (\Exception $e) {
+            $this->logger->error($e);
+
+            // set error for chunk in redis
+            // this will let other parseChunkFile jobs know, then do "if one failed previously, all failed" as above
+            $this->redis->set($chunkFailedKey, 1);
+
+            $this->handleParseChunkFileFailed($params);
+
             return;
         }
 
@@ -167,77 +177,78 @@ class ParseChunkFile implements JobInterface
                 $this->autoImportData->parseFileOnPreGroups($connectedDataSource, $dataSourceEntry, $importHistory, $inputFile, $outputFile);
             }
         } catch (ImportDataException $ex) {
-            $this->logger->error($ex->getMessage(), $ex->getTrace());
-            $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
-            $failureAlert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
-
-            $this->redis->set($chunkFailedKey, 1);
-            $this->redis->del($params->getRequiredParam(self::CHUNKS_KEY));
-
-            $alertProcessed = $this->redis->exists(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId));
-            if ($failureAlert instanceof ConnectedDataSourceAlertInterface && $alertProcessed == false) {
-                $this->manager->processAlert($failureAlert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails(), $failureAlert->getDataSourceId());
-                $this->redis->set(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId), 1);
-            }
+            $this->handleException($importHistory, $ex, $params, $chunkFailedKey);
         } catch (\Exception $ex) {
-            $this->logger->error($ex->getMessage(), $ex->getTrace());
-            $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
-            $failureAlert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
-
-            $this->redis->set($chunkFailedKey, 1);
-            $this->redis->del($params->getRequiredParam(self::CHUNKS_KEY));
-
-            $alertProcessed = $this->redis->exists(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId));
-            if ($failureAlert instanceof ConnectedDataSourceAlertInterface && $alertProcessed == false) {
-                $this->manager->processAlert(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_UN_EXPECTED_ERROR, $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails(), $failureAlert->getDataSourceId());
-                $this->redis->set(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId), 1);
-            }
+            $this->handleException($importHistory, $ex, $params, $chunkFailedKey);
         }
 
-        //all chunk parsed
+        // all chunk parsed
         if ($this->redis->decr($params->getRequiredParam(self::TOTAL_CHUNK_KEY)) == 0) {
-            $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
-            $alert = null;
-            $chunks = null;
-            $mergedFile = null;
+            $importHistoryLockKey = sprintf(ParseChunkFile::FLAG_IMPORT_COMPLETED_CHUNKS, $importHistory->getId());
 
-            if ($hasGroup) {
-                $this->logger->notice('All chunks parsed completely, merging result');
-                $chunks = $this->redis->lRange($params->getRequiredParam(self::CHUNKS_KEY), 0, -1);
+            if (!$this->redis->exists($importHistoryLockKey)) {
+                // Set lock to make sure one ParseChunkFile job processes mergeFileAndImportToDatabase
+                // then, all other ParseChunkFile jobs do not process this action
 
                 try {
-                    $mergeFileDirectory = $this->getMergedFileDirectory($dataSourceEntry);
-                    $mergedFileObj = new MergeFiles($chunks, $mergeFileDirectory, $importHistory->getId());
-                    $mergedFile = $mergedFileObj->mergeFiles();
-                    $this->autoImportData->parseFileOnPostGroups($connectedDataSource, $dataSourceEntry, $importHistory, $mergedFile);
-                    $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, null);
-                } catch (ImportDataException $ex) {
-                    $this->logger->error($ex->getMessage(), $ex->getTrace());
-                    $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
-                } catch (\Exception $ex) {
-                    $this->logger->error($ex->getMessage(), $ex->getTrace());
-                    $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
+                    $this->redis->set($importHistoryLockKey, 1);
+
+                    $this->mergeFileAndImportToDatabase($importHistory, $hasGroup, $params);
+                } catch (\Exception $e) {
+                    $this->logger->warning(sprintf('mergeFileAndImportToDatabase got exception: %s %s', $e->getMessage(), $e->getTraceAsString()));
                 }
+
+                $this->loadingStatusChecker->postFileLoadingCompletedForConnectedDatSource($connectedDataSource, $concurrentLoadingFilesCountRedisKey);
+                $this->loadingStatusChecker->postFileLoadingCompletedForDataSet($connectedDataSource->getDataSet());
+                
+                // Remove total chunk key in redis regardless merge file successfully or not
+                $this->redis->del($params->getRequiredParam(self::TOTAL_CHUNK_KEY));
+
+                // release above lock
+                // then, all other ParseChunkFile jobs do nothing after
+                $this->redis->del($importHistoryLockKey);
             }
+        }
+    }
 
-            $this->deleteTemporaryFiles($chunks, $mergedFile);
+    /**
+     * handle ParseChunkFile Failed
+     *
+     * @param JobParams $params
+     * @throws \Pubvantage\Worker\Exception\MissingJobParamException
+     */
+    private function handleParseChunkFileFailed(JobParams $params)
+    {
+        $importHistoryId = (int)$params->getRequiredParam(self::IMPORT_HISTORY_ID);
+        $dataSetId = (int)$params->getRequiredParam(self::DATA_SET_ID);
+        $concurrentLoadingFilesCountRedisKey = $params->getRequiredParam(LoadFilesConcurrentlyIntoDataSet::CONCURRENT_LOADING_FILE_COUNT_REDIS_KEY);
 
-            $dataSetId = $connectedDataSource->getDataSet()->getId();
-            $this->manager->updateOverwriteDateForDataSet($dataSetId);
-            $this->manager->updateTotalRowsForDataSet($dataSetId);
-            $this->manager->updateAllConnectedDataSourceTotalRowForDataSet($dataSetId);
+        $connectedDataSourceId = (int)$params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
+        $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
 
-            $this->redis->del($params->getRequiredParam(self::TOTAL_CHUNK_KEY));
-            $this->redis->del($params->getRequiredParam(self::CHUNKS_KEY));
+        // decrease total chunk in redis
+        if ($this->redis->decr($params->getRequiredParam(self::TOTAL_CHUNK_KEY)) == 0) {
+            // all chunk parsed
 
-            $alertProcessed = $this->redis->exists(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId));
-            if ($alert instanceof ConnectedDataSourceAlertInterface && $alertProcessed == false) {
-                $this->manager->processAlert($alert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $alert->getDetails(), $alert->getDataSourceId());
+            $importHistoryLockKey = sprintf(ParseChunkFile::FLAG_IMPORT_COMPLETED_CHUNKS, $importHistoryId);
+
+            if (!$this->redis->exists($importHistoryLockKey)) {
+                // Set lock to make sure one ParseChunkFile job processes mergeFileAndImportToDatabase
+                // then, all other ParseChunkFile jobs do not process this action
+                $this->redis->set($importHistoryLockKey, 1);
+
+                if ($connectedDataSource instanceof ConnectedDataSourceInterface) {
+                    $this->loadingStatusChecker->postFileLoadingCompletedForConnectedDatSource($connectedDataSource, $concurrentLoadingFilesCountRedisKey);
+                    $this->loadingStatusChecker->postFileLoadingCompletedForDataSet($connectedDataSource->getDataSet());
+                }
+
+                // Remove total chunk key in redis regardless merge file successfully or not
+                $this->redis->del($params->getRequiredParam(self::TOTAL_CHUNK_KEY));
+
+                // release above lock
+                // then, all other ParseChunkFile jobs do nothing after
+                $this->redis->del($importHistoryLockKey);
             }
-         
-            //Decrease pending job count
-            $linearTubeName = DataSetJobScheduler::getDataSetTubeName($dataSetId);
-            $this->jobCounter->decrementPendingJobCount($linearTubeName);
         }
     }
 
@@ -294,6 +305,94 @@ class ParseChunkFile implements JobInterface
             }
         } catch (\Exception $e) {
 
+        }
+    }
+
+    /**
+     * @param ImportHistoryInterface $importHistory
+     * @param $hasGroup
+     * @param JobParams $params
+     * @throws \Pubvantage\Worker\Exception\MissingJobParamException
+     */
+    private function mergeFileAndImportToDatabase(ImportHistoryInterface $importHistory, $hasGroup, JobParams $params)
+    {
+        $dataSourceEntry = $importHistory->getDataSourceEntry();
+        $connectedDataSource = $importHistory->getConnectedDataSource();
+
+        $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
+        $alert = null;
+        $chunks = null;
+        $mergedFile = null;
+        $isImportFail = false;
+
+        if ($hasGroup) {
+            try {
+                $this->logger->notice('All chunks parsed completely, merging result');
+                $chunks = $this->redis->lRange($params->getRequiredParam(self::CHUNKS_KEY), 0, -1);
+
+                $mergeFileDirectory = $this->getMergedFileDirectory($dataSourceEntry);
+                $mergedFileObj = new MergeFiles($chunks, $mergeFileDirectory, $importHistory->getId());
+                $mergedFile = $mergedFileObj->mergeFiles();
+
+                $this->autoImportData->parseFileOnPostGroups($connectedDataSource, $dataSourceEntry, $importHistory, $mergedFile);
+
+                $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, null);
+            } catch (ImportDataException $ex) {
+                $isImportFail = true;
+                $this->logger->error($ex->getMessage(), $ex->getTrace());
+                $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
+            } catch (\Exception $ex) {
+                $isImportFail = true;
+                $this->logger->error($ex->getMessage(), $ex->getTrace());
+                $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
+            }
+        }
+
+        try {
+            $this->importHistoryManager->deleteOldImportHistories($importHistory);
+        } catch (\Exception $e) {
+
+        }
+
+        $this->deleteTemporaryFiles($chunks, $mergedFile);
+
+        $this->redis->del($params->getRequiredParam(self::CHUNKS_KEY));
+
+        $alertProcessed = $this->redis->exists(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntry->getId()));
+        if ($alert instanceof ConnectedDataSourceAlertInterface && $alertProcessed == false) {
+            $this->manager->processAlert($alert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $alert->getDetails(), $alert->getDataSourceId());
+        }
+
+        if ($isImportFail) {
+            $this->logger->notice('----------------------------LOADING LARGE FILE FAILED-------------------------------------------------------------');
+        } else {
+            $this->logger->notice('----------------------------LOADING LARGE FILE COMPLETED-------------------------------------------------------------');
+        }
+    }
+
+    /**
+     * @param ImportHistoryInterface $importHistory
+     * @param \Exception $ex
+     * @param JobParams $params
+     * @param $chunkFailedKey
+     * @throws \Pubvantage\Worker\Exception\MissingJobParamException
+     */
+    private function handleException(ImportHistoryInterface $importHistory, \Exception $ex, JobParams $params, $chunkFailedKey)
+    {
+        $connectedDataSource = $importHistory->getConnectedDataSource();
+        $dataSourceEntry = $importHistory->getDataSourceEntry();
+
+        $this->logger->error($ex->getMessage(), $ex->getTrace());
+        $connectedDataSourceAlertFactory = new ConnectedDataSourceAlertFactory();
+        $failureAlert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
+
+        $this->redis->set($chunkFailedKey, 1);
+        $this->redis->del($params->getRequiredParam(self::CHUNKS_KEY));
+
+        $alertProcessed = $this->redis->exists(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntry->getId()));
+        if ($failureAlert instanceof ConnectedDataSourceAlertInterface && $alertProcessed == false) {
+            $this->manager->processAlert($failureAlert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $failureAlert->getDetails(), $failureAlert->getDataSourceId());
+            $this->redis->set(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntry->getId()), 1);
         }
     }
 }

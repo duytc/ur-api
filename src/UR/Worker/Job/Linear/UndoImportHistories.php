@@ -5,6 +5,7 @@ namespace UR\Worker\Job\Linear;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\JobParams;
 use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
+use UR\Repository\Core\LinkedMapDataSetRepositoryInterface;
 
 class UndoImportHistories implements SplittableJobInterface
 {
@@ -23,11 +24,14 @@ class UndoImportHistories implements SplittableJobInterface
      */
     private $logger;
 
-    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger)
+    /** @var LinkedMapDataSetRepositoryInterface */
+    private $linkedMapDataSetRepository;
+
+    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger, LinkedMapDataSetRepositoryInterface $linkedMapDataSetRepository)
     {
         $this->scheduler = $scheduler;
-
         $this->logger = $logger;
+        $this->linkedMapDataSetRepository = $linkedMapDataSetRepository;
     }
 
     /**
@@ -61,8 +65,13 @@ class UndoImportHistories implements SplittableJobInterface
             ['task' => UpdateOverwriteDateInDataSetSubJob::JOB_NAME],
             ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
-            ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
         ]);
+
+        $linkedMapDataSets = $this->linkedMapDataSetRepository->getByMapDataSetId($dataSetId);
+        if (!empty($linkedMapDataSets)) {
+            // only add job if has augmentedDataSet
+            $jobs[] = ['task' => UpdateAugmentedDataSetStatus::JOB_NAME];
+        }
 
         $this->scheduler->addJob($jobs, $dataSetId, $params);
     }
