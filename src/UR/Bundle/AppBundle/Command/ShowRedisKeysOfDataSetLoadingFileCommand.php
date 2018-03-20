@@ -2,7 +2,7 @@
 
 namespace UR\Bundle\AppBundle\Command;
 
-use Pubvantage\Worker\Scheduler\DataSetLoadFilesConcurrentJobScheduler;
+use Pubvantage\Worker\Scheduler\DataSetJobScheduler;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -121,7 +121,7 @@ class ShowRedisKeysOfDataSetLoadingFileCommand extends ContainerAwareCommand
      */
     public function getAllLoadFileKeys(DataSetInterface $dataSet)
     {
-        $linearTubeName = DataSetLoadFilesConcurrentJobScheduler::getDataSetTubeName($dataSet->getId());
+        $linearTubeName = DataSetJobScheduler::getDataSetTubeName($dataSet->getId());
 
         return array_unique(array_merge(
             $this->redis->keys(sprintf("*%s-*", $linearTubeName)),
