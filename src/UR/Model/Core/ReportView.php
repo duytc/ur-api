@@ -7,6 +7,7 @@ namespace UR\Model\Core;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use UR\Model\User\Role\PublisherInterface;
+use UR\Service\DataSet\FieldType;
 
 class ReportView implements ReportViewInterface
 {
@@ -296,6 +297,12 @@ class ReportView implements ReportViewInterface
      */
     public function setFieldTypes($fieldTypes)
     {
+        $fieldTypes = is_array($fieldTypes) ? $fieldTypes : [$fieldTypes];
+        foreach ($fieldTypes as $field => $type) {
+            if (!in_array($type, FieldType::$types)) {
+                unset($fieldTypes[$field]);
+            }
+        }
         $this->fieldTypes = $fieldTypes;
         return $this;
     }
