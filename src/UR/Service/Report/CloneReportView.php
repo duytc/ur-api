@@ -2,17 +2,24 @@
 namespace UR\Service\Report;
 
 
+use UR\Domain\DTO\Report\Transforms\AddConditionValueTransform;
+use UR\Domain\DTO\Report\Transforms\TransformInterface;
+use UR\DomainManager\ReportViewAddConditionalTransformValueManagerInterface;
 use UR\DomainManager\ReportViewManagerInterface;
+use UR\Model\Core\ReportViewAddConditionalTransformValueInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 
 class CloneReportView implements CloneReportViewInterface
 {
     protected $reportViewManager;
+    /** @var ReportViewAddConditionalTransformValueManagerInterface */
+    protected $conditionalTransformManager;
 
-    public function __construct(ReportViewManagerInterface $reportViewManager)
+    public function __construct(ReportViewManagerInterface $reportViewManager, ReportViewAddConditionalTransformValueManagerInterface $conditionalTransformManager)
     {
         $this->reportViewManager = $reportViewManager;
+        $this->conditionalTransformManager = $conditionalTransformManager;
     }
 
     public function cloneReportView(ReportViewInterface $reportView, array $cloneSettings)
@@ -29,6 +36,35 @@ class CloneReportView implements CloneReportViewInterface
                 $newReportView->setTransforms($newTransforms);
                 $newReportView->setFormats($newFormats);
             }
+
+            //clone transforms
+            $transforms = $reportView->getTransforms();
+            foreach ($transforms as &$transform) {
+                if ($transform[TransformInterface::TRANSFORM_TYPE_KEY] == AddConditionValueTransform::TRANSFORMS_TYPE) {
+                    $fields = $transform[TransformInterface::FIELDS_TRANSFORM];
+                    foreach ($fields as &$field) {
+                        $values = $field[AddConditionValueTransform::VALUES_KEY];
+                        foreach ($values as &$conditionalTransformId) {
+                            $transformValue = $this->conditionalTransformManager->find($conditionalTransformId);
+                            if (!$transformValue instanceof ReportViewAddConditionalTransformValueInterface) {
+                                continue;
+                            }
+
+                            $newTransformValue = clone $transformValue;
+                            $newTransformValue->setId(null);
+                            $this->conditionalTransformManager->save($newTransformValue);
+                            $conditionalTransformId = $newTransformValue->getId();
+                        }
+                        unset($conditionalTransformId);
+                        $field[AddConditionValueTransform::VALUES_KEY] = $values;
+                    }
+
+                    unset($field);
+                    $transform[TransformInterface::FIELDS_TRANSFORM] = $fields;
+                }
+            }
+            unset($transform);
+            $newReportView->setTransforms($transforms);
 
             // clone filters
             /** @var ReportViewDataSetInterface[] $reportViewDataSets */
