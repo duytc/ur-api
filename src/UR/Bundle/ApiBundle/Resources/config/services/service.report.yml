@@ -39,6 +39,7 @@ services:
         class: UR\Service\Report\CloneReportView
         arguments:
             - '@ur.domain_manager.report_view'
+            - '@ur.domain_manager.report_view_add_conditional_transform_value'
 
     ur.service.report.shareable_link_updater:
         class: UR\Service\Report\ShareableLinkUpdater
