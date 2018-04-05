@@ -10,6 +10,7 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
+use UR\Bundle\ReportApiBundle\Behaviors\DashBoardUtilTrait;
 use UR\DomainManager\ReportViewManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
@@ -18,6 +19,7 @@ use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
+use UR\Model\User\Role\PublisherInterface;
 use UR\Service\ColumnUtilTrait;
 use UR\Service\PublicSimpleException;
 use UR\Service\ReportViewTemplate\DTO\CustomTemplateParams;
@@ -31,6 +33,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     use GetEntityFromIdTrait;
     use ColumnUtilTrait;
     use StringUtilTrait;
+    use DashBoardUtilTrait;
 
     /**
      * Get all report views
@@ -191,6 +194,66 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         }
 
         throw new NotFoundHttpException('either "dataSets" or "reportViews" is invalid');
+    }
+
+    /**
+     * Get all valid report views for ur dashboard
+     *
+     * @Rest\Get("/reportviews/dashboard" )
+     *
+     * @Rest\View(serializerGroups={"report_view.summary", "user.summary", "report_view_data_set.summary", "report_view_multi_view.summary", "dataset.summary"})
+     *
+     * @ApiDoc(
+     *  section = "ReportView",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return ReportViewInterface[]
+     * @throws \Exception
+     */
+    public function getAllValidReportViewsForDashboardAction(Request $request)
+    {
+        $user = $this->getUser();
+
+        /* get all report views */
+        /** @var ReportViewInterface[] $reportViews */
+        $reportViews = ($user instanceof PublisherInterface)
+            ? $this->get('ur.domain_manager.report_view')
+                ->getReportViewsForPublisherQuery($user)
+                ->getQuery()->getResult()
+            : $this->all();
+
+        /* filter all valid report views */
+        $validReportViews = [];
+        foreach ($reportViews as $reportView) {
+            if (!$reportView instanceof ReportViewInterface) {
+                continue;
+            }
+
+            try {
+                $this->validateReportViewForDashboard($reportView);
+                $validReportViews[] = $reportView;
+            } catch (Exception $e) {
+                // report view not satisfy => skip
+            }
+        }
+
+        /* sort by last run */
+        usort($validReportViews, function ($rv1, $rv2) {
+            /** @var ReportViewInterface $rv1 */
+            /** @var ReportViewInterface $rv2 */
+            if ($rv1->getLastRun() === $rv2->getLastRun()) {
+                return 0;
+            }
+
+            return ($rv1->getLastRun() > $rv2->getLastRun()) ? -1 : 1;
+        });
+
+        return $validReportViews;
     }
 
     /**
@@ -409,7 +472,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     {
         $view = $this->post($request);
         $statusCode = $view->getStatusCode();
-        if (!in_array($statusCode, [200, 201])){
+        if (!in_array($statusCode, [200, 201])) {
             return $view;
         }
 

@@ -37,4 +37,11 @@ interface ParamsBuilderInterface
      * @return ParamsInterface
      */
     public function buildFromReportViewAndParams(ReportViewInterface $reportView, $data);
+
+    /**
+     * @param ReportViewInterface $reportView
+     * @param array $data
+     * @return ParamsInterface
+     */
+    public function buildFromReportViewAndParamsForDashboard(ReportViewInterface $reportView, $data);
 }

@@ -3,6 +3,21 @@ report_api_homepage:
     defaults: { _controller: ReportApiBundle:Report:report }
     methods: [POST]
 
+report_api_comparison:
+    path:     /reportview/comparison
+    defaults: { _controller: ReportApiBundle:Report:getReportComparison }
+    methods: [POST]
+
+report_api_overview:
+    path:     /reportview/overview
+    defaults: { _controller: ReportApiBundle:Report:getReportOverview }
+    methods: [POST]
+
+report_api_topperformers:
+    path:     /reportview/topperformers
+    defaults: { _controller: ReportApiBundle:Report:reportTopPerformers }
+    methods: [POST]
+
 report_result_api:
     path:     /reportview/{id}/data
     defaults: { _controller: ReportApiBundle:Report:reportResult }

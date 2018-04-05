@@ -229,7 +229,7 @@ class ParamsBuilder implements ParamsBuilderInterface
 
             if ($filters) {
                 foreach ($filters as $filter) {
-                    if ($dataSet['dataSet'] == $filter['dataSet']){
+                    if ($dataSet['dataSet'] == $filter['dataSet']) {
                         $dataSet['filters'][] = $filter;
                     }
                 }
@@ -538,7 +538,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     {
         $param = new Params();
         $param->setReportView($reportView);
-        $param->setReportViewId($reportView->getId());  
+        $param->setReportViewId($reportView->getId());
         // important: the dimensions/metrics need re-calculate due to shared fields.
         // This makes sure group calculation is correct
         // e.g: dimensions are date-tag-country, if shared only date-tag => the shared report need be re-calculate base on
@@ -694,6 +694,16 @@ class ParamsBuilder implements ParamsBuilderInterface
         $fullFields = $this->getFieldsFromReportView($reportView);
         $param = new Params();
 
+        $param->setReportViewId($reportView->getId());
+
+        $param->setSubView($reportView->isSubView());
+        if ($reportView->isSubView()) {
+            $param->setFilters(DataSet::createFilterObjects($reportView->getFilters(), $overrideFilter = true));
+            if ($reportView->getMasterReportView() instanceof ReportViewInterface) {
+                $reportView = $reportView->getMasterReportView();
+            }
+        }
+
         if (array_key_exists(self::REPORT_VIEW_ID, $data) && !empty($data[self::REPORT_VIEW_ID])) {
             $param->setReportViewId($reportView->getId());
         }
@@ -734,6 +744,14 @@ class ParamsBuilder implements ParamsBuilderInterface
             } else {
                 throw new InvalidArgumentException('Invalid: startDate is not less than endDate or endDate is not less than today');
             }
+        }
+
+        if (array_key_exists(self::ORDER_BY_KEY, $data)) {
+            $param->setOrderBy($data[self::ORDER_BY_KEY]);
+        }
+
+        if (array_key_exists(self::SORT_FIELD_KEY, $data)) {
+            $param->setSortField($data[self::SORT_FIELD_KEY]);
         }
 
         if (array_key_exists(self::PAGE_KEY, $data)) {
@@ -803,6 +821,24 @@ class ParamsBuilder implements ParamsBuilderInterface
             }
 
             $param->setTransforms($transforms);
+        }
+
+        return $param;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function buildFromReportViewAndParamsForDashboard(ReportViewInterface $reportView, $data)
+    {
+        $param = $this->buildFromReportViewAndParams($reportView, $data);
+
+        /* patch some params */
+        // show in total: use [] for none instead of null for default metrics
+        if (!array_key_exists(self::SHOW_IN_TOTAL_KEY, $data)) {
+            $showInTotal = $reportView->getShowInTotal();
+            $showInTotal = empty($showInTotal) ? [] : $showInTotal;
+            $param->setShowInTotal($showInTotal);
         }
 
         return $param;
