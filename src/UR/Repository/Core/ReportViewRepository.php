@@ -81,10 +81,10 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
 					$qb->addOrderBy('rv.' . $param->getSortField(), $param->getSortDirection());
 					break;
 				case $this->SORT_FIELDS['lastActivity']:
-					$qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
+					$qb->addOrderBy('rv.' . $param->getSortField(), $param->getSortDirection());
 					break;
 				case $this->SORT_FIELDS['lastRun']:
-					$qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
+					$qb->addOrderBy('rv.' . $param->getSortField(), $param->getSortDirection());
 					break;
 				default:
 					break;

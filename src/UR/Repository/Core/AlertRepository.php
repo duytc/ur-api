@@ -11,7 +11,7 @@ use UR\Model\User\Role\UserRoleInterface;
 
 class AlertRepository extends EntityRepository implements AlertRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'createdDate' => 'createdDate', 'title' => 'code'];
+    protected $SORT_FIELDS = ['id' => 'id', 'createdDate' => 'createdDate', 'title' => 'code', 'type' => 'type'];
 
     public function getAlertsForPublisherQuery(PublisherInterface $publisher, $limit = null, $offset = null)
     {
@@ -88,6 +88,10 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
                     $qb->addOrderBy('a.' . $this->SORT_FIELDS['title'], $param->getSortDirection());
                     break;
 
+                case 'type':
+                    $qb->addOrderBy('a.' . $this->SORT_FIELDS['type'], $param->getSortDirection());
+                    break;
+
                 default:
                     break;
             }
@@ -146,6 +150,10 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
 
                 case 'title':
                     $qb->addOrderBy('a.' . $this->SORT_FIELDS['title'], $param->getSortDirection());
+                    break;
+
+                case 'type':
+                    $qb->addOrderBy('a.' . $this->SORT_FIELDS['type'], $param->getSortDirection());
                     break;
 
                 default:
