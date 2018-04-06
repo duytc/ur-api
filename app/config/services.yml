@@ -607,6 +607,7 @@ services:
             - @ur.domain_manager.data_source_entry
             - @ur.service.import
             - @ur.worker.manager
+            - @ur.service.file_factory
 
     ur.service.import.do_log:
         class: UR\Service\Import\ImportDataLogger

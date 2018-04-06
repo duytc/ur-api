@@ -15,6 +15,7 @@ use UR\Model\Core\DataSourceInterface;
 use UR\Service\Alert\DataSource\AbstractDataSourceAlert;
 use UR\Service\Alert\DataSource\DataReceivedAlert;
 use UR\Service\Alert\DataSource\DataSourceAlertFactory;
+use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\DataSource\DataSourceType;
 use UR\Service\Import\ImportDataException;
 use UR\Service\Import\ImportService;
@@ -38,6 +39,9 @@ class UploadFileService
     /** @var DataSourceAlertFactory */
     private $alertFactory;
 
+    /** @var DataSourceFileFactory */
+    private $dataSourceFileFactory;
+
     /**
      * @inheritdoc
      */
@@ -48,13 +52,14 @@ class UploadFileService
      * @param ImportService $importService
      * @param Manager $workerManager
      */
-    public function __construct(DataSourceManagerInterface $dataSourceManager, DataSourceEntryManager $dataSourceEntryManager, ImportService $importService, Manager $workerManager)
+    public function __construct(DataSourceManagerInterface $dataSourceManager, DataSourceEntryManager $dataSourceEntryManager, ImportService $importService, Manager $workerManager, DataSourceFileFactory $dataSourceFileFactory)
     {
         $this->dataSourceManager = $dataSourceManager;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
         $this->importService = $importService;
         $this->workerManager = $workerManager;
         $this->alertFactory = new DataSourceAlertFactory();
+        $this->dataSourceFileFactory = $dataSourceFileFactory;
     }
 
     /**
@@ -152,6 +157,8 @@ class UploadFileService
             if (!$convertResult) {
                 throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $originName));
             }
+
+            $this->dataSourceFileFactory->getFileForChunk($filePath);
 
             // create new data source entry
             $hash = sha1_file($filePath);

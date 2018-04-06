@@ -8,10 +8,12 @@ use League\Csv\Reader;
 use SplDoublyLinkedList;
 use UR\Behaviors\ParserUtilTrait;
 use UR\Exception\InvalidArgumentException;
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\DataSource\CSV\FilterReplace;
 use UR\Service\DTO\Collection;
 use UR\Service\Import\CsvWriter;
+use UR\Service\Import\ImportDataException;
 
 class Csv extends CommonDataSourceFile implements DataSourceInterface
 {
@@ -56,6 +58,7 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         $delimiters = null === $delimiters ? self::$SUPPORTED_DELIMITERS : $delimiters;
         $this->setDelimiters($delimiters);
         $this->detectColumns();
+        $this->validateHeaders();
     }
 
     /**
@@ -404,5 +407,54 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
         $sourceDir =  pathinfo($filePath, PATHINFO_DIRNAME);
 
         return $sourceDir;
+    }
+
+    /**
+     * @throws ImportDataException
+     */
+    private function validateHeaders()
+    {
+        //Sometime detect header fail, as below example
+        //       Row before headers:      ["", "Day", "ZoneName", "Ad Impressions", "Revenue", "Ad CPM"]
+        //       Headers:                 ["1",	"2018-04-01", "Sunset - Mobile", "11897", "$23.59", "$1.98"]
+        //We need fire an exception for this
+
+        if (!$this->hasNumber($this->headers)) {
+            //Return if headers valid. Most cases return here
+            return;
+        }
+
+        $this->csv->setLimit(500);
+        $allRows = $this->csv->fetchAll();
+
+        //Validate row before headers only
+        if (!array_key_exists($this->headerRow - 1, $allRows)) {
+            return;
+        }
+
+        $rowBeforeHeaders = $allRows[$this->headerRow - 1];
+        //Expect $rowBeforeHeaders = ["", "Day", "ZoneName", "Ad Impressions", "Revenue", "Ad CPM"]
+
+        if (count(array_filter($rowBeforeHeaders)) != count($this->headers) - 1) {
+            return;
+        }
+
+        if (!$this->hasNumber($rowBeforeHeaders)) {
+            throw new ImportDataException(
+                AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT, null, null, null, "Wrong headers"
+            );
+        }
+    }
+
+    /**
+     * Do not accept columns if it's name only contain number
+     * @param $headers
+     * @return bool
+     */
+    private function hasNumber($headers)
+    {
+        return count(array_filter($headers, function($item) {
+            return is_numeric($item);
+        })) > 0;
     }
 }
