@@ -78,12 +78,16 @@ class ConnectedDataSourceAlertFactory
     }
 
     /**
-     * @param ImportHistoryInterface $importHistory
+     * @param $importHistory
      * @param $ex
      * @return null|DataAddedAlert|ImportFailureAlert
      */
-    public function getAlertByException(ImportHistoryInterface $importHistory, $ex)
+    public function getAlertByException($importHistory, $ex)
     {
+        if (!$importHistory instanceof ImportHistoryInterface) {
+            return null;
+        }
+
         $connectedDataSource = $importHistory->getConnectedDataSource();
         $dataSourceEntry = $importHistory->getDataSourceEntry();
 
