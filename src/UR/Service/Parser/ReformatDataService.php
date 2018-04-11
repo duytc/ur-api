@@ -17,6 +17,8 @@ class ReformatDataService
         switch ($type) {
             case FieldType::DECIMAL:
             case FieldType::NUMBER:
+                $cellValue = number_format($cellValue, 15);
+                $cellValue = rtrim(rtrim(strval($cellValue), "0"), ".");
                 $cellValue = preg_replace('/[^\d.-]+/', '', $cellValue);
 
                 // advance process on dash character
