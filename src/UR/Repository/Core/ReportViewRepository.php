@@ -89,6 +89,8 @@ class ReportViewRepository extends EntityRepository implements ReportViewReposit
 				default:
 					break;
 			}
+		} else {
+			$qb->addOrderBy('rv.lastActivity', 'desc');
 		}
 		return $qb;
 	}

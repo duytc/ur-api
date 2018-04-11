@@ -160,6 +160,8 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
                 default:
                     break;
             }
+        } else {
+            $qb->addOrderBy('ds.lastActivity', 'desc');
         }
         return $qb;
     }

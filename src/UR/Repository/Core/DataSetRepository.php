@@ -93,6 +93,8 @@ class DataSetRepository extends EntityRepository implements DataSetRepositoryInt
                 default:
                     break;
             }
+        } else {
+            $qb->addOrderBy('ds.lastActivity', 'desc');
         }
         return $qb;
     }
