@@ -454,12 +454,12 @@ trait DashBoardUtilTrait
             case self::$COMPARISON_TYPE_DAY_OVER_DAY:
                 return [
                     'current' => [
-                        'startDate' => (new \DateTime())->format('Y-m-d'),
-                        'endDate' => (new \DateTime())->format('Y-m-d')
-                    ],
-                    'history' => [
                         'startDate' => (new \DateTime('yesterday'))->format('Y-m-d'),
                         'endDate' => (new \DateTime('yesterday'))->format('Y-m-d')
+                    ],
+                    'history' => [
+                        'startDate' => (new \DateTime('-2 days'))->format('Y-m-d'),
+                        'endDate' => (new \DateTime('-2 days'))->format('Y-m-d')
                     ]
                 ];
 
