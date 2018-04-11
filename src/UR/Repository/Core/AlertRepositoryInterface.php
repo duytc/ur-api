@@ -38,17 +38,17 @@ interface AlertRepositoryInterface extends ObjectRepository
      * @param $ids
      * @return mixed
      */
-    public function deleteAlertsByIds($ids);
+    public function deleteAlertsByIds($ids = null);
 
     /**
      * @param $ids
      * @return mixed
      */
-    public function updateMarkAsReadByIds($ids);
+    public function updateMarkAsReadByIds($ids=null);
 
     /**
      * @param $ids
      * @return mixed
      */
-    public function updateMarkAsUnreadByIds($ids);
+    public function updateMarkAsUnreadByIds($ids=null);
 }

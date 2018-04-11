@@ -19,7 +19,14 @@ use UR\Service\DataSet\Synchronizer;
 
 class ImportHistoryRepository extends EntityRepository implements ImportHistoryRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'dataSet' => 'dataSet', 'dataSource' => 'dataSource'];
+    protected $SORT_FIELDS = [
+        'id' => 'id',
+        'dataSet' => 'dataSet',
+        'dataSource' => 'dataSource',
+        'dataSourceEntryFileName'=> 'dataSourceEntry.fileName',
+        'createdDate' => 'createdDate',
+        'dataSourceEntryDataSourceName' => 'dataSourceEntry.dataSource.name'
+    ];
 
     /**
      * @inheritdoc
@@ -67,7 +74,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
             ->leftJoin('ih.dataSourceEntry', 'dse')
             ->leftJoin('dse.dataSource', 'ds')
             ->where('ih.dataSet=:dataSet')
-            ->setParameter('dataSet', $dataSet)->addOrderBy('ih.createdDate', 'desc');
+            ->setParameter('dataSet', $dataSet);
 
         if (is_string($param->getSearchKey())) {
             $searchLike = sprintf('%%%s%%', $param->getSearchKey());
@@ -95,6 +102,15 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
                     break;
                 case $this->SORT_FIELDS['dataSource']:
                     $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['dataSourceEntryFileName']:
+                    $qb->addOrderBy('dse.fileName', $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['createdDate']:
+                    $qb->addOrderBy('ih.'. $param->getSortField(), $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['dataSourceEntryDataSourceName']:
+                    $qb->addOrderBy('ds.name', $param->getSortDirection());
                     break;
                 default:
                     break;
