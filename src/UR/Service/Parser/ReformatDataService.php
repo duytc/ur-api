@@ -17,8 +17,20 @@ class ReformatDataService
         switch ($type) {
             case FieldType::DECIMAL:
             case FieldType::NUMBER:
-                $cellValue = number_format($cellValue, 15);
-                $cellValue = rtrim(rtrim(strval($cellValue), "0"), ".");
+                $length = strpos($cellValue, "e") !== false || strpos($cellValue, "E") !== false ? 25 : strlen($cellValue);
+                $cellValue = str_replace(",", "", $cellValue);
+                $cellValue = str_replace("$", "", $cellValue);
+                $cellValue = str_replace(" ", "", $cellValue);
+                if (strpos($cellValue, "%") !== false) {
+                    $cellValue = str_replace("%", "", $cellValue);
+                    $cellValue = $cellValue/100;
+                }
+
+                if (strpos($cellValue, "e") !== false || strpos($cellValue, "E") !== false) {
+                    // for converting scientific format
+                    $cellValue = number_format($cellValue, $length);
+                }
+
                 $cellValue = preg_replace('/[^\d.-]+/', '', $cellValue);
 
                 // advance process on dash character
@@ -50,10 +62,11 @@ class ReformatDataService
 
                 if (!is_numeric($cellValue)) {
                     $cellValue = null;
+                } else {
+                    $cellValue = $type == FieldType::NUMBER ? round($cellValue) : $cellValue;
                 }
 
                 break;
-
             case FieldType::DATE:
             case FieldType::DATETIME:
                 // the cellValue may be a DateTime instance if file type is excel. The object is return by excel reader library
