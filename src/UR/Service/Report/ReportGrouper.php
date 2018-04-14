@@ -57,11 +57,30 @@ class ReportGrouper implements ReportGrouperInterface
         foreach ($columns as $index => $column) {
             $headers[$column] = $this->convertColumn($column, $params->getIsShowDataSetName());
         }
-        
+
+        // make fields in show in total to an array
+        $showInTotalFields = [];
+        $showInTotals = $params->getShowInTotal();
+        $showInTotals = is_array($showInTotals) ? $showInTotals : [$showInTotals];
+        foreach ($showInTotals as $showInTotal) {
+            if (!is_array($showInTotal)) {
+                continue;
+            }
+            if (!array_key_exists('type', $showInTotal)) {
+                continue;
+            }
+            if ($showInTotal['type'] == 'average') {
+                $needToBeAverageFields = $showInTotal['fields'];
+            }
+
+            $showInTotalFields = array_merge($showInTotalFields, $showInTotal['fields']);
+        }
+        unset($showInTotal);
+
         if (count($dataSets) < 2) {
-            $stmt = $this->sqlBuilder->buildGroupQueryForSingleDataSet($params, $dataSets[0], $params->getTransforms(), $params->getSearches(), $params->getShowInTotal(), $overridingFilters);
+            $stmt = $this->sqlBuilder->buildGroupQueryForSingleDataSet($params, $dataSets[0], $params->getTransforms(), $params->getSearches(), $showInTotalFields, $overridingFilters);
         } else {
-            $stmt = $this->sqlBuilder->buildGroupQuery($params, $dataSets, $params->getJoinConfigs(), $params->getTransforms(), $params->getSearches(), $params->getShowInTotal(), $overridingFilters);
+            $stmt = $this->sqlBuilder->buildGroupQuery($params, $dataSets, $params->getJoinConfigs(), $params->getTransforms(), $params->getSearches(), $showInTotalFields, $overridingFilters);
         }
 
         if ($stmt instanceof Statement) {
@@ -84,6 +103,16 @@ class ReportGrouper implements ReportGrouperInterface
             } else {
                 $total = $rows[0];
                 $totalReport = intval($total['total']);
+            }
+
+            foreach ($total as $key => &$value) {
+                // calculate average for the fields in type avarage
+                if (isset($needToBeAverageFields)) {
+                    if (in_array($key, $needToBeAverageFields)) {
+                        $value = (float) $value / $totalReport;
+                        continue;
+                    }
+                }
             }
 
             unset($total['total']);
