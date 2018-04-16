@@ -17,21 +17,22 @@ class ReformatDataService
         switch ($type) {
             case FieldType::DECIMAL:
             case FieldType::NUMBER:
-                $length = strpos($cellValue, "e") !== false || strpos($cellValue, "E") !== false ? 25 : strlen($cellValue);
-                $cellValue = str_replace(",", "", $cellValue);
-                $cellValue = str_replace("$", "", $cellValue);
-                $cellValue = str_replace(" ", "", $cellValue);
-                if (strpos($cellValue, "%") !== false) {
-                    $cellValue = str_replace("%", "", $cellValue);
-                    $cellValue = $cellValue/100;
-                }
+                $isSciNotation = (strpos($cellValue, "e") !== false || strpos($cellValue, "E") !== false);
 
-                if (strpos($cellValue, "e") !== false || strpos($cellValue, "E") !== false) {
-                    // for converting scientific format
-                    $cellValue = number_format($cellValue, $length);
-                }
+                if ($isSciNotation) {
+                    try {
+                        //Remove invalid characters, such as %, comma, currency signs
+                        //Do not remove e/E
+                        $cellValue = preg_replace('/[^eE0-9.-]+/', '', $cellValue);
+                        // for converting scientific format
+                        if(is_numeric($cellValue)){
+                            $cellValue = number_format($cellValue, 10);
+                        }
+                    } catch (\Exception $e) {
 
-                $cellValue = preg_replace('/[^\d.-]+/', '', $cellValue);
+                    }
+                }
+                $cellValue = preg_replace('/[^0-9.-]+/', '', $cellValue);
 
                 // advance process on dash character
                 // if dash is at first position => negative flag
@@ -63,10 +64,11 @@ class ReformatDataService
                 if (!is_numeric($cellValue)) {
                     $cellValue = null;
                 } else {
-                    $cellValue = $type == FieldType::NUMBER ? round($cellValue) : $cellValue;
+                    $cellValue = $type == FieldType::NUMBER ? floor($cellValue) : $cellValue;
                 }
 
                 break;
+
             case FieldType::DATE:
             case FieldType::DATETIME:
                 // the cellValue may be a DateTime instance if file type is excel. The object is return by excel reader library
