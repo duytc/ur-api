@@ -156,8 +156,9 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
 
         // do sum for same date in reports detail
         $reportViewFormatter = $this->get('ur.services.report.report_formatter');
-        $currentReport = $this->doSumForSameDate($currentReport, $dateField, $params->getFormats(), $reportViewFormatter);
-        $historyReport = $this->doSumForSameDate($historyReport, $dateField, $params->getFormats(), $reportViewFormatter);
+        $averageFields = $this->getAverageFieldsFromReportView($reportView);
+        $currentReport = $this->groupReportsByDate($currentReport, $dateField, $params->getFormats(), $reportViewFormatter, $averageFields);
+        $historyReport = $this->groupReportsByDate($historyReport, $dateField, $params->getFormats(), $reportViewFormatter, $averageFields);
 
         // add dateField
         $currentReport['dateField'] = $dateFieldAndFormat;
@@ -254,7 +255,8 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
 
         // do sum for same date in reports detail
         $reportViewFormatter = $this->get('ur.services.report.report_formatter');
-        $result = $this->doSumForSameDate($result, $dateField, $params->getFormats(), $reportViewFormatter);
+        $averageFields = $this->getAverageFieldsFromReportView($reportView);
+        $result = $this->groupReportsByDate($result, $dateField, $params->getFormats(), $reportViewFormatter, $averageFields);
 
         // add dateField
         $result['dateField'] = $dateFieldAndFormat;

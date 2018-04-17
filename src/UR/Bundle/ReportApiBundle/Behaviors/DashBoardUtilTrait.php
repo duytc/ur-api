@@ -466,24 +466,24 @@ trait DashBoardUtilTrait
             case self::$COMPARISON_TYPE_WEEK_OVER_WEEK:
                 return [
                     'current' => [
-                        'startDate' => (new \DateTime('-6 days'))->format('Y-m-d'),
-                        'endDate' => (new \DateTime())->format('Y-m-d')
+                        'startDate' => (new \DateTime('-7 days'))->format('Y-m-d'),
+                        'endDate' => (new \DateTime('yesterday'))->format('Y-m-d')
                     ],
                     'history' => [
-                        'startDate' => (new \DateTime('-13 days'))->format('Y-m-d'),
-                        'endDate' => (new \DateTime('-7 days'))->format('Y-m-d')
+                        'startDate' => (new \DateTime('-14 days'))->format('Y-m-d'),
+                        'endDate' => (new \DateTime('-8 days'))->format('Y-m-d')
                     ]
                 ];
 
             case self::$COMPARISON_TYPE_MONTH_OVER_MONTH:
                 return [
                     'current' => [
-                        'startDate' => (new \DateTime('-29 days'))->format('Y-m-d'),
-                        'endDate' => (new \DateTime())->format('Y-m-d')
+                        'startDate' => (new \DateTime('-30 days'))->format('Y-m-d'),
+                        'endDate' => (new \DateTime('yesterday'))->format('Y-m-d')
                     ],
                     'history' => [
-                        'startDate' => (new \DateTime('-59 days'))->format('Y-m-d'),
-                        'endDate' => (new \DateTime('-30 days'))->format('Y-m-d')
+                        'startDate' => (new \DateTime('-60 days'))->format('Y-m-d'),
+                        'endDate' => (new \DateTime('-31 days'))->format('Y-m-d')
                     ]
                 ];
 
@@ -491,7 +491,7 @@ trait DashBoardUtilTrait
                 return [
                     'current' => [
                         'startDate' => (new \DateTime('first day of January this year'))->format('Y-m-d'),
-                        'endDate' => (new \DateTime())->format('Y-m-d')
+                        'endDate' => (new \DateTime('yesterday'))->format('Y-m-d')
                     ],
                     'history' => [
                         'startDate' => (new \DateTime('first day of January last year'))->format('Y-m-d'),
@@ -507,7 +507,7 @@ trait DashBoardUtilTrait
      * @param ReportViewInterface $reportView
      * @return string|null
      */
-    private function getDefaultSortFieldForReportView(ReportViewInterface $reportView)
+    public function getDefaultSortFieldForReportView(ReportViewInterface $reportView)
     {
         $metrics = $reportView->getMetrics();
         $fieldTypes = $reportView->getFieldTypes();
@@ -584,7 +584,7 @@ trait DashBoardUtilTrait
      * @param array $reports
      * @return array
      */
-    private function getMinimizeReportForComparison(array $reports)
+    public function getMinimizeReportForComparison(array $reports)
     {
         $KEYS_FOR_COMPARISON_REPORTS = [
             ReportResult::REPORT_RESULT_COLUMNS,
@@ -607,9 +607,10 @@ trait DashBoardUtilTrait
      * @param string $dateField
      * @param array|FormatInterface[] $formats
      * @param ReportViewFormatterInterface $reportViewFormatter
+     * @param array $averageFields
      * @return array
      */
-    private function doSumForSameDate(array $reports, $dateField, array $formats = [], ReportViewFormatterInterface $reportViewFormatter)
+    public function groupReportsByDate(array $reports, $dateField, array $formats = [], ReportViewFormatterInterface $reportViewFormatter, $averageFields = [])
     {
         if (!array_key_exists(ReportResult::REPORT_RESULT_REPORTS, $reports)
             || !array_key_exists(ReportResult::REPORT_RESULT_TYPES, $reports)
@@ -645,11 +646,23 @@ trait DashBoardUtilTrait
          */
         $didSumReportsDetail = [];
 
+        /*
+         * [ date_1 => 10, date_2 => 20, ... ]
+         */
+        $sameDateCount = [];
+
         foreach ($reportsDetail as $reportDetail) {
             // skip not have date field
             if (!array_key_exists($dateField, $reportDetail)) {
                 continue;
             }
+
+            // count same date
+            $dateValue = $reportDetail[$dateField];
+            if (!array_key_exists($dateValue, $sameDateCount)) {
+                $sameDateCount[$dateValue] = 0;
+            }
+            $sameDateCount[$dateValue] = $sameDateCount[$dateValue] + 1;
 
             foreach ($reportDetail as $fieldName => $value) {
                 // skip if not dateField and not number fields
@@ -658,7 +671,6 @@ trait DashBoardUtilTrait
                 }
 
                 // init sum for date
-                $dateValue = $reportDetail[$dateField];
                 if (!array_key_exists($dateValue, $didSumReportsDetail)) {
                     $didSumReportsDetail[$dateValue] = [];
 
@@ -683,6 +695,23 @@ trait DashBoardUtilTrait
                 // this line is reached if date field!
             }
         }
+
+        /* Do average - Due to showInTotal format changed to support sum or average calculation */
+        foreach ($didSumReportsDetail as $date => &$detail) {
+            foreach ($detail as $field => &$value) {
+                if (!in_array($field, $averageFields)) {
+                    // keep sum
+                    continue;
+                }
+
+                // do average
+                $value = round($value / $sameDateCount[$date], 12);
+            }
+
+            unset($field, $value);
+        }
+
+        unset($date, $detail);
 
         $didSumReportsDetail = array_values($didSumReportsDetail);
 
@@ -718,5 +747,33 @@ trait DashBoardUtilTrait
         $reports[ReportResult::REPORT_RESULT_REPORTS] = $didSumReportsDetail;
 
         return $reports;
+    }
+
+    /**
+     * @param ReportViewInterface $reportView
+     * @return array
+     */
+    public function getAverageFieldsFromReportView(ReportViewInterface $reportView)
+    {
+        $showInTotal = $reportView->getShowInTotal();
+        if (!is_array($showInTotal)) {
+            return [];
+        }
+
+        $averageFields = [];
+
+        foreach ($showInTotal as $config) {
+            if (!is_array($config)
+                || !array_key_exists('type', $config)
+                || $config['type'] !== 'average'
+                || !array_key_exists('fields', $config)
+            ) {
+                continue;
+            }
+
+            $averageFields = array_merge($averageFields, $config['fields']);
+        }
+
+        return $averageFields;
     }
 }
