@@ -11,7 +11,12 @@ use UR\Model\PagerParam;
 
 class ConnectedDataSourceRepository extends EntityRepository implements ConnectedDataSourceRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name', 'lastActivity' => 'lastActivity'];
+    protected $SORT_FIELDS = ['id' => 'id',
+        'name' => 'name',
+        'totalRow' => 'totalRow',
+        'dataSourceName' => 'dataSource.name',
+        'numOfFile' => 'dataSource.numOfFiles',
+    ];
 
     public function getConnectedDataSourceByDataSetQuery(DataSetInterface $dataSet, PagerParam $param)
     {
@@ -26,6 +31,7 @@ class ConnectedDataSourceRepository extends EntityRepository implements Connecte
             $qb
                 ->andWhere($qb->expr()->orX(
                     $qb->expr()->like('cds.id', ':searchKey'),
+                    $qb->expr()->like('cds.name', ':searchKey'),
                     $qb->expr()->like('ds.name', ':searchKey')
                 ))
                 ->setParameter('searchKey', $searchLike);
@@ -43,8 +49,14 @@ class ConnectedDataSourceRepository extends EntityRepository implements Connecte
                 case $this->SORT_FIELDS['name']:
                     $qb->addOrderBy('cds.' . $param->getSortField(), $param->getSortDirection());
                     break;
-                case $this->SORT_FIELDS['lastActivity']:
-                    $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
+                case $this->SORT_FIELDS['totalRow']:
+                    $qb->addOrderBy('cds.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['dataSourceName']:
+                    $qb->addOrderBy('ds.name' , $param->getSortDirection());
+                    break;
+                case $this->SORT_FIELDS['numOfFile']:
+                    $qb->addOrderBy('ds.numOfFiles' , $param->getSortDirection());
                     break;
                 default:
                     break;
