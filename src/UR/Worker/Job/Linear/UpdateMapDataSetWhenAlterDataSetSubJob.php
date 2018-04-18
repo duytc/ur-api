@@ -6,11 +6,11 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\JobParams;
-use UR\DomainManager\DataSetManagerInterface;
 use UR\Entity\Core\DataSet;
 use UR\Entity\Core\MapBuilderConfig;
 use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\MapBuilderConfigInterface;
+use UR\Repository\Core\MapBuilderConfigRepositoryInterface;
 
 class UpdateMapDataSetWhenAlterDataSetSubJob implements SubJobInterface
 {
@@ -54,14 +54,17 @@ class UpdateMapDataSetWhenAlterDataSetSubJob implements SubJobInterface
         $dataSetId = $params->getRequiredParam(self::DATA_SET_ID);
         $updateColumns = $params->getRequiredParam(self::UPDATE_FIELDS);
         $deletedColumns = $params->getRequiredParam(self::DELETED_FIELDS);
+        /** @var MapBuilderConfigRepositoryInterface $mapBuilderConfigRepository */
         $mapBuilderConfigRepository = $this->em->getRepository(MapBuilderConfig::class);
         $dataSetRepository = $this->em->getRepository(DataSet::class);
         /** @var DataSetInterface $dataSet */
         $dataSet = $dataSetRepository->find($dataSetId);
 
         $mapBuilderConfigs = $mapBuilderConfigRepository->getByDataSet($dataSet);
-        /** @var MapBuilderConfigInterface $config */
         foreach ($mapBuilderConfigs as $config) {
+            if (!$config instanceof MapBuilderConfigInterface) {
+                continue;
+            }
             $mapFields = $config->getMapFields();
             foreach ($mapFields as $key => $field) {
                 if (isset($updateColumns[$key])) {
@@ -79,8 +82,10 @@ class UpdateMapDataSetWhenAlterDataSetSubJob implements SubJobInterface
         }
 
         $mapBuilderConfigs = $mapBuilderConfigRepository->getByMapDataSet($dataSet);
-        /** @var MapBuilderConfigInterface $config */
         foreach ($mapBuilderConfigs as $config) {
+            if (!$config instanceof MapBuilderConfigInterface) {
+                continue;
+            }
             $mapFields = $config->getMapFields();
             $dataSet = $config->getDataSet();
             foreach ($mapFields as $key => $field) {

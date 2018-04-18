@@ -89,7 +89,9 @@ class ReloadAllImportedDataCommand extends ContainerAwareCommand
         $this->logger->notice(sprintf('reloading %s data sets', count($dataSets)));
         $numOfDataSetReloaded = 0;
         foreach ($dataSets as $dataSet) {
-
+            if (!$dataSet instanceof DataSetInterface) {
+                continue;
+            }
             $workerManager->reloadAllForDataSet($dataSet);
             $numOfDataSetReloaded++;
         }

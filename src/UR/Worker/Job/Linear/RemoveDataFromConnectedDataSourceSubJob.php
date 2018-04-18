@@ -43,6 +43,13 @@ class RemoveDataFromConnectedDataSourceSubJob implements SubJobInterface
 
     protected $connectedDataSourceManager;
 
+    /**
+     * RemoveDataFromConnectedDataSourceSubJob constructor.
+     * @param LoggerInterface $logger
+     * @param EntityManagerInterface $em
+     * @param ImportHistoryManagerInterface $importHistoryManager
+     * @param ConnectedDataSourceManagerInterface $connectedDataSourceManager
+     */
     public function __construct(LoggerInterface $logger, EntityManagerInterface $em,
                                 ImportHistoryManagerInterface $importHistoryManager,
                                 ConnectedDataSourceManagerInterface $connectedDataSourceManager)
@@ -80,14 +87,8 @@ class RemoveDataFromConnectedDataSourceSubJob implements SubJobInterface
             return;
         }
 
-        /**
-         * @var ConnectedDataSourceInterface $connectedDataSource ;
-         */
-
-        if ($startDate instanceof DateTime && $endDate instanceof DateTime) {
-            $startDate = $startDate->format('Y-m-d');
-            $endDate = $endDate->format('Y-m-d');
-        }
+        $startDate = $startDate instanceof DateTime ? $startDate->format('Y-m-d') : $startDate;
+        $endDate = $endDate instanceof DateTime ? $endDate->format('Y-m-d') : $endDate; 
 
         $dataSetSynchronizer = new Synchronizer($this->conn, new Comparator());
 
@@ -100,11 +101,9 @@ class RemoveDataFromConnectedDataSourceSubJob implements SubJobInterface
             $this->logger->notice(sprintf('deleting data from %s with Connected data source (ID:%s)', $dataTable->getName(), $connectedDataSourceId));
             $this->conn->beginTransaction();
             $this->deleteDataByConnectedDataSourceId($dataTable->getName(), $this->conn, $connectedDataSourceId, $startDate, $endDate);
-            //$this->importHistoryManager->deleteImportHistoryByConnectedDataSource($connectedDataSourceId);
             $this->conn->commit();
             $this->conn->close();
             $this->logger->notice('success delete data from data set');
-
         } catch (Exception $exception) {
             $this->logger->error(sprintf('cannot deleting data from connected data source (ID: %s) of data set (ID: %s) cause: %s', $connectedDataSourceId, $dataSetId, $exception->getMessage()));
         } finally {
@@ -165,5 +164,4 @@ class RemoveDataFromConnectedDataSourceSubJob implements SubJobInterface
 
         return $dateTimeFields;
     }
-
 }

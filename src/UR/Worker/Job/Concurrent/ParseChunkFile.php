@@ -113,6 +113,7 @@ class ParseChunkFile implements JobInterface
         if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
             $this->logger->error(sprintf('ConnectedDataSource %d not found or you do not have permission', $connectedDataSourceId));
             $this->redis->set($chunkFailedKey, 1);
+            $this->handleParseChunkFileFailed($params, $connectedDataSource);
             return;
         }
 
@@ -120,6 +121,7 @@ class ParseChunkFile implements JobInterface
         if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
             $this->logger->error(sprintf('DataSourceEntry %d not found or you do not have permission', $dataSourceEntryId));
             $this->redis->set($chunkFailedKey, 1);
+            $this->handleParseChunkFileFailed($params, $connectedDataSource);
             return;
         }
 
@@ -128,19 +130,14 @@ class ParseChunkFile implements JobInterface
         if (!$importHistory instanceof ImportHistoryInterface) {
             $this->logger->error(sprintf('ImportHistory %d not found or you do not have permission', $importHistoryId));
             $this->redis->set($chunkFailedKey, 1);
+            $this->handleParseChunkFileFailed($params, $connectedDataSource);
             return;
         }
 
         // if one failed, all failed
         $failed = $this->redis->exists($chunkFailedKey);
         if ($failed == true) {
-            //all chunk parsed
-            if ($this->redis->decr($params->getRequiredParam(self::TOTAL_CHUNK_KEY)) == 0) {
-                //Decrease pending job count
-                $linearTubeName = DataSetJobScheduler::getDataSetTubeName($connectedDataSource->getDataSet()->getId());
-                $this->jobCounter->decrementPendingJobCount($linearTubeName);
-            }
-            
+            $this->handleParseChunkFileFailed($params, $connectedDataSource);
             return;
         }
 
@@ -294,6 +291,25 @@ class ParseChunkFile implements JobInterface
             }
         } catch (\Exception $e) {
 
+        }
+    }
+
+    /**
+     * handle ParseChunkFile Failed
+     *
+     * @param JobParams $params
+     * @param $connectedDataSource
+     */
+    private function handleParseChunkFileFailed(JobParams $params, $connectedDataSource)
+    {
+        if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+            return;
+        }
+        //all chunk parsed
+        if ($this->redis->decr($params->getRequiredParam(self::TOTAL_CHUNK_KEY)) == 0) {
+            //Decrease pending job count
+            $linearTubeName = DataSetJobScheduler::getDataSetTubeName($connectedDataSource->getDataSet()->getId());
+            $this->jobCounter->decrementPendingJobCount($linearTubeName);
         }
     }
 }

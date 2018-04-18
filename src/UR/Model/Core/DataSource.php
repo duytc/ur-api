@@ -21,7 +21,6 @@ class DataSource implements DataSourceInterface
     protected $nextAlertTime;
     protected $useIntegration; // bool, true if use integration
     protected $lastActivity;
-    protected $numOfFiles;
     protected $dateFields;
     /** @var  array */
     protected $dateFieldsFromMetadata;
@@ -82,7 +81,6 @@ class DataSource implements DataSourceInterface
     public function __construct()
     {
         $this->enable = true;
-        $this->numOfFiles = 0;
         $this->missingDate = [];
     }
 
@@ -379,16 +377,11 @@ class DataSource implements DataSourceInterface
      */
     public function getNumOfFiles()
     {
-        return $this->numOfFiles;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setNumOfFiles($numOfFiles)
-    {
-        $this->numOfFiles = $numOfFiles;
-        return $this;
+        if ($this->dataSourceEntries instanceof Collection) {
+            $this->dataSourceEntries = $this->dataSourceEntries->toArray();
+        }
+        
+        return count($this->dataSourceEntries);
     }
 
     /**

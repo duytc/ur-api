@@ -20,7 +20,6 @@ use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Worker\Job\Concurrent\CountChunkRow;
 use UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView;
 use UR\Worker\Job\Concurrent\ParseChunkFile;
-use UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource;
 use UR\Worker\Job\Concurrent\ProcessAlert;
 use UR\Worker\Job\Concurrent\SplitHugeFile;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
@@ -126,27 +125,6 @@ class Manager
         ];
 
         $this->dataSetJobScheduler->addJob($reloadAllForDataSet, $dataSet->getId());
-    }
-
-    /**
-     * @param ConnectedDataSourceInterface $connectedDataSource
-     * @param ReloadParamsInterface $reloadParameter
-     */
-    public function reloadAllForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ReloadParamsInterface $reloadParameter = null)
-    {
-        $reloadType = $reloadParameter instanceof ReloadParamsInterface ? $reloadParameter->getType() : ReloadParamsInterface::ALL_DATA_TYPE;
-        $reloadStartDate = null;
-        $reloadEndDate = null;
-
-        $reloadAllForConnectedDataSource = [
-            'task' => ReloadConnectedDataSource::JOB_NAME,
-            ReloadConnectedDataSource::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId(),
-            ReloadParamsInterface::RELOAD_TYPE => $reloadType,
-            ReloadParamsInterface::RELOAD_START_DATE => $reloadStartDate,
-            ReloadParamsInterface::RELOAD_END_DATE => $reloadEndDate
-        ];
-
-        $this->dataSetJobScheduler->addJob($reloadAllForConnectedDataSource, $connectedDataSource->getDataSet()->getId());
     }
 
     /**
@@ -424,17 +402,6 @@ class Manager
         $jobData = [
             'task' => SplitHugeFile::JOB_NAME,
             ParseChunkFile::DATA_SOURCE_ENTRY_ID => $dataSourceEntryId,
-        ];
-
-        // concurrent job, we do not care what order it is processed in
-        $this->concurrentJobScheduler->addJob($jobData);
-    }
-
-    public function removeDuplicatedDateEntries($dataSourceId)
-    {
-        $jobData = [
-            'task' => RemoveDuplicatedDateEntriesForDataSource::JOB_NAME,
-            RemoveDuplicatedDateEntriesForDataSource::DATA_SOURCE_ID => $dataSourceId,
         ];
 
         // concurrent job, we do not care what order it is processed in

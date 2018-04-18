@@ -13,7 +13,7 @@ use UR\Model\User\Role\UserRoleInterface;
 
 class DataSourceRepository extends EntityRepository implements DataSourceRepositoryInterface
 {
-    protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name', 'lastActivity' => 'lastActivity', 'numOfFiles' => 'numOfFiles'];
+    protected $SORT_FIELDS = ['id' => 'id', 'name' => 'name', 'lastActivity' => 'lastActivity'];
 
     /**
      * @inheritdoc
@@ -152,9 +152,6 @@ class DataSourceRepository extends EntityRepository implements DataSourceReposit
                     $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 case $this->SORT_FIELDS['lastActivity']:
-                    $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
-                    break;
-                case $this->SORT_FIELDS['numOfFiles']:
                     $qb->addOrderBy('ds.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 default:

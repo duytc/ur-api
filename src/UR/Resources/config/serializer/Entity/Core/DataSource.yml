@@ -1,5 +1,9 @@
 UR\Entity\Core\DataSource:
     exclusion_policy: ALL
+    virtual_properties:
+        getNumOfFiles:
+            serialized_name: numOfFiles
+            groups: [datasource.detail, datasource.summary, datasource.edit, datasource.importhistory, datasource.dataset, datasource.viewAlert, datasource.missingdate]
     properties:
         id:
             expose: true
@@ -38,9 +42,6 @@ UR\Entity\Core\DataSource:
             expose: true
             groups: [datasource.detail, datasource.summary, datasource.edit]
         lastActivity:
-            expose: true
-            groups: [datasource.detail, datasource.summary]
-        numOfFiles:
             expose: true
             groups: [datasource.detail, datasource.summary]
         dateRange:

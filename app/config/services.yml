@@ -349,13 +349,6 @@ services:
             - '%ur.worker.entry_file_size_threshold%'
             - '@ur.worker.manager'
 
-    ur.worker.job.concurrent.clean_up_time_series_for_data_source_subjob:
-        class: UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource
-        arguments:
-            - '@logger'
-            - '@ur.service.data_source.data_source_cleaning_service'
-            - '@ur.domain_manager.data_source'
-
     ur.worker.job.linear.load_file_into_data_set_sub_job:
         class: UR\Worker\Job\Linear\LoadFileIntoDataSetSubJob
         arguments:
@@ -555,11 +548,6 @@ services:
             - "%upload_file_dir%"
             - @doctrine.orm.entity_manager
 
-    ur.worker.job.concurrent.fix_csv_line_feed:
-        class: UR\Worker\Job\Concurrent\FixCSVLineFeed
-        arguments:
-            - @monolog.logger
-
     ur.worker.job.concurrent.worker_pool:
         class: Pubvantage\Worker\JobWorkerPool
         arguments:
@@ -570,10 +558,8 @@ services:
                 - @ur.worker.job.concurrent.update_detected_fields_when_entry_inserted
                 - @ur.worker.job.concurrent.update_total_row_when_entry_inserted
                 - @ur.worker.job.concurrent.update_detected_fields_when_entry_deleted
-                - @ur.worker.job.concurrent.fix_csv_line_feed
                 - @ur.worker.job.concurrent.detect_mising_date_range_for_data_source_subjob
                 - @ur.worker.job.concurrent.detect_mising_date_range_for_entry_subjob
-                - @ur.worker.job.concurrent.clean_up_time_series_for_data_source_subjob
                 - @ur.worker.job.concurrent.split_huge_file
                 - @ur.worker.job.concurrent.count_chunk_row
                 - @ur.worker.job.concurrent.maintain_pre_calculate_table_for_large_report_view
@@ -734,6 +720,7 @@ services:
             - @ur.service.csv_writer
             - @ur.service.file_factory
             - @ur.service.data_set.update_total_row
+            - @ur.services.overwrite_date_updater
 
     ur.service.csv_writer:
         class: UR\Service\Import\CsvWriter
@@ -771,3 +758,11 @@ services:
 
     ur.services.dry_run_report_filter:
         class: UR\Service\Parser\DryRunReportFilter
+
+    ur.services.overwrite_date_updater:
+        class: UR\Service\DataSet\OverwriteDateUpdater
+        arguments:
+            - @monolog.logger
+            - @doctrine.orm.entity_manager
+            - @ur.domain_manager.data_set
+            - @ur.redis.app_cache

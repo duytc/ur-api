@@ -12,6 +12,7 @@ use UR\DomainManager\DataSourceEntryManager;
 use UR\DomainManager\ImportHistoryManagerInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
+use UR\Model\Core\DataSourceEntryInterface;
 use UR\Repository\Core\ConnectedDataSourceRepositoryInterface;
 use UR\Service\DataSet\DataSetTableUtilInterface;
 use UR\Service\DataSet\ReloadParams;
@@ -57,7 +58,7 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
         $this->logger = $logger;
         $this->dataSetManager = $dataSetManager;
         $this->connectedDataSourceRepository = $connectedDataSourceRepository;
-		$this->dataSetTableUtil = $dataSetTableUtil;
+        $this->dataSetTableUtil = $dataSetTableUtil;
         $this->importHistoryManager = $importHistoryManager;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
     }
@@ -105,11 +106,8 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
             ], $dataSetId, $params);
         }
 
-        /** @var ConnectedDataSourceInterface[] $connectedDataSources */
         $connectedDataSources = $this->connectedDataSourceRepository->getConnectedDataSourceByDataSet($dataSet);
-        if ($connectedDataSources instanceof Collection) {
-            $connectedDataSources = $connectedDataSources->toArray();
-        }
+        $connectedDataSources = $connectedDataSources instanceof Collection ? $connectedDataSources = $connectedDataSources->toArray() : $connectedDataSources;
 
         usort($connectedDataSources, function (ConnectedDataSourceInterface $a, ConnectedDataSourceInterface $b) {
             if ($a->getId() == $b->getId()) {
@@ -120,6 +118,9 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
 
         $jobs = [];
         foreach ($connectedDataSources as $connectedDataSource) {
+            if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
+                continue;
+            }
             $entryIds = $this->dataSetTableUtil->getEntriesByReloadParameter($connectedDataSource, $reloadParameter);
             if (empty($entryIds)) {
                 $this->logger->notice(sprintf('No entry of connected data source %d reload', $connectedDataSource->getId()));
@@ -132,6 +133,9 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
 
             foreach ($entryIds as $entryId) {
                 $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
+                if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+                    continue;
+                }
                 if (ReloadParamsInterface::ALL_DATA_TYPE !== $reloadType) {
                     $this->importHistoryManager->deleteImportHistoryByConnectedDataSourceAndEntry($connectedDataSource, $dataSourceEntry);
                 }

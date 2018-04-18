@@ -21,6 +21,11 @@ class LoadFileIntoDataSetMapBuilderSubJob implements SubJobInterface, ExpirableJ
     /** @var DataMappingService */
     private $dataMappingService;
 
+    /**
+     * LoadFileIntoDataSetMapBuilderSubJob constructor.
+     * @param LoggerInterface $logger
+     * @param DataMappingService $dataMappingService
+     */
     public function __construct(LoggerInterface $logger, DataMappingService $dataMappingService)
     {
         $this->logger = $logger;
@@ -35,6 +40,7 @@ class LoadFileIntoDataSetMapBuilderSubJob implements SubJobInterface, ExpirableJ
     public function run(JobParams $params)
     {
         $dataSetId = $params->getRequiredParam(self::DATA_SET_ID);
+
         return $this->dataMappingService->importDataFromMapBuilderConfig($dataSetId);
     }
 }

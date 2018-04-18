@@ -78,38 +78,28 @@ class UpdateDetectedFieldsWhenEntryInserted implements LockableJobInterface
      */
     public function run(JobParams $params)
     {
-        // TODO: do not hardcode, use const instead
         $dataSourceEntryId = (int)$params->getRequiredParam(self::PARAM_KEY_ENTRY_ID);
 
         /**@var DataSourceEntryInterface $dataSourceEntry */
         $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
-        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface || !$dataSourceEntry->getDataSource() instanceof DataSourceInterface) {
             $this->logger->warning(sprintf('Data Source Entry %d not found (may be deleted before)', $dataSourceEntryId));
             return;
         }
 
-        $dataSourceId = $dataSourceEntry->getDataSource()->getId();
-        /** @var DataSourceInterface $dataSource */
-        $dataSource = $this->dataSourceManager->find($dataSourceId);
-        if (!$dataSource instanceof DataSourceInterface) {
-            return;
-        }
+        $dataSource = $dataSourceEntry->getDataSource();
+        $dataSourceId = $dataSource->getId();
 
         // update detected fields (update count of detected fields)
         try {
             $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($dataSourceEntry->getFileExtension());
             $dataSourceFile = $this->importService->getDataSourceFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
 
-            /** skip check dataSource->getFormat. This will be removed later */
-            //if ($dataSourceTypeExtension === $dataSource->getFormat()) {
             $newFields = $this->importService->getNewFieldsFromFiles($dataSourceFile);
             $detectedFields = $this->importService->detectFieldsForDataSource($newFields, $dataSource->getDetectedFields(), ImportService::ACTION_UPLOAD);
 
             $dataSource->setDetectedFields($detectedFields);
             $this->dataSourceManager->save($dataSource);
-//            } else {
-//                $this->logger->error(sprintf('Data Source Entry format %s and Data Source format %s not match => skip update detected fields', $dataSourceEntry->getFileExtension(), $dataSource->getFormat()));
-//            }
         } catch (Exception $exception) {
             $this->manager->processAlert(
                 AlertInterface::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD_WRONG_FORMAT,

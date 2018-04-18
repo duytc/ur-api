@@ -89,12 +89,10 @@ class UpdateTotalRowWhenEntryInserted implements JobInterface
      */
     public function run(JobParams $params)
     {
-        // TODO: do not hardcode, use const instead
         $dataSourceEntryId = (int)$params->getRequiredParam(self::PARAM_KEY_ENTRY_ID);
 
         try {
             $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
-            /**@var DataSourceEntryInterface $dataSourceEntry */
             if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
                 throw new Exception(sprintf('Data Source Entry %d not found (may be deleted before)', $dataSourceEntryId));
             }
@@ -107,7 +105,7 @@ class UpdateTotalRowWhenEntryInserted implements JobInterface
                 $keyTotalChunks = sprintf(CountChunkRow::TOTAL_CHUNKS, $dataSourceEntryId);
 
                 $this->redis->set($keyTotalChunks, count($dataSourceEntry->getChunks()));
-                $this->redis->set($keyTotal, 1);
+                $this->redis->set($keyTotal, 0);
 
                 //Create jobs
                 foreach ($dataSourceEntry->getChunks() as $chunk) {
@@ -120,15 +118,10 @@ class UpdateTotalRowWhenEntryInserted implements JobInterface
             $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($dataSourceEntry->getFileExtension());
             $dataSourceFile = $this->importService->getDataSourceFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
 
-            /** skip check dataSource->getFormat. This will be removed later */
-            //if ($dataSourceTypeExtension === $dataSource->getFormat()) {
             $totalRow = $dataSourceFile->getTotalRows();
             $dataSourceEntry->setTotalRow($totalRow);
 
             $this->dataSourceEntryManager->save($dataSourceEntry);
-            //} else {
-            //    $this->logger->error(sprintf('Data Source Entry format %s and Data Source format %s not match => skip update total rows', $dataSourceEntry->getFileExtension(), $dataSource->getFormat()));
-            //}
         } catch (Exception $exception) {
             $this->logger->error(sprintf('could not update detected fields when entry insert, error occur: %s', $exception->getMessage()));
         } finally {

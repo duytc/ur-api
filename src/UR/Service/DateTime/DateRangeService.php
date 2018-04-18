@@ -96,16 +96,15 @@ class DateRangeService implements DateRangeServiceInterface
         }
 
         $dataSourceEntries = $dataSource->getDataSourceEntries();
+        $dataSourceEntries = $dataSourceEntries instanceof \Doctrine\Common\Collections\Collection ? $dataSourceEntries->toArray() : $dataSourceEntries;
+
         if (count($dataSourceEntries) < 1) {
             $dataSource
                 ->setMissingDate([])
                 ->setDateRangeBroken(false);
             $this->dataSourceManager->save($dataSource);
-            return false;
-        }
 
-        if (!is_array($dataSourceEntries)) {
-            $dataSourceEntries = $dataSourceEntries->toArray();
+            return false;
         }
 
         usort($dataSourceEntries, function (DataSourceEntryInterface $a, DataSourceEntryInterface $b) {
@@ -116,8 +115,11 @@ class DateRangeService implements DateRangeServiceInterface
         $endDate = null;
         $dates = [];
 
-        /** @var DataSourceEntryInterface $dataSourceEntry */
         foreach ($dataSourceEntries as $dataSourceEntry) {
+            if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+                continue;
+            }
+
             if (!$dataSourceEntry->getStartDate() instanceof DateTime || !$dataSourceEntry->getEndDate() instanceof DateTime) {
                 continue;
             }
@@ -138,11 +140,11 @@ class DateRangeService implements DateRangeServiceInterface
             ->setDetectedEndDate($endDate);
 
         $result = $this->getDateRange($dataSource->getDateRange());
-        if ($result[self::START_DATE_KEY] instanceof DateTime) {
+        if (array_key_exists(self::START_DATE_KEY, $result) && $result[self::START_DATE_KEY] instanceof DateTime) {
             $startDate = $result[self::START_DATE_KEY];
         }
 
-        if ($result[self::END_DATE_KEY] instanceof DateTime) {
+        if (array_key_exists(self::END_DATE_KEY, $result) && $result[self::END_DATE_KEY] instanceof DateTime) {
             $endDate = $result[self::END_DATE_KEY];
         }
 
@@ -152,10 +154,12 @@ class DateRangeService implements DateRangeServiceInterface
 
         $missingDate = $this->calculateMissingDate($dates, $startDate, $endDate);
 
-        $dataSource->setMissingDate(array_values($missingDate))
+        $dataSource
+            ->setMissingDate(array_values($missingDate))
             ->setDateRangeBroken(!empty($missingDate));
 
         $this->dataSourceManager->save($dataSource);
+
         return true;
     }
 
@@ -166,7 +170,7 @@ class DateRangeService implements DateRangeServiceInterface
     {
         $dataSourceEntry = $this->dataSourceEntryManager->find($entryId);
 
-        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface || !$dataSourceEntry->getDataSource() instanceof DataSourceInterface) {
             return false;
         }
 
@@ -247,6 +251,7 @@ class DateRangeService implements DateRangeServiceInterface
 
                 unset($rows);
             } catch (\Exception $e) {
+                //array_combine fail if different count between row and columns
                 return false;
             }
         }
@@ -297,13 +302,17 @@ class DateRangeService implements DateRangeServiceInterface
         return true;
     }
 
+    /**
+     * @param DataSourceEntryInterface $dataSourceEntry
+     * @return DateTime|null
+     */
     private function calculateDateRangeForDataSourceEntryFromMetadata(DataSourceEntryInterface $dataSourceEntry)
     {
         $dataSource = $dataSourceEntry->getDataSource();
         $dateFieldsFromMetadata = $dataSource->getDateFieldsFromMetadata();
         $formats = $dataSource->getDateFormats();
 
-        if (empty($dateFieldsFromMetadata)) {
+        if (empty($dateFieldsFromMetadata) || !is_array($dateFieldsFromMetadata)) {
             return null;
         }
 
@@ -426,6 +435,10 @@ class DateRangeService implements DateRangeServiceInterface
         return $date;
     }
 
+    /**
+     * @param $dateRange
+     * @return array
+     */
     private function getDateRange($dateRange)
     {
         if (

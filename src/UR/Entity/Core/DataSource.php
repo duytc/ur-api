@@ -22,7 +22,6 @@ class DataSource extends DataSourceModel
     protected $nextAlertTime;
     protected $useIntegration;
     protected $lastActivity;
-    protected $numOfFiles;
     protected $missingDate;
     protected $dateRange;
     protected $dateRangeBroken;
