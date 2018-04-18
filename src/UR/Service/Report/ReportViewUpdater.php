@@ -249,9 +249,17 @@ class ReportViewUpdater implements ReportViewUpdaterInterface
 	private function refreshShowInTotalsForSingleReportView(ReportViewInterface $reportView, array $allDimensionsMetrics)
 	{
 		$showInTotals = $reportView->getShowInTotal();
-		$missingFields = array_diff($showInTotals, $allDimensionsMetrics);
+		$showInTotals = is_array($showInTotals) ? $showInTotals : [$showInTotals];
 
-		$showInTotals = $this->removeItemsFromArray($showInTotals, $missingFields);
+		foreach ($showInTotals as &$showInTotal) {
+			if (!array_key_exists('fields', $showInTotal)) {
+				continue;
+			}
+			$fields = $showInTotal['fields'];
+			$missingFields = array_diff($fields, $allDimensionsMetrics);
+			$fields = $this->removeItemsFromArray($fields, $missingFields);
+			$showInTotal['fields'] = array_values($fields);
+		}
 
 		return array_values($showInTotals);
 	}
