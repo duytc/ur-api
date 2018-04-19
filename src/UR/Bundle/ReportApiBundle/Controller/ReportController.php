@@ -418,6 +418,7 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
         $request->request->remove('limit');
 
         $params = $this->get('ur.services.report.params_builder')->buildFromArray($request->request->all());
+        $params->setNeedFormat(false);
         //check permission
         if ($params->getReportViewId() !== null) {
             $reportViewRepository = $this->get('ur.repository.report_view');

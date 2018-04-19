@@ -321,4 +321,15 @@ interface ParamsInterface
      * @return self
      */
     public function setReportView($reportView);
+
+    /**
+     * @return bool
+     */
+    public function isNeedFormat();
+
+    /**
+     * @param bool $needFormat
+     * @return self
+     */
+    public function setNeedFormat($needFormat);
 }
