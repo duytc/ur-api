@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "53c209e631f07a51323f22b4ee0e8703",
-    "content-hash": "cc03f64577c948348c01d033c5e5d77e",
+    "hash": "af99209a6555aed7273cdf7acd593f7a",
+    "content-hash": "726046e48c7ad39b9e00eeac660c1e05",
     "packages": [
         {
             "name": "behat/transliterator",
@@ -773,65 +773,6 @@
             "time": "2018-03-27 09:22:12"
         },
         {
-            "name": "doctrine/doctrine-migrations-bundle",
-            "version": "1.0.1",
-            "target-dir": "Doctrine/Bundle/MigrationsBundle",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/doctrine/DoctrineMigrationsBundle.git",
-                "reference": "1e8cd4415bd2f893eb828216b529a75e8b61d579"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/DoctrineMigrationsBundle/zipball/1e8cd4415bd2f893eb828216b529a75e8b61d579",
-                "reference": "1e8cd4415bd2f893eb828216b529a75e8b61d579",
-                "shasum": ""
-            },
-            "require": {
-                "doctrine/doctrine-bundle": "~1.0",
-                "doctrine/migrations": "~1.0@dev",
-                "php": ">=5.3.2",
-                "symfony/framework-bundle": "~2.3|~3.0"
-            },
-            "type": "symfony-bundle",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.1.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Doctrine\\Bundle\\MigrationsBundle": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Symfony Community",
-                    "homepage": "http://symfony.com/contributors"
-                },
-                {
-                    "name": "Doctrine Project",
-                    "homepage": "http://www.doctrine-project.org"
-                },
-                {
-                    "name": "Fabien Potencier",
-                    "email": "fabien@symfony.com"
-                }
-            ],
-            "description": "Symfony DoctrineMigrationsBundle",
-            "homepage": "http://www.doctrine-project.org",
-            "keywords": [
-                "dbal",
-                "migrations",
-                "schema"
-            ],
-            "time": "2015-05-06 08:32:15"
-        },
-        {
             "name": "doctrine/inflector",
             "version": "v1.0.1",
             "source": {
@@ -1005,73 +946,6 @@
                 "parser"
             ],
             "time": "2014-09-09 13:34:57"
-        },
-        {
-            "name": "doctrine/migrations",
-            "version": "v1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/doctrine/migrations.git",
-                "reference": "3a787de7c4a64460436dc2eb2e3cde8920d5fadd"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/migrations/zipball/3a787de7c4a64460436dc2eb2e3cde8920d5fadd",
-                "reference": "3a787de7c4a64460436dc2eb2e3cde8920d5fadd",
-                "shasum": ""
-            },
-            "require": {
-                "doctrine/dbal": "~2.2",
-                "php": ">=5.4.0",
-                "symfony/console": "~2.3",
-                "symfony/yaml": "~2.3"
-            },
-            "require-dev": {
-                "doctrine/coding-standard": "dev-master",
-                "doctrine/orm": "2.*",
-                "johnkary/phpunit-speedtrap": "~1.0@dev",
-                "mockery/mockery": "^0.9.4",
-                "phpunit/phpunit": "~4.7",
-                "satooshi/php-coveralls": "0.6.*"
-            },
-            "suggest": {
-                "symfony/console": "to run the migration from the console"
-            },
-            "bin": [
-                "bin/doctrine-migrations"
-            ],
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Doctrine\\DBAL\\Migrations": "lib"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "LGPL-2.1"
-            ],
-            "authors": [
-                {
-                    "name": "Benjamin Eberlei",
-                    "email": "kontakt@beberlei.de"
-                },
-                {
-                    "name": "Jonathan Wage",
-                    "email": "jonwage@gmail.com"
-                }
-            ],
-            "description": "Database Schema migrations using Doctrine DBAL",
-            "homepage": "http://www.doctrine-project.org",
-            "keywords": [
-                "database",
-                "migrations"
-            ],
-            "time": "2015-07-29 20:43:19"
         },
         {
             "name": "doctrine/orm",
@@ -1257,18 +1131,21 @@
                 "symfony/doctrine-bridge": "<2.7"
             },
             "require-dev": {
-                "doctrine/doctrine-bundle": "^1.3",
-                "friendsofphp/php-cs-fixer": "^2.2",
-                "phpunit/phpunit": "^4.8.35|^5.7.11|^6.5",
-                "swiftmailer/swiftmailer": "^4.3 || ^5.0 || ^6.0",
-                "symfony/console": "^2.8 || ^3.0 || ^4.0",
-                "symfony/phpunit-bridge": "^2.8 || ^3.0 || ^4.0",
-                "symfony/yaml": "^2.8 || ^3.0 || ^4.0"
+                "doctrine/doctrine-bundle": "~1.3",
+                "swiftmailer/swiftmailer": "~4.3|~5",
+                "symfony/console": "~2.3|~3.0",
+                "symfony/phpunit-bridge": "~2.7|~3.0",
+                "symfony/validator": "~2.3|~3.0",
+                "symfony/yaml": "~2.3|~3.0",
+                "willdurand/propel-typehintable-behavior": "~1.0"
+            },
+            "suggest": {
+                "willdurand/propel-typehintable-behavior": "Needed when using the propel implementation"
             },
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.1.x-dev"
+                    "dev-master": "2.0.x-dev"
                 }
             },
             "autoload": {
@@ -1293,7 +1170,8 @@
                     "homepage": "https://github.com/friendsofsymfony/FOSUserBundle/contributors"
                 },
                 {
-                    "name": "Thibault Duplessis"
+                    "name": "Thibault Duplessis",
+                    "email": "thibault.duplessis@gmail.com"
                 }
             ],
             "description": "Symfony FOSUserBundle",
@@ -1855,43 +1733,6 @@
                 "xml"
             ],
             "time": "2013-12-05 14:36:11"
-        },
-        {
-            "name": "jowy/rest-client",
-            "version": "v0.1.3",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Atriedes/rest-client.git",
-                "reference": "d29562a025bc70a1656bbca039cce40b1d40568d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Atriedes/rest-client/zipball/d29562a025bc70a1656bbca039cce40b1d40568d",
-                "reference": "d29562a025bc70a1656bbca039cce40b1d40568d",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "php": ">=5.3.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "RestClient": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Prasetyo Wicaksono",
-                    "email": "prasetyo@nanomit.es"
-                }
-            ],
-            "description": "PHP 5.3+ Rest Client",
-            "time": "2015-10-11 01:26:30"
         },
         {
             "name": "league/csv",
@@ -3049,80 +2890,6 @@
                 "uuid"
             ],
             "time": "2018-01-20 00:28:24"
-        },
-        {
-            "name": "rinvex/country",
-            "version": "v3.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/rinvex/country.git",
-                "reference": "e32228ef43f26d3b02296be9454f842c52d492f3"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/rinvex/country/zipball/e32228ef43f26d3b02296be9454f842c52d492f3",
-                "reference": "e32228ef43f26d3b02296be9454f842c52d492f3",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^7.0.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^5.4.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "3.0-dev"
-                }
-            },
-            "autoload": {
-                "files": [
-                    "src/helpers.php"
-                ],
-                "psr-4": {
-                    "Rinvex\\Country\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Rinvex LLC",
-                    "email": "help@rinvex.com",
-                    "homepage": "https://rinvex.com"
-                },
-                {
-                    "name": "Abdelrahman Omran",
-                    "email": "me@omranic.com",
-                    "homepage": "https://omranic.com",
-                    "role": "Project Lead"
-                },
-                {
-                    "name": "The Generous Laravel Community",
-                    "homepage": "https://github.com/rinvex/country/contributors"
-                }
-            ],
-            "description": "Rinvex Country is a simple and lightweight package for retrieving country details with flexibility. A whole bunch of data including name, demonym, capital, iso codes, dialling codes, geo data, currencies, flags, emoji, and other attributes for all 250 countries worldwide at your fingertips.",
-            "homepage": "https://rinvex.com",
-            "keywords": [
-                "Flexible",
-                "Simple",
-                "countries",
-                "country",
-                "currencies",
-                "demonym",
-                "dialling",
-                "emoji",
-                "flags",
-                "geographic",
-                "languages",
-                "rinvex",
-                "svg"
-            ],
-            "time": "2017-03-07 18:40:20"
         },
         {
             "name": "rollerworks/multi-user-bundle",
@@ -4488,82 +4255,32 @@
             "time": "2017-06-07 20:12:45"
         },
         {
-            "name": "tagcade/unified-reports-custom-transform-bundle",
-            "version": "dev-master",
-            "target-dir": "Tagcade/Bundle/URCustomTransformBundle",
-            "source": {
-                "type": "git",
-                "url": "git@github.com:tagcade/unified-reports-custom-transform-bundle.git",
-                "reference": "bc8cfd1ad604a98979bc543d3caba89764007c2b"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/tagcade/unified-reports-custom-transform-bundle/zipball/bc8cfd1ad604a98979bc543d3caba89764007c2b",
-                "reference": "bc8cfd1ad604a98979bc543d3caba89764007c2b",
-                "shasum": ""
-            },
-            "require": {
-                "doctrine/doctrine-bundle": "~1.4",
-                "doctrine/doctrine-migrations-bundle": "1.0.*",
-                "doctrine/migrations": "1.0.*@dev",
-                "doctrine/orm": "^2.4.8",
-                "incenteev/composer-parameter-handler": "^2.0",
-                "lexik/jwt-authentication-bundle": "^1.4.3|^2.0.0@dev",
-                "php": ">=5.3.3",
-                "sensio/distribution-bundle": "^5.0",
-                "sensio/framework-extra-bundle": "^3.0.2",
-                "symfony/monolog-bundle": "~2.4",
-                "symfony/polyfill-apcu": "^1.0",
-                "symfony/symfony": "2.8.*"
-            },
-            "require-dev": {
-                "sensio/generator-bundle": "^3.0",
-                "symfony/phpunit-bridge": "^3.0"
-            },
-            "type": "symfony-bundle",
-            "extra": {
-                "branch-alias": null
-            },
-            "autoload": {
-                "psr-0": {
-                    "Tagcade\\Bundle\\URCustomTransformBundle": ""
-                }
-            },
-            "license": [
-                "proprietary"
-            ],
-            "support": {
-                "source": "https://github.com/tagcade/unified-reports-custom-transform-bundle/tree/master",
-                "issues": "https://github.com/tagcade/unified-reports-custom-transform-bundle/issues"
-            },
-            "time": "2017-04-03 10:43:19"
-        },
-        {
             "name": "twig/twig",
-            "version": "v1.34.3",
+            "version": "v2.4.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/Twig.git",
-                "reference": "451c6f4197e113e24c1c85bc3fc8c2d77adeff2e"
+                "reference": "7b604c89da162034bdf4bb66310f358d313dd16d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/Twig/zipball/451c6f4197e113e24c1c85bc3fc8c2d77adeff2e",
-                "reference": "451c6f4197e113e24c1c85bc3fc8c2d77adeff2e",
+                "url": "https://api.github.com/repos/twigphp/Twig/zipball/7b604c89da162034bdf4bb66310f358d313dd16d",
+                "reference": "7b604c89da162034bdf4bb66310f358d313dd16d",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.3"
+                "php": "^7.0",
+                "symfony/polyfill-mbstring": "~1.0"
             },
             "require-dev": {
                 "psr/container": "^1.0",
-                "symfony/debug": "~2.7",
-                "symfony/phpunit-bridge": "~3.3@dev"
+                "symfony/debug": "^2.7",
+                "symfony/phpunit-bridge": "^3.3"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.34-dev"
+                    "dev-master": "2.4-dev"
                 }
             },
             "autoload": {
@@ -4601,7 +4318,7 @@
             "keywords": [
                 "templating"
             ],
-            "time": "2017-06-07 18:45:17"
+            "time": "2018-04-02 09:24:19"
         },
         {
             "name": "willdurand/jsonp-callback-validator",
@@ -6506,7 +6223,6 @@
         "jms/serializer-bundle": 20,
         "gfreeau/custom-validation-path-bundle": 20,
         "stof/doctrine-extensions-bundle": 20,
-        "tagcade/unified-reports-custom-transform-bundle": 20,
         "liip/functional-test-bundle": 20,
         "webfactory/exceptions-bundle": 0
     },
