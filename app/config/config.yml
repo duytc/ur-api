@@ -94,7 +94,7 @@ doctrine:
                     # custom
                     CoreEntities:
                         type:       yml
-                        dir:        %kernel.root_dir%/../src/UR/Resources/config/doctrine/Core
+                        dir:        '%kernel.root_dir%/../src/UR/Resources/config/doctrine/Core'
                         prefix:     UR\Entity\Core
                         alias:      URCoreEntity
                         is_bundle:  false
@@ -104,14 +104,14 @@ jms_serializer:
     metadata:
         directories:
             entity_core:
-                namespace_prefix:   "UR\\Entity\Core\\"
-                path:               %kernel.root_dir%/../src/UR/Resources/config/serializer/Entity/Core
+                namespace_prefix:   'UR\\Entity\Core\\'
+                path:               '%kernel.root_dir%/../src/UR/Resources/config/serializer/Entity/Core'
             model_core:
-                namespace_prefix:   "UR\\Model\Core\\"
-                path:               %kernel.root_dir%/../src/UR/Resources/config/serializer/Model/Core
+                namespace_prefix:   'UR\\Model\Core\\'
+                path:               '%kernel.root_dir%/../src/UR/Resources/config/serializer/Model/Core'
             ur:
                 namespace_prefix:   "UR\\"
-                path:               %kernel.root_dir%/../src/UR/Resources/config/serializer
+                path:               '%kernel.root_dir%/../src/UR/Resources/config/serializer'
             FOSUserBundle:
                 namespace_prefix:   "FOS\\UserBundle"
                 path:               "@URUserBundle/Resources/config/serializer/fos"
@@ -120,7 +120,7 @@ jms_serializer:
 gfreeau_custom_validation_path:
     directories:
         -
-            path:       %kernel.root_dir%/../src/UR/Resources/config/validation
+            path:       '%kernel.root_dir%/../src/UR/Resources/config/validation'
             type:       yml
             recursive:  true
 
@@ -203,7 +203,7 @@ lexik_jwt_authentication:
     private_key_path:   '%jwt_private_key_path%'
     public_key_path:    '%jwt_public_key_path%'
     pass_phrase:        '%jwt_key_pass_phrase%'
-    token_ttl:          %jwt_token_ttl%
+    token_ttl:          '%jwt_token_ttl%'
 
 # nelmio_cors Configuration
 nelmio_cors:
