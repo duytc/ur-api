@@ -12,7 +12,8 @@
     },
     "repositories": [
         { "type": "vcs", "url": "https://github.com/gfreeau/GfreeauCustomValidationPathBundle" },
-        { "type": "vcs", "url": "https://github.com/tagcade/pubvantage-multi-user-bundle" }
+        { "type": "vcs", "url": "https://github.com/tagcade/pubvantage-multi-user-bundle" },
+        { "type": "vcs", "url": "https://github.com/tagcade/SfContainerInjector" }
     ],
     "require": {
         "php": ">=5.5.0",
@@ -43,7 +44,8 @@
         "symfony/expression-language": "^3.1",
         "liuggio/excelbundle": "^2.1",
         "box/spout": "^2.7",
-        "salsify/json-streaming-parser": "^6.0"
+        "salsify/json-streaming-parser": "^6.0",
+        "rollerworks/sf-container-injector": "dev-master"
     },
     "require-dev": {
         "sensio/generator-bundle": "3.0",
