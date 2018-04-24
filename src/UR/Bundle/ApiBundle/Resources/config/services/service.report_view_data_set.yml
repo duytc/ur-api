@@ -12,9 +12,9 @@ services:
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.report_view_data_set.class%
+            - '%ur.entity.core.report_view_data_set.class%'
 
     ur.form.type.report_view_data_set:
-        class: %ur.form.type.core.report_view_data_set.class%
+        class: '%ur.form.type.core.report_view_data_set.class%'
         tags:
             - { name: form.type, alias: ur_form_report_view_data_set }

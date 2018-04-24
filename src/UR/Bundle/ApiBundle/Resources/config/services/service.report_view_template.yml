@@ -10,23 +10,23 @@ services:
         factory_service: ur.handler.handler_manager.report_view_template
         factory_method: getHandler
         arguments:
-            - @ur.user_role
+            - '@ur.user_role'
 
     ur.repository.report_view_template:
         class: UR\Repository\Core\ReportViewTemplateRepositoryInterface
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.report_view_template.class%
+            - '%ur.entity.core.report_view_template.class%'
 
     ur.domain_manager.report_view_template:
         class: UR\DomainManager\ReportViewTemplateManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.report_view_template
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.report_view_template'
 
     ur.form.type.report_view_template:
-        class: %ur.form.type.core.report_view_template.class%
+        class: '%ur.form.type.core.report_view_template.class%'
         tags:
             - { name: form.type, alias: ur_form_report_view_template }
 
@@ -36,15 +36,15 @@ services:
         abstract: true
         public: false
         arguments:
-            - @ur.form.type.report_view_template
-            - @ur.domain_manager.report_view_template
+            - '@ur.form.type.report_view_template'
+            - '@ur.domain_manager.report_view_template'
 
     ur.handler.handlers.report_view_template.admin:
         class: UR\Handler\Handlers\Core\Admin\ReportViewTemplateHandler
         parent: ur.handler.handlers.report_view_template.abstract
         public: false
         arguments:
-            - @ur_user.domain_manager.publisher
+            - '@ur_user.domain_manager.publisher'
 
     ur.handler.handlers.report_view_template.publisher:
         class: UR\Handler\Handlers\Core\Publisher\ReportViewTemplateHandler
@@ -54,7 +54,7 @@ services:
     ur.handler.handler_manager.report_view_template:
         class: UR\Handler\HandlerManager
         arguments:
-            - %ur.entity.core.report_view_template.class%
+            - '%ur.entity.core.report_view_template.class%'
             -
-                - @ur.handler.handlers.report_view_template.admin
-                - @ur.handler.handlers.report_view_template.publisher
+                - '@ur.handler.handlers.report_view_template.admin'
+                - '@ur.handler.handlers.report_view_template.publisher'

@@ -10,23 +10,23 @@ services:
         factory_service: ur.handler.handler_manager.connected_data_source
         factory_method: getHandler
         arguments:
-            - @ur.user_role
+            - '@ur.user_role'
 
     ur.repository.connected_data_source:
         class: UR\Repository\Core\ConnectedDataSourceRepositoryInterface
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.connected_data_source.class%
+            - '%ur.entity.core.connected_data_source.class%'
 
     ur.domain_manager.connected_data_source:
         class: UR\DomainManager\ConnectedDataSourceManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.connected_data_source
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.connected_data_source'
 
     ur.form.type.connected_data_source:
-        class: %ur.form.type.core.connected_data_source.class%
+        class: '%ur.form.type.core.connected_data_source.class%'
         tags:
             - { name: form.type, alias: ur_form_connected_data_source }
 
@@ -36,15 +36,15 @@ services:
         abstract: true
         public: false
         arguments:
-            - @ur.form.type.connected_data_source
-            - @ur.domain_manager.connected_data_source
+            - '@ur.form.type.connected_data_source'
+            - '@ur.domain_manager.connected_data_source'
 
     ur.handler.handlers.connected_data_source.admin:
         class: UR\Handler\Handlers\Core\Admin\ConnectedDataSourceHandler
         parent: ur.handler.handlers.connected_data_source.abstract
         public: false
         arguments:
-            - @ur_user.domain_manager.publisher
+            - '@ur_user.domain_manager.publisher'
 
     ur.handler.handlers.connected_data_source.publisher:
         class: UR\Handler\Handlers\Core\Publisher\ConnectedDataSourceHandler
@@ -54,7 +54,7 @@ services:
     ur.handler.handler_manager.connected_data_source:
         class: UR\Handler\HandlerManager
         arguments:
-            - %ur.entity.core.connected_data_source.class%
+            - '%ur.entity.core.connected_data_source.class%'
             -
-                - @ur.handler.handlers.connected_data_source.admin
-                - @ur.handler.handlers.connected_data_source.publisher
+                - '@ur.handler.handlers.connected_data_source.admin'
+                - '@ur.handler.handlers.connected_data_source.publisher'

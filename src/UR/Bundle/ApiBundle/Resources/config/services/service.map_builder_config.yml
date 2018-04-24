@@ -9,10 +9,10 @@ services:
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.map_builder_config.class%
+            - '%ur.entity.core.map_builder_config.class%'
 
     ur.domain_manager.map_builder_config:
         class: UR\DomainManager\MapBuilderConfigManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.map_builder_config
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.map_builder_config'

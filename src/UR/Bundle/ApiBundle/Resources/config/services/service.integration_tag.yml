@@ -10,23 +10,23 @@ services:
         factory_service: ur.handler.handler_manager.integration_tag
         factory_method: getHandler
         arguments:
-            - @ur.user_role
+            - '@ur.user_role'
 
     ur.repository.integration_tag:
         class: UR\Repository\Core\IntegrationTagRepositoryInterface
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.integration_tag.class%
+            - '%ur.entity.core.integration_tag.class%'
 
     ur.domain_manager.integration_tag:
         class: UR\DomainManager\IntegrationTagManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.integration_tag
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.integration_tag'
 
     ur.form.type.integration_tag:
-        class: %ur.form.type.core.integration_tag.class%
+        class: '%ur.form.type.core.integration_tag.class%'
         integration_tags:
             - { name: form.type, alias: ur_form_integration_tag }
 
@@ -36,15 +36,15 @@ services:
         abstract: true
         public: false
         arguments:
-            - @ur.form.type.integration_tag
-            - @ur.domain_manager.integration_tag
+            - '@ur.form.type.integration_tag'
+            - '@ur.domain_manager.integration_tag'
 
     ur.handler.handlers.integration_tag.admin:
         class: UR\Handler\Handlers\Core\Admin\IntegrationTagHandler
         parent: ur.handler.handlers.integration_tag.abstract
         public: false
         arguments:
-            - @ur_user.domain_manager.publisher
+            - '@ur_user.domain_manager.publisher'
 
     ur.handler.handlers.integration_tag.publisher:
         class: UR\Handler\Handlers\Core\Publisher\IntegrationTagHandler
@@ -54,7 +54,7 @@ services:
     ur.handler.handler_manager.integration_tag:
         class: UR\Handler\HandlerManager
         arguments:
-            - %ur.entity.core.integration_tag.class%
+            - '%ur.entity.core.integration_tag.class%'
             -
-                - @ur.handler.handlers.integration_tag.admin
-                - @ur.handler.handlers.integration_tag.publisher
+                - '@ur.handler.handlers.integration_tag.admin'
+                - '@ur.handler.handlers.integration_tag.publisher'

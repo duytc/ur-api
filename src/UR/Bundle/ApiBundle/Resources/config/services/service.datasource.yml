@@ -12,23 +12,23 @@ services:
         factory_service: ur.handler.handler_manager.data_source
         factory_method: getHandler
         arguments:
-            - @ur.user_role
+            - '@ur.user_role'
 
     ur.repository.data_source:
         class: UR\Repository\Core\DataSourceRepositoryInterface
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.data_source.class%
+            - '%ur.entity.core.data_source.class%'
 
     ur.domain_manager.data_source:
         class: UR\DomainManager\DataSourceManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.data_source
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.data_source'
 
     ur.form.type.data_source:
-        class: %ur.form.type.core.data_source.class%
+        class: '%ur.form.type.core.data_source.class%'
         tags:
             - { name: form.type, alias: ur_form_data_source }
 
@@ -38,16 +38,16 @@ services:
         abstract: true
         public: false
         arguments:
-            - @ur.form.type.data_source
-            - @ur.domain_manager.data_source
+            - '@ur.form.type.data_source'
+            - '@ur.domain_manager.data_source'
 
     ur.handler.handlers.data_source.admin:
         class: UR\Handler\Handlers\Core\Admin\DataSourceHandler
         parent: ur.handler.handlers.data_source.abstract
         public: false
         arguments:
-            - @ur_user.domain_manager.publisher
-            - @ur.repository.integration_publisher
+            - '@ur_user.domain_manager.publisher'
+            - '@ur.repository.integration_publisher'
 
     ur.handler.handlers.data_source.publisher:
         class: UR\Handler\Handlers\Core\Publisher\DataSourceHandler
@@ -57,14 +57,14 @@ services:
     ur.handler.handler_manager.data_source:
         class: UR\Handler\HandlerManager
         arguments:
-            - %ur.entity.core.data_source.class%
+            - '%ur.entity.core.data_source.class%'
             -
-                - @ur.handler.handlers.data_source.admin
-                - @ur.handler.handlers.data_source.publisher
+                - '@ur.handler.handlers.data_source.admin'
+                - '@ur.handler.handlers.data_source.publisher'
     ur.bundle.event.data_source_listener:
-        class: %ur.listener.data_source.class%
+        class: '%ur.listener.data_source.class%'
         arguments:
-            - %ur_email_template%
+            - '%ur_email_template%'
         tags:
             -
                 name: doctrine.event_listener

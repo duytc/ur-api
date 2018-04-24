@@ -10,32 +10,32 @@ services:
         factory_service: ur.handler.handler_manager.report_view
         factory_method: getHandler
         arguments:
-            - @ur.user_role
+            - '@ur.user_role'
 
     ur.repository.report_view:
         class: UR\Repository\Core\ReportViewRepositoryInterface
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.report_view.class%
+            - '%ur.entity.core.report_view.class%'
 
     ur.domain_manager.report_view:
         class: UR\DomainManager\ReportViewManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.report_view
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.report_view'
 
     ur.domain_manager.report_view_data_set:
         class: UR\DomainManager\ReportViewDataSetManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.report_view_data_set
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.report_view_data_set'
 
     ur.form.type.report_view:
-        class: %ur.form.type.core.report_view.class%
+        class: '%ur.form.type.core.report_view.class%'
         arguments:
-            - @doctrine.orm.entity_manager
-            - %ur.report_view.large_threshold%
+            - '@doctrine.orm.entity_manager'
+            - '%ur.report_view.large_threshold%'
         tags:
             - { name: form.type, alias: ur_form_report_view }
 
@@ -45,15 +45,15 @@ services:
         abstract: true
         public: false
         arguments:
-            - @ur.form.type.report_view
-            - @ur.domain_manager.report_view
+            - '@ur.form.type.report_view'
+            - '@ur.domain_manager.report_view'
 
     ur.handler.handlers.report_view.admin:
         class: UR\Handler\Handlers\Core\Admin\ReportViewHandler
         parent: ur.handler.handlers.report_view.abstract
         public: false
         arguments:
-            - @ur_user.domain_manager.publisher
+            - '@ur_user.domain_manager.publisher'
 
     ur.handler.handlers.report_view.publisher:
         class: UR\Handler\Handlers\Core\Publisher\ReportViewHandler
@@ -63,7 +63,7 @@ services:
     ur.handler.handler_manager.report_view:
         class: UR\Handler\HandlerManager
         arguments:
-            - %ur.entity.core.report_view.class%
+            - '%ur.entity.core.report_view.class%'
             -
-                - @ur.handler.handlers.report_view.admin
-                - @ur.handler.handlers.report_view.publisher
+                - '@ur.handler.handlers.report_view.admin'
+                - '@ur.handler.handlers.report_view.publisher'

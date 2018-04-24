@@ -23,13 +23,13 @@ services:
     ur_user.domain_manager.publisher:
         class: UR\Bundle\UserBundle\DomainManager\PublisherManager
         arguments:
-            - @ur_user_system_publisher.user_manager
-            - @ur.domain_manager.user_tag
+            - '@ur_user_system_publisher.user_manager'
+            - '@ur.domain_manager.user_tag'
 
     ur_user.handler.authentication_success:
         class: UR\Bundle\UserBundle\Handler\AuthenticationSuccessHandler
         arguments:
-            - @lexik_jwt_authentication.handler.authentication_success
+            - '@lexik_jwt_authentication.handler.authentication_success'
         calls:
             - [setEventDispatcher, ["@event_dispatcher"]]
             - [setSuccessEventName, ["%ur_user.events.login_success%"]]
@@ -40,7 +40,7 @@ services:
     ur_app.event_listener.user_type_security_listener:
         class: UR\Bundle\UserBundle\EventListener\UserTypeSecurityListener
         arguments:
-            - @security.context
-            - @annotation_reader
+            - '@security.context'
+            - '@annotation_reader'
         tags:
             - { name: kernel.event_listener, event: kernel.controller, method: onKernelController }

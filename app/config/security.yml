@@ -36,7 +36,7 @@ security:
             gfreeau_get_jwt:
                 username_parameter: username
                 password_parameter: password
-                post_only:          true
+                # post_only:          true
                 success_handler:    ur_user.handler.authentication_success
                 failure_handler:    lexik_jwt_authentication.handler.authentication_failure
             provider: ur_user

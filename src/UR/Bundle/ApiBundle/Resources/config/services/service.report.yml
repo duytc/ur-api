@@ -5,9 +5,9 @@ services:
     ur.services.report.report_grouper:
         class: UR\Service\Report\ReportGrouper
         arguments:
-            - @ur.domain_manager.data_set
-            - @ur.service.date_util
-            - @ur.services.report.sql_builder
+            - '@ur.domain_manager.data_set'
+            - '@ur.service.date_util'
+            - '@ur.services.report.sql_builder'
 
     ur.services.report.report_builder:
         class: UR\Service\Report\ReportBuilder
@@ -20,7 +20,7 @@ services:
             - '@ur.services.report.report_filter'
             - '@ur.services.report.report_formatter'
             - '@ur.services.report.report_sorter'
-            - @monolog.logger
+            - '@monolog.logger'
 
     ur.services.report.sql_builder:
         class: UR\Service\Report\SqlBuilder

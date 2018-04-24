@@ -10,23 +10,23 @@ services:
         factory_service: ur.handler.handler_manager.report_schedule
         factory_method: getHandler
         arguments:
-            - @ur.user_role
+            - '@ur.user_role'
 
     ur.repository.report_schedule:
         class: UR\Repository\Core\ReportScheduleRepositoryInterface
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.report_schedule.class%
+            - '%ur.entity.core.report_schedule.class%'
 
     ur.domain_manager.report_schedule:
         class: UR\DomainManager\ReportScheduleManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.report_schedule
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.report_schedule'
 
     ur.form.type.report_schedule:
-        class: %ur.form.type.core.report_schedule.class%
+        class: '%ur.form.type.core.report_schedule.class%'
         tags:
             - { name: form.type, alias: ur_form_report_schedule }
 
@@ -36,15 +36,15 @@ services:
         abstract: true
         public: false
         arguments:
-            - @ur.form.type.report_schedule
-            - @ur.domain_manager.report_schedule
+            - '@ur.form.type.report_schedule'
+            - '@ur.domain_manager.report_schedule'
 
     ur.handler.handlers.report_schedule.admin:
         class: UR\Handler\Handlers\Core\Admin\ReportScheduleHandler
         parent: ur.handler.handlers.report_schedule.abstract
         public: false
         arguments:
-            - @ur_user.domain_manager.publisher
+            - '@ur_user.domain_manager.publisher'
 
     ur.handler.handlers.report_schedule.publisher:
         class: UR\Handler\Handlers\Core\Publisher\ReportScheduleHandler
@@ -54,7 +54,7 @@ services:
     ur.handler.handler_manager.report_schedule:
         class: UR\Handler\HandlerManager
         arguments:
-            - %ur.entity.core.report_schedule.class%
+            - '%ur.entity.core.report_schedule.class%'
             -
-                - @ur.handler.handlers.report_schedule.admin
-                - @ur.handler.handlers.report_schedule.publisher
+                - '@ur.handler.handlers.report_schedule.admin'
+                - '@ur.handler.handlers.report_schedule.publisher'

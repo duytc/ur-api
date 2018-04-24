@@ -10,23 +10,23 @@ services:
         factory_service: ur.handler.handler_manager.report_view_template_tag
         factory_method: getHandler
         arguments:
-            - @ur.user_role
+            - '@ur.user_role'
 
     ur.repository.report_view_template_tag:
         class: UR\Repository\Core\ReportViewTemplateTagRepositoryInterface
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.report_view_template_tag.class%
+            - '%ur.entity.core.report_view_template_tag.class%'
 
     ur.domain_manager.report_view_template_tag:
         class: UR\DomainManager\ReportViewTemplateTagManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.report_view_template_tag
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.report_view_template_tag'
 
     ur.form.type.report_view_template_tag:
-        class: %ur.form.type.core.report_view_template_tag.class%
+        class: '%ur.form.type.core.report_view_template_tag.class%'
         report_view_template_tags:
             - { name: form.type, alias: ur_form_report_view_template_tag }
 
@@ -36,15 +36,15 @@ services:
         abstract: true
         public: false
         arguments:
-            - @ur.form.type.report_view_template_tag
-            - @ur.domain_manager.report_view_template_tag
+            - '@ur.form.type.report_view_template_tag'
+            - '@ur.domain_manager.report_view_template_tag'
 
     ur.handler.handlers.report_view_template_tag.admin:
         class: UR\Handler\Handlers\Core\Admin\ReportViewTemplateTagHandler
         parent: ur.handler.handlers.report_view_template_tag.abstract
         public: false
         arguments:
-            - @ur_user.domain_manager.publisher
+            - '@ur_user.domain_manager.publisher'
 
     ur.handler.handlers.report_view_template_tag.publisher:
         class: UR\Handler\Handlers\Core\Publisher\ReportViewTemplateTagHandler
@@ -54,7 +54,7 @@ services:
     ur.handler.handler_manager.report_view_template_tag:
         class: UR\Handler\HandlerManager
         arguments:
-            - %ur.entity.core.report_view_template_tag.class%
+            - '%ur.entity.core.report_view_template_tag.class%'
             -
-                - @ur.handler.handlers.report_view_template_tag.admin
-                - @ur.handler.handlers.report_view_template_tag.publisher
+                - '@ur.handler.handlers.report_view_template_tag.admin'
+                - '@ur.handler.handlers.report_view_template_tag.publisher'

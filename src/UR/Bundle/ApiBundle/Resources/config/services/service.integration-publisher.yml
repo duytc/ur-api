@@ -9,10 +9,10 @@ services:
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.integration_publisher.class%
+            - '%ur.entity.core.integration_publisher.class%'
 
     ur.domain_manager.integration_publisher:
         class: UR\DomainManager\IntegrationPublisherManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.integration_publisher
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.integration_publisher'

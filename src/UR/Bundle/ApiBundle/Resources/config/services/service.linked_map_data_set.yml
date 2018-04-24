@@ -8,4 +8,4 @@ services:
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.linked_map_data_set.class%
+            - '%ur.entity.core.linked_map_data_set.class%'

@@ -8,14 +8,14 @@ services:
     ur_app.event_listener.update_connected_data_source_when_data_set_changed_listener:
         class: UR\Bundle\AppBundle\EventListener\UpdateConnectedDataSourceWhenDataSetChangedListener
         arguments:
-            - @ur.worker.manager
+            - '@ur.worker.manager'
         tags:
             - { name: doctrine.event_listener, event: postUpdate }
 
     ur_app.event_listener.re_import_when_connected_data_source_changed_listener:
         class: UR\Bundle\AppBundle\EventListener\ReImportWhenConnectedDataSourceChangedListener
         arguments:
-            - @ur.worker.manager
+            - '@ur.worker.manager'
         tags:
             - { name: doctrine.event_listener, event: postPersist, priority: -100 }
             - { name: doctrine.event_listener, event: postUpdate, priority: -100 }
@@ -24,7 +24,7 @@ services:
     ur_app.event_listener.alter_data_set_listener:
         class: UR\Bundle\AppBundle\EventListener\AlterDataSetListener
         arguments:
-            - @ur.worker.manager
+            - '@ur.worker.manager'
         tags:
             - { name: doctrine.event_listener, event: postUpdate }
             - { name: doctrine.event_listener, event: postFlush }
@@ -38,7 +38,7 @@ services:
     ur_app.event_listener.update_detected_fields_for_data_source_entry_listener:
         class: UR\Bundle\AppBundle\EventListener\UpdateDetectedFieldsForDataSourceEntryListener
         arguments:
-            - @ur.worker.manager
+            - '@ur.worker.manager'
         tags:
             - { name: doctrine.event_listener, event: postPersist, priority: -100 }
             - { name: doctrine.event_listener, event: postRemove, priority: -100 }
@@ -53,7 +53,7 @@ services:
     ur_app.event_listener.update_date_range_for_data_source_listener:
         class: UR\Bundle\AppBundle\EventListener\UpdateDateRangeForDataSourceListener
         arguments:
-            - @ur.worker.manager
+            - '@ur.worker.manager'
         tags:
             - { name: doctrine.event_listener, event: postUpdate }
             - { name: doctrine.event_listener, event: postFlush }
@@ -61,7 +61,7 @@ services:
     ur_app.event_listener.update_date_range_for_data_source_entry_listener:
         class: UR\Bundle\AppBundle\EventListener\UpdateDateRangeForDataSourceEntryListener
         arguments:
-            - @ur.worker.manager
+            - '@ur.worker.manager'
         tags:
             - { name: doctrine.event_listener, event: postRemove }
 
@@ -74,7 +74,7 @@ services:
     ur_app.event_listener.create_job_delete_data_when_entry_deleted:
         class: UR\Bundle\AppBundle\EventListener\CreateJobsDeleteDataFromImportTableWhenImportHistoriesDeleted
         arguments:
-            - @ur.worker.manager
+            - '@ur.worker.manager'
         tags:
             - { name: doctrine.event_listener, event: preRemove }
             - { name: doctrine.event_listener, event: postFlush }

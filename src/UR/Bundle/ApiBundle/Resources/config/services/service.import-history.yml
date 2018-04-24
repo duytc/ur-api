@@ -10,24 +10,24 @@ services:
         factory_service: ur.handler.handler_manager.import_history
         factory_method: getHandler
         arguments:
-            - @ur.user_role
+            - '@ur.user_role'
 
     ur.repository.import_history:
         class: UR\Repository\Core\ImportHistoryRepositoryInterface
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.import_history.class%
+            - '%ur.entity.core.import_history.class%'
 
     ur.domain_manager.import_history:
         class: UR\DomainManager\ImportHistoryManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.import_history
-            - @ur.worker.manager
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.import_history'
+            - '@ur.worker.manager'
 
     ur.form.type.import_history:
-        class: %ur.form.type.core.import_history.class%
+        class: '%ur.form.type.core.import_history.class%'
         tags:
             - { name: form.type, alias: ur_form_import_history }
 
@@ -37,15 +37,15 @@ services:
         abstract: true
         public: false
         arguments:
-            - @ur.form.type.import_history
-            - @ur.domain_manager.import_history
+            - '@ur.form.type.import_history'
+            - '@ur.domain_manager.import_history'
 
     ur.handler.handlers.import_history.admin:
         class: UR\Handler\Handlers\Core\Admin\ImportHistoryHandler
         parent: ur.handler.handlers.import_history.abstract
         public: false
         arguments:
-            - @ur_user.domain_manager.publisher
+            - '@ur_user.domain_manager.publisher'
 
     ur.handler.handlers.import_history.publisher:
         class: UR\Handler\Handlers\Core\Publisher\ImportHistoryHandler
@@ -55,7 +55,7 @@ services:
     ur.handler.handler_manager.import_history:
         class: UR\Handler\HandlerManager
         arguments:
-            - %ur.entity.core.import_history.class%
+            - '%ur.entity.core.import_history.class%'
             -
-                - @ur.handler.handlers.import_history.admin
-                - @ur.handler.handlers.import_history.publisher
+                - '@ur.handler.handlers.import_history.admin'
+                - '@ur.handler.handlers.import_history.publisher'

@@ -10,27 +10,27 @@ services:
         factory_service: ur.handler.handler_manager.tag
         factory_method: getHandler
         arguments:
-            - @ur.user_role
+            - '@ur.user_role'
 
     ur.repository.tag:
         class: UR\Repository\Core\TagRepositoryInterface
         factory_service: doctrine.orm.entity_manager
         factory_method: getRepository
         arguments:
-            - %ur.entity.core.tag.class%
+            - '%ur.entity.core.tag.class%'
 
     ur.domain_manager.tag:
         class: UR\DomainManager\TagManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.tag
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.tag'
 
     ur.form.type.tag:
-        class: %ur.form.type.core.tag.class%
+        class: '%ur.form.type.core.tag.class%'
         tags:
             - { name: form.type, alias: ur_form_tag }
         arguments:
-            - @ur.domain_manager.tag
+            - '@ur.domain_manager.tag'
 
     ur.handler.handlers.tag.abstract:
         class: UR\Handler\Handlers\Core\TagHandlerAbstract
@@ -38,15 +38,15 @@ services:
         abstract: true
         public: false
         arguments:
-            - @ur.form.type.tag
-            - @ur.domain_manager.tag
+            - '@ur.form.type.tag'
+            - '@ur.domain_manager.tag'
 
     ur.handler.handlers.tag.admin:
         class: UR\Handler\Handlers\Core\Admin\TagHandler
         parent: ur.handler.handlers.tag.abstract
         public: false
         arguments:
-            - @ur_user.domain_manager.publisher
+            - '@ur_user.domain_manager.publisher'
 
     ur.handler.handlers.tag.publisher:
         class: UR\Handler\Handlers\Core\Publisher\TagHandler
@@ -56,7 +56,7 @@ services:
     ur.handler.handler_manager.tag:
         class: UR\Handler\HandlerManager
         arguments:
-            - %ur.entity.core.tag.class%
+            - '%ur.entity.core.tag.class%'
             -
-                - @ur.handler.handlers.tag.admin
-                - @ur.handler.handlers.tag.publisher
+                - '@ur.handler.handlers.tag.admin'
+                - '@ur.handler.handlers.tag.publisher'
