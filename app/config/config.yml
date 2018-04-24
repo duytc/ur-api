@@ -155,7 +155,7 @@ ur_user_system_publisher:
 # sensio_framework_extra configuration
 sensio_framework_extra:
     view:
-        annotations: false
+        annotations: true
 
 # fos_rest configuration
 fos_rest:
