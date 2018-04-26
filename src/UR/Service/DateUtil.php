@@ -7,8 +7,6 @@ use UR\Domain\DTO\Report\DateRange;
 
 class DateUtil implements DateUtilInterface
 {
-    const DATE_FORMAT = 'Y-m-d';
-
     /**
      * @inheritdoc
      */
@@ -129,5 +127,97 @@ class DateUtil implements DateUtilInterface
         }, $dateRanges);
 
         return new DateRange(min($startDates), max($endDates));
+    }
+
+    public function getDynamicDateRange($dynamicDateRange)
+    {
+        $startDate = '';
+        $endDate = '';
+
+        if (!is_string($dynamicDateRange)) {
+            return ['' . self::START_DATE_KEY . '' =>$startDate, '' . self::END_DATE_KEY . '' => $endDate];
+        }
+
+        switch ($dynamicDateRange) {
+            case self::DATE_DYNAMIC_VALUE_EVERYTHING:
+                $startDate = $endDate = '';
+                break;
+
+            case self::DATE_DYNAMIC_VALUE_12_HOURS:
+                $startDate = date('Y-m-d H:i:s', strtotime('-12 hours'));
+                $endDate = date('Y-m-d H:i:s', strtotime('now'));
+                break;
+
+            case self::DATE_DYNAMIC_VALUE_24_HOURS:
+                $startDate = date('Y-m-d H:i:s', strtotime('-24 hours'));
+                $endDate = date('Y-m-d H:i:s', strtotime('now'));
+                break;
+
+            case self::DATE_DYNAMIC_VALUE_TODAY:
+                $startDate = date_create('now')->setTime(0, 0, 0)->format('Y-m-d H:i:s');
+                $endDate = date_create('now')->setTime(23, 59, 59)->format('Y-m-d H:i:s');
+                break;
+
+            case self::DATE_DYNAMIC_VALUE_YESTERDAY:
+                $startDate = date_create('yesterday')->setTime(0, 0, 0)->format('Y-m-d H:i:s');
+                $endDate = date_create('yesterday')->setTime(23, 59, 59)->format('Y-m-d H:i:s');
+                break;
+
+            case self::DATE_DYNAMIC_VALUE_LAST_7_DAYS:
+                $startDate = date_create('-7 day')->setTime(0, 0, 0)->format('Y-m-d H:i:s');
+                $endDate = date_create('yesterday')->setTime(23, 59, 59)->format('Y-m-d H:i:s');
+                break;
+
+            case self::DATE_DYNAMIC_VALUE_LAST_30_DAYS:
+                $startDate = date_create('-30 day')->setTime(0, 0, 0)->format('Y-m-d H:i:s');
+                $endDate = date_create('yesterday')->setTime(23, 59, 59)->format('Y-m-d H:i:s');
+                break;
+
+            case self::DATE_DYNAMIC_VALUE_THIS_MONTH:
+                $startDate = date('Y-m-01', strtotime('this month'));
+                $startDate = date_create($startDate)->setTime(0, 0, 0)->format('Y-m-d H:i:s');
+                $endDate = date_create('now')->setTime(23, 59, 59)->format('Y-m-d H:i:s');
+                break;
+
+            case self::DATE_DYNAMIC_VALUE_LAST_MONTH:
+                $startDate = date('Y-m-01', strtotime('last month'));
+                $startDate = date_create($startDate)->setTime(0, 0, 0)->format('Y-m-d H:i:s');
+
+                $endDate = date('Y-m-t', strtotime('last month'));
+                $endDate = date_create($endDate)->setTime(23, 59, 59)->format('Y-m-d H:i:s');
+                break;
+
+            case self::DATE_DYNAMIC_VALUE_LAST_2_MONTH:
+                $month = time();
+                $months = [];
+                for ($i = 1; $i <= 2; $i++) {
+                    $month = strtotime('last month', $month);
+                    $months[] = $month;
+                }
+                $startDate = date('Y-m-01', $months[count($months) - 1]);
+                $startDate = date_create($startDate)->setTime(0, 0, 0)->format('Y-m-d H:i:s');
+                $endDate = date('Y-m-t', $months[0]);
+                $endDate = date_create($endDate)->setTime(23, 59, 59)->format('Y-m-d H:i:s');
+                break;
+
+            case self::DATE_DYNAMIC_VALUE_LAST_3_MONTH:
+                $month = time();
+                $months = [];
+                for ($i = 1; $i <= 3; $i++) {
+                    $month = strtotime('last month', $month);
+                    $months[] = $month;
+                }
+                $startDate = date('Y-m-01', $months[count($months) - 1]);
+                $startDate = date_create($startDate)->setTime(0, 0, 0)->format('Y-m-d H:i:s');
+                $endDate = date('Y-m-t', $months[0]);
+                $endDate = date_create($endDate)->setTime(23, 59, 59)->format('Y-m-d H:i:s');
+                break;
+
+            default:
+                break;
+        }
+
+        return [self::START_DATE_KEY =>$startDate, self::END_DATE_KEY => $endDate];
+
     }
 }

@@ -332,4 +332,15 @@ interface ParamsInterface
      * @return self
      */
     public function setNeedFormat($needFormat);
+
+    /**
+     * @return boolean
+     */
+    public function isOptimizationRule();
+
+    /**
+     * @param boolean $optimizationRule
+     * @return self
+     */
+    public function setOptimizationRule($optimizationRule);
 }

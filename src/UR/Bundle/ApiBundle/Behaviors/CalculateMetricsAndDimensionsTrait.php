@@ -114,6 +114,16 @@ trait CalculateMetricsAndDimensionsTrait
         );
     }
 
+    /**
+     * @param ParamsInterface $params
+     * @return array
+     */
+    protected function getMetricsAndDimensionsForOptimizationRule(ParamsInterface $params)
+    {
+        // same as getMetricsAndDimensionsForSingleView()
+        return $this->getMetricsAndDimensionsForSingleView($params);
+    }
+
     protected abstract function getMetricsKey();
     protected abstract function getDimensionsKey();
 }

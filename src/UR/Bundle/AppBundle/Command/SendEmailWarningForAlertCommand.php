@@ -201,7 +201,7 @@ class SendEmailWarningForAlertCommand extends ContainerAwareCommand
             $alertDetails[] = $this->fillEmailBody($alert);
         }
 
-        return $alertDetails;
+        return array_unique($alertDetails);
     }
 
     /**
@@ -220,7 +220,12 @@ class SendEmailWarningForAlertCommand extends ContainerAwareCommand
                 $username = $detail['username'];
                 $url = $detail['url'];
                 return sprintf('Password expires on data source "%s".  Please change password for account "%s" on link "%s"  or contact your account manager. Date "%s" ', $alert->getDataSource()->getId(), $username, $url, $date);
-
+            case AlertInterface::ALERT_CODE_OPTIMIZATION_INTEGRATION_REFRESH_CACHE_PENDING:
+                $detail = $alert->getDetail();
+                return reset($detail);
+            case AlertInterface::ALERT_CODE_OPTIMIZATION_INTEGRATION_REFRESH_CACHE_SUCCESS:
+                $detail = $alert->getDetail();
+                return reset($detail);
             default:
                 return 'Unknown alert code . Please contact your account manager';
         }

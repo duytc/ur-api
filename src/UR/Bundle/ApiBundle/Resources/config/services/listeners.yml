@@ -201,3 +201,58 @@ services:
             - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: preRemove }
             - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.update_training_data_table_when_optimization_rule_change_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateTrainingDataTableWhenOptimizationRuleChangeListener
+        arguments:
+            - '@ur.worker.manager'
+            - %ur_batch_size%
+
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
+            - { name: doctrine.event_listener, event: preRemove }
+
+    ur_api.event_listener.notify_platform_integration_when_optimization_integration_change_listener:
+        class: UR\Bundle\ApiBundle\EventListener\NotifyPlatformIntegrationWhenOptimizationIntegrationChangeListener
+        tags:
+            - { name: doctrine.event_listener, event: preRemove }
+        arguments:
+            - '@leezy.pheanstalk'
+            - '%pubvantage_integration_tube_name%'
+
+    ur_api.event_listener.remove_optimization_rule_score_when_optimization_rule_change_listener:
+        class: UR\Bundle\ApiBundle\EventListener\RemoveOptimizationRuleScoreWhenOptimizationRuleChangeListener
+        tags:
+            - { name: doctrine.event_listener, event: preRemove }
+
+    ur_api.event_listener.activate3rd_partner_scoring_service_integration_listener:
+            class: UR\Bundle\ApiBundle\EventListener\Activate3rdPartnerScoringServiceIntegrationListener
+            arguments:
+                - '@ur.worker.manager'
+            tags:
+                - { name: doctrine.event_listener, event: postPersist }
+                - { name: doctrine.event_listener, event: preUpdate }
+                - { name: doctrine.event_listener, event: postFlush }
+
+    ur_api.event_listener.update_segments_integration_when_segment_rule_removed_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateSegmentsIntegrationWhenSegmentRuleRemovedListener
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
+    ur_api.event_listener.update_identifier_integration_when_identifiers_rule_change_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateIdentifierIntegrationWhenIdentifiersRuleChangeListener
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
+    ur_api.event_listener.update_active_optimization_integration_when_optimization_rule_change_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UpdateActiveOptimizationIntegrationWhenOptimizationRuleChangeListener
+        tags:
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postFlush }
+    ur_api.event_listener.disable_old_action_required_alerts_listener:
+            class: UR\Bundle\ApiBundle\EventListener\DisableOldActionRequiredAlertsListener
+            tags:
+                - { name: doctrine.event_listener, event: postPersist }
+                - { name: doctrine.event_listener, event: postFlush }

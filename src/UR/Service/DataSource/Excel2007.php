@@ -133,6 +133,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
                     if ($this->isEmptyRow($row)) {
                         continue;
                     }
+
                     if (count($row) !== count($this->headers)) {
                         if (!is_array($this->headers)) {
                             $this->headers = [];
@@ -149,6 +150,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
                         $value = $this->normalizeScientificValue($value);
                     }
 
+                    $this->removeEmptyData($row);
                     $rows->push($this->removeNonUtf8CharactersForSingleRow($row));
                 }
 
@@ -162,6 +164,20 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
     public function getDataRow()
     {
         return $this->dataRow;
+    }
+
+    /**
+     * @param array $row_data
+     * remove all empty items from row
+     */
+    private function removeEmptyData(array &$row)
+    {
+        if(count($row) > count($this->headers))
+            foreach ($row as $index => $value) {
+                $tmpIndex = $index + 1;
+                if(empty($value) && $tmpIndex > count($this->headers))
+                    unset($row[$index]);
+            }
     }
 
     /**

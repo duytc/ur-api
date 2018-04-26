@@ -1,0 +1,61 @@
+parameters:
+    # entity class
+    ur.entity.core.optimization_rule.class: UR\Entity\Core\OptimizationRule
+    # form class
+    ur.form.type.core.optimization_rule.class: UR\Form\Type\OptimizationRuleFormType
+
+services:
+    ur_api.handler.optimization_rule:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.optimization_rule
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.optimization_rule:
+        class: UR\Repository\Core\OptimizationRuleRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.optimization_rule.class%
+
+    ur.domain_manager.optimization_rule:
+        class: UR\DomainManager\OptimizationRuleManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.optimization_rule
+            - @ur.repository.optimization_integration
+
+    ur.form.type.optimization_rule:
+        class: %ur.form.type.core.optimization_rule.class%
+        tags:
+            - { name: form.type, alias: ur_form_optimization_rule}
+
+    ur.handler.handlers.optimization_rule.abstract:
+        class: UR\Handler\Handlers\Core\OptimizationHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.optimization_rule
+            - @ur.domain_manager.optimization_rule
+
+    ur.handler.handlers.optimization_rule.admin:
+        class: UR\Handler\Handlers\Core\Admin\OptimizationRuleHandler
+        parent: ur.handler.handlers.optimization_rule.abstract
+        public: false
+        arguments:
+            - @ur_user.domain_manager.publisher
+
+    ur.handler.handlers.optimization_rule.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\OptimizationRuleHandler
+        parent: ur.handler.handlers.optimization_rule.abstract
+        public: false
+
+    ur.handler.handler_manager.optimization_rule:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.optimization_rule.class%
+            -
+                - @ur.handler.handlers.optimization_rule.admin
+                - @ur.handler.handlers.optimization_rule.publisher

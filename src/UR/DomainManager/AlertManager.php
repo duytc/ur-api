@@ -8,6 +8,7 @@ use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\AlertInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\AlertRepositoryInterface;
+use UR\Service\Alert\AlertParams;
 
 class AlertManager implements AlertManagerInterface
 {
@@ -97,5 +98,10 @@ class AlertManager implements AlertManagerInterface
     public function updateMarkAsUnreadByIds($ids)
     {
         return $this->repository->updateMarkAsUnreadByIds($ids);
+    }
+
+    public function getAlertsByParams(AlertParams $alertParams)
+    {
+        return $this->repository->getAlertsByParams($alertParams);
     }
 }

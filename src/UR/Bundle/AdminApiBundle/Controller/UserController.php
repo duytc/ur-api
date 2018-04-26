@@ -261,6 +261,31 @@ class UserController extends RestControllerAbstract implements ClassResourceInte
     }
 
     /**
+     * Get all Optimization Rules of a publisher
+     *
+     * @Rest\Get("/users/{id}/optimizationrules" )
+     * @Rest\View(serializerGroups={"optimization_rule.detail", "user.summary", "optimization_rule_data_set.summary", "dataset.summary"})
+     *
+     * @ApiDoc(
+     *  section = "admin",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  },
+     * )
+     *
+     * @param int $id the resource id
+     * @return string
+     * @throws \Exception
+     */
+    public function getOptimizationRuleByUserAction($id)
+    {
+        /** @var PublisherInterface $publisher */
+        $publisher = $this->one($id);
+        return $this->get('ur.domain_manager.optimization_rule')->findByPublisher($publisher);
+    }
+
+    /**
      * Delete an existing publisher
      *
      * @ApiDoc(

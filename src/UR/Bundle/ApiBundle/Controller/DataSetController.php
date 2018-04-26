@@ -146,6 +146,48 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     }
 
     /**
+     * Get a editable state for data sets
+     *
+     * @Rest\Get("/datasets/editable")
+     * @Rest\QueryParam(name="ids", nullable=false, description="data set ids")
+     *
+     * @ApiDoc(
+     *  section = "Data Set",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return array
+     *
+     */
+    public function getEditableAction(Request $request)
+    {
+        $dataSetIdsString = $request->query->get('ids', null);
+        if (empty($dataSetIdsString)) {
+            throw new BadRequestHttpException('Invalid ids, expected array');
+        }
+
+        $dataSetIds = explode(',', $dataSetIdsString);
+        $optimizationRuleRepository = $this->get('ur.repository.optimization_rule');
+
+        $editable = [];
+        foreach ($dataSetIds as $dataSetId) {
+            $dataSet = $this->one($dataSetId);
+            if (!$dataSet instanceof DataSetInterface) {
+                continue;
+            }
+
+            $optimizationRules = $optimizationRuleRepository->getOptimizationRulesForDataSet($dataSet);
+            $editable[$dataSetId] = count($optimizationRules) == 0;
+        }
+
+        return $editable;
+    }
+
+    /**
      * Get all rows of map builder data set
      *
      * @Rest\Get("/datasets/{id}/rows", requirements={"id" = "\d+"})

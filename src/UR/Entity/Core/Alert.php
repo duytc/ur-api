@@ -27,6 +27,8 @@ class Alert extends AlertModel
      */
     protected $dataSource;
 
+    protected $optimizationIntegration;
+
     /**
      * @inheritdoc
      *

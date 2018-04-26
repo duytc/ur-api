@@ -4,6 +4,7 @@ namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
+use UR\Entity\Core\OptimizationRule;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\DataSetInterface;
@@ -13,6 +14,7 @@ use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
+use UR\Repository\Core\OptimizationRuleRepositoryInterface;
 use UR\Repository\Core\ReportViewRepositoryInterface;
 
 class ReportViewManager implements ReportViewManagerInterface
@@ -20,11 +22,14 @@ class ReportViewManager implements ReportViewManagerInterface
     protected $om;
     protected $repository;
     const DATE_CREATED = 'dateCreated';
+    /** @var OptimizationRuleRepositoryInterface */
+    private $optimizationRuleRepository;
 
     public function __construct(ObjectManager $om, ReportViewRepositoryInterface $repository)
     {
         $this->om = $om;
         $this->repository = $repository;
+        $this->optimizationRuleRepository = $this->om->getRepository(OptimizationRule::class);
     }
 
     /**
@@ -63,6 +68,10 @@ class ReportViewManager implements ReportViewManagerInterface
 
         if ($this->repository->hasSubviews($reportView)) {
             throw new InvalidArgumentException("There're some subviews still referencing to this report view");
+        }
+
+        if ($this->optimizationRuleRepository->hasReportView($reportView)) {
+            throw new InvalidArgumentException("There're some optimization rule still referencing to this report view");
         }
 
         $this->om->remove($reportView);

@@ -1,0 +1,36 @@
+UR\Entity\Core\OptimizationRule:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [optimization_rule.detail, optimization_rule.summary, optimization_rule.one]
+        name:
+            expose: true
+            groups: [optimization_rule.detail, optimization_rule.summary]
+        dateField:
+            expose: true
+            groups: [optimization_rule.detail, optimization_rule.summary]
+        dateRange:
+            expose: true
+            groups: [optimization_rule.detail, optimization_rule.summary]
+        identifierFields:
+            expose: true
+            groups: [optimization_rule.detail, optimization_rule.summary]
+        optimizeFields:
+            expose: true
+            groups: [optimization_rule.detail, optimization_rule.summary]
+        segmentFields:
+            expose: true
+            groups: [optimization_rule.detail, optimization_rule.summary]
+        createdDate:
+            expose: true
+            groups: [optimization_rule.detail, optimization_rule.summary]
+        reportView:
+            expose: true
+            groups: [optimization_rule.detail, optimization_rule.summary]
+        publisher:
+            expose: true
+            groups: [optimization_rule.detail, optimization_rule.summary]
+        finishLoading:
+            expose: true
+            groups: [optimization_rule.detail, optimization_rule.summary]

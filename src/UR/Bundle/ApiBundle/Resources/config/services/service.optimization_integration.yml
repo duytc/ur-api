@@ -1,0 +1,58 @@
+parameters:
+    # entity class
+    ur.entity.core.optimization_integration.class: UR\Entity\Core\OptimizationIntegration
+    # form class
+    ur.form.type.core.optimization_integration.class: UR\Form\Type\OptimizationIntegrationFormType
+
+services:
+    ur_api.handler.optimization_integration:
+        class: UR\Handler\HandlerInterface
+        factory_service: ur.handler.handler_manager.optimization_integration
+        factory_method: getHandler
+        arguments:
+            - @ur.user_role
+
+    ur.repository.optimization_integration:
+        class: UR\Repository\Core\OptimizationIntegrationRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.optimization_integration.class%
+
+    ur.domain_manager.optimization_integration:
+        class: UR\DomainManager\OptimizationIntegrationManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.optimization_integration
+
+    ur.form.type.optimization_integration:
+        class: %ur.form.type.core.optimization_integration.class%
+        tags:
+            - { name: form.type, alias: ur_form_optimization_integration}
+
+    ur.handler.handlers.optimization_integration.abstract:
+        class: UR\Handler\Handlers\Core\OptimizationIntegrationHandlerAbstract
+        parent: ur.handler.role_handler_abstract
+        abstract: true
+        public: false
+        arguments:
+            - @ur.form.type.optimization_integration
+            - @ur.domain_manager.optimization_integration
+
+    ur.handler.handlers.optimization_integration.admin:
+        class: UR\Handler\Handlers\Core\Admin\OptimizationIntegrationHandler
+        parent: ur.handler.handlers.optimization_integration.abstract
+        public: false
+
+    ur.handler.handlers.optimization_integration.publisher:
+        class: UR\Handler\Handlers\Core\Publisher\OptimizationIntegrationHandler
+        parent: ur.handler.handlers.optimization_integration.abstract
+        public: false
+
+    ur.handler.handler_manager.optimization_integration:
+        class: UR\Handler\HandlerManager
+        arguments:
+            - %ur.entity.core.optimization_integration.class%
+            -
+                - @ur.handler.handlers.optimization_integration.admin
+                - @ur.handler.handlers.optimization_integration.publisher

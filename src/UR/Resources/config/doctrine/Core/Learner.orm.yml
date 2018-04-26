@@ -1,0 +1,42 @@
+UR\Entity\Core\Learner:
+    type: entity
+    table: core_learner
+    repositoryClass: UR\Repository\Core\LearnerRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        identifier:
+            type: string
+            length: 100
+        segmentValues:
+            type: json_array
+            nullable: true
+        optimizeField:
+             type: string
+             nullable: false
+        modelPath:
+            string: string
+            nullable: true
+        mathModel:
+            type: json_array
+            nullable: true
+        metricsPredictiveValues:
+            type: json_array
+            nullable: true
+        createdDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+        updatedDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+    manyToOne:
+        optimizationRule:
+            targetEntity: UR\Entity\Core\OptimizationRule
+

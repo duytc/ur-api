@@ -101,7 +101,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)
     {
-        $resolver->setDefaults(['data_class' => DataSource::class,]);
+        $resolver->setDefaults(array('data_class' => DataSource::class, 'allow_extra_fields' => true));
     }
 
     public function getName()

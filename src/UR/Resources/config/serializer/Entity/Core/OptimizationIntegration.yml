@@ -1,0 +1,45 @@
+UR\Entity\Core\OptimizationIntegration:
+    exclusion_policy: ALL
+    properties:
+        id:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        name:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        identifierMapping:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        identifierField:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        segments:
+            expose: true
+            groups: [optimizationIntegration.detail]
+        supplies:
+            expose: true
+            groups: [optimizationIntegration.detail]
+        adSlots:
+            expose: true
+            groups: [optimizationIntegration.detail]
+        active:
+            expose: true
+            groups: [optimizationIntegration.detail]
+        optimizationRule:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        optimizationAlerts:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        optimizationFrequency:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        startRescoreAt:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        endRescoreAt:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        platformIntegration:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]

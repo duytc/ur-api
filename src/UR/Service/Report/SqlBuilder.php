@@ -422,6 +422,12 @@ class SqlBuilder implements SqlBuilderInterface
                 unset($dimensions[$key]);
             }
             $types = array_merge($types, $metrics, $dimensions);
+
+            if ($params->isOptimizationRule()) {
+                $showInTotal = [];
+                continue;
+            }
+
             if ($showInTotal === null) {
                 if ($dataSetEntity instanceof \UR\Model\Core\DataSetInterface) {
                     $metrics = $dataSetEntity->getMetrics();
@@ -549,7 +555,8 @@ class SqlBuilder implements SqlBuilderInterface
         }
         // if no field is valid
         if (empty($fields)) {
-            throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
+            //throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
+            return;
         }
 
         // build select query for each data set
@@ -1063,7 +1070,8 @@ class SqlBuilder implements SqlBuilderInterface
         $fields = array_values(array_unique($fields));
 
         if (count($tableColumns) < 1) {
-            throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
+           // throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
+            return;
         }
 
         foreach ($fields as $index => $field) {

@@ -35,7 +35,10 @@ class Alert implements AlertInterface
         self::ALERT_CODE_BROWSER_AUTOMATION_TIME_OUT,
         self::ALERT_CODE_BROWSER_AUTOMATION_PASSWORD_EXPIRY,
 
-        self::ALERT_CODE_EMAIL_WEB_HOOK_INVALID_EMAIL_SETTING
+        self::ALERT_CODE_EMAIL_WEB_HOOK_INVALID_EMAIL_SETTING,
+
+        AlertInterface::ALERT_CODE_OPTIMIZATION_INTEGRATION_REFRESH_CACHE_PENDING,
+        AlertInterface::ALERT_CODE_OPTIMIZATION_INTEGRATION_REFRESH_CACHE_SUCCESS
     ];
 
     public static $ALERT_CODE_TO_TYPE_MAP = [
@@ -64,7 +67,10 @@ class Alert implements AlertInterface
 
         AlertInterface::ALERT_CODE_BROWSER_AUTOMATION_LOGIN_FAIL => Alert::ALERT_TYPE_ERROR,
         AlertInterface::ALERT_CODE_BROWSER_AUTOMATION_TIME_OUT => Alert::ALERT_TYPE_ERROR,
-        AlertInterface::ALERT_CODE_BROWSER_AUTOMATION_PASSWORD_EXPIRY => Alert::ALERT_TYPE_WARNING
+        AlertInterface::ALERT_CODE_BROWSER_AUTOMATION_PASSWORD_EXPIRY => Alert::ALERT_TYPE_WARNING,
+
+        AlertInterface::ALERT_CODE_OPTIMIZATION_INTEGRATION_REFRESH_CACHE_PENDING => Alert::ALERT_TYPE_INFO,
+        AlertInterface::ALERT_CODE_OPTIMIZATION_INTEGRATION_REFRESH_CACHE_SUCCESS => Alert::ALERT_TYPE_INFO
     ];
 
     protected $id;
@@ -85,6 +91,9 @@ class Alert implements AlertInterface
      * @var DataSourceInterface
      */
     protected $dataSource;
+
+    /** @var OptimizationIntegrationInterface */
+    protected $optimizationIntegration;
 
     public function __construct()
     {
@@ -171,6 +180,8 @@ class Alert implements AlertInterface
     public function setPublisher($publisher)
     {
         $this->publisher = $publisher;
+        
+        return $this;
     }
 
     /**
@@ -241,6 +252,24 @@ class Alert implements AlertInterface
     public function setIsSent($isSent)
     {
         $this->isSent = $isSent;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getOptimizationIntegration()
+    {
+        return $this->optimizationIntegration;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setOptimizationIntegration($optimizationIntegration)
+    {
+        $this->optimizationIntegration = $optimizationIntegration;
 
         return $this;
     }

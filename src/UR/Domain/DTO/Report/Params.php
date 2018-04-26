@@ -130,6 +130,9 @@ class Params implements ParamsInterface
     /** @var boolean */
     protected $needFormat;
 
+    /** @var  boolean */
+    protected $optimizationRule;
+
     /** @var  ReportViewInterface */
     private $reportView;
 
@@ -738,6 +741,25 @@ class Params implements ParamsInterface
     {
         $this->needFormat = $needFormat;
 
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isOptimizationRule()
+    {
+        return $this->optimizationRule;
+    }
+
+    /**
+     * @param boolean $optimizationRule
+     * @return self
+     */
+    public function setOptimizationRule($optimizationRule)
+    {
+        $this->optimizationRule = $optimizationRule;
+        
         return $this;
     }
 }

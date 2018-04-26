@@ -20,6 +20,8 @@ parameters:
     ur.security.auth.voter.report_view_template.class: UR\Security\Authorization\Voter\ReportViewTemplateVoter
     ur.security.auth.voter.report_view_template_tag.class: UR\Security\Authorization\Voter\ReportViewTemplateTagVoter
     ur.security.auth.voter.report_view_add_conditional_transform_value.class: UR\Security\Authorization\Voter\ReportViewAddConditionalTransformValueVoter
+    ur.security.auth.voter.optimization_rule.class: UR\Security\Authorization\Voter\OptimizationRuleVoter
+    ur.security.auth.voter.optimization_integration.class: UR\Security\Authorization\Voter\OptimizationIntegrationVoter
 
     # event dispatched on user action such as add, remove, delete
     ur.events.handler_event: 'ur.events.handler_event'
@@ -119,6 +121,18 @@ services:
 
     ur.security.auth.voter.report_view_add_conditional_transform_value:
         class:  %ur.security.auth.voter.report_view_add_conditional_transform_value.class%
+        public: false
+        tags:
+            - { name: security.voter }
+
+    ur.security.auth.voter.optimization_rule:
+        class:  %ur.security.auth.voter.optimization_rule.class%
+        public: false
+        tags:
+            - { name: security.voter }
+
+    ur.security.auth.voter.optimization_integration:
+        class:  %ur.security.auth.voter.optimization_integration.class%
         public: false
         tags:
             - { name: security.voter }
@@ -563,6 +577,9 @@ services:
                 - @ur.worker.job.concurrent.split_huge_file
                 - @ur.worker.job.concurrent.count_chunk_row
                 - @ur.worker.job.concurrent.maintain_pre_calculate_table_for_large_report_view
+                - @ur.worker.job.concurrent.sync_training_data_and_generate_learner_model
+                - @ur.worker.job.concurrent.activate_the3_partner_scoring_service_integration
+                - @ur.worker.job.concurrent.process_optimization_frequency
 
     ### end of concurrence worker pool
 
@@ -574,6 +591,20 @@ services:
             - @ur.domain_manager.alert
             - @ur_user.domain_manager.publisher
             - @ur.domain_manager.data_source
+            - @ur.domain_manager.optimization_integration
+
+    ur.service.alert.action_require_handler:
+        class: UR\Service\Alert\ActionRequire\ActionRequireHandler
+        arguments:
+            - '@ur.domain_manager.optimization_integration'
+            - '@ur.worker.manager'
+
+    ur.service.alert.action_require_factory:
+        class: UR\Service\Alert\ActionRequire\ActionRequireFactory
+        arguments:
+            - '@ur.worker.manager'
+            - '@ur.domain_manager.alert'
+            - '@ur.service.optimization_rule.optimization_rule_score_service'
 
     ur.service.datasource.regenerate_email:
         class: UR\Bundle\ApiBundle\Service\DataSource\RegenerateUrEmail

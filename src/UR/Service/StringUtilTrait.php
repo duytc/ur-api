@@ -222,4 +222,16 @@ trait StringUtilTrait
 
         return $newFields;
     }
+
+    /**
+     * @param $text
+     * @return mixed
+     */
+    public function normalizeSentence($text) {
+        $text = mb_strtolower($text, "UTF-8");
+        $text = str_replace("_", " ", $text);
+        $text = ucwords($text);
+
+        return $text;
+    }
 }

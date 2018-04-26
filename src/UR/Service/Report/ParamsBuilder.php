@@ -7,6 +7,7 @@ use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Behaviors\JoinConfigUtilTrait;
 use UR\Behaviors\ReportViewUtilTrait;
 use UR\Domain\DTO\Report\DataSets\DataSet;
+use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Formats\ColumnPositionFormat;
 use UR\Domain\DTO\Report\Formats\CurrencyFormat;
 use UR\Domain\DTO\Report\Formats\DateFormat;
@@ -29,6 +30,7 @@ use UR\Domain\DTO\Report\Transforms\ReplaceTextTransform;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Exception\InvalidArgumentException;
+use UR\Model\Core\OptimizationRuleInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\DTO\Report\WeightedCalculation;
@@ -378,11 +380,15 @@ class ParamsBuilder implements ParamsBuilderInterface
     }
 
     /**
-     * @param array $transforms
+     * @param $transforms
      * @return array
+     * @throws \Exception
      */
-    public function createTransforms(array $transforms)
+    public function createTransforms($transforms)
     {
+        if (!is_array($transforms)) {
+            return [];
+        }
         $transformObjects = [];
         foreach ($transforms as $transform) {
             if (!array_key_exists(TransformInterface::TRANSFORM_TYPE_KEY, $transform)) {
@@ -527,6 +533,27 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         $param->setPage(1)->setLimit(10);
+
+        return $param;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function buildFromOptimizationRule(OptimizationRuleInterface $optimizationRule, ParamsInterface $multiParams = null)
+    {
+        $param = $this->buildFromReportView($optimizationRule->getReportView());
+        $param->setOptimizationRule(true);
+
+        $filter = new DateFilter();
+        $filter
+            ->setFieldName($optimizationRule->getDateField())
+            ->setDateType(DateFilter::DATE_TYPE_DYNAMIC)
+            ->setDateValue($optimizationRule->getDateRange());
+
+        $filters = $param->getFilters();
+        $filters[] = $filter;
+        $param->setFilters($filters);
 
         return $param;
     }

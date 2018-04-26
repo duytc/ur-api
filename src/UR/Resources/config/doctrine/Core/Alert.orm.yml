@@ -24,7 +24,7 @@ UR\Entity\Core\Alert:
                     on: create
         type:
             type: string
-            length: 10
+            length: 20
             nullable: true
         isSent:
             type: boolean
@@ -35,3 +35,6 @@ UR\Entity\Core\Alert:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
         dataSource:
             targetEntity: UR\Entity\Core\DataSource
+        optimizationIntegration:
+            targetEntity: UR\Entity\Core\OptimizationIntegration
+            inversedBy: alerts
