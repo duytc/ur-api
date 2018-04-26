@@ -62,7 +62,7 @@ class AppKernel extends Kernel
     public function getCacheDir()
     {
         if ($this->isRunningOnDevelopmentVM()) {
-            return '/dev/shm/unified-reports-api/cache/' . $this->environment;
+            return '/dev/shm/unified-reports-api/var/cache/' . $this->environment;
         }
 
         return parent::getCacheDir();
@@ -71,7 +71,7 @@ class AppKernel extends Kernel
     public function getLogDir()
     {
         if ($this->isRunningOnDevelopmentVM()) {
-            return '/dev/shm/unified-reports-api/logs';
+            return '/dev/shm/unified-reports-api/var/logs';
         }
 
         return parent::getLogDir();
