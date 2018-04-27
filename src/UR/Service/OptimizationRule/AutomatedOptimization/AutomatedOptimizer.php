@@ -126,8 +126,9 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
             if (!$optimizationIntegration->isUserConfirm()) {
                 if ($optimizationIntegration->isRequirePendingAlert() && $optimizationRule->getPublisher() instanceof PublisherInterface) {
                     $this->actionRequireFactory->createActionRequireAlert($optimizationIntegration, $optimizer->testForOptimizationIntegration($optimizationIntegration));
-                    continue;
                 }
+
+                continue;
             }
 
             try {
