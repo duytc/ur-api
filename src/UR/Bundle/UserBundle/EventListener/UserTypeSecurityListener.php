@@ -5,7 +5,7 @@ namespace UR\Bundle\UserBundle\EventListener;
 use Doctrine\Common\Annotations\Reader;
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 use Doctrine\Common\Util\ClassUtils;
-use Symfony\Component\Security\Core\SecurityContextInterface;
+use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use UR\Bundle\UserBundle\Annotations\UserType;
 use UR\Exception\RuntimeException;
@@ -13,18 +13,22 @@ use UR\Exception\RuntimeException;
 class UserTypeSecurityListener
 {
     /**
-     * @var SecurityContextInterface
+     * @var Security
      */
     private $securityContext;
 
     private $reader;
 
-    public function __construct(SecurityContextInterface $securityContext = null, Reader $reader)
+    public function __construct(Security $securityContext = null, Reader $reader)
     {
         $this->securityContext = $securityContext;
         $this->reader = $reader;
     }
 
+    /**
+     * @param FilterControllerEvent $event
+     * @throws \ReflectionException
+     */
     public function onKernelController(FilterControllerEvent $event)
     {
         if (!is_array($controller = $event->getController())) {

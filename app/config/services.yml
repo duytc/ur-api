@@ -771,3 +771,24 @@ services:
 
     ur.services.dry_run_report_filter:
         class: UR\Service\Parser\DryRunReportFilter
+
+    fos_user.change_password.form.type:
+        class: FOS\UserBundle\Form\Type\ChangePasswordFormType
+        arguments: ~
+
+    fos_user.group.form.type:
+        class: FOS\UserBundle\Form\Type\GroupFormType
+        arguments: ~
+
+    fos_user.profile.form.type:
+        class: FOS\UserBundle\Form\Type\ProfileFormType
+        arguments: ~
+
+    fos_user.registration.form.type:
+        class: FOS\UserBundle\Form\Type\RegistrationFormType
+        arguments: ~
+
+    fos_user.resetting.form.type:
+        class: FOS\UserBundle\Form\Type\ResettingFormType
+        arguments: ~
+

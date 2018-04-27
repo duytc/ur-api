@@ -40,7 +40,8 @@ services:
     ur_app.event_listener.user_type_security_listener:
         class: UR\Bundle\UserBundle\EventListener\UserTypeSecurityListener
         arguments:
-            - '@security.context'
+            - '@security.helper'
             - '@annotation_reader'
+
         tags:
             - { name: kernel.event_listener, event: kernel.controller, method: onKernelController }
