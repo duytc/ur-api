@@ -277,6 +277,8 @@ class OptimizationIntegration implements OptimizationIntegrationInterface
                 return false;
             }
         }
+
+        return true;
     }
 
     /**
