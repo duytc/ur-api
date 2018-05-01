@@ -377,10 +377,6 @@ class DataSource implements DataSourceInterface
      */
     public function getNumOfFiles()
     {
-        if ($this->dataSourceEntries instanceof Collection) {
-            $this->dataSourceEntries = $this->dataSourceEntries->toArray();
-        }
-        
         return count($this->dataSourceEntries);
     }
 
