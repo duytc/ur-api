@@ -589,12 +589,33 @@ trait DashBoardUtilTrait
         $KEYS_FOR_COMPARISON_REPORTS = [
             ReportResult::REPORT_RESULT_COLUMNS,
             ReportResult::REPORT_RESULT_TOTAL,
-            ReportResult::REPORT_RESULT_REPORTS,
             ReportResult::REPORT_RESULT_TYPES
         ];
 
         foreach ($reports as $k => $v) {
             if (!in_array($k, $KEYS_FOR_COMPARISON_REPORTS)) {
+                unset($reports[$k]);
+            }
+        }
+
+        return $reports;
+    }
+
+    /**
+     * @param array $reports
+     * @return array
+     */
+    public function getMinimizeReportForOverview(array $reports)
+    {
+        $KEYS_FOR_OVERVIEW_REPORTS = [
+            ReportResult::REPORT_RESULT_COLUMNS,
+            ReportResult::REPORT_RESULT_TOTAL,
+            ReportResult::REPORT_RESULT_REPORTS,
+            ReportResult::REPORT_RESULT_TYPES
+        ];
+
+        foreach ($reports as $k => $v) {
+            if (!in_array($k, $KEYS_FOR_OVERVIEW_REPORTS)) {
                 unset($reports[$k]);
             }
         }

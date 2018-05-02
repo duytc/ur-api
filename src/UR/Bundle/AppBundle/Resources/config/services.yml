@@ -12,15 +12,6 @@ services:
         tags:
             - { name: doctrine.event_listener, event: postUpdate }
 
-    ur_app.event_listener.re_import_when_connected_data_source_changed_listener:
-        class: UR\Bundle\AppBundle\EventListener\ReImportWhenConnectedDataSourceChangedListener
-        arguments:
-            - '@ur.worker.manager'
-        tags:
-            - { name: doctrine.event_listener, event: postPersist, priority: -100 }
-            - { name: doctrine.event_listener, event: postUpdate, priority: -100 }
-            - { name: doctrine.event_listener, event: postFlush, priority: -100 }
-
     ur_app.event_listener.alter_data_set_listener:
         class: UR\Bundle\AppBundle\EventListener\AlterDataSetListener
         arguments:
@@ -44,10 +35,9 @@ services:
             - { name: doctrine.event_listener, event: postRemove, priority: -100 }
             - { name: doctrine.event_listener, event: postFlush, priority: -100 }
 
-    ur_app.event_listener.update_num_of_files_on_data_source_listener:
-        class: UR\Bundle\AppBundle\EventListener\UpdateNumOfFileWhenDataSourceEntryInsertedOrDeletedListener
+    ur_app.event_listener.delete_import_history_when_data_source_entry_deleted_listener:
+        class: UR\Bundle\AppBundle\EventListener\DeleteImportHistoryWhenDataSourceEntryDeletedListener
         tags:
-            - { name: doctrine.event_listener, event: postPersist }
             - { name: doctrine.event_listener, event: preRemove }
 
     ur_app.event_listener.update_date_range_for_data_source_listener:

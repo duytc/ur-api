@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9e090e46db78ae714d0f9aa93376dc09",
+    "content-hash": "b0d92f313e66b83e59ca10d87f851753",
     "packages": [
         {
             "name": "behat/transliterator",
@@ -1831,6 +1831,43 @@
             "time": "2017-12-08T19:49:08+00:00"
         },
         {
+            "name": "jowy/rest-client",
+            "version": "v0.1.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Atriedes/rest-client.git",
+                "reference": "d29562a025bc70a1656bbca039cce40b1d40568d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Atriedes/rest-client/zipball/d29562a025bc70a1656bbca039cce40b1d40568d",
+                "reference": "d29562a025bc70a1656bbca039cce40b1d40568d",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "RestClient": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Prasetyo Wicaksono",
+                    "email": "prasetyo@nanomit.es"
+                }
+            ],
+            "description": "PHP 5.3+ Rest Client",
+            "time": "2015-10-11T01:26:30+00:00"
+        },
+        {
             "name": "league/csv",
             "version": "8.2.3",
             "source": {
@@ -3247,142 +3284,78 @@
             "time": "2018-01-20T00:28:24+00:00"
         },
         {
-            "name": "rollerworks/multi-user-bundle",
-            "version": "dev-master",
+            "name": "rinvex/country",
+            "version": "v3.1.0",
             "source": {
                 "type": "git",
-                "url": "git@github.com:tagcade/pubvantage-multi-user-bundle.git",
-                "reference": "2925d47ac4c7e8a17f90a32ed528910b65ebe439"
+                "url": "https://github.com/rinvex/country.git",
+                "reference": "e32228ef43f26d3b02296be9454f842c52d492f3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tagcade/pubvantage-multi-user-bundle/zipball/2925d47ac4c7e8a17f90a32ed528910b65ebe439",
-                "reference": "2925d47ac4c7e8a17f90a32ed528910b65ebe439",
+                "url": "https://api.github.com/repos/rinvex/country/zipball/e32228ef43f26d3b02296be9454f842c52d492f3",
+                "reference": "e32228ef43f26d3b02296be9454f842c52d492f3",
                 "shasum": ""
             },
             "require": {
-                "friendsofsymfony/user-bundle": "~2.0@dev,>2.0.0-alpha3",
-                "ocramius/proxy-manager": "~1.0|~2.2",
-                "php": ">=5.3.3",
-                "rollerworks/sf-container-injector": "dev-master",
-                "symfony/finder": "~3.4|~4.0",
-                "symfony/framework-bundle": "~3.4|~4.0",
-                "symfony/proxy-manager-bridge": "~3.4|~4.0"
-            },
-            "conflict": {
-                "pugx/multi-user-bundle": "*"
+                "php": "^7.0.0"
             },
             "require-dev": {
-                "doctrine/doctrine-bundle": "~1.2|~1.8",
-                "doctrine/orm": "^2.2.3",
-                "matthiasnoback/symfony-config-test": "^0.1.1|~2.0|~3.1",
-                "sensio/generator-bundle": "~2.3|~3.1",
-                "swiftmailer/swiftmailer": "~6.0",
-                "symfony/browser-kit": "~2.3|~3.0|~4.0",
-                "symfony/css-selector": "~2.3|~3.0|~4.0",
-                "symfony/expression-language": "~2.8|~3.4|~4.0",
-                "symfony/monolog-bundle": "~2.3|~3.2",
-                "symfony/process": "~2.3|~3.4|~4.0",
-                "symfony/swiftmailer-bundle": "~2.3|~3.2",
-                "symfony/twig-bundle": "~2.3|~3.0|~4.0",
-                "symfony/validator": "~2.3|~3.0|~4.0",
-                "symfony/web-profiler-bundle": "~2.3|~3.0|~4.0",
-                "symfony/yaml": "~3.4|~4.0",
-                "twig/twig": "~1.5|~2.4"
-            },
-            "type": "symfony-bundle",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.1-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Rollerworks\\Bundle\\MultiUserBundle\\": "src/"
-                }
-            },
-            "autoload-dev": {
-                "psr-4": {
-                    "Rollerworks\\Bundle\\MultiUserBundle\\Tests\\": "tests/"
-                }
-            },
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastiaan Stok",
-                    "email": "s.stok@rollercapes.net"
-                },
-                {
-                    "name": "Contributors",
-                    "homepage": "https://github.com/rollerworks/RollerworksMultiUserBundle/graphs/contributors"
-                }
-            ],
-            "description": "Multi user management for the FOSUserBundle",
-            "keywords": [
-                "FOSUserBundle",
-                "bundle",
-                "multi",
-                "rollerworks",
-                "user"
-            ],
-            "support": {
-                "source": "https://github.com/tagcade/pubvantage-multi-user-bundle/tree/master",
-                "issues": "https://github.com/tagcade/pubvantage-multi-user-bundle/issues"
-            },
-            "time": "2018-04-27T04:38:09+00:00"
-        },
-        {
-            "name": "rollerworks/sf-container-injector",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/tagcade/SfContainerInjector.git",
-                "reference": "251c85f3b69cfeef1c59ad757afedae1259746d3"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/tagcade/SfContainerInjector/zipball/251c85f3b69cfeef1c59ad757afedae1259746d3",
-                "reference": "251c85f3b69cfeef1c59ad757afedae1259746d3",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3",
-                "symfony/dependency-injection": "~3.4"
+                "phpunit/phpunit": "^5.4.0"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.0-dev"
+                    "dev-master": "3.0-dev"
                 }
             },
             "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
                 "psr-4": {
-                    "Rollerworks\\Component\\SfContainerInjector\\": ""
+                    "Rinvex\\Country\\": "src/"
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "authors": [
                 {
-                    "name": "Sebastiaan Stok",
-                    "email": "s.stok@rollercapes.net"
+                    "name": "Rinvex LLC",
+                    "email": "help@rinvex.com",
+                    "homepage": "https://rinvex.com"
+                },
+                {
+                    "name": "Abdelrahman Omran",
+                    "email": "me@omranic.com",
+                    "homepage": "https://omranic.com",
+                    "role": "Project Lead"
+                },
+                {
+                    "name": "The Generous Laravel Community",
+                    "homepage": "https://github.com/rinvex/country/contributors"
                 }
             ],
-            "description": "Symfony Dependency Container Injector library",
+            "description": "Rinvex Country is a simple and lightweight package for retrieving country details with flexibility. A whole bunch of data including name, demonym, capital, iso codes, dialling codes, geo data, currencies, flags, emoji, and other attributes for all 250 countries worldwide at your fingertips.",
+            "homepage": "https://rinvex.com",
             "keywords": [
-                "Dependency Container",
-                "container",
-                "injector",
-                "rollerworks",
-                "sf"
+                "Flexible",
+                "Simple",
+                "countries",
+                "country",
+                "currencies",
+                "demonym",
+                "dialling",
+                "emoji",
+                "flags",
+                "geographic",
+                "languages",
+                "rinvex",
+                "svg"
             ],
-            "support": {
-                "source": "https://github.com/tagcade/SfContainerInjector/tree/master"
-            },
-            "time": "2018-04-27T07:16:32+00:00"
+            "time": "2017-03-07T18:40:20+00:00"
         },
         {
             "name": "salsify/json-streaming-parser",

@@ -2,12 +2,16 @@
 
 namespace UR\Worker\Job\Concurrent;
 
+use Doctrine\Common\Collections\Collection;
 use Exception;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\Job\JobInterface;
 use Pubvantage\Worker\JobParams;
 use UR\DomainManager\DataSourceEntryManagerInterface;
+use UR\Model\Core\ConnectedDataSourceInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceEntryInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Worker\Manager;
 
@@ -37,6 +41,8 @@ class SplitHugeFile implements JobInterface
      * @param LoggerInterface $logger
      * @param DataSourceEntryManagerInterface $dataSourceEntryManager
      * @param DataSourceFileFactory $dataSourceFileFactory
+     * @param $fileSizeThreshold
+     * @param Manager $manager
      */
     public function __construct(LoggerInterface $logger, DataSourceEntryManagerInterface $dataSourceEntryManager, DataSourceFileFactory $dataSourceFileFactory, $fileSizeThreshold, Manager $manager)
     {
@@ -64,11 +70,12 @@ class SplitHugeFile implements JobInterface
         $dataSourceEntryId = $params->getRequiredParam(self::DATA_SOURCE_ENTRY_ID);
         $dataSourceEntry = $this->dataSourceEntryManager->find($dataSourceEntryId);
 
-        if (!$dataSourceEntry instanceof DataSourceEntryInterface) {
+        if (!$dataSourceEntry instanceof DataSourceEntryInterface || !$dataSourceEntry->getDataSource() instanceof DataSourceInterface) {
             $this->logger->error(sprintf('DataSourceEntry %d not found or you do not have permission', $dataSourceEntryId));
             return;
         }
 
+        $dataSource = $dataSourceEntry->getDataSource();
         $fileSize = filesize($this->dataSourceFileFactory->getAbsolutePath($dataSourceEntry->getPath()));
 
         if ($fileSize > $this->fileSizeThreshold) {
@@ -86,14 +93,19 @@ class SplitHugeFile implements JobInterface
         }
 
         /** Detect date range */
-        if ($dataSourceEntry->getDataSource()->isDateRangeDetectionEnabled()) {
-            $this->manager->updateDateRangeForDataSourceEntry($dataSourceEntry->getDataSource()->getId(), $dataSourceEntry->getId());
+        if ($dataSource->isDateRangeDetectionEnabled()) {
+            $this->manager->updateDateRangeForDataSourceEntry($dataSource->getId(), $dataSourceEntry->getId());
         }
-
+        
         /** Load to data sets */
-        if ($dataSourceEntry->getDataSource()->getEnable()) {
-            $dataSource = $dataSourceEntry->getDataSource();
-            foreach ($dataSource->getConnectedDataSources() as $connectedDataSource) {
+        if ($dataSource->getEnable()) {
+            $connectedDataSources = $dataSource->getConnectedDataSources();
+            $connectedDataSources = $connectedDataSources instanceof Collection ? $connectedDataSources->toArray() : $connectedDataSources;
+
+            foreach ($connectedDataSources as $connectedDataSource) {
+                if (!$connectedDataSource instanceof ConnectedDataSourceInterface || !$connectedDataSource->getDataSet() instanceof DataSetInterface) {
+                    continue;
+                }
                 $this->manager->loadingDataSourceEntriesToDataSetTable($connectedDataSource->getId(), [$dataSourceEntry->getId()], $connectedDataSource->getDataSet()->getId());
             }
         }

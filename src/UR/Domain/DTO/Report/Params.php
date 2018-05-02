@@ -127,6 +127,12 @@ class Params implements ParamsInterface
     /** @var  string */
     protected $temporarySuffix;
 
+    /** @var boolean */
+    protected $needFormat;
+
+    /** @var  boolean */
+    protected $optimizationRule;
+
     /** @var  ReportViewInterface */
     private $reportView;
 
@@ -138,6 +144,7 @@ class Params implements ParamsInterface
         $this->transforms = [];
         $this->searches = [];
         $this->metricCalculations = [];
+        $this->needFormat = true;
     }
 
     /**
@@ -717,5 +724,42 @@ class Params implements ParamsInterface
     public function setReportView($reportView)
     {
         $this->reportView = $reportView;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isNeedFormat()
+    {
+        return $this->needFormat;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setNeedFormat($needFormat)
+    {
+        $this->needFormat = $needFormat;
+
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isOptimizationRule()
+    {
+        return $this->optimizationRule;
+    }
+
+    /**
+     * @param boolean $optimizationRule
+     * @return self
+     */
+    public function setOptimizationRule($optimizationRule)
+    {
+        $this->optimizationRule = $optimizationRule;
+        
+        return $this;
     }
 }

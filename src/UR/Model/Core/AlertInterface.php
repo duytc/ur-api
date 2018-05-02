@@ -37,15 +37,19 @@ interface AlertInterface extends ModelInterface
     const ALERT_CODE_BROWSER_AUTOMATION_TIME_OUT = 2002;
     const ALERT_CODE_BROWSER_AUTOMATION_PASSWORD_EXPIRY = 2003;
 
+    const ALERT_CODE_OPTIMIZATION_INTEGRATION_REFRESH_CACHE_PENDING = 3000;
+    const ALERT_CODE_OPTIMIZATION_INTEGRATION_REFRESH_CACHE_SUCCESS = 3001;
+
     /* const type alert */
     const ALERT_TYPE_INFO = 'info';
     const ALERT_TYPE_WARNING = 'warning';
     const ALERT_TYPE_ERROR = 'error';
+    const ALERT_TYPE_ACTION_REQUIRED = 'actionRequired';
 
     const ALERT_CODE_EMAIL_WEB_HOOK_INVALID_EMAIL_SETTING = 2004;
 
     /**
-     * @return mixed
+     * @return mixed    
      */
     public function getId();
 
@@ -91,6 +95,7 @@ interface AlertInterface extends ModelInterface
 
     /**
      * @param PublisherInterface $publisher
+     * @return self
      */
     public function setPublisher($publisher);
 
@@ -137,4 +142,15 @@ interface AlertInterface extends ModelInterface
      * @return self
      */
     public function setIsSent($isSent);
+
+    /**
+     * @return OptimizationIntegrationInterface
+     */
+    public function getOptimizationIntegration();
+
+    /**
+     * @param OptimizationIntegrationInterface $optimizationRule
+     * @return self
+     */
+    public function setOptimizationIntegration($optimizationRule);
 }

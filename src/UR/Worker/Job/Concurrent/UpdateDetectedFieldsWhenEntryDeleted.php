@@ -70,7 +70,6 @@ class UpdateDetectedFieldsWhenEntryDeleted implements LockableJobInterface
      */
     public function run(JobParams $params)
     {
-        // TODO: do not hardcode, use const instead
         $format = $params->getRequiredParam(self::PARAM_KEY_FORMAT);
         $path = $params->getRequiredParam(self::PARAM_KEY_PATH);
         $chunkPaths = $params->getRequiredParam(self::PARAM_KEY_CHUNK_PATHS);
@@ -91,6 +90,9 @@ class UpdateDetectedFieldsWhenEntryDeleted implements LockableJobInterface
             }
 
             $dataSourceFile = $this->importService->getDataSourceFile($format, $path);
+            if (!$dataSourceFile instanceof \UR\Service\DataSource\DataSourceInterface) {
+                return;
+            }
             $newFields = $this->importService->getNewFieldsFromFiles($dataSourceFile);
             $detectedFields = $this->importService->detectFieldsForDataSource(
                 $newFields,

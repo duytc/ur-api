@@ -24,7 +24,8 @@ class AlertFormType extends AbstractRoleSpecificFormType
             ->add('isRead')
             ->add('dataSource')
             ->add('type')
-            ->add('isSent');
+            ->add('isSent')
+            ->add('optimizationIntegration');
 
         if ($this->userRole instanceof AdminInterface) {
             $builder->add(
@@ -118,9 +119,9 @@ class AlertFormType extends AbstractRoleSpecificFormType
      */
     private function validateAlertType($alertType, FormInterface $form)
     {
-        $alertTypes = [Alert::ALERT_TYPE_ERROR, Alert::ALERT_TYPE_WARNING, Alert::ALERT_TYPE_INFO];
+        $alertTypes = [Alert::ALERT_TYPE_ERROR, Alert::ALERT_TYPE_WARNING, Alert::ALERT_TYPE_INFO, Alert::ALERT_TYPE_ACTION_REQUIRED];
         if (!in_array($alertType, $alertTypes)) {
-            $form->addError(new FormError('Expect alert type is  in error, warning, info '));
+            $form->addError(new FormError('Expect alert type is  in error, warning, info, actionRequired '));
             return false;
         }
 

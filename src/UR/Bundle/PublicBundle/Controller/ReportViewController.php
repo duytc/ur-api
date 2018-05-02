@@ -82,6 +82,7 @@ class ReportViewController extends FOSRestController
         $allowDatesOutside = array_key_exists(ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE, $shareConfig) ? $shareConfig[ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE] : false;
         $paginationParams = $request->query->all();
         $params = $this->getParams($reportView, $fieldsToBeShared, $paginationParams);
+        $params->setNeedFormat(false);
 
         // get dateRange from config then convert to array such as [ startDate => '', endDate => '' ],
         // this is for return to UI for setting startDate-endDate for datePicker

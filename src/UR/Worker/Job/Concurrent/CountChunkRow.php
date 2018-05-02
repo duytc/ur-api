@@ -12,7 +12,7 @@ use UR\Model\Core\DataSourceEntryInterface;
 use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Worker\Manager;
 
-class CountChunkRow  implements JobInterface
+class CountChunkRow implements JobInterface
 {
     const CHUNK = 'path_chunk_file';
     const JOB_NAME = 'count_total_chunk_file';
@@ -25,7 +25,7 @@ class CountChunkRow  implements JobInterface
      */
     private $logger;
 
-    /** @var Manager  */
+    /** @var Manager */
     private $manager;
 
     /** @var RedLock */
@@ -71,30 +71,41 @@ class CountChunkRow  implements JobInterface
             return;
         }
 
-
-        $keyTotal = sprintf(self::TOTAL, $dataSourceEntryId);
-        $keyTotalChunks = sprintf(self::TOTAL_CHUNKS, $dataSourceEntryId);
-
         /** Count */
         try {
             $file = $this->dataSourceFileFactory->getFile('csv', $chunk);
+            $count = count($file->getRows());
+            $keyTotal = sprintf(self::TOTAL, $dataSourceEntryId);
+            $this->redis->incrBy($keyTotal, $count);
         } catch (\Exception $exception) {
+            $this->finishJob($dataSourceEntry);
+
             throw $exception;
         }
-        $count = count($file->getRows());
-        $this->redis->incrBy($keyTotal, $count);
 
-        /** Decrease number job */
-        $this->redis->decr($keyTotalChunks);
+        $this->finishJob($dataSourceEntry);
+    }
 
-        /** Merge result */
-        $totalChunk = $this->redis->decr($keyTotalChunks);
-        //all chunk parsed
-        if ($totalChunk <= 0) {
-            $countAll = $this->redis->get($keyTotal);
-            $this->logger->debug(sprintf('Update total row for DataSourceEntry %d', $dataSourceEntryId));
-            $dataSourceEntry->setTotalRow($countAll);
-            $this->dataSourceEntryManager->save($dataSourceEntry);
+    /**
+     * @param DataSourceEntryInterface $dataSourceEntry
+     */
+    private function finishJob(DataSourceEntryInterface $dataSourceEntry)
+    {
+        try {
+            $dataSourceEntryId = $dataSourceEntry->getId();
+
+            /** Decrease job counter */
+            $keyTotalChunks = sprintf(self::TOTAL_CHUNKS, $dataSourceEntryId);
+            if ($this->redis->decr($keyTotalChunks) <= 0) {
+                /** All chunks counted */
+                $this->logger->debug(sprintf('Update total row for DataSourceEntry %d', $dataSourceEntryId));
+                $keyTotal = sprintf(self::TOTAL, $dataSourceEntryId);
+                $dataSourceEntry->setTotalRow($this->redis->get($keyTotal));
+                //Trigger many listeners related to DataSourceEntryInterface
+                $this->dataSourceEntryManager->save($dataSourceEntry);
+            }
+        } catch (\Exception $e) {
+
         }
     }
 }

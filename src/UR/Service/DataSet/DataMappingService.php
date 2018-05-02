@@ -90,8 +90,10 @@ class DataMappingService implements DataMappingServiceInterface
             return false;
         }
 
-        /** @var MapBuilderConfigInterface $config */
         foreach ($dataSet->getMapBuilderConfigs() as $config) {
+            if (!$config instanceof MapBuilderConfigInterface) {
+                continue;
+            }
             $dataSetRows = $this->getDataFromMapBuilderConfig($config);
             $this->insertRowsToDataSet($config, $dataSetRows);
         }

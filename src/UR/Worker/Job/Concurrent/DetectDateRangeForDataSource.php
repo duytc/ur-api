@@ -3,7 +3,6 @@
 namespace UR\Worker\Job\Concurrent;
 
 use Psr\Log\LoggerInterface;
-use Pubvantage\Worker\Job\JobInterface;
 use Pubvantage\Worker\Job\LockableJobInterface;
 use Pubvantage\Worker\JobParams;
 use UR\Service\DateTime\DateRangeService;

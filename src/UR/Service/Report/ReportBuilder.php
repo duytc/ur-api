@@ -589,7 +589,10 @@ class ReportBuilder implements ReportBuilderInterface
         }
 
         $reportResult = $this->reportViewFormatter->getSmartColumns($reportResult, $params);
-        $reportResult = $this->reportViewFormatter->getReportAfterApplyDefaultFormat($reportResult, $params);
+
+        if ($params->isNeedFormat()) {
+            $reportResult = $this->reportViewFormatter->getReportAfterApplyDefaultFormat($reportResult, $params);
+        }
 
         /* format data if need */
         $formats = is_array($params->getFormats()) ? $params->getFormats() : [];

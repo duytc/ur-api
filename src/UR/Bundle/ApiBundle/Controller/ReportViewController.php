@@ -8,6 +8,7 @@ use FOS\RestBundle\View\View;
 use \Exception;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Bundle\ReportApiBundle\Behaviors\DashBoardUtilTrait;
@@ -259,6 +260,8 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     /**
      * Get a single report view group for the given id
      *
+     * @Rest\Get("/reportviews/{id}", requirements={"id" = "\d+"})
+     *
      * @Rest\View(serializerGroups={"report_view.detail", "user.summary", "report_view_data_set.summary", "report_view_multi_view.summary", "dataset.summary"})
      *
      * @ApiDoc(
@@ -277,6 +280,47 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     public function getAction($id)
     {
         return $this->one($id);
+    }
+
+    /**
+     * Get a editable state for report views
+     *
+     * @Rest\Get("/reportviews/editable")
+     * @Rest\QueryParam(name="ids", nullable=false, description="report view ids")
+     *
+     * @ApiDoc(
+     *  section = "ReportView",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return array
+     *
+     */
+    public function getEditableAction(Request $request)
+    {
+        $reportViewIdsString = $request->query->get('ids', null);
+        if (empty($reportViewIdsString)) {
+            throw new BadRequestHttpException('Invalid ids, expected array');
+        }
+
+        $reportViewIds = explode(',', $reportViewIdsString);
+        $optimizationRuleRepository = $this->get('ur.repository.optimization_rule');
+        $editable = [];
+        foreach ($reportViewIds as $reportViewId) {
+            $reportView = $this->one($reportViewId);
+            if (!$reportView instanceof ReportViewInterface) {
+                continue;
+            }
+
+            $optimizationRules = $optimizationRuleRepository->getOptimizationRulesForReportView($reportView);
+            $editable[$reportViewId] = count($optimizationRules) == 0;
+        }
+
+        return $editable;
     }
 
     /**

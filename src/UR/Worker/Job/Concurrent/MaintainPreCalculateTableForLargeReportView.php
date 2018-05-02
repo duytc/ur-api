@@ -37,7 +37,7 @@ class MaintainPreCalculateTableForLargeReportView implements JobInterface
     /** @var LargeReportMaintainerInterface */
     private $largeReportMaintainer;
 
-    /** @var EntityManagerInterface  */
+    /** @var EntityManagerInterface */
     private $em;
 
     public function __construct(LoggerInterface $logger, Manager $manager, ReportViewManagerInterface $reportViewManager, $largeThreshold, LargeReportMaintainerInterface $largeReportMaintainer, EntityManagerInterface $em)
@@ -62,8 +62,6 @@ class MaintainPreCalculateTableForLargeReportView implements JobInterface
         if (empty($reportViewId)) {
             return;
         }
-
-        $reportView = null;
 
         try {
             $reportView = $this->reportViewManager->find($reportViewId);
@@ -105,8 +103,6 @@ class MaintainPreCalculateTableForLargeReportView implements JobInterface
             } catch (\Exception $e) {
 
             }
-
-            return;
         }
     }
 }

@@ -30,6 +30,12 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	const DATE_DYNAMIC_VALUE_THIS_MONTH = 'this month';
 	const DATE_DYNAMIC_VALUE_LAST_MONTH = 'last month';
 
+	/*for datetime type*/
+	const DATETIME_DYNAMIC_VALUE_CONTINUOUSLY = 'continuously';
+	const DATETIME_DYNAMIC_VALUE_30M = '30 minutes';
+	const DATETIME_DYNAMIC_VALUE_1H = '1 hour';
+	const DATETIME_DYNAMIC_VALUE_24H = '24 hours';
+
 	/* supported date types */
 	public static $SUPPORTED_DATE_TYPES = [
 		self::DATE_TYPE_CUSTOM_RANGE,

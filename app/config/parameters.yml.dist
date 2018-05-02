@@ -58,3 +58,13 @@ parameters:
     data_source_entry_job_temp_file_dir: '%kernel.root_dir%/temp/data-source-entry'
     number_of_rows_to_export_file: 2000 # int
     ur.report_view.large_threshold: 500000 #estimate by multiply total row from component data sets
+
+    tagcade_user_name: tcadmin
+    tagcade_user_password: '123456'
+    tagcade_get_token_url: 'http://api.pubvantage-dev.test/app_dev.php/api/v1/getToken'
+    tagcade_update_cache_url: 'http://api.pubvantage-dev.test/app_dev.php/api/admin/v1/autooptimizecache'
+    tagcade_test_cache_url: 'http://api.pubvantage-dev.test/app_dev.php/api/admin/v1/autooptimizecache/previewposition'
+    tagcade_score_fetcher_url: 'http://10.0.2.2:8086/api/scores'
+    activate_learning_process_url: 'http://10.0.2.2:8086/api/learner'
+    calculate_score_url: 'http://10.0.2.2:8086/api/v2/scores'
+    pubvantage_integration_tube_name: 'tagcade-api-worker'

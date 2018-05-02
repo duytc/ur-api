@@ -185,12 +185,6 @@ interface DataSourceInterface extends ModelInterface
     public function getNumOfFiles();
 
     /**
-     * @param mixed $numOfFiles
-     * @return self
-     */
-    public function setNumOfFiles($numOfFiles);
-
-    /**
      * @return array
      */
     public function getMissingDate();

@@ -69,8 +69,10 @@ class UpdateReportViewWhenAlterDataSetSubJob implements SubJobInterface
         }
 
         $reportViews = $reportViewRepository->getReportViewThatUseDataSet($dataSet);
-        /** @var ReportViewInterface $reportView */
         foreach($reportViews as $reportView) {
+            if (!$reportView instanceof ReportViewInterface) {
+                continue;
+            }
 			$this->reportViewUpdater->refreshSingleReportView($reportView, $dataSet, $newFields, $updatedFields, $deletedFields);
         }
 

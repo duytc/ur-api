@@ -17,12 +17,15 @@ use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\ReloadParamsInterface;
 use UR\Service\DateUtilInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
+use UR\Worker\Job\Concurrent\ActivateThe3PartnerScoringServiceIntegration;
 use UR\Worker\Job\Concurrent\CountChunkRow;
 use UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView;
 use UR\Worker\Job\Concurrent\ParseChunkFile;
+use UR\Worker\Job\Concurrent\ProcessOptimizationFrequency;
 use UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource;
 use UR\Worker\Job\Concurrent\ProcessAlert;
 use UR\Worker\Job\Concurrent\SplitHugeFile;
+use UR\Worker\Job\Concurrent\SyncTrainingDataAndGenerateLearnerModel;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
 use UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted;
@@ -132,27 +135,6 @@ class Manager
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param ReloadParamsInterface $reloadParameter
      */
-    public function reloadAllForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ReloadParamsInterface $reloadParameter = null)
-    {
-        $reloadType = $reloadParameter instanceof ReloadParamsInterface ? $reloadParameter->getType() : ReloadParamsInterface::ALL_DATA_TYPE;
-        $reloadStartDate = null;
-        $reloadEndDate = null;
-
-        $reloadAllForConnectedDataSource = [
-            'task' => ReloadConnectedDataSource::JOB_NAME,
-            ReloadConnectedDataSource::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId(),
-            ReloadParamsInterface::RELOAD_TYPE => $reloadType,
-            ReloadParamsInterface::RELOAD_START_DATE => $reloadStartDate,
-            ReloadParamsInterface::RELOAD_END_DATE => $reloadEndDate
-        ];
-
-        $this->dataSetJobScheduler->addJob($reloadAllForConnectedDataSource, $connectedDataSource->getDataSet()->getId());
-    }
-
-    /**
-     * @param ConnectedDataSourceInterface $connectedDataSource
-     * @param ReloadParamsInterface $reloadParameter
-     */
     public function reloadConnectedDataSourceByDateRange(ConnectedDataSourceInterface $connectedDataSource, ReloadParamsInterface $reloadParameter)
     {
         $reloadType = $reloadParameter->getType();
@@ -245,18 +227,32 @@ class Manager
      * @param int $publisherId
      * @param array $details
      * @param null|int $dataSourceId optional
+     * @param null $optimizationIntegrationId
      */
-    public function processAlert($code, $publisherId, $details, $dataSourceId = null)
+    public function processAlert($code, $publisherId, $details, $dataSourceId = null, $optimizationIntegrationId = null)
     {
         $jobData = [
             'task' => ProcessAlert::JOB_NAME,
             ProcessAlert::PARAM_KEY_CODE => $code,
             ProcessAlert::PARAM_KEY_PUBLISHER_ID => $publisherId,
             ProcessAlert::PARAM_KEY_DETAILS => $details,
-            ProcessAlert::PARAM_KEY_DATA_SOURCE_ID => $dataSourceId
+            ProcessAlert::PARAM_KEY_DATA_SOURCE_ID => $dataSourceId,
+            ProcessAlert::PARAM_KEY_OPTIMIZATION_INTEGRATION_ID => $optimizationIntegrationId
         ];
 
         // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    /**
+     *
+     */
+    public function processOptimizationFrequency()
+    {
+        $jobData = [
+            'task' => ProcessOptimizationFrequency::JOB_NAME,
+        ];
+
         $this->concurrentJobScheduler->addJob($jobData);
     }
 
@@ -430,17 +426,6 @@ class Manager
         $this->concurrentJobScheduler->addJob($jobData);
     }
 
-    public function removeDuplicatedDateEntries($dataSourceId)
-    {
-        $jobData = [
-            'task' => RemoveDuplicatedDateEntriesForDataSource::JOB_NAME,
-            RemoveDuplicatedDateEntriesForDataSource::DATA_SOURCE_ID => $dataSourceId,
-        ];
-
-        // concurrent job, we do not care what order it is processed in
-        $this->concurrentJobScheduler->addJob($jobData);
-    }
-
     public function createJobCountChunkRow($chunkFilePath, $dataSourceEntryId)
     {
         $jobData = [
@@ -461,6 +446,28 @@ class Manager
         ];
 
         // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+
+    public function syncTrainingDataAndGenerateLearnerModel($optimizationRuleId)
+    {
+        $jobData = [
+            'task' => SyncTrainingDataAndGenerateLearnerModel::JOB_NAME,
+            SyncTrainingDataAndGenerateLearnerModel::OPTIMIZATION_RULE_ID_KEY => $optimizationRuleId,
+        ];
+
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    public function activateThe3PartnerScoringServiceIntegration($optimizationRuleId, $optimizationIntegrationId)
+    {
+        $jobData = [
+            'task' => ActivateThe3PartnerScoringServiceIntegration::JOB_NAME,
+            ActivateThe3PartnerScoringServiceIntegration::OPTIMIZATION_RULE_ID_KEY => $optimizationRuleId,
+            ActivateThe3PartnerScoringServiceIntegration::OPTIMIZATION_INTEGRATION_ID_KEY => $optimizationIntegrationId,
+        ];
+
         $this->concurrentJobScheduler->addJob($jobData);
     }
 }

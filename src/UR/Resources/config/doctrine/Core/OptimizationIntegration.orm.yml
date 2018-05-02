@@ -1,0 +1,57 @@
+UR\Entity\Core\OptimizationIntegration:
+    type: entity
+    table: core_optimization_integration
+    repositoryClass: UR\Repository\Core\OptimizationIntegrationRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: 100
+        identifierMapping:
+            type: string
+            length: 100
+        identifierField:
+            type: string
+            length: 100
+        segments:
+            type: json_array
+            nullable: true
+        supplies:
+            type: json_array
+            nullable:
+                default: true
+        adSlots:
+            type: json_array
+            nullable: true
+        active:
+            type: smallint
+            options:
+               default: 1
+        optimizationAlerts:
+            type: string
+            length: 100
+        optimizationFrequency:
+            type: string
+            nullable: true
+        startRescoreAt:
+            type: datetime
+            nullable: true
+        endRescoreAt:
+            type: datetime
+            nullable: true
+        platformIntegration:
+            type: string
+            length: 100
+    manyToOne:
+        optimizationRule:
+            targetEntity: UR\Entity\Core\OptimizationRule
+    oneToMany:
+        alerts:
+            targetEntity: UR\Entity\Core\Alert
+            cascade: ['persist', 'detach', 'remove']
+            mappedBy: optimizationIntegration
+            orphanRemoval: true

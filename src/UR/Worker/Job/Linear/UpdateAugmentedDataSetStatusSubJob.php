@@ -64,8 +64,10 @@ class UpdateAugmentedDataSetStatusSubJob implements SubJobInterface, ExpirableJo
             return;
         }
 
-        /** @var LinkedMapDataSetInterface $linkedMapDataSet */
         foreach ($linkedMapDataSets as $linkedMapDataSet) {
+            if (!$linkedMapDataSet instanceof LinkedMapDataSetInterface) {
+                continue;
+            }
             $dataSet = $linkedMapDataSet->getConnectedDataSource()->getDataSet();
             $dataSet->setNumChanges($dataSet->getNumChanges() + 1);
             $this->dataSetManager->save($dataSet);

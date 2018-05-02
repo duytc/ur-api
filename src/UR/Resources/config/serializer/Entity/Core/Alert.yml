@@ -28,3 +28,6 @@ UR\Entity\Core\Alert:
         isSent:
             expose: true
             groups: [alert.detail, alert.summary]
+        optimizationIntegration:
+            expose: true
+            groups: [alert.detail, alert.summary]

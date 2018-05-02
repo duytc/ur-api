@@ -154,11 +154,8 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
         $currentReport = $this->getMinimizeReportForComparison($currentReport->toArray());
         $historyReport = $this->getMinimizeReportForComparison($historyReport->toArray());
 
-        // do sum for same date in reports detail
-        $reportViewFormatter = $this->get('ur.services.report.report_formatter');
-        $averageFields = $this->getAverageFieldsFromReportView($reportView);
-        $currentReport = $this->groupReportsByDate($currentReport, $dateField, $params->getFormats(), $reportViewFormatter, $averageFields);
-        $historyReport = $this->groupReportsByDate($historyReport, $dateField, $params->getFormats(), $reportViewFormatter, $averageFields);
+        // do sum for same date in reports detail: no need because we not need draw chart for comparison
+        // if need, find the way to do sum by date by sql
 
         // add dateField
         $currentReport['dateField'] = $dateFieldAndFormat;
@@ -251,7 +248,7 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
         $result = $this->getReport($params);
 
         // unset not need fields from reports
-        $result = $this->getMinimizeReportForComparison($result->toArray());
+        $result = $this->getMinimizeReportForOverview($result->toArray());
 
         // do sum for same date in reports detail
         $reportViewFormatter = $this->get('ur.services.report.report_formatter');
@@ -418,6 +415,7 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
         $request->request->remove('limit');
 
         $params = $this->get('ur.services.report.params_builder')->buildFromArray($request->request->all());
+        $params->setNeedFormat(false);
         //check permission
         if ($params->getReportViewId() !== null) {
             $reportViewRepository = $this->get('ur.repository.report_view');

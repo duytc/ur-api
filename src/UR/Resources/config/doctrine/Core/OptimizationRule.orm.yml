@@ -1,0 +1,55 @@
+UR\Entity\Core\OptimizationRule:
+    type: entity
+    table: core_optimization_rule
+    repositoryClass: UR\Repository\Core\OptimizationRuleRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: 100
+        dateField:
+            type: string
+            nullable: true
+        dateRange:
+            string: json_array
+            nullable: true
+        identifierFields:
+            type: json_array
+            nullable: true
+        optimizeFields:
+            type: json_array
+            nullable:
+                default: true
+        segmentFields:
+            type: json_array
+            nullable: true
+        token:
+            type: string
+            nullable: true
+        createdDate:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+        finishLoading:
+            type: boolean
+            options:
+                default: true
+    manyToOne:
+        reportView:
+            targetEntity: UR\Entity\Core\ReportView
+        publisher:
+            targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
+
+    oneToMany:
+        optimizationIntegrations:
+            targetEntity: UR\Entity\Core\OptimizationIntegration
+            mappedBy: optimizationRule
+        learners:
+            targetEntity: UR\Entity\Core\Learner
+            mappedBy: optimizationRule
+            cascade: ['remove','detach']

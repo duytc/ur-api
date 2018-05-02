@@ -94,7 +94,12 @@ class UpdateDataSetTotalRowService
 
     public function updateConnectedDataSourceTotalRow(ConnectedDataSourceInterface $connectedDataSource)
     {
-        $dataSetId = $connectedDataSource->getDataSet()->getId();
+        $dataSet = $connectedDataSource->getDataSet();
+        if (!$dataSet instanceof DataSetInterface) {
+            return;
+        }
+
+        $dataSetId = $dataSet->getId();
         try {
             $dataSetSynchronizer = new Synchronizer($this->conn, new Comparator());
             $dataTable = $dataSetSynchronizer->getDataSetImportTable($dataSetId);

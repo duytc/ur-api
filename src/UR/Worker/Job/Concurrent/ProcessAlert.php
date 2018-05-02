@@ -17,6 +17,7 @@ class ProcessAlert implements JobInterface
     const PARAM_KEY_PUBLISHER_ID = 'publisherId';
     const PARAM_KEY_DETAILS = 'details';
     const PARAM_KEY_DATA_SOURCE_ID = 'dataSourceId';
+    const PARAM_KEY_OPTIMIZATION_INTEGRATION_ID = 'optimizationIntegrationId';
 
     /**
      * @var Logger $logger
@@ -63,9 +64,10 @@ class ProcessAlert implements JobInterface
         $publisherId = $params->getRequiredParam(self::PARAM_KEY_PUBLISHER_ID);
         $details = $params->getRequiredParam(self::PARAM_KEY_DETAILS);
         $dataSourceId = $params->getRequiredParam(self::PARAM_KEY_DATA_SOURCE_ID);
+        $optimizationIntegrationId = $params->getRequiredParam(self::PARAM_KEY_OPTIMIZATION_INTEGRATION_ID);
 
         try {
-            $this->processAlert->createAlert($code, $publisherId, $details, $dataSourceId);
+            $this->processAlert->createAlert($code, $publisherId, $details, $dataSourceId, $optimizationIntegrationId);
         } catch (Exception $exception) {
             $this->logger->error(sprintf('could not create alert, error occur: %s', $exception->getMessage()));
         } finally {

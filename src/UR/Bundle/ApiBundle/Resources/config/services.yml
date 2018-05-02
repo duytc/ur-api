@@ -23,6 +23,9 @@ imports:
     - { resource: services/service.report_view_template.yml}
     - { resource: services/service.report_view_template_tag.yml}
     - { resource: services/service.report_view_add_conditional_transform_value.yml}
+    - { resource: services/service.optimization-rule.yml}
+    - { resource: services/service.optimization_integration.yml}
+    - { resource: services/service.automated_optimization.yml}
 
 
 parameters:

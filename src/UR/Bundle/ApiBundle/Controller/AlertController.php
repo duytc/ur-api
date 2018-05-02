@@ -5,6 +5,7 @@ namespace UR\Bundle\ApiBundle\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
+use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -12,9 +13,13 @@ use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Handler\HandlerInterface;
 use UR\Model\AlertPagerParam;
 use UR\Model\Core\AlertInterface;
+use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\OptimizationIntegrationInterface;
+use UR\Model\Core\OptimizationRuleInterface;
 use UR\Model\PagerParam;
-use Nelmio\ApiDocBundle\Annotation\ApiDoc;
-use Psr\Log\LoggerInterface;
+use UR\Service\Alert\ActionRequire\ActionRequireHandlerInterface;
+use UR\Service\Alert\AlertParams;
+use UR\Service\Alert\ProcessAlertInterface;
 
 /**
  * @Rest\RouteResource("Alert")
@@ -64,6 +69,76 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     }
 
     /**
+     * Get all alerts
+     * @Rest\Get("/alerts/list")
+     * @Rest\View(serializerGroups={"alert.detail", "user.summary", "datasource.viewAlert", "optimizationIntegration.detail", "optimization_rule.one"})
+     *
+     * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
+     * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
+     * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
+     * @Rest\QueryParam(name="searchField", nullable=true, description="field to filter, must match field in Entity")
+     * @Rest\QueryParam(name="searchKey", nullable=true, description="value of above filter")
+     * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
+     * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     * @Rest\QueryParam(name="types", nullable=true, description="the type to get")
+     *
+     * @ApiDoc(
+     *  section = "Alert",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return \UR\Model\Core\AlertInterface[]
+     */
+    public function cgetAlertsAction(Request $request)
+    {
+        $alertRepository = $this->get('ur.repository.alert');
+        $dataSourceManager = $this->get('ur.domain_manager.data_source');
+        $optimizationIntegrationManager = $this->get('ur.domain_manager.optimization_integration');
+
+        $params = array_merge($request->request->all(), $request->query->all());
+        $id = array_key_exists('id', $params) ? $params['id'] : null;
+        $source = array_key_exists('source', $params) ? $params['source'] : 'all';
+
+        $user = $this->getUserDueToQueryParamPublisher($request, 'publisher');
+        $qb = $alertRepository->getAlertsForUserQuery($user, $this->getParams());
+
+        switch ($source) {
+            case 'datasource':
+                if (!empty($id)) {
+                    $dataSource = $dataSourceManager->find($id);
+                    if (!$dataSource instanceof DataSourceInterface) {
+                        break;
+                    }
+                    $qb = $alertRepository->getAlertsByDataSourceQuery($dataSource, $this->getParams());
+                } else {
+                    $qb = $alertRepository->getAllDataSourceAlertsQuery($user, $this->getParams());
+                }
+                break;
+            case 'optimization':
+                if (!empty($id)) {
+                    $optimizationIntegration = $optimizationIntegrationManager->find($id);
+                    if (!$optimizationIntegration instanceof OptimizationIntegrationInterface) {
+                        break;
+                    }
+                    $qb = $alertRepository->getAlertsByOptimizationQuery($optimizationIntegration, $this->getParams());
+                } else {
+                    $qb = $alertRepository->getAllOptimizationAlertsQuery($user, $this->getParams());
+                }
+        }
+
+        $params = array_merge($request->query->all(), $request->attributes->all());
+        if (!isset($params['page'])) {
+            return $qb->getQuery()->getResult();
+        } else {
+            return $this->getPagination($qb, $request);
+        }
+    }
+
+    /**
      * Get a single alert group for the given id
      *
      * @Rest\View(serializerGroups={"alert.detail", "user.summary", "datasource.viewAlert"})
@@ -105,6 +180,32 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     public function postAction(Request $request)
     {
         return $this->post($request);
+    }
+
+    /**
+     * Create a action for action require alert
+     * @Rest\Post("/alerts/action")
+     * @ApiDoc(
+     *  section = "Alert",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param Request $request the request object
+     * @return mixed
+     */
+    public function postActionRequireAction(Request $request)
+    {
+        $data = array_merge($request->request->all(), $request->query->all());
+        $actionName = array_key_exists(ActionRequireHandlerInterface::PARAM_ACTION_NAME, $data) ? $data[ActionRequireHandlerInterface::PARAM_ACTION_NAME] : "";
+        $actionData = array_key_exists(ActionRequireHandlerInterface::PARAM_ACTION_DATA, $data) ? $data[ActionRequireHandlerInterface::PARAM_ACTION_DATA] : [];
+
+        $processActionRequire = $this->get('ur.service.alert.action_require_handler');
+
+        return $processActionRequire->handleActionRequired($actionName, $actionData);
     }
 
     /**
@@ -178,22 +279,19 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
      */
     public function putAlertsAction(Request $request)
     {
-        $alertManager = $this->get('ur.domain_manager.alert');
+        $processAlert = $this->get('ur.service.alert.process_alert');
         $params = $request->request->all();
 
-        $ids = $params['ids'];
-        $delete = filter_var($request->query->get('delete', null), FILTER_VALIDATE_BOOLEAN);
-        $status = filter_var($request->query->get('status', null), FILTER_VALIDATE_BOOLEAN);
+        $action = filter_var($request->query->get('action', null));
+        $alertIds = array_key_exists('ids', $params) ? $params['ids'] : [];
+        $publisherId = array_key_exists('publisherId', $params) ? $params['publisherId'] : null;
+        $alertSource = array_key_exists('alertSource', $params) ? $params['alertSource'] : null;
+        $sourceId = array_key_exists('sourceId', $params) ? $params['sourceId'] : null;
+        $types = array_key_exists('types', $params) ? $params['types'] : '';
 
-        if ($delete === true) {
-            return $alertManager->deleteAlertsByIds($ids);
-        } else if ($status === true) {
-            return $alertManager->updateMarkAsReadByIds($ids);
-        } else if ($status === false) {
-            return $alertManager->updateMarkAsUnreadByIds($ids);
-        }
+        $alertParams =  new AlertParams($action, $alertIds, $publisherId, $alertSource, $sourceId, $types);
+        $processAlert->updateStatusOrDeleteAlertsByParams($alertParams);
 
-        throw new \Exception("param is not valid");
     }
 
     /**
