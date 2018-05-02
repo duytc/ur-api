@@ -126,13 +126,13 @@ services:
             - { name: security.voter }
 
     ur.security.auth.voter.optimization_rule:
-        class:  %ur.security.auth.voter.optimization_rule.class%
+        class:  '%ur.security.auth.voter.optimization_rule.class%'
         public: false
         tags:
             - { name: security.voter }
 
     ur.security.auth.voter.optimization_integration:
-        class:  %ur.security.auth.voter.optimization_integration.class%
+        class:  '%ur.security.auth.voter.optimization_integration.class%'
         public: false
         tags:
             - { name: security.voter }
@@ -798,22 +798,27 @@ services:
             - '@ur.domain_manager.data_set'
             - '@ur.redis.app_cache'
 
+    # TODO: change...
     fos_user.change_password.form.type:
         class: FOS\UserBundle\Form\Type\ChangePasswordFormType
         arguments: ~
 
+    # TODO: change...
     fos_user.group.form.type:
         class: FOS\UserBundle\Form\Type\GroupFormType
         arguments: ~
 
+    # TODO: change...
     fos_user.profile.form.type:
         class: FOS\UserBundle\Form\Type\ProfileFormType
         arguments: ~
 
+    # TODO: change...
     fos_user.registration.form.type:
         class: FOS\UserBundle\Form\Type\RegistrationFormType
         arguments: ~
 
+    # TODO: change...
     fos_user.resetting.form.type:
         class: FOS\UserBundle\Form\Type\ResettingFormType
         arguments: ~

@@ -14,7 +14,7 @@ framework:
     csrf_protection:
         enabled: false
     validation:
-        # api: 2.4
+        # REMOVED: api: 2.4
         enable_annotations: false
     templating:
         engines: ['twig']
@@ -104,14 +104,14 @@ jms_serializer:
     metadata:
         directories:
             entity_core:
-                namespace_prefix:   'UR\\Entity\Core\\'
-                path:               '%kernel.root_dir%/../src/UR/Resources/config/serializer/Entity/Core'
+                namespace_prefix:   UR\\Entity\Core\\
+                path:               %kernel.root_dir%/../src/UR/Resources/config/serializer/Entity/Core
             model_core:
-                namespace_prefix:   'UR\\Model\Core\\'
-                path:               '%kernel.root_dir%/../src/UR/Resources/config/serializer/Model/Core'
+                namespace_prefix:   UR\\Model\Core\\
+                path:               %kernel.root_dir%/../src/UR/Resources/config/serializer/Model/Core
             ur:
-                namespace_prefix:   "UR\\"
-                path:               '%kernel.root_dir%/../src/UR/Resources/config/serializer'
+                namespace_prefix:   UR\\
+                path:               %kernel.root_dir%/../src/UR/Resources/config/serializer
             FOSUserBundle:
                 namespace_prefix:   "FOS\\UserBundle"
                 path:               "@URUserBundle/Resources/config/serializer/fos"
