@@ -7,26 +7,26 @@ parameters:
 services:
     ur_api.handler.optimization_integration:
         class: UR\Handler\HandlerInterface
-        factory_service: ur.handler.handler_manager.optimization_integration
-        factory_method: getHandler
+        factory_service: 'ur.handler.handler_manager.optimization_integration'
+        factory_method: 'getHandler'
         arguments:
-            - @ur.user_role
+            - '@ur.user_role'
 
     ur.repository.optimization_integration:
         class: UR\Repository\Core\OptimizationIntegrationRepositoryInterface
-        factory_service: doctrine.orm.entity_manager
-        factory_method: getRepository
+        factory_service: 'doctrine.orm.entity_manager'
+        factory_method: 'getRepository'
         arguments:
-            - %ur.entity.core.optimization_integration.class%
+            - '%ur.entity.core.optimization_integration.class%'
 
     ur.domain_manager.optimization_integration:
         class: UR\DomainManager\OptimizationIntegrationManager
         arguments:
-            - @doctrine.orm.entity_manager
-            - @ur.repository.optimization_integration
+            - '@doctrine.orm.entity_manager'
+            - '@ur.repository.optimization_integration'
 
     ur.form.type.optimization_integration:
-        class: %ur.form.type.core.optimization_integration.class%
+        class: '%ur.form.type.core.optimization_integration.class%'
         tags:
             - { name: form.type, alias: ur_form_optimization_integration}
 
@@ -36,8 +36,8 @@ services:
         abstract: true
         public: false
         arguments:
-            - @ur.form.type.optimization_integration
-            - @ur.domain_manager.optimization_integration
+            - '@ur.form.type.optimization_integration'
+            - '@ur.domain_manager.optimization_integration'
 
     ur.handler.handlers.optimization_integration.admin:
         class: UR\Handler\Handlers\Core\Admin\OptimizationIntegrationHandler
@@ -52,7 +52,7 @@ services:
     ur.handler.handler_manager.optimization_integration:
         class: UR\Handler\HandlerManager
         arguments:
-            - %ur.entity.core.optimization_integration.class%
+            - '%ur.entity.core.optimization_integration.class%'
             -
-                - @ur.handler.handlers.optimization_integration.admin
-                - @ur.handler.handlers.optimization_integration.publisher
+                - '@ur.handler.handlers.optimization_integration.admin'
+                - '@ur.handler.handlers.optimization_integration.publisher'

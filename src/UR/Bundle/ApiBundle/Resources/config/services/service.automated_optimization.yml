@@ -2,53 +2,53 @@ services:
     ur.service.optimization_rule.data_training_table_service:
         class: UR\Service\OptimizationRule\DataTrainingTableService
         arguments:
-              - @ur.service.dynamic_table.dynamic_table_service
+              - '@ur.service.dynamic_table.dynamic_table_service'
 
     ur.service.optimization_rule.optimization_learning_facade_service:
         class: UR\Service\OptimizationRule\OptimizationLearningFacadeService
         arguments:
-              - @ur.service.optimization_rule.data_training_collector
-              - @ur.service.optimization_rule.data_training_table_service
-              - @ur.service.optimization_rule.optimization_rule_score_service
-              - %activate_learning_process_url%
-              - %calculate_score_url%
-              - @monolog.logger
+              - '@ur.service.optimization_rule.data_training_collector'
+              - '@ur.service.optimization_rule.data_training_table_service'
+              - '@ur.service.optimization_rule.optimization_rule_score_service'
+              - '%activate_learning_process_url%'
+              - '%calculate_score_url%'
+              - '@monolog.logger'
 
     ur.service.optimization_rule.data_training_collector:
         class: UR\Service\OptimizationRule\DataTrainingCollector
         arguments:
-            - @ur.services.report.params_builder
-            - @ur.services.report.report_builder
-            - @ur.service.optimization_rule.data_training_table_service
+            - '@ur.services.report.params_builder'
+            - '@ur.services.report.report_builder'
+            - '@ur.service.optimization_rule.data_training_table_service'
             -
-                - @ur.service.optimization_rule.normalization.country_normalizer
+                - '@ur.service.optimization_rule.normalization.country_normalizer'
 
     ur.util.tagcade_rest_client:
         class: UR\Util\TagcadeRestClient
         arguments:
-            - %tagcade_user_name%
-            - %tagcade_user_password%
-            - %tagcade_get_token_url%
-            - %tagcade_update_cache_url%
-            - %tagcade_score_fetcher_url%
-            - %tagcade_test_cache_url%
+            - '%tagcade_user_name%'
+            - '%tagcade_user_password%'
+            - '%tagcade_get_token_url%'
+            - '%tagcade_update_cache_url%'
+            - '%tagcade_score_fetcher_url%'
+            - '%tagcade_test_cache_url%'
 
     ur.service.optimization_rule.automated_optimization.puvantage.pubvantage_optimizer:
         class: UR\Service\OptimizationRule\AutomatedOptimization\Pubvantage\PubvantageOptimizer
         arguments:
-          - @ur.util.tagcade_rest_client
-          - @ur.service.optimization_rule.data_training_table_service
-          - @ur.service.dynamic_table.dynamic_table_service
-          - @ur.service.optimization_rule.optimization_rule_score_service
+          - '@ur.util.tagcade_rest_client'
+          - '@ur.service.optimization_rule.data_training_table_service'
+          - '@ur.service.dynamic_table.dynamic_table_service'
+          - '@ur.service.optimization_rule.optimization_rule_score_service'
 
     ur.service.optimization_rule.automated_optimization.automated_optimizer:
         class: UR\Service\OptimizationRule\AutomatedOptimization\AutomatedOptimizer
         arguments:
-            - @logger
-            - @ur.worker.manager
-            - @ur.service.alert.action_require_factory
-            - @ur.domain_manager.optimization_integration
-            - @ur.redis.app_cache
+            - '@logger'
+            - '@ur.worker.manager'
+            - '@ur.service.alert.action_require_factory'
+            - '@ur.domain_manager.optimization_integration'
+            - '@ur.redis.app_cache'
             -
                 - '@ur.service.optimization_rule.automated_optimization.puvantage.pubvantage_optimizer'
 
@@ -58,15 +58,15 @@ services:
     ur.service.dynamic_table.dynamic_table_service:
             class: UR\Service\DynamicTable\DynamicTableService
             arguments:
-                - @doctrine.orm.entity_manager
-                - %ur_batch_size%
+                - '@doctrine.orm.entity_manager'
+                - '%ur_batch_size%'
 
     ur.service.optimization_rule.optimization_rule_score_service:
             class: UR\Service\OptimizationRule\OptimizationRuleScoreService
             arguments:
-              - @ur.service.dynamic_table.dynamic_table_service
-              - @ur.domain_manager.optimization_rule
-              - @ur.service.optimization_rule.data_training_table_service
+              - '@ur.service.dynamic_table.dynamic_table_service'
+              - '@ur.domain_manager.optimization_rule'
+              - '@ur.service.optimization_rule.data_training_table_service'
 
     ur.worker.job.concurrent.process_optimization_frequency:
         class: UR\Worker\Job\Concurrent\ProcessOptimizationFrequency
@@ -75,19 +75,19 @@ services:
             - '@ur.service.optimization_rule.automated_optimization.automated_optimizer'
             - '@ur.domain_manager.optimization_rule'
             - '@ur.service.optimization_rule.optimization_learning_facade_service'
-            - @monolog.logger
+            - '@monolog.logger'
 
     ur.worker.job.concurrent.sync_training_data_and_generate_learner_model:
         class: UR\Worker\Job\Concurrent\SyncTrainingDataAndGenerateLearnerModel
         arguments:
-            - @ur.domain_manager.optimization_rule
-            - @ur.service.optimization_rule.automated_optimization.automated_optimizer
-            - @ur.service.optimization_rule.optimization_learning_facade_service
-            - @monolog.logger
+            - '@ur.domain_manager.optimization_rule'
+            - '@ur.service.optimization_rule.automated_optimization.automated_optimizer'
+            - '@ur.service.optimization_rule.optimization_learning_facade_service'
+            - '@monolog.logger'
 
     ur.worker.job.concurrent.activate_the3_partner_scoring_service_integration:
         class: UR\Worker\Job\Concurrent\ActivateThe3PartnerScoringServiceIntegration
         arguments:
-            - @ur.service.optimization_rule.automated_optimization.automated_optimizer
-            - @ur.domain_manager.optimization_rule
-            - @monolog.logger
+            - '@ur.service.optimization_rule.automated_optimization.automated_optimizer'
+            - '@ur.domain_manager.optimization_rule'
+            - '@monolog.logger'

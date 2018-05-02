@@ -3358,6 +3358,144 @@
             "time": "2017-03-07T18:40:20+00:00"
         },
         {
+            "name": "rollerworks/multi-user-bundle",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:tagcade/pubvantage-multi-user-bundle.git",
+                "reference": "2925d47ac4c7e8a17f90a32ed528910b65ebe439"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tagcade/pubvantage-multi-user-bundle/zipball/2925d47ac4c7e8a17f90a32ed528910b65ebe439",
+                "reference": "2925d47ac4c7e8a17f90a32ed528910b65ebe439",
+                "shasum": ""
+            },
+            "require": {
+                "friendsofsymfony/user-bundle": "~2.0@dev,>2.0.0-alpha3",
+                "ocramius/proxy-manager": "~1.0|~2.2",
+                "php": ">=5.3.3",
+                "rollerworks/sf-container-injector": "dev-master",
+                "symfony/finder": "~3.4|~4.0",
+                "symfony/framework-bundle": "~3.4|~4.0",
+                "symfony/proxy-manager-bridge": "~3.4|~4.0"
+            },
+            "conflict": {
+                "pugx/multi-user-bundle": "*"
+            },
+            "require-dev": {
+                "doctrine/doctrine-bundle": "~1.2|~1.8",
+                "doctrine/orm": "^2.2.3",
+                "matthiasnoback/symfony-config-test": "^0.1.1|~2.0|~3.1",
+                "sensio/generator-bundle": "~2.3|~3.1",
+                "swiftmailer/swiftmailer": "~6.0",
+                "symfony/browser-kit": "~2.3|~3.0|~4.0",
+                "symfony/css-selector": "~2.3|~3.0|~4.0",
+                "symfony/expression-language": "~2.8|~3.4|~4.0",
+                "symfony/monolog-bundle": "~2.3|~3.2",
+                "symfony/process": "~2.3|~3.4|~4.0",
+                "symfony/swiftmailer-bundle": "~2.3|~3.2",
+                "symfony/twig-bundle": "~2.3|~3.0|~4.0",
+                "symfony/validator": "~2.3|~3.0|~4.0",
+                "symfony/web-profiler-bundle": "~2.3|~3.0|~4.0",
+                "symfony/yaml": "~3.4|~4.0",
+                "twig/twig": "~1.5|~2.4"
+            },
+            "type": "symfony-bundle",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.1-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Rollerworks\\Bundle\\MultiUserBundle\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Rollerworks\\Bundle\\MultiUserBundle\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sebastiaan Stok",
+                    "email": "s.stok@rollercapes.net"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/rollerworks/RollerworksMultiUserBundle/graphs/contributors"
+                }
+            ],
+            "description": "Multi user management for the FOSUserBundle",
+            "keywords": [
+                "FOSUserBundle",
+                "bundle",
+                "multi",
+                "rollerworks",
+                "user"
+            ],
+            "support": {
+                "source": "https://github.com/tagcade/pubvantage-multi-user-bundle/tree/master",
+                "issues": "https://github.com/tagcade/pubvantage-multi-user-bundle/issues"
+            },
+            "time": "2018-04-27T04:38:09+00:00"
+        },
+        {
+            "name": "rollerworks/sf-container-injector",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/tagcade/SfContainerInjector.git",
+                "reference": "251c85f3b69cfeef1c59ad757afedae1259746d3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tagcade/SfContainerInjector/zipball/251c85f3b69cfeef1c59ad757afedae1259746d3",
+                "reference": "251c85f3b69cfeef1c59ad757afedae1259746d3",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3",
+                "symfony/dependency-injection": "~3.4"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Rollerworks\\Component\\SfContainerInjector\\": ""
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sebastiaan Stok",
+                    "email": "s.stok@rollercapes.net"
+                }
+            ],
+            "description": "Symfony Dependency Container Injector library",
+            "keywords": [
+                "Dependency Container",
+                "container",
+                "injector",
+                "rollerworks",
+                "sf"
+            ],
+            "support": {
+                "source": "https://github.com/tagcade/SfContainerInjector/tree/master"
+            },
+            "time": "2018-04-27T07:16:32+00:00"
+        },
+        {
             "name": "salsify/json-streaming-parser",
             "version": "v6.0.3",
             "source": {
