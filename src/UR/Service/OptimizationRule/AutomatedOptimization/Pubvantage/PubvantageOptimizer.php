@@ -1,8 +1,6 @@
 <?php
 
-
 namespace UR\Service\OptimizationRule\AutomatedOptimization\Pubvantage;
-
 
 use UR\Model\Core\OptimizationIntegrationInterface;
 use UR\Model\Core\OptimizationRuleInterface;
@@ -12,7 +10,6 @@ use UR\Service\OptimizationRule\DataTrainingTableService;
 use UR\Service\OptimizationRule\DataTrainingTableServiceInterface;
 use UR\Service\OptimizationRule\OptimizationRuleScoreServiceInterface;
 use UR\Util\TagcadeRestClient;
-
 
 class PubvantageOptimizer implements OptimizerInterface
 {
@@ -49,6 +46,11 @@ class PubvantageOptimizer implements OptimizerInterface
     const REFRESH_CACHE_IDENTIFIER_KEY = 'identifier';
     const REFRESH_CACHE_SCORE_KEY = 'score';
     const REFRESH_CACHE_OVERALL_SCORE_KEY = 'overallScore';
+
+    //config for value of segments
+    const SEGMENT_AD_TAG_SCORES = 'adTagScores';
+    const SEGMENT_AD_TAG_SCORES_IDENTIFIER = 'identifier';
+    const GLOBAL = 'global';
 
     /** @var TagcadeRestClient */
     private $restClient;
@@ -96,7 +98,12 @@ class PubvantageOptimizer implements OptimizerInterface
         $scoresOfRefreshData[self::REFRESH_CACHE_MAPPED_BY_KEY] = $mappedBy;
 
         if ($optimizationIntegration->getActive() == OptimizationIntegrationInterface::ACTIVE_APPLY) {
+            // get scores from data base
             $scoresFromScorers = $this->getScoresFromDatabase($optimizationIntegration);
+
+            // remove duplicated scores
+            $scoresFromScorers = $this->removeDuplicatedScores($scoresFromScorers);
+
             $scoresOfRefreshData[self::REFRESH_CACHE_SCORES_KEY] = $scoresFromScorers;
         } else {
             $scoresOfRefreshData[self::REFRESH_CACHE_SCORES_KEY] = [];
@@ -291,5 +298,180 @@ class PubvantageOptimizer implements OptimizerInterface
         if (!empty($data)) {
             $scores[] = $data;
         }
+    }
+
+    /**
+     * @param array $scoresFromScorers
+     * @return array
+     */
+    private function removeDuplicatedScores(array $scoresFromScorers)
+    {
+        /* validate */
+        if (empty($scoresFromScorers)) {
+            return $scoresFromScorers;
+        }
+
+        // remove item the same segment value
+        /*
+         *
+         * [0] => [
+         *      [segmentFields] => [
+         *               [country] => United Kingdom
+         *       ],
+         *       [adTagScores] => [...]
+         *   ],
+         *   [1] => [
+         *       [segmentFields] => [
+         *               [country] => United Kingdom
+         *        ],
+         *       [adTagScores] => [...]
+         *   ]
+
+         * => remove [1]
+         */
+        $scoresFromScorers = $this->scanToMakeDataDistinct($scoresFromScorers);
+
+        // remove item the same AdTagScore with global
+        /*
+         *
+         * [0] => [
+         *      [segmentFields] => [
+         *          [country] => ''  // this one is global value
+         *      ],
+         *      [adTagScores] => [1, 0.8, 0.6, 0.3]
+         *   ],
+         * [1] => [
+         *       [segmentFields] => [
+         *           [country] => United Kingdom
+         *       ],
+         *       [adTagScores] => [1, 0.8, 0.6, 0.3]
+         *   ]
+
+         * => remove [1]
+         */
+        $scoresFromScorers = $this->removeItemDuplicateWithTheSameScoreForEachSegmentValue($scoresFromScorers);
+
+        return $scoresFromScorers;
+    }
+
+    /**
+     * @param $scoresFromScorers
+     * @return mixed
+     */
+    private function scanToMakeDataDistinct($scoresFromScorers)
+    {
+        $arrayToCompare = [];
+        // make data distinct
+        foreach ($scoresFromScorers as $keyScore => $scoresFromScorer) {
+            if (!is_array($scoresFromScorer) && !array_key_exists(self::REFRESH_CACHE_SEGMENT_FIELDS_KEY, $scoresFromScorer)) {
+                continue;
+            }
+            $segmentFields = $scoresFromScorer[self::REFRESH_CACHE_SEGMENT_FIELDS_KEY];
+            $hash = $this->calculateHash($segmentFields);
+
+            if (in_array($hash, $arrayToCompare)) {
+                unset($scoresFromScorers[$keyScore]);
+            } else {
+                $arrayToCompare[] = $hash;
+            }
+        }
+        unset($scoresFromScorer, $arrayToCompare);
+
+        return array_values($scoresFromScorers);
+    }
+
+    /**
+     * @param $scoresFromScorers
+     * @return array
+     */
+    private function removeItemDuplicateWithTheSameScoreForEachSegmentValue($scoresFromScorers)
+    {
+        $scoresFromScorers = array_filter($scoresFromScorers, function ($score) {
+            return array_key_exists(self::REFRESH_CACHE_SEGMENT_FIELDS_KEY, $score);
+        });
+
+        // sort adTagScore by score desc
+        foreach ($scoresFromScorers as &$scoresFromScorer) {
+            $adTagScores = $scoresFromScorer[self::REFRESH_CACHE_AD_TAG_SCORES_KEY];
+            usort($adTagScores, function ($a, $b) {
+                $scoreA = floatval($a[self::REFRESH_CACHE_SCORE_KEY]);
+                $scoreB = floatval($b[self::REFRESH_CACHE_SCORE_KEY]);
+                if ($scoreA == $scoreB) {
+                    return $a[self::SEGMENT_AD_TAG_SCORES_IDENTIFIER] < $b[self::SEGMENT_AD_TAG_SCORES_IDENTIFIER];
+                }
+                return ($scoreA < $scoreB) ? 1 : -1;
+            });
+            $scoresFromScorer[self::REFRESH_CACHE_AD_TAG_SCORES_KEY] = $adTagScores;
+        }
+
+        //Groups as: global, country, domain, country.domain
+        $groups = [];
+        foreach ($scoresFromScorers as $score) {
+            $segmentFieldKeys = $score[self::REFRESH_CACHE_SEGMENT_FIELDS_KEY];
+            $group = implode(".", array_keys($segmentFieldKeys));
+            if (empty($group) || $group == '.') {
+                $group = self::GLOBAL;
+            }
+            $segmentValues = array_values($segmentFieldKeys);
+            $segmentValues = array_filter($segmentValues);
+            if (empty($segmentValues)) {
+                $segmentValues = self::GLOBAL;
+            } else {
+                $names = array_merge(array_keys($segmentFieldKeys), array_values($segmentFieldKeys));
+                $segmentValues = implode(".", $names);
+            }
+            $groups[$group][$segmentValues] = $score;
+        }
+
+        $allScores = [];
+        foreach ($groups as $group => $scores) {
+            if (count($scores) < 2) {
+                // group: global - only run once
+                $allScores = array_merge($allScores, array_values($scores));
+                continue;
+            }
+
+            // do with groups: country, domain, country.domain
+            // filter to make sure all items (will be scanned) have to adTagsScores
+            $scores = array_filter($scores, function ($score) {
+                return array_key_exists(self::SEGMENT_AD_TAG_SCORES, $score);
+            });
+
+            $global = $scores[self::GLOBAL];
+            $globalSerializer = serialize($global[self::SEGMENT_AD_TAG_SCORES]);
+            foreach ($scores as $index => $score) {
+                if ($index == self::GLOBAL) {
+                    continue;
+                }
+                $adTagScores = $score[self::SEGMENT_AD_TAG_SCORES];
+                $itemSerializer = serialize($adTagScores);
+                // remove item score when duplicate with global score
+                if ($globalSerializer == $itemSerializer) {
+                    //Found duplicate, ignore
+                    unset($scores[$index]);
+                }
+            }
+            $allScores = array_merge($allScores, array_values($scores));
+        }
+
+        return array_values($allScores);
+    }
+
+    /**
+     * @param array $arrayInput
+     * @return string
+     */
+    private function calculateHash(array $arrayInput)
+    {
+        // TODO: find best algorithm for this hash function!
+        $output = implode(', ', array_map(
+            function ($v, $k) {
+                return sprintf("%s='%s'", $k, $v);
+            },
+            $arrayInput,
+            array_keys($arrayInput)
+        ));
+
+        return hash('sha256',$output);
     }
 }
