@@ -12,13 +12,15 @@ services:
     # returns our role model class for the current authenticated user entity
     ur.token:
         class: Symfony\Component\Security\Core\Authentication\Token\TokenInterface
-        factory_service: security.context
-        factory_method: getToken
+        factory:
+            - '@security.context'
+            - 'getToken'
 
     ur.user_role:
         class: UR\Model\User\Role\UserRoleInterface
-        factory_service: ur.token
-        factory_method: getUser
+        factory:
+            - '@ur.token'
+            - 'getUser'
 
     ur_user.domain_manager.publisher:
         class: UR\Bundle\UserBundle\DomainManager\PublisherManager
