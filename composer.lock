@@ -3212,12 +3212,12 @@
             "source": {
                 "type": "git",
                 "url": "git@github.com:tagcade/pubvantage-multi-user-bundle.git",
-                "reference": "2925d47ac4c7e8a17f90a32ed528910b65ebe439"
+                "reference": "e2bcce2f568fe5fd832a9b805f0749ed252d8018"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tagcade/pubvantage-multi-user-bundle/zipball/2925d47ac4c7e8a17f90a32ed528910b65ebe439",
-                "reference": "2925d47ac4c7e8a17f90a32ed528910b65ebe439",
+                "url": "https://api.github.com/repos/tagcade/pubvantage-multi-user-bundle/zipball/e2bcce2f568fe5fd832a9b805f0749ed252d8018",
+                "reference": "e2bcce2f568fe5fd832a9b805f0749ed252d8018",
                 "shasum": ""
             },
             "require": {
@@ -3291,7 +3291,7 @@
                 "source": "https://github.com/tagcade/pubvantage-multi-user-bundle/tree/master",
                 "issues": "https://github.com/tagcade/pubvantage-multi-user-bundle/issues"
             },
-            "time": "2018-04-27 04:38:09"
+            "time": "2018-05-03 09:26:23"
         },
         {
             "name": "rollerworks/sf-container-injector",
