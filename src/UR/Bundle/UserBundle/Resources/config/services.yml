@@ -13,7 +13,7 @@ services:
     ur.token:
         class: Symfony\Component\Security\Core\Authentication\Token\TokenInterface
         factory:
-            - '@security.context'
+            - '@security.helper'
             - 'getToken'
 
     ur.user_role:
