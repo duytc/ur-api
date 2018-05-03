@@ -7,15 +7,17 @@ parameters:
 services:
     ur_api.handler.data_set:
         class: UR\Handler\HandlerInterface
-        factory_service: ur.handler.handler_manager.data_set
-        factory_method: getHandler
+        factory:
+            - '@ur.handler.handler_manager.data_set'
+            - getHandler
         arguments:
             - '@ur.user_role'
 
     ur.repository.data_set:
-        class: UR\Repository\Core\DataSetRepositoryInterface
-        factory_service: doctrine.orm.entity_manager
-        factory_method: getRepository
+        class: UR\Repository\Core\DataSetRepository
+        factory:
+            - '@doctrine.orm.entity_manager'
+            - getRepository
         arguments:
             - '%ur.entity.core.data_set.class%'
 
@@ -32,7 +34,7 @@ services:
 
     ur.handler.handlers.data_set.abstract:
         class: UR\Handler\Handlers\Core\DataSetHandlerAbstract
-        parent: ur.handler.role_handler_abstract
+        parent: 'ur.handler.role_handler_abstract'
         abstract: true
         public: false
         arguments:
@@ -41,14 +43,14 @@ services:
 
     ur.handler.handlers.data_set.admin:
         class: UR\Handler\Handlers\Core\Admin\DataSetHandler
-        parent: ur.handler.handlers.data_set.abstract
+        parent: 'ur.handler.handlers.data_set.abstract'
         public: false
         arguments:
             - '@ur_user.domain_manager.publisher'
 
     ur.handler.handlers.data_set.publisher:
         class: UR\Handler\Handlers\Core\Publisher\DataSetHandler
-        parent: ur.handler.handlers.data_set.abstract
+        parent: 'ur.handler.handlers.data_set.abstract'
         public: false
 
     ur.handler.handler_manager.data_set:

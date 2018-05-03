@@ -249,7 +249,7 @@ class DataSetController extends RestControllerAbstract implements ClassResourceI
     /**
      * @Rest\Post("/datasets/{id}/matching", requirements={"id" = "\d+"})
      * @Rest\QueryParam(name="leftSide", requirements="\d+", nullable=true, description="left id")
-     * @Rest\QueryParam(array=true, name="rightSide", requirements="\d+", nullable=true, description="list uniques")
+     * @Rest\QueryParam(name="rightSide", requirements="\d+", nullable=true, description="list uniques")
      *
      * @param $id
      * @param Request $request
