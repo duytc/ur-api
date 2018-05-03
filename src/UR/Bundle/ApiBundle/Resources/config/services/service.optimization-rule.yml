@@ -7,15 +7,17 @@ parameters:
 services:
     ur_api.handler.optimization_rule:
         class: UR\Handler\HandlerInterface
-        factory_service: 'ur.handler.handler_manager.optimization_rule'
-        factory_method: 'getHandler'
+        factory:
+            - '@ur.handler.handler_manager.optimization_rule'
+            - 'getHandler'
         arguments:
             - '@ur.user_role'
 
     ur.repository.optimization_rule:
         class: UR\Repository\Core\OptimizationRuleRepositoryInterface
-        factory_service: 'doctrine.orm.entity_manager'
-        factory_method: 'getRepository'
+        factory:
+            - '@doctrine.orm.entity_manager'
+            - 'getRepository'
         arguments:
             - '%ur.entity.core.optimization_rule.class%'
 

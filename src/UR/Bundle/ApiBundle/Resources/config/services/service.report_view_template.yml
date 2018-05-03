@@ -7,15 +7,17 @@ parameters:
 services:
     ur_api.handler.report_view_template:
         class: UR\Handler\HandlerInterface
-        factory_service: ur.handler.handler_manager.report_view_template
-        factory_method: getHandler
+        factory:
+            - '@ur.handler.handler_manager.report_view_template'
+            - 'getHandler'
         arguments:
             - '@ur.user_role'
 
     ur.repository.report_view_template:
         class: UR\Repository\Core\ReportViewTemplateRepositoryInterface
-        factory_service: doctrine.orm.entity_manager
-        factory_method: getRepository
+        factory:
+            - '@doctrine.orm.entity_manager'
+            - 'getRepository'
         arguments:
             - '%ur.entity.core.report_view_template.class%'
 
