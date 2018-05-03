@@ -3,19 +3,19 @@ UR\Entity\Core\DataSet:
     properties:
         id:
             expose: true
-            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory]
+            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory, dataset.inreportview]
         publisher:
             expose: true
             groups: [dataset.detail, dataset.edit, dataset.summary]
         name:
             expose: true
-            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory]
+            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory, dataset.inreportview]
         dimensions:
             expose: true
-            groups: [dataset.detail, dataset.summary, dataset.edit]
+            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.inreportview]
         metrics:
             expose: true
-            groups: [dataset.detail, dataset.summary, dataset.edit]
+            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.inreportview]
         createdDate:
             expose: true
             groups: [dataset.detail, dataset.summary, dataset.edit]

@@ -39,7 +39,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     /**
      * Get all report views
      *
-     * @Rest\View(serializerGroups={"report_view.summary", "user.summary", "report_view_data_set.summary", "report_view_multi_view.summary", "dataset.summary"})
+     * @Rest\View(serializerGroups={"report_view.summary", "user.summary", "report_view_data_set.summary", "dataset.inreportview"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
@@ -83,7 +83,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     }
 
     /**
-     * @Rest\View(serializerGroups={"datasource.missingdate", "dataSourceIntegration.summary", "user.summary", "dataSourceEntry.missingdate"})
+     * @Rest\View(serializerGroups={"datasource.missingdate", "dataSourceIntegration.summary", "user.summary"})
      *
      * @Rest\QueryParam(name="dataSets", nullable=true, description="the publisher id")
      * @Rest\QueryParam(name="reportViews", nullable=true, description="the page to get")
@@ -119,7 +119,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     /**
      * @Rest\View(serializerGroups={"dataset.edit", "report_view.summary", "report_view_data_set.summary"})
      *
-     * @Rest\QueryParam(name="dataSets", nullable=true, description="the publisher id")
+     * @Rest\QueryParam(name="dataSets", nullable=true, description="the dataSet id")
      * @Rest\QueryParam(name="reportViews", nullable=true, description="the page to get")
      * @Rest\QueryParam(name="showDataSetName", nullable=true, description="the page to get")
      * @param Request $request
@@ -202,7 +202,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      *
      * @Rest\Get("/reportviews/dashboard" )
      *
-     * @Rest\View(serializerGroups={"report_view.summary", "user.summary", "report_view_data_set.summary", "report_view_multi_view.summary", "dataset.summary"})
+     * @Rest\View(serializerGroups={"report_view.summary", "user.summary", "report_view_data_set.summary", "dataset.summary"})
      *
      * @ApiDoc(
      *  section = "ReportView",
@@ -262,7 +262,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      *
      * @Rest\Get("/reportviews/{id}", requirements={"id" = "\d+"})
      *
-     * @Rest\View(serializerGroups={"report_view.detail", "user.summary", "report_view_data_set.summary", "report_view_multi_view.summary", "dataset.summary"})
+     * @Rest\View(serializerGroups={"report_view.detail", "user.summary", "report_view_data_set.summary", "dataset.inreportview"})
      *
      * @ApiDoc(
      *  section = "ReportView",
@@ -497,7 +497,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
 
     /**
      * Create a report view from the submitted data
-     * @Rest\View(serializerGroups={"report_view.detail", "user.summary", "report_view_data_set.summary", "report_view_multi_view.summary", "dataset.summary"})
+     * @Rest\View(serializerGroups={"report_view.detail", "user.summary", "report_view_data_set.summary", "dataset.inreportview"})
      *
      * @ApiDoc(
      *  section = "ReportView",
@@ -633,7 +633,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     }
 
     /**
-     * @Rest\View(serializerGroups={"report_view.detail", "user.summary", "report_view_data_set.summary", "report_view_multi_view.summary", "dataset.summary"})
+     * @Rest\View(serializerGroups={"report_view.detail", "user.summary", "report_view_data_set.summary", "dataset.inreportview"})
      *
      * Update an existing report view from the submitted data or create a new report view at a specific location
      *

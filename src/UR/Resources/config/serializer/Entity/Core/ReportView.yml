@@ -24,16 +24,16 @@ UR\Entity\Core\ReportView:
             groups: [report_view.detail, report_view.summary]
         weightedCalculations:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail]
         filters:
             expose: true
-            groups: [report_view.detail, report_view.summary, report_view.share]
+            groups: [report_view.detail, report_view.share]
         masterReportView:
             expose: true
             groups: [report_view.detail, report_view.summary, report_view.share]
         showInTotal:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail]
         metrics:
             expose: true
             groups: [report_view.detail, report_view.summary]
@@ -45,11 +45,11 @@ UR\Entity\Core\ReportView:
             groups: [report_view.detail, report_view.summary]
         createdDate:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail]
             type: DateTime<'Y-m-d'>
         formats:
             expose: true
-            groups: [report_view.detail, report_view.summary, report_view.share]
+            groups: [report_view.detail, report_view.share]
         fieldTypes:
             expose: true
             groups: [report_view.detail, report_view.summary, report_view.share]
@@ -61,16 +61,16 @@ UR\Entity\Core\ReportView:
             groups: [report_view.detail, report_view.summary]
         lastActivity:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail]
         lastRun:
             expose: true
             groups: [report_view.detail, report_view.summary]
         isShowDataSetName:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail]
         enableCustomDimensionMetric:
             expose: true
-            groups: [report_view.detail, report_view.summary]
+            groups: [report_view.detail]
         largeReport:
             expose: true
             groups: [report_view.detail, report_view.summary, report_view.share]
