@@ -7,15 +7,17 @@ parameters:
 services:
     ur_api.handler.import_history:
         class: UR\Handler\HandlerInterface
-        factory_service: ur.handler.handler_manager.import_history
-        factory_method: getHandler
+        factory:
+            - '@ur.handler.handler_manager.import_history'
+            - 'getHandler'
         arguments:
             - '@ur.user_role'
 
     ur.repository.import_history:
         class: UR\Repository\Core\ImportHistoryRepositoryInterface
-        factory_service: doctrine.orm.entity_manager
-        factory_method: getRepository
+        factory:
+            - '@doctrine.orm.entity_manager'
+            - 'getRepository'
         arguments:
             - '%ur.entity.core.import_history.class%'
 

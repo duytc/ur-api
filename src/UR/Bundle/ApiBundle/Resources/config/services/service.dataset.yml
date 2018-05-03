@@ -9,7 +9,7 @@ services:
         class: UR\Handler\HandlerInterface
         factory:
             - '@ur.handler.handler_manager.data_set'
-            - getHandler
+            - 'getHandler'
         arguments:
             - '@ur.user_role'
 
@@ -17,7 +17,7 @@ services:
         class: UR\Repository\Core\DataSetRepository
         factory:
             - '@doctrine.orm.entity_manager'
-            - getRepository
+            - 'getRepository'
         arguments:
             - '%ur.entity.core.data_set.class%'
 

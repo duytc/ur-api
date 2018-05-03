@@ -7,15 +7,17 @@ parameters:
 services:
     ur_api.handler.data_source_integration:
         class: UR\Handler\HandlerInterface
-        factory_service: ur.handler.handler_manager.data_source_integration
-        factory_method: getHandler
+        factory:
+            - '@ur.handler.handler_manager.data_source_integration'
+            - 'getHandler'
         arguments:
             - '@ur.user_role'
 
     ur.repository.data_source_integration:
         class: UR\Repository\Core\DataSourceIntegrationRepositoryInterface
-        factory_service: doctrine.orm.entity_manager
-        factory_method: getRepository
+        factory:
+            - '@doctrine.orm.entity_manager'
+            - 'getRepository'
         arguments:
             - '%ur.entity.core.data_source_integration.class%'
 
