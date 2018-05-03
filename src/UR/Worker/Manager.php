@@ -135,6 +135,27 @@ class Manager
      * @param ConnectedDataSourceInterface $connectedDataSource
      * @param ReloadParamsInterface $reloadParameter
      */
+    public function reloadAllForConnectedDataSource(ConnectedDataSourceInterface $connectedDataSource, ReloadParamsInterface $reloadParameter = null)
+    {
+        $reloadType = $reloadParameter instanceof ReloadParamsInterface ? $reloadParameter->getType() : ReloadParamsInterface::ALL_DATA_TYPE;
+        $reloadStartDate = null;
+        $reloadEndDate = null;
+
+        $reloadAllForConnectedDataSource = [
+            'task' => ReloadConnectedDataSource::JOB_NAME,
+            ReloadConnectedDataSource::CONNECTED_DATA_SOURCE_ID => $connectedDataSource->getId(),
+            ReloadParamsInterface::RELOAD_TYPE => $reloadType,
+            ReloadParamsInterface::RELOAD_START_DATE => $reloadStartDate,
+            ReloadParamsInterface::RELOAD_END_DATE => $reloadEndDate
+        ];
+
+        $this->dataSetJobScheduler->addJob($reloadAllForConnectedDataSource, $connectedDataSource->getDataSet()->getId());
+    }
+
+    /**
+     * @param ConnectedDataSourceInterface $connectedDataSource
+     * @param ReloadParamsInterface $reloadParameter
+     */
     public function reloadConnectedDataSourceByDateRange(ConnectedDataSourceInterface $connectedDataSource, ReloadParamsInterface $reloadParameter)
     {
         $reloadType = $reloadParameter->getType();
