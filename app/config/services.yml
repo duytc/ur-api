@@ -801,25 +801,31 @@ services:
     # TODO: change...
     fos_user.change_password.form.type:
         class: FOS\UserBundle\Form\Type\ChangePasswordFormType
-        arguments: ~
+        arguments:
+            - '%fos_user.model.user.class%'
 
     # TODO: change...
     fos_user.group.form.type:
         class: FOS\UserBundle\Form\Type\GroupFormType
-        arguments: ~
+        arguments:
+            - '%fos_user.model.group.class%'
 
     # TODO: change...
     fos_user.profile.form.type:
         class: FOS\UserBundle\Form\Type\ProfileFormType
-        arguments: ~
+        arguments:
+            - '%fos_user.model.user.class%'
 
     # TODO: change...
     fos_user.registration.form.type:
         class: FOS\UserBundle\Form\Type\RegistrationFormType
-        arguments: ~
+        arguments:
+            - '%fos_user.model.user.class%'
 
     # TODO: change...
     fos_user.resetting.form.type:
         class: FOS\UserBundle\Form\Type\ResettingFormType
-        arguments: ~
+        arguments:
+            - '%fos_user.model.user.class%'
+
 
