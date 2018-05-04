@@ -8,8 +8,8 @@ use Symfony\Component\HttpFoundation\Request;
 use FOS\RestBundle\Controller\FOSRestController;
 
 use FOS\RestBundle\View\View;
-use FOS\RestBundle\Util\Codes;
 
+use Symfony\Component\HttpFoundation\Response;
 use UR\Handler\HandlerInterface;
 use UR\Model\ModelInterface;
 use UR\Exception\InvalidFormException;
@@ -58,7 +58,7 @@ abstract class RestControllerAbstract extends FOSRestController
                 '_format' => $request->get('_format')
             );
 
-            return $this->addRedirectToResource($newEntity, Codes::HTTP_CREATED, $routeOptions);
+            return $this->addRedirectToResource($newEntity, Response::HTTP_CREATED, $routeOptions);
         } catch (InvalidFormException $exception) {
             return $exception->getForm();
         }
