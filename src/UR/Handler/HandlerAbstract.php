@@ -44,7 +44,7 @@ abstract class HandlerAbstract implements HandlerInterface
      */
     protected $handlerEvent;
 
-    public function __construct(FormFactoryInterface $formFactory, FormTypeInterface $formType, $domainManager)
+    public function __construct(FormFactoryInterface $formFactory, $formType, $domainManager)
     {
         $this->formFactory = $formFactory;
         $this->formType = $formType;

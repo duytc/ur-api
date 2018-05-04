@@ -1,3 +1,6 @@
+parameters:
+    ur_admin_api.form.type.user.class: UR\Bundle\AdminApiBundle\Form\Type\UserFormType
+
 services:
     # main public services
 
@@ -7,7 +10,7 @@ services:
         public: true
         arguments:
             - '@form.factory'
-            - '@ur_admin_api.form.type.user'
+            - '%ur_admin_api.form.type.user.class%'
             - '@ur_user.domain_manager.publisher'
 
     # forms

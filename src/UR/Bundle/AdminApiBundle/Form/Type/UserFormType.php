@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\AdminApiBundle\Form\Type;
 
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
@@ -99,19 +100,19 @@ class UserFormType extends AbstractRoleSpecificFormType
             $builder
                 ->add('tagDomain')
                 ->add('enabled')
-                ->add('enabledModules', 'choice', [
+                ->add('enabledModules', ChoiceType::class, [
                     'empty_data' => null,
                     'multiple' => true,
                     'choices' => [
-                        'MODULE_DISPLAY' => 'Display',
-                        'MODULE_VIDEO'         => 'VideoAds',
-                        'MODULE_VIDEO_ANALYTICS' => 'Video',
-                        'MODULE_ANALYTICS' => 'Analytics',
-                        'MODULE_FRAUD_DETECTION' => 'Fraud Detection',
-                        'MODULE_UNIFIED_REPORT' => 'Unified Report',
-                        'MODULE_HEADER_BIDDING' => 'Header Bidding',
-                        'MODULE_RTB' => 'RealTime Bidding'
-                    ],
+                        'MODULE_DISPLAY' => 'MODULE_DISPLAY',
+                        'MODULE_VIDEO'         => 'MODULE_VIDEO',
+                        'MODULE_VIDEO_ANALYTICS' => 'MODULE_VIDEO_ANALYTICS',
+                        'MODULE_ANALYTICS' => 'MODULE_ANALYTICS',
+                        'MODULE_FRAUD_DETECTION' => 'MODULE_FRAUD_DETECTION',
+                        'MODULE_UNIFIED_REPORT' => 'MODULE_UNIFIED_REPORT',
+                        'MODULE_HEADER_BIDDING' => 'MODULE_HEADER_BIDDING',
+                        'MODULE_RTB' => 'MODULE_RTB'
+                    ]
                 ])
                 ->add('billingRate');
         }
