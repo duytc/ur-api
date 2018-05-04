@@ -17,7 +17,7 @@ use UR\Exception\InvalidUserRoleException;
 abstract class RoleHandlerAbstract extends HandlerAbstract implements RoleHandlerInterface
 {
     /**
-     * @var RoleSpecificFormTypeInterface
+     * @var string
      */
     protected $formType;
 
@@ -26,7 +26,7 @@ abstract class RoleHandlerAbstract extends HandlerAbstract implements RoleHandle
      */
     protected $userRole;
 
-    public function __construct(FormFactoryInterface $formFactory, RoleSpecificFormTypeInterface $formType, $domainManager, UserRoleInterface $userRole = null)
+    public function __construct(FormFactoryInterface $formFactory, $formType, $domainManager, UserRoleInterface $userRole = null)
     {
         parent::__construct($formFactory, $formType, $domainManager);
 

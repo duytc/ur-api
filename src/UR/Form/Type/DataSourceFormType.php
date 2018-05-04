@@ -30,7 +30,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             ->add('name')
             ->add('format', ChoiceType::class, [
                 'choices' => [
-                    DataSource::CSV_FORMAT => 'CSV',
+                    DataSource::CSV_FORMAT => 'csv',
                     DataSource::EXCEL_FORMAT => 'Excel',
                     DataSource::JSON_FORMAT => 'Json'
                 ],
@@ -39,7 +39,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             ->add('enable')
             ->add('dataSourceIntegrations', CollectionType::class, array(
                 'mapped' => true,
-                'type' => new DataSourceIntegrationFormType(),
+                'entry_type' => DataSourceIntegrationFormType::class,
                 'allow_add' => true,
                 'allow_delete' => true,
             ))

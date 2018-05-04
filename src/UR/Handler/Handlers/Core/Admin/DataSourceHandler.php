@@ -24,12 +24,12 @@ class DataSourceHandler extends DataSourceHandlerAbstract
 
     /**
      * @param FormFactoryInterface $formFactory
-     * @param RoleSpecificFormTypeInterface $formType
+     * @param string $formType
      * @param $domainManager
      * @param PublisherManagerInterface $publisherManager
      * @param IntegrationPublisherRepositoryInterface $integrationPublisherManager
      */
-    function __construct(FormFactoryInterface $formFactory, RoleSpecificFormTypeInterface $formType, $domainManager, PublisherManagerInterface $publisherManager, IntegrationPublisherRepositoryInterface $integrationPublisherManager)
+    function __construct(FormFactoryInterface $formFactory, $formType, $domainManager, PublisherManagerInterface $publisherManager, IntegrationPublisherRepositoryInterface $integrationPublisherManager)
     {
         parent:: __construct($formFactory, $formType, $domainManager, $userRole = null);
 
