@@ -271,7 +271,7 @@ abstract class RestControllerAbstract extends FOSRestController
             throw new InvalidArgumentException('checking for an invalid permission');
         }
 
-        $securityContext = $this->get('security.context');
+        $securityContext = $this->get('security.helper');
 
         // allow admins to everything
         if ($securityContext->isGranted('ROLE_ADMIN')) {

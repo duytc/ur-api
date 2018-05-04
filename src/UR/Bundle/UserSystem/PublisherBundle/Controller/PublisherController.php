@@ -29,7 +29,7 @@ class PublisherController extends RestControllerAbstract implements ClassResourc
      */
     public function getAction()
     {
-        $publisherId = $this->get('security.context')->getToken()->getUser()->getId();
+        $publisherId = $this->get('security.helper')->getToken()->getUser()->getId();
 
         return $this->one($publisherId);
     }
@@ -45,7 +45,7 @@ class PublisherController extends RestControllerAbstract implements ClassResourc
      */
     public function patchAction(Request $request)
     {
-        $publisherId = $this->get('security.context')->getToken()->getUser()->getId();
+        $publisherId = $this->get('security.helper')->getToken()->getUser()->getId();
 
         return $this->patch($request, $publisherId);
     }
