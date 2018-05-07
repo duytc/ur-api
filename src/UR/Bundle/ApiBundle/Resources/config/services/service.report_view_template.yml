@@ -38,7 +38,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.report_view_template'
+            - '%ur.form.type.core.report_view_template.class%'
             - '@ur.domain_manager.report_view_template'
 
     ur.handler.handlers.report_view_template.admin:

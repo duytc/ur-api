@@ -5,7 +5,7 @@ namespace UR\Form\Type;
 
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\ReportViewTemplate;
 
 class ReportViewTemplateFormType extends AbstractRoleSpecificFormType
@@ -32,7 +32,7 @@ class ReportViewTemplateFormType extends AbstractRoleSpecificFormType
         ));
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults(['data_class' => ReportViewTemplate::class]);
     }
