@@ -15,10 +15,10 @@ class OptimizationIntegrationHandler extends OptimizationIntegrationHandlerAbstr
 
     /**
      * @param FormFactoryInterface $formFactory
-     * @param RoleSpecificFormTypeInterface $formType
+     * @param string $formType
      * @param $domainManager
      */
-    function __construct(FormFactoryInterface $formFactory, RoleSpecificFormTypeInterface $formType, $domainManager)
+    function __construct(FormFactoryInterface $formFactory, $formType, $domainManager)
     {
         parent:: __construct($formFactory, $formType, $domainManager, $userRole = null);
     }

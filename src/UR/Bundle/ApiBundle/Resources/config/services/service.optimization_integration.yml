@@ -38,7 +38,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.optimization_integration'
+            - '%ur.form.type.core.optimization_integration.class%'
             - '@ur.domain_manager.optimization_integration'
 
     ur.handler.handlers.optimization_integration.admin:

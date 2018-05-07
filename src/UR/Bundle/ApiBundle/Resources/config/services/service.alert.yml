@@ -38,7 +38,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.alert'
+            - '%ur.form.type.core.alert.class%'
             - '@ur.domain_manager.alert'
 
     ur.handler.handlers.alert.admin:
