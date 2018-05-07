@@ -31,8 +31,8 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             ->add('format', ChoiceType::class, [
                 'choices' => [
                     DataSource::CSV_FORMAT => 'csv',
-                    DataSource::EXCEL_FORMAT => 'Excel',
-                    DataSource::JSON_FORMAT => 'Json'
+                    DataSource::EXCEL_FORMAT => 'excel',
+                    DataSource::JSON_FORMAT => 'json'
                 ],
             ])
             ->add('alertSetting')
