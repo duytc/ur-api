@@ -79,7 +79,7 @@ abstract class RestControllerAbstract extends FOSRestController
                 '_format' => $request->get('_format')
             );
 
-            return $this->view($newEntity, Codes::HTTP_CREATED, $routeOptions);
+            return $this->view($newEntity, Response::HTTP_CREATED, $routeOptions);
 
         } catch (InvalidFormException $exception) {
             return $exception->getForm();
@@ -97,7 +97,7 @@ abstract class RestControllerAbstract extends FOSRestController
             '_format' => $request->get('_format')
         );
 
-        return $this->view($message, Codes::HTTP_NOT_IMPLEMENTED, $routeOptions);
+        return $this->view($message, Response::HTTP_NOT_IMPLEMENTED, $routeOptions);
     }
 
     /**
@@ -110,13 +110,13 @@ abstract class RestControllerAbstract extends FOSRestController
         try {
             if (!($entity = $this->getHandler()->get($id))) {
                 // create new
-                $statusCode = Codes::HTTP_CREATED;
+                $statusCode = Response::HTTP_CREATED;
                 $entity = $this->getHandler()->post(
                     $request->request->all()
                 );
             } else {
                 $this->checkUserPermission($entity, 'edit');
-                $statusCode = Codes::HTTP_NO_CONTENT;
+                $statusCode = Response::HTTP_NO_CONTENT;
                 $entity = $this->getHandler()->put(
                     $entity,
                     $request->request->all()
@@ -153,7 +153,7 @@ abstract class RestControllerAbstract extends FOSRestController
                 '_format' => $request->get('_format')
             );
 
-            return $this->addRedirectToResource($entity, Codes::HTTP_NO_CONTENT, $routeOptions);
+            return $this->addRedirectToResource($entity, Response::HTTP_NO_CONTENT, $routeOptions);
         } catch (InvalidFormException $exception) {
             return $exception->getForm();
         }
@@ -170,7 +170,7 @@ abstract class RestControllerAbstract extends FOSRestController
 
         $this->getHandler()->delete($entity);
 
-        $view = $this->view(null, Codes::HTTP_NO_CONTENT);
+        $view = $this->view(null, Response::HTTP_NO_CONTENT);
 
         return $this->handleView($view);
     }

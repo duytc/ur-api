@@ -38,7 +38,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.data_set'
+            - '%ur.form.type.core.data_set.class%'
             - '@ur.domain_manager.data_set'
 
     ur.handler.handlers.data_set.admin:

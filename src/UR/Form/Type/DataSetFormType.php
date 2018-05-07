@@ -48,12 +48,12 @@ class DataSetFormType extends AbstractRoleSpecificFormType
             ->add('allowOverwriteExistingData')
             ->add('mapBuilderEnabled')
             ->add('mapBuilderConfigs', CollectionType::class, array(
-                'type' => new MapBuilderConfigFormType(),
+                'entry_type' =>  MapBuilderConfigFormType::class,
                 'allow_add' => true,
                 'allow_delete' => true,
             ))
             ->add('connectedDataSources', CollectionType::class, array(
-                'type' => new ConnectedDataSourceFormType(),
+                'entry_type' => ConnectedDataSourceFormType::class,
                 'allow_add' => true,
                 'allow_delete' => true,
             ))
