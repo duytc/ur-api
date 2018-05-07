@@ -38,7 +38,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.connected_data_source'
+            - '%ur.form.type.core.connected_data_source.class%'
             - '@ur.domain_manager.connected_data_source'
 
     ur.handler.handlers.connected_data_source.admin:
