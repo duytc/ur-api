@@ -9,7 +9,7 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\DataSet;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\DataSetInterface;
@@ -155,7 +155,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
         );
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults(['data_class' => DataSet::class,]);
     }

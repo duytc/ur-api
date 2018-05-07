@@ -6,7 +6,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\ConnectedDataSource;
 use UR\Form\Behaviors\ValidateConnectedDataSourceTrait;
 use UR\Model\Core\ConnectedDataSourceInterface;
@@ -90,7 +90,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
         );
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults(['data_class' => ConnectedDataSource::class,]);
     }

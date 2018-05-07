@@ -4,10 +4,11 @@ namespace UR\Form\Type;
 
 
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Behaviors\LargeReportViewUtilTrait;
 use UR\Entity\Core\ReportView;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
@@ -61,9 +62,9 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
         ;
 
         $builder
-            ->add('reportViewDataSets', 'collection', array(
+            ->add('reportViewDataSets', CollectionType::class, array(
                     'mapped' => true,
-                    'type' => new ReportViewDataSetFormType(),
+                    'entry_type' => ReportViewDataSetFormType::class,
                     'allow_add' => true,
                     'allow_delete' => true,
                 )
@@ -125,7 +126,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
         );
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults(['data_class' => ReportView::class]);
     }

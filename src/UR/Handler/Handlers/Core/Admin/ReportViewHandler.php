@@ -17,11 +17,11 @@ class ReportViewHandler extends ReportViewHandlerAbstract
 
     /**
      * @param FormFactoryInterface $formFactory
-     * @param RoleSpecificFormTypeInterface $formType
+     * @param string $formType
      * @param $domainManager
      * @param PublisherManagerInterface $publisherManager
      */
-    function __construct(FormFactoryInterface $formFactory, RoleSpecificFormTypeInterface $formType, $domainManager, PublisherManagerInterface $publisherManager)
+    function __construct(FormFactoryInterface $formFactory, $formType, $domainManager, PublisherManagerInterface $publisherManager)
     {
         parent:: __construct($formFactory, $formType, $domainManager, $userRole = null);
 

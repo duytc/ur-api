@@ -107,7 +107,7 @@ jms_serializer:
                 namespace_prefix:   UR\Entity\Core\
                 path:               %kernel.root_dir%/../src/UR/Resources/config/serializer/Entity/Core
             model_core:
-                namespace_prefix:   UR\Model\Core\\
+                namespace_prefix:   UR\Model\Core\
                 path:               %kernel.root_dir%/../src/UR/Resources/config/serializer/Model/Core
             ur:
                 namespace_prefix:   UR\
