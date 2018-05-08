@@ -197,6 +197,7 @@ class ParseChunkFile implements JobInterface
             $alert = null;
             $chunks = null;
             $mergedFile = null;
+            $alertProcessed = $this->redis->exists(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId));
 
             if ($hasGroup) {
                 $this->logger->notice('All chunks parsed completely, merging result');
@@ -215,6 +216,11 @@ class ParseChunkFile implements JobInterface
                     $this->logger->error($ex->getMessage(), $ex->getTrace());
                     $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, $ex);
                 }
+            } else {
+                if ($alertProcessed == false) {
+                    //For case parseFileThenInsert without group
+                    $alert = $connectedDataSourceAlertFactory->getAlertByException($importHistory, null);
+                }
             }
 
             $this->deleteTemporaryFiles($chunks, $mergedFile);
@@ -227,7 +233,6 @@ class ParseChunkFile implements JobInterface
             $this->redis->del($params->getRequiredParam(self::TOTAL_CHUNK_KEY));
             $this->redis->del($params->getRequiredParam(self::CHUNKS_KEY));
 
-            $alertProcessed = $this->redis->exists(sprintf(self::PROCESS_ALERT_KEY_TEMPLATE, $dataSourceEntryId));
             if ($alert instanceof ConnectedDataSourceAlertInterface && $alertProcessed == false) {
                 $this->manager->processAlert($alert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $alert->getDetails(), $alert->getDataSourceId());
             }
