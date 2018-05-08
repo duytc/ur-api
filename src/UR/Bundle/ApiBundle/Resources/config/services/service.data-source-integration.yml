@@ -38,7 +38,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.data_source_integration'
+            - '%ur.form.type.data_source_integration.class%'
             - '@ur.domain_manager.data_source_integration'
 
     ur.handler.handlers.data_source_integration.admin:
