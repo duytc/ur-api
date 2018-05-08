@@ -138,13 +138,13 @@ services:
             - { name: security.voter }
 
     ur.security.auth.voter.optimization_rule:
-        class:  %ur.security.auth.voter.optimization_rule.class%
+        class:  '%ur.security.auth.voter.optimization_rule.class%'
         public: false
         tags:
             - { name: security.voter }
 
     ur.security.auth.voter.optimization_integration:
-        class:  %ur.security.auth.voter.optimization_integration.class%
+        class:  '%ur.security.auth.voter.optimization_integration.class%'
         public: false
         tags:
             - { name: security.voter }
@@ -802,6 +802,13 @@ services:
     ur.services.dry_run_report_filter:
         class: UR\Service\Parser\DryRunReportFilter
 
+    ur.services.overwrite_date_updater:
+        class: UR\Service\DataSet\OverwriteDateUpdater
+        arguments:
+            - @monolog.logger
+            - @doctrine.orm.entity_manager
+            - @ur.domain_manager.data_set
+            - @ur.redis.app_cache
     ur.services.overwrite_date_updater:
         class: UR\Service\DataSet\OverwriteDateUpdater
         arguments:

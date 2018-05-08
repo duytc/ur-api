@@ -101,7 +101,6 @@ class PubvantageOptimizer implements OptimizerInterface
         $scoresOfRefreshData[self::REFRESH_CACHE_MAPPED_BY_KEY] = $mappedBy;
 
         if ($optimizationIntegration->getActive() == OptimizationIntegrationInterface::ACTIVE_APPLY) {
-            $scoresFromScorers = $this->getScoresFromDatabase($optimizationIntegration);
             // get scores from data base
             $scoresFromScorers = $this->getScoresFromDatabase($optimizationIntegration);
 
