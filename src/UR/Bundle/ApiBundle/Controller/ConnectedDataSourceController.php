@@ -4,10 +4,10 @@ namespace UR\Bundle\ApiBundle\Controller;
 
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
-use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Domain\DTO\ConnectedDataSource\DryRunParamsInterface;
@@ -122,7 +122,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         $dataSet->increaseNumConnectedDataSourceChanges();
         $this->get('ur.domain_manager.data_set')->save($dataSet);
 
-        return $this->view(null, Codes::HTTP_CREATED);
+        return $this->view(null, Response::HTTP_CREATED);
     }
 
     /**
@@ -292,7 +292,7 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         $this->get('ur.worker.manager')->deleteConnectedDataSource($connectedDataSourceId, $dataSetId);
         $this->delete($id);
 
-        $view = $this->view(null, Codes::HTTP_NO_CONTENT);
+        $view = $this->view(null, Response::HTTP_NO_CONTENT);
 
         return $this->handleView($view);
     }

@@ -4,10 +4,10 @@ namespace UR\Bundle\ApiBundle\Controller;
 
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
-use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceIntegrationScheduleManagerInterface;
@@ -215,7 +215,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
          * => When fetcher finishes and update the next executedAt, the setting from UI is overwrite.
          */
         if ($dataSourceIntegrationSchedule->getStatus() != DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_PENDING) {
-            return $this->view(true, Codes::HTTP_OK);
+            return $this->view(true, Response::HTTP_OK);
         }
 
         $dataSourceIntegrationScheduleManager = $this->get('ur.domain_manager.data_source_integration_schedule');
@@ -252,7 +252,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
         $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
 
 
-        return $this->view(true, Codes::HTTP_OK);
+        return $this->view(true, Response::HTTP_OK);
     }
 
     /**
@@ -299,7 +299,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
             $dataSourceIntegrationSchedule->setFinishedAt(null);
             $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
 
-            return $this->view(true, Codes::HTTP_OK);
+            return $this->view(true, Response::HTTP_OK);
         }
 
         /*
@@ -332,7 +332,7 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
 
         $dataSourceIntegrationScheduleManager->save($dataSourceIntegrationSchedule);
 
-        return $this->view(true, Codes::HTTP_OK);
+        return $this->view(true, Response::HTTP_OK);
     }
 
     /**

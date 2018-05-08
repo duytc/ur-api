@@ -8,12 +8,12 @@ use Exception;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
-use FOS\RestBundle\Util\Codes;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
@@ -1206,7 +1206,7 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             $dataSourceManager->save($dataSource);
         }
 
-        return $this->view(true, Codes::HTTP_OK);
+        return $this->view(true, Response::HTTP_OK);
     }
 
     /**

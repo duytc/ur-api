@@ -8,6 +8,7 @@ use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Entity\Core\ReportViewTemplateTag;
 use UR\Entity\Core\Tag;
@@ -375,7 +376,7 @@ class ReportViewTemplateController extends RestControllerAbstract implements Cla
 
         }
 
-        return Codes::HTTP_ACCEPTED;
+        return Response::HTTP_ACCEPTED;
     }
 
     /**

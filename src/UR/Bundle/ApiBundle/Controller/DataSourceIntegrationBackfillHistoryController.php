@@ -4,10 +4,10 @@ namespace UR\Bundle\ApiBundle\Controller;
 
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
-use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\DomainManager\DataSourceIntegrationBackfillHistoryManagerInterface;
 use UR\Exception\InvalidArgumentException;
@@ -153,7 +153,7 @@ class DataSourceIntegrationBackfillHistoryController extends RestControllerAbstr
         $dataSourceIntegrationBackFillHistoryManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
         $dataSourceIntegrationBackFillHistoryManager->save($dataSourceIntegrationBackFillHistory);
 
-        return $this->view(true, Codes::HTTP_OK);
+        return $this->view(true, Response::HTTP_OK);
     }
 
     /**
