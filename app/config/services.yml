@@ -805,10 +805,10 @@ services:
     ur.services.overwrite_date_updater:
         class: UR\Service\DataSet\OverwriteDateUpdater
         arguments:
-            - @monolog.logger
-            - @doctrine.orm.entity_manager
-            - @ur.domain_manager.data_set
-            - @ur.redis.app_cache
+            - '@monolog.logger'
+            - '@doctrine.orm.entity_manager'
+            - '@ur.domain_manager.data_set'
+            - '@ur.redis.app_cache'
     ur.services.overwrite_date_updater:
         class: UR\Service\DataSet\OverwriteDateUpdater
         arguments:
