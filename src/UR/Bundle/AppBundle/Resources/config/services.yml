@@ -15,7 +15,7 @@ services:
     ur_app.event_listener.re_import_when_connected_data_source_changed_listener:
         class: UR\Bundle\AppBundle\EventListener\ReImportWhenConnectedDataSourceChangedListener
         arguments:
-            - @ur.worker.manager
+            - '@ur.worker.manager'
         tags:
             - { name: doctrine.event_listener, event: postPersist, priority: -100 }
             - { name: doctrine.event_listener, event: postUpdate, priority: -100 }
