@@ -6,7 +6,7 @@ namespace UR\Form\Type;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\UserTag;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
 use UR\Model\Core\UserTagInterface;
@@ -20,7 +20,7 @@ class UserTagFormType extends AbstractRoleSpecificFormType
             ->add('publisher')
             ->add('tag');
 
-        if ($this->userRole instanceof AdminInterface) {
+        if ($options['userRole'] instanceof AdminInterface) {
             $builder->add(
                 $builder->create('publisher')
                     ->addModelTransformer(new RoleToUserEntityTransformer(), false)
@@ -40,9 +40,12 @@ class UserTagFormType extends AbstractRoleSpecificFormType
         );
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => UserTag::class]);
+        $resolver->setDefaults([
+            'data_class' => UserTag::class,
+            'userRole' => null
+        ]);
     }
 
     public function getName()

@@ -6,7 +6,9 @@ namespace UR\Form\Type;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Form\DataTransformer\RoleToUserEntityTransformer;
+use UR\Model\Core\ReportViewAddConditionalTransformValue;
 use UR\Model\Core\ReportViewAddConditionalTransformValueInterface;
 use UR\Model\User\Role\AdminInterface;
 
@@ -20,7 +22,7 @@ class ReportViewAddConditionalTransformValueFormType extends AbstractRoleSpecifi
             ->add('sharedConditions')
             ->add('conditions');
 
-        if ($this->userRole instanceof AdminInterface) {
+        if ($options['userRole'] instanceof AdminInterface) {
             $builder->add(
                 $builder->create('publisher')
                     ->addModelTransformer(new RoleToUserEntityTransformer(), false
@@ -43,6 +45,13 @@ class ReportViewAddConditionalTransformValueFormType extends AbstractRoleSpecifi
                 $this->validateConditions($conditions);
             }
         );
+    }
+
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults([
+            'data_class' => ReportViewAddConditionalTransformValue::class,
+            'userRole' => null]);
     }
 
     /**

@@ -38,7 +38,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.integration_tag'
+            - '%ur.form.type.core.integration_tag.class%'
             - '@ur.domain_manager.integration_tag'
 
     ur.handler.handlers.integration_tag.admin:

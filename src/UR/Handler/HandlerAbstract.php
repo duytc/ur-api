@@ -11,6 +11,7 @@ use UR\DomainManager\ManagerInterface as DummyManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Exception\InvalidFormException;
 use UR\Exception\LogicException;
+use UR\Form\Type\RoleSpecificFormTypeInterface;
 use UR\Model\ModelInterface;
 
 abstract class HandlerAbstract implements HandlerInterface
@@ -157,6 +158,13 @@ abstract class HandlerAbstract implements HandlerInterface
         $formOptions = [
             'method' => $method,
         ];
+
+        // set user role
+        // this is because RoleHandlerAbstract's formType is string, not object, so that could not set UserRole for its formType
+        if ($this instanceof RoleHandlerAbstract) {
+            $userRole = $this->getUserRole();
+            $formOptions['userRole'] = $userRole;
+        }
 
         // backup entity as oldEntity before submit form
         $oldEntity = clone $entity;

@@ -4,7 +4,7 @@ namespace UR\Form\Type;
 
 
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\ReportSchedule;
 
 class ReportScheduleFormType extends AbstractRoleSpecificFormType
@@ -18,9 +18,11 @@ class ReportScheduleFormType extends AbstractRoleSpecificFormType
             ->add('alertMissingData');
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => ReportSchedule::class]);
+        $resolver->setDefaults([
+            'data_class' => ReportSchedule::class,
+            'userRole' => null]);
     }
 
     public function getName()

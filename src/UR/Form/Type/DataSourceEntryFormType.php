@@ -7,7 +7,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\DataSource;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Model\Core\DataSourceEntryInterface;
@@ -22,13 +22,13 @@ class DataSourceEntryFormType extends AbstractRoleSpecificFormType
         $builder
             ->add('dataSource', 'entity', array(
                 'class' => DataSource::class,
-                'query_builder' => function (DataSourceRepository $ds) {
-                    if ($this->userRole instanceof AdminInterface) {
+                'query_builder' => function (DataSourceRepository $ds) use ($options) {
+                    if ($options['userRole'] instanceof AdminInterface) {
                         return $ds->createQueryBuilder('ds')->select('ds');
                     }
                     // current user is publisher
                     /** @var PublisherInterface publisher */
-                    $publisher = $this->userRole;
+                    $publisher = $options['userRole'];
                     return $ds->getDataSourcesForPublisherQuery($publisher);
                 }
             ))
@@ -62,11 +62,12 @@ class DataSourceEntryFormType extends AbstractRoleSpecificFormType
         );
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
         $resolver
             ->setDefaults([
                 'data_class' => DataSourceEntry::class,
+                'userRole' => null
             ]);
     }
 

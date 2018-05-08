@@ -27,7 +27,7 @@ class AlertFormType extends AbstractRoleSpecificFormType
             ->add('isSent')
             ->add('optimizationIntegration');
 
-        if ($this->userRole instanceof AdminInterface) {
+        if ($options['userRole'] instanceof AdminInterface) {
             $builder->add(
                 $builder->create('publisher')
                     ->addModelTransformer(new RoleToUserEntityTransformer(), false)
@@ -58,7 +58,10 @@ class AlertFormType extends AbstractRoleSpecificFormType
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => Alert::class]);
+        $resolver->setDefaults([
+            'data_class' => Alert::class,
+            'userRole' => null
+        ]);
     }
 
     public function getName()

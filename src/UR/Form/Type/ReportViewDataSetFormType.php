@@ -39,7 +39,10 @@ class ReportViewDataSetFormType extends AbstractRoleSpecificFormType
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => ReportViewDataSet::class]);
+        $resolver->setDefaults([
+            'data_class' => ReportViewDataSet::class,
+            'userRole' => null
+        ]);
     }
 
     public function getName()

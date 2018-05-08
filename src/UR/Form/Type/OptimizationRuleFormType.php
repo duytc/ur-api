@@ -28,7 +28,7 @@ class OptimizationRuleFormType extends AbstractRoleSpecificFormType
             ->add('segmentFields')
             ->add('finishLoading');
 
-        if ($this->userRole instanceof AdminInterface) {
+        if ($options['userRole'] instanceof AdminInterface) {
             $builder->add(
                 $builder->create('publisher')
                     ->addModelTransformer(new RoleToUserEntityTransformer(), false
@@ -83,7 +83,9 @@ class OptimizationRuleFormType extends AbstractRoleSpecificFormType
      */
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => OptimizationRule::class]);
+        $resolver->setDefaults([
+            'data_class' => OptimizationRule::class,
+            'userRole' => null]);
     }
 
     /**

@@ -70,7 +70,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
                 )
             );
 
-        if ($this->userRole instanceof AdminInterface) {
+        if ($options['userRole'] instanceof AdminInterface) {
             $builder->add(
                 $builder->create('publisher')
                     ->addModelTransformer(new RoleToUserEntityTransformer(), false
@@ -128,7 +128,9 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => ReportView::class]);
+        $resolver->setDefaults([
+            'data_class' => ReportView::class,
+            'userRole' => null]);
     }
 
     public function getName()

@@ -3,7 +3,7 @@
 namespace UR\Form\Type;
 
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\Integration;
 
 class IntegrationFormType extends AbstractRoleSpecificFormType
@@ -16,11 +16,12 @@ class IntegrationFormType extends AbstractRoleSpecificFormType
             ->add('params');
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
         $resolver
             ->setDefaults([
                 'data_class' => Integration::class,
+                'userRole' => null
             ]);
     }
 

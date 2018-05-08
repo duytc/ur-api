@@ -3,7 +3,7 @@
 namespace UR\Form\Type;
 
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\DataSet;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Entity\Core\ImportHistory;
@@ -22,20 +22,20 @@ class ImportHistoryFormType extends AbstractRoleSpecificFormType
             ->add('description')
             ->add('dataSourceEntry', 'entity', array(
                 'class' => DataSourceEntry::class,
-                'query_builder' => function (DataSourceEntryRepository $ds) {
-                    if ($this->userRole instanceof AdminInterface) {
+                'query_builder' => function (DataSourceEntryRepository $ds) use($options) {
+                    if ($options['userRole'] instanceof AdminInterface) {
                         return $ds->createQueryBuilder('ds')->select('ds');
                     }
                     // current user is publisher
                     /** @var PublisherInterface publisher */
-                    $publisher = $this->userRole;
+                    $publisher = $options['userRole'];
                     return $ds->getDataSourceEntriesForPublisherQuery($publisher);
                 }
             ))
             ->add('dataSet', 'entity', array(
                 'class' => DataSet::class,
-                'query_builder' => function (DataSetRepository $ds) {
-                    if ($this->userRole instanceof AdminInterface) {
+                'query_builder' => function (DataSetRepository $ds) use($options) {
+                    if ($options['userRole'] instanceof AdminInterface) {
                         return $ds->createQueryBuilder('ds')->select('ds');
                     }
                     // current user is publisher
@@ -45,7 +45,7 @@ class ImportHistoryFormType extends AbstractRoleSpecificFormType
                 }
             ));
 
-        if ($this->userRole instanceof AdminInterface) {
+        if ($options['userRole'] instanceof AdminInterface) {
             $builder->add(
                 $builder->create('publisher')
                     ->addModelTransformer(new RoleToUserEntityTransformer(), false
@@ -54,9 +54,11 @@ class ImportHistoryFormType extends AbstractRoleSpecificFormType
         };
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => ImportHistory::class,]);
+        $resolver->setDefaults([
+            'data_class' => ImportHistory::class,
+            'userRole' => null]);
     }
 
     public function getName()

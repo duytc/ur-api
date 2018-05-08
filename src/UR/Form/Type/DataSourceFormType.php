@@ -55,7 +55,7 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
             ->add('backfillMissingDateRunning')
             ->add('removeDuplicateDates');
 
-        if ($this->userRole instanceof AdminInterface) {
+        if ($options['userRole'] instanceof AdminInterface) {
             $builder->add(
                 $builder->create('publisher')
                     ->addModelTransformer(new RoleToUserEntityTransformer(), false)
@@ -101,7 +101,10 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(array('data_class' => DataSource::class, 'allow_extra_fields' => true));
+        $resolver->setDefaults(array(
+            'data_class' => DataSource::class,
+            'allow_extra_fields' => true,
+            'userRole' => null));
     }
 
     public function getName()

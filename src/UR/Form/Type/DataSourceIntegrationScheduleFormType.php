@@ -3,7 +3,7 @@
 namespace UR\Form\Type;
 
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\DataSourceIntegrationSchedule;
 
 class DataSourceIntegrationScheduleFormType extends AbstractRoleSpecificFormType
@@ -20,9 +20,11 @@ class DataSourceIntegrationScheduleFormType extends AbstractRoleSpecificFormType
             ->add('status');
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => DataSourceIntegrationSchedule::class,]);
+        $resolver->setDefaults([
+            'data_class' => DataSourceIntegrationSchedule::class,
+            'userRole' => null]);
     }
 
     public function getName()

@@ -38,7 +38,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.data_source_integration_schedule'
+            - '%ur.form.type.data_source_integration_schedule.class%'
             - '@ur.domain_manager.data_source_integration_schedule'
 
     ur.handler.handlers.data_source_integration_schedule.admin:

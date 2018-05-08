@@ -59,7 +59,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
             ))
             ->add('actions', null, array('mapped' => false));
 
-        if ($this->userRole instanceof AdminInterface) {
+        if ($options['userRole'] instanceof AdminInterface) {
             $builder->add(
                 $builder->create('publisher')
                     ->addModelTransformer(new RoleToUserEntityTransformer(), false
@@ -157,12 +157,15 @@ class DataSetFormType extends AbstractRoleSpecificFormType
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => DataSet::class,]);
+        $resolver->setDefaults([
+            'data_class' => DataSet::class,
+            'userRole' => null
+        ]);
     }
 
     public function getName()
     {
-        return 'ur_form_data_source';
+        return 'ur_form_data_set';
     }
 
     /**

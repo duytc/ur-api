@@ -38,7 +38,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.report_schedule'
+            - '%ur.form.type.core.report_schedule.class%'
             - '@ur.domain_manager.report_schedule'
 
     ur.handler.handlers.report_schedule.admin:

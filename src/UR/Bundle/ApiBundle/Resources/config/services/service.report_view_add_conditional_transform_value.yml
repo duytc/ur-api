@@ -38,7 +38,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.report_view_add_conditional_transform_value'
+            - '%ur.form.type.core.report_view_add_conditional_transform_value.class%'
             - '@ur.domain_manager.report_view_add_conditional_transform_value'
 
     ur.handler.handlers.report_view_add_conditional_transform_value.admin:

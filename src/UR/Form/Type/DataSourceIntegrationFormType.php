@@ -48,7 +48,9 @@ class DataSourceIntegrationFormType extends AbstractRoleSpecificFormType
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => DataSourceIntegration::class,]);
+        $resolver->setDefaults([
+            'data_class' => DataSourceIntegration::class,
+            'userRole' => null]);
     }
 
     public function getName()

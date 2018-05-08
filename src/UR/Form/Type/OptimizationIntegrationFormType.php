@@ -55,7 +55,9 @@ class OptimizationIntegrationFormType extends AbstractRoleSpecificFormType
      */
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => OptimizationIntegration::class]);
+        $resolver->setDefaults([
+            'data_class' => OptimizationIntegration::class,
+            'userRole' => null]);
     }
 
     /**

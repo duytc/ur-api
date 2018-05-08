@@ -39,7 +39,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.import_history'
+            - '%ur.form.type.core.import_history.class%'
             - '@ur.domain_manager.import_history'
 
     ur.handler.handlers.import_history.admin:

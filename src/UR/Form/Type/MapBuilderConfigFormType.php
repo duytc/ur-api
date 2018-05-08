@@ -43,7 +43,9 @@ class MapBuilderConfigFormType extends AbstractRoleSpecificFormType
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => MapBuilderConfig::class]);
+        $resolver->setDefaults([
+            'data_class' => MapBuilderConfig::class,
+            'userRole' => null]);
     }
 
     public function getName()

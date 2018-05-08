@@ -8,7 +8,7 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormInterface;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\DataSourceIntegrationBackfillHistory;
 use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
 
@@ -49,9 +49,11 @@ class DataSourceIntegrationBackfillHistoryFormType extends AbstractRoleSpecificF
 
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => DataSourceIntegrationBackfillHistory::class,]);
+        $resolver->setDefaults([
+            'data_class' => DataSourceIntegrationBackfillHistory::class,
+            'userRole' => null]);
     }
 
     public function getName()

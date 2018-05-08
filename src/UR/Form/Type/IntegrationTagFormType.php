@@ -6,7 +6,7 @@ namespace UR\Form\Type;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\IntegrationTag;
 use UR\Model\Core\IntegrationTagInterface;
 
@@ -31,9 +31,11 @@ class IntegrationTagFormType extends AbstractRoleSpecificFormType
         );
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(['data_class' => IntegrationTag::class]);
+        $resolver->setDefaults([
+            'data_class' => IntegrationTag::class,
+            'userRole' => null]);
     }
 
     public function getName()
