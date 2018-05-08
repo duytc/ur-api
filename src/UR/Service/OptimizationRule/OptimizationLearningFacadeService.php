@@ -50,7 +50,7 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
 
     /**
      * @param OptimizationRuleInterface $reactiveLearningOptimizationRule
-     * @throws \Exception
+     * @return mixed
      */
     public function calculateNewScores(OptimizationRuleInterface $reactiveLearningOptimizationRule)
     {

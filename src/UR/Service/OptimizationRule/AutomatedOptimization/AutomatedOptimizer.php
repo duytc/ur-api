@@ -127,7 +127,7 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
                 if ($optimizationIntegration->isRequirePendingAlert() && $optimizationRule->getPublisher() instanceof PublisherInterface) {
                     $this->actionRequireFactory->createActionRequireAlert($optimizationIntegration, $optimizer->testForOptimizationIntegration($optimizationIntegration));
                 }
-
+                $this->logger->info(sprintf('Create action require alert successfully for optimization integration %d', $optimizationIntegration->getId()));
                 continue;
             }
 
@@ -154,12 +154,11 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
                         $optimizationIntegration->getId()
                     );
                 }
+                $this->logger->info(sprintf('Update 3rd party integrations successfully for optimization integration %d', $optimizationIntegration->getId()));
             } catch (\Exception $exception) {
                 throw $exception;
             }
         }
-
-        $this->logger->info(sprintf('Update 3rd party integrations successfully for optimization rule %d', $optimizationRule->getId()));
 
         return true;
     }

@@ -2,6 +2,7 @@
 
 namespace UR\Form\Type;
 
+use DateTime;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
@@ -46,6 +47,10 @@ class OptimizationIntegrationFormType extends AbstractRoleSpecificFormType
                 $this->validateOptimizationFrequency($optimizationIntegration->getOptimizationFrequency(), $form);
                 $this->validatePlatformIntegration($optimizationIntegration->getPlatformIntegration(), $form);
                 $this->setActiveForOptimizationIntegration($optimizationIntegration);
+                if (empty($optimizationIntegration->getId())) {
+                    $optimizationIntegration->setStartRescoreAt(new DateTime('now'));
+                    $optimizationIntegration->setEndRescoreAt(new DateTime('now'));
+                }
             }
         );
     }

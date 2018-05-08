@@ -71,7 +71,6 @@ class ProcessOptimizationFrequency implements JobInterface
      */
     public function run(JobParams $params)
     {
-
         $optimizationRules = $this->getOptimizationRulesToReCalculatedScores();
         foreach ($optimizationRules as $optimizationRule) {
             $this->optimizationLearningFacadeService->calculateNewScores($optimizationRule);
@@ -98,7 +97,9 @@ class ProcessOptimizationFrequency implements JobInterface
                 continue;
             }
 
-            $this->updateStartDate($optimizationIntegrations);
+            // do not set startDate and endDate in here
+            // this will be set in $this->automatedOptimizer->optimizeForRule
+            //$this->updateStartDate($optimizationIntegrations);
             try {
                 foreach ($optimizationIntegrations as $optimizationIntegration) {
                     if (!$optimizationIntegration instanceof OptimizationIntegrationInterface) {
@@ -114,7 +115,7 @@ class ProcessOptimizationFrequency implements JobInterface
             } catch (Exception $e) {
                 throw $e;
             }
-            $this->updateEndDate($optimizationIntegrations);
+            //$this->updateEndDate($optimizationIntegrations);
         }
     }
 

@@ -25,13 +25,6 @@ interface ParamsBuilderInterface
     public function buildFromReportView(ReportViewInterface $reportView, $showInTotal = null, ParamsInterface $multiParams = null);
 
     /**
-     * @param OptimizationRuleInterface $optimizationRule
-     * @param ParamsInterface $multiParams
-     * @return ParamsInterface
-     */
-    public function buildFromOptimizationRule(OptimizationRuleInterface $optimizationRule, ParamsInterface $multiParams = null);
-
-    /**
      * @param ReportViewInterface $reportView
      * @param array $fieldsToBeShared
      * @param array $paginationParams

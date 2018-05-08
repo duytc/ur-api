@@ -15,6 +15,7 @@ interface DateUtilInterface
     const DATE_DYNAMIC_VALUE_EVERYTHING= 'Everything';
     const DATE_DYNAMIC_VALUE_12_HOURS = '-12 hours';
     const DATE_DYNAMIC_VALUE_24_HOURS = '-24 hours';
+    const DATE_DYNAMIC_VALUE_48_HOURS = '-48 hours';
     const DATE_DYNAMIC_VALUE_TODAY = 'today';
     const DATE_DYNAMIC_VALUE_YESTERDAY = 'yesterday';
     const DATE_DYNAMIC_VALUE_LAST_7_DAYS = 'last 7 days';

@@ -34,6 +34,8 @@ class DateFilter extends AbstractFilter implements DateFilterInterface
 	const DATETIME_DYNAMIC_VALUE_CONTINUOUSLY = 'continuously';
 	const DATETIME_DYNAMIC_VALUE_30M = '30 minutes';
 	const DATETIME_DYNAMIC_VALUE_1H = '1 hour';
+	const DATETIME_DYNAMIC_VALUE_4H = '4 hours';
+	const DATETIME_DYNAMIC_VALUE_12H = '12 hours';
 	const DATETIME_DYNAMIC_VALUE_24H = '24 hours';
 
 	/* supported date types */

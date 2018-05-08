@@ -135,7 +135,7 @@ class TagcadeRestClient
         }
 
         if (is_array($result) && array_key_exists('code', $result) && $result['code'] != 200) {
-            throw new \Exception('Failure to update 3rd party integrations (update cache)');
+            throw new \Exception('Failure to update 3rd party integrations (get previous adTags position)');
         }
 
         return $result;

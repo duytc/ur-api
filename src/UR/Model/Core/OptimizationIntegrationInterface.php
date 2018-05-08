@@ -22,6 +22,8 @@ interface OptimizationIntegrationInterface extends ModelInterface
         DateFilter::DATETIME_DYNAMIC_VALUE_CONTINUOUSLY,
         DateFilter::DATETIME_DYNAMIC_VALUE_30M,
         DateFilter::DATETIME_DYNAMIC_VALUE_1H,
+        DateFilter::DATETIME_DYNAMIC_VALUE_4H,
+        DateFilter::DATETIME_DYNAMIC_VALUE_12H,
         DateFilter::DATETIME_DYNAMIC_VALUE_24H
     ];
 

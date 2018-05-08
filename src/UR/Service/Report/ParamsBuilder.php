@@ -540,27 +540,6 @@ class ParamsBuilder implements ParamsBuilderInterface
     /**
      * @inheritdoc
      */
-    public function buildFromOptimizationRule(OptimizationRuleInterface $optimizationRule, ParamsInterface $multiParams = null)
-    {
-        $param = $this->buildFromReportView($optimizationRule->getReportView());
-        $param->setOptimizationRule(true);
-
-        $filter = new DateFilter();
-        $filter
-            ->setFieldName($optimizationRule->getDateField())
-            ->setDateType(DateFilter::DATE_TYPE_DYNAMIC)
-            ->setDateValue($optimizationRule->getDateRange());
-
-        $filters = $param->getFilters();
-        $filters[] = $filter;
-        $param->setFilters($filters);
-
-        return $param;
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $fieldsToBeShared, array $paginationParams)
     {
         $param = new Params();

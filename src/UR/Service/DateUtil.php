@@ -153,6 +153,11 @@ class DateUtil implements DateUtilInterface
                 $endDate = date('Y-m-d H:i:s', strtotime('now'));
                 break;
 
+            case self::DATE_DYNAMIC_VALUE_48_HOURS:
+                $startDate = date('Y-m-d H:i:s', strtotime('-48 hours'));
+                $endDate = date('Y-m-d H:i:s', strtotime('now'));
+                break;
+
             case self::DATE_DYNAMIC_VALUE_TODAY:
                 $startDate = date_create('now')->setTime(0, 0, 0)->format('Y-m-d H:i:s');
                 $endDate = date_create('now')->setTime(23, 59, 59)->format('Y-m-d H:i:s');
@@ -218,6 +223,5 @@ class DateUtil implements DateUtilInterface
         }
 
         return [self::START_DATE_KEY =>$startDate, self::END_DATE_KEY => $endDate];
-
     }
 }
