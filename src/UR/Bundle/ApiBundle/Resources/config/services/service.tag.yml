@@ -40,7 +40,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.tag'
+            - '%ur.form.type.core.tag.class%'
             - '@ur.domain_manager.tag'
 
     ur.handler.handlers.tag.admin:

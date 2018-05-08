@@ -38,7 +38,7 @@ services:
         abstract: true
         public: false
         arguments:
-            - '@ur.form.type.user_tag'
+            - '%ur.form.type.core.user_tag.class%'
             - '@ur.domain_manager.user_tag'
 
     ur.handler.handlers.user_tag.admin:
