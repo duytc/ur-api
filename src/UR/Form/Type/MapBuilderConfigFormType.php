@@ -6,7 +6,7 @@ namespace UR\Form\Type;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use UR\Entity\Core\MapBuilderConfig;
 use UR\Model\Core\MapBuilderConfigInterface;
 use UR\Service\StringUtilTrait;
@@ -41,7 +41,7 @@ class MapBuilderConfigFormType extends AbstractRoleSpecificFormType
         );
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults(['data_class' => MapBuilderConfig::class]);
     }
