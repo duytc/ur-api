@@ -389,7 +389,7 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
 
         $em->flush();
 
-        $view = $this->view(null, Codes::HTTP_NO_CONTENT);
+        $view = $this->view(null, Response::HTTP_NO_CONTENT);
 
         return $this->handleView($view);
     }
