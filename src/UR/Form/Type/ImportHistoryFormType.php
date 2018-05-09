@@ -40,7 +40,7 @@ class ImportHistoryFormType extends AbstractRoleSpecificFormType
                     }
                     // current user is publisher
                     /** @var PublisherInterface publisher */
-                    $publisher = $this->userRole;
+                    $publisher = $options['userRole'];
                     return $ds->getDataSetsForPublisherQuery($publisher);
                 }
             ));

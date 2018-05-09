@@ -26,7 +26,7 @@ class ReportViewTemplateFormType extends AbstractRoleSpecificFormType
 
         $builder->add('reportViewTemplateTags', CollectionType::class, array(
             'mapped' => true,
-            'type' => new ReportViewTemplateTagFormType(),
+            'entry_type' => ReportViewTemplateTagFormType::class,
             'allow_add' => true,
             'allow_delete' => true,
         ));
