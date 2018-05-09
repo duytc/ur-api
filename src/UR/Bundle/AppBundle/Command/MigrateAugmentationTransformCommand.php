@@ -38,6 +38,10 @@ class MigrateAugmentationTransformCommand extends ContainerAwareCommand
                     continue;
                 }
 
+                if (!array_key_exists('mapCondition', $transform)) {
+                    continue;
+                }
+
                 $transform['mapConditions'] = [$transform['mapCondition']];
 
                 unset($transform['mapCondition']);
