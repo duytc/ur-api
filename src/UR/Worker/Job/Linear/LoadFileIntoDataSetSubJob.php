@@ -245,7 +245,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
         } finally {
             $this->logger->notice('----------------------------LOADING COMPLETED-------------------------------------------------------------');
 
-            if (!$isLargeFile) {
+            if (!$isLargeFile && $connectedDataSource instanceof ConnectedDataSourceInterface) {
                 $linearTubeName = DataSetJobScheduler::getDataSetTubeName($connectedDataSource->getDataSet()->getId());
                 $this->jobCounter->decrementPendingJobCount($linearTubeName);
             }
@@ -255,7 +255,7 @@ class LoadFileIntoDataSetSubJob implements SubJobInterface, ExpirableJobInterfac
                 $this->importHistoryManager->deleteImportHistoriesByIds([$importHistoryEntity->getId()]);
             }
 
-            if ($alert instanceof ConnectedDataSourceAlertInterface) {
+            if ($alert instanceof ConnectedDataSourceAlertInterface && $connectedDataSource instanceof ConnectedDataSourceInterface) {
                 $this->workerManager->processAlert($alert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $alert->getDetails(), $alert->getDataSourceId());
             }
 
