@@ -39,21 +39,21 @@ class TagFormType extends AbstractRoleSpecificFormType
 
         $builder->add('userTags', CollectionType::class, array(
             'mapped' => true,
-            'type' => new UserTagFormType(),
+            'entry_type' => UserTagFormType::class,
             'allow_add' => true,
             'allow_delete' => true,
         ));
 
         $builder->add('integrationTags', CollectionType::class, array(
             'mapped' => true,
-            'type' => new IntegrationTagFormType(),
+            'entry_type' => IntegrationTagFormType::class,
             'allow_add' => true,
             'allow_delete' => true,
         ));
 
         $builder->add('reportViewTemplateTags', CollectionType::class, array(
             'mapped' => true,
-            'type' => new ReportViewTemplateTagFormType(),
+            'type' => ReportViewTemplateTagFormType::class,
             'allow_add' => true,
             'allow_delete' => true,
         ));
