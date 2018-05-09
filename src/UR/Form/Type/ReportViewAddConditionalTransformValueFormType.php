@@ -51,7 +51,8 @@ class ReportViewAddConditionalTransformValueFormType extends AbstractRoleSpecifi
     {
         $resolver->setDefaults([
             'data_class' => ReportViewAddConditionalTransformValue::class,
-            'userRole' => null]);
+            'userRole' => null
+        ]);
     }
 
     /**

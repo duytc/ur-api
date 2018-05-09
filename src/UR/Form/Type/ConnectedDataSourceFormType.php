@@ -95,7 +95,7 @@ class ConnectedDataSourceFormType extends AbstractRoleSpecificFormType
         $resolver->setDefaults([
             'data_class' => ConnectedDataSource::class,
             'userRole' => null
-            ]);
+        ]);
     }
 
     public function getName()

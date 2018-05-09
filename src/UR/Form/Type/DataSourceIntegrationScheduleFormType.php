@@ -24,7 +24,8 @@ class DataSourceIntegrationScheduleFormType extends AbstractRoleSpecificFormType
     {
         $resolver->setDefaults([
             'data_class' => DataSourceIntegrationSchedule::class,
-            'userRole' => null]);
+            'userRole' => null
+        ]);
     }
 
     public function getName()

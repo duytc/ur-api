@@ -36,7 +36,8 @@ class ReportViewTemplateFormType extends AbstractRoleSpecificFormType
     {
         $resolver->setDefaults([
             'data_class' => ReportViewTemplate::class,
-            'userRole' => null]);
+            'userRole' => null
+        ]);
     }
 
     public function getName()

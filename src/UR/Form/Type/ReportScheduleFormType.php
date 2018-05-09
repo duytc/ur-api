@@ -22,7 +22,8 @@ class ReportScheduleFormType extends AbstractRoleSpecificFormType
     {
         $resolver->setDefaults([
             'data_class' => ReportSchedule::class,
-            'userRole' => null]);
+            'userRole' => null
+        ]);
     }
 
     public function getName()

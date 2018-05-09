@@ -85,7 +85,8 @@ class OptimizationRuleFormType extends AbstractRoleSpecificFormType
     {
         $resolver->setDefaults([
             'data_class' => OptimizationRule::class,
-            'userRole' => null]);
+            'userRole' => null
+        ]);
     }
 
     /**

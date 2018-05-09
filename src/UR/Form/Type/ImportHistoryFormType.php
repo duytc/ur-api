@@ -22,7 +22,7 @@ class ImportHistoryFormType extends AbstractRoleSpecificFormType
             ->add('description')
             ->add('dataSourceEntry', 'entity', array(
                 'class' => DataSourceEntry::class,
-                'query_builder' => function (DataSourceEntryRepository $ds) use($options) {
+                'query_builder' => function (DataSourceEntryRepository $ds) use ($options) {
                     if ($options['userRole'] instanceof AdminInterface) {
                         return $ds->createQueryBuilder('ds')->select('ds');
                     }
@@ -34,7 +34,7 @@ class ImportHistoryFormType extends AbstractRoleSpecificFormType
             ))
             ->add('dataSet', 'entity', array(
                 'class' => DataSet::class,
-                'query_builder' => function (DataSetRepository $ds) use($options) {
+                'query_builder' => function (DataSetRepository $ds) use ($options) {
                     if ($options['userRole'] instanceof AdminInterface) {
                         return $ds->createQueryBuilder('ds')->select('ds');
                     }
@@ -58,7 +58,8 @@ class ImportHistoryFormType extends AbstractRoleSpecificFormType
     {
         $resolver->setDefaults([
             'data_class' => ImportHistory::class,
-            'userRole' => null]);
+            'userRole' => null
+        ]);
     }
 
     public function getName()

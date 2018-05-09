@@ -113,7 +113,8 @@ class TagFormType extends AbstractRoleSpecificFormType
     {
         $resolver->setDefaults([
             'data_class' => Tag::class,
-            'userRole' => null]);
+            'userRole' => null
+        ]);
     }
 
     public function getName()

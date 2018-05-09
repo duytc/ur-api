@@ -58,8 +58,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             ->add('largeReport')
             ->add('availableToRun')
             ->add('availableToChange')
-            ->add('preCalculateTable')
-        ;
+            ->add('preCalculateTable');
 
         $builder
             ->add('reportViewDataSets', CollectionType::class, array(
@@ -130,7 +129,8 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
     {
         $resolver->setDefaults([
             'data_class' => ReportView::class,
-            'userRole' => null]);
+            'userRole' => null
+        ]);
     }
 
     public function getName()

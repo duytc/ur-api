@@ -48,7 +48,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
             ->add('allowOverwriteExistingData')
             ->add('mapBuilderEnabled')
             ->add('mapBuilderConfigs', CollectionType::class, array(
-                'entry_type' =>  MapBuilderConfigFormType::class,
+                'entry_type' => MapBuilderConfigFormType::class,
                 'allow_add' => true,
                 'allow_delete' => true,
             ))
@@ -129,7 +129,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
                 if (!$dataSet->isMapBuilderEnabled()) {
                     return;
                 }
-                
+
                 $dataSet->setAllowOverwriteExistingData(true);
                 $mapBuilderConfigs = $dataSet->getMapBuilderConfigs();
 

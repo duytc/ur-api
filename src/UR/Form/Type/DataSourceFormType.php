@@ -104,7 +104,8 @@ class DataSourceFormType extends AbstractRoleSpecificFormType
         $resolver->setDefaults(array(
             'data_class' => DataSource::class,
             'allow_extra_fields' => true,
-            'userRole' => null));
+            'userRole' => null
+        ));
     }
 
     public function getName()

@@ -35,7 +35,8 @@ class IntegrationTagFormType extends AbstractRoleSpecificFormType
     {
         $resolver->setDefaults([
             'data_class' => IntegrationTag::class,
-            'userRole' => null]);
+            'userRole' => null
+        ]);
     }
 
     public function getName()

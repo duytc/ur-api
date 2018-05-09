@@ -53,7 +53,8 @@ class DataSourceIntegrationBackfillHistoryFormType extends AbstractRoleSpecificF
     {
         $resolver->setDefaults([
             'data_class' => DataSourceIntegrationBackfillHistory::class,
-            'userRole' => null]);
+            'userRole' => null
+        ]);
     }
 
     public function getName()
