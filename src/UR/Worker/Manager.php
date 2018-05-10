@@ -105,7 +105,8 @@ class Manager
     public function reloadAllForDataSet(DataSetInterface $dataSet)
     {
         $reloadAllForDataSet = [
-            'task' => ReloadDataSet::JOB_NAME
+            'task' => ReloadDataSet::JOB_NAME,
+            ReloadParamsInterface::RELOAD_TYPE => ReloadParamsInterface::ALL_DATA_TYPE,
         ];
 
         $this->dataSetJobScheduler->addJob($reloadAllForDataSet, $dataSet->getId());
