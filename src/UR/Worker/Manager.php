@@ -12,6 +12,7 @@ use Pubvantage\Worker\Scheduler\DataSourceEntryJobSchedulerInterface;
 use Pubvantage\Worker\Scheduler\LinearJobScheduler;
 use Pubvantage\Worker\Scheduler\LinearJobSchedulerInterface;
 use Redis;
+use stdClass;
 use UR\Model\Core\ConnectedDataSourceInterface;
 use UR\Model\Core\DataSetInterface;
 use UR\Service\DataSet\ReloadParamsInterface;
@@ -50,6 +51,8 @@ use UR\Worker\Job\Linear\UpdateOverwriteDateInDataSetSubJob;
 
 class Manager
 {
+    const TAGCADE_API_TUBE = 'tagcade-api-worker';
+
     /** @var DateUtilInterface */
     protected $dateUtil;
 
@@ -491,5 +494,18 @@ class Manager
         ];
 
         $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    public function synchronizeAdSlotWithOptimizationIntegration($actions){
+        /* new worker design of ur api, so that the jobData is changed */
+        $params = new stdClass;
+        $params->actions = $actions;
+
+        $jobData = [
+            'task' => 'synchronizeAdSlotWithOptimizationIntegration',
+            'params' => $params
+        ];
+
+        $this->beanstalk->putInTube(Manager::TAGCADE_API_TUBE, json_encode($jobData));
     }
 }

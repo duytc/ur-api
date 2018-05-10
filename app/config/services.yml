@@ -580,6 +580,7 @@ services:
                 - @ur.worker.job.concurrent.sync_training_data_and_generate_learner_model
                 - @ur.worker.job.concurrent.activate_the3_partner_scoring_service_integration
                 - @ur.worker.job.concurrent.process_optimization_frequency
+                - @ur.worker.job.concurrent.update_optimization_integration_when_ad_slot_change_worker
 
     ### end of concurrence worker pool
 
@@ -797,3 +798,8 @@ services:
             - @doctrine.orm.entity_manager
             - @ur.domain_manager.data_set
             - @ur.redis.app_cache
+
+    ur.worker.job.concurrent.update_optimization_integration_when_ad_slot_change_worker:
+        class: UR\Worker\Job\Concurrent\UpdateOptimizationIntegrationWhenAdSlotChangeWorker
+        arguments:
+            - @ur.domain_manager.optimization_integration
