@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use DateTime;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
@@ -203,9 +204,20 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
 
         $params = array_merge($request->query->all(), $request->request->all());
 
-        $startDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['startDate']);
-        $endDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['endDate']);
-        $segmentFieldValues = $params['segmentFieldValues'];
+        $startDate = new DateTime('today');
+        if (array_key_exists('startDate', $params)) {
+            $startDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['startDate']);
+        }
+
+        $endDate =    new \DateTime('tomorrow');
+        if (array_key_exists('endDate', $params)) {
+            $endDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['endDate']);
+        }
+
+        $segmentFieldValues = [];
+        if (array_key_exists('segmentFieldValues', $params)) {
+            $segmentFieldValues = $params['segmentFieldValues'];
+        }
 
         $result = $optimizationRuleScoreService->getFinalScores($optimizationRule, $segmentFieldValues, $startDate, $endDate);
 
