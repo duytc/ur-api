@@ -209,7 +209,7 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
             $startDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['startDate']);
         }
 
-        $endDate =    new \DateTime('tomorrow');
+        $endDate =    new DateTime('tomorrow');
         if (array_key_exists('endDate', $params)) {
             $endDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['endDate']);
         }
