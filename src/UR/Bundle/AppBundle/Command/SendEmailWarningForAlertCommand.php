@@ -6,6 +6,7 @@ use Swift_Mailer;
 use Symfony\Bridge\Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
@@ -18,6 +19,7 @@ use UR\Service\StringUtilTrait;
 class SendEmailWarningForAlertCommand extends ContainerAwareCommand
 {
     use StringUtilTrait;
+    const INPUT_ALERT_TYPES = 'types';
 
     /**
      * @var Logger
@@ -51,6 +53,8 @@ class SendEmailWarningForAlertCommand extends ContainerAwareCommand
     {
         $this
             ->setName('ur:alert:email-warning:send')
+            ->addOption(self::INPUT_ALERT_TYPES, 't', InputOption::VALUE_OPTIONAL,
+                'alert types to be send to user, warning, actionRequired...')
             ->setDescription('Send email alert for critical alerts for Publisher');
     }
 
@@ -72,7 +76,8 @@ class SendEmailWarningForAlertCommand extends ContainerAwareCommand
         $output->writeln(sprintf('sending alert Emails for %d publishers', count($publishers)));
 
         // send Email Alert
-        $emailAlertsCount = $this->sendEmailAlertForPublisher($output, $publishers);
+        $alertTypes = $this->getAlertTypes($input);
+        $emailAlertsCount = $this->sendEmailAlertForPublisher($output, $publishers, $alertTypes);
 
         $output->writeln(sprintf('command run successfully: emails sent to %d Publisher.', $emailAlertsCount));
     }
@@ -82,9 +87,10 @@ class SendEmailWarningForAlertCommand extends ContainerAwareCommand
      *
      * @param OutputInterface $output
      * @param array|PublisherInterface[] $publishers
+     * @param $alertTypes
      * @return int migrated update alert type count
      */
-    private function sendEmailAlertForPublisher(OutputInterface $output, array $publishers)
+    private function sendEmailAlertForPublisher(OutputInterface $output, array $publishers, $alertTypes)
     {
         $emailAlertsCount = 0;
 
@@ -99,7 +105,7 @@ class SendEmailWarningForAlertCommand extends ContainerAwareCommand
                 continue;
             }
 
-            $alerts = $this->alertRepository->getAlertsToSendEmailByTypesQuery($publisher, [AlertInterface::ALERT_TYPE_WARNING]);
+            $alerts = $this->alertRepository->getAlertsToSendEmailByTypesQuery($publisher, $alertTypes);
             if (!is_array($alerts)) {
                 continue;
             }
@@ -229,5 +235,33 @@ class SendEmailWarningForAlertCommand extends ContainerAwareCommand
             default:
                 return 'Unknown alert code . Please contact your account manager';
         }
+    }
+
+    /**
+     * @param InputInterface $input
+     * @return array
+     */
+    private function getAlertTypes(InputInterface $input)
+    {
+        $alertString = $input->getOption(self::INPUT_ALERT_TYPES);
+        $alertTypesByComma = explode(",", $alertString);
+        $alertTypesBySemicolon = explode(";", $alertString);
+
+        $alertTypes = array_merge($alertTypesByComma, $alertTypesBySemicolon);
+        $alertTypes = array_map(function ($alertType) {
+            //Remove space
+            return trim($alertType);
+        }, $alertTypes);
+
+        $alertTypes = array_filter($alertTypes, function ($alertType) {
+            return in_array($alertType, AlertInterface::SUPPORT_ALERT_TYPES);
+        });
+
+        if (empty($alertTypes)) {
+            //For old behavior, use for cron job missing input alert types
+            $alertTypes[] = AlertInterface::ALERT_TYPE_WARNING;
+        }
+
+        return $alertTypes;
     }
 }
