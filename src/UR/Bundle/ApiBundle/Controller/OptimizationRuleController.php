@@ -87,7 +87,7 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
      */
     public function getIdentifiersAction($id, Request $request)
     {
-        $optimizationRule =  $this->one($id);
+        $optimizationRule = $this->one($id);
         if (!$optimizationRule instanceof OptimizationRuleInterface) {
             return [];
         }
@@ -121,7 +121,7 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
      */
     public function getSegmentsAction($id, Request $request)
     {
-        $optimizationRule =  $this->one($id);
+        $optimizationRule = $this->one($id);
         if (!$optimizationRule instanceof OptimizationRuleInterface) {
             return [];
         }
@@ -159,7 +159,7 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
      */
     public function getIdentifierBySegmentsAction($id, Request $request)
     {
-        $optimizationRule =  $this->one($id);
+        $optimizationRule = $this->one($id);
         if (!$optimizationRule instanceof OptimizationRuleInterface) {
             return [];
         }
@@ -209,7 +209,7 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
             $startDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['startDate']);
         }
 
-        $endDate =    new DateTime('tomorrow');
+        $endDate = new DateTime('tomorrow');
         if (array_key_exists('endDate', $params)) {
             $endDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['endDate']);
         }
@@ -227,6 +227,38 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
 
         return $result;
     }
+
+
+    /**
+     * Recalculate new scores for one Optimization Rule
+     * @Rest\Post("/optimizationrules/{id}/rescore", requirements={"id" = "\d+"})
+     *
+     * @Rest\QueryParam(name="identifiers", nullable=true, description="the identifiers of ad tags")
+     * @ApiDoc(
+     *  section = "OptimizationRule",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @param Request $request
+     * @return array
+     * @throws PublicSimpleException
+     */
+    public function postRescoreAction($id, Request $request)
+    {
+        $optimizationRuleRescoreService = $this->get('ur.service.optimization_rule.optimization_learning_facade_service');
+        $optimizationRule = $this->one($id);
+        if (!$optimizationRule instanceof OptimizationRuleInterface) {
+            return [];
+        }
+
+        return $optimizationRuleRescoreService->calculateNewScores($optimizationRule);
+    }
+
 
     /**
      * Get training data belong to an Optimization Rule
