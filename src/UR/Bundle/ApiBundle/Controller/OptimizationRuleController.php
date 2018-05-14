@@ -14,6 +14,7 @@ use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\OptimizationRuleInterface;
 use UR\Service\DateUtilInterface;
+use UR\Service\OptimizationRule\OptimizationLearningFacadeServiceInterface;
 use UR\Service\PublicSimpleException;
 
 /**
@@ -247,6 +248,7 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
      * @param Request $request
      * @return array
      * @throws PublicSimpleException
+     * @throws \Exception
      */
     public function postRescoreAction($id, Request $request)
     {
@@ -256,7 +258,11 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
             return [];
         }
 
-        return $optimizationRuleRescoreService->calculateNewScores($optimizationRule);
+        /** @var OptimizationLearningFacadeServiceInterface $optimizationRuleRescoreService */
+        $optimizationRuleRescoreService->calculateNewScores($optimizationRule);
+        $optimizerService = $this->get('ur.service.optimization_rule.automated_optimization.automated_optimizer');
+
+        return $optimizerService->optimizeForRule($optimizationRule);
     }
 
 
