@@ -61,6 +61,11 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
 
         $data = $this->dataTrainingCollector->buildDataForOptimizationRule($reactiveLearningOptimizationRule);
 
+        if (empty($data)) {
+            $this->logger->info(sprintf('There is not any data optimization rule %d ', $reactiveLearningOptimizationRule->getId()));
+            return;
+        }
+
         //Table: data_training_58
         $this->importTrainingData($reactiveLearningOptimizationRule, $data);
 
