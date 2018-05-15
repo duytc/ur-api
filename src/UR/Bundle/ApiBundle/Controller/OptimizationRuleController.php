@@ -260,7 +260,12 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
 
         /** @var OptimizationLearningFacadeServiceInterface $optimizationRuleRescoreService */
         $optimizationRuleRescoreService->calculateNewScores($optimizationRule);
+
         $optimizerService = $this->get('ur.service.optimization_rule.automated_optimization.automated_optimizer');
+        $optimizationRule = $this->one($id); //Note: Do not remove this line
+        if (!$optimizationRule instanceof OptimizationRuleInterface) {
+            return [];
+        }
 
         return $optimizerService->optimizeForRule($optimizationRule);
     }
