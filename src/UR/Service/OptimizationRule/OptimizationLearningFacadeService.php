@@ -50,20 +50,21 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
 
     /**
      * @param OptimizationRuleInterface $reactiveLearningOptimizationRule
-     * @return mixed|void
+     * @return int|mixed
      * @throws \Exception
      */
     public function calculateNewScores(OptimizationRuleInterface $reactiveLearningOptimizationRule)
     {
         if (!$reactiveLearningOptimizationRule instanceof OptimizationRuleInterface) {
-            return;
+            return self::UNCOMPLETED;
         }
 
         $data = $this->dataTrainingCollector->buildDataForOptimizationRule($reactiveLearningOptimizationRule);
 
         if (empty($data)) {
             $this->logger->info(sprintf('There is not any data optimization rule %d ', $reactiveLearningOptimizationRule->getId()));
-            return;
+
+            return self::UNCOMPLETED;
         }
 
         //Table: data_training_58
@@ -73,7 +74,7 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
         $activateLearnerResult = $this->activateLearner($reactiveLearningOptimizationRule);
         if (!$activateLearnerResult) {
             $this->logger->error(sprintf('Activate learning process failed for optimization rule %d', $reactiveLearningOptimizationRule->getId()));
-            return;
+            return self::UNCOMPLETED;
         }
 
         //Table: __optimization_rule_score_58
@@ -81,6 +82,8 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
 
         //Table: __optimization_rule_score_58
         $this->activeCalculating($reactiveLearningOptimizationRule);
+
+        return self::COMPLETED;
     }
 
     /**

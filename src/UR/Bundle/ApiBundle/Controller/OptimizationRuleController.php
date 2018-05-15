@@ -246,7 +246,7 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
      * @param int $id the resource id
      *
      * @param Request $request
-     * @return array
+     * @return array|int
      * @throws PublicSimpleException
      * @throws \Exception
      */
@@ -259,7 +259,11 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
         }
 
         /** @var OptimizationLearningFacadeServiceInterface $optimizationRuleRescoreService */
-        $optimizationRuleRescoreService->calculateNewScores($optimizationRule);
+        $result = $optimizationRuleRescoreService->calculateNewScores($optimizationRule);
+
+        if ($result ==  OptimizationLearningFacadeServiceInterface::UNCOMPLETED) {
+            return $result;
+        }
 
         $optimizerService = $this->get('ur.service.optimization_rule.automated_optimization.automated_optimizer');
         $optimizationRule = $this->one($id); //Note: Do not remove this line
