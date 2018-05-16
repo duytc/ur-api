@@ -45,7 +45,12 @@ interface AlertInterface extends ModelInterface
     const ALERT_TYPE_WARNING = 'warning';
     const ALERT_TYPE_ERROR = 'error';
     const ALERT_TYPE_ACTION_REQUIRED = 'actionRequired';
-
+    const SUPPORT_ALERT_TYPES = [
+        self::ALERT_TYPE_INFO,
+        self::ALERT_TYPE_WARNING,
+        self::ALERT_TYPE_ERROR,
+        self::ALERT_TYPE_ACTION_REQUIRED,
+    ];
     const ALERT_CODE_EMAIL_WEB_HOOK_INVALID_EMAIL_SETTING = 2004;
 
     /**
