@@ -14,6 +14,7 @@ use UR\DomainManager\DataSourceManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Service\DataSource\BackFillHistoryCreator;
 use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\DataSource\DataSourceType;
 use UR\Service\DTO\Collection;
@@ -65,19 +66,26 @@ class DateRangeService implements DateRangeServiceInterface
     protected $logger;
 
     /**
+     * @var BackFillHistoryCreator
+     */
+    protected $backFillHistoryCreator;
+
+    /**
      * DateRangeService constructor.
      * @param DataSourceManagerInterface $dataSourceManager
      * @param DataSourceEntryManagerInterface $dataSourceEntryManager
      * @param DataSourceFileFactory $fileFactory
      * @param Logger $logger
+     * @param BackFillHistoryCreator $backFillHistoryCreator
      */
     public function __construct(DataSourceManagerInterface $dataSourceManager, DataSourceEntryManagerInterface $dataSourceEntryManager,
-                                DataSourceFileFactory $fileFactory, Logger $logger)
+                                DataSourceFileFactory $fileFactory, Logger $logger, BackFillHistoryCreator $backFillHistoryCreator)
     {
         $this->dataSourceManager = $dataSourceManager;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
         $this->fileFactory = $fileFactory;
         $this->logger = $logger;
+        $this->backFillHistoryCreator= $backFillHistoryCreator;
     }
 
     /**
@@ -159,6 +167,8 @@ class DateRangeService implements DateRangeServiceInterface
             ->setDateRangeBroken(!empty($missingDate));
 
         $this->dataSourceManager->save($dataSource);
+
+        $this->backFillHistoryCreator->createBackfillForDataSource($dataSource);
 
         return true;
     }

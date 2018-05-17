@@ -39,4 +39,10 @@ interface DataSourceIntegrationBackfillHistoryRepositoryInterface extends Object
      * @return array
      */
     public function getBackfillHistoriesByDataSourceIdWithAutoCreated(DataSourceInterface $dataSource);
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @return mixed
+     */
+    public function getCurrentAutoCreateBackFillHistory(DataSourceInterface $dataSource);
 }

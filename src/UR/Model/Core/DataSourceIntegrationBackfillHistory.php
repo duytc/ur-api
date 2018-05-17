@@ -41,6 +41,7 @@ class DataSourceIntegrationBackfillHistory implements DataSourceIntegrationBackf
         $this->backFillEndDate = null;
         $this->queuedAt = null;
         $this->status = DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_NOT_RUN;
+        $this->autoCreate = false;
     }
 
     /**

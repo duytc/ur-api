@@ -142,11 +142,9 @@ class DataSourceIntegrationBackfillHistoryController extends RestControllerAbstr
                 break;
             case DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_FINISHED:
                 $dataSourceIntegrationBackFillHistory->setFinishedAt($nowInUTC);
-                $dataSourceIntegrationBackFillHistory->setAutoCreate(false);
                 break;
             case DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_FAILED:
                 $dataSourceIntegrationBackFillHistory->setFinishedAt($nowInUTC);
-                $dataSourceIntegrationBackFillHistory->setAutoCreate(false);
                 break;
         }
 

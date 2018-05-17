@@ -739,6 +739,12 @@ services:
             - '@ur.domain_manager.data_source_entry'
             - '@ur.domain_manager.import_history'
 
+    ur.service.back_fill_history_creator:
+            class: UR\Service\DataSource\BackFillHistoryCreator
+            arguments:
+                - '@ur.domain_manager.data_source_integration_backfill_history'
+                - '@ur.domain_manager.data_source'
+
     ur.service.auto_import_data:
         class: UR\Service\Import\AutoImportData
         arguments:
@@ -776,6 +782,7 @@ services:
             - '@ur.domain_manager.data_source_entry'
             - '@ur.service.file_factory'
             - '@logger'
+            - '@ur.service.back_fill_history_creator'
 
     ur.service.date_time.next_executed_at:
         class: UR\Service\DateTime\NextExecutedAt

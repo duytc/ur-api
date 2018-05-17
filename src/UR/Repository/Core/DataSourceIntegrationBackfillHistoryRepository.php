@@ -127,4 +127,23 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
 
         return $result;
     }
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @return mixed
+     */
+    public function getCurrentAutoCreateBackFillHistory(DataSourceInterface $dataSource)
+    {
+        $qb = $this->createQueryBuilder('dibh')
+            ->join('dibh.dataSourceIntegration', 'di')
+            ->where('di.dataSource = :dataSource')
+            ->andWhere('dibh.queuedAt is null')
+            ->andWhere('dibh.finishedAt is null')
+            ->andWhere('dibh.autoCreate = true')
+            ->setParameter('dataSource', $dataSource);
+
+        $result = $qb->getQuery()->getResult();
+
+        return $result;
+    }
 }
