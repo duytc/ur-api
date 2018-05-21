@@ -1,0 +1,26 @@
+UR\Entity\Core\ExchangeRate:
+    type: entity
+    table: core_exchange_rate
+    repositoryClass: UR\Repository\Core\ExchangeRateRepository
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        rate:
+            type: float
+            options:
+                default: 1
+            nullable: true
+        date:
+            type: string
+            nullable: false
+        fromCurrency:
+            type: string
+            length: 20
+            nullable: false
+        toCurrency:
+            type: string
+            length: 20
+            nullable: false

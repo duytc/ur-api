@@ -1,0 +1,19 @@
+parameters:
+    # entity class
+    ur.entity.core.exchange_rate.class: UR\Entity\Core\ExchangeRate
+    # form class
+    ur.form.type.core.exchange_rate.class: UR\Form\Type\ExchangeRateFormType
+
+services:
+    ur.repository.exchange_rate:
+        class: UR\Repository\Core\ExchangeRateRepositoryInterface
+        factory_service: doctrine.orm.entity_manager
+        factory_method: getRepository
+        arguments:
+            - %ur.entity.core.exchange_rate.class%
+
+    ur.domain_manager.exchange_rate:
+        class: UR\DomainManager\ExchangeRateManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @ur.repository.exchange_rate
