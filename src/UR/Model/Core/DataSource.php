@@ -78,6 +78,11 @@ class DataSource implements DataSourceInterface
      */
     protected $backfillMissingDateRunning;
 
+    /**
+     * @var array
+     */
+    protected $sheets;
+
     public function __construct()
     {
         $this->enable = true;
@@ -631,4 +636,22 @@ class DataSource implements DataSourceInterface
         $this->removeDuplicateDates = $removeDuplicateDates;
         return $this;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSheets()
+    {
+        return $this->sheets;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setSheets($sheets)
+    {
+        $this->sheets = $sheets;
+        return $this;
+    }
+
 }

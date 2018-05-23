@@ -88,15 +88,11 @@ class SplitHugeFile implements JobInterface
         }
 
         /** Update total row */
-        if (empty($dataSourceEntry->getTotalRow())) {
-            $this->manager->updateTotalRowWhenEntryInserted($dataSourceEntry->getId());
-        }
+        $this->manager->updateTotalRowWhenEntryInserted($dataSourceEntry->getId());
 
         /** Detect date range */
-        if ($dataSource->isDateRangeDetectionEnabled()) {
-            $this->manager->updateDateRangeForDataSourceEntry($dataSource->getId(), $dataSourceEntry->getId());
-        }
-        
+        $this->manager->updateDateRangeForDataSourceEntry($dataSource->getId(), $dataSourceEntry->getId());
+
         /** Load to data sets */
         if ($dataSource->getEnable()) {
             $connectedDataSources = $dataSource->getConnectedDataSources();

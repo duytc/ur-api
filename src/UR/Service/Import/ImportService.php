@@ -80,7 +80,7 @@ class ImportService
                 $fileName = sprintf('%s/%s', $dirItem, $name);
                 $fileFormat = $this->getUploadFileFormat($fileName);
 
-                $dataSourceFile = $this->getDataSourceFile($fileFormat, $fileName);
+                $dataSourceFile = $this->getDataSourceFile($fileFormat, $fileName, $dataSource->getSheets());
                 $newFields = $this->getNewFieldsFromFiles($dataSourceFile);
                 if (empty($newFields) && !empty($currentFields)) {
                     throw new \Exception(sprintf('Cannot detect header of File %s', $origin_name));
@@ -229,14 +229,15 @@ class ImportService
     /**
      * @param $format
      * @param $entryPath
+     * @param array $sheets
      * @return \UR\Service\DataSource\Csv|\UR\Service\DataSource\Excel|\UR\Service\DataSource\Excel2007|\UR\Service\DataSource\Json|\UR\Service\DataSource\JsonNewFormat
      * @throws \Exception
      */
-    public function getDataSourceFile($format, $entryPath)
+    public function getDataSourceFile($format, $entryPath, $sheets = [])
     {
         try {
             /**@var \UR\Service\DataSource\DataSourceInterface $file */
-            return $this->fileFactory->getFile($format, $entryPath);
+            return $this->fileFactory->getFile($format, $entryPath, $sheets);
         } catch (\Exception $ex) {
             throw $ex;
         }

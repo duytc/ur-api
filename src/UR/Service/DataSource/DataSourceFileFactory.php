@@ -46,11 +46,12 @@ class DataSourceFileFactory
     /**
      * @param string $fileType
      * @param $entryPath
+     * @param array $sheets
      * @return Csv|Excel|Excel2007|Json|JsonNewFormat
      * @throws Exception
      * @throws ImportDataException
      */
-    public function getFile($fileType, $entryPath)
+    public function getFile($fileType, $entryPath, $sheets = [])
     {
         $filePath = $this->uploadFileDir . $entryPath;
         if (!file_exists($filePath)) {
@@ -58,7 +59,7 @@ class DataSourceFileFactory
         }
 
         try {
-            return $this->getEntryFile($fileType, $filePath);
+            return $this->getEntryFile($fileType, $filePath, $sheets);
         } catch (\Exception $ex) {
             throw $ex;
         }
@@ -66,11 +67,16 @@ class DataSourceFileFactory
 
     /**
      * @param $entryPath
+     * @param array $sheets
      * @return Csv|Excel|Excel2007|Json|JsonNewFormat
      * @throws Exception
      * @throws ImportDataException
+     * @throws \Box\Spout\Common\Exception\IOException
+     * @throws \Box\Spout\Common\Exception\UnsupportedTypeException
+     * @throws \Box\Spout\Reader\Exception\ReaderNotOpenedException
+     * @throws \PHPExcel_Reader_Exception
      */
-    public function getFileForChunk($entryPath)
+    public function getFileForChunk($entryPath, $sheets = [])
     {
         $filePath = $entryPath;
 
@@ -84,7 +90,7 @@ class DataSourceFileFactory
 
         $fileType = DataSourceType::getOriginalDataSourceType(pathinfo($entryPath, PATHINFO_EXTENSION));
 
-        return $this->getEntryFile($fileType, $filePath);
+        return $this->getEntryFile($fileType, $filePath, $sheets);
     }
 
     public function getAbsolutePath($path) {
@@ -104,19 +110,24 @@ class DataSourceFileFactory
     /**
      * @param $fileType
      * @param $filePath
+     * @param array $sheets
      * @return Csv|Excel|Excel2007|Json
      * @throws Exception
+     * @throws \Box\Spout\Common\Exception\IOException
+     * @throws \Box\Spout\Common\Exception\UnsupportedTypeException
+     * @throws \Box\Spout\Reader\Exception\ReaderNotOpenedException
+     * @throws \PHPExcel_Reader_Exception
      */
-    private function getEntryFile($fileType, $filePath) {
+    private function getEntryFile($fileType, $filePath, $sheets = []) {
         switch ($fileType) {
             case DataSourceType::DS_CSV_FORMAT:
                 return new Csv($filePath);
             case DataSourceType::DS_EXCEL_FORMAT:
                 $inputFileType = \PHPExcel_IOFactory::identify($filePath);
                 if (in_array($inputFileType, Excel::$EXCEL_2003_FORMATS)) {
-                    return new Excel($filePath, $this->chunkSize);
+                    return new Excel($filePath, $this->chunkSize, $sheets);
                 } else if (in_array($inputFileType, Excel2007::$EXCEL_2007_FORMATS)) {
-                    return new Excel2007($filePath, $this->chunkSize);
+                    return new Excel2007($filePath, $this->chunkSize, $sheets);
                 } else {
                     throw new Exception(sprintf('Does not support this Excel type'));
                 }
@@ -155,10 +166,11 @@ class DataSourceFileFactory
 
         gc_enable();
         $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($this->getSourceExtension($dataSourceEntry->getPath()));
-        $file = $this->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
+        $dataSource = $dataSourceEntry->getDataSource();
+        $file = $this->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath(), $dataSource->getSheets());
 
         $chunks = [];
-        $bodyRows = $file->getRows();
+        $bodyRows = $file->getRows($dataSource->getSheets());
         $header = $file->getHeaders();
         $rowCount = 0;
         $chunkCount = 0;

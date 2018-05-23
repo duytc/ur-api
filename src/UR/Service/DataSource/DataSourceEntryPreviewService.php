@@ -45,14 +45,16 @@ class DataSourceEntryPreviewService implements DataSourceEntryPreviewServiceInte
 
         /** @var \UR\Service\DataSource\DataSourceInterface $dataSourceFileData */
         $dataSourceFileData = null;
+        $dataSource = $dataSourceEntry->getDataSource();
+        $sheets = $dataSource->getSheets();
 
         $chunks = $dataSourceEntry->getChunks();
         $chunkFilePath = $dataSourceEntry->isSeparable() && !empty($chunks) && is_array($chunks)? $this->fileFactory->getAbsolutePath(reset($chunks)) : "";
 
         if (!empty($chunkFilePath) && is_file($chunkFilePath)) {
-            $dataSourceFileData = $this->fileFactory->getFileForChunk($chunkFilePath);
+            $dataSourceFileData = $this->fileFactory->getFileForChunk($chunkFilePath, $sheets);
         } else {
-            $dataSourceFileData = $this->fileFactory->getFile($fileType, $dataSourceEntry->getPath());
+            $dataSourceFileData = $this->fileFactory->getFile($fileType, $dataSourceEntry->getPath(), $sheets);
         }
         $columns = $dataSourceFileData->getColumns();
 
@@ -63,7 +65,7 @@ class DataSourceEntryPreviewService implements DataSourceEntryPreviewServiceInte
             throw new PublicImportDataException($details, new ImportDataException(AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_DATA_IMPORT_NO_DATA_ROW_FOUND));
         }
 
-        $rows = $dataSourceFileData->getLimitedRows($limit);
+        $rows = $dataSourceFileData->getLimitedRows($limit, $sheets);
         $totalRowsCount = $dataSourceEntry->getTotalRow();
 
         return $this->formatAsReport($columns, $rows, $totalRowsCount);

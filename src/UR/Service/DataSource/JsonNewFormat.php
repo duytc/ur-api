@@ -42,7 +42,7 @@ class JsonNewFormat extends CommonDataSourceFile implements DataSourceInterface
     /**
      * @inheritdoc
      */
-    public function getRows()
+    public function getRows($sheets = [])
     {
         return $this->removeNonUtf8Characters($this->rows);
     }
@@ -94,10 +94,9 @@ class JsonNewFormat extends CommonDataSourceFile implements DataSourceInterface
     }
 
     /**
-     * @param $limit
-     * @return array
+     * @inheritdoc
      */
-    public function getLimitedRows($limit)
+    public function getLimitedRows($limit, $sheets = [])
     {
         if (is_numeric($limit)) {
             return $this->removeNonUtf8Characters(array_slice($this->rows, 0, $limit));
@@ -109,9 +108,9 @@ class JsonNewFormat extends CommonDataSourceFile implements DataSourceInterface
     /**
      * @inheritdoc
      */
-    public function getTotalRows()
+    public function getTotalRows($sheets = [])
     {
-        return count($this->getRows());
+        return count($this->getRows($sheets));
     }
 
     /**

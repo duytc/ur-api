@@ -234,10 +234,10 @@ class DateRangeService implements DateRangeServiceInterface
 
                 } else {
                     $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($this->fileFactory->getSourceExtension($dataSourceEntry->getPath()));
-                    $dataSourceFileData = $this->fileFactory->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
+                    $dataSourceFileData = $this->fileFactory->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath(), $dataSource->getSheets());
 
                     $columns = $dataSourceFileData->getColumns();
-                    $rows = $dataSourceFileData->getRows();
+                    $rows = $dataSourceFileData->getRows($dataSource->getSheets());
 
                     foreach ($rows as $row) {
                         $row = array_combine($columns, $row);

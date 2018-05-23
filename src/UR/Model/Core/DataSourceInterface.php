@@ -337,4 +337,15 @@ interface DataSourceInterface extends ModelInterface
      * @return self
      */
     public function setRemoveDuplicateDates($removeDuplicateDates);
+
+    /**
+     * @return array
+     */
+    public function getSheets();
+
+    /**
+     * @param array $sheets
+     * @return self
+     */
+    public function setSheets($sheets);
 }

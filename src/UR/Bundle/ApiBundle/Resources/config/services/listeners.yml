@@ -266,3 +266,10 @@ services:
              - { name: doctrine.event_listener, event: preUpdate }
              - { name: doctrine.event_listener, event: preRemove }
              - { name: doctrine.event_listener, event: postFlush }
+    ur_api.event_listener.update_all_data_source_entries_when_datasource_sheet_changed_lisener:
+            class: UR\Bundle\ApiBundle\EventListener\UpdateAllDataSourceEntriesWhenDataSourceSheetChangedListener
+            arguments:
+                - '@ur.worker.manager'
+            tags:
+                - { name: doctrine.event_listener, event: preUpdate }
+                - { name: doctrine.event_listener, event: postFlush }

@@ -158,7 +158,7 @@ class UploadFileService
                 throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $originName));
             }
 
-            $this->dataSourceFileFactory->getFileForChunk($filePath);
+            $this->dataSourceFileFactory->getFileForChunk($filePath, $dataSource->getSheets());
 
             // create new data source entry
             $hash = sha1_file($filePath);

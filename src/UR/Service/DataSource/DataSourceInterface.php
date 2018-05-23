@@ -24,9 +24,10 @@ interface DataSourceInterface
     public function getColumns();
 
     /**
+     * @param $sheets
      * @return SplDoublyLinkedList
      */
-    public function getRows();
+    public function getRows($sheets);
 
     /**
      * @return int
@@ -35,14 +36,16 @@ interface DataSourceInterface
 
     /**
      * @param $limit
+     * @param $sheets
      * @return SplDoublyLinkedList
      */
-    public function getLimitedRows($limit);
+    public function getLimitedRows($limit, $sheets);
 
     /**
+     * @param $sheets
      * @return int
      */
-    public function getTotalRows();
+    public function getTotalRows($sheets);
 
     /**
      * @return array
