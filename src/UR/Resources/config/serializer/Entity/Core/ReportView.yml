@@ -49,7 +49,7 @@ UR\Entity\Core\ReportView:
             type: DateTime<'Y-m-d'>
         formats:
             expose: true
-            groups: [report_view.detail, report_view.share]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         fieldTypes:
             expose: true
             groups: [report_view.detail, report_view.summary, report_view.share]
