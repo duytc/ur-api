@@ -562,6 +562,16 @@ services:
             - "%upload_file_dir%"
             - @doctrine.orm.entity_manager
 
+    ur.worker.job.concurrent.update_optimization_integration_when_ad_slot_change_worker:
+        class: UR\Worker\Job\Concurrent\UpdateOptimizationIntegrationWhenAdSlotChangeWorker
+        arguments:
+            - @ur.domain_manager.optimization_integration
+
+    ur.worker.job.concurrent.update_optimization_integration_when_video_waterfall_tag_change_worker:
+        class: UR\Worker\Job\Concurrent\UpdateOptimizationIntegrationWhenVideoWaterfallTagChangeWorker
+        arguments:
+            - @ur.domain_manager.optimization_integration
+
     ur.worker.job.concurrent.worker_pool:
         class: Pubvantage\Worker\JobWorkerPool
         arguments:
@@ -581,6 +591,7 @@ services:
                 - @ur.worker.job.concurrent.activate_the3_partner_scoring_service_integration
                 - @ur.worker.job.concurrent.process_optimization_frequency
                 - @ur.worker.job.concurrent.update_optimization_integration_when_ad_slot_change_worker
+                - @ur.worker.job.concurrent.update_optimization_integration_when_video_waterfall_tag_change_worker
 
     ### end of concurrence worker pool
 
@@ -805,8 +816,3 @@ services:
             - @doctrine.orm.entity_manager
             - @ur.domain_manager.data_set
             - @ur.redis.app_cache
-
-    ur.worker.job.concurrent.update_optimization_integration_when_ad_slot_change_worker:
-        class: UR\Worker\Job\Concurrent\UpdateOptimizationIntegrationWhenAdSlotChangeWorker
-        arguments:
-            - @ur.domain_manager.optimization_integration

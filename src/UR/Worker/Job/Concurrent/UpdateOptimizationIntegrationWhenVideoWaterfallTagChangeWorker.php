@@ -8,9 +8,9 @@ use UR\Bundle\ApiBundle\EventListener\UpdateResourceForPlatformIntegrationWhenOp
 use UR\DomainManager\OptimizationIntegrationManagerInterface;
 use UR\Model\Core\OptimizationIntegrationInterface;
 
-class UpdateOptimizationIntegrationWhenAdSlotChangeWorker implements JobInterface
+class UpdateOptimizationIntegrationWhenVideoWaterfallTagChangeWorker implements JobInterface
 {
-    const JOB_NAME = 'synchronizeAdSlotWithOptimizationIntegration';
+    const JOB_NAME = 'synchronizeVideoWaterfallTagWithOptimizationIntegration';
 
     /** @var OptimizationIntegrationManagerInterface */
     private $optimizationIntegrationManager;
@@ -21,7 +21,7 @@ class UpdateOptimizationIntegrationWhenAdSlotChangeWorker implements JobInterfac
     }
 
     /**
-     * UpdateOptimizationIntegrationWhenAdSlotChangeWorker constructor.
+     * UpdateOptimizationIntegrationWhenVideoWaterfallTagChangeWorker constructor.
      * @param OptimizationIntegrationManagerInterface $optimizationIntegrationManager
      */
     public function __construct(OptimizationIntegrationManagerInterface $optimizationIntegrationManager)
@@ -37,59 +37,63 @@ class UpdateOptimizationIntegrationWhenAdSlotChangeWorker implements JobInterfac
         foreach ($actions as $group) {
             $group = json_decode(json_encode($group), true);
             if (!array_key_exists(UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::ACTION, $group) ||
-                !array_key_exists(UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::AD_SLOT, $group) ||
+                !array_key_exists(UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::VIDEO_WATERFALL_TAG, $group) ||
                 !array_key_exists(UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::OPTIMIZATION_INTEGRATION, $group)
             ) {
                 continue;
             }
 
             $action = $group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::ACTION];
-            $site = isset($group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::SITE]) ? $group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::SITE] : null;
-            $adSlot = $group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::AD_SLOT];
+            $videoPublisher = isset($group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::VIDEO_PUBLISHER]) ? $group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::VIDEO_PUBLISHER] : null;
+            $videoWaterfallTag = $group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::VIDEO_WATERFALL_TAG];
             $optimizationIntegration = $group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::OPTIMIZATION_INTEGRATION];
 
-            $this->syncAdSlotByDataFromUR($action, $adSlot, $optimizationIntegration, $site);
+            $this->syncVideoWaterfallTagByDataFromUR($action, $videoWaterfallTag, $optimizationIntegration, $videoPublisher);
         }
     }
 
     /**
-     * @param $action
-     * @param $adSlot
-     * @param $optimizationIntegrationId
-     * @param $supply
+     * @param string $action
+     * @param int $videoWaterfallTag
+     * @param int $optimizationIntegrationId
+     * @param int $videoPublisher
      */
-    private function syncAdSlotByDataFromUR($action, $adSlot, $optimizationIntegrationId, $supply)
+    private function syncVideoWaterfallTagByDataFromUR($action, $videoWaterfallTag, $optimizationIntegrationId, $videoPublisher)
     {
         $optimizationIntegration = $this->optimizationIntegrationManager->find($optimizationIntegrationId);
         if (!$optimizationIntegration instanceof OptimizationIntegrationInterface) {
             return;
         }
 
-        $adSlots = $optimizationIntegration->getAdSlots();
-        $adSlots = is_array($adSlots) ? $adSlots : [];
+        $waterfallTags = $optimizationIntegration->getWaterfallTags();
+        $waterfallTags = is_array($waterfallTags) ? $waterfallTags : [];
 
-        $supplies = $optimizationIntegration->getSupplies();
-        $supplies = is_array($supplies) ? $supplies : [];
+        $videoPublishers = $optimizationIntegration->getVideoPublishers();
+        $videoPublishers = is_array($videoPublishers) ? $videoPublishers : [];
 
         switch ($action) {
             case UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::ACTION_ADD:
-                if (in_array($adSlot, $adSlots)) {
+                if (in_array($videoWaterfallTag, $waterfallTags)) {
                     return;
                 }
-                $adSlots[] = $adSlot;
-                if (!empty($supply)) {
-                    $supplies[] = $supply;
+
+                $waterfallTags[] = $videoWaterfallTag;
+                if (!empty($videoPublisher) && !in_array($videoPublisher, $videoPublishers)) {
+                    $videoPublishers[] = $videoPublisher;
                 }
+
                 break;
+
             case UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::ACTION_REMOVE:
-                $adSlots = array_filter($adSlots, function ($item) use ($adSlot) {
-                    return $item != $adSlot;
+                $waterfallTags = array_filter($waterfallTags, function ($waterfallTagId) use ($videoWaterfallTag) {
+                    return $waterfallTagId != $videoWaterfallTag;
                 });
+
                 break;
         }
 
-        $optimizationIntegration->setAdSlots(array_unique($adSlots));
-        $optimizationIntegration->setSupplies(array_unique($supplies));
+        $optimizationIntegration->setVideoPublishers(array_unique($videoPublishers));
+        $optimizationIntegration->setWaterfallTags(array_unique($waterfallTags));
         $this->optimizationIntegrationManager->save($optimizationIntegration);
     }
 }

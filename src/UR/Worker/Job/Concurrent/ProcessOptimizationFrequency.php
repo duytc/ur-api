@@ -2,7 +2,6 @@
 
 namespace UR\Worker\Job\Concurrent;
 
-use DateTime;
 use Exception;
 use Psr\Log\LoggerInterface;
 use Pubvantage\Worker\Job\JobInterface;
@@ -18,7 +17,7 @@ use UR\Service\OptimizationRule\OptimizationLearningFacadeServiceInterface;
 class ProcessOptimizationFrequency implements JobInterface
 {
     use OptimizationRuleUtilTrait;
-    
+
     const JOB_NAME = 'process_optimization_frequency';
 
     /** @var OptimizationIntegrationManagerInterface */
@@ -99,7 +98,7 @@ class ProcessOptimizationFrequency implements JobInterface
 
             // do not set startDate and endDate in here
             // this will be set in $this->automatedOptimizer->optimizeForRule
-            //$this->updateStartDate($optimizationIntegrations);
+            // $this->updateStartDate($optimizationIntegrations);
             try {
                 foreach ($optimizationIntegrations as $optimizationIntegration) {
                     if (!$optimizationIntegration instanceof OptimizationIntegrationInterface) {
@@ -115,12 +114,15 @@ class ProcessOptimizationFrequency implements JobInterface
             } catch (Exception $e) {
                 throw $e;
             }
-            //$this->updateEndDate($optimizationIntegrations);
+            // $this->updateEndDate($optimizationIntegrations);
         }
     }
 
-
-    private function getOptimizationRulesToReCalculatedScores() {
+    /**
+     * @return array
+     */
+    private function getOptimizationRulesToReCalculatedScores()
+    {
         $optimizationIntegrations = $this->optimizationIntegrationManager->all();
         $optimizationRules = [];
 
@@ -139,36 +141,5 @@ class ProcessOptimizationFrequency implements JobInterface
         }
 
         return $optimizationRules;
-
-    }
-
-    /**
-     * @param $optimizationIntegrations
-     */
-    private function updateStartDate($optimizationIntegrations)
-    {
-        foreach ($optimizationIntegrations as $optimizationIntegration) {
-            if (!$optimizationIntegration instanceof OptimizationIntegrationInterface) {
-                continue;
-            }
-            $startRescoreAt = new DateTime('now');
-            $optimizationIntegration->setStartRescoreAt($startRescoreAt);
-            $this->optimizationIntegrationManager->save($optimizationIntegration);
-        }
-    }
-
-    /**
-     * @param $optimizationIntegrations
-     */
-    private function updateEndDate($optimizationIntegrations)
-    {
-        foreach ($optimizationIntegrations as $optimizationIntegration) {
-            if (!$optimizationIntegration instanceof OptimizationIntegrationInterface) {
-                continue;
-            }
-            $endRescoreAt = new DateTime('now');
-            $optimizationIntegration->setEndRescoreAt($endRescoreAt);
-            $this->optimizationIntegrationManager->save($optimizationIntegration);
-        }
     }
 }

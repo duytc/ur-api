@@ -24,6 +24,15 @@ class OptimizationIntegration implements OptimizationIntegrationInterface
     protected $alerts;
 
     /**
+     * @var array
+     */
+    protected $videoPublishers;
+    /**
+     * @var array
+     */
+    protected $waterfallTags;
+
+    /**
      * @inheritdoc
      */
     public function getId()
@@ -260,6 +269,42 @@ class OptimizationIntegration implements OptimizationIntegrationInterface
     {
         $this->optimizationAlerts = $optimizationAlerts;
 
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getVideoPublishers()
+    {
+        return $this->videoPublishers;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setVideoPublishers(array $videoPublishers)
+    {
+        $this->videoPublishers = $videoPublishers;
+        
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getWaterfallTags()
+    {
+        return $this->waterfallTags;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setWaterfallTags(array $waterfallTags)
+    {
+        $this->waterfallTags = $waterfallTags;
+        
         return $this;
     }
 

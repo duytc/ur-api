@@ -104,4 +104,12 @@ class OptimizationIntegrationManager implements OptimizationIntegrationManagerIn
     {
         return $this->optimizationIntegrationRepository->getOptimizationIntegrationAdSlotIds($optimizationIntegrationId);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getOptimizationIntegrationWaterfallTagIds($optimizationIntegrationId = null)
+    {
+        return $this->optimizationIntegrationRepository->getOptimizationIntegrationWaterFallTagIds($optimizationIntegrationId);
+    }
 }

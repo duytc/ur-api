@@ -257,8 +257,8 @@ services:
                 - { name: doctrine.event_listener, event: postPersist }
                 - { name: doctrine.event_listener, event: postFlush }
 
-    ur_api.event_listener.update_otimization_integration_when_ad_slot_change_listener:
-         class: UR\Bundle\ApiBundle\EventListener\UpdateAdSlotWhenOptimizationIntegrationChangeListener
+    ur_api.event_listener.update_resource_for_platform_integration_when_ad_slot_change_listener:
+         class: UR\Bundle\ApiBundle\EventListener\UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener
          arguments:
              - '@ur.worker.manager'
          tags:

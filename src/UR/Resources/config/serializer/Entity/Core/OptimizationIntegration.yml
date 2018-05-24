@@ -43,3 +43,9 @@ UR\Entity\Core\OptimizationIntegration:
         platformIntegration:
             expose: true
             groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        videoPublishers:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        waterfallTags:
+            expose: true
+            groups: [optimizationIntegration.detail, optimizationIntegration.min]

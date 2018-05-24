@@ -36,10 +36,18 @@ services:
     ur.service.optimization_rule.automated_optimization.puvantage.pubvantage_optimizer:
         class: UR\Service\OptimizationRule\AutomatedOptimization\Pubvantage\PubvantageOptimizer
         arguments:
-          - @ur.util.tagcade_rest_client
-          - @ur.service.optimization_rule.data_training_table_service
-          - @ur.service.dynamic_table.dynamic_table_service
-          - @ur.service.optimization_rule.optimization_rule_score_service
+            - @ur.util.tagcade_rest_client
+            - @ur.service.optimization_rule.data_training_table_service
+            - @ur.service.dynamic_table.dynamic_table_service
+            - @ur.service.optimization_rule.optimization_rule_score_service
+
+    ur.service.optimization_rule.automated_optimization.pubvantage_video.pubvantage_video_optimizer:
+        class: UR\Service\OptimizationRule\AutomatedOptimization\PubvantageVideo\PubvantageVideoOptimizer
+        arguments:
+            - @ur.util.tagcade_rest_client
+            - @ur.service.optimization_rule.data_training_table_service
+            - @ur.service.dynamic_table.dynamic_table_service
+            - @ur.service.optimization_rule.optimization_rule_score_service
 
     ur.service.optimization_rule.automated_optimization.automated_optimizer:
         class: UR\Service\OptimizationRule\AutomatedOptimization\AutomatedOptimizer
@@ -51,6 +59,7 @@ services:
             - @ur.redis.app_cache
             -
                 - '@ur.service.optimization_rule.automated_optimization.puvantage.pubvantage_optimizer'
+                - '@ur.service.optimization_rule.automated_optimization.pubvantage_video.pubvantage_video_optimizer'
 
     ur.service.optimization_rule.normalization.country_normalizer:
         class: UR\Service\OptimizationRule\Normalization\CountryNormalizer

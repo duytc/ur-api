@@ -5,6 +5,7 @@ namespace UR\Model\Core;
 use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Model\ModelInterface;
 use UR\Service\OptimizationRule\AutomatedOptimization\Pubvantage\PubvantageOptimizer;
+use UR\Service\OptimizationRule\AutomatedOptimization\PubvantageVideo\PubvantageVideoOptimizer;
 
 interface OptimizationIntegrationInterface extends ModelInterface
 {
@@ -28,7 +29,8 @@ interface OptimizationIntegrationInterface extends ModelInterface
     ];
 
     const SUPPORT_PLATFORM_INTEGRATION = [
-        PubvantageOptimizer::PLATFORM_INTEGRATION
+        PubvantageOptimizer::PLATFORM_INTEGRATION,
+        PubvantageVideoOptimizer::PLATFORM_INTEGRATION,
     ];
 
     const ACTIVE_APPLY = 1;
@@ -128,6 +130,28 @@ interface OptimizationIntegrationInterface extends ModelInterface
      * @return self
      */
     public function setOptimizationAlerts($optimizationAlerts);
+
+    /**
+     * @return array
+     */
+    public function getVideoPublishers();
+
+    /**
+     * @param array $videoPublishers
+     * @return self
+     */
+    public function setVideoPublishers(array $videoPublishers);
+
+    /**
+     * @return array
+     */
+    public function getWaterfallTags();
+
+    /**
+     * @param array $waterfallTags
+     * @return self
+     */
+    public function setWaterfallTags(array $waterfallTags);
 
     /**
      * @return boolean

@@ -22,4 +22,6 @@ class OptimizationIntegration extends OptimizationIntegrationModel
     protected $endRescoreAt;
     protected $platformIntegration;
     protected $alerts;
+    protected $videoPublishers;
+    protected $waterfallTags;
 }

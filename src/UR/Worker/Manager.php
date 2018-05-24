@@ -496,13 +496,34 @@ class Manager
         $this->concurrentJobScheduler->addJob($jobData);
     }
 
-    public function synchronizeAdSlotWithOptimizationIntegration($actions){
+    /**
+     * @param array $actions
+     */
+    public function synchronizeAdSlotWithOptimizationIntegration($actions)
+    {
         /* new worker design of ur api, so that the jobData is changed */
         $params = new stdClass;
         $params->actions = $actions;
 
         $jobData = [
             'task' => 'synchronizeAdSlotWithOptimizationIntegration',
+            'params' => $params
+        ];
+
+        $this->beanstalk->putInTube(Manager::TAGCADE_API_TUBE, json_encode($jobData));
+    }
+
+    /**
+     * @param array $actions
+     */
+    public function synchronizeVideoWaterfallTagWithOptimizationIntegration($actions)
+    {
+        /* new worker design of ur api, so that the jobData is changed */
+        $params = new stdClass;
+        $params->actions = $actions;
+
+        $jobData = [
+            'task' => 'synchronizeVideoWaterfallTagWithOptimizationIntegration',
             'params' => $params
         ];
 

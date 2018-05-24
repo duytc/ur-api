@@ -3,6 +3,8 @@
 namespace UR\Util;
 
 use RestClient\CurlRestClient;
+use UR\Service\OptimizationRule\AutomatedOptimization\Pubvantage\PubvantageOptimizer;
+use UR\Service\OptimizationRule\AutomatedOptimization\PubvantageVideo\PubvantageVideoOptimizer;
 use UR\Service\RestClientTrait;
 
 class TagcadeRestClient
@@ -45,7 +47,9 @@ class TagcadeRestClient
     }
 
     /**
-     * @inheritdoc
+     * @param bool $force
+     * @return mixed|null|string
+     * @throws \Exception
      */
     public function getToken($force = false)
     {
@@ -72,9 +76,37 @@ class TagcadeRestClient
     }
 
     /**
-     * @inheritdoc
+     * @param array $data
+     * @param string $platformIntegration
+     * @return bool
+     * @throws \Exception
      */
-    public function updateCacheForAdSlots($data)
+    public function updateCacheForAdSlots(array $data, $platformIntegration = PubvantageOptimizer::PLATFORM_INTEGRATION)
+    {
+        $data['platform_integration'] = $platformIntegration;
+
+        return $this->updateCacheForPubvantage($data);
+    }
+
+    /**
+     * @param array $data
+     * @param string $platformIntegration
+     * @return bool
+     * @throws \Exception
+     */
+    public function updateCacheForWaterFallTags(array $data, $platformIntegration = PubvantageVideoOptimizer::PLATFORM_INTEGRATION)
+    {
+        $data['platform_integration'] = $platformIntegration;
+
+        return $this->updateCacheForPubvantage($data);
+    }
+
+    /**
+     * @param array $data
+     * @return bool
+     * @throws \Exception
+     */
+    private function updateCacheForPubvantage(array $data)
     {
         /* important: not try-catch here, we need let getToken() throw exception when authentication failed */
         $header = array('Authorization: Bearer ' . $this->getToken());
@@ -84,7 +116,7 @@ class TagcadeRestClient
         ];
 
         $result = $this->curl->executeQuery(
-            $this->updateCacheUrl .'?XDEBUG_SESSION_START=1',
+            $this->updateCacheUrl, // . '?XDEBUG_SESSION_START=1',
             'POST',
             $header,
             $data
@@ -107,9 +139,37 @@ class TagcadeRestClient
     }
 
     /**
-     * @inheritdoc
+     * @param array $data
+     * @param string $platformIntegration
+     * @return mixed
+     * @throws \Exception
      */
-    public function testCacheForAdSlots($data)
+    public function testCacheForAdSlots(array $data, $platformIntegration = PubvantageOptimizer::PLATFORM_INTEGRATION)
+    {
+        $data['platform_integration'] = $platformIntegration;
+
+        return $this->testCacheForPubvantage($data);
+    }
+
+    /**
+     * @param array $data
+     * @param string $platformIntegration
+     * @return mixed
+     * @throws \Exception
+     */
+    public function testCacheForWaterFallTags(array $data, $platformIntegration = PubvantageVideoOptimizer::PLATFORM_INTEGRATION)
+    {
+        $data['platform_integration'] = $platformIntegration;
+
+        return $this->testCacheForPubvantage($data);
+    }
+
+    /**
+     * @param array $data
+     * @return mixed
+     * @throws \Exception
+     */
+    private function testCacheForPubvantage(array $data)
     {
         /* important: not try-catch here, we need let getToken() throw exception when authentication failed */
         $header = array('Authorization: Bearer ' . $this->getToken());
@@ -119,7 +179,7 @@ class TagcadeRestClient
         ];
 
         $result = $this->curl->executeQuery(
-            $this->testCacheUrl .'?XDEBUG_SESSION_START=1',
+            $this->testCacheUrl, // . '?XDEBUG_SESSION_START=1',
             'POST',
             $header,
             $data
@@ -142,21 +202,23 @@ class TagcadeRestClient
     }
 
     /**
-     * @inheritdoc
+     * @param array $data
+     * @return mixed
+     * @throws \Exception
      */
-    public function getScoresForOptimizationRule($data)
+    public function getScoresForOptimizationRule(array $data)
     {
         /* important: not try-catch here, we need let getToken() throw exception when authentication failed */
-      /*  $scores = $this->curl->executeQuery(
-            $this->scoreFetcherUrl,
-            'POST',
-            ["Content-Type" => "application/json;charset=UTF-8"],
-            $data
+        /*  $scores = $this->curl->executeQuery(
+              $this->scoreFetcherUrl,
+              'POST',
+              ["Content-Type" => "application/json;charset=UTF-8"],
+              $data
 
-            $this->curl->close();
-        );*/
+              $this->curl->close();
+          );*/
 
-        $scores= $this->callRestAPI('POST', $this->scoreFetcherUrl, json_encode($data));
+        $scores = $this->callRestAPI('POST', $this->scoreFetcherUrl, json_encode($data));
         $scores = json_decode($scores, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -168,60 +230,5 @@ class TagcadeRestClient
         }
 
         return $scores;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getAdTagsFromAdSlot($adSlotId)
-    {
-        /* important: not try-catch here, we need let getToken() throw exception when authentication failed */
-        $header = array('Authorization: Bearer ' . $this->getToken());
-        $url = str_replace("{id}", $adSlotId, $this->getAdSlotUrl);
-
-        $adTags = $this->curl->executeQuery(
-            $url,
-            'GET',
-            $header,
-            []
-        );
-
-        $this->curl->close();
-
-        $adTags = json_decode($adTags, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('json decoding error when get scores');
-        }
-
-        if (array_key_exists('code', $adTags) && $adTags['code'] != 200) {
-            throw new \Exception(sprintf('failed to get adtags, code %d', $adTags['code']));
-        }
-
-        return $adTags;
-    }
-
-    /**
-     * check if file too large (http code 413)
-     *
-     * @param string $postResult html response
-     * @return bool|int
-     */
-    private function checkIfHttp413($postResult)
-    {
-        /*
-         * <html>
-         * <head><title>413 Request Entity Too Large</title></head>
-         * <body bgcolor="white">
-         * <center><h1>413 Request Entity Too Large</h1></center>
-         * <hr><center>nginx/1.10.2</center>
-         * </body>
-         * </html>
-         */
-        if (empty($postResult) || !is_string($postResult)) {
-            return false;
-        }
-
-        return false !== strpos($postResult, '<head><title>413');
     }
 }

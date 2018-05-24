@@ -216,6 +216,41 @@ class OptimizationIntegrationController extends RestControllerAbstract implement
     }
 
     /**
+     * Get WaterfallTags ids has been assigned optimization integration
+     *
+     * @Rest\Get("/optimizationintegrations/waterfalltags/ids")
+     *
+     * @Rest\QueryParam(name="id", nullable=false, description="optimization integration id")
+     * @ApiDoc(
+     *  section = "Optimization Integration",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return array
+     * @throws \Exception
+     */
+    public function getWaterfallTagIdsAction(Request $request)
+    {
+        $optimizationIntegrationId = $request->query->get('id', null);
+
+        $optimizationIntegrationManager = $this->get('ur.domain_manager.optimization_integration');
+        $waterfallTagIds = $optimizationIntegrationManager->getOptimizationIntegrationWaterfallTagIds($optimizationIntegrationId);
+
+        $waterfallTagIdsAssigned = [];
+        foreach ($waterfallTagIds as $waterfallTagId) {
+            $waterfallTagIdsAssigned[$waterfallTagId] = $waterfallTagId;
+        }
+
+        $waterfallTagIdsAssigned = array_values($waterfallTagIdsAssigned);
+
+        return $waterfallTagIdsAssigned;
+    }
+
+    /**
      * Get segments form optimization integration based on adSlot Id
      *
      * @Rest\Get("/optimizationintegrations/adslot/{id}/segments")

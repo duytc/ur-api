@@ -164,6 +164,30 @@ class OptimizationIntegrationRepository extends EntityRepository implements Opti
     /**
      * @inheritdoc
      */
+    public function getOptimizationIntegrationWaterFallTagIds($optimizationIntegrationId = null)
+    {
+        $optimizationIntegrations = $this->createQueryBuilder('opc');
+        if (is_numeric($optimizationIntegrationId))
+            $optimizationIntegrations->where($optimizationIntegrations->expr()->notIn('opc.id', $optimizationIntegrationId));
+
+        $optimizationIntegrations = $optimizationIntegrations->getQuery()->getResult();
+
+        $waterfallTagIds = [];
+        foreach ($optimizationIntegrations as $optimizationIntegration) {
+            if (!$optimizationIntegration instanceof OptimizationIntegrationInterface) {
+                continue;
+            }
+            $waterfallTagIds = array_merge($waterfallTagIds, $optimizationIntegration->getWaterfallTags());
+        }
+
+        $waterfallTagIds = array_values(array_unique($waterfallTagIds));
+
+        return $waterfallTagIds;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getSegmentsByAdSlotId($adSlotId)
     {
         if (empty($adSlotId)) {
