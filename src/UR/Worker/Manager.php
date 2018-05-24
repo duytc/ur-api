@@ -27,6 +27,7 @@ use UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource;
 use UR\Worker\Job\Concurrent\ProcessAlert;
 use UR\Worker\Job\Concurrent\SplitHugeFile;
 use UR\Worker\Job\Concurrent\SyncTrainingDataAndGenerateLearnerModel;
+use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenDataSourceSheetConfigChange;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
 use UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted;
@@ -323,6 +324,25 @@ class Manager
             'task' => UpdateDetectedFieldsWhenEntryInserted::JOB_NAME,
             UpdateDetectedFieldsWhenEntryInserted::PARAM_KEY_ENTRY_ID => $entryId,
             UpdateDetectedFieldsWhenEntryInserted::PARAM_KEY_DATA_SOURCE_ID => $dataSourceId
+        ];
+
+        // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+
+    /**
+     * @param int $entryId
+     * @param int $dataSourceId
+     * @param array $deletedSheets
+     */
+    public function updateDetectedFieldsWhenDataSourceSheetConfigChange($entryId, $dataSourceId, $deletedSheets = [])
+    {
+        $jobData = [
+            'task' => UpdateDetectedFieldsWhenDataSourceSheetConfigChange::JOB_NAME,
+            UpdateDetectedFieldsWhenDataSourceSheetConfigChange::PARAM_KEY_ENTRY_ID => $entryId,
+            UpdateDetectedFieldsWhenDataSourceSheetConfigChange::PARAM_KEY_DATA_SOURCE_ID => $dataSourceId,
+            UpdateDetectedFieldsWhenDataSourceSheetConfigChange::PARAM_KEY_DELETED_SHEETS => $deletedSheets
         ];
 
         // concurrent job, we do not care what order it is processed in

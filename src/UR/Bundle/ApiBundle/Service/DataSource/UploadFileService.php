@@ -158,6 +158,7 @@ class UploadFileService
                 throw new \Exception(sprintf("File %s is not valid - cannot convert to UTF-8", $originName));
             }
 
+            // try get file for build upload message to return to UI
             $this->dataSourceFileFactory->getFileForChunk($filePath, $dataSource->getSheets());
 
             // create new data source entry

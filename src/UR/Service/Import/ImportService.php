@@ -144,6 +144,7 @@ class ImportService
      * @param array $newDetectedFields
      * @param array $currentDetectedFields
      * @param string $action UPLOAD or DELETE
+     * @param array $deletedFields
      * @return array|mixed
      */
     public function detectFieldsForDataSource(array $newDetectedFields, array $currentDetectedFields, $action)

@@ -541,6 +541,16 @@ services:
             - "%upload_file_dir%"
             - '@ur.worker.manager'
 
+    ur.worker.job.concurrent.update_detected_fields_when_sheet_config_change:
+        class: UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenDataSourceSheetConfigChange
+        arguments:
+            - '@monolog.logger'
+            - '@ur.domain_manager.data_source'
+            - '@ur.domain_manager.data_source_entry'
+            - '@ur.service.import'
+            - "%upload_file_dir%"
+            - '@ur.worker.manager'
+
     ur.worker.job.concurrent.update_total_row_when_entry_inserted:
         class: UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted
         arguments:
@@ -592,6 +602,7 @@ services:
                 - @ur.worker.job.concurrent.process_optimization_frequency
                 - @ur.worker.job.concurrent.update_optimization_integration_when_ad_slot_change_worker
                 - @ur.worker.job.concurrent.update_optimization_integration_when_video_waterfall_tag_change_worker
+                - '@ur.worker.job.concurrent.update_detected_fields_when_sheet_config_change'
 
     ### end of concurrence worker pool
 

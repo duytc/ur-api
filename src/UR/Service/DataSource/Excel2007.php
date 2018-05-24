@@ -6,6 +6,7 @@ use Box\Spout\Common\Type;
 use Box\Spout\Reader\ReaderFactory;
 use Box\Spout\Reader\SheetInterface;
 use Box\Spout\Reader\XLSX\Sheet;
+use Exception;
 use SplDoublyLinkedList;
 use UR\Behaviors\ParserUtilTrait;
 
@@ -16,6 +17,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
     public static $EXCEL_2007_FORMATS = ['Excel2007'];
 
     protected $excel;
+    /**@var Sheet */
     protected $sheet;
     protected $headers;
     protected $rows = [];
@@ -42,10 +44,11 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         $this->excel->setShouldFormatDates(true);
         $this->excel->open($filePath);
 
-        $headerLength = $this->getHeaderLength();
+        //$headerLength = $this->getHeaderLength($sheets);
+        /// compare headers
 
         foreach ($this->excel->getSheetIterator() as $sheet) {
-            if (is_array($sheets) && !empty($sheets) && !in_array($sheet->getName(), $sheets)) {
+            if (is_array($sheets) && !empty($sheets) && !in_array(trim($sheet->getName()), $sheets)) {
                 continue;
             }
             $this->sheet = $sheet;
@@ -58,6 +61,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
                 break;
             }
         }
+        $headerLength = $this->getHeaderLength([$this->sheet->getName()]);
         /**@var Sheet $sheet */
         foreach ($this->sheet->getRowIterator() as $rowIndex2 => $row) {
             if ($this->isTextArray($row) && !$this->isEmptyArray($row) && count($this->trimArray($row)) == $headerLength) {
@@ -75,10 +79,13 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         }
     }
 
-    public function getHeaderLength()
+    public function getHeaderLength($sheets = [])
     {
         $rowLength = [];
         foreach ($this->excel->getSheetIterator() as $sheet) {
+            if (is_array($sheets) && !empty($sheets) && !in_array(trim($sheet->getName()), $sheets)) {
+                continue;
+            }
             /**@var Sheet $sheet */
             foreach ($sheet->getRowIterator() as $rowIndex2 => $row) {
                 if ($rowIndex2 > 200) {
@@ -138,13 +145,14 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
      */
     public function getRows($sheets = [])
     {
+        $this->compareHeaders($sheets);
         $rows = new SplDoublyLinkedList();
         /**
          * @var Sheet $sheet
          */
         $curRow = 1;
         foreach ($this->excel->getSheetIterator() as $sheet) {
-            if (is_array($sheets) && !empty($sheets) && !in_array($sheet->getName(), $sheets)) {
+            if (is_array($sheets) && !empty($sheets) && !in_array(trim($sheet->getName()), $sheets)) {
                 continue;
             }
 
@@ -153,7 +161,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
                     if ($this->isEmptyRow($row)) {
                         continue;
                     }
-                    if($row == $this->headers){
+                    if(empty(array_diff($row, $this->headers))){
                         continue;
                     }
                     if (count($row) !== count($this->headers)) {
@@ -221,6 +229,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
         if (!is_numeric($limit)) {
             return $this->getRows($sheets);
         }
+        $this->compareHeaders($sheets);
 
         $limitedRows = new SplDoublyLinkedList();
         /**
@@ -228,7 +237,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
          */
         $curRow = 1;
         foreach ($this->excel->getSheetIterator() as $sheet) {
-            if (is_array($sheets) && !empty($sheets) && !in_array($sheet->getName(), $sheets)) {
+            if (is_array($sheets) && !empty($sheets) && !in_array(trim($sheet->getName()), $sheets)) {
                 continue;
             }
             foreach ($sheet->getRowIterator() as $row) {
@@ -236,7 +245,7 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
                     if ($this->isEmptyRow($row)) {
                         continue;
                     }
-                    if($row == $this->headers){
+                    if(empty(array_diff($row, $this->headers))){
                         continue;
                     }
                     if (count($row) !== count($this->headers)) {
@@ -282,5 +291,27 @@ class Excel2007 extends CommonDataSourceFile implements DataSourceInterface
     public function getHeaders()
     {
         return $this->headers;
+    }
+
+    private function compareHeaders($sheets = [])
+    {
+        $headers = [];
+        foreach ($this->excel->getSheetIterator() as $sheet) {
+            if (is_array($sheets) && !empty($sheets) && !in_array(trim($sheet->getName()), $sheets)) {
+                continue;
+            }
+
+            foreach ($sheet->getRowIterator() as $rowIndex2 => $row) {
+                if ($this->isTextArray($row) && !$this->isEmptyArray($row) && count($this->trimArray($row)) == $this->getHeaderLength([trim($sheet->getName())])) {
+                    $headers[] = $row;
+                }
+            }
+
+        }
+        foreach ($headers as $header){
+            if(!empty(array_diff($header,reset($headers)))){
+                throw new Exception(sprintf('Multi sheets have header not match'));
+            }
+        }
     }
 }

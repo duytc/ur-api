@@ -2,6 +2,7 @@
 
 namespace UR\Service\DataSource;
 
+use Exception;
 use PHPExcel_IOFactory;
 use PHPExcel_Reader_IReader;
 use PHPExcel_Shared_Date;
@@ -67,7 +68,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
     {
         $objPHPExcel = $this->getPhpExcelObj($this->filePath, 100, 1);
         foreach ($objPHPExcel->getAllSheets() as $sheet) {
-            if (is_array($sheets) && !empty($sheets) && !in_array($sheet->getTitle(), $sheets)) {
+            if (is_array($sheets) && !empty($sheets) && !in_array(trim($sheet->getTitle()), $sheets)) {
                 continue;
             }
             $this->sheet = $sheet;
@@ -214,6 +215,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
 
     private function getChunkRows(&$beginRowsReadRange, $chunkSize, $sheets = [])
     {
+        $this->compareHeaders($sheets);
         $chunkRows = [];
         $objPHPExcel = $this->getPhpExcelObj($this->filePath, $chunkSize, $beginRowsReadRange);
 
@@ -225,7 +227,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
         try {
             $this->ogiHeaders = is_array($this->ogiHeaders) ? $this->ogiHeaders : [$this->ogiHeaders];
             $columnsHeaders = array_combine($columns, $this->ogiHeaders);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
 
         }
 
@@ -240,7 +242,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
             if(!$sheet instanceof PHPExcel_Worksheet){
                 continue;
             }
-            if (is_array($sheets) && !empty($sheets) && !in_array($sheet->getTitle(), $sheets)) {
+            if (is_array($sheets) && !empty($sheets) && !in_array(trim($sheet->getTitle()), $sheets)) {
                 continue;
             }
             $highestRow = $sheet->getHighestDataRow();
@@ -265,7 +267,7 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
                         $rowData[] = $this->normalizeScientificValue($cell->getValue());
                     }
                 }
-                if($rowData == $this->getHeaders()){
+                if(empty(array_diff($rowData,$this->getHeaders()))){
                     continue;
                 }
                 $chunkRows[$i] = $this->removeNonUtf8CharactersForSingleRow($rowData);
@@ -332,5 +334,59 @@ class Excel extends CommonDataSourceFile implements DataSourceInterface
     public function getHeaders()
     {
         return $this->headers;
+    }
+
+    public function compareHeaders($sheets){
+        $headers = [];
+        $objPHPExcel = $this->getPhpExcelObj($this->filePath, 100, 1);
+        foreach ($objPHPExcel->getAllSheets() as $sheet) {
+            if (is_array($sheets) && !empty($sheets) && !in_array(trim($sheet->getTitle()), $sheets)) {
+                continue;
+            }
+
+            $i = 0;
+            $maxColumns = 0;
+            $header = [];
+            for ($rowIndex = 1, $highestDataRow = $sheet->getHighestDataRow(); $rowIndex <= $highestDataRow; $rowIndex++) {
+                $highestDataColumnIndex = $sheet->getHighestDataColumn($rowIndex);
+                $currentRows = $sheet->rangeToArray(
+                    'A' . $rowIndex . ':' . $highestDataColumnIndex . $rowIndex,
+                    $nullValue = null,
+                    $calculateFormulas = true,
+                    $formatData = false, $returnCellRef = false
+                );
+
+                $currentRow = array_filter($currentRows[0], function ($value) {
+                    if (is_numeric($value)) {
+                        return true;
+                    }
+
+                    return (!is_null($value) && !empty($value));
+                });
+
+                $currentRow = $this->removeInvalidColumns($currentRow);
+
+                if (count($currentRow) < 1) {
+                    continue;
+                }
+
+                $i++;
+
+                if ($this->isTextArray($currentRow) && !$this->isEmptyArray($currentRow) && count($currentRow) > $maxColumns) {
+                    $header = $currentRow;
+                    $maxColumns = $currentRow;
+                }
+                if ($i >= DataSourceInterface::DETECT_HEADER_ROWS) {
+                    break;
+                }
+            }
+            $headers[] = $header;
+        }
+
+        foreach ($headers as $header){
+            if(!empty(array_diff($header,reset($headers)))){
+                throw new Exception(sprintf('Multi sheets have header not match!'));
+            }
+        }
     }
 }
