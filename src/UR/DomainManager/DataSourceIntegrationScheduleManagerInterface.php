@@ -4,6 +4,7 @@ namespace UR\DomainManager;
 
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\IntegrationInterface;
 
 interface DataSourceIntegrationScheduleManagerInterface extends ManagerInterface
 {
@@ -20,4 +21,10 @@ interface DataSourceIntegrationScheduleManagerInterface extends ManagerInterface
      * @return array|DataSourceIntegrationScheduleInterface[]
      */
     public function findByDataSource(DataSourceInterface $dataSource);
+
+    /**
+     * @param IntegrationInterface $integration
+     * @return array|DataSourceIntegrationScheduleInterface[]
+     */
+    public function findByIntegration(IntegrationInterface $integration);
 }

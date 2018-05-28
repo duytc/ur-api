@@ -5,6 +5,7 @@ namespace UR\Repository\Core;
 use Doctrine\Common\Persistence\ObjectRepository;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\IntegrationInterface;
 
 interface DataSourceIntegrationScheduleRepositoryInterface extends ObjectRepository
 {
@@ -21,6 +22,12 @@ interface DataSourceIntegrationScheduleRepositoryInterface extends ObjectReposit
      * @return array|DataSourceIntegrationScheduleInterface[]
      */
     public function findByDataSource(DataSourceInterface $dataSource);
+
+    /**
+     * @param IntegrationInterface $integration
+     * @return array|\UR\Model\Core\DataSourceIntegrationScheduleInterface[]
+     */
+    public function findByIntegration(IntegrationInterface $integration);
 
     /**
      * @param $uuid

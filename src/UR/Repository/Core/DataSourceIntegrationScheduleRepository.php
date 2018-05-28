@@ -7,6 +7,7 @@ use Doctrine\ORM\EntityRepository;
 use UR\Model\Core\DataSourceIntegrationInterface;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\IntegrationInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 
 class DataSourceIntegrationScheduleRepository extends EntityRepository implements DataSourceIntegrationScheduleRepositoryInterface
@@ -85,6 +86,20 @@ class DataSourceIntegrationScheduleRepository extends EntityRepository implement
             ->join('dis.dataSourceIntegration', 'dsi')
             ->where('dsi.dataSource = :dataSource')
             ->setParameter('dataSource', $dataSource);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @param IntegrationInterface $integration
+     * @return array|\UR\Model\Core\DataSourceIntegrationScheduleInterface[]
+     */
+    public function findByIntegration(IntegrationInterface $integration)
+    {
+        $qb = $this->createQueryBuilder('dis')
+            ->join('dis.dataSourceIntegration', 'dsi')
+            ->where('dsi.integration = :integration')
+            ->setParameter('integration', $integration);
 
         return $qb->getQuery()->getResult();
     }
