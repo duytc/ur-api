@@ -17,3 +17,8 @@ services:
         arguments:
             - @doctrine.orm.entity_manager
             - @ur.repository.exchange_rate
+
+    ur.service.exchange_rate:
+            class: UR\Service\ExchangeRateService
+            arguments:
+                - @ur.domain_manager.exchange_rate

@@ -16,6 +16,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
     const CONDITION_COMPARATOR_KEY = 'conditionComparator';
     const CONDITION_VALUE_KEY = 'conditionValue';
     const CONDITION_FIELD_CALCULATED_VALUE = '$$CALCULATED_VALUE$$';
+    const EXCHANGE_RATE_DATE_FIELD = 'exchangeRateDateField';
 
     /**
      * @var string
@@ -23,6 +24,7 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
     protected $expression;
     protected $defaultValue;
     protected $language;
+    protected $exchangeRateDateField;
 
     public function __construct(ExpressionLanguage $language, array $addCalculatedField, bool $isPostGroup = true)
     {
@@ -39,6 +41,11 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
         $this->fieldName = $addCalculatedField[self::FIELD_NAME_KEY];
         $this->expression = $addCalculatedField[self::EXPRESSION_CALCULATED_FIELD];
         $this->type = $addCalculatedField[self::TYPE_KEY];
+
+        if (array_key_exists(self::EXCHANGE_RATE_DATE_FIELD, $addCalculatedField)) {
+            $this->exchangeRateDateField = $addCalculatedField[self::EXCHANGE_RATE_DATE_FIELD];
+        }
+
         if (isset($addCalculatedField[self::DEFAULT_VALUE_CALCULATED_FIELD]) && is_array($addCalculatedField[self::DEFAULT_VALUE_CALCULATED_FIELD])) {
             $this->defaultValue = $addCalculatedField[self::DEFAULT_VALUE_CALCULATED_FIELD];
         } else {
@@ -156,6 +163,13 @@ class AddCalculatedFieldTransform extends NewFieldTransform implements Transform
         return $this->expression;
     }
 
+    /**
+     * @return string
+     */
+    public function getExchangeRateDateField()
+    {
+        return $this->exchangeRateDateField;
+    }
     /**
      * @return array
      */

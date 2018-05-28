@@ -3,9 +3,8 @@
 namespace UR\DomainManager;
 
 use Doctrine\Common\Persistence\ObjectManager;
-use Doctrine\ORM\ORMException;
+
 use ReflectionClass;
-use UR\Service\ExchangeRateService;
 use UR\Service\RestClientTrait;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\ExchangeRateInterface;
@@ -19,13 +18,11 @@ class ExchangeRateManager implements ExchangeRateManagerInterface
     protected $om;
     protected $repository;
     protected $commandAPI;
-    protected $exchangeRateService;
 
     public function __construct(ObjectManager $om, ExchangeRateRepositoryInterface $repository)
     {
         $this->om = $om;
         $this->repository = $repository;
-        $this->exchangeRateService = new ExchangeRateService($this, $repository);
     }
 
     /**
@@ -84,53 +81,9 @@ class ExchangeRateManager implements ExchangeRateManagerInterface
     }
 
     /**
-     * Get the conversion in our system
-     * Default get the conversion from USD-EUR with current moment
-     * If the date passed in service is not valid in our system, try to get
-     * yesterday closing exchange rate
-     *
-     * @param String $date The date to get the conversion for currency
-     * @param String $fromCurrency The base currency to get exchange rate for it
-     * @param String $toCurrency The destination that need to transform
-     *
-     * @return ExchangeRateInterface $exchangeRate
-     * @throws ORMException
-     *
+     * @inheritdoc
      */
-    public function getConversionByDate($date = null, $fromCurrency = 'USD', $toCurrency = 'EUR')
-    {
-        $date = $date ?: date('Y-m-d');
-        $exchangeRate = null;
-
-        try {
-
-            $data = $this->repository->findBy([
-                'date' => $date,
-                'fromCurrency' => $fromCurrency,
-                'toCurrency' => $toCurrency
-            ]) ?: $this->repository->findBy([
-                'fromCurrency' => $fromCurrency,
-                'toCurrency' => $toCurrency
-            ], array('date' => 'desc'));
-
-            $data = null;
-
-            if(is_array($data) && !empty($data)) {
-                $exchangeRate = $data[0] && $data[0] instanceof ExchangeRateInterface ? $data[0] : null;
-            } else {
-                //call Exchange Rate Service to get conversion via API call
-                $exRate = $this->exchangeRateService->getExchangeRateHistorical($date);
-                if(!empty($exRate)) {
-                    $this->exchangeRateService->storeExchangeRate($exRate);
-                    $exchangeRate = $this->exchangeRateService->getExchangeRate();
-                }
-            }
-        } catch(\Doctrine\ORM\ORMException $orm) {
-            throw new ORMException($orm->getCode() . ':' . $orm->getMessage());
-        } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());
-        }
-
-        return $exchangeRate;
+    public function findBy($criteria = []) {
+        return $this->repository->findBy($criteria);
     }
 }

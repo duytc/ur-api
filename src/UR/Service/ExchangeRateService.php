@@ -4,13 +4,15 @@ namespace UR\Service;
 
 use Doctrine\ORM\ORMException;
 use UR\Entity\Core\ExchangeRate;
-use Symfony\Component\Process\Exception\RuntimeException;
+use UR\Model\Core\ExchangeRateInterface;
 use UR\DomainManager\ExchangeRateManagerInterface;
-use UR\Repository\Core\ExchangeRateRepositoryInterface;
+use Symfony\Component\Process\Exception\RuntimeException;
 
 
 class ExchangeRateService
 {
+    /** Base currency of FreePlan*/
+    const DEFAULT_CURRENCY = 'USD';
     /** appId using to authenticated on API*/
     const APP_ID_DEFAULT = 'c87f920291ee4e8995db7e507c1f2d50';
     const API_BASE_PATH = 'https://openexchangerates.org/api/';
@@ -26,12 +28,20 @@ class ExchangeRateService
         $toCurrency = 'EUR',
         $baseCurrency = 'USD',
         $exchangeRate,
-        $currencyList = array(),
-        $exchangeRateHistoricalList = array();
+        $date = null;
 
-    function __construct(ExchangeRateManagerInterface $exchangeRateManager, ExchangeRateRepositoryInterface $exchangeRateRepository) {
+    function __construct(ExchangeRateManagerInterface $exchangeRateManager) {
         $this->exchangeRateManager = $exchangeRateManager;
-        $this->exchangeRateRepository = $exchangeRateRepository;
+    }
+
+    public function setDate($date)
+    {
+        $this->date = $date;
+    }
+
+    public function getDate()
+    {
+        return $this->date;
     }
 
     public function setBaseCurrency($currency = 'USD')
@@ -122,6 +132,7 @@ class ExchangeRateService
     public function getExchangeRateHistorical($date)
     {
         $res = $this->sendGetRequest($this->getHistoricalPathByDate($date));
+
         return $res && is_array($res) && array_key_exists('rates', $res) ? $res['rates'] : [];
     }
 
@@ -133,6 +144,7 @@ class ExchangeRateService
     public function getLatestExchangeRate()
     {
         $res = $this->sendGetRequest(self::LATEST_DATA);
+
         return $res && is_array($res) && array_key_exists('rates', $res) ? $res['rates'] : [];
     }
 
@@ -146,13 +158,44 @@ class ExchangeRateService
     {
         throw new RuntimeException(sprintf('An error occurred during get Exchange Rate: %s',
             (is_array($res) ? 'code ' . ($res['status'] ?: '') . ($res['description'] ?: '') : '')));
-        /*$this->io->warning(sprintf('An error occurred during get Exchange Rate: %s',
-            (is_array($res) ? 'code ' . ($res['status'] ?: '') . ($res['description'] ?: '') : '')));*/
     }
 
     public  function getHistoricalPathByDate($date = null)
     {
         return self::HISTORICAL . '/' . ($date ?: date("Y-m-d")) . '.json';
+    }
+
+    /**
+     * check whether currency param is available supported or not
+     *
+     * @return boolean
+     */
+    protected function isBaseCurrencyNotSupported()
+    {
+        return $this->getBaseCurrency() !== self::DEFAULT_CURRENCY;
+    }
+
+    protected function getReverseRate(array $rates = [], String $toCurrency = self::DEFAULT_CURRENCY)
+    {
+        return $rates[$toCurrency] > 0 ? 1 / $rates[$toCurrency] : 1;
+    }
+
+    /**
+     * re-calculate exchange rate if base currency was passed is not support in OpenExchangeRate API
+     * @return array $exchangeRate
+     */
+    protected final function calcExchangeRateOutOfFreePlan()
+    {
+        $currentBaseCurrency = $this->getBaseCurrency();
+        $this->setBaseCurrency(self::DEFAULT_CURRENCY);
+        $transformExchangeRate = is_null($this->getDate()) ? $this->getLatestExchangeRate() : $this->getExchangeRateHistorical($this->getDate());
+        $this->setBaseCurrency($currentBaseCurrency);
+
+        return [ "rates" => [
+                    self::DEFAULT_CURRENCY => (array_key_exists($currentBaseCurrency, $transformExchangeRate) ?
+                        $this->getReverseRate($transformExchangeRate, $currentBaseCurrency) : 1)
+            ]
+        ];
     }
 
     /**
@@ -163,6 +206,12 @@ class ExchangeRateService
      */
     public function sendGetRequest($endPoint = '')
     {
+        //check if base currency is out of free plan
+        if($this->isBaseCurrencyNotSupported()) {
+            return $this->calcExchangeRateOutOfFreePlan();
+        }
+
+
         $url = self::API_BASE_PATH . $endPoint . '?' . $this->buildQuery([
                 'app_id' => $this->getAppId(),
                 'base' => $this->getBaseCurrency(),
@@ -203,8 +252,9 @@ class ExchangeRateService
      *
      * Stores all exchange rate data to Databse through ExchangeRateManger/Doctrine
      * @param array $data
+     * @param String $date
      * @return mixed
-     *
+     * @throws ORMException
      */
     public function storeExchangeRate(array $data = [], String $date = '')
     {
@@ -216,7 +266,7 @@ class ExchangeRateService
             $exchangeRate->setToCurrency($this->getToCurrency() ?: 'EUR');
             $exchangeRate->setRate($data[$this->getToCurrency() ?: 'EUR']);
 
-            if(empty($this->exchangeRateRepository->findBy(array(
+            if(empty($this->exchangeRateManager->findBy(array(
                 'date' => $date ?: date('Y-m-d'),
                 'fromCurrency' => $this->getBaseCurrency(),
                 'toCurrency' => $this->getToCurrency()
@@ -233,5 +283,53 @@ class ExchangeRateService
         }
 
         return $isSuccess;
+    }
+
+    /**
+     * Get the conversion in our system
+     * Default get the conversion from USD-EUR with current moment
+     * If the date passed in service is not valid in our system, try to get
+     * yesterday closing exchange rate
+     *
+     * @param String $date The date to get the conversion for currency
+     * @param String $fromCurrency The base currency to get exchange rate for it
+     * @param String $toCurrency The destination that need to transform
+     *
+     * @return ExchangeRateInterface $exchangeRate
+     * @throws ORMException
+     *
+     */
+    public function getConversionByDate($date = null, $fromCurrency = 'USD', $toCurrency = 'EUR')
+    {
+        $date = $date ?: date('Y-m-d');
+        $exchangeRate = null;
+
+        try {
+            $data = $this->exchangeRateManager->findBy([
+                'date' => $date,
+                'fromCurrency' => $fromCurrency,
+                'toCurrency' => $toCurrency
+            ]) ?: $this->exchangeRateManager->findBy([
+                'fromCurrency' => $fromCurrency,
+                'toCurrency' => $toCurrency
+            ], array('date' => 'desc'));
+
+            if(is_array($data) && !empty($data)) {
+                $exchangeRate = $data[0] && $data[0] instanceof ExchangeRateInterface ? $data[0] : null;
+            } else {
+                //call Exchange Rate Service to get conversion via API call
+                $exRate = $this->getExchangeRateHistorical($date);
+                if(!empty($exRate)) {
+                    $this->storeExchangeRate($exRate);
+                    $exchangeRate = $this->getExchangeRate();
+                }
+            }
+        } catch(\Doctrine\ORM\ORMException $orm) {
+            throw new ORMException($orm->getCode() . ':' . $orm->getMessage());
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
+
+        return $exchangeRate;
     }
 }
