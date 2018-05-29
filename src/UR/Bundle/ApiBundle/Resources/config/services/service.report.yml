@@ -20,7 +20,8 @@ services:
             - '@ur.services.report.report_filter'
             - '@ur.services.report.report_formatter'
             - '@ur.services.report.report_sorter'
-            - @monolog.logger
+            - '@monolog.logger'
+            - '%max_rows_for_normal_download%'
 
     ur.services.report.sql_builder:
         class: UR\Service\Report\SqlBuilder
@@ -73,3 +74,11 @@ services:
             - '%ur.report_view.large_threshold%'
             - '@ur.services.report.params_builder'
             - '@ur.worker.manager'
+
+    ur.services.large_report.remove_out_of_date_report_service:
+        class: UR\Service\LargeReport\RemoveOutOfDateReportService
+        arguments:
+            - '%report_file_dir%'
+            - '%expired_time_small_file%'
+            - '%expired_time_large_file%'
+            - '%ur.report_view.large_file_threshold%'

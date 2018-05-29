@@ -20,6 +20,7 @@ use UR\Service\DateUtilInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Worker\Job\Concurrent\ActivateThe3PartnerScoringServiceIntegration;
 use UR\Worker\Job\Concurrent\CountChunkRow;
+use UR\Worker\Job\Concurrent\ExportReportViewsAndSentEmail;
 use UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView;
 use UR\Worker\Job\Concurrent\ParseChunkFile;
 use UR\Worker\Job\Concurrent\ProcessOptimizationFrequency;
@@ -277,6 +278,29 @@ class Manager
     {
         $jobData = [
             'task' => ProcessOptimizationFrequency::JOB_NAME,
+        ];
+
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    /**
+     * @param $array
+     * @param string $email
+     * @param $filePath
+     * @param $url
+     * @param $reportViewId
+     * @param $token
+     */
+    public function exportReportViewsAndSentEmail($array, $email, $filePath, $url, $reportViewId = '', $token = '')
+    {
+        $jobData = [
+            'task' => ExportReportViewsAndSentEmail::JOB_NAME,
+            ExportReportViewsAndSentEmail::PARAMS => $array,
+            ExportReportViewsAndSentEmail::USER_EMAILS => $email,
+            ExportReportViewsAndSentEmail::PATH => $filePath,
+            ExportReportViewsAndSentEmail::URL => $url,
+            ExportReportViewsAndSentEmail::REPORT_VIEW_ID => $reportViewId,
+            ExportReportViewsAndSentEmail::TOKEN => $token
         ];
 
         $this->concurrentJobScheduler->addJob($jobData);

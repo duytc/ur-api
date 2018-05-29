@@ -7,16 +7,17 @@ use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use UR\Bundle\ApiBundle\Controller\RestControllerAbstract;
 use UR\Bundle\ReportApiBundle\Behaviors\DashBoardUtilTrait;
 use UR\Domain\DTO\Report\ParamsInterface;
-use UR\Handler\HandlerInterface;
-use UR\Service\DTO\Report\ReportResult;
 use UR\Exception\InvalidArgumentException;
+use UR\Handler\HandlerInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\DTO\Report\ReportResultInterface;
+use UR\Service\ExportLargeReportException;
 use UR\Service\Report\ParamsBuilder;
 
 /**
@@ -407,7 +408,7 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
      * )
      *
      * @param Request $request
-     * @return array
+     * @return mixed
      */
     public function downloadAction(Request $request)
     {
@@ -423,10 +424,40 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
             $reportViewRepository->updateLastRun($params->getReportViewId());
         }
 
-        /** @var ReportResult $reportResult */
-        $reportResult = $this->get('ur.services.report.report_builder')->getReport($params);
         // Set the filename of the download
         $filename = 'MyReport_Tagcade_' . date('Ymd') . '-' . date('His');
+        $userEmails = $request->request->get('userEmail');
+
+        //if ($userEmails != null && filter_var($userEmails, FILTER_VALIDATE_EMAIL)) {
+        if (!empty($userEmails)) {
+            foreach ($userEmails as $key => $email) {
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    unset($userEmails[$key]);
+                }
+            }
+            if (!empty($userEmails)) {
+                //Process 2nd request with email provided by user
+                if (!file_exists($this->getParameter('report_file_dir'))) {
+                    mkdir($this->getParameter('report_file_dir'), 0777, true);
+                }
+
+                $filename = sprintf("%s_%s.csv", $filename, uniqid("report"));
+                $path = sprintf("%s/%s", $this->getParameter('report_file_dir'), $filename);
+                $url = sprintf("%s/%s", $this->getParameter('download_report_view_link'), $filename);
+                $worker = $this->container->get('ur.worker.manager');
+                $worker->exportReportViewsAndSentEmail($request->request->all(), $userEmails, $path, $url);
+            }
+
+            return [];
+        }
+
+        $params->setIsExport(true);
+        $reportResult = $this->get('ur.services.report.report_builder')->getReport($params);
+        if (!$reportResult instanceof ReportResultInterface) {
+            //This is important step, notify to UI about large report
+            //UI will ask user to provide email and resend request with email in above code
+            return new JsonResponse(array('message' => 'The report file is too large. Please provide your emails to receive the report file.', 'code' => 102));
+        }
 
         // Output CSV-specific headers
         header('Pragma: public');

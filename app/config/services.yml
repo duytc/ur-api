@@ -582,6 +582,20 @@ services:
         arguments:
             - @ur.domain_manager.optimization_integration
 
+    ur.worker.job.concurrent.export_report_views_and_sent_email:
+        class: UR\Worker\Job\Concurrent\ExportReportViewsAndSentEmail
+        arguments:
+            - '@monolog.logger'
+            - '@ur.services.report.report_builder'
+            - '@ur.services.report.params_builder'
+            - '@ur.service.csv_writer'
+            - '@swiftmailer.mailer'
+            - '@templating'
+            - '@ur.services.large_report.remove_out_of_date_report_service'
+            - '@ur.domain_manager.report_view'
+            - '@swiftmailer.transport.real'
+            - '%mailer_sender%'
+
     ur.worker.job.concurrent.worker_pool:
         class: Pubvantage\Worker\JobWorkerPool
         arguments:
@@ -603,6 +617,7 @@ services:
                 - @ur.worker.job.concurrent.update_optimization_integration_when_ad_slot_change_worker
                 - @ur.worker.job.concurrent.update_optimization_integration_when_video_waterfall_tag_change_worker
                 - '@ur.worker.job.concurrent.update_detected_fields_when_sheet_config_change'
+                - '@ur.worker.job.concurrent.export_report_views_and_sent_email'
 
     ### end of concurrence worker pool
 

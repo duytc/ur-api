@@ -1,0 +1,13 @@
+{#src/UR/Bundle/AppBundle/Resources/view/Report/email.html.twig#}
+<h3>Dear {{ publisher_name }}, </h3>
+
+<p>This is email for download report view. Details:</p>
+
+{% for path in paths %}
+    <a target="_blank" href="{{ path }}">{{ path }}</a>
+{% endfor %}
+
+<p>The file will be removed within 7 days</p>
+
+<p>Regards,</p>
+<p>Pubvantage.</p>
