@@ -5,13 +5,17 @@ namespace UR\Service\Report;
 use UR\Behaviors\ReportViewUtilTrait;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Domain\DTO\Report\Filters\DateFilter;
+use UR\Domain\DTO\Report\Transforms\AddCalculatedFieldTransform;
 use UR\Model\Core\ReportViewInterface;
 
 class ShareableLinkUpdater implements ShareableLinkUpdaterInterface
 {
     use ReportViewUtilTrait;
+    const TRANSFORM_FOR_AUTOMATED_SHARE_FIELDS = [
+        AddCalculatedFieldTransform::TRANSFORMS_TYPE
+    ];
 
-	/**
+    /**
      * @inheritdoc
      */
     public function updateShareableLinks(ReportViewInterface $reportView)
@@ -60,10 +64,13 @@ class ShareableLinkUpdater implements ShareableLinkUpdaterInterface
             }
         }
 
+        $automatedShareFields = $this->getAutomatedShareFields($reportView);
+
         foreach ($sharedKeysConfig as &$config) {
             /** Update shared fields */
             $oldShareFields = $config[ReportViewInterface::SHARE_FIELDS];
             $shareFields = $this->updateShareFields($reportView, $oldShareFields);
+            $shareFields = $this->addAutomatedShareFields($automatedShareFields, $shareFields);
             $config[ReportViewInterface::SHARE_FIELDS] = $shareFields;
 
             $config[ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE] = $userProvided && !$reportView->isLargeReport();
@@ -125,5 +132,48 @@ class ShareableLinkUpdater implements ShareableLinkUpdaterInterface
         }
 
         return array_values($oldShareFields);
+    }
+
+    /**
+     * @param ReportViewInterface $reportView
+     * @return array
+     */
+    private function getAutomatedShareFields(ReportViewInterface $reportView)
+    {
+        $transforms = $reportView->getTransforms();
+        $filterTransforms = array_filter($transforms, function ($transform) {
+            return isset($transform['type']) && in_array($transform['type'], self::TRANSFORM_FOR_AUTOMATED_SHARE_FIELDS);
+        });
+
+        $addFields = [];
+        foreach ($filterTransforms as $transform) {
+            if (!is_array($transform) || !array_key_exists('fields', $transform)) {
+                continue;
+            }
+
+            $groups = array_filter($transform['fields'], function ($group) {
+                return isset($group['autoAddShareableReport']) && $group['autoAddShareableReport'] == true;
+            });
+
+            $groups = array_map(function ($group) {
+                if (isset($group['field'])) {
+                    return $group['field'];
+                }
+            }, $groups);
+
+            $addFields = array_merge($addFields, $groups);
+        }
+
+        return array_values($addFields);
+    }
+
+    /**
+     * @param $automatedShareFields
+     * @param $shareFields
+     * @return array
+     */
+    private function addAutomatedShareFields(array $automatedShareFields, array $shareFields)
+    {
+        return array_values(array_unique(array_merge($automatedShareFields, $shareFields)));
     }
 }
