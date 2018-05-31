@@ -19,7 +19,7 @@ class ActivateLearningProcessCommand extends ContainerAwareCommand
 {
     use RestClientTrait;
 
-    const COMMAND_NAME = 'ur:auto-optimization:reactivate-learning-process';
+    const COMMAND_NAME = 'ur:auto-optimization:test:reactivate-learning-process';
     const STATUS_KEY = 'status';
     const MESSAGE_KEY = 'message';
     const DATA_KEY = 'data';
@@ -30,7 +30,7 @@ class ActivateLearningProcessCommand extends ContainerAwareCommand
         $this
             ->setName(self::COMMAND_NAME)
             ->addArgument('optimizationRuleId', InputArgument::REQUIRED, 'Auto Optimization Rule Id')
-            ->setDescription('activate learning process for Optimization Rule with given id');
+            ->setDescription('The test command to activate learning process for Optimization Rule with given id');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -67,25 +67,24 @@ class ActivateLearningProcessCommand extends ContainerAwareCommand
 
         try {
             $result = $this->callRestAPI($activateLeanerMethod, $activateLearnerLink, json_encode($data));
+
+            $result = json_decode($result, true);
+            if (empty($result)) {
+                $io->text('There is a error in learner: could not parse response');
+                return;
+            }
+
+            $status = $this->getStatus($result);
+            $message = $this->getMessage($result);
+
+            if (Response::HTTP_OK != $status) {
+                $io->text($message);
+            } else {
+                $io->section(sprintf('Activate learning process successfully for optimization rule %d', $optimizationRule->getId()));;
+            }
         } catch (\Exception $e) {
-            $io->warning("Call Rest API fail. Exception ". $e);
+            $io->warning("Call Rest API fail. Detail: " . $e);
         }
-
-        $result = json_decode($result, true);
-        if (empty($result)) {
-            $io->text('There is a error in learner');
-            return;
-        }
-
-        $status = $this->getStatus($result);
-        $message = $this->getMessage($result);
-
-        if (Response::HTTP_OK != $status) {
-            $io->text($message);
-        } else {
-            $io->section(sprintf('Activate learning process successfully for optimization rule %d', $optimizationRule->getId()));;
-        }
-
     }
 
     /**

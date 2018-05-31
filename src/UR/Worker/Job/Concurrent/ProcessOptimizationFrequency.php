@@ -33,6 +33,7 @@ class ProcessOptimizationFrequency implements JobInterface
      * @var LoggerInterface
      */
     private $logger;
+
     /**
      * @var OptimizationLearningFacadeServiceInterface
      */
@@ -82,6 +83,7 @@ class ProcessOptimizationFrequency implements JobInterface
             if (!$optimizationIntegration instanceof OptimizationIntegrationInterface) {
                 continue;
             }
+
             if (!$this->isOutOfDate($optimizationIntegration)) {
                 continue;
             }
@@ -104,7 +106,9 @@ class ProcessOptimizationFrequency implements JobInterface
                     if (!$optimizationIntegration instanceof OptimizationIntegrationInterface) {
                         continue;
                     }
+
                     $optimizationIntegrationIds = [$optimizationIntegration->getId()];
+
                     try {
                         $this->automatedOptimizer->optimizeForRule($optimizationRule, $optimizationIntegrationIds);
                     } catch (\Exception $e) {
@@ -130,6 +134,7 @@ class ProcessOptimizationFrequency implements JobInterface
             if (!$optimizationIntegration instanceof OptimizationIntegrationInterface) {
                 continue;
             }
+
             if (!$this->isOutOfDate($optimizationIntegration)) {
                 continue;
             }

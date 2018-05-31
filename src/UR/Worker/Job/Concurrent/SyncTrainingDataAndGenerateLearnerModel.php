@@ -17,18 +17,23 @@ use UR\Service\RestClientTrait;
 class SyncTrainingDataAndGenerateLearnerModel implements JobInterface
 {
     use  RestClientTrait;
+
     const JOB_NAME = 'syncTrainingDataAndGenerateLearnerModel';
     const OPTIMIZATION_RULE_ID_KEY = 'optimizationRuleId';
+
     /**
      * @var OptimizationRuleManagerInterface
      */
     private $optimizationRuleManager;
+
     /**
      * @var LoggerInterface
      */
     private $logger;
+
     /** @var AutomatedOptimizerInterface */
     private $automatedOptimizer;
+
     /**
      * @var OptimizationLearningFacadeServiceInterface
      */
@@ -52,12 +57,10 @@ class SyncTrainingDataAndGenerateLearnerModel implements JobInterface
         $this->optimizationLearningFacadeService = $optimizationLearningFacadeService;
     }
 
-
     public function getName(): string
     {
         return self::JOB_NAME;
     }
-
 
     /**
      * @param JobParams $params
@@ -65,7 +68,7 @@ class SyncTrainingDataAndGenerateLearnerModel implements JobInterface
     public function run(JobParams $params)
     {
         try {
-            $optimizationRuleId = $params->getRequiredParam(self::OPTIMIZATION_RULE_ID_KEY);
+            $optimizationRuleId = (int)$params->getRequiredParam(self::OPTIMIZATION_RULE_ID_KEY);
         } catch (MissingJobParamException $e) {
             return;
         }
@@ -76,7 +79,7 @@ class SyncTrainingDataAndGenerateLearnerModel implements JobInterface
         }
         $this->optimizationLearningFacadeService->calculateNewScores($optimizationRule);
 
-        //Update cache
+        // Notify new scores to integration platforms to update their data due to calculated scores
         try {
             $optimizationRule = $this->optimizationRuleManager->find($optimizationRuleId); //Note: Not remove this line
             if (!$optimizationRule instanceof OptimizationRuleInterface) {

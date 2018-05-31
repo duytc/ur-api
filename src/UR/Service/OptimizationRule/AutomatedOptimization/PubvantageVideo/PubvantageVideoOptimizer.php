@@ -100,7 +100,7 @@ class PubvantageVideoOptimizer implements OptimizerInterface
             $scoresOfRefreshData[self::REFRESH_CACHE_SCORES_KEY] = [];
         }
 
-        $this->restClient->updateCacheForWaterFallTags($scoresOfRefreshData, self::PLATFORM_INTEGRATION);
+        return $this->restClient->updateCacheForWaterFallTags($scoresOfRefreshData, self::PLATFORM_INTEGRATION);
     }
 
     /**

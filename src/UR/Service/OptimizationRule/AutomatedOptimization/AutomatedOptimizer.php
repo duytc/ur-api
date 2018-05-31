@@ -136,7 +136,10 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
                 $startRescoreAt = new DateTime('now');
                 $optimizationIntegration->setStartRescoreAt($startRescoreAt);
 
-                $optimizer->optimizeForOptimizationIntegration($optimizationIntegration);
+                $optimizeResult = $optimizer->optimizeForOptimizationIntegration($optimizationIntegration);
+                $optimizeResultDetail = (is_array($optimizeResult) && array_key_exists('message', $optimizeResult))
+                    ? $optimizeResult['message']
+                    : '';
 
                 // set endRescoreAt after finished update cache
                 $endRescoreAt = new DateTime('now');
@@ -154,7 +157,8 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
                         $optimizationIntegration->getId()
                     );
                 }
-                $this->logger->info(sprintf('Update 3rd party integrations successfully for optimization integration %d', $optimizationIntegration->getId()));
+
+                $this->logger->info(sprintf('Update 3rd party integrations successfully for optimization integration %d. Detail: %s', $optimizationIntegration->getId(), $optimizeResultDetail));
             } catch (\Exception $exception) {
                 throw $exception;
             }

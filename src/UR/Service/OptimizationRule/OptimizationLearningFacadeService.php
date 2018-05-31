@@ -4,7 +4,6 @@
 namespace UR\Service\OptimizationRule;
 
 
-
 use PHPUnit\Runner\Exception;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\OptimizationRuleInterface;
@@ -118,7 +117,7 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
                 return false;
             }
         } catch (Exception $e) {
-            $this->logger->warning('There is a error when activating learning process');
+            $this->logger->warning(sprintf('There is an error when activating learning process. Detail: %s', $e->getMessage()));
             return false;
         }
 
@@ -127,6 +126,7 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
 
     /**
      * @param OptimizationRuleInterface $optimizationRule
+     * @return bool
      * @throws \Exception
      */
     private function activeCalculating(OptimizationRuleInterface $optimizationRule)
@@ -138,9 +138,29 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
 
         try {
             $this->logger->info('Activate calculating process');
-            $this->callRestAPI($method, $this->calculateScoreLink, json_encode($data));
+            $result = $this->callRestAPI($method, $this->calculateScoreLink, json_encode($data));
+
+            $result = json_decode($result, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->logger->warning('There is a error when activating calculating process: could not parse response');
+                return false;
+            }
+
+            // $result = '{message: Done}'
+            if(strpos($result, 'Done') !== false){
+                $message = 'Done';
+                $this->logger->warning(sprintf('There is a error when activating calculating process: message: %s', $message));
+                return false;
+            }
+//            if (array_key_exists('status', $result) && $result['status'] != 200) {
+//                $message = array_key_exists('message', $result) ? $result['message'] : '';
+//                $this->logger->warning(sprintf('There is a error when activating calculating process: got status %s, message: %s', $result['status'], $message));
+//                return false;
+//            }
         } catch (Exception $e) {
-            $this->logger->warning('There is a error when calculating scores');
+            $this->logger->warning(sprintf('There is a error when calculating scores. Detail: %s', $e->getMessage()));
         }
+
+        return true;
     }
 }

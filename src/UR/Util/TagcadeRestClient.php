@@ -78,7 +78,7 @@ class TagcadeRestClient
     /**
      * @param array $data
      * @param string $platformIntegration
-     * @return bool
+     * @return mixed
      * @throws \Exception
      */
     public function updateCacheForAdSlots(array $data, $platformIntegration = PubvantageOptimizer::PLATFORM_INTEGRATION)
@@ -91,7 +91,7 @@ class TagcadeRestClient
     /**
      * @param array $data
      * @param string $platformIntegration
-     * @return bool
+     * @return mixed
      * @throws \Exception
      */
     public function updateCacheForWaterFallTags(array $data, $platformIntegration = PubvantageVideoOptimizer::PLATFORM_INTEGRATION)
@@ -103,7 +103,7 @@ class TagcadeRestClient
 
     /**
      * @param array $data
-     * @return bool
+     * @return mixed
      * @throws \Exception
      */
     private function updateCacheForPubvantage(array $data)
@@ -131,11 +131,12 @@ class TagcadeRestClient
             throw new \Exception('Invalid response (json decode failed)');
         }
 
-        if (is_array($result) && array_key_exists('code', $result) && $result['code'] != 200) {
-            throw new \Exception('Failure to update 3rd party integrations (update cache)');
+        if (is_array($result) && array_key_exists('code', $result) && !in_array($result['code'], [200, 201, 204])) {
+            $messageDetail = array_key_exists('message', $result) ? $result['message'] : 'unknown';
+            throw new \Exception(sprintf('Failure to update 3rd party integrations (update cache). Detail: %s', $messageDetail));
         }
 
-        return true;
+        return $result;
     }
 
     /**
@@ -194,8 +195,13 @@ class TagcadeRestClient
             throw new \Exception('Invalid response (json decode failed)');
         }
 
-        if (is_array($result) && array_key_exists('code', $result) && $result['code'] != 200) {
-            throw new \Exception('Failure to update 3rd party integrations (get previous adTags position)');
+        if (!is_array($result)) {
+            throw new \Exception('Failure to update 3rd party integrations (get previous positions). Detail: unknown');
+        }
+
+        if (array_key_exists('code', $result) && !in_array($result['code'], [200, 201, 204])) {
+            $messageDetail = array_key_exists('message', $result) ? $result['message'] : 'unknown';
+            throw new \Exception(sprintf('Failure to update 3rd party integrations (get previous position). Detail: %s', $messageDetail));
         }
 
         return $result;
@@ -225,8 +231,9 @@ class TagcadeRestClient
             throw new \Exception('json decoding error when get scores');
         }
 
-        if (array_key_exists('code', $scores) && $scores['code'] != 200) {
-            throw new \Exception(sprintf('failed to get scores, code %d', $scores['code']));
+        if (array_key_exists('code', $scores) && !in_array($scores['code'], [200, 201, 204])) {
+            $messageDetail = array_key_exists('message', $scores) ? $scores['message'] : 'unknown';
+            throw new \Exception(sprintf('failed to get scores, code %d. Detail: %s', $scores['code'], $messageDetail));
         }
 
         return $scores;

@@ -109,7 +109,7 @@ class PubvantageOptimizer implements OptimizerInterface
             $scoresOfRefreshData[self::REFRESH_CACHE_SCORES_KEY] = [];
         }
 
-        $this->restClient->updateCacheForAdSlots($scoresOfRefreshData);
+        return $this->restClient->updateCacheForAdSlots($scoresOfRefreshData);
     }
 
     /**
