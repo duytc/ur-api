@@ -1063,6 +1063,12 @@ trait SqlUtilTrait
                 $matchesExchangeRate = 'DATE ('. $matchesExchangeRate .')';
                 $field = '(SELECT exr.rate from `core_exchange_rate` as exr where exr.date = ' . $matchesExchangeRate . ' and exr.from_currency = "' . $from . '" and exr.to_currency =  "' . $to . '")';
 
+                /*
+                * wrap IFNULL
+                * e.g: 1+2+null = null, but IFNULL(1,0)+IFNULL(2,0)+IFNULL(null,0) = 3
+                */
+                $field = sprintf('IFNULL(%s, 0)', $field);
+
                 $expression = str_replace($fieldsInBracket[$index], $field, $expression);
 
                 continue;
