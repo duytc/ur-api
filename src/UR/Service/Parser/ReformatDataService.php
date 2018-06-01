@@ -32,7 +32,10 @@ class ReformatDataService
 
                     }
                 }
-                $cellValue = preg_replace('/[^0-9.-]+/', '', $cellValue);
+                $cellValue = preg_match('/[^0-9- % $ € .*]+/', trim($cellValue)) ? null : $cellValue;
+                $cellValue = preg_match('/\-{2,}|\%{2,}|\\${2,}|\p{Sc}{2,}/u', $cellValue) ? null : preg_replace('/[%|$|€]+/', '', $cellValue);
+                $cellValue = trim($cellValue);
+                //$cellValue = preg_replace('/[^0-9.-]+/', '', $cellValue);
 
                 // advance process on dash character
                 // if dash is at first position => negative flag
@@ -64,7 +67,7 @@ class ReformatDataService
                 if (!is_numeric($cellValue)) {
                     $cellValue = null;
                 } else {
-                    $cellValue = $type == FieldType::NUMBER ? floor($cellValue) : $cellValue;
+                    $cellValue = $type == FieldType::NUMBER ? round($cellValue) : $cellValue;
                 }
 
                 break;
