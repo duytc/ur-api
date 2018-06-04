@@ -102,7 +102,7 @@ class DataSourceIntegrationBackfillHistoryController extends RestControllerAbstr
         /** @var DataSourceIntegrationBackfillHistoryRepositoryInterface $backFillHistoryRepository */
         $backFillHistoryRepository = $this->get('ur.repository.data_source_integration_backfill_history');
         $qb = $backFillHistoryRepository->findByBackFillNotExecuted();
-        $result = $this->getPagination($qb, $request);
+        $result =  $this->getPagination($qb, $request);
         $notExecutedBackFills = $result['records'];
         $backFillSchedules = [];
         foreach ($notExecutedBackFills as $notExecutedBackFill) {

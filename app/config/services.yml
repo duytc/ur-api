@@ -781,6 +781,7 @@ services:
             arguments:
                 - '@ur.domain_manager.data_source_integration_backfill_history'
                 - '@ur.domain_manager.data_source'
+                - '@ur.repository.data_source_integration_backfill_history'
 
     ur.service.auto_import_data:
         class: UR\Service\Import\AutoImportData
