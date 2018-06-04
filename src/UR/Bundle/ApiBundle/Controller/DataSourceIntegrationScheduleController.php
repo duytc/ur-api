@@ -97,11 +97,12 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
      */
     public function getIntegrationByScheduleAction(Request $request)
     {
-        // get normal data source integration by schedule
-        /** @var DataSourceIntegrationScheduleManagerInterface $dsisManager */
-        $dsisManager = $this->get('ur.domain_manager.data_source_integration_schedule');
-        $notExecutedNormalSchedules = $dsisManager->findToBeExecuted();
+        /** @var DataSourceIntegrationScheduleRepositoryInterface $schedulesRepository */
+        $schedulesRepository = $this->get('ur.repository.data_source_integration_schedule');
+        $qb = $schedulesRepository->findToBeExecuted();
+        $result = $this->getPagination($qb, $request);
 
+        $notExecutedNormalSchedules = $result['records'];
         $normalSchedules = [];
         foreach ($notExecutedNormalSchedules as $notExecutedNormalSchedule) {
             if (!$notExecutedNormalSchedule instanceof DataSourceIntegrationScheduleInterface) {
@@ -113,24 +114,9 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
 
             $normalSchedules[] = $fetcherSchedule;
         }
+        $result['records'] = $normalSchedules;
 
-        // get data source integration by backfill
-        $backFillHistoryManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
-        $notExecutedBackFills = $backFillHistoryManager->findByBackFillNotExecuted();
-
-        $backFillSchedules = [];
-        foreach ($notExecutedBackFills as $notExecutedBackFill) {
-            if (!$notExecutedBackFill instanceof DataSourceIntegrationBackfillHistoryInterface) {
-                continue;
-            }
-
-            $fetcherSchedule = (new FetcherSchedule())
-                ->setBackFillHistory($notExecutedBackFill);
-
-            $backFillSchedules[] = $fetcherSchedule;
-        }
-
-        return array_merge($normalSchedules, $backFillSchedules);
+        return $result;
     }
 
     /**

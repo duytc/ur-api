@@ -64,30 +64,18 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
 
         // get all schedule have status = 1, nextExecuted < currentDate, queueAt < yesterday
         //Ensure an unexpected exception will occur such as shutdown redis before running the fetcher worker
-        $qbStatusIsPending = $this->createQueryBuilder('dibh')
-            ->join('dibh.dataSourceIntegration', 'di')
-            ->join('di.dataSource', 'ds')
-            ->andWhere('ds.enable = true')
-            ->andWhere('dibh.queuedAt <= :yesterday')
-            ->andWhere('dibh.status = :status')
-            ->andWhere('dibh.finishedAt is null')
-            ->setParameter('yesterday', $yesterday)
-            ->setParameter('status', DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_PENDING);
 
-        $backFillsStatusIsPending = $qbStatusIsPending->getQuery()->getResult();
+        // handle query nested -- jennyphuong
+        $qb = $this->createQueryBuilder('dibh');
+        $qb
+            ->where(
+                $qb->expr()->in('dibh.id',
+                    $this->getBackfillQueryBefore($yesterday->format('Y-m-d H:i:s'))->select('dibh1.id')->getDQL()))
+            ->orWhere(
+                $qb->expr()->in('dibh.id',
+                    $this->getBackfillQueryAfter()->select('dibh2.id')->getDQL()));
 
-        $qb = $this->createQueryBuilder('dibh')
-            ->join('dibh.dataSourceIntegration', 'di')
-            ->join('di.dataSource', 'ds')
-            ->andWhere('ds.enable = true')
-            ->andWhere('dibh.status = :status')
-            ->andWhere('dibh.queuedAt is null')
-            ->andWhere('dibh.finishedAt is null')
-            ->setParameter('status', DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_NOT_RUN);
-
-        $backFills = $qb->getQuery()->getResult();
-
-        return array_merge($backFills, $backFillsStatusIsPending);
+        return $qb;
     }
 
     /**
@@ -145,5 +133,44 @@ class DataSourceIntegrationBackfillHistoryRepository extends EntityRepository im
         $result = $qb->getQuery()->getResult();
 
         return $result;
+    }
+
+    /**
+     * @param null $queueAt
+     * @return \Doctrine\ORM\QueryBuilder
+     */
+    private function getBackfillQueryBefore($queueAt = null)
+    {
+        $queueAt = "'" . $queueAt . "'";
+        $qb = $this->createQueryBuilder('dibh1')
+            ->join('dibh1.dataSourceIntegration', 'di1')
+            ->join('di1.dataSource', 'ds1')
+            ->andWhere('ds1.enable = true')
+            ->andWhere('dibh1.status = ' . DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_PENDING)
+            ->andWhere('dibh1.finishedAt is null');
+
+        if ($queueAt != null) {
+            $qb->andWhere('dibh1.queuedAt <= ' . $queueAt);
+        } else {
+            $qb->andWhere('dibh.queuedAt is null');
+        }
+
+        return $qb;
+    }
+
+    /**
+     * @return \Doctrine\ORM\QueryBuilder
+     */
+    private function getBackfillQueryAfter()
+    {
+        $qb = $this->createQueryBuilder('dibh2')
+            ->join('dibh2.dataSourceIntegration', 'di2')
+            ->join('di2.dataSource', 'ds2')
+            ->andWhere('ds2.enable = true')
+            ->andWhere('dibh2.status = ' . DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_NOT_RUN)
+            ->andWhere('dibh2.finishedAt is null')
+            ->andWhere('dibh2.queuedAt is null');
+
+        return $qb;
     }
 }
