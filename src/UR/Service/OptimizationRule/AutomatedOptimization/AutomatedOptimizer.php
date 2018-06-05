@@ -124,11 +124,17 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
             //Lock
             $this->redis->set($lockKey, 1000, self::DEFAULT_TIME_OUT);
             if (!$optimizationIntegration->isUserConfirm()) {
-                if ($optimizationIntegration->isRequirePendingAlert() && $optimizationRule->getPublisher() instanceof PublisherInterface) {
-                    $this->actionRequireFactory->createActionRequireAlert($optimizationIntegration, $optimizer->testForOptimizationIntegration($optimizationIntegration));
+                try {
+                    if ($optimizationIntegration->isRequirePendingAlert() && $optimizationRule->getPublisher() instanceof PublisherInterface) {
+                        $this->actionRequireFactory->createActionRequireAlert($optimizationIntegration, $optimizer->testForOptimizationIntegration($optimizationIntegration));
+                        $this->logger->info(sprintf('Create action require alert successfully for optimization integration %d', $optimizationIntegration->getId()));
+                        continue;
+                    }
+                } catch (\Exception $exception) {
+                    $newMessage = sprintf($exception->getMessage(). ' - integration id: %d -', $optimizationIntegration->getId());
+
+                    throw new \Exception($newMessage, $exception->getCode(), $exception);
                 }
-                $this->logger->info(sprintf('Create action require alert successfully for optimization integration %d', $optimizationIntegration->getId()));
-                continue;
             }
 
             try {
@@ -160,7 +166,9 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
 
                 $this->logger->info(sprintf('Update 3rd party integrations successfully for optimization integration %d. Detail: %s', $optimizationIntegration->getId(), $optimizeResultDetail));
             } catch (\Exception $exception) {
-                throw $exception;
+                $newMessage = sprintf($exception->getMessage(). ' - integration id: %d -', $optimizationIntegration->getId());
+
+                throw new \Exception($newMessage, $exception->getCode(), $exception);
             }
         }
 

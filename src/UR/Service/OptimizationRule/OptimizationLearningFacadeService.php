@@ -157,12 +157,12 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
 
             if (array_key_exists('status', $result) && $result['status'] != 200) {
                 $message = array_key_exists('message', $result) ? $result['message'] : '';
-                $this->logger->warning(sprintf('There is a error when activating calculating process: got status %s, message: %s', $result['status'], $message));
+                $this->logger->warning(sprintf('There is an error when activating calculating process: got status %s, message: %s', $result['status'], $message));
                 return false;
             }
 
         } catch (Exception $e) {
-            $this->logger->warning(sprintf('There is a error when calculating scores. Detail: %s', $e->getMessage()));
+            $this->logger->warning(sprintf('There is an error when calculating scores. Detail: %s', $e->getMessage()));
         }
 
         return true;

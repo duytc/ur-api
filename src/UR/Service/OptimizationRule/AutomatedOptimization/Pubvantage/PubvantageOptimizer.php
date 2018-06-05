@@ -97,6 +97,13 @@ class PubvantageOptimizer implements OptimizerInterface
         $scoresOfRefreshData[self::REFRESH_CACHE_AD_SLOTS_KEY] = $mappedAdSlots;
         $scoresOfRefreshData[self::REFRESH_CACHE_MAPPED_BY_KEY] = $mappedBy;
 
+        // ignore update if no identifier or adSlot map config...
+        if (!is_array($mappedAdSlots) || empty($mappedBy) || empty($mappedAdSlots)) {
+            return [
+                'message' => 'either mappedBy or mappedAdSlots is empty. Skip update cache for ad slots.'
+            ];
+        }
+
         if ($optimizationIntegration->getActive() == OptimizationIntegrationInterface::ACTIVE_APPLY) {
             // get scores from data base
             $scoresFromScorers = $this->getScoresFromDatabase($optimizationIntegration);
@@ -107,6 +114,13 @@ class PubvantageOptimizer implements OptimizerInterface
             $scoresOfRefreshData[self::REFRESH_CACHE_SCORES_KEY] = $scoresFromScorers;
         } else {
             $scoresOfRefreshData[self::REFRESH_CACHE_SCORES_KEY] = [];
+        }
+
+        // ignore update if no score
+        if (!is_array($scoresOfRefreshData[self::REFRESH_CACHE_SCORES_KEY]) || empty($scoresOfRefreshData[self::REFRESH_CACHE_SCORES_KEY])) {
+            return [
+                'message' => 'Score is empty. Skip update cache for ad slots.'
+            ];
         }
 
         return $this->restClient->updateCacheForAdSlots($scoresOfRefreshData);

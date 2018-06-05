@@ -92,6 +92,13 @@ class PubvantageVideoOptimizer implements OptimizerInterface
         $scoresOfRefreshData[self::REFRESH_CACHE_WATERFALL_TAGS_KEY] = $mappedWaterFallTags;
         $scoresOfRefreshData[self::REFRESH_CACHE_MAPPED_BY_KEY] = $mappedBy;
 
+        // ignore update if no identifier or waterfall map config...
+        if (!is_array($mappedWaterFallTags) || empty($mappedBy) || empty($mappedWaterFallTags)) {
+            return [
+                'message' => 'either mappedBy or mappedWaterfallTags is empty. Skip update cache for waterfall Tags.'
+            ];
+        }
+
         if ($optimizationIntegration->getActive() == OptimizationIntegrationInterface::ACTIVE_APPLY) {
             // get scores from data base
             $scoresFromScorers = $this->getScoresFromDatabase($optimizationIntegration);
@@ -100,6 +107,12 @@ class PubvantageVideoOptimizer implements OptimizerInterface
             $scoresOfRefreshData[self::REFRESH_CACHE_SCORES_KEY] = [];
         }
 
+        // ignore update if no score
+        if (!is_array($scoresOfRefreshData[self::REFRESH_CACHE_SCORES_KEY]) || empty($scoresOfRefreshData[self::REFRESH_CACHE_SCORES_KEY])) {
+            return [
+                'message' => 'Score is empty. Skip update cache for waterfall.'
+            ];
+        }
         return $this->restClient->updateCacheForWaterFallTags($scoresOfRefreshData, self::PLATFORM_INTEGRATION);
     }
 
