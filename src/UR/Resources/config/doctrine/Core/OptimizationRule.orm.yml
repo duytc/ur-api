@@ -39,6 +39,12 @@ UR\Entity\Core\OptimizationRule:
             type: boolean
             options:
                 default: true
+        lastTrainingDataCheckSum:
+            type: string
+            nullable: true
+        ruleCheckSum:
+            type: string
+            nullable: true
     manyToOne:
         reportView:
             targetEntity: UR\Entity\Core\ReportView
