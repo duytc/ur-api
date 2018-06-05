@@ -22,6 +22,7 @@ use UR\Worker\Job\Concurrent\ActivateThe3PartnerScoringServiceIntegration;
 use UR\Worker\Job\Concurrent\CountChunkRow;
 use UR\Worker\Job\Concurrent\ExportReportViewsAndSentEmail;
 use UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView;
+use UR\Worker\Job\Concurrent\OptimizeOptimizationIntegrationNow;
 use UR\Worker\Job\Concurrent\ParseChunkFile;
 use UR\Worker\Job\Concurrent\ProcessOptimizationFrequency;
 use UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource;
@@ -524,6 +525,20 @@ class Manager
         $jobData = [
             'task' => SyncTrainingDataAndGenerateLearnerModel::JOB_NAME,
             SyncTrainingDataAndGenerateLearnerModel::OPTIMIZATION_RULE_ID_KEY => $optimizationRuleId,
+        ];
+
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    /**
+     * @param $optimizationIntegrationId
+     * @throws \Exception
+     */
+    public function optimizeOptimizationIntegrationNow($optimizationIntegrationId)
+    {
+        $jobData = [
+            'task' => OptimizeOptimizationIntegrationNow::JOB_NAME,
+            OptimizeOptimizationIntegrationNow::OPTIMIZATION_INTEGRATION_ID_KEY => $optimizationIntegrationId,
         ];
 
         $this->concurrentJobScheduler->addJob($jobData);

@@ -616,6 +616,7 @@ services:
                 - @ur.worker.job.concurrent.process_optimization_frequency
                 - @ur.worker.job.concurrent.update_optimization_integration_when_ad_slot_change_worker
                 - @ur.worker.job.concurrent.update_optimization_integration_when_video_waterfall_tag_change_worker
+                - @ur.worker.job.concurrent.optimize_optimization_integration_now
                 - '@ur.worker.job.concurrent.update_detected_fields_when_sheet_config_change'
                 - '@ur.worker.job.concurrent.export_report_views_and_sent_email'
 

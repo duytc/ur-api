@@ -100,3 +100,11 @@ services:
             - @ur.service.optimization_rule.automated_optimization.automated_optimizer
             - @ur.domain_manager.optimization_rule
             - @monolog.logger
+
+    ur.worker.job.concurrent.optimize_optimization_integration_now:
+        class: UR\Worker\Job\Concurrent\OptimizeOptimizationIntegrationNow
+        arguments:
+            - '@ur.domain_manager.optimization_integration'
+            - '@ur.service.optimization_rule.automated_optimization.automated_optimizer'
+            - '@ur.service.optimization_rule.optimization_learning_facade_service'
+            - '@logger'
