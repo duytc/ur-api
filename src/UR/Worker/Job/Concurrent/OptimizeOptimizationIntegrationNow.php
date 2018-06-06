@@ -77,34 +77,49 @@ class OptimizeOptimizationIntegrationNow implements JobInterface
 
         $optimizeIntegration = $this->optimizationIntegrationManager->find($optimizeIntegrationId);
         if (!$optimizeIntegration instanceof OptimizationIntegrationInterface) {
-            throw  new Exception(sprintf('Cannot find the integration, id =%d', $optimizeIntegrationId));
+            $this->logger->warning(sprintf('Cannot find the integration, id =%d', $optimizeIntegrationId));
         }
 
         $result = $this->optimizationLearningFacadeService->calculateNewScores($optimizeIntegration->getOptimizationRule());
         if (!$result) {
-            throw  new Exception(sprintf('There is a error when optimizing for integration rule, id =%d', $optimizeIntegrationId));
+            $this->logger->warning(sprintf('There is a error when optimizing for integration rule, id =%d', $optimizeIntegrationId));
+
+            return false;
         }
 
         $optimizeIntegration = $this->optimizationIntegrationManager->find($optimizeIntegrationId);
         if (!$optimizeIntegration instanceof OptimizationIntegrationInterface) {
-            throw  new Exception(sprintf('Cannot find the integration, id =%d', $optimizeIntegrationId));
+            $this->logger->warning(sprintf('Cannot find the integration, id =%d', $optimizeIntegrationId));
+
+            return false;
         }
         $oldFrequencySetting = $optimizeIntegration->getOptimizationFrequency();
+        $oldStartDate = $optimizeIntegration->getStartRescoreAt();
+        $odlEndDate =  $optimizeIntegration->getEndRescoreAt();
         $optimizeIntegration->setOptimizationFrequency(DateFilter::DATETIME_DYNAMIC_VALUE_CONTINUOUSLY);
+        //Tip to force optimize run after change
+        $optimizeIntegration->setStartRescoreAt($odlEndDate);
+        $optimizeIntegration->setEndRescoreAt($oldStartDate);
 
         try {
             $optimizeResult = $this->automatedOptimizer->optimizeForRule($optimizeIntegration->getOptimizationRule(), [$optimizeIntegrationId]);
         } catch (Exception $e) {
-            throw  $e;
+            $this->logger->warning(sprintf(sprintf('There is an exception: %s for optimization rule %d', $e->getMessage(), $optimizeIntegration->getOptimizationRule()->getId())));
+
+            return false;
         }
 
         if (!$optimizeResult) {
-            throw  new Exception(sprintf('There is a error when optimizing for integration, id =%d', $optimizeIntegration->getId()));
+            $this->logger->warning(sprintf('There is a error when optimizing for integration, id =%d', $optimizeIntegration->getId()));
+
+            return false;
         }
 
         $optimizeIntegration = $this->optimizationIntegrationManager->find($optimizeIntegrationId);
         if (!$optimizeIntegration instanceof OptimizationIntegrationInterface) {
-            throw  new Exception(sprintf('Cannot find the integration, id =%d', $optimizeIntegrationId));
+            $this->logger->warning(sprintf('Cannot find the integration, id =%d', $optimizeIntegrationId));
+
+            return false;
         }
 
         $optimizeIntegration->setOptimizationFrequency($oldFrequencySetting);

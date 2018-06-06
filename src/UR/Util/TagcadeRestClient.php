@@ -2,6 +2,7 @@
 
 namespace UR\Util;
 
+use Exception;
 use RestClient\CurlRestClient;
 use UR\Service\OptimizationRule\AutomatedOptimization\Pubvantage\PubvantageOptimizer;
 use UR\Service\OptimizationRule\AutomatedOptimization\PubvantageVideo\PubvantageVideoOptimizer;
@@ -49,7 +50,7 @@ class TagcadeRestClient
     /**
      * @param bool $force
      * @return mixed|null|string
-     * @throws \Exception
+     * @throws Exception
      */
     public function getToken($force = false)
     {
@@ -63,11 +64,11 @@ class TagcadeRestClient
         $token = json_decode($token, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('json decoding for token error');
+            throw new Exception('json decoding for token error');
         }
 
         if (!array_key_exists('token', $token)) {
-            throw new \Exception(sprintf('Could not authenticate user %s', $this->username));
+            throw new Exception(sprintf('Could not authenticate user %s', $this->username));
         }
 
         $this->token = $token['token'];
@@ -79,7 +80,7 @@ class TagcadeRestClient
      * @param array $data
      * @param string $platformIntegration
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function updateCacheForAdSlots(array $data, $platformIntegration = PubvantageOptimizer::PLATFORM_INTEGRATION)
     {
@@ -92,7 +93,7 @@ class TagcadeRestClient
      * @param array $data
      * @param string $platformIntegration
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function updateCacheForWaterFallTags(array $data, $platformIntegration = PubvantageVideoOptimizer::PLATFORM_INTEGRATION)
     {
@@ -104,7 +105,7 @@ class TagcadeRestClient
     /**
      * @param array $data
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     private function updateCacheForPubvantage(array $data)
     {
@@ -128,12 +129,12 @@ class TagcadeRestClient
         $result = json_decode($result, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('Invalid response (json decode failed)');
+            throw new Exception('Invalid response (json decode failed)');
         }
 
         if (is_array($result) && array_key_exists('code', $result) && !in_array($result['code'], [200, 201, 204])) {
             $messageDetail = array_key_exists('message', $result) ? $result['message'] : 'unknown';
-            throw new \Exception(sprintf('Failure to update 3rd party integrations (update cache). Detail: %s', $messageDetail));
+            throw new Exception(sprintf('Failure to update 3rd party integrations (update cache). Detail: %s', $messageDetail));
         }
 
         return $result;
@@ -143,7 +144,7 @@ class TagcadeRestClient
      * @param array $data
      * @param string $platformIntegration
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCacheForAdSlots(array $data, $platformIntegration = PubvantageOptimizer::PLATFORM_INTEGRATION)
     {
@@ -156,7 +157,7 @@ class TagcadeRestClient
      * @param array $data
      * @param string $platformIntegration
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCacheForWaterFallTags(array $data, $platformIntegration = PubvantageVideoOptimizer::PLATFORM_INTEGRATION)
     {
@@ -168,7 +169,7 @@ class TagcadeRestClient
     /**
      * @param array $data
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     private function testCacheForPubvantage(array $data)
     {
@@ -192,16 +193,16 @@ class TagcadeRestClient
         $result = json_decode($result, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('Invalid response (json decode failed)');
+            throw new Exception('Invalid response (json decode failed)');
         }
 
         if (!is_array($result)) {
-            throw new \Exception('Failure to update 3rd party integrations (get previous positions). Detail: unknown');
+            throw new Exception('Failure to update 3rd party integrations (get previous positions). Detail: unknown');
         }
 
         if (array_key_exists('code', $result) && !in_array($result['code'], [200, 201, 204])) {
             $messageDetail = array_key_exists('message', $result) ? $result['message'] : 'unknown';
-            throw new \Exception(sprintf('Failure to update 3rd party integrations (get previous position). Detail: %s', $messageDetail));
+            throw new Exception(sprintf('Failure to update 3rd party integrations (get previous position). Detail: %s', $messageDetail));
         }
 
         return $result;
@@ -210,7 +211,7 @@ class TagcadeRestClient
     /**
      * @param array $data
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function getScoresForOptimizationRule(array $data)
     {
@@ -228,12 +229,12 @@ class TagcadeRestClient
         $scores = json_decode($scores, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('json decoding error when get scores');
+            throw new Exception('json decoding error when get scores');
         }
 
         if (array_key_exists('code', $scores) && !in_array($scores['code'], [200, 201, 204])) {
             $messageDetail = array_key_exists('message', $scores) ? $scores['message'] : 'unknown';
-            throw new \Exception(sprintf('failed to get scores, code %d. Detail: %s', $scores['code'], $messageDetail));
+            throw new Exception(sprintf('failed to get scores, code %d. Detail: %s', $scores['code'], $messageDetail));
         }
 
         return $scores;
