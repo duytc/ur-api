@@ -94,12 +94,16 @@ class OptimizeOptimizationIntegrationNow implements JobInterface
             return false;
         }
         $oldFrequencySetting = $optimizeIntegration->getOptimizationFrequency();
-        $oldStartDate = $optimizeIntegration->getStartRescoreAt();
-        $odlEndDate =  $optimizeIntegration->getEndRescoreAt();
         $optimizeIntegration->setOptimizationFrequency(DateFilter::DATETIME_DYNAMIC_VALUE_CONTINUOUSLY);
+
         //Tip to force optimize run after change
-        $optimizeIntegration->setStartRescoreAt($odlEndDate);
-        $optimizeIntegration->setEndRescoreAt($oldStartDate);
+        $startDate = time();
+        $endDate = strtotime('-1 minutes', $startDate);
+        $startDate = date_create_from_format('Y-m-d H:i:s', date('Y-m-d H:i:s', $startDate));
+        $endDate = date_create_from_format('Y-m-d H:i:s', date('Y-m-d H:i:s', $endDate));
+
+        $optimizeIntegration->setStartRescoreAt($startDate);
+        $optimizeIntegration->setEndRescoreAt($endDate);
 
         try {
             $optimizeResult = $this->automatedOptimizer->optimizeForRule($optimizeIntegration->getOptimizationRule(), [$optimizeIntegrationId]);
