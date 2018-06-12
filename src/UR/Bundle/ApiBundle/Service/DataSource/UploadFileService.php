@@ -163,8 +163,8 @@ class UploadFileService
 
             // create new data source entry
             $hash = sha1_file($filePath);
-            $dataSourceEntry = new DataSourceEntry();
-            $dataSourceEntry->setPath($dirItem . '/' . $name)
+            $dataSourceEntry = (new DataSourceEntry())
+                ->setPath($dirItem . '/' . $name)
                 ->setIsValid(true)
                 ->setReceivedVia($receivedVia)
                 ->setFileName($originName)
