@@ -17,14 +17,10 @@ class ReformatDataService
         switch ($type) {
             case FieldType::DECIMAL:
             case FieldType::NUMBER:
-                $cellValue = preg_replace('/[%|$|€| ]+/', '', $cellValue);
-                if ((strpos($cellValue, ".") !== false)) {
-                    //Replace 1,234,567.123 to 1 234 567.123
-                    $cellValue = preg_replace('/[,]+/', '', $cellValue);
-                } else {
-                    //Replace 1,234 to 1.234. If bug, remove this code (if-else) and replace all comma by empty string
-                    $cellValue = preg_replace('/[,]+/', '.', $cellValue);
-                }
+                //Remove special characters such as %, $, €, comma and space
+                $cellValue = preg_replace('/[%|$|€|,| ]+/', '', $cellValue);
+                //Sometime is_float() can not check scientific notation with E, so we convert to e
+                $cellValue = preg_replace('/[E]+/', 'e', $cellValue);
 
                 //Check scientific notation here
                 if (!is_float($cellValue) && !is_numeric($cellValue)) {
