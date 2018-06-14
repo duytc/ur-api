@@ -17,59 +17,24 @@ class ReformatDataService
         switch ($type) {
             case FieldType::DECIMAL:
             case FieldType::NUMBER:
-                $isSciNotation = (strpos($cellValue, "e") !== false || strpos($cellValue, "E") !== false);
-
-                if ($isSciNotation) {
-                    try {
-                        //Remove invalid characters, such as %, comma, currency signs
-                        //Do not remove e/E
-                        $cellValue = preg_replace('/[^eE0-9.-]+/', '', $cellValue);
-                        // for converting scientific format
-                        if(is_numeric($cellValue)){
-                            $cellValue = number_format($cellValue, 10);
-                        }
-                    } catch (\Exception $e) {
-
-                    }
-                }
-                $cellValue = preg_match('/[^0-9- % $ € .*]+/', trim($cellValue)) ? null : $cellValue;
-                $cellValue = preg_match('/\-{2,}|\%{2,}|\\${2,}|\p{Sc}{2,}/u', $cellValue) ? null : preg_replace('/[%|$|€]+/', '', $cellValue);
-                $cellValue = trim($cellValue);
-                //$cellValue = preg_replace('/[^0-9.-]+/', '', $cellValue);
-
-                // advance process on dash character
-                // if dash is at first position => negative flag
-                // else => remove dash
-                $firstNegativePosition = strpos($cellValue, '-');
-                if ($firstNegativePosition === 0) {
-                    $afterFirstNegative = substr($cellValue, 1);
-                    $afterFirstNegative = preg_replace('/\-{1,}/', '', $afterFirstNegative);
-                    $cellValue = '-' . $afterFirstNegative;
-                } else if ($firstNegativePosition > 0) {
-                    $cellValue = preg_replace('/\-{1,}/', '', $cellValue);
-                }
-
-                // advance process on dot character
-                // if dash is at first position => append 0
-                // else => remove dot
-                $firstDotPosition = strpos($cellValue, '.');
-                if ($firstDotPosition !== false) {
-                    $first = substr($cellValue, 0, $firstDotPosition);
-                    if (!is_numeric($first)) {
-                        $first = '0';
-                    }
-
-                    $second = substr($cellValue, $firstDotPosition + 1);
-                    $second = preg_replace('/\.{1,}/', '', $second);
-                    $cellValue = $first . '.' . $second;
-                }
-
-                if (!is_numeric($cellValue)) {
-                    $cellValue = null;
+                $cellValue = preg_replace('/[%|$|€| ]+/', '', $cellValue);
+                if ((strpos($cellValue, ".") !== false)) {
+                    //Replace 1,234,567.123 to 1 234 567.123
+                    $cellValue = preg_replace('/[,]+/', '', $cellValue);
                 } else {
-                    $cellValue = $type == FieldType::NUMBER ? round($cellValue) : $cellValue;
+                    //Replace 1,234 to 1.234. If bug, remove this code (if-else) and replace all comma by empty string
+                    $cellValue = preg_replace('/[,]+/', '.', $cellValue);
                 }
 
+                //Check scientific notation here
+                if (!is_float($cellValue) && !is_numeric($cellValue)) {
+                    //Number with invalid data should be "Zero"
+                    return 0;
+                }
+
+                //Auto convert scientific value to decimal value
+                $cellValue = (float)$cellValue;
+                $cellValue = $type == FieldType::NUMBER ? round($cellValue) : $cellValue;
                 break;
 
             case FieldType::DATE:
