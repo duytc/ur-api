@@ -54,6 +54,10 @@ UR\Entity\Core\OptimizationIntegration:
             type: json_array
             nullable:
                 default: true
+        reminder:
+            type: boolean
+            options:
+               default: false
     manyToOne:
         optimizationRule:
             targetEntity: UR\Entity\Core\OptimizationRule

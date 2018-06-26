@@ -82,6 +82,8 @@ class Alert implements AlertInterface
     /** @var boolean */
     protected $isSent;
 
+    protected $isSentReminder;
+
     /**
      * @var UserEntityInterface
      */
@@ -98,6 +100,7 @@ class Alert implements AlertInterface
     public function __construct()
     {
         $this->isRead = false;
+        $this->isSentReminder = false;
     }
 
     /**
@@ -272,5 +275,22 @@ class Alert implements AlertInterface
         $this->optimizationIntegration = $optimizationIntegration;
 
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getIsSentReminder()
+    {
+        return $this->isSentReminder;
+
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setIsSentReminder($isSentReminder)
+    {
+        $this->isSentReminder = $isSentReminder;
     }
 }

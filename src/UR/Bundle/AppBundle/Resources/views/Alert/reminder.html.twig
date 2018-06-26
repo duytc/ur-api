@@ -1,0 +1,15 @@
+{#src/UR/Bundle/AppBundle/Resources/view/Alert/reminder.html.twig#}
+<h3>Dear {{ publisher_name }}, </h3>
+
+<p>This is email reminder for Required alerts. Details:</p>
+
+
+{% for alert_summary in alert_summaries %}
+    <p>- {{ alert_summary }}</p>
+{% endfor %}
+
+
+<p>Please go to Pubvangtage system to apply change this alert.</p>
+
+<p>Regards,</p>
+<p>Pubvantage.</p>
