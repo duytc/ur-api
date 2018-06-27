@@ -24,4 +24,5 @@ class OptimizationIntegration extends OptimizationIntegrationModel
     protected $alerts;
     protected $videoPublishers;
     protected $waterfallTags;
+    protected $reminder;
 }

@@ -30,7 +30,8 @@ class OptimizationIntegrationFormType extends AbstractRoleSpecificFormType
             ->add('optimizationFrequency')
             ->add('platformIntegration')
             ->add('videoPublishers')
-            ->add('waterfallTags');
+            ->add('waterfallTags')
+            ->add('reminder');
 
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,

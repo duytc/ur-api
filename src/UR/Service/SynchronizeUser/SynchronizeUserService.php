@@ -36,7 +36,8 @@ class SynchronizeUserService implements SynchronizeUserServiceInterface
         $entityData = $this->addMasterAccountInfo($entityData);
 
         /** @var PublisherInterface|UserInterface $publisher */
-        $publisher = $this->publisherManager->findUserByUsernameOrEmail($userName);
+        //$publisher = $this->publisherManager->findUserByUsernameOrEmail($userName);
+        $publisher = $this->publisherManager->find($idFromTagcadeAPI);
         if (!$publisher instanceof PublisherInterface) {
             $publisher = new User();
         }

@@ -49,3 +49,6 @@ UR\Entity\Core\OptimizationIntegration:
         waterfallTags:
             expose: true
             groups: [optimizationIntegration.detail, optimizationIntegration.min]
+        reminder:
+            expose: true
+            groups: [optimizationIntegration.detail]

@@ -5,9 +5,11 @@ namespace UR\Behaviors;
 
 use DateTime;
 use UR\Domain\DTO\Report\Filters\DateFilter;
+use UR\Model\Core\AlertInterface;
 use UR\Model\Core\OptimizationIntegrationInterface;
 use UR\Model\Core\OptimizationRuleInterface;
 use UR\Model\Core\ReportViewInterface;
+use UR\Repository\Core\AlertRepositoryInterface;
 use UR\Service\OptimizationRule\DataTrainingTableService;
 
 trait OptimizationRuleUtilTrait
@@ -156,5 +158,64 @@ trait OptimizationRuleUtilTrait
         }
 
         return false;
+    }
+
+    /**
+     * @param OptimizationIntegrationInterface $optimizationIntegration
+     * @param AlertRepositoryInterface $alertRepository
+     * @param string $alertType
+     * @return bool
+     */
+    public function isAlertCreatedInCurrentInterval(OptimizationIntegrationInterface $optimizationIntegration, AlertRepositoryInterface $alertRepository, $alertType = AlertInterface::ALERT_TYPE_ACTION_REQUIRED)
+    {
+        $startCreatedDate = $this->getCurrentIntervalTime($optimizationIntegration);
+        if (!$startCreatedDate instanceof DateTime) {
+            return false;
+        }
+        
+        $alertsInThisInterval = $alertRepository->getAlertsCreatedFromDateRange($optimizationIntegration, $alertType, $fromDate = $startCreatedDate, $toDate = date_create('now'));
+
+        return count($alertsInThisInterval);
+    }
+
+    /**
+     * @param OptimizationIntegrationInterface $optimizationIntegration
+     * @return DateTime
+     */
+    public function getCurrentIntervalTime(OptimizationIntegrationInterface $optimizationIntegration)
+    {
+        $now = new DateTime('now', new \DateTimeZone('UTC'));
+        $minutes = $this->getMinutesByInterval($optimizationIntegration->getOptimizationFrequency());
+        $dateInterval = new \DateInterval(sprintf('PT%sM', $minutes));
+        $diff = $now->sub($dateInterval);
+
+        return $diff;
+    }
+
+    /**
+     * @param $frequency
+     * @return int
+     */
+    public function getMinutesByInterval($frequency)
+    {
+        switch ($frequency) {
+            case DateFilter::DATETIME_DYNAMIC_VALUE_CONTINUOUSLY:
+                return 60 * 24; //1 day
+            case DateFilter::DATETIME_DYNAMIC_VALUE_30M:
+                return 30;
+            case DateFilter::DATETIME_DYNAMIC_VALUE_1H:
+                return 60;
+            case DateFilter::DATETIME_DYNAMIC_VALUE_4H:
+                return 60 * 4;
+            case DateFilter::DATETIME_DYNAMIC_VALUE_12H:
+                return 60 * 12;
+            case DateFilter::DATETIME_DYNAMIC_VALUE_24H:
+                return 60 * 24;
+            default:
+                break;
+        }
+
+        //For empty frequency
+        return 0;
     }
 }

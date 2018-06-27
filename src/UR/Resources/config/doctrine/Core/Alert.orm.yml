@@ -30,6 +30,10 @@ UR\Entity\Core\Alert:
             type: boolean
             option:
                 default: false
+        isSentReminder:
+            type: boolean
+            option:
+                default: false
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

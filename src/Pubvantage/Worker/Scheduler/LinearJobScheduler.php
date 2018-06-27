@@ -63,7 +63,7 @@ class LinearJobScheduler implements LinearJobSchedulerInterface
     public function addJob($jobs, string $linearTubeName, array $extraJobData = [], JobParams $parentJobParams = null, int $jobTTR = null): array
     {
         if (empty($jobs)) {
-            return;
+            return [];
         }
 
         if (count(array_filter(array_keys($jobs), 'is_string')) > 0) {

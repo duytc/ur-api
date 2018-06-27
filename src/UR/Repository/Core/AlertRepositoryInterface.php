@@ -83,4 +83,13 @@ interface AlertRepositoryInterface extends ObjectRepository
     public function findOldActionRequiredAlert(AlertInterface $newAlert);
 
     public function getAlertsByParams(AlertParams $alertParams);
+
+    /**
+     * @param OptimizationIntegrationInterface $optimizationIntegration
+     * @param $alertType
+     * @param \DateTime $fromDate
+     * @param \DateTime $toDate
+     * @return mixed
+     */
+    public function getAlertsCreatedFromDateRange(OptimizationIntegrationInterface $optimizationIntegration, $alertType, \DateTime $fromDate, \DateTime $toDate);
 }

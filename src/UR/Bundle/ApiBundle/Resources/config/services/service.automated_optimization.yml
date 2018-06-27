@@ -57,6 +57,7 @@ services:
             - @ur.service.alert.action_require_factory
             - @ur.domain_manager.optimization_integration
             - @ur.redis.app_cache
+            - @ur.repository.alert
             -
                 - '@ur.service.optimization_rule.automated_optimization.puvantage.pubvantage_optimizer'
                 - '@ur.service.optimization_rule.automated_optimization.pubvantage_video.pubvantage_video_optimizer'

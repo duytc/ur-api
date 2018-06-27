@@ -7,6 +7,7 @@ use UR\Model\AlertPagerParam;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\OptimizationIntegrationInterface;
+use UR\Model\Core\OptimizationRuleInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
@@ -492,5 +493,29 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
 
         return $qb->getQuery()->getResult();
 
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getAlertsCreatedFromDateRange(OptimizationIntegrationInterface $optimizationIntegration, $alertType, \DateTime $fromDate, \DateTime $toDate)
+    {
+        $optimizationRule = $optimizationIntegration->getOptimizationRule();
+        if (!$optimizationRule instanceof OptimizationRuleInterface) {
+            return [];
+        }
+
+        //Local server might use timezone not UTC, such as PST8PDT
+        $fromDate->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+
+        $qb = $this->createQueryBuilderForUser($optimizationRule->getPublisher())
+            ->andWhere('a.type = :type')
+            ->andWhere('a.createdDate > :startDate')
+            ->andWhere('a.createdDate < :endDate')
+            ->setParameter('type', $alertType)
+            ->setParameter('startDate', $fromDate)
+            ->setParameter('endDate', $toDate);
+
+        return $qb->getQuery()->getResult();
     }
 }

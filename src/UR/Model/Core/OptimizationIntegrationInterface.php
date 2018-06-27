@@ -212,4 +212,14 @@ interface OptimizationIntegrationInterface extends ModelInterface
      */
     public function setPlatformIntegration($platformIntegration);
 
+    /**
+     * @return mixed
+     */
+    public function isReminder();
+
+    /**
+     * @param boolean $reminder
+     * @return self
+     */
+    public function setReminder(bool $reminder);
 }

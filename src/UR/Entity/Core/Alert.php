@@ -16,6 +16,7 @@ class Alert extends AlertModel
     protected $createdDate;
     protected $type;
     protected $isSent;
+    protected $isSentReminder;
 
     /**
      * @var UserEntityInterface

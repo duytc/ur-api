@@ -18,10 +18,35 @@ class OptimizationIntegration implements OptimizationIntegrationInterface
     protected $startRescoreAt;
     protected $endRescoreAt;
     protected $platformIntegration;
+
+    public function __construct()
+    {
+        $this->reminder = false;
+    }
+
+    /** @var boolean */
+    protected $reminder;
     /**
      * @var AlertInterface[]
      */
     protected $alerts;
+
+    /**
+     * @return boolean
+     */
+    public function isReminder(): bool
+    {
+        return $this->reminder;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setReminder(bool $reminder)
+    {
+        $this->reminder = $reminder;
+    }
+
 
     /**
      * @var array
