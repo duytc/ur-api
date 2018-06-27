@@ -32,6 +32,8 @@ use UR\Model\Core\IntegrationInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Service\ArrayUtilTrait;
+use UR\Service\Metadata\MetadataInterface;
+use UR\Worker\Manager;
 
 /**
  * @Rest\RouteResource("DataSource")
@@ -672,6 +674,31 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
     }
 
     /**
+     * Force Date Range Detection of a Data Source
+     *
+     * @Rest\Post("/datasources/{id}/forcedaterangedetection")
+     * @ApiDoc(
+     *  section = "Data Sources",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
+     *  }
+     * )
+     *
+     * @param $id
+     */
+    public function postForceDateRangeDetectionAction($id)
+    {
+        /** @var DataSourceInterface $dataSource */
+        $dataSource = $this->one($id);
+
+        /** @var Manager $manager */
+        $manager = $this->get('ur.worker.manager');
+        $manager->updateDateRangeForDataSource($dataSource->getId());
+    }
+
+    /**
      * Update an existing data source from the submitted data or create a new ad network
      *
      * @ApiDoc(
@@ -841,6 +868,12 @@ class DataSourceController extends RestControllerAbstract implements ClassResour
             }
 
             try {
+                // default add file name to metadata if not set
+                $metadata = is_array($metadata) ? $metadata : [];
+                if (!array_key_exists(MetadataInterface::META_DATA_FILE_NAME, $metadata)) {
+                    $metadata[MetadataInterface::META_DATA_FILE_NAME] = $file->getClientOriginalName();
+                }
+
                 $oneResult = $uploadFileService->uploadDataSourceEntryFile($file, $uploadPath, $dirItem, $dataSource, $via, $alsoMoveFile, $metadata);
 
                 $result[] = $oneResult;

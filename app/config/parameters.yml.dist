@@ -68,3 +68,11 @@ parameters:
     activate_learning_process_url: 'http://10.0.2.2:8086/api/learner'
     calculate_score_url: 'http://10.0.2.2:8086/api/v2/scores'
     pubvantage_integration_tube_name: 'tagcade-api-worker'
+
+    #config for report view download report
+    max_rows_for_normal_download: 10000  #
+    report_file_dir: '%kernel.root_dir%/../web/download/report'  # for download large file report
+    download_report_view_link: 'http://ur-api.pubvantage-dev.test/download/report'
+    expired_time_small_file: 7 # days
+    expired_time_large_file: 2 # days
+    ur.report_view.large_file_threshold: 500000000  # bytes

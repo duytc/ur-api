@@ -15,19 +15,21 @@ use UR\Service\StringUtilTrait;
 class OptimizationRuleScoreService implements OptimizationRuleScoreServiceInterface
 {
     use StringUtilTrait;
+
     /**
      * @var DynamicTableServiceInterface
      */
     private $dynamicTableService;
+
     /**
      * @var OptimizationRuleManagerInterface
      */
     private $optimizationRuleManager;
+
     /**
      * @var DataTrainingTableServiceInterface
      */
     private $dataTrainingTableService;
-
 
     /**
      * OptimizationRuleScoreService constructor.
@@ -112,7 +114,6 @@ class OptimizationRuleScoreService implements OptimizationRuleScoreServiceInterf
         $result['rows'] = $rows;
 
         return $result;
-
     }
 
     /**
@@ -440,7 +441,6 @@ class OptimizationRuleScoreService implements OptimizationRuleScoreServiceInterf
      */
     public function getPredictiveScore(OptimizationRuleInterface $optimizationRule, array $segmentsValues)
     {
-
         if (!$this->isExistOptimizationRuleScoreTable($optimizationRule)) {
             return [];
         }

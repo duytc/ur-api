@@ -2,7 +2,10 @@
 
 namespace UR\Util;
 
+use Exception;
 use RestClient\CurlRestClient;
+use UR\Service\OptimizationRule\AutomatedOptimization\Pubvantage\PubvantageOptimizer;
+use UR\Service\OptimizationRule\AutomatedOptimization\PubvantageVideo\PubvantageVideoOptimizer;
 use UR\Service\RestClientTrait;
 
 class TagcadeRestClient
@@ -45,7 +48,9 @@ class TagcadeRestClient
     }
 
     /**
-     * @inheritdoc
+     * @param bool $force
+     * @return mixed|null|string
+     * @throws Exception
      */
     public function getToken($force = false)
     {
@@ -59,11 +64,11 @@ class TagcadeRestClient
         $token = json_decode($token, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('json decoding for token error');
+            throw new Exception('json decoding for token error');
         }
 
         if (!array_key_exists('token', $token)) {
-            throw new \Exception(sprintf('Could not authenticate user %s', $this->username));
+            throw new Exception(sprintf('Could not authenticate user %s', $this->username));
         }
 
         $this->token = $token['token'];
@@ -72,44 +77,37 @@ class TagcadeRestClient
     }
 
     /**
-     * @inheritdoc
+     * @param array $data
+     * @param string $platformIntegration
+     * @return mixed
+     * @throws Exception
      */
-    public function updateCacheForAdSlots($data)
+    public function updateCacheForAdSlots(array $data, $platformIntegration = PubvantageOptimizer::PLATFORM_INTEGRATION)
     {
-        /* important: not try-catch here, we need let getToken() throw exception when authentication failed */
-        $header = array('Authorization: Bearer ' . $this->getToken());
+        $data['platform_integration'] = $platformIntegration;
 
-        $data = [
-            'data' => json_encode($data)
-        ];
-
-        $result = $this->curl->executeQuery(
-            $this->updateCacheUrl .'?XDEBUG_SESSION_START=1',
-            'POST',
-            $header,
-            $data
-        );
-
-        $this->curl->close();
-
-        /* decode and parse */
-        $result = json_decode($result, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('Invalid response (json decode failed)');
-        }
-
-        if (is_array($result) && array_key_exists('code', $result) && $result['code'] != 200) {
-            throw new \Exception('Failure to update 3rd party integrations (update cache)');
-        }
-
-        return true;
+        return $this->updateCacheForPubvantage($data);
     }
 
     /**
-     * @inheritdoc
+     * @param array $data
+     * @param string $platformIntegration
+     * @return mixed
+     * @throws Exception
      */
-    public function testCacheForAdSlots($data)
+    public function updateCacheForWaterFallTags(array $data, $platformIntegration = PubvantageVideoOptimizer::PLATFORM_INTEGRATION)
+    {
+        $data['platform_integration'] = $platformIntegration;
+
+        return $this->updateCacheForPubvantage($data);
+    }
+
+    /**
+     * @param array $data
+     * @return mixed
+     * @throws Exception
+     */
+    private function updateCacheForPubvantage(array $data)
     {
         /* important: not try-catch here, we need let getToken() throw exception when authentication failed */
         $header = array('Authorization: Bearer ' . $this->getToken());
@@ -119,7 +117,7 @@ class TagcadeRestClient
         ];
 
         $result = $this->curl->executeQuery(
-            $this->testCacheUrl .'?XDEBUG_SESSION_START=1',
+            $this->updateCacheUrl, // . '?XDEBUG_SESSION_START=1',
             'POST',
             $header,
             $data
@@ -131,97 +129,114 @@ class TagcadeRestClient
         $result = json_decode($result, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('Invalid response (json decode failed)');
+            throw new Exception('Invalid response (json decode failed)');
         }
 
-        if (is_array($result) && array_key_exists('code', $result) && $result['code'] != 200) {
-            throw new \Exception('Failure to update 3rd party integrations (get previous adTags position)');
+        if (is_array($result) && array_key_exists('code', $result) && !in_array($result['code'], [200, 201, 204])) {
+            $messageDetail = array_key_exists('message', $result) ? $result['message'] : 'unknown';
+            throw new Exception(sprintf('Failure to update 3rd party integrations (update cache). Detail: %s', $messageDetail));
         }
 
         return $result;
     }
 
     /**
-     * @inheritdoc
+     * @param array $data
+     * @param string $platformIntegration
+     * @return mixed
+     * @throws Exception
      */
-    public function getScoresForOptimizationRule($data)
+    public function testCacheForAdSlots(array $data, $platformIntegration = PubvantageOptimizer::PLATFORM_INTEGRATION)
     {
-        /* important: not try-catch here, we need let getToken() throw exception when authentication failed */
-      /*  $scores = $this->curl->executeQuery(
-            $this->scoreFetcherUrl,
-            'POST',
-            ["Content-Type" => "application/json;charset=UTF-8"],
-            $data
+        $data['platform_integration'] = $platformIntegration;
 
-            $this->curl->close();
-        );*/
-
-        $scores= $this->callRestAPI('POST', $this->scoreFetcherUrl, json_encode($data));
-        $scores = json_decode($scores, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('json decoding error when get scores');
-        }
-
-        if (array_key_exists('code', $scores) && $scores['code'] != 200) {
-            throw new \Exception(sprintf('failed to get scores, code %d', $scores['code']));
-        }
-
-        return $scores;
+        return $this->testCacheForPubvantage($data);
     }
 
     /**
-     * @inheritdoc
+     * @param array $data
+     * @param string $platformIntegration
+     * @return mixed
+     * @throws Exception
      */
-    public function getAdTagsFromAdSlot($adSlotId)
+    public function testCacheForWaterFallTags(array $data, $platformIntegration = PubvantageVideoOptimizer::PLATFORM_INTEGRATION)
+    {
+        $data['platform_integration'] = $platformIntegration;
+
+        return $this->testCacheForPubvantage($data);
+    }
+
+    /**
+     * @param array $data
+     * @return mixed
+     * @throws Exception
+     */
+    private function testCacheForPubvantage(array $data)
     {
         /* important: not try-catch here, we need let getToken() throw exception when authentication failed */
         $header = array('Authorization: Bearer ' . $this->getToken());
-        $url = str_replace("{id}", $adSlotId, $this->getAdSlotUrl);
 
-        $adTags = $this->curl->executeQuery(
-            $url,
-            'GET',
+        $data = [
+            'data' => json_encode($data)
+        ];
+
+        $result = $this->curl->executeQuery(
+            $this->testCacheUrl, // . '?XDEBUG_SESSION_START=1',
+            'POST',
             $header,
-            []
+            $data
         );
 
         $this->curl->close();
 
-        $adTags = json_decode($adTags, true);
+        /* decode and parse */
+        $result = json_decode($result, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('json decoding error when get scores');
+            throw new Exception('Invalid response (json decode failed)');
         }
 
-        if (array_key_exists('code', $adTags) && $adTags['code'] != 200) {
-            throw new \Exception(sprintf('failed to get adtags, code %d', $adTags['code']));
+        if (!is_array($result)) {
+            throw new Exception('Failure to update 3rd party integrations (get previous positions). Detail: unknown');
         }
 
-        return $adTags;
+        if (array_key_exists('code', $result) && !in_array($result['code'], [200, 201, 204])) {
+            $messageDetail = array_key_exists('message', $result) ? $result['message'] : 'unknown';
+            throw new Exception(sprintf('Failure to update 3rd party integrations (get previous position). Detail: %s', $messageDetail));
+        }
+
+        return $result;
     }
 
     /**
-     * check if file too large (http code 413)
-     *
-     * @param string $postResult html response
-     * @return bool|int
+     * @param array $data
+     * @return mixed
+     * @throws Exception
      */
-    private function checkIfHttp413($postResult)
+    public function getScoresForOptimizationRule(array $data)
     {
-        /*
-         * <html>
-         * <head><title>413 Request Entity Too Large</title></head>
-         * <body bgcolor="white">
-         * <center><h1>413 Request Entity Too Large</h1></center>
-         * <hr><center>nginx/1.10.2</center>
-         * </body>
-         * </html>
-         */
-        if (empty($postResult) || !is_string($postResult)) {
-            return false;
+        /* important: not try-catch here, we need let getToken() throw exception when authentication failed */
+        /*  $scores = $this->curl->executeQuery(
+              $this->scoreFetcherUrl,
+              'POST',
+              ["Content-Type" => "application/json;charset=UTF-8"],
+              $data
+
+              $this->curl->close();
+          );*/
+
+        $scores = $this->callRestAPI('POST', $this->scoreFetcherUrl, json_encode($data));
+        $scores = json_decode($scores, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('json decoding error when get scores');
         }
 
-        return false !== strpos($postResult, '<head><title>413');
+        if (array_key_exists('code', $scores) && !in_array($scores['code'], [200, 201, 204])) {
+            $messageDetail = array_key_exists('message', $scores) ? $scores['message'] : 'unknown';
+            throw new Exception(sprintf('failed to get scores, code %d. Detail: %s', $scores['code'], $messageDetail));
+        }
+
+        return $scores;
     }
 }

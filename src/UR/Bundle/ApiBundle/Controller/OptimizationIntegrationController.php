@@ -5,13 +5,15 @@ namespace UR\Bundle\ApiBundle\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
+use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
+use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\OptimizationIntegrationInterface;
-use Nelmio\ApiDocBundle\Annotation\ApiDoc;
+use UR\Model\Core\OptimizationRuleInterface;
 use UR\Service\OptimizationRule\OptimizationRuleScoreServiceInterface;
 
 /**
@@ -216,6 +218,41 @@ class OptimizationIntegrationController extends RestControllerAbstract implement
     }
 
     /**
+     * Get WaterfallTags ids has been assigned optimization integration
+     *
+     * @Rest\Get("/optimizationintegrations/waterfalltags/ids")
+     *
+     * @Rest\QueryParam(name="id", nullable=false, description="optimization integration id")
+     * @ApiDoc(
+     *  section = "Optimization Integration",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return array
+     * @throws \Exception
+     */
+    public function getWaterfallTagIdsAction(Request $request)
+    {
+        $optimizationIntegrationId = $request->query->get('id', null);
+
+        $optimizationIntegrationManager = $this->get('ur.domain_manager.optimization_integration');
+        $waterfallTagIds = $optimizationIntegrationManager->getOptimizationIntegrationWaterfallTagIds($optimizationIntegrationId);
+
+        $waterfallTagIdsAssigned = [];
+        foreach ($waterfallTagIds as $waterfallTagId) {
+            $waterfallTagIdsAssigned[$waterfallTagId] = $waterfallTagId;
+        }
+
+        $waterfallTagIdsAssigned = array_values($waterfallTagIdsAssigned);
+
+        return $waterfallTagIdsAssigned;
+    }
+
+    /**
      * Get segments form optimization integration based on adSlot Id
      *
      * @Rest\Get("/optimizationintegrations/adslot/{id}/segments")
@@ -235,7 +272,7 @@ class OptimizationIntegrationController extends RestControllerAbstract implement
      */
     public function getSegmentsForAdSlotAction(Request $request, $id)
     {
-        $adSlotId = (int) $id;
+        $adSlotId = (int)$id;
         $optimizationIntegrationRepository = $this->get('ur.repository.optimization_integration');
 
         // get all optimization
@@ -318,6 +355,32 @@ class OptimizationIntegrationController extends RestControllerAbstract implement
             'currentPage' => $page
         );
     }
+
+    /**
+     * Optimize integration immediately
+     *
+     * @Rest\Get("/optimizationintegrations/{id}/optimizenow")
+     *
+     * @ApiDoc(
+     *  section = "Optimization Integration",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @param int $id the resource id
+     * @return mixed
+     * @throws \Exception
+     */
+    public function getOptimizeNowAction($id)
+    {
+      $workerManager =  $this->get('ur.worker.manager');
+
+      return $workerManager->optimizeOptimizationIntegrationNow($id);
+    }
+
 
     /**
      * @return string

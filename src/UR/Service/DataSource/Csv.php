@@ -226,9 +226,9 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     }
 
     /**
-     * @return SplDoublyLinkedList
+     * @inheritdoc
      */
-    public function getRows()
+    public function getRows($sheets = [])
     {
         $rows = $this->csv->fetch();
         $result = new SplDoublyLinkedList();
@@ -252,10 +252,9 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     }
 
     /**
-     * @param $limit
-     * @return SplDoublyLinkedList
+     * @inheritdoc
      */
-    public function getLimitedRows($limit = 100)
+    public function getLimitedRows($limit = 100, $sheets = [])
     {
         if (!is_numeric($limit)) {
             return $this->getRows();
@@ -290,9 +289,9 @@ class Csv extends CommonDataSourceFile implements DataSourceInterface
     /**
      * @inheritdoc
      */
-    public function getTotalRows()
+    public function getTotalRows($sheets = [])
     {
-        return count($this->getRows());
+        return count($this->getRows($sheets));
     }
 
     /**

@@ -80,3 +80,6 @@ UR\Entity\Core\DataSource:
         removeDuplicateDates:
             expose: true
             groups: [datasource.detail, datasource.edit]
+        sheets:
+            expose: true
+            groups: [datasource.detail, datasource.edit]

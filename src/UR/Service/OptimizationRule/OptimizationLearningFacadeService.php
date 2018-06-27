@@ -4,16 +4,15 @@
 namespace UR\Service\OptimizationRule;
 
 
-
 use PHPUnit\Runner\Exception;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\Response;
 use UR\Model\Core\OptimizationRuleInterface;
 use UR\Service\RestClientTrait;
 
 class OptimizationLearningFacadeService implements OptimizationLearningFacadeServiceInterface
 {
     use RestClientTrait;
-
     /**
      * @var DataTrainingCollectorInterface
      */
@@ -50,40 +49,37 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
 
     /**
      * @param OptimizationRuleInterface $reactiveLearningOptimizationRule
-     * @return int|mixed
+     * @return bool|mixed
      * @throws \Exception
      */
     public function calculateNewScores(OptimizationRuleInterface $reactiveLearningOptimizationRule)
     {
         if (!$reactiveLearningOptimizationRule instanceof OptimizationRuleInterface) {
-            return self::UNCOMPLETED;
+            return false;
         }
 
         $data = $this->dataTrainingCollector->buildDataForOptimizationRule($reactiveLearningOptimizationRule);
-
-        if (empty($data)) {
-            $this->logger->info(sprintf('There is not any data optimization rule %d ', $reactiveLearningOptimizationRule->getId()));
-
-            return self::UNCOMPLETED;
-        }
 
         //Table: data_training_58
         $this->importTrainingData($reactiveLearningOptimizationRule, $data);
 
         //Table: core_learner
-        $activateLearnerResult = $this->activateLearner($reactiveLearningOptimizationRule);
-        if (!$activateLearnerResult) {
-            $this->logger->error(sprintf('Activate learning process failed for optimization rule %d', $reactiveLearningOptimizationRule->getId()));
-            return self::UNCOMPLETED;
+        $returnCode = $this->activateLearner($reactiveLearningOptimizationRule);
+
+        if ($returnCode == Response::HTTP_OK) {
+            //Table: __optimization_rule_score_58
+            $this->optimizationRuleScoreService->createOptimizationRuleScoreTable($reactiveLearningOptimizationRule);
+            //Table: __optimization_rule_score_58
+            return $this->activeCalculatingScores($reactiveLearningOptimizationRule);
         }
 
-        //Table: __optimization_rule_score_58
-        $this->optimizationRuleScoreService->createOptimizationRuleScoreTable($reactiveLearningOptimizationRule);
+        if ($returnCode == Response::HTTP_CREATED) {
+            $this->logger->warning(sprintf('Data training of optimization rule %d does not change, no need to recalculate scores', $reactiveLearningOptimizationRule->getId()));
+            return true;
+        }
 
-        //Table: __optimization_rule_score_58
-        $this->activeCalculating($reactiveLearningOptimizationRule);
-
-        return self::COMPLETED;
+        $this->logger->error(sprintf('Activate learning process failed for optimization rule %d', $reactiveLearningOptimizationRule->getId()));
+        return false;
     }
 
     /**
@@ -112,33 +108,37 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
             'optimizationRuleId' => $optimizationRule->getId(),
             'token' => $optimizationRule->getToken()];
 
+        $returnCode =  Response::HTTP_BAD_REQUEST;
+
         try {
             $result = $this->callRestAPI($method, $this->activateLearnerLink, json_encode($data));
 
             $result = json_decode($result, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 $this->logger->warning('There is a error when activating learning process: could not parse response');
-                return false;
+
+                return $returnCode;
             }
 
-            if (array_key_exists('status', $result) && $result['status'] != 200) {
-                $message = array_key_exists('message', $result) ? $result['message'] : '';
-                $this->logger->warning(sprintf('There is a error when activating learning process: got status %s, message: %s', $result['status'], $message));
-                return false;
+            if (array_key_exists('status', $result)) {
+                $returnCode =  $result['status'];
             }
+
         } catch (Exception $e) {
-            $this->logger->warning('There is a error when activating learning process');
-            return false;
+            $this->logger->warning(sprintf('There is an error when activating learning process. Detail: %s', $e->getMessage()));
+
+            return $returnCode;
         }
 
-        return true;
+        return $returnCode;
     }
 
     /**
      * @param OptimizationRuleInterface $optimizationRule
+     * @return bool
      * @throws \Exception
      */
-    private function activeCalculating(OptimizationRuleInterface $optimizationRule)
+    private function activeCalculatingScores(OptimizationRuleInterface $optimizationRule)
     {
         $method = 'POST';
         $data = [
@@ -147,9 +147,24 @@ class OptimizationLearningFacadeService implements OptimizationLearningFacadeSer
 
         try {
             $this->logger->info('Activate calculating process');
-            $this->callRestAPI($method, $this->calculateScoreLink, json_encode($data));
+            $result = $this->callRestAPI($method, $this->calculateScoreLink, json_encode($data));
+
+            $result = json_decode($result, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->logger->warning('There is a error when activating calculating process: could not parse response');
+                return false;
+            }
+
+            if (array_key_exists('status', $result) && $result['status'] != 200) {
+                $message = array_key_exists('message', $result) ? $result['message'] : '';
+                $this->logger->warning(sprintf('There is an error when activating calculating process: got status %s, message: %s', $result['status'], $message));
+                return false;
+            }
+
         } catch (Exception $e) {
-            $this->logger->warning('There is a error when calculating scores');
+            $this->logger->warning(sprintf('There is an error when calculating scores. Detail: %s', $e->getMessage()));
         }
+
+        return true;
     }
 }

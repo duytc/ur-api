@@ -31,3 +31,6 @@ UR\Entity\Core\Alert:
         optimizationIntegration:
             expose: true
             groups: [alert.detail, alert.summary]
+        isSentReminder:
+            expose: true
+            groups: [alert.detail, alert.summary]

@@ -11,6 +11,7 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use UR\Entity\Core\OptimizationIntegration;
 use UR\Model\Core\OptimizationIntegrationInterface;
+use UR\Service\OptimizationRule\AutomatedOptimization\Pubvantage\PubvantageOptimizer;
 
 class OptimizationIntegrationFormType extends AbstractRoleSpecificFormType
 {
@@ -27,7 +28,10 @@ class OptimizationIntegrationFormType extends AbstractRoleSpecificFormType
             ->add('active')
             ->add('optimizationAlerts')
             ->add('optimizationFrequency')
-            ->add('platformIntegration');
+            ->add('platformIntegration')
+            ->add('videoPublishers')
+            ->add('waterfallTags')
+            ->add('reminder');
 
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,
@@ -39,13 +43,13 @@ class OptimizationIntegrationFormType extends AbstractRoleSpecificFormType
                 // validate alert code
                 $name = $optimizationIntegration->getName();
                 $this->validateName($name, $form);
-                $this->validateSupplies($optimizationIntegration->getSupplies(), $form);
+                $this->validatePlatformIntegration($optimizationIntegration->getPlatformIntegration(), $form);
+                $this->validateSupplies($optimizationIntegration->getSupplies(), $optimizationIntegration->getPlatformIntegration(), $form);
                 $this->validateIdentifierMapping($optimizationIntegration->getIdentifierMapping(), $form);
                 $this->validateIdentifierField($optimizationIntegration->getIdentifierField(), $form);
                 $this->validateOptimizeSegments($optimizationIntegration->getSegments(), $form);
                 $this->validateOptimizeAlerts($optimizationIntegration->getOptimizationAlerts(), $form);
                 $this->validateOptimizationFrequency($optimizationIntegration->getOptimizationFrequency(), $form);
-                $this->validatePlatformIntegration($optimizationIntegration->getPlatformIntegration(), $form);
                 $this->setActiveForOptimizationIntegration($optimizationIntegration);
                 if (empty($optimizationIntegration->getId())) {
                     $optimizationIntegration->setStartRescoreAt(new DateTime('now'));
@@ -182,11 +186,16 @@ class OptimizationIntegrationFormType extends AbstractRoleSpecificFormType
      * validate Supplies can not be null
      *
      * @param array $supplies
+     * @param $PlatformIntegration
      * @param FormInterface $form
      * @return bool
      */
-    private function validateSupplies($supplies, $form)
+    private function validateSupplies($supplies, $PlatformIntegration, $form)
     {
+        if ($PlatformIntegration !== PubvantageOptimizer::PLATFORM_INTEGRATION) {
+            return true;
+        }
+
         if (!is_array($supplies) || empty($supplies)) {
             $form->addError(new FormError('Expect Supplies must be not null'));
             return false;

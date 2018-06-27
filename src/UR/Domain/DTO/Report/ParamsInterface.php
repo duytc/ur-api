@@ -343,4 +343,15 @@ interface ParamsInterface
      * @return self
      */
     public function setOptimizationRule($optimizationRule);
+
+    /**
+     * @return bool
+     */
+    public function isExport();
+
+    /**
+     * @param bool $isDownload
+     * @return self
+     */
+    public function setIsExport($isDownload);
 }

@@ -89,7 +89,12 @@ class UpdateDetectedFieldsWhenEntryDeleted implements LockableJobInterface
                 throw new Exception(sprintf('Data Source %d not found (may be deleted before)', $dataSourceId));
             }
 
-            $dataSourceFile = $this->importService->getDataSourceFile($format, $path);
+            if (count($dataSource->getDataSourceEntries()) < 1) {
+                $this->logger->info(sprintf('Keep detected fields when delete last entry (%s)', implode(", ", array_keys($dataSource->getDetectedFields()))));
+                return;
+            }
+
+            $dataSourceFile = $this->importService->getDataSourceFile($format, $path, $dataSource->getSheets());
             if (!$dataSourceFile instanceof \UR\Service\DataSource\DataSourceInterface) {
                 return;
             }

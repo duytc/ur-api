@@ -1,22 +1,15 @@
 <?php
 
-
 namespace UR\Service;
 
-
 use Doctrine\DBAL\Query\QueryBuilder;
-use Doctrine\DBAL\Types\Type;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
-use Symfony\Component\ExpressionLanguage\SyntaxError;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\Filters\AbstractFilter;
 use UR\Domain\DTO\Report\Filters\DateFilter;
-use UR\Domain\DTO\Report\Filters\DateFilterInterface;
 use UR\Domain\DTO\Report\Filters\FilterInterface;
 use UR\Domain\DTO\Report\Filters\NumberFilter;
-use UR\Domain\DTO\Report\Filters\NumberFilterInterface;
 use UR\Domain\DTO\Report\Filters\TextFilter;
-use UR\Domain\DTO\Report\Filters\TextFilterInterface;
 use UR\Domain\DTO\Report\JoinBy\JoinConfig;
 use UR\Domain\DTO\Report\JoinBy\JoinField;
 use UR\Domain\DTO\Report\ParamsInterface;
@@ -605,17 +598,22 @@ trait SqlUtilTrait
      * @param array $dataSetIndexes
      * @param array $joinConfig
      * @param bool $removeSuffix
+     * @param bool $hasExchangeRate
      * @return QueryBuilder
-     * @throws PublicSimpleException
-     * @throws \Exception
      */
-    public function addCalculatedFieldTransformQuery(QueryBuilder $qb, $transform, &$newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = false)
+    public function addCalculatedFieldTransformQuery(QueryBuilder $qb, $transform, &$newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = false, &$hasExchangeRate = false)
     {
         if ($transform instanceof AddCalculatedFieldTransform) {
             $fieldName = $transform->getFieldName();
             $expression = $transform->getExpression();
+            $exchangeRateDateField = $transform->getExchangeRateDateField();
 
-            $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $newFields, $dataSetIndexes, $joinConfig, $removeSuffix);
+            if (isset($exchangeRateDateField) && !empty($exchangeRateDateField)) {
+                $expressionForm = $this->normalizeExpressionExchangeRate(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $newFields, $dataSetIndexes, $joinConfig, $removeSuffix, $exchangeRateDateField);
+                $hasExchangeRate = true;
+            } else {
+                $expressionForm = $this->normalizeExpression(AddCalculatedFieldTransform::TRANSFORMS_TYPE, $fieldName, $expression, $newFields, $dataSetIndexes, $joinConfig, $removeSuffix);
+            }
 
             if ($expressionForm === null) return $qb;
 
@@ -868,7 +866,6 @@ trait SqlUtilTrait
                         : "WHEN 0 THEN $conditionValue";
                 }
 
-
                 // combine sharedConditions and conditions sql
                 $whenQueries[] = (empty($whenConditionsQueries))
                     ? (
@@ -981,6 +978,144 @@ trait SqlUtilTrait
         return $expression;
     }
 
+    /**
+     * @param $transformType
+     * @param $fieldName
+     * @param $expression
+     * @param array $newFields
+     * @param array $dataSetIndexes
+     * @param array $joinConfig
+     * @param bool $removeSuffix
+     * @param $exchangeRateDateField
+     * @return mixed
+     * @throws PublicSimpleException
+     * @throws \Exception
+     */
+    protected function normalizeExpressionExchangeRate($transformType, $fieldName, $expression, array $newFields, $dataSetIndexes = [], array $joinConfig = [], $removeSuffix = true, $exchangeRateDateField)
+    {
+        if (is_null($expression)) {
+            throw new \Exception(sprintf('Expression for calculated field can not be null'));
+        }
+
+        $regex = '/\[(.*?)\]/';
+        if (!preg_match_all($regex, $expression, $matches)) {
+            return $expression;
+        };
+
+        $fieldsInBracket = $matches[0];
+        $fields = $matches[1];
+        $newExpressionForm = null;
+        $evalExpression = $expression;
+
+        foreach ($fields as $index => $field) {
+            $evalExpression = str_replace($fieldsInBracket[$index], strval($index + 1), $evalExpression);
+        }
+
+        $language = new ExpressionLanguage();
+
+        try {
+            $language->evaluate($evalExpression);
+        } catch (\Exception $ex) {
+            throw new PublicSimpleException(sprintf('Warning: Wrong expression of %s', $transformType));
+        }
+
+        foreach ($fields as $index => $field) {
+            if (preg_match('/^EXCHANGE_RATE\((.*),(.*)\)$/', $field, $matches)) {
+                // sql select ...
+                $to = $matches[2];
+                $from = $matches[1];
+
+                /*
+                 * e.g: select exr.rate from core_exchange_rate where exr.date = t.date and exr.from_currency = usd and exr.to_currency = eur
+                 */
+                if (!empty($joinConfig)) {
+                    // exchange rate with join data set
+                    if ($removeSuffix === false) {
+                        //post transform
+                        $exchangeRateDateFieldSuffix = "`$exchangeRateDateField`";
+                        $matchesExchangeRate = self::JOIN_EXCHANGE_RATE . '.' . $exchangeRateDateFieldSuffix;
+
+                    } else {
+                        //pre transform
+                        $fieldAndId = $this->getIdSuffixAndField($exchangeRateDateField);
+                        if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
+                            $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                            $field = $fieldAndId['field'];
+                            $matchesExchangeRate = "`$tableAlias`.`$field`";
+                        } else {
+                            // handle this case later due to $exchangeRateDateField is join field
+                            $matchesExchangeRate =self::EXCHANGE_RATE;
+                        }
+                    }
+                } else {
+                    // exchange rate with single data set
+                    if ($removeSuffix === false) {
+                        //post transform
+                        $exchangeRateDateFieldSuffix = "`$exchangeRateDateField`";
+                        $matchesExchangeRate = self::JOIN_EXCHANGE_RATE . '.' . $exchangeRateDateFieldSuffix;
+                    } else {
+                        //pre transform
+                        $fieldAndId = $this->getIdSuffixAndField($exchangeRateDateField);
+                        $field = $fieldAndId['field'];
+                        $matchesExchangeRate = "`t`.`$field`";
+                    }
+                }
+                $matchesExchangeRate = 'DATE ('. $matchesExchangeRate .')';
+                $field = '(SELECT exr.rate from `core_exchange_rate` as exr where exr.date = ' . $matchesExchangeRate . ' and exr.from_currency = "' . $from . '" and exr.to_currency =  "' . $to . '")';
+
+                /*
+                * wrap IFNULL
+                * e.g: 1+2+null = null, but IFNULL(1,0)+IFNULL(2,0)+IFNULL(null,0) = 3
+                */
+                $field = sprintf('IFNULL(%s, 0)', $field);
+
+                $expression = str_replace($fieldsInBracket[$index], $field, $expression);
+
+                continue;
+            }
+
+            if ($fieldsInBracket[$index] == "[$fieldName]") {
+                throw new RuntimeException('Can not reference Calculated Field to itself');
+            }
+
+            if ($removeSuffix === false) {
+                $field = "`$field`";
+            } else {
+                $alias = $this->convertOutputJoinFieldToAlias($field, $joinConfig, $dataSetIndexes);
+                if ($alias) {
+                    $field = $alias;
+                } else {
+                    $tableAlias = null;
+                    $fieldAndId = $this->getIdSuffixAndField($field);
+                    if ($fieldAndId) {
+                        $field = $fieldAndId['field'];
+                        if (array_key_exists($fieldAndId['id'], $dataSetIndexes)) {
+                            $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                        }
+                    }
+
+                    //$field = $tableAlias !== null ? "`$tableAlias`.`$field`" : (empty($joinConfig) ? "`t`.`$field`" : "`$field`");
+                    $field = ($tableAlias !== null)
+                        ? "`$tableAlias`.`$field`"
+                        : (
+                        empty($joinConfig) && !in_array($field, $newFields)
+                            ? "`t`.`$field`"
+                            : "`$field`"
+                        );
+                }
+            }
+
+            /*
+             * wrap IFNULL
+             * e.g: 1+2+null = null, but IFNULL(1,0)+IFNULL(2,0)+IFNULL(null,0) = 3
+             */
+            $field = sprintf('IFNULL(%s, 0)', $field);
+
+            $expression = str_replace($fieldsInBracket[$index], $field, $expression);
+        }
+
+        return $expression;
+    }
 
     /**
      * @param array $types
@@ -1009,7 +1144,6 @@ trait SqlUtilTrait
             } else {
                 $filter[AbstractFilter::FILTER_FIELD_KEY] = $searchField;
             }
-
 
             if ($type == FieldType::NUMBER || $type == FieldType::DECIMAL) {
                 $conditions = preg_split('/[\s]+/', $searchContent);

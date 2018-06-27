@@ -10,4 +10,11 @@ interface OptimizationIntegrationManagerInterface extends ManagerInterface
      * @return array
      */
     public function getOptimizationIntegrationAdSlotIds($optimizationIntegrationId = null);
+
+
+    /**
+     * @param null $optimizationIntegrationId
+     * @return mixed
+     */
+    public function getOptimizationIntegrationWaterfallTagIds($optimizationIntegrationId = null);
 }

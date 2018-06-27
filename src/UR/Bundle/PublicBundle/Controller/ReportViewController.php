@@ -6,6 +6,7 @@ use Exception;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Controller\FOSRestController;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use UR\Domain\DTO\Report\Filters\DateFilter;
@@ -14,6 +15,7 @@ use UR\Exception\InvalidArgumentException;
 use UR\Exception\RuntimeException;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\ColumnUtilTrait;
+use UR\Service\DTO\Report\ReportResultInterface;
 use UR\Service\PublicSimpleException;
 
 /**
@@ -32,6 +34,7 @@ class ReportViewController extends FOSRestController
      *
      * @Rest\QueryParam(name="token", nullable=false)
      * @Rest\QueryParam(name="startDate", nullable=true)
+     * @Rest\QueryParam(name="isExport", nullable=true)
      * @Rest\QueryParam(name="endDate", nullable=true)
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
      * @Rest\QueryParam(name="limit", requirements="\d+", nullable=true, description="number of item per page")
@@ -58,6 +61,56 @@ class ReportViewController extends FOSRestController
     public function getSharedReportsAction(Request $request, $id)
     {
         $reportView = $this->get('ur.domain_manager.report_view')->find($id);
+        if (!$reportView instanceof ReportViewInterface) {
+            return [];
+        }
+        list($token, $sharedKeysConfig) = $this->validateUser($request, $reportView);
+
+        list($shareConfig, $fieldsToBeShared, $allowDatesOutside, $params, $dateRange) = $this->buildParams($request, $sharedKeysConfig, $token, $reportView);
+
+        $isExport = $request->query->get('isExport');
+
+        // Set the filename of the download
+        $filename = 'MyReport_Tagcade_' . date('Ymd') . '-' . date('His');
+        $userEmails = $request->query->get('userEmail');
+        $userEmails = json_decode($userEmails);
+
+        //if ($userEmails != null && filter_var($userEmails, FILTER_VALIDATE_EMAIL)) {
+        if (!empty($userEmails)) {
+            foreach ($userEmails as $key => $email) {
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    unset($userEmails[$key]);
+                }
+            }
+            if (!empty($userEmails)) {
+                //Process 2nd request with email provided by user
+                if (!file_exists($this->getParameter('report_file_dir'))) {
+                    mkdir($this->getParameter('report_file_dir'), 0777, true);
+                }
+                $token = $request->query->get(ReportViewInterface::TOKEN, null);
+                $filename = sprintf("%s_%s.csv", $filename, uniqid("report"));
+                $path = sprintf("%s/%s", $this->getParameter('report_file_dir'), $filename);
+                $url = sprintf("%s/%s", $this->getParameter('download_report_view_link'), $filename);
+                $worker = $this->container->get('ur.worker.manager');
+                $worker->exportReportViewsAndSentEmail($request->request->all(), $userEmails, $path, $url, $id, $token);
+            }
+
+            return [];
+        }
+
+        $report = $this->getFinalReports($params, $fieldsToBeShared, $reportView, $dateRange, $shareConfig, $allowDatesOutside, $isExport);
+
+        return $report;
+    }
+
+    /**
+     * @param Request $request
+     * @param $reportView
+     * @return array
+     * @throws PublicSimpleException
+     */
+    protected function validateUser(Request $request, $reportView): array
+    {
         if (!($reportView instanceof ReportViewInterface)) {
             throw new BadRequestHttpException('Invalid ReportView');
         }
@@ -76,6 +129,18 @@ class ReportViewController extends FOSRestController
             throw new PublicSimpleException(sprintf("We're building report for you. Please wait 5 minutes and retry"));
         }
 
+        return array($token, $sharedKeysConfig);
+    }
+
+    /**
+     * @param Request $request
+     * @param $sharedKeysConfig
+     * @param $token
+     * @param $reportView
+     * @return array
+     */
+    protected function buildParams(Request $request, $sharedKeysConfig, $token, $reportView): array
+    {
         $shareConfig = $sharedKeysConfig[$token];
 
         $fieldsToBeShared = $shareConfig[ReportViewInterface::SHARE_FIELDS];
@@ -160,42 +225,12 @@ class ReportViewController extends FOSRestController
                     )
                 );
             }
-        } else if ($dateRange && array_key_exists('startDate', $dateRange) && array_key_exists('endDate', $dateRange)){
+        } else if ($dateRange && array_key_exists('startDate', $dateRange) && array_key_exists('endDate', $dateRange)) {
             // override previous date range which is parsed from query params
             $params->setStartDate(new \DateTime($dateRange['startDate']));
             $params->setEndDate(new \DateTime($dateRange['endDate']));
         }
-
-        $reportResult = $this->getReportBuilder()->getShareableReport($params, $fieldsToBeShared);
-        $reportResult->generateReports();
-        $report = $reportResult->toArray();
-
-        $report['reportView'] = $reportView;
-
-        // also return user provided dimensions, metrics, columns
-        $report['dateRange'] = $dateRange;
-        $report[ReportViewInterface::SHARE_FIELDS] = $shareConfig[ReportViewInterface::SHARE_FIELDS];
-
-        // also return allowDatesOutside
-        $report[ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE] = $allowDatesOutside;
-
-        //// columns
-        if (!is_array($report['columns']) || empty($report['columns'])) {
-            $columns = array_merge($reportView->getDimensions(), $reportView->getMetrics());
-            $mappedColumns = [];
-            foreach ($columns as $index => $column) {
-                if (!in_array($column, $report[ReportViewInterface::SHARE_FIELDS])) {
-                    // do not return the columns that are not in shared fields
-                    continue;
-                }
-
-                $mappedColumns[$column] = $this->convertColumn($column, $reportView->getIsShowDataSetName());
-            }
-
-            $report['columns'] = $mappedColumns;
-        }
-
-        return $report;
+        return array($shareConfig, $fieldsToBeShared, $allowDatesOutside, $params, $dateRange);
     }
 
     /**
@@ -223,6 +258,59 @@ class ReportViewController extends FOSRestController
     protected function getParams($reportView, array $fieldsToBeShared, array $paginationParams)
     {
         return $this->get('ur.services.report.params_builder')->buildFromReportViewForSharedReport($reportView, $fieldsToBeShared, $paginationParams);
+    }
+
+    /**
+     * @param ParamsInterface $params
+     * @param $fieldsToBeShared
+     * @param ReportViewInterface $reportView
+     * @param $dateRange
+     * @param $shareConfig
+     * @param $allowDatesOutside
+     * @param boolean $isExport
+     * @return mixed
+     */
+    protected function getFinalReports($params, $fieldsToBeShared, $reportView, $dateRange, $shareConfig, $allowDatesOutside, $isExport)
+    {
+        if ($isExport) {
+            $params->setIsExport(true);
+        }
+        $reportResult = $this->getReportBuilder()->getShareableReport($params, $fieldsToBeShared);
+
+        ////for download
+        if (!$reportResult instanceof ReportResultInterface) {
+            //This is important step, notify to UI about large report
+            //UI will ask user to provide email and resend request with email in above code
+            return new JsonResponse(array('message' => 'The report file is too large. Please provide your emails to receive the report file.', 'code' => 102));
+        }
+
+        $reportResult->generateReports();
+        $report = $reportResult->toArray();
+
+        $report['reportView'] = $reportView;
+        // also return user provided dimensions, metrics, columns
+        $report['dateRange'] = $dateRange;
+        $report[ReportViewInterface::SHARE_FIELDS] = $shareConfig[ReportViewInterface::SHARE_FIELDS];
+
+        // also return allowDatesOutside
+        $report[ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE] = $allowDatesOutside;
+
+        //// columns
+        if (!is_array($report['columns']) || empty($report['columns'])) {
+            $columns = array_merge($reportView->getDimensions(), $reportView->getMetrics());
+            $mappedColumns = [];
+            foreach ($columns as $index => $column) {
+                if (!in_array($column, $report[ReportViewInterface::SHARE_FIELDS])) {
+                    // do not return the columns that are not in shared fields
+                    continue;
+                }
+
+                $mappedColumns[$column] = $this->convertColumn($column, $reportView->getIsShowDataSetName());
+            }
+
+            $report['columns'] = $mappedColumns;
+        }
+        return $report;
     }
 
     protected function getReportBuilder()

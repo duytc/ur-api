@@ -18,7 +18,7 @@ class ActivatePredictionProcessCommand extends ContainerAwareCommand
 {
     use RestClientTrait;
 
-    const COMMAND_NAME = 'ur:auto-optimization:notify-scoring-integration';
+    const COMMAND_NAME = 'ur:auto-optimization:test:notify-scoring-integration';
     const STATUS_KEY = 'status';
     const MESSAGE_KEY = 'message';
     const DATA_KEY = 'data';
@@ -29,7 +29,7 @@ class ActivatePredictionProcessCommand extends ContainerAwareCommand
         $this
             ->setName(self::COMMAND_NAME)
             ->addArgument('optimizationRuleId', InputArgument::REQUIRED, 'Auto Optimization Rule Id')
-            ->setDescription('notify scoring integration for Optimization Rule with given id');
+            ->setDescription('The test command to notify new scores to platform integrations for the Optimization Rule with given id');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)

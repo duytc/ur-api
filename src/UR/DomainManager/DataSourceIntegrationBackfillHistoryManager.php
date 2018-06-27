@@ -5,7 +5,9 @@ namespace UR\DomainManager;
 use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
+use UR\Model\Core\DataSourceIntegrationBackfillHistory;
 use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
+use UR\Model\Core\DataSourceInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\DataSourceIntegrationBackfillHistoryRepositoryInterface;
 
@@ -95,5 +97,22 @@ class DataSourceIntegrationBackfillHistoryManager implements DataSourceIntegrati
     public function findHistoryByStartDateEndDate($startDate, $endDate, $dataSourceIntegration)
     {
         return $this->repository->findHistoryByStartDateEndDate($startDate, $endDate, $dataSourceIntegration);
+    }
+
+    /**
+     * @param DataSourceInterface $dataSource
+     * @return mixed
+     */
+    public function deleteCurrentAutoCreateBackFillHistory(DataSourceInterface $dataSource)
+    {
+        $autoCreateBackFills = $this->repository->getCurrentAutoCreateBackFillHistory($dataSource);
+
+        foreach ($autoCreateBackFills as $oldAutoCreateBackFill) {
+            if (!$oldAutoCreateBackFill instanceof DataSourceIntegrationBackfillHistoryInterface) {
+                continue;
+            }
+
+            $this->delete($oldAutoCreateBackFill);
+        }
     }
 }

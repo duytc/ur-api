@@ -18,10 +18,44 @@ class OptimizationIntegration implements OptimizationIntegrationInterface
     protected $startRescoreAt;
     protected $endRescoreAt;
     protected $platformIntegration;
+
+    public function __construct()
+    {
+        $this->reminder = false;
+    }
+
+    /** @var boolean */
+    protected $reminder;
     /**
      * @var AlertInterface[]
      */
     protected $alerts;
+
+    /**
+     * @return boolean
+     */
+    public function isReminder(): bool
+    {
+        return $this->reminder;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setReminder(bool $reminder)
+    {
+        $this->reminder = $reminder;
+    }
+
+
+    /**
+     * @var array
+     */
+    protected $videoPublishers;
+    /**
+     * @var array
+     */
+    protected $waterfallTags;
 
     /**
      * @inheritdoc
@@ -260,6 +294,42 @@ class OptimizationIntegration implements OptimizationIntegrationInterface
     {
         $this->optimizationAlerts = $optimizationAlerts;
 
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getVideoPublishers()
+    {
+        return $this->videoPublishers;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setVideoPublishers(array $videoPublishers)
+    {
+        $this->videoPublishers = $videoPublishers;
+        
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getWaterfallTags()
+    {
+        return $this->waterfallTags;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setWaterfallTags(array $waterfallTags)
+    {
+        $this->waterfallTags = $waterfallTags;
+        
         return $this;
     }
 

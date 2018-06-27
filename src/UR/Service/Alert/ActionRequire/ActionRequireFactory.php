@@ -40,11 +40,13 @@ class ActionRequireFactory implements ActionRequireFactoryInterface
     /**
      * @inheritdoc
      */
-    public function createActionRequireAlert($object, $extraData = [])
+    public function createActionRequireAlert($optimizationIntegration, $extraData = [])
     {
-        if ($object instanceof OptimizationIntegrationInterface) {
-            return $this->createAlertActionRequireForOptimizationIntegration($object, $extraData);
+        if (!$optimizationIntegration instanceof OptimizationIntegrationInterface) {
+            return false;
         }
+
+        return $this->createAlertActionRequireForOptimizationIntegration($optimizationIntegration, $extraData);
     }
 
     /**

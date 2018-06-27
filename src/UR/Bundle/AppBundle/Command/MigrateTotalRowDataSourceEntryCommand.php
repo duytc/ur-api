@@ -96,8 +96,8 @@ class MigrateTotalRowDataSourceEntryCommand extends ContainerAwareCommand
                         continue;
                     }
                     $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($this->dataSourceFileFactory->getSourceExtension($dataSourceEntry->getPath()));
-                    $dataSourceFile = $this->dataSourceFileFactory->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
-                    $totalRow = $dataSourceFile->getTotalRows();
+                    $dataSourceFile = $this->dataSourceFileFactory->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath(), $dataSource->getSheets());
+                    $totalRow = $dataSourceFile->getTotalRows($dataSource->getSheets());
                     $dataSourceEntry->setTotalRow($totalRow);
                     $this->dataSourceEntryManager->save($dataSourceEntry);
                     $migratedCount++;

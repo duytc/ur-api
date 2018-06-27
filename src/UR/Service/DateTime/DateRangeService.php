@@ -14,6 +14,7 @@ use UR\DomainManager\DataSourceManagerInterface;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceEntryInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Service\DataSource\BackFillHistoryCreator;
 use UR\Service\DataSource\DataSourceFileFactory;
 use UR\Service\DataSource\DataSourceType;
 use UR\Service\DTO\Collection;
@@ -65,19 +66,26 @@ class DateRangeService implements DateRangeServiceInterface
     protected $logger;
 
     /**
+     * @var BackFillHistoryCreator
+     */
+    protected $backFillHistoryCreator;
+
+    /**
      * DateRangeService constructor.
      * @param DataSourceManagerInterface $dataSourceManager
      * @param DataSourceEntryManagerInterface $dataSourceEntryManager
      * @param DataSourceFileFactory $fileFactory
      * @param Logger $logger
+     * @param BackFillHistoryCreator $backFillHistoryCreator
      */
     public function __construct(DataSourceManagerInterface $dataSourceManager, DataSourceEntryManagerInterface $dataSourceEntryManager,
-                                DataSourceFileFactory $fileFactory, Logger $logger)
+                                DataSourceFileFactory $fileFactory, Logger $logger, BackFillHistoryCreator $backFillHistoryCreator)
     {
         $this->dataSourceManager = $dataSourceManager;
         $this->dataSourceEntryManager = $dataSourceEntryManager;
         $this->fileFactory = $fileFactory;
         $this->logger = $logger;
+        $this->backFillHistoryCreator= $backFillHistoryCreator;
     }
 
     /**
@@ -160,6 +168,8 @@ class DateRangeService implements DateRangeServiceInterface
 
         $this->dataSourceManager->save($dataSource);
 
+        $this->backFillHistoryCreator->createBackfillForDataSource($dataSource);
+
         return true;
     }
 
@@ -224,10 +234,10 @@ class DateRangeService implements DateRangeServiceInterface
 
                 } else {
                     $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($this->fileFactory->getSourceExtension($dataSourceEntry->getPath()));
-                    $dataSourceFileData = $this->fileFactory->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
+                    $dataSourceFileData = $this->fileFactory->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath(), $dataSource->getSheets());
 
                     $columns = $dataSourceFileData->getColumns();
-                    $rows = $dataSourceFileData->getRows();
+                    $rows = $dataSourceFileData->getRows($dataSource->getSheets());
 
                     foreach ($rows as $row) {
                         $row = array_combine($columns, $row);

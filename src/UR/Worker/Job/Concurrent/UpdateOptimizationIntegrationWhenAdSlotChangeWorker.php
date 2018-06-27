@@ -4,7 +4,7 @@ namespace UR\Worker\Job\Concurrent;
 
 use Pubvantage\Worker\Job\JobInterface;
 use Pubvantage\Worker\JobParams;
-use UR\Bundle\ApiBundle\EventListener\UpdateAdSlotWhenOptimizationIntegrationChangeListener;
+use UR\Bundle\ApiBundle\EventListener\UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener;
 use UR\DomainManager\OptimizationIntegrationManagerInterface;
 use UR\Model\Core\OptimizationIntegrationInterface;
 
@@ -36,17 +36,17 @@ class UpdateOptimizationIntegrationWhenAdSlotChangeWorker implements JobInterfac
 
         foreach ($actions as $group) {
             $group = json_decode(json_encode($group), true);
-            if (!array_key_exists(UpdateAdSlotWhenOptimizationIntegrationChangeListener::ACTION, $group) ||
-                !array_key_exists(UpdateAdSlotWhenOptimizationIntegrationChangeListener::AD_SLOT, $group) ||
-                !array_key_exists(UpdateAdSlotWhenOptimizationIntegrationChangeListener::OPTIMIZATION_INTEGRATION, $group)
+            if (!array_key_exists(UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::ACTION, $group) ||
+                !array_key_exists(UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::AD_SLOT, $group) ||
+                !array_key_exists(UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::OPTIMIZATION_INTEGRATION, $group)
             ) {
                 continue;
             }
 
-            $action = $group[UpdateAdSlotWhenOptimizationIntegrationChangeListener::ACTION];
-            $site = isset($group[UpdateAdSlotWhenOptimizationIntegrationChangeListener::SITE]) ? $group[UpdateAdSlotWhenOptimizationIntegrationChangeListener::SITE] : null;
-            $adSlot = $group[UpdateAdSlotWhenOptimizationIntegrationChangeListener::AD_SLOT];
-            $optimizationIntegration = $group[UpdateAdSlotWhenOptimizationIntegrationChangeListener::OPTIMIZATION_INTEGRATION];
+            $action = $group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::ACTION];
+            $site = isset($group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::SITE]) ? $group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::SITE] : null;
+            $adSlot = $group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::AD_SLOT];
+            $optimizationIntegration = $group[UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::OPTIMIZATION_INTEGRATION];
 
             $this->syncAdSlotByDataFromUR($action, $adSlot, $optimizationIntegration, $site);
         }
@@ -72,7 +72,7 @@ class UpdateOptimizationIntegrationWhenAdSlotChangeWorker implements JobInterfac
         $supplies = is_array($supplies) ? $supplies : [];
 
         switch ($action) {
-            case UpdateAdSlotWhenOptimizationIntegrationChangeListener::ACTION_ADD:
+            case UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::ACTION_ADD:
                 if (in_array($adSlot, $adSlots)) {
                     return;
                 }
@@ -81,7 +81,7 @@ class UpdateOptimizationIntegrationWhenAdSlotChangeWorker implements JobInterfac
                     $supplies[] = $supply;
                 }
                 break;
-            case UpdateAdSlotWhenOptimizationIntegrationChangeListener::ACTION_REMOVE:
+            case UpdateResourceForPlatformIntegrationWhenOptimizationIntegrationChangeListener::ACTION_REMOVE:
                 $adSlots = array_filter($adSlots, function ($item) use ($adSlot) {
                     return $item != $adSlot;
                 });

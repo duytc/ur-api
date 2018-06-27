@@ -46,6 +46,18 @@ UR\Entity\Core\OptimizationIntegration:
         platformIntegration:
             type: string
             length: 100
+        videoPublishers:
+            type: json_array
+            nullable:
+                default: true
+        waterfallTags:
+            type: json_array
+            nullable:
+                default: true
+        reminder:
+            type: boolean
+            options:
+               default: false
     manyToOne:
         optimizationRule:
             targetEntity: UR\Entity\Core\OptimizationRule

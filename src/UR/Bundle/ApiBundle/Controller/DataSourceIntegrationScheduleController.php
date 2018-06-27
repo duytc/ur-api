@@ -20,6 +20,7 @@ use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\FetcherSchedule;
+use UR\Model\Core\IntegrationInterface;
 use UR\Repository\Core\DataSourceIntegrationScheduleRepositoryInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 
@@ -96,11 +97,12 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
      */
     public function getIntegrationByScheduleAction(Request $request)
     {
-        // get normal data source integration by schedule
-        /** @var DataSourceIntegrationScheduleManagerInterface $dsisManager */
-        $dsisManager = $this->get('ur.domain_manager.data_source_integration_schedule');
-        $notExecutedNormalSchedules = $dsisManager->findToBeExecuted();
+        /** @var DataSourceIntegrationScheduleRepositoryInterface $schedulesRepository */
+        $schedulesRepository = $this->get('ur.repository.data_source_integration_schedule');
+        $qb = $schedulesRepository->findToBeExecuted();
+        $result = $this->getPagination($qb, $request);
 
+        $notExecutedNormalSchedules = $result['records'];
         $normalSchedules = [];
         foreach ($notExecutedNormalSchedules as $notExecutedNormalSchedule) {
             if (!$notExecutedNormalSchedule instanceof DataSourceIntegrationScheduleInterface) {
@@ -112,24 +114,9 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
 
             $normalSchedules[] = $fetcherSchedule;
         }
+        $result['records'] = $normalSchedules;
 
-        // get data source integration by backfill
-        $backFillHistoryManager = $this->get('ur.domain_manager.data_source_integration_backfill_history');
-        $notExecutedBackFills = $backFillHistoryManager->findByBackFillNotExecuted();
-
-        $backFillSchedules = [];
-        foreach ($notExecutedBackFills as $notExecutedBackFill) {
-            if (!$notExecutedBackFill instanceof DataSourceIntegrationBackfillHistoryInterface) {
-                continue;
-            }
-
-            $fetcherSchedule = (new FetcherSchedule())
-                ->setBackFillHistory($notExecutedBackFill);
-
-            $backFillSchedules[] = $fetcherSchedule;
-        }
-
-        return array_merge($normalSchedules, $backFillSchedules);
+        return $result;
     }
 
     /**
@@ -168,6 +155,41 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
             }
         }, $normalSchedules);
 
+
+        return $normalSchedules;
+    }
+
+    /**
+     * Get integration to be executed due to schedule
+     *
+     * @Rest\Get("/datasourceintegrationschedules/byintegration")
+     *
+     * @Rest\View(serializerGroups={"fetcherschedule.detail", "dataSourceIntegrationBackfillHistory.summary", "dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.bySchedule", "integration.detail", "user.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return DataSourceIntegrationScheduleInterface[]
+     */
+    public function getDataSourceIntegrationSchedulesByIntegrationAction(Request $request)
+    {
+        // The REST naming is not standard. This REST Api seems to be that use the cgetAction()
+        // But because of the difference from serializer groups, we must use this REST API:
+        $normalSchedules = $this->findByIntegration($request);
+
+        $normalSchedules = array_map(function ($schedule) {
+            if ($schedule instanceof DataSourceIntegrationScheduleInterface) {
+                $fetcherSchedule = new FetcherSchedule();
+                $fetcherSchedule->setDataSourceIntegrationSchedule($schedule);
+                return $fetcherSchedule;
+            }
+        }, $normalSchedules);
 
         return $normalSchedules;
     }
@@ -390,6 +412,39 @@ class DataSourceIntegrationScheduleController extends RestControllerAbstract imp
         $dsisManager = $this->get('ur.domain_manager.data_source_integration_schedule');
 
         return $dsisManager->findByDataSource($dataSource);
+    }
+
+    /**
+     * find By Integration Id
+     *
+     * @param Request $request
+     * @return array|\UR\Model\Core\DataSourceIntegrationScheduleInterface[]
+     */
+    private function findByIntegration(Request $request)
+    {
+        $integrationId = $request->query->get('integration', null);
+        $integrationId = filter_var($integrationId, FILTER_VALIDATE_INT);
+        if (false === $integrationId || $integrationId < 0) {
+            throw new BadRequestHttpException(sprintf('Invalid integration id %s', $integrationId));
+        }
+
+        /** @var DataSourceManagerInterface $dataSourceManager */
+        $integrationManager = $this->get('ur.domain_manager.integration');
+        $integration = $integrationManager->find($integrationId);
+        if (!$integration instanceof IntegrationInterface) {
+            throw new NotFoundHttpException(
+                sprintf("The %s resource '%s' was not found or you do not have access", $this->getResourceName(), $integrationId)
+            );
+        }
+
+        // check permission
+        $this->checkUserPermission($integration);
+
+        // find and return
+        /** @var DataSourceIntegrationScheduleManagerInterface $dsisManager */
+        $dsisManager = $this->get('ur.domain_manager.data_source_integration_schedule');
+
+        return $dsisManager->findByIntegration($integration);
     }
 
     /**

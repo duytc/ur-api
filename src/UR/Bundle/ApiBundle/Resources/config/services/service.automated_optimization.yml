@@ -36,10 +36,18 @@ services:
     ur.service.optimization_rule.automated_optimization.puvantage.pubvantage_optimizer:
         class: UR\Service\OptimizationRule\AutomatedOptimization\Pubvantage\PubvantageOptimizer
         arguments:
-          - @ur.util.tagcade_rest_client
-          - @ur.service.optimization_rule.data_training_table_service
-          - @ur.service.dynamic_table.dynamic_table_service
-          - @ur.service.optimization_rule.optimization_rule_score_service
+            - @ur.util.tagcade_rest_client
+            - @ur.service.optimization_rule.data_training_table_service
+            - @ur.service.dynamic_table.dynamic_table_service
+            - @ur.service.optimization_rule.optimization_rule_score_service
+
+    ur.service.optimization_rule.automated_optimization.pubvantage_video.pubvantage_video_optimizer:
+        class: UR\Service\OptimizationRule\AutomatedOptimization\PubvantageVideo\PubvantageVideoOptimizer
+        arguments:
+            - @ur.util.tagcade_rest_client
+            - @ur.service.optimization_rule.data_training_table_service
+            - @ur.service.dynamic_table.dynamic_table_service
+            - @ur.service.optimization_rule.optimization_rule_score_service
 
     ur.service.optimization_rule.automated_optimization.automated_optimizer:
         class: UR\Service\OptimizationRule\AutomatedOptimization\AutomatedOptimizer
@@ -49,8 +57,10 @@ services:
             - @ur.service.alert.action_require_factory
             - @ur.domain_manager.optimization_integration
             - @ur.redis.app_cache
+            - @ur.repository.alert
             -
                 - '@ur.service.optimization_rule.automated_optimization.puvantage.pubvantage_optimizer'
+                - '@ur.service.optimization_rule.automated_optimization.pubvantage_video.pubvantage_video_optimizer'
 
     ur.service.optimization_rule.normalization.country_normalizer:
         class: UR\Service\OptimizationRule\Normalization\CountryNormalizer
@@ -91,3 +101,11 @@ services:
             - @ur.service.optimization_rule.automated_optimization.automated_optimizer
             - @ur.domain_manager.optimization_rule
             - @monolog.logger
+
+    ur.worker.job.concurrent.optimize_optimization_integration_now:
+        class: UR\Worker\Job\Concurrent\OptimizeOptimizationIntegrationNow
+        arguments:
+            - '@ur.domain_manager.optimization_integration'
+            - '@ur.service.optimization_rule.automated_optimization.automated_optimizer'
+            - '@ur.service.optimization_rule.optimization_learning_facade_service'
+            - '@logger'

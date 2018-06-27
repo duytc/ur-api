@@ -93,11 +93,17 @@ class UpdateDetectedFieldsWhenEntryInserted implements LockableJobInterface
         // update detected fields (update count of detected fields)
         try {
             $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($dataSourceEntry->getFileExtension());
-            $dataSourceFile = $this->importService->getDataSourceFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
+            $dataSourceFile = $this->importService->getDataSourceFile($dataSourceTypeExtension, $dataSourceEntry->getPath(), $dataSource->getSheets());
 
             $newFields = $this->importService->getNewFieldsFromFiles($dataSourceFile);
-            $detectedFields = $this->importService->detectFieldsForDataSource($newFields, $dataSource->getDetectedFields(), ImportService::ACTION_UPLOAD);
 
+            if (count($dataSource->getDataSourceEntries()) < 2) {
+                //Update detected fields when upload new entry after delete all
+                $detectedFields = $this->importService->detectFieldsForDataSource($newFields, [], ImportService::ACTION_UPLOAD);
+            } else {
+                $detectedFields = $this->importService->detectFieldsForDataSource($newFields, $dataSource->getDetectedFields(), ImportService::ACTION_UPLOAD);
+            }
+            
             $dataSource->setDetectedFields($detectedFields);
             $this->dataSourceManager->save($dataSource);
         } catch (Exception $exception) {

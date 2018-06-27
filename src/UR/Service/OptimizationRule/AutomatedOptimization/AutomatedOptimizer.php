@@ -12,6 +12,7 @@ use UR\Model\Core\AlertInterface;
 use UR\Model\Core\OptimizationIntegrationInterface;
 use UR\Model\Core\OptimizationRuleInterface;
 use UR\Model\User\Role\PublisherInterface;
+use UR\Repository\Core\AlertRepositoryInterface;
 use UR\Service\Alert\ActionRequire\ActionRequireFactoryInterface;
 use UR\Service\PublicSimpleException;
 use UR\Worker\Manager;
@@ -40,6 +41,9 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
     /** @var Redis */
     private $redis;
 
+    /** @var AlertRepositoryInterface */
+    private $alertRepository;
+
     /**
      * AutomatedOptimizer constructor.
      * @param LoggerInterface $logger
@@ -47,16 +51,18 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
      * @param ActionRequireFactoryInterface $actionRequireFactory
      * @param OptimizationIntegrationManagerInterface $optimizationIntegrationManager
      * @param Redis $redis
+     * @param AlertRepositoryInterface $alertRepository
      * @param $optimizers
      */
     public function __construct(LoggerInterface $logger, Manager $manager, ActionRequireFactoryInterface $actionRequireFactory,
-                                OptimizationIntegrationManagerInterface $optimizationIntegrationManager, Redis $redis, $optimizers)
+                                OptimizationIntegrationManagerInterface $optimizationIntegrationManager, Redis $redis, AlertRepositoryInterface $alertRepository, $optimizers)
     {
         $this->optimizers = $optimizers;
         $this->logger = $logger;
         $this->actionRequireFactory = $actionRequireFactory;
         $this->manager = $manager;
         $this->optimizationIntegrationManager = $optimizationIntegrationManager;
+        $this->alertRepository = $alertRepository;
         $this->redis = $redis;
     }
 
@@ -124,10 +130,17 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
             //Lock
             $this->redis->set($lockKey, 1000, self::DEFAULT_TIME_OUT);
             if (!$optimizationIntegration->isUserConfirm()) {
-                if ($optimizationIntegration->isRequirePendingAlert() && $optimizationRule->getPublisher() instanceof PublisherInterface) {
-                    $this->actionRequireFactory->createActionRequireAlert($optimizationIntegration, $optimizer->testForOptimizationIntegration($optimizationIntegration));
+                try {
+                    if ($optimizationIntegration->isRequirePendingAlert() && !$this->isAlertCreatedInCurrentInterval($optimizationIntegration, $this->alertRepository) && $optimizationRule->getPublisher() instanceof PublisherInterface) {
+                        $this->actionRequireFactory->createActionRequireAlert($optimizationIntegration, $optimizer->testForOptimizationIntegration($optimizationIntegration));
+                        $this->logger->info(sprintf('Create action require alert successfully for optimization integration %d', $optimizationIntegration->getId()));
+                    }
+                } catch (\Exception $exception) {
+                    $newMessage = sprintf($exception->getMessage(). ' - integration id: %d -', $optimizationIntegration->getId());
+
+                    throw new \Exception($newMessage, $exception->getCode(), $exception);
                 }
-                $this->logger->info(sprintf('Create action require alert successfully for optimization integration %d', $optimizationIntegration->getId()));
+
                 continue;
             }
 
@@ -136,7 +149,10 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
                 $startRescoreAt = new DateTime('now');
                 $optimizationIntegration->setStartRescoreAt($startRescoreAt);
 
-                $optimizer->optimizeForOptimizationIntegration($optimizationIntegration);
+                $optimizeResult = $optimizer->optimizeForOptimizationIntegration($optimizationIntegration);
+                $optimizeResultDetail = (is_array($optimizeResult) && array_key_exists('message', $optimizeResult))
+                    ? $optimizeResult['message']
+                    : '';
 
                 // set endRescoreAt after finished update cache
                 $endRescoreAt = new DateTime('now');
@@ -154,9 +170,12 @@ class AutomatedOptimizer implements AutomatedOptimizerInterface
                         $optimizationIntegration->getId()
                     );
                 }
-                $this->logger->info(sprintf('Update 3rd party integrations successfully for optimization integration %d', $optimizationIntegration->getId()));
+
+                $this->logger->info(sprintf('Update 3rd party integrations successfully for optimization integration %d. Detail: %s', $optimizationIntegration->getId(), $optimizeResultDetail));
             } catch (\Exception $exception) {
-                throw $exception;
+                $newMessage = sprintf($exception->getMessage(). ' - integration id: %d -', $optimizationIntegration->getId());
+
+                throw new \Exception($newMessage, $exception->getCode(), $exception);
             }
         }
 

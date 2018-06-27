@@ -7,6 +7,7 @@ use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\DataSourceIntegrationScheduleInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\IntegrationInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\DataSourceIntegrationScheduleRepositoryInterface;
 
@@ -88,5 +89,13 @@ class DataSourceIntegrationScheduleManager implements DataSourceIntegrationSched
     public function findByDataSource(DataSourceInterface $dataSource)
     {
         return $this->repository->findByDataSource($dataSource);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function findByIntegration(IntegrationInterface $integration)
+    {
+        return $this->repository->findByIntegration($integration);
     }
 }

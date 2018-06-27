@@ -21,4 +21,6 @@ class OptimizationRule extends OptimizationRuleModel
     protected $optimizationIntegrations;
     protected $learners;
     protected $finishLoading;
+    protected $lastTrainingDataCheckSum;
+    protected $ruleCheckSum;
 }

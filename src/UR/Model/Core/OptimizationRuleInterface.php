@@ -156,4 +156,25 @@ interface OptimizationRuleInterface extends ModelInterface
      * @return self
      */
     public function setAlerts($alerts);
+
+    /**
+     * @return mixed
+     */
+    public function getLastTrainingDataCheckSum();
+
+    /**
+     * @param $lastTrainingDataCheckSum
+     * @return mixed
+     */
+    public function setLastTrainingDataCheckSum($lastTrainingDataCheckSum);
+
+    /**
+     * @return mixed
+     */
+    public function getRuleCheckSum();
+
+    /**
+     * @param mixed $ruleCheckSum
+     */
+    public function setRuleCheckSum($ruleCheckSum);
 }

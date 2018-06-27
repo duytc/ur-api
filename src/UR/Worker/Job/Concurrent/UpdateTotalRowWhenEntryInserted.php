@@ -116,9 +116,10 @@ class UpdateTotalRowWhenEntryInserted implements JobInterface
             }
 
             $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($dataSourceEntry->getFileExtension());
-            $dataSourceFile = $this->importService->getDataSourceFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
+            $dataSource = $dataSourceEntry->getDataSource();
+            $dataSourceFile = $this->importService->getDataSourceFile($dataSourceTypeExtension, $dataSourceEntry->getPath(), $dataSource->getSheets());
 
-            $totalRow = $dataSourceFile->getTotalRows();
+            $totalRow = $dataSourceFile->getTotalRows($dataSource->getSheets());
             $dataSourceEntry->setTotalRow($totalRow);
 
             $this->dataSourceEntryManager->save($dataSourceEntry);

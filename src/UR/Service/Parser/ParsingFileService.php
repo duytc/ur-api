@@ -82,15 +82,15 @@ class ParsingFileService
     {
         /** @var DataSourceInterface $dataSourceFileData */
         $dataSourceFileData = null;
-
+        $dataSource = $dataSourceEntry->getDataSource();
         if (!empty($chunkFilePath)) {
-            $dataSourceFileData = $this->fileFactory->getFileForChunk($chunkFilePath);
+            $dataSourceFileData = $this->fileFactory->getFileForChunk($chunkFilePath, $dataSource->getSheets());
         }
 
         if (!$dataSourceFileData instanceof DataSourceInterface ){
             try {
                 $dataSourceTypeExtension = DataSourceType::getOriginalDataSourceType($this->fileFactory->getSourceExtension($dataSourceEntry->getPath()));
-                $dataSourceFileData = $this->fileFactory->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath());
+                $dataSourceFileData = $this->fileFactory->getFile($dataSourceTypeExtension, $dataSourceEntry->getPath(), $dataSource->getSheets());
             } catch (\Exception $ex) {
                 throw $ex;
             }
@@ -111,9 +111,9 @@ class ParsingFileService
 
         /* 1. get all row data */
         if (is_numeric($limit) && $limit > 0) {
-            $rows = $dataSourceFileData->getLimitedRows($limit);
+            $rows = $dataSourceFileData->getLimitedRows($limit, $dataSource->getSheets());
         } else {
-            $rows = $dataSourceFileData->getRows();
+            $rows = $dataSourceFileData->getRows($dataSource->getSheets());
         }
 
         if ($parserType != ParserInterface::TYPE_POST_GROUPS) {

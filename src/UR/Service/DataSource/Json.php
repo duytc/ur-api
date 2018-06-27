@@ -94,7 +94,7 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
     /**
      * @inheritdoc
      */
-    public function getRows()
+    public function getRows($sheets = [])
     {
         $data = $this->listener->getJson();
         if (array_key_exists('columns', $data) && array_key_exists('rows', $data)) {
@@ -210,10 +210,9 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
     }
 
     /**
-     * @param $limit
-     * @return array
+     * @inheritdoc
      */
-    public function getLimitedRows($limit)
+    public function getLimitedRows($limit, $sheets = [])
     {
         if (!is_numeric($limit)) {
             return $this->getRows();
@@ -264,9 +263,9 @@ class Json extends CommonDataSourceFile implements DataSourceInterface
     /**
      * @inheritdoc
      */
-    public function getTotalRows()
+    public function getTotalRows($sheets = [])
     {
-        return count($this->getRows());
+        return count($this->getRows($sheets));
     }
 
     /**

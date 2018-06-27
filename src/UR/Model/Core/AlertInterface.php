@@ -158,4 +158,14 @@ interface AlertInterface extends ModelInterface
      * @return self
      */
     public function setOptimizationIntegration($optimizationRule);
+
+    /**
+     * @return mixed
+     */
+    public function getIsSentReminder();
+
+    /**
+     * @param mixed $isSentReminder
+     */
+    public function setIsSentReminder($isSentReminder);
 }

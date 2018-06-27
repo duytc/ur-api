@@ -80,6 +80,8 @@ class ReportBuilder implements ReportBuilderInterface
      */
     private $logger;
 
+    private $maxRowsForNormalDownload;
+
     /**
      * ReportBuilder constructor.
      * @param ReportSelectorInterface $reportSelector
@@ -91,10 +93,11 @@ class ReportBuilder implements ReportBuilderInterface
      * @param ReportViewFormatter $reportViewFormatter
      * @param ReportViewSorter $reportViewSorter
      * @param LoggerInterface $logger
+     * @param $maxRowsForNormalDownload
      */
     public function __construct(ReportSelectorInterface $reportSelector, ReportGrouperInterface $reportGrouper,
                                 ReportViewManagerInterface $reportViewManager, ParamsBuilderInterface $paramsBuilder, DataSetManagerInterface $dataSetManager,
-                                ReportViewFilter $reportViewFilter, ReportViewFormatter $reportViewFormatter, ReportViewSorter $reportViewSorter, LoggerInterface $logger)
+                                ReportViewFilter $reportViewFilter, ReportViewFormatter $reportViewFormatter, ReportViewSorter $reportViewSorter, LoggerInterface $logger, $maxRowsForNormalDownload)
     {
         $this->reportSelector = $reportSelector;
         $this->reportGrouper = $reportGrouper;
@@ -105,6 +108,7 @@ class ReportBuilder implements ReportBuilderInterface
         $this->reportViewFormatter = $reportViewFormatter;
         $this->reportViewSorter = $reportViewSorter;
         $this->logger = $logger;
+        $this->maxRowsForNormalDownload = $maxRowsForNormalDownload;
     }
 
     /**
@@ -126,7 +130,7 @@ class ReportBuilder implements ReportBuilderInterface
         $reportResult = $this->getReport($params);
 
         // check if $fieldsToBeShared not yet configured (empty array) => default share all
-        if (count($fieldsToBeShared) < 1) {
+        if (count($fieldsToBeShared) < 1 || !$reportResult instanceof ReportResultInterface) {
             return $reportResult;
         }
 
@@ -187,6 +191,16 @@ class ReportBuilder implements ReportBuilderInterface
      */
     private function getSingleReport(ParamsInterface $params, $overridingFilters = null, $isNeedFormatReport = true)
     {
+        if ($params->isExport()) {
+            $params->setPage(1);      //// faster ???
+            if($this->maxRowsForNormalDownload > 20000){
+                $params->setLimit($this->maxRowsForNormalDownload);
+            }else{
+                $params->setLimit(20000);
+            }
+
+        }
+
         $metrics = [];
         $dimensions = [];
         $dataSets = $params->getDataSets();
@@ -338,6 +352,10 @@ class ReportBuilder implements ReportBuilderInterface
         $data = $this->reportSelector->getReportData($params, $overridingFilters);
         $rows = $data[SqlBuilder::ROWS];
         $total = $data[SqlBuilder::TOTAl_ROWS];
+        if ($total > $this->maxRowsForNormalDownload && $params->isExport()) {
+            // return for export report send email, run worker
+            return $total;
+        }
 
         if (count($rows) < 1) {
             $columns = [];
@@ -606,7 +624,7 @@ class ReportBuilder implements ReportBuilderInterface
 
         if (!empty($params->getPage()) && is_int($params->getPage())) {
             $limit = !empty($params->getLimit()) && is_int($params->getLimit()) ? $params->getLimit() : 10;
-            $reportResult->setTotalPage($totalReport/$limit);
+            $reportResult->setTotalPage(ceil($totalReport / $limit));
         }
 
         /* return report result */

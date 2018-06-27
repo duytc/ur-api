@@ -21,6 +21,8 @@ class OptimizationRule implements OptimizationRuleInterface
     protected $learners;
     /** @var  boolean */
     protected $finishLoading;
+    protected $lastTrainingDataCheckSum;
+    protected $ruleCheckSum;
 
     /**
      * @inheritdoc
@@ -258,6 +260,42 @@ class OptimizationRule implements OptimizationRuleInterface
     public function setAlerts($alerts)
     {
         $this->alerts = $alerts;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLastTrainingDataCheckSum()
+    {
+        return $this->lastTrainingDataCheckSum;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLastTrainingDataCheckSum($lastTrainingDataCheckSum)
+    {
+        $this->lastTrainingDataCheckSum = $lastTrainingDataCheckSum;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getRuleCheckSum()
+    {
+        return $this->ruleCheckSum;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setRuleCheckSum($ruleCheckSum)
+    {
+        $this->ruleCheckSum = $ruleCheckSum;
 
         return $this;
     }

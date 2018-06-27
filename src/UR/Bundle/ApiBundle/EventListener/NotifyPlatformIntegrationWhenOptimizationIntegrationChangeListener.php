@@ -7,11 +7,13 @@ use Leezy\PheanstalkBundle\Proxy\PheanstalkProxyInterface;
 use stdClass;
 use UR\Model\Core\OptimizationIntegrationInterface;
 use UR\Service\OptimizationRule\AutomatedOptimization\Pubvantage\PubvantageOptimizer;
+use UR\Service\OptimizationRule\AutomatedOptimization\PubvantageVideo\PubvantageVideoOptimizer;
 
 class NotifyPlatformIntegrationWhenOptimizationIntegrationChangeListener
 {
     /* important: keep sync name from this to tagcade api (in tagcade api, this is function name in worker!!!) */
-    const NOTIFY_PLATFORM_INTEGRATION_JOB_NAME_REMOVED_OPTIMIZATION_INTEGRATION = 'updateAdSlotCacheWhenRemoveOptimizationIntegration';
+    const NOTIFY_PLATFORM_INTEGRATION_DISPLAY_JOB_NAME_REMOVED_OPTIMIZATION_INTEGRATION = 'updateAdSlotCacheWhenRemoveOptimizationIntegration';
+    const NOTIFY_PLATFORM_INTEGRATION_VIDEO_JOB_NAME_REMOVED_OPTIMIZATION_INTEGRATION = 'updateVideoWaterfallTagCacheWhenRemoveOptimizationIntegration';
 
     /** @var PheanstalkProxyInterface */
     private $beanstalk;
@@ -45,7 +47,20 @@ class NotifyPlatformIntegrationWhenOptimizationIntegrationChangeListener
                 $params->adSlots = $optimizationIntegration->getAdSlots();
 
                 $payload = new stdClass();
-                $payload->task = self::NOTIFY_PLATFORM_INTEGRATION_JOB_NAME_REMOVED_OPTIMIZATION_INTEGRATION;
+                $payload->task = self::NOTIFY_PLATFORM_INTEGRATION_DISPLAY_JOB_NAME_REMOVED_OPTIMIZATION_INTEGRATION;
+                $payload->params = $params;
+
+                $this->beanstalk->putInTube($this->pubvantageIntegrationTubeName, json_encode($payload));
+
+                break;
+
+            case PubvantageVideoOptimizer::PLATFORM_INTEGRATION: // pubvantage video api
+                // send job to Pubvantage platform
+                $params = new stdClass();
+                $params->videoWaterfallTags = $optimizationIntegration->getWaterfallTags();
+
+                $payload = new stdClass();
+                $payload->task = self::NOTIFY_PLATFORM_INTEGRATION_VIDEO_JOB_NAME_REMOVED_OPTIMIZATION_INTEGRATION;
                 $payload->params = $params;
 
                 $this->beanstalk->putInTube($this->pubvantageIntegrationTubeName, json_encode($payload));

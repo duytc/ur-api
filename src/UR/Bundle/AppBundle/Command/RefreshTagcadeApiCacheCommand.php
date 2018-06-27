@@ -15,7 +15,7 @@ use UR\Model\Core\OptimizationRuleInterface;
 
 class RefreshTagcadeApiCacheCommand extends ContainerAwareCommand
 {
-    const COMMAND_NAME = 'ur:auto-optimization:reactivate-scoring-integration';
+    const COMMAND_NAME = 'ur:auto-optimization:test:reactivate-scoring-integration';
     const INPUT_DATA_FORCE = 'force';
     const ALL = 'all';
     const RULES = 'optimizationRules';
@@ -24,7 +24,7 @@ class RefreshTagcadeApiCacheCommand extends ContainerAwareCommand
     private $optimizationRuleManager;
 
     /**
-     *
+     * @inheritdoc
      */
     protected function configure()
     {
@@ -34,7 +34,9 @@ class RefreshTagcadeApiCacheCommand extends ContainerAwareCommand
                 'Enable for all optimization rules (optional)')
             ->addOption(self::RULES, 'u', InputOption::VALUE_OPTIONAL,
                 'Enable for special optimization rules (optional), allow multiple optimization id separated by comma, e.g. -u "5,10,3"')
-            ->setDescription('Synchronization OptimizationRule, to data training table, call scorer and update ad slot cache');
+            ->setDescription('The test command to synchronize Optimization Rule and data training table,'
+                . ' call scoring service to get new scores,'
+                . ' then notify new scores to platform integrations');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)

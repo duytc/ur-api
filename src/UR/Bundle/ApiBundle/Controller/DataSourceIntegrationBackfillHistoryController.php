@@ -16,6 +16,8 @@ use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Psr\Log\LoggerInterface;
 use UR\Model\Core\DataSourceIntegrationBackfillHistory;
 use UR\Model\Core\DataSourceIntegrationBackfillHistoryInterface;
+use UR\Model\Core\FetcherSchedule;
+use UR\Repository\Core\DataSourceIntegrationBackfillHistoryRepositoryInterface;
 
 /**
  * @Rest\RouteResource("DataSourceIntegrationBackfillHistory")
@@ -76,6 +78,47 @@ class DataSourceIntegrationBackfillHistoryController extends RestControllerAbstr
         return $this->one($id);
     }
 
+    /**
+     * Get data source integration to be executed due to schedule
+     *
+     * @Rest\Get("/datasourceintegrationsbackfillhistories/byschedule")
+     *
+     * @Rest\View(serializerGroups={"fetcherschedule.detail", "dataSourceIntegrationBackfillHistory.summary", "dataSourceIntegrationSchedule.detail", "datasource.detail", "dataSourceIntegration.bySchedule", "integration.detail", "user.summary"})
+     *
+     * @ApiDoc(
+     *  section = "Data Source Integration Backfill History",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param Request $request
+     * @return array
+     * @throws \Exception
+     */
+    public function getIntegrationByScheduleAction(Request $request)
+    {
+        /** @var DataSourceIntegrationBackfillHistoryRepositoryInterface $backFillHistoryRepository */
+        $backFillHistoryRepository = $this->get('ur.repository.data_source_integration_backfill_history');
+        $qb = $backFillHistoryRepository->findByBackFillNotExecuted();
+        $result =  $this->getPagination($qb, $request);
+        $notExecutedBackFills = $result['records'];
+        $backFillSchedules = [];
+        foreach ($notExecutedBackFills as $notExecutedBackFill) {
+            if (!$notExecutedBackFill instanceof DataSourceIntegrationBackfillHistoryInterface) {
+                continue;
+            }
+
+            $fetcherSchedule = (new FetcherSchedule())
+                ->setBackFillHistory($notExecutedBackFill);
+
+            $backFillSchedules[] = $fetcherSchedule;
+        }
+        $result['records'] = $backFillSchedules;
+
+        return $result;
+    }
 
     /**
      * Create a data source integration backfill history from the submitted data
@@ -142,11 +185,9 @@ class DataSourceIntegrationBackfillHistoryController extends RestControllerAbstr
                 break;
             case DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_FINISHED:
                 $dataSourceIntegrationBackFillHistory->setFinishedAt($nowInUTC);
-                $dataSourceIntegrationBackFillHistory->setAutoCreate(false);
                 break;
             case DataSourceIntegrationBackfillHistoryInterface::FETCHER_STATUS_FAILED:
                 $dataSourceIntegrationBackFillHistory->setFinishedAt($nowInUTC);
-                $dataSourceIntegrationBackFillHistory->setAutoCreate(false);
                 break;
         }
 

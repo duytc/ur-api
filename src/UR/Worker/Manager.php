@@ -20,13 +20,16 @@ use UR\Service\DateUtilInterface;
 use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Worker\Job\Concurrent\ActivateThe3PartnerScoringServiceIntegration;
 use UR\Worker\Job\Concurrent\CountChunkRow;
+use UR\Worker\Job\Concurrent\ExportReportViewsAndSentEmail;
 use UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView;
+use UR\Worker\Job\Concurrent\OptimizeOptimizationIntegrationNow;
 use UR\Worker\Job\Concurrent\ParseChunkFile;
 use UR\Worker\Job\Concurrent\ProcessOptimizationFrequency;
 use UR\Worker\Job\Concurrent\RemoveDuplicatedDateEntriesForDataSource;
 use UR\Worker\Job\Concurrent\ProcessAlert;
 use UR\Worker\Job\Concurrent\SplitHugeFile;
 use UR\Worker\Job\Concurrent\SyncTrainingDataAndGenerateLearnerModel;
+use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenDataSourceSheetConfigChange;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryInserted;
 use UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenEntryDeleted;
 use UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted;
@@ -282,6 +285,29 @@ class Manager
     }
 
     /**
+     * @param $array
+     * @param string $email
+     * @param $filePath
+     * @param $url
+     * @param $reportViewId
+     * @param $token
+     */
+    public function exportReportViewsAndSentEmail($array, $email, $filePath, $url, $reportViewId = '', $token = '')
+    {
+        $jobData = [
+            'task' => ExportReportViewsAndSentEmail::JOB_NAME,
+            ExportReportViewsAndSentEmail::PARAMS => $array,
+            ExportReportViewsAndSentEmail::USER_EMAILS => $email,
+            ExportReportViewsAndSentEmail::PATH => $filePath,
+            ExportReportViewsAndSentEmail::URL => $url,
+            ExportReportViewsAndSentEmail::REPORT_VIEW_ID => $reportViewId,
+            ExportReportViewsAndSentEmail::TOKEN => $token
+        ];
+
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+    /**
      * @param int $dataSetId
      * @param array $newFields
      * @param array $updateFields
@@ -323,6 +349,25 @@ class Manager
             'task' => UpdateDetectedFieldsWhenEntryInserted::JOB_NAME,
             UpdateDetectedFieldsWhenEntryInserted::PARAM_KEY_ENTRY_ID => $entryId,
             UpdateDetectedFieldsWhenEntryInserted::PARAM_KEY_DATA_SOURCE_ID => $dataSourceId
+        ];
+
+        // concurrent job, we do not care what order it is processed in
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
+
+    /**
+     * @param int $entryId
+     * @param int $dataSourceId
+     * @param array $deletedSheets
+     */
+    public function updateDetectedFieldsWhenDataSourceSheetConfigChange($entryId, $dataSourceId, $deletedSheets = [])
+    {
+        $jobData = [
+            'task' => UpdateDetectedFieldsWhenDataSourceSheetConfigChange::JOB_NAME,
+            UpdateDetectedFieldsWhenDataSourceSheetConfigChange::PARAM_KEY_ENTRY_ID => $entryId,
+            UpdateDetectedFieldsWhenDataSourceSheetConfigChange::PARAM_KEY_DATA_SOURCE_ID => $dataSourceId,
+            UpdateDetectedFieldsWhenDataSourceSheetConfigChange::PARAM_KEY_DELETED_SHEETS => $deletedSheets
         ];
 
         // concurrent job, we do not care what order it is processed in
@@ -485,6 +530,20 @@ class Manager
         $this->concurrentJobScheduler->addJob($jobData);
     }
 
+    /**
+     * @param $optimizationIntegrationId
+     * @throws \Exception
+     */
+    public function optimizeOptimizationIntegrationNow($optimizationIntegrationId)
+    {
+        $jobData = [
+            'task' => OptimizeOptimizationIntegrationNow::JOB_NAME,
+            OptimizeOptimizationIntegrationNow::OPTIMIZATION_INTEGRATION_ID_KEY => $optimizationIntegrationId,
+        ];
+
+        $this->concurrentJobScheduler->addJob($jobData);
+    }
+
     public function activateThe3PartnerScoringServiceIntegration($optimizationRuleId, $optimizationIntegrationId)
     {
         $jobData = [
@@ -496,13 +555,34 @@ class Manager
         $this->concurrentJobScheduler->addJob($jobData);
     }
 
-    public function synchronizeAdSlotWithOptimizationIntegration($actions){
+    /**
+     * @param array $actions
+     */
+    public function synchronizeAdSlotWithOptimizationIntegration($actions)
+    {
         /* new worker design of ur api, so that the jobData is changed */
         $params = new stdClass;
         $params->actions = $actions;
 
         $jobData = [
             'task' => 'synchronizeAdSlotWithOptimizationIntegration',
+            'params' => $params
+        ];
+
+        $this->beanstalk->putInTube(Manager::TAGCADE_API_TUBE, json_encode($jobData));
+    }
+
+    /**
+     * @param array $actions
+     */
+    public function synchronizeVideoWaterfallTagWithOptimizationIntegration($actions)
+    {
+        /* new worker design of ur api, so that the jobData is changed */
+        $params = new stdClass;
+        $params->actions = $actions;
+
+        $jobData = [
+            'task' => 'synchronizeVideoWaterfallTagWithOptimizationIntegration',
             'params' => $params
         ];
 

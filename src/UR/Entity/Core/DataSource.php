@@ -63,6 +63,11 @@ class DataSource extends DataSourceModel
     protected $backfillMissingDateRunning;
 
     /**
+     * @var array
+     */
+    protected $sheets;
+
+    /**
      * @inheritdoc
      *
      * inherit constructor for inheriting all default initialized value

@@ -85,6 +85,9 @@ class SqlBuilder implements SqlBuilderInterface
     const TEMPORARY_TABLE_THIRD_TEMPLATE = "temp3_%s";
     const TEMPORARY_TABLE_FOURTH_TEMPLATE = "temp4_%s";
 
+    const EXCHANGE_RATE = "EXCHANGE_RATE(USD,EUR)";
+    const JOIN_EXCHANGE_RATE = "joinExchangeRate";
+
     /**
      * @var Connection
      */
@@ -98,7 +101,7 @@ class SqlBuilder implements SqlBuilderInterface
     /** @var  Synchronizer */
     protected $sync;
 
-    /** @var ReportViewManagerInterface  */
+    /** @var ReportViewManagerInterface */
     private $reportViewManager;
 
     /** @var  int */
@@ -714,7 +717,7 @@ class SqlBuilder implements SqlBuilderInterface
     {
         if (!empty($dataSetId) && $this->exitColumnInTable($filter->getFieldName(), $dataSetId)) {
             $fieldName = $tableAlias !== null ? sprintf('%s.%s', $tableAlias, $filter->getFieldName()) : $filter->getFieldName();
-            $fieldName = empty($dataSetId) ? $this->connection->quoteIdentifier($fieldName) : $this->connection->quoteIdentifier($fieldName. "_" . $dataSetId);
+            $fieldName = empty($dataSetId) ? $this->connection->quoteIdentifier($fieldName) : $this->connection->quoteIdentifier($fieldName . "_" . $dataSetId);
         } else {
             $fieldName = $this->connection->quoteIdentifier($filter->getFieldName());
         }
@@ -1070,7 +1073,7 @@ class SqlBuilder implements SqlBuilderInterface
         $fields = array_values(array_unique($fields));
 
         if (count($tableColumns) < 1) {
-           // throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
+            // throw new InvalidArgumentException(sprintf('The data set "%s" has no data', $dataSetEntity->getName()));
             return;
         }
 
@@ -1128,7 +1131,7 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             if ($transform instanceof AddCalculatedFieldTransform) {
-                $subQb = $this->addCalculatedFieldTransformQuery($subQb, $transform, $newFields, [], [] , $removeSuffix = true);
+                $subQb = $this->addCalculatedFieldTransformQuery($subQb, $transform, $newFields, [], [], $removeSuffix = true);
                 $types[$transform->getFieldName()] = $transform->getType();
                 continue;
             }
@@ -1159,6 +1162,7 @@ class SqlBuilder implements SqlBuilderInterface
         $subQb = $this->applyFiltersForSingleDataSetForTemporaryTables($subQb, $dataSet, $params, $searches, $overridingFilters, $types, $fields);
 
         $fromQuery = $subQb->getSQL();
+
         $finalSQLs[] = sprintf("CREATE TEMPORARY TABLE %s AS %s;", $tempTable1st, $fromQuery);
 
         /* do group */
@@ -1175,7 +1179,7 @@ class SqlBuilder implements SqlBuilderInterface
 
             foreach ($fields as $field) {
                 $fieldWithId = sprintf('%s_%d', $field, $dataSet->getDataSetId());
-                if ($isAggregateAll && $hasGroup && array_key_exists($fieldWithId, $types) && in_array($types[$fieldWithId], [FieldType::NUMBER, FieldType::DECIMAL])){
+                if ($isAggregateAll && $hasGroup && array_key_exists($fieldWithId, $types) && in_array($types[$fieldWithId], [FieldType::NUMBER, FieldType::DECIMAL])) {
                     $qb->addSelect(sprintf('SUM(%s) as %s', $this->connection->quoteIdentifier($fieldWithId), $this->connection->quoteIdentifier($fieldWithId)));
                     continue;
                 }
@@ -1202,6 +1206,7 @@ class SqlBuilder implements SqlBuilderInterface
 
         /* do post transform */
         $newFieldsOnPost = [];
+        $hasExchangeRateOnPost = false;
         foreach ($transforms as $transform) {
             if (!$transform instanceof TransformInterface) {
                 continue;
@@ -1212,7 +1217,7 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             if ($transform instanceof AddCalculatedFieldTransform) {
-                $outerQb = $this->addCalculatedFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, [], [], $removeSuffix = false);
+                $outerQb = $this->addCalculatedFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, [], [], $removeSuffix = false, $hasExchangeRateOnPost);
                 continue;
             }
 
@@ -1254,11 +1259,22 @@ class SqlBuilder implements SqlBuilderInterface
                 $outerQb->addSelect($this->connection->quoteIdentifier($newField));
             }
 
-            $outerQb->from($tempTable2nd);
-            $outerQb->orderBy("null");
-            $fromQuery = $outerQb->getSQL();
-            $finalSQLs[] = sprintf("CREATE TEMPORARY TABLE %s AS %s;", $tempTable3rd, $fromQuery);
-            $finalSQLs[] = sprintf("DROP TABLE %s;", $tempTable2nd);
+            // Handle exchange rate in here
+            if ($hasExchangeRateOnPost == true) {
+                $tempTable2ndNew = $tempTable2nd . " AS " . self::JOIN_EXCHANGE_RATE;
+                $outerQb->from($tempTable2ndNew);
+                $outerQb->orderBy("null");
+                $fromQuery = $outerQb->getSQL();
+
+                $finalSQLs[] = sprintf("CREATE TEMPORARY TABLE %s AS %s;", $tempTable3rd, $fromQuery);
+                $finalSQLs[] = sprintf("DROP TABLE %s;", $tempTable2nd);
+            } else {
+                $outerQb->from($tempTable2nd);
+                $outerQb->orderBy("null");
+                $fromQuery = $outerQb->getSQL();
+                $finalSQLs[] = sprintf("CREATE TEMPORARY TABLE %s AS %s;", $tempTable3rd, $fromQuery);
+                $finalSQLs[] = sprintf("DROP TABLE %s;", $tempTable2nd);
+            }
 
             $finalQb = $this->connection->createQueryBuilder();
             $finalQb->select("*");
@@ -1388,7 +1404,9 @@ class SqlBuilder implements SqlBuilderInterface
             $subQb = $this->buildSelectQuery($isAggregateAll, $aggregationFields, $subQb, $dataSet, $dataSetIndex, $joinConfig, $selectedJoinFields, false, []);
         }
 
+        /* do pre transform */
         $newFields = [];
+        $hasExchangeRate = false;
         foreach ($transforms as $transform) {
             if (!$transform instanceof TransformInterface) {
                 continue;
@@ -1399,7 +1417,7 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             if ($transform instanceof AddCalculatedFieldTransform) {
-                $subQb = $this->addCalculatedFieldTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, $joinConfig, true);
+                $subQb = $this->addCalculatedFieldTransformQuery($subQb, $transform, $newFields, $dataSetIndexes, $joinConfig, true, $hasExchangeRate);
                 $types[$transform->getFieldName()] = $transform->getType();
                 continue;
             }
@@ -1455,10 +1473,26 @@ class SqlBuilder implements SqlBuilderInterface
             $subQuery = sprintf('%s WHERE (%s)', $subQuery, $where);
         }
 
+        // Handle exchange rate  for pre transform multiple dataset with join field is date field
+        if ($hasExchangeRate == true) {
+            foreach ($params->getFieldTypes() as $keyField => $fieldType) {
+                if ($fieldType == 'date' || $fieldType == 'datetime') {
+                    $fieldAndId = $this->getIdSuffixAndField($keyField);
+                    $field = $fieldAndId['field'];
+                    $tableAlias = sprintf('t%d', $dataSetIndexes[$fieldAndId['id']]);
+                    $matchesExchangeRate = "`$tableAlias`.`$field`";
+                    // do the same $removeSuffix = true
+                    $subQuery = str_replace(self::EXCHANGE_RATE, $matchesExchangeRate, $subQuery);
+                    break;
+                }
+            }
+        }
+
         $subQuery = sprintf("%s %s", $subQuery, " ORDER BY NULL ");
 
         $finalSQLs[] = sprintf("CREATE TEMPORARY TABLE %s AS %s;", $tempTable1st, $subQuery);
 
+        /* do group */
         if ($hasGroup) {
             $qb = $this->connection->createQueryBuilder();
             $selectedJoinFields = [];
@@ -1488,7 +1522,9 @@ class SqlBuilder implements SqlBuilderInterface
 
         $outerQb = $this->connection->createQueryBuilder();
 
+        /* do post transform */
         $newFieldsOnPost = [];
+        $hasExchangeRateOnPost = false;
         foreach ($transforms as $transform) {
             if (!$transform instanceof TransformInterface) {
                 continue;
@@ -1499,7 +1535,7 @@ class SqlBuilder implements SqlBuilderInterface
             }
 
             if ($transform instanceof AddCalculatedFieldTransform) {
-                $outerQb = $this->addCalculatedFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, $dataSetIndexes, $joinConfig, $removeSuffix = false);
+                $outerQb = $this->addCalculatedFieldTransformQuery($outerQb, $transform, $newFieldsOnPost, $dataSetIndexes, $joinConfig, $removeSuffix = false, $hasExchangeRateOnPost);
                 continue;
             }
 
@@ -1536,11 +1572,22 @@ class SqlBuilder implements SqlBuilderInterface
                 $outerQb->addSelect($this->connection->quoteIdentifier($newField));
             }
 
-            $outerQb->from($tempTable2nd);
-            $outerQb->orderBy("null");
-            $fromQuery = $outerQb->getSQL();
-            $finalSQLs[] = sprintf("CREATE TEMPORARY TABLE %s AS %s;", $tempTable3rd, $fromQuery);
-            $finalSQLs[] = sprintf("DROP TABLE %s;", $tempTable2nd);
+            // Handle exchange rate in here
+            if ($hasExchangeRateOnPost == true) {
+                $tempTable2ndNew = $tempTable2nd . " AS " . self::JOIN_EXCHANGE_RATE;
+                $outerQb->from($tempTable2ndNew);
+                $outerQb->orderBy("null");
+                $fromQuery = $outerQb->getSQL();
+
+                $finalSQLs[] = sprintf("CREATE TEMPORARY TABLE %s AS %s;", $tempTable3rd, $fromQuery);
+                $finalSQLs[] = sprintf("DROP TABLE %s;", $tempTable2nd);
+            } else {
+                $outerQb->from($tempTable2nd);
+                $outerQb->orderBy("null");
+                $fromQuery = $outerQb->getSQL();
+                $finalSQLs[] = sprintf("CREATE TEMPORARY TABLE %s AS %s;", $tempTable3rd, $fromQuery);
+                $finalSQLs[] = sprintf("DROP TABLE %s;", $tempTable2nd);
+            }
 
             $finalQb = $this->connection->createQueryBuilder();
             $finalQb->select("*");
@@ -1715,7 +1762,6 @@ class SqlBuilder implements SqlBuilderInterface
             $allFields = array_merge($allFields, explode(",", $joinConfig->getOutputField()));
         }
 
-
         $table = $this->getSync()->getTable($preCalculateTable);
         if (!$table instanceof Table) {
             return [];
@@ -1728,7 +1774,8 @@ class SqlBuilder implements SqlBuilderInterface
         return array_unique(array_values($allFields));
     }
 
-    public function getTypes(ParamsInterface $params) {
+    public function getTypes(ParamsInterface $params)
+    {
         $types = [];
         $dataSetRepository = $this->em->getRepository(DataSet::class);
         $dataSets = $params->getDataSets();
@@ -1764,12 +1811,12 @@ class SqlBuilder implements SqlBuilderInterface
     private function addForceIndex(QueryBuilder $queryBuilder, ParamsInterface $params, $dataTable)
     {
         if (empty($params->getSortField())) {
-            return$queryBuilder->from($dataTable);
+            return $queryBuilder->from($dataTable);
         }
 
         $table = $this->getSync()->getTable($dataTable);
         $index = sprintf("idx_%s", str_replace('"', "", $params->getSortField()));
-        if ($table instanceof Table && $table->hasIndex($index)){
+        if ($table instanceof Table && $table->hasIndex($index)) {
             return $queryBuilder->from(sprintf("%s FORCE INDEX (%s)", $dataTable, $index));
         }
 
@@ -1783,8 +1830,8 @@ class SqlBuilder implements SqlBuilderInterface
     private function isSupportCalculateTable($reportView)
     {
         return $reportView instanceof ReportViewInterface &&
-                $this->isLargeReportView($reportView, $this->largeThreshold) &&
-                !empty($reportView->getPreCalculateTable()) &&
-                $this->getSync()->getTable($reportView->getPreCalculateTable()) instanceof Table;
+        $this->isLargeReportView($reportView, $this->largeThreshold) &&
+        !empty($reportView->getPreCalculateTable()) &&
+        $this->getSync()->getTable($reportView->getPreCalculateTable()) instanceof Table;
     }
 }

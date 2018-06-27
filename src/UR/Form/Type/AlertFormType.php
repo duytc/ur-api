@@ -25,6 +25,7 @@ class AlertFormType extends AbstractRoleSpecificFormType
             ->add('dataSource')
             ->add('type')
             ->add('isSent')
+            ->add('isSentReminder')
             ->add('optimizationIntegration');
 
         if ($this->userRole instanceof AdminInterface) {

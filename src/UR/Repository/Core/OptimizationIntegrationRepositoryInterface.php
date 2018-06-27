@@ -37,6 +37,12 @@ interface OptimizationIntegrationRepositoryInterface extends ObjectRepository
     public function getOptimizationIntegrationAdSlotIds($optimizationIntegrationId = null);
 
     /**
+     * @param null $optimizationIntegrationId
+     * @return array
+     */
+    public function getOptimizationIntegrationWaterFallTagIds($optimizationIntegrationId = null);
+
+    /**
      * @param $adSlotId
      * @return array
      */

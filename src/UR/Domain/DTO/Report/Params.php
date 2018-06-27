@@ -136,6 +136,11 @@ class Params implements ParamsInterface
     /** @var  ReportViewInterface */
     private $reportView;
 
+    /**
+     * @var boolean
+     */
+    private $isExport;
+
     function __construct()
     {
         $this->dataSets = [];
@@ -145,6 +150,7 @@ class Params implements ParamsInterface
         $this->searches = [];
         $this->metricCalculations = [];
         $this->needFormat = true;
+        $this->isExport = false;
     }
 
     /**
@@ -760,6 +766,24 @@ class Params implements ParamsInterface
     {
         $this->optimizationRule = $optimizationRule;
         
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isExport()
+    {
+        return $this->isExport;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setIsExport($isExport)
+    {
+        $this->isExport = $isExport;
+
         return $this;
     }
 }

@@ -541,6 +541,16 @@ services:
             - "%upload_file_dir%"
             - '@ur.worker.manager'
 
+    ur.worker.job.concurrent.update_detected_fields_when_sheet_config_change:
+        class: UR\Worker\Job\Concurrent\UpdateDetectedFieldsWhenDataSourceSheetConfigChange
+        arguments:
+            - '@monolog.logger'
+            - '@ur.domain_manager.data_source'
+            - '@ur.domain_manager.data_source_entry'
+            - '@ur.service.import'
+            - "%upload_file_dir%"
+            - '@ur.worker.manager'
+
     ur.worker.job.concurrent.update_total_row_when_entry_inserted:
         class: UR\Worker\Job\Concurrent\UpdateTotalRowWhenEntryInserted
         arguments:
@@ -562,6 +572,30 @@ services:
             - "%upload_file_dir%"
             - @doctrine.orm.entity_manager
 
+    ur.worker.job.concurrent.update_optimization_integration_when_ad_slot_change_worker:
+        class: UR\Worker\Job\Concurrent\UpdateOptimizationIntegrationWhenAdSlotChangeWorker
+        arguments:
+            - @ur.domain_manager.optimization_integration
+
+    ur.worker.job.concurrent.update_optimization_integration_when_video_waterfall_tag_change_worker:
+        class: UR\Worker\Job\Concurrent\UpdateOptimizationIntegrationWhenVideoWaterfallTagChangeWorker
+        arguments:
+            - @ur.domain_manager.optimization_integration
+
+    ur.worker.job.concurrent.export_report_views_and_sent_email:
+        class: UR\Worker\Job\Concurrent\ExportReportViewsAndSentEmail
+        arguments:
+            - '@monolog.logger'
+            - '@ur.services.report.report_builder'
+            - '@ur.services.report.params_builder'
+            - '@ur.service.csv_writer'
+            - '@swiftmailer.mailer'
+            - '@templating'
+            - '@ur.services.large_report.remove_out_of_date_report_service'
+            - '@ur.domain_manager.report_view'
+            - '@swiftmailer.transport.real'
+            - '%mailer_sender%'
+
     ur.worker.job.concurrent.worker_pool:
         class: Pubvantage\Worker\JobWorkerPool
         arguments:
@@ -581,6 +615,10 @@ services:
                 - @ur.worker.job.concurrent.activate_the3_partner_scoring_service_integration
                 - @ur.worker.job.concurrent.process_optimization_frequency
                 - @ur.worker.job.concurrent.update_optimization_integration_when_ad_slot_change_worker
+                - @ur.worker.job.concurrent.update_optimization_integration_when_video_waterfall_tag_change_worker
+                - @ur.worker.job.concurrent.optimize_optimization_integration_now
+                - '@ur.worker.job.concurrent.update_detected_fields_when_sheet_config_change'
+                - '@ur.worker.job.concurrent.export_report_views_and_sent_email'
 
     ### end of concurrence worker pool
 
@@ -739,6 +777,13 @@ services:
             - '@ur.domain_manager.data_source_entry'
             - '@ur.domain_manager.import_history'
 
+    ur.service.back_fill_history_creator:
+            class: UR\Service\DataSource\BackFillHistoryCreator
+            arguments:
+                - '@ur.domain_manager.data_source_integration_backfill_history'
+                - '@ur.domain_manager.data_source'
+                - '@ur.repository.data_source_integration_backfill_history'
+
     ur.service.auto_import_data:
         class: UR\Service\Import\AutoImportData
         arguments:
@@ -776,6 +821,7 @@ services:
             - '@ur.domain_manager.data_source_entry'
             - '@ur.service.file_factory'
             - '@logger'
+            - '@ur.service.back_fill_history_creator'
 
     ur.service.date_time.next_executed_at:
         class: UR\Service\DateTime\NextExecutedAt
@@ -798,8 +844,3 @@ services:
             - @doctrine.orm.entity_manager
             - @ur.domain_manager.data_set
             - @ur.redis.app_cache
-
-    ur.worker.job.concurrent.update_optimization_integration_when_ad_slot_change_worker:
-        class: UR\Worker\Job\Concurrent\UpdateOptimizationIntegrationWhenAdSlotChangeWorker
-        arguments:
-            - @ur.domain_manager.optimization_integration

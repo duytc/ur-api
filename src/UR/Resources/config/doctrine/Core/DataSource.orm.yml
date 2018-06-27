@@ -99,6 +99,9 @@ UR\Entity\Core\DataSource:
             nullable: true
             options:
                 default: false
+        sheets:
+            type: json_array
+            nullable: true
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

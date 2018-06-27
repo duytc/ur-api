@@ -23,6 +23,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use UR\Model\Core\DataSourceInterface;
 use UR\Service\PublicSimpleException;
+use UR\Worker\Manager;
 
 /**
  * @Rest\RouteResource("datasourceentry")
@@ -225,6 +226,34 @@ class DataSourceEntryController extends RestControllerAbstract implements ClassR
         $this->checkFileExist($dataSourceEntry);
 
         return $this->replayDataSourceEntryData([$dataSourceEntry->getId()], $dataSourceEntry->getDataSource());
+    }
+
+    /**
+     * Force Date Range Detection of an Entry
+     *
+     * @Rest\Post("/datasourceentries/{id}/forcedaterangedetection" )
+     *
+     * @ApiDoc(
+     *  section = "Data Source Entry",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     * @throws \Exception
+     */
+    public function postForceDateRangeDetectionAction($id)
+    {
+        /** @var DataSourceEntryInterface $dataSourceEntry */
+        $dataSourceEntry = $this->one($id);
+
+        $this->checkFileExist($dataSourceEntry);
+
+        /** @var Manager $manager */
+        $manager = $this->get('ur.worker.manager');
+        $manager->updateDateRangeForDataSourceEntry($dataSourceEntry->getDataSource()->getId(), $dataSourceEntry->getId());
     }
 
     /**

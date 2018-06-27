@@ -25,6 +25,8 @@ trait DashBoardUtilTrait
     public static $COMPARISON_TYPE_MONTH_OVER_MONTH = 'month-over-month';
     public static $COMPARISON_TYPE_YEAR_OVER_YEAR = 'year-over-year';
 
+    public static $ARRAY_DATE_AND_DATETIME_TYPE = ['date', 'datetime'];
+
     /**
      * @param ReportViewInterface $reportView
      * @return array
@@ -37,7 +39,7 @@ trait DashBoardUtilTrait
         $dateFieldsFromDimensions = [];
 
         foreach ($dimensions as $dimension) {
-            if (!array_key_exists($dimension, $fieldTypes) || !in_array($fieldTypes[$dimension], ['date', 'dateTime'])) {
+            if (!array_key_exists($dimension, $fieldTypes) || !in_array($fieldTypes[$dimension], self::$ARRAY_DATE_AND_DATETIME_TYPE)) {
                 continue;
             }
 
@@ -73,7 +75,7 @@ trait DashBoardUtilTrait
 
                 // check if join on date fields or not
                 $inputJoinField = $joinField[SqlBuilder::JOIN_CONFIG_FIELD] . '_' . $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
-                if (!array_key_exists($inputJoinField, $fieldTypes) || !in_array($fieldTypes[$inputJoinField], ['date', 'dateTime'])) {
+                if (!array_key_exists($inputJoinField, $fieldTypes) || !in_array($fieldTypes[$inputJoinField], self::$ARRAY_DATE_AND_DATETIME_TYPE)) {
                     continue;
                 }
 
@@ -169,7 +171,7 @@ trait DashBoardUtilTrait
         $dateFieldsFromDimensions = [];
 
         foreach ($dimensions as $dimension) {
-            if (!in_array($dimension, $fieldTypes) || !in_array($fieldTypes[$dimension], ['date', 'dateTime'])) {
+            if (!in_array($dimension, $fieldTypes) || !in_array($fieldTypes[$dimension], self::$ARRAY_DATE_AND_DATETIME_TYPE)) {
                 continue;
             }
 
@@ -365,7 +367,7 @@ trait DashBoardUtilTrait
                 }
 
                 $inputJoinField = $joinField[SqlBuilder::JOIN_CONFIG_FIELD] . '_' . $joinField[SqlBuilder::JOIN_CONFIG_DATA_SET];
-                if (!array_key_exists($inputJoinField, $fieldTypes) || !in_array($fieldTypes[$inputJoinField], ['date', 'dateTime'])) {
+                if (!array_key_exists($inputJoinField, $fieldTypes) || !in_array($fieldTypes[$inputJoinField], self::$ARRAY_DATE_AND_DATETIME_TYPE)) {
                     continue;
                 }
 
@@ -403,7 +405,7 @@ trait DashBoardUtilTrait
             foreach ($reportViewDataSet->getFilters() as $filter) {
                 if (!is_array($filter)
                     || !array_key_exists(AbstractFilter::FILTER_TYPE_KEY, $filter)
-                    || !in_array($filter[AbstractFilter::FILTER_TYPE_KEY], ['date', 'dateTime'])
+                    || !in_array($filter[AbstractFilter::FILTER_TYPE_KEY], self::$ARRAY_DATE_AND_DATETIME_TYPE)
                     || !array_key_exists(AbstractFilter::FILTER_FIELD_KEY, $filter)
                 ) {
                     continue;
@@ -419,7 +421,7 @@ trait DashBoardUtilTrait
                 foreach ($reportView->getFilters() as $filter) {
                     if (!is_array($filter)
                         || !array_key_exists(AbstractFilter::FILTER_TYPE_KEY, $filter)
-                        || !in_array($filter[AbstractFilter::FILTER_TYPE_KEY], ['date', 'dateTime'])
+                        || !in_array($filter[AbstractFilter::FILTER_TYPE_KEY], self::$ARRAY_DATE_AND_DATETIME_TYPE)
                         || !array_key_exists(AbstractFilter::FILTER_FIELD_KEY, $filter)
                         || !array_key_exists(AbstractFilter::FILTER_DATA_SET_KEY, $filter)
                     ) {
