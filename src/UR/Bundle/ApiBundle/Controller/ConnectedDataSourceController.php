@@ -6,6 +6,7 @@ use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\Util\Codes;
 use FOS\RestBundle\View\View;
+use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -15,8 +16,6 @@ use UR\Entity\Core\DataSourceEntry;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\ConnectedDataSourceInterface;
-use Nelmio\ApiDocBundle\Annotation\ApiDoc;
-use Psr\Log\LoggerInterface;
 use UR\Service\Alert\ConnectedDataSource\AbstractConnectedDataSourceAlert;
 use UR\Service\DataSet\ReloadParams;
 use UR\Service\Import\AutoImportDataInterface;
@@ -151,7 +150,123 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         /** @var ConnectedDataSourceInterface $tempConnectedDataSource */
         $tempConnectedDataSource = $postResult->getData();
 
+        //Note: This function needs for getting reports from Rest Client API
+        $tempConnectedDataSource = $this->convertNullValueToEmptyArray($tempConnectedDataSource);
+
         return $this->handleDryRun($tempConnectedDataSource, $pathOrDataSourceEntryId, $dryRunParams);
+    }
+
+    private function convertNullValueToEmptyArray(ConnectedDataSourceInterface $tempConnectedDataSource)
+    {
+        /*
+            {
+              "name": "connected test wrong number",
+              "mapFields": {
+                "__$$FILE$$date": "date",
+                "__$$FILE$$numb 1": "number_1",
+                "__$$FILE$$numb 2": "number_2",
+                "__$$FILE$$numb 3": "number_3",
+                "__$$FILE$$numb 4": "number_4",
+                "__$$FILE$$numb 5": "number_5",
+                "__$$FILE$$numb 6": "number_6",
+                "__$$FILE$$numb 7": "number_7",
+                "__$$FILE$$numb 8": "number_8"
+              },
+              "filters": [],
+              "transforms": [
+                {
+                  "field": "date",
+                  "type": "date",
+                  "to": "YYYY-MM-DD",
+                  "from": [
+                    {
+                      "isCustomFormatDateFrom": false,
+                      "format": "YYYY-MM-DD"
+                    }
+                  ],
+                  "timezone": null
+                }
+              ],
+              "requires": [],
+              "alertSetting": [],
+              "temporaryFields": [],
+              "replayData": true,
+              "dataSource": 8,
+              "dataSet": 6,
+              "isDryRun": true,
+              "connectedDataSourceId": 13,
+              "dataSourceEntryId": 94,
+              "limit": 500,
+              "page": 1,
+              "limitRows": 500
+           }
+         */
+
+        $mapFields = $tempConnectedDataSource->getMapFields();
+        if (is_null($mapFields)) {
+            $tempConnectedDataSource->setMapFields([]);
+        }
+
+        $filters = $tempConnectedDataSource->getFilters();
+        if (is_null($filters)) {
+            $tempConnectedDataSource->setFilters([]);
+        }
+
+        $transforms = $tempConnectedDataSource->getTransforms();
+        if (is_null($transforms)) {
+            $tempConnectedDataSource->setTransforms([]);
+        }
+
+        $requires = $tempConnectedDataSource->getRequires();
+        if (is_null($requires)) {
+            $tempConnectedDataSource->setRequires([]);
+        }
+
+        $temporaryFields = $tempConnectedDataSource->getTemporaryFields();
+        if (is_null($temporaryFields)) {
+            $tempConnectedDataSource->setTemporaryFields([]);
+        }
+
+        $alertsSetting = $tempConnectedDataSource->getAlertSetting();
+        if (is_null($alertsSetting)) {
+            $tempConnectedDataSource->setAlertSetting([]);
+        }
+
+        return $tempConnectedDataSource;
+    }
+
+    /**
+     * @param ConnectedDataSourceInterface $tempConnectedDataSource
+     * @param $pathOrDataSourceEntryId
+     * @param DryRunParamsInterface $dryRunParams
+     * @return mixed
+     * @throws PublicImportDataException
+     */
+    private function handleDryRun(ConnectedDataSourceInterface $tempConnectedDataSource, $pathOrDataSourceEntryId, DryRunParamsInterface $dryRunParams)
+    {
+        $dataSourceEntryManager = $this->get('ur.repository.data_source_entry');
+        $selectedEntry = null;
+        if (is_numeric($pathOrDataSourceEntryId)) {
+            $selectedEntry = $dataSourceEntryManager->find($pathOrDataSourceEntryId);
+        } else if (!empty($pathOrDataSourceEntryId)) {
+            $selectedEntry = new DataSourceEntry();
+            $selectedEntry->setPath($pathOrDataSourceEntryId);
+        }
+
+        if ($selectedEntry === null) {
+            $result = [
+                AbstractConnectedDataSourceAlert::CODE => AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_NO_FILE_PREVIEW,
+                AbstractConnectedDataSourceAlert::DETAILS => []
+            ];
+
+            throw new PublicImportDataException($result, new BadRequestHttpException(json_encode($result)));
+        }
+
+        // call auto import for dry run only
+        /** @var AutoImportDataInterface $autoImportService */
+        $autoImportService = $this->get('ur.service.auto_import_data');
+
+        return $autoImportService->createDryRunImportData($tempConnectedDataSource, $selectedEntry, $dryRunParams);
     }
 
     /**
@@ -321,39 +436,5 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
     protected function getHandler()
     {
         return $this->container->get('ur_api.handler.connected_data_source');
-    }
-
-    /**
-     * @param ConnectedDataSourceInterface $tempConnectedDataSource
-     * @param $pathOrDataSourceEntryId
-     * @param DryRunParamsInterface $dryRunParams
-     * @return mixed
-     * @throws PublicImportDataException
-     */
-    private function handleDryRun(ConnectedDataSourceInterface $tempConnectedDataSource, $pathOrDataSourceEntryId, DryRunParamsInterface $dryRunParams)
-    {
-        $dataSourceEntryManager = $this->get('ur.repository.data_source_entry');
-        $selectedEntry = null;
-        if (is_numeric($pathOrDataSourceEntryId)) {
-            $selectedEntry = $dataSourceEntryManager->find($pathOrDataSourceEntryId);
-        } else if (!empty($pathOrDataSourceEntryId)) {
-            $selectedEntry = new DataSourceEntry();
-            $selectedEntry->setPath($pathOrDataSourceEntryId);
-        }
-
-        if ($selectedEntry === null) {
-            $result = [
-                AbstractConnectedDataSourceAlert::CODE => AlertInterface::ALERT_CODE_CONNECTED_DATA_SOURCE_NO_FILE_PREVIEW,
-                AbstractConnectedDataSourceAlert::DETAILS => []
-            ];
-
-            throw new PublicImportDataException($result, new BadRequestHttpException(json_encode($result)));
-        }
-
-        // call auto import for dry run only
-        /** @var AutoImportDataInterface $autoImportService */
-        $autoImportService = $this->get('ur.service.auto_import_data');
-
-        return $autoImportService->createDryRunImportData($tempConnectedDataSource, $selectedEntry, $dryRunParams);
     }
 }
