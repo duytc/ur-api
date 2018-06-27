@@ -2,6 +2,7 @@
 
 namespace UR\Bundle\ApiBundle\Controller;
 
+use DateTime;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Routing\ClassResourceInterface;
 use FOS\RestBundle\View\View;
@@ -13,6 +14,7 @@ use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
 use UR\Handler\HandlerInterface;
 use UR\Model\Core\OptimizationRuleInterface;
 use UR\Service\DateUtilInterface;
+use UR\Service\OptimizationRule\OptimizationLearningFacadeServiceInterface;
 use UR\Service\PublicSimpleException;
 
 /**
@@ -86,7 +88,7 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
      */
     public function getIdentifiersAction($id, Request $request)
     {
-        $optimizationRule =  $this->one($id);
+        $optimizationRule = $this->one($id);
         if (!$optimizationRule instanceof OptimizationRuleInterface) {
             return [];
         }
@@ -120,7 +122,7 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
      */
     public function getSegmentsAction($id, Request $request)
     {
-        $optimizationRule =  $this->one($id);
+        $optimizationRule = $this->one($id);
         if (!$optimizationRule instanceof OptimizationRuleInterface) {
             return [];
         }
@@ -158,7 +160,7 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
      */
     public function getIdentifierBySegmentsAction($id, Request $request)
     {
-        $optimizationRule =  $this->one($id);
+        $optimizationRule = $this->one($id);
         if (!$optimizationRule instanceof OptimizationRuleInterface) {
             return [];
         }
@@ -203,9 +205,20 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
 
         $params = array_merge($request->query->all(), $request->request->all());
 
-        $startDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['startDate']);
-        $endDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['endDate']);
-        $segmentFieldValues = $params['segmentFieldValues'];
+        $startDate = new DateTime('today');
+        if (array_key_exists('startDate', $params)) {
+            $startDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['startDate']);
+        }
+
+        $endDate = new DateTime('tomorrow');
+        if (array_key_exists('endDate', $params)) {
+            $endDate = date_create_from_format(DateUtilInterface::DATE_FORMAT, $params['endDate']);
+        }
+
+        $segmentFieldValues = [];
+        if (array_key_exists('segmentFieldValues', $params)) {
+            $segmentFieldValues = $params['segmentFieldValues'];
+        }
 
         $result = $optimizationRuleScoreService->getFinalScores($optimizationRule, $segmentFieldValues, $startDate, $endDate);
 
@@ -215,6 +228,52 @@ class OptimizationRuleController extends RestControllerAbstract implements Class
 
         return $result;
     }
+
+
+    /**
+     * Recalculate new scores for one Optimization Rule
+     * @Rest\Post("/optimizationrules/{id}/rescore", requirements={"id" = "\d+"})
+     *
+     * @Rest\QueryParam(name="identifiers", nullable=true, description="the identifiers of ad tags")
+     * @ApiDoc(
+     *  section = "OptimizationRule",
+     *  resource = true,
+     *  statusCodes = {
+     *      200 = "Returned when successful"
+     *  }
+     * )
+     *
+     * @param int $id the resource id
+     *
+     * @param Request $request
+     * @return array|int
+     * @throws PublicSimpleException
+     * @throws \Exception
+     */
+    public function postRescoreAction($id, Request $request)
+    {
+        $optimizationRuleRescoreService = $this->get('ur.service.optimization_rule.optimization_learning_facade_service');
+        $optimizationRule = $this->one($id);
+        if (!$optimizationRule instanceof OptimizationRuleInterface) {
+            return [];
+        }
+
+        /** @var OptimizationLearningFacadeServiceInterface $optimizationRuleRescoreService */
+        $result = $optimizationRuleRescoreService->calculateNewScores($optimizationRule);
+
+        if ($result ==  OptimizationLearningFacadeServiceInterface::UNCOMPLETED) {
+            return $result;
+        }
+
+        $optimizerService = $this->get('ur.service.optimization_rule.automated_optimization.automated_optimizer');
+        $optimizationRule = $this->one($id); //Note: Do not remove this line
+        if (!$optimizationRule instanceof OptimizationRuleInterface) {
+            return [];
+        }
+
+        return $optimizerService->optimizeForRule($optimizationRule);
+    }
+
 
     /**
      * Get training data belong to an Optimization Rule
