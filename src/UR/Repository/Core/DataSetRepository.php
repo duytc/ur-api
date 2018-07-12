@@ -10,6 +10,7 @@ use UR\Model\Core\DataSourceInterface;
 use UR\Model\PagerParam;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\Role\UserRoleInterface;
+use UR\Service\DataSet\Synchronizer;
 
 class DataSetRepository extends EntityRepository implements DataSetRepositoryInterface
 {

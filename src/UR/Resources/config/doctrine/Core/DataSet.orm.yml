@@ -53,6 +53,19 @@ UR\Entity\Core\DataSet:
         customIndexConfig:
             type: json_array
             nullable: true
+        autoReload:
+            type: boolean
+            options:
+                default: false
+        lastCheckSum:
+            type: string
+            nullable: true
+        startDate:
+            type: datetime
+            nullable: true
+        endDate:
+            type: datetime
+            nullable: true
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

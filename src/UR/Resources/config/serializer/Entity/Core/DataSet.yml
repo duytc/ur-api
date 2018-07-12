@@ -31,6 +31,9 @@ UR\Entity\Core\DataSet:
         mapBuilderConfigs:
             expose: true
             groups: [dataset.detail, dataset.summary, dataset.edit]
+        autoReload:
+            expose: true
+            groups: [dataset.detail, dataset.summary, dataset.edit]
         lastActivity:
             expose: true
             groups: [dataset.detail, dataset.summary]

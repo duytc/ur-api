@@ -21,6 +21,13 @@ class DataSet implements DataSetInterface
     /** @var UserEntityInterface */
     protected $publisher;
 
+    /** auto reload data set*/
+    protected $autoReload;
+    protected $startDate;
+    protected $endDate;
+    protected $lastCheckSum;
+
+
     /**
      * @var int
      */
@@ -451,6 +458,81 @@ class DataSet implements DataSetInterface
     public function setCustomIndexConfig($customIndexConfig)
     {
         $this->customIndexConfig = $customIndexConfig;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStartDate()
+    {
+        return $this->startDate;
+    }
+
+    /**
+     * @param $startDate
+     * @return self
+     */
+    public function setStartDate($startDate)
+    {
+        $this->startDate = $startDate;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getEndDate()
+    {
+        return $this->endDate;
+    }
+
+    /**
+     * @param $endDate
+     * @return self
+     */
+    public function setEndDate($endDate)
+    {
+        $this->endDate = $endDate;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLastCheckSum()
+    {
+        return $this->lastCheckSum;
+    }
+
+    /**
+     * @param $lastCheckSum
+     * @return self
+     */
+    public function setLastCheckSum($lastCheckSum)
+    {
+        $this->lastCheckSum = $lastCheckSum;
+
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getAutoReload()
+    {
+        return $this->autoReload;
+    }
+
+    /**
+     * @param $autoReload
+     * @return self
+     */
+    public function setAutoReload($autoReload = false)
+    {
+        $this->autoReload = $autoReload;
+
         return $this;
     }
 }

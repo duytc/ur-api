@@ -250,4 +250,48 @@ interface DataSetInterface extends ModelInterface
      * @param mixed $customIndexConfig
      */
     public function setCustomIndexConfig($customIndexConfig);
+
+    /**
+     * @return string
+     */
+    public function getAutoReload();
+
+    /**
+     * @param $autoReload
+     * @return self
+     */
+    public function setAutoReload($autoReload = false);
+
+    /**
+     * @return string
+     */
+    public function getStartDate();
+
+    /**
+     * @param $startDate
+     * @return self
+     */
+    public function setStartDate($startDate);
+
+    /**
+     * @return string
+     */
+    public function getEndDate();
+
+    /**
+     * @param $endDate
+     * @return self
+     */
+    public function setEndDate($endDate);
+
+    /**
+     * @return string
+     */
+    public function getLastCheckSum();
+
+    /**
+     * @param $lastCheckSum
+     * @return self
+     */
+    public function setLastCheckSum($lastCheckSum);
 }

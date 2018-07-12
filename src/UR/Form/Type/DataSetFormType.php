@@ -47,6 +47,7 @@ class DataSetFormType extends AbstractRoleSpecificFormType
             ->add('metrics')
             ->add('allowOverwriteExistingData')
             ->add('mapBuilderEnabled')
+            ->add('autoReload')
             ->add('mapBuilderConfigs', CollectionType::class, array(
                 'type' => new MapBuilderConfigFormType(),
                 'allow_add' => true,

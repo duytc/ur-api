@@ -10,7 +10,6 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use UR\Model\Core\DataSetInterface;
-use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Service\DTO\DataImportTable\ColumnIndex;
 
 class Synchronizer
@@ -187,7 +186,7 @@ class Synchronizer
             $truncateSql = $this->conn->getDatabasePlatform()->getTruncateTableSQL(self::getDataSetImportTableName($dataSet->getId()));
             $this->conn->exec($truncateSql);
         } catch (\Exception $e) {
-            
+
         }
 
         return $dataSetImportTable;
@@ -336,7 +335,7 @@ class Synchronizer
             foreach ($customIndexConfigs as $customIndexConfig) {
                 foreach ($customIndexConfig as $subField) {
                     if ($dataSetImportTable->hasColumn($subField)) {
-                        if (array_key_exists($subField, $dimensionsAndMetrics)){
+                        if (array_key_exists($subField, $dimensionsAndMetrics)) {
                             $columnIndex [] = new ColumnIndex($subField, $dimensionsAndMetrics[$subField]);
                         }
                     }
@@ -564,10 +563,10 @@ class Synchronizer
     {
         foreach ($columnNamesAndLengths as &$columnNamesAndLength) {
             $separateColumnNameAndLengths = explode('(', $columnNamesAndLength);
-            $columnNamesAndLength = '`'.$columnNamesAndLength.'`';
+            $columnNamesAndLength = '`' . $columnNamesAndLength . '`';
 
             if (count($separateColumnNameAndLengths) > 0) {
-                $separateColumnNameAndLengths[0] = '`'.$separateColumnNameAndLengths[0].'`';
+                $separateColumnNameAndLengths[0] = '`' . $separateColumnNameAndLengths[0] . '`';
                 $columnNamesAndLength = implode('(', $separateColumnNameAndLengths);
             }
         }
@@ -635,5 +634,25 @@ class Synchronizer
             return false;
         }
         return $sm->listTableDetails($tableName);
+    }
+
+    /**
+     * get Checksum Of Data Import Table By Data Set Id
+     *
+     * @param null $dataSetId
+     * @return bool|string false if invalid data set id or could not get checksum
+     */
+    public function getCheckSumOfDataImportTableByDataSetId($dataSetId = null)
+    {
+        if (empty(($dataSetId))) {
+            return false;
+        }
+
+        $tableName = $this->getDataSetImportTableName($dataSetId);
+        $dql = sprintf('CHECKSUM TABLE %s;', $this->conn->quoteIdentifier($tableName));
+        $checkSum = $this->conn->query($dql)->fetch();
+        $this->conn->close();
+
+        return (is_array($checkSum) && array_key_exists('Checksum', $checkSum)) ? $checkSum['Checksum'] : false;
     }
 }
