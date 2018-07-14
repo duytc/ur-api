@@ -30,7 +30,7 @@ class ReportViewController extends FOSRestController
      * Get shared report
      *
      * @Rest\Get("/reportviews/{id}/sharedReports")
-     * @Rest\View(serializerGroups={"report_view.share", "report_view_multi_view.share", "report_view_data_set.share"})
+     * @Rest\View(serializerGroups={"report_view.share", "report_view_multi_view.share", "report_view_data_set.share", "dataset.share"})
      *
      * @Rest\QueryParam(name="token", nullable=false)
      * @Rest\QueryParam(name="startDate", nullable=true)
@@ -41,6 +41,7 @@ class ReportViewController extends FOSRestController
      * @Rest\QueryParam(name="searches", nullable=true)
      * @Rest\QueryParam(name="sortField", nullable=true, description="field to sort, must match field in Entity and sortable")
      * @Rest\QueryParam(name="orderBy", nullable=true, description="value of sort direction : asc or desc")
+     * @Rest\QueryParam(name="customFilter", nullable=true, description="custom filter")
      *
      * @ApiDoc(
      *    section = "public",
@@ -146,7 +147,31 @@ class ReportViewController extends FOSRestController
         $fieldsToBeShared = $shareConfig[ReportViewInterface::SHARE_FIELDS];
         $allowDatesOutside = array_key_exists(ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE, $shareConfig) ? $shareConfig[ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE] : false;
         $paginationParams = $request->query->all();
-        $params = $this->getParams($reportView, $fieldsToBeShared, $paginationParams);
+
+        $paramsFilters = json_decode($request->query->get('customFilter'), true);
+//        $paramsFilters =
+//            [ [
+//            "dataSet" => 6,
+//            "filters" => [
+//                [
+//                    "field"=>"tag_name",
+//                    "type"=>"text",
+//                    "comparison"=>"in",
+//                    "userProvided"=>true,
+//                    "compareValue"=>[
+//                        "Tag 1p",
+//                        "Tag 2p",
+//                        "Tag3p",
+//                        "Tag p",
+//                        "Tag 5p"
+//                        ],
+//                    "filterOld"=>true
+//                ]
+//            ]
+//            ]];
+
+        $params = $this->getParams($reportView, $fieldsToBeShared, $paginationParams, $paramsFilters);
+
         $params->setNeedFormat(false);
 
         // get dateRange from config then convert to array such as [ startDate => '', endDate => '' ],
@@ -230,6 +255,7 @@ class ReportViewController extends FOSRestController
             $params->setStartDate(new \DateTime($dateRange['startDate']));
             $params->setEndDate(new \DateTime($dateRange['endDate']));
         }
+
         return array($shareConfig, $fieldsToBeShared, $allowDatesOutside, $params, $dateRange);
     }
 
@@ -237,6 +263,7 @@ class ReportViewController extends FOSRestController
      * @param ReportViewInterface $reportView
      * @param array $fieldsToBeShared
      * @param array $paginationParams
+     * @param array $paramsFilters
      * @return ParamsInterface formatted as:
      * {
      * {"name"="dimensions", "dataType"="array", "required"=false, "description"="list of dimensions to build report"},
@@ -255,9 +282,9 @@ class ReportViewController extends FOSRestController
      * }
      * @see UR\Bundle\ReportApiBundle\Controller\ReportController
      */
-    protected function getParams($reportView, array $fieldsToBeShared, array $paginationParams)
+    protected function getParams($reportView, array $fieldsToBeShared, array $paginationParams, $paramsFilters = [])
     {
-        return $this->get('ur.services.report.params_builder')->buildFromReportViewForSharedReport($reportView, $fieldsToBeShared, $paginationParams);
+        return $this->get('ur.services.report.params_builder')->buildFromReportViewForSharedReport($reportView, $fieldsToBeShared, $paginationParams, $paramsFilters);
     }
 
     /**
@@ -310,6 +337,7 @@ class ReportViewController extends FOSRestController
 
             $report['columns'] = $mappedColumns;
         }
+
         return $report;
     }
 

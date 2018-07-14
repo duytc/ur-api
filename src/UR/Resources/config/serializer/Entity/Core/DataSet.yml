@@ -3,13 +3,13 @@ UR\Entity\Core\DataSet:
     properties:
         id:
             expose: true
-            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory, dataset.inreportview]
+            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory, dataset.inreportview, dataset.share]
         publisher:
             expose: true
             groups: [dataset.detail, dataset.edit, dataset.summary]
         name:
             expose: true
-            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory, dataset.inreportview]
+            groups: [dataset.detail, dataset.summary, dataset.edit, dataset.importhistory, dataset.inreportview, dataset.share]
         dimensions:
             expose: true
             groups: [dataset.detail, dataset.summary, dataset.edit, dataset.inreportview]

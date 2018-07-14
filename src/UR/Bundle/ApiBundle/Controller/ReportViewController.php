@@ -350,6 +350,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         $reportView = $this->one($id);
 
         $fieldsToBeShared = $request->request->get(ReportViewInterface::SHARE_FIELDS, '[]');
+        $filterToBeShared = $request->request->get('filters', '[]');
         if (!is_array($fieldsToBeShared)) {
             throw new InvalidArgumentException('expect "fields" to be an array');
         }
@@ -357,7 +358,7 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         $dateRange = $request->request->get(ReportViewInterface::SHARE_DATE_RANGE, null);
         $allowDatesOutside = $request->request->get(ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE, false);
 
-        return $this->getShareableLink($reportView, $fieldsToBeShared, $dateRange, $allowDatesOutside);
+        return $this->getShareableLink($reportView, $fieldsToBeShared, $dateRange, $allowDatesOutside, $filterToBeShared);
     }
 
     /**
@@ -714,15 +715,16 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
      *
      * @param ReportViewInterface $reportView
      * @param array $fieldsToBeShared
+     * @param array $filterToBeShared
      * @param array|string|null $dateRange
      * @param bool $allowDatesOutside
      * @return mixed
      */
-    private function getShareableLink(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null, $allowDatesOutside = false)
+    private function getShareableLink(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null, $allowDatesOutside = false, array $filterToBeShared = [])
     {
         /** @var ReportViewManagerInterface $reportViewManager */
         $reportViewManager = $this->get('ur.domain_manager.report_view');
-        $token = $reportViewManager->createTokenForReportView($reportView, $fieldsToBeShared, $dateRange, $allowDatesOutside);
+        $token = $reportViewManager->createTokenForReportView($reportView, $fieldsToBeShared, $dateRange, $allowDatesOutside, $filterToBeShared);
 
         return $this->getShareableLinkFromTemplate($reportView->getId(), $token);
     }

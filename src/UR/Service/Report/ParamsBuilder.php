@@ -229,18 +229,65 @@ class ParamsBuilder implements ParamsBuilderInterface
                 throw new InvalidArgumentException(sprintf('expect array, got %s', gettype($dataSet)));
             }
 
-            if ($filters) {
+            if ($filters && !empty($filters)) {
+                // due to have not had any place use this code.
+                // So this one can edit
+                $currentFilter = $dataSet['filters'];
                 foreach ($filters as $filter) {
+
+                    if (!is_array($filter) || !array_key_exists('dataSet', $filter)) {
+                        continue;
+                    }
+
                     if ($dataSet['dataSet'] == $filter['dataSet']) {
-                        $dataSet['filters'][] = $filter;
+                        $arrayFilter = $filter['filters'];
+                        foreach ($arrayFilter as $item) {
+                            if (!is_array($item) || !array_key_exists('field', $item)) {
+                                continue;
+                            }
+                            $currentFilter = $this->checkFieldToApplyCustomFilter($currentFilter, $item['field']);
+                        }
                     }
                 }
+
+                foreach ($filters as $filter) {
+
+                    if (!is_array($filter) || !array_key_exists('dataSet', $filter)) {
+                        continue;
+                    }
+
+                    if ($dataSet['dataSet'] == $filter['dataSet']) {
+                        // due to have not had any place use this code.
+                        // So this one can edit
+                        $arrayFilter = $filter['filters'];
+                        foreach ($arrayFilter as $item) {
+
+                            if (!is_array($item) || (array_key_exists('isAll', $item) && $item['isAll'] == true)){
+                                continue;
+                            }
+
+                            $currentFilter[] = $item;
+                        }
+                    }
+                }
+
+                $dataSet['filters'] = $currentFilter;
             }
 
             $dataSetObjects[] = new DataSet($dataSet);
         }
 
         return $dataSetObjects;
+    }
+
+    private function checkFieldToApplyCustomFilter($currentFilter, $fieldName) {
+        foreach ($currentFilter as $key => $item) {
+            if ($item['field'] == $fieldName){
+                unset($currentFilter[$key]);
+            }
+        }
+
+        return array_values($currentFilter);
     }
 
     /**
@@ -540,7 +587,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     /**
      * @inheritdoc
      */
-    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $fieldsToBeShared, array $paginationParams)
+    public function buildFromReportViewForSharedReport(ReportViewInterface $reportView, array $fieldsToBeShared, array $paginationParams, $paramsFilters = [])
     {
         $param = new Params();
         $param->setReportView($reportView);
@@ -598,8 +645,9 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         $param->setDataSets($this->createDataSets(
-            $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()))
+            $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()), $paramsFilters  )
         );
+
         $param->setJoinConfigs($this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets()));
 
         $param

@@ -111,7 +111,7 @@ class ReportViewManager implements ReportViewManagerInterface
     /**
      * @inheritdoc
      */
-    public function createTokenForReportView(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null, $allowDatesOutside = false)
+    public function createTokenForReportView(ReportViewInterface $reportView, array $fieldsToBeShared, $dateRange = null, $allowDatesOutside = false, array $filterToBeShared = [])
     {
         $sharedKeysConfig = $reportView->getSharedKeysConfig();
         if (!is_array($sharedKeysConfig)) {
@@ -120,11 +120,14 @@ class ReportViewManager implements ReportViewManagerInterface
 
         // check if fieldsToBeShared already existed
         $concatenatedFieldsToBeShared = implode(':', $fieldsToBeShared);
+
+        $concatenatedFilterToBeShared = serialize($filterToBeShared);
         $tokenExisted = false;
         $newToken = '';
 
         foreach ($sharedKeysConfig as $token => $fields) {
             $concatenatedOldFieldsToBeShared = implode(':', $fields[ReportViewInterface::SHARE_FIELDS]);
+            $concatenatedOldFilterToBeShared = serialize(array_key_exists(ReportViewInterface::REPORT_VIEW_FILTERS, $fields) ? $fields[ReportViewInterface::REPORT_VIEW_FILTERS] : []);
 
             // check if token existed base on:
             // - the shared fields
@@ -132,6 +135,7 @@ class ReportViewManager implements ReportViewManagerInterface
             // - the shared option allowDatesOutside
             if (
                 $concatenatedOldFieldsToBeShared === $concatenatedFieldsToBeShared &&
+                $concatenatedFilterToBeShared === $concatenatedOldFilterToBeShared &&
                 (
                     (array_key_exists(ReportViewInterface::SHARE_DATE_RANGE, $fields) && $this->compareDateRange($fields[ReportViewInterface::SHARE_DATE_RANGE], $dateRange)) ||
                     (array_key_exists(ReportViewInterface::SHARE_DATE_RANGE, $fields) && $dateRange === null)
@@ -153,6 +157,7 @@ class ReportViewManager implements ReportViewManagerInterface
                 ReportViewInterface::SHARE_FIELDS => $fieldsToBeShared,
                 ReportViewInterface::SHARE_DATE_RANGE => $dateRange,
                 ReportViewInterface::SHARE_ALLOW_DATES_OUTSIDE => $allowDatesOutside,
+                ReportViewInterface::REPORT_VIEW_FILTERS => (is_array($filterToBeShared) && !empty($filterToBeShared) ? $filterToBeShared : []),
                 self::DATE_CREATED => date("Y-m-d H:i:s")
             );
 
