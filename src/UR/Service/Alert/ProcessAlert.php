@@ -7,11 +7,13 @@ use Doctrine\Common\Collections\Collection;
 use Exception;
 use UR\Bundle\UserBundle\DomainManager\PublisherManagerInterface;
 use UR\DomainManager\AlertManagerInterface;
+use UR\DomainManager\DataSetManagerInterface;
 use UR\DomainManager\DataSourceManagerInterface;
 use UR\DomainManager\OptimizationIntegrationManagerInterface;
 use UR\Entity\Core\Alert;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\OptimizationIntegrationInterface;
 use UR\Model\Core\OptimizationRuleInterface;
 use UR\Model\User\Role\PublisherInterface;
@@ -24,22 +26,30 @@ class ProcessAlert implements ProcessAlertInterface
     protected $publisherManager;
     /** @var DataSourceManagerInterface */
     protected $dataSourceManager;
+    /** @var DataSetManagerInterface */
+    protected $dataSetManager;
 
     /** @var  OptimizationIntegrationManagerInterface */
     private $optimizationIntegrationManager;
 
-    public function __construct(AlertManagerInterface $alertManager, PublisherManagerInterface $publisherManager, DataSourceManagerInterface $dataSourceManager, OptimizationIntegrationManagerInterface $optimizationRuleManager)
+    public function __construct(AlertManagerInterface $alertManager,
+                                PublisherManagerInterface $publisherManager,
+                                DataSourceManagerInterface $dataSourceManager,
+                                DataSetManagerInterface $dataSetManager,
+                                OptimizationIntegrationManagerInterface $optimizationRuleManager
+    )
     {
         $this->alertManager = $alertManager;
         $this->publisherManager = $publisherManager;
         $this->dataSourceManager = $dataSourceManager;
+        $this->dataSetManager = $dataSetManager;
         $this->optimizationIntegrationManager = $optimizationRuleManager;
     }
 
     /**
      * @inheritdoc
      */
-    public function createAlert($alertCode, $publisherId, $details, $dataSourceId = null, $optimizationIntegrationId = null)
+    public function createAlert($alertCode, $publisherId, $details, $dataSourceId = null, $optimizationIntegrationId = null, $dataSetId = null)
     {
         $publisher = $this->publisherManager->findPublisher($publisherId);
         if (!$publisher instanceof PublisherInterface) {
@@ -58,6 +68,18 @@ class ProcessAlert implements ProcessAlertInterface
             $dataSource = null;
         }
 
+        if (null !== $dataSetId) {
+            /** @var null|DataSetInterface $dataSet */
+            $dataSet = $this->dataSetManager->find($dataSetId);
+            if ($dataSet instanceof DataSetInterface) {
+                if ($dataSet->getPublisherId() !== $publisherId) {
+                    $dataSet = null; // make sure correct permission on data source for publisher
+                }
+            }
+        } else {
+            $dataSet = null;
+        }
+
         if (null !== $optimizationIntegrationId) {
             /** @var null|OptimizationIntegrationInterface $optimizationIntegration */
             $optimizationIntegration = $this->optimizationIntegrationManager->find($optimizationIntegrationId);
@@ -74,13 +96,14 @@ class ProcessAlert implements ProcessAlertInterface
         $type = array_key_exists($alertCode, Alert::$ALERT_CODE_TO_TYPE_MAP) ? Alert::$ALERT_CODE_TO_TYPE_MAP[$alertCode] : Alert::ALERT_TYPE_INFO;
 
         $alert = new Alert();
-        $alert->setCode($alertCode);
-        $alert->setPublisher($publisher);
-        $alert->setDetail($details);
-        $alert->setDataSource($dataSource);
-        $alert->setOptimizationIntegration($optimizationIntegration);
-        $alert->setType($type);
-        $alert->setIsSent(false);
+        $alert->setCode($alertCode)
+        ->setPublisher($publisher)
+        ->setDetail($details)
+        ->setDataSource($dataSource)
+        ->setDataSet($dataSet)
+        ->setOptimizationIntegration($optimizationIntegration)
+        ->setType($type)
+        ->setIsSent(false);
 
         $this->alertManager->save($alert);
     }

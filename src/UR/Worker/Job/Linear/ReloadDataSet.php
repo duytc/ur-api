@@ -167,6 +167,7 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
 
         $jobs[] = ['task' => UpdateDataSetReloadCompleted::JOB_NAME];
         $jobs[] = ['task' => UpdateAugmentedDataSetStatus::JOB_NAME];
+        $jobs[] = ['task' => CreateAlertOnAugmentedDataSetChangedJob::JOB_NAME];
 
         // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
         // this will save a lot of execution time

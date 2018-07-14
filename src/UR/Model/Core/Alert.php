@@ -8,6 +8,9 @@ use UR\Model\User\UserEntityInterface;
 class Alert implements AlertInterface
 {
     public static $SUPPORTED_ALERT_CODES = [
+        /* Alert for data set */
+        self::ALERT_CODE_DATA_AUGMENTED_DATA_SET_CHANGED,
+
         /* Alert for data source */
         self::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD,
         self::ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_EMAIL,
@@ -93,6 +96,11 @@ class Alert implements AlertInterface
      * @var DataSourceInterface
      */
     protected $dataSource;
+
+    /**
+     * @var DataSetInterface
+     */
+    protected $dataSet;
 
     /** @var OptimizationIntegrationInterface */
     protected $optimizationIntegration;
@@ -219,6 +227,24 @@ class Alert implements AlertInterface
     public function setDataSource($dataSource)
     {
         $this->dataSource = $dataSource;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSet()
+    {
+        return $this->dataSet;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setDataSet($dataSet)
+    {
+        $this->dataSet = $dataSet;
 
         return $this;
     }

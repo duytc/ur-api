@@ -62,6 +62,7 @@ class UndoImportHistories implements SplittableJobInterface
             ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
             ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
+            ['task' => CreateAlertOnAugmentedDataSetChangedJob::JOB_NAME],
         ]);
 
         $this->scheduler->addJob($jobs, $dataSetId, $params);

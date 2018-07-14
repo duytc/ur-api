@@ -87,6 +87,7 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
             ];
 
             $jobs[] = ['task' => UpdateAugmentedDataSetStatus::JOB_NAME];
+            $jobs[] = ['task' => CreateAlertOnAugmentedDataSetChangedJob::JOB_NAME];
 
             $this->scheduler->addJob($jobs, $dataSetId, $params);
             return;
@@ -122,6 +123,7 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
         ];
 
         $jobs[] = ['task' => UpdateAugmentedDataSetStatus::JOB_NAME];
+        $jobs[] = ['task' => CreateAlertOnAugmentedDataSetChangedJob::JOB_NAME];
 
         $this->scheduler->addJob($jobs, $dataSetId, $params);
     }

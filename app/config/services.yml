@@ -409,6 +409,15 @@ services:
             - '@ur.domain_manager.connected_data_source'
             - '@ur.repository.linked_map_data_set'
 
+    ur.worker.job.linear.create_alert_on_augmented_data_set_changed:
+        class: UR\Worker\Job\Linear\CreateAlertOnAugmentedDataSetChangedJob
+        arguments:
+            - '@monolog.logger'
+            - '@ur.domain_manager.data_set'
+            - '@ur.domain_manager.alert'
+            - '@ur.repository.linked_map_data_set'
+            - '@ur.service.alert.process_alert'
+
     ur.worker.job.linear.update_augmented_data_set_status:
         class: UR\Worker\Job\Linear\UpdateAugmentedDataSetStatus
         arguments:
@@ -505,6 +514,7 @@ services:
                 - @ur.worker.job.concurrent.parse_chunk_file
                 - @ur.worker.job.linear.update_augmented_data_set_status
                 - @ur.worker.job.linear.update_augmented_data_set_status_sub_job
+                - @ur.worker.job.linear.create_alert_on_augmented_data_set_changed
 
     ### end of linear worker pool
 
@@ -630,6 +640,7 @@ services:
             - @ur.domain_manager.alert
             - @ur_user.domain_manager.publisher
             - @ur.domain_manager.data_source
+            - @ur.domain_manager.data_set
             - @ur.domain_manager.optimization_integration
 
     ur.service.alert.action_require_handler:

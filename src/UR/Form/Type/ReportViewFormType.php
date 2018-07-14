@@ -4,6 +4,7 @@ namespace UR\Form\Type;
 
 
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -102,6 +103,8 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
 
                 $this->validateWeightedCalculations($form, $reportView->getWeightedCalculations());
 
+                $this->validateShowInTotal($form, $reportView->getShowInTotal());
+
                 $this->validateFormats($form, $reportView->getFormats());
 
                 $this->validateFieldTypes($form, $reportView->getFieldTypes());
@@ -176,5 +179,44 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
     public function getLargeThreshold()
     {
         return $this->largeThreshold;
+    }
+
+    /**
+     * @param $form
+     * @param $getShowInTotal
+     * @return bool
+     * @throws Exception
+     */
+    private function validateShowInTotal($form, $getShowInTotal)
+    {
+        if (empty($getShowInTotal)) {
+            return true;
+        }
+
+        foreach ($getShowInTotal as $oneGroup) {
+            if (!array_key_exists('fields', $oneGroup) || !array_key_exists('aliasName', $oneGroup)) {
+                continue;
+            }
+
+            $fields = $oneGroup['fields'];
+            $aliasNames = $oneGroup['aliasName'];
+
+            $originalNames = [];
+            foreach ($aliasNames as $aliasName) {
+                if (!array_key_exists('originalName', $aliasName)) {
+                    throw new  Exception(sprintf('Invalid submit json for show in total'));
+                }
+
+                array_push($originalNames, $aliasName['originalName']);
+            }
+
+            $diffKeys = array_diff($fields, $originalNames);
+
+            if (!empty($diffKeys)) {
+                    throw new  Exception(sprintf('There is at least one total or average field which does not have alias name'));
+            }
+        }
+
+        return true;
     }
 }

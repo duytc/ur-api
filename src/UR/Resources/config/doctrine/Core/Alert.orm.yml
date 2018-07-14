@@ -39,6 +39,8 @@ UR\Entity\Core\Alert:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User
         dataSource:
             targetEntity: UR\Entity\Core\DataSource
+        dataSet:
+            targetEntity: UR\Entity\Core\DataSet
         optimizationIntegration:
             targetEntity: UR\Entity\Core\OptimizationIntegration
             inversedBy: alerts

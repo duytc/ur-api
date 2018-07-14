@@ -14,10 +14,11 @@ interface ProcessAlertInterface
      * @param int $publisherId
      * @param mixed $details
      * @param null|int $dataSourceId
+     * @param null|int $dataSetId
      * @param null $optimizationIntegrationId
      * @return mixed
      */
-    public function createAlert($alertCode, $publisherId, $details, $dataSourceId = null, $optimizationIntegrationId = null);
+    public function createAlert($alertCode, $publisherId, $details, $dataSourceId = null, $optimizationIntegrationId = null, $dataSetId = null);
 
     /**
      * @param AlertParams $alertParam

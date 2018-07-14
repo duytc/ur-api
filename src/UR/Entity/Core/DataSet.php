@@ -7,6 +7,7 @@ use UR\Model\Core\DataSet as DataSetModel;
 use UR\Model\Core\LinkedMapDataSetInterface;
 use UR\Model\Core\MapBuilderConfigInterface;
 use UR\Model\User\UserEntityInterface;
+use UR\Model\Core\AlertInterface;
 
 class DataSet extends DataSetModel
 {
@@ -36,6 +37,11 @@ class DataSet extends DataSetModel
      * @var LinkedMapDataSetInterface[]
      */
     protected $linkedMapDataSets;
+
+    /**
+     * @var AlertInterface[]
+     */
+    protected $alerts;
 
     protected $numConnectedDataSourceChanges;
     protected $numChanges;

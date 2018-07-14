@@ -6,6 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use ReflectionClass;
 use UR\Exception\InvalidArgumentException;
 use UR\Model\Core\AlertInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\ModelInterface;
 use UR\Repository\Core\AlertRepositoryInterface;
 use UR\Service\Alert\AlertParams;
@@ -103,5 +104,13 @@ class AlertManager implements AlertManagerInterface
     public function getAlertsByParams(AlertParams $alertParams)
     {
         return $this->repository->getAlertsByParams($alertParams);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getUnreadAlertByDataSet(DataSetInterface $dataSet)
+    {
+        return $this->repository->getUnReadAlertByDataSet($dataSet);
     }
 }

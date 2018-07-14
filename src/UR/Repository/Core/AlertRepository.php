@@ -5,6 +5,7 @@ namespace UR\Repository\Core;
 use Doctrine\ORM\EntityRepository;
 use UR\Model\AlertPagerParam;
 use UR\Model\Core\AlertInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\OptimizationIntegrationInterface;
 use UR\Model\Core\OptimizationRuleInterface;
@@ -173,6 +174,68 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
     /**
      * @inheritdoc
      */
+    public function getAlertsByDataSetQuery(DataSetInterface $dataSet, PagerParam $param)
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->join('a.dataSet', 'ds')
+            ->where('a.dataSet = :dataSet')
+            ->setParameter('dataSet', $dataSet);
+
+        // support filter by alert types
+        if ($param instanceof AlertPagerParam && !empty($param->getTypes())) {
+            $types = explode(',', $param->getTypes());
+            $qb
+                ->andWhere('a.type IN (:types)')
+                ->setParameter('types', $types);
+        }
+
+        if (is_string($param->getSearchKey())) {
+            $searchLike = sprintf('%%%s%%', $param->getSearchKey());
+            $qb
+                ->andWhere($qb->expr()->orX(
+                    $qb->expr()->like('ds.name', ':searchKey'),
+                    $qb->expr()->like('a.id', ':searchKey'),
+                    $qb->expr()->like('a.code', ':searchKey'),
+                    $qb->expr()->like('a.type', ':searchKey')
+                ))
+                ->setParameter('searchKey', $searchLike);
+        }
+
+        if (is_string($param->getSortField()) &&
+            is_string($param->getSortDirection()) &&
+            in_array($param->getSortDirection(), ['asc', 'desc', 'ASC', 'DESC']) &&
+            in_array($param->getSortField(), $this->SORT_FIELDS)
+        ) {
+            switch ($param->getSortField()) {
+                case 'id':
+                    $qb->addOrderBy('a.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+
+                case 'createdDate':
+                    $qb->addOrderBy('a.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+
+                case 'title':
+                    $qb->addOrderBy('a.' . $this->SORT_FIELDS['title'], $param->getSortDirection());
+                    break;
+
+                case 'type':
+                    $qb->addOrderBy('a.' . $this->SORT_FIELDS['type'], $param->getSortDirection());
+                    break;
+
+                default:
+                    break;
+            }
+        } else {
+            $qb->addOrderBy('a.createdDate', 'desc');
+        }
+
+        return $qb;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getAllDataSourceAlertsQuery(UserRoleInterface $user, PagerParam $param)
     {
         if ($user instanceof PublisherInterface) {
@@ -190,6 +253,77 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
             ->andWhere('ds.enable = :enable')
             ->andWhere('a.dataSource is not null')
             ->setParameter('enable', true);
+
+        // support filter by alert types
+        if ($param instanceof AlertPagerParam && !empty($param->getTypes())) {
+            $types = explode(',', $param->getTypes());
+            $qb
+                ->andWhere('a.type IN (:types)')
+                ->setParameter('types', $types);
+        }
+
+        if (is_string($param->getSearchKey())) {
+            $searchLike = sprintf('%%%s%%', $param->getSearchKey());
+            $qb
+                ->andWhere($qb->expr()->orX(
+                    $qb->expr()->like('ds.name', ':searchKey'),
+                    $qb->expr()->like('a.id', ':searchKey'),
+                    $qb->expr()->like('a.code', ':searchKey'),
+                    $qb->expr()->like('a.type', ':searchKey')
+                ))
+                ->setParameter('searchKey', $searchLike);
+        }
+
+        if (is_string($param->getSortField()) &&
+            is_string($param->getSortDirection()) &&
+            in_array($param->getSortDirection(), ['asc', 'desc', 'ASC', 'DESC']) &&
+            in_array($param->getSortField(), $this->SORT_FIELDS)
+        ) {
+            switch ($param->getSortField()) {
+                case 'id':
+                    $qb->addOrderBy('a.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+
+                case 'createdDate':
+                    $qb->addOrderBy('a.' . $param->getSortField(), $param->getSortDirection());
+                    break;
+
+                case 'title':
+                    $qb->addOrderBy('a.' . $this->SORT_FIELDS['title'], $param->getSortDirection());
+                    break;
+
+                case 'type':
+                    $qb->addOrderBy('a.' . $this->SORT_FIELDS['type'], $param->getSortDirection());
+                    break;
+
+                default:
+                    break;
+            }
+        } else {
+            $qb->addOrderBy('a.createdDate', 'desc');
+        }
+
+        return $qb;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getAllDataSetAlertsQuery(UserRoleInterface $user, PagerParam $param)
+    {
+        if ($user instanceof PublisherInterface) {
+            $qb = $this->createQueryBuilder('a')
+                ->leftJoin('a.publisher', 'p')
+                ->select('a, p')
+                ->where('a.publisher = :publisher')
+                ->setParameter('publisher', $user);
+        } else {
+            $qb = $this->createQueryBuilder('a');
+        }
+
+        $qb
+            ->join('a.dataSet', 'ds')
+            ->andWhere('a.dataSet is not null');
 
         // support filter by alert types
         if ($param instanceof AlertPagerParam && !empty($param->getTypes())) {
@@ -515,6 +649,23 @@ class AlertRepository extends EntityRepository implements AlertRepositoryInterfa
             ->setParameter('type', $alertType)
             ->setParameter('startDate', $fromDate)
             ->setParameter('endDate', $toDate);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getUnReadAlertByDataSet(DataSetInterface $dataSet)
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->andWhere('a.isRead = :isRead')
+            ->andWhere('a.dataSet = :setId')
+            ->andWhere('a.publisher = :pubId')
+            ->setParameter('isRead', false)
+            ->setParameter('setId', $dataSet->getId())
+            ->setParameter('pubId', $dataSet->getPublisherId())
+            ->addOrderBy('a.createdDate', 'desc');
 
         return $qb->getQuery()->getResult();
     }

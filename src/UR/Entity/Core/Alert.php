@@ -5,6 +5,7 @@ namespace UR\Entity\Core;
 
 use UR\Model\Core\Alert as AlertModel;
 use UR\Model\Core\DataSourceInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\User\UserEntityInterface;
 
 class Alert extends AlertModel
@@ -27,6 +28,11 @@ class Alert extends AlertModel
      * @var DataSourceInterface
      */
     protected $dataSource;
+
+    /**
+     * @var DataSetInterface
+     */
+    protected $dataSet;
 
     protected $optimizationIntegration;
 
