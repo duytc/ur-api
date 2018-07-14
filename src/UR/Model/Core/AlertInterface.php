@@ -10,6 +10,9 @@ interface AlertInterface extends ModelInterface
     /* define all alert codes */
     // TODO: move all other alert codes to here...
 
+    /* Alert for data set */
+    const ALERT_CODE_DATA_AUGMENTED_DATA_SET_CHANGED = 1001;
+
     /* Alert for data source */
     const ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_UPLOAD = 1100;
     const ALERT_CODE_DATA_SOURCE_NEW_DATA_IS_RECEIVED_FROM_EMAIL = 1101;
@@ -125,6 +128,17 @@ interface AlertInterface extends ModelInterface
      * return self
      */
     public function setDataSource($dataSource);
+
+    /**
+     * @return null|DataSetInterface
+     */
+    public function getDataSet();
+
+    /**
+     * @param null|DataSetInterface $dataSet
+     * return self
+     */
+    public function setDataSet($dataSet);
 
     /**
      * @return mixed

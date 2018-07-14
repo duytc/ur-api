@@ -19,4 +19,10 @@ interface AlertDTOInterface
 
     /** string */
     const DATA_SOURCE_NAME = 'dataSourceName';
+
+    /** int */
+    const DATA_SET_ID = 'dataSetId';
+
+    /** string */
+    const DATA_SET_NAME = 'dataSetName';
 }

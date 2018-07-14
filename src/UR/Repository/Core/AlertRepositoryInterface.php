@@ -6,6 +6,7 @@ namespace UR\Repository\Core;
 use Doctrine\Common\Persistence\ObjectRepository;
 use UR\Model\AlertPagerParam;
 use UR\Model\Core\AlertInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 use Doctrine\ORM\QueryBuilder;
 use UR\Model\Core\OptimizationIntegrationInterface;
@@ -31,11 +32,26 @@ interface AlertRepositoryInterface extends ObjectRepository
     public function getAlertsByDataSourceQuery(DataSourceInterface $dataSource, PagerParam $param);
 
     /**
+     * @param DataSetInterface $dataSet
+     * @param PagerParam|AlertPagerParam $param
+     * @return QueryBuilder
+     * @internal param DataSetInterface $dataSet
+     */
+    public function getAlertsByDataSetQuery(DataSetInterface $dataSet, PagerParam $param);
+
+    /**
      * @param UserRoleInterface $user
      * @param PagerParam $param
      * @return mixed
      */
     public function getAllDataSourceAlertsQuery(UserRoleInterface $user, PagerParam $param);
+
+    /**
+     * @param UserRoleInterface $user
+     * @param PagerParam $param
+     * @return mixed
+     */
+    public function getAllDataSetAlertsQuery(UserRoleInterface $user, PagerParam $param);
     
     /**
      * @param OptimizationIntegrationInterface $optimizationIntegration
@@ -92,4 +108,10 @@ interface AlertRepositoryInterface extends ObjectRepository
      * @return mixed
      */
     public function getAlertsCreatedFromDateRange(OptimizationIntegrationInterface $optimizationIntegration, $alertType, \DateTime $fromDate, \DateTime $toDate);
+
+    /**
+     * @param DataSetInterface $dataSet
+     * @return mixed
+     */
+    public function getUnReadAlertByDataSet(DataSetInterface $dataSet);
 }

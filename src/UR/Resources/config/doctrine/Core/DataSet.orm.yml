@@ -92,3 +92,7 @@ UR\Entity\Core\DataSet:
             targetEntity: UR\Entity\Core\ImportHistory
             mappedBy: dataSet
             cascade: ['remove', 'detach']
+        alerts:
+            targetEntity: UR\Entity\Core\Alert
+            cascade: ['detach', 'remove']
+            mappedBy: dataSet

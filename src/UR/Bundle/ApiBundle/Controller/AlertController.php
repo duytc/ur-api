@@ -10,9 +10,11 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use UR\Bundle\ApiBundle\Behaviors\GetEntityFromIdTrait;
+use UR\DomainManager\DataSetManagerInterface;
 use UR\Handler\HandlerInterface;
 use UR\Model\AlertPagerParam;
 use UR\Model\Core\AlertInterface;
+use UR\Model\Core\DataSetInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\OptimizationIntegrationInterface;
 use UR\Model\Core\OptimizationRuleInterface;
@@ -71,7 +73,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     /**
      * Get all alerts
      * @Rest\Get("/alerts/list")
-     * @Rest\View(serializerGroups={"alert.detail", "user.summary", "datasource.viewAlert", "optimizationIntegration.detail", "optimization_rule.one"})
+     * @Rest\View(serializerGroups={"alert.detail", "user.summary", "datasource.viewAlert", "dataset.viewAlert", "optimizationIntegration.detail", "optimization_rule.one"})
      *
      * @Rest\QueryParam(name="publisher", nullable=true, requirements="\d+", description="the publisher id")
      * @Rest\QueryParam(name="page", requirements="\d+", nullable=true, description="the page to get")
@@ -97,6 +99,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     {
         $alertRepository = $this->get('ur.repository.alert');
         $dataSourceManager = $this->get('ur.domain_manager.data_source');
+        $dataSetManager = $this->get('ur.domain_manager.data_set');
         $optimizationIntegrationManager = $this->get('ur.domain_manager.optimization_integration');
 
         $params = array_merge($request->request->all(), $request->query->all());
@@ -116,6 +119,17 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
                     $qb = $alertRepository->getAlertsByDataSourceQuery($dataSource, $this->getParams());
                 } else {
                     $qb = $alertRepository->getAllDataSourceAlertsQuery($user, $this->getParams());
+                }
+                break;
+            case 'dataset':
+                if (!empty($id)) {
+                    $dataSet = $dataSetManager->find($id);
+                    if (!$dataSet instanceof DataSetInterface) {
+                        break;
+                    }
+                    $qb = $alertRepository->getAlertsByDataSetQuery($dataSet, $this->getParams());
+                } else {
+                    $qb = $alertRepository->getAllDataSetAlertsQuery($user, $this->getParams());
                 }
                 break;
             case 'optimization':
