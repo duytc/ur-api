@@ -140,23 +140,33 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
             $ids = explode(',', $dataSetIds);
             $dataSets = $this->get('ur.repository.data_set')->getDataSetByIds($ids);
             $columns = [];
+
+            $sameNameFromDataSets = $this->getSameDimensionsMetricsFromDataSetEntities($dataSets);
+
             /**
              * @var DataSetInterface $dataSet
              */
             foreach ($dataSets as $dataSet) {
                 foreach ($dataSet->getDimensions() as $dimension => $type) {
-                    if ($showDataSetName) {
+                    $isForceShowDataSetName = in_array($dimension, $sameNameFromDataSets);
+                    $isForceShowDataSetName = $isForceShowDataSetName || $showDataSetName;
+
+                    if (true || $isForceShowDataSetName) {
                         $dimension = sprintf('%s_%d', $dimension, $dataSet->getId());
                     }
 
-                    $columns[$dimension] = $this->convertColumnForDataSet($dimension, $showDataSetName);
+                    $columns[$dimension] = $this->convertColumn($dimension, $isForceShowDataSetName);
                 }
 
                 foreach ($dataSet->getMetrics() as $metric => $type) {
-                    if ($showDataSetName) {
+                    $isForceShowDataSetName = in_array($metric, $sameNameFromDataSets);
+                    $isForceShowDataSetName = $isForceShowDataSetName || $showDataSetName;
+
+                    if (true || $isForceShowDataSetName) {
                         $metric = sprintf('%s_%d', $metric, $dataSet->getId());
                     }
-                    $columns[$metric] = $this->convertColumnForDataSet($metric, $showDataSetName);
+                    
+                    $columns[$metric] = $this->convertColumn($metric, $isForceShowDataSetName);
                 }
             }
 

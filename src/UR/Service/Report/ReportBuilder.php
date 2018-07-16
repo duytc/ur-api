@@ -193,9 +193,9 @@ class ReportBuilder implements ReportBuilderInterface
     {
         if ($params->isExport()) {
             $params->setPage(1);      //// faster ???
-            if($this->maxRowsForNormalDownload > 20000){
+            if ($this->maxRowsForNormalDownload > 20000) {
                 $params->setLimit($this->maxRowsForNormalDownload);
-            }else{
+            } else {
                 $params->setLimit(20000);
             }
 
@@ -384,7 +384,13 @@ class ReportBuilder implements ReportBuilderInterface
             foreach ($columns as $index => $column) {
                 $headers[$column] = $this->convertColumn($column, $params->getIsShowDataSetName());
             }
-            return new ReportResult(new SplDoublyLinkedList(), [], [], null, $headers, $types, $total);
+
+            $reportResult = new ReportResult(new SplDoublyLinkedList(), [], [], null, $headers, $types, $total);
+
+            /* modify columns in case same name from data sets */
+            $this->autoAddDataSetNameToSameColumns($reportResult, $params);
+
+            return $reportResult;
         }
 
         $collection = new Collection(array_merge($metrics, $dimensions), $rows, $types);
@@ -627,6 +633,9 @@ class ReportBuilder implements ReportBuilderInterface
             $reportResult->setTotalPage(ceil($totalReport / $limit));
         }
 
+        /* modify columns in case same name from data sets */
+        $this->autoAddDataSetNameToSameColumns($reportResult, $params);
+
         /* return report result */
         return $reportResult;
     }
@@ -751,6 +760,27 @@ class ReportBuilder implements ReportBuilderInterface
         gc_collect_cycles();
         $reportResult->setRows($newRows);
         return $reportResult;
+    }
+
+    /**
+     * @param ReportResultInterface $reportResult
+     * @param ParamsInterface $params
+     */
+    private function autoAddDataSetNameToSameColumns(ReportResultInterface $reportResult, ParamsInterface $params)
+    {
+        /* modify columns in case same name from data sets */
+        $columns = $reportResult->getColumns();
+        $sameNameFromDataSets = $this->getSameDimensionsMetricsFromDataSets($params);
+        foreach ($columns as $column => &$label) {
+            $isForceShowDataSetName = in_array($this->removeIdSuffix($column), $sameNameFromDataSets);
+            $isForceShowDataSetName = $isForceShowDataSetName || $params->getIsShowDataSetName();
+
+            $label = $this->convertColumn($column, $isForceShowDataSetName);
+        }
+
+        unset($label);
+
+        $reportResult->setColumns($columns);
     }
 
     protected function getDataSetManager()
