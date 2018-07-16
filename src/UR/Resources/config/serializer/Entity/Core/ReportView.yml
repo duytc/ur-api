@@ -86,3 +86,6 @@ UR\Entity\Core\ReportView:
         sharedKeysConfig:
             expose: true
             groups: [report_view.detail, report_view.summary, report_view.share]
+        calculatedMetrics:
+            expose: true
+            groups: [report_view.detail, report_view.summary, report_view.share]

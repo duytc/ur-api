@@ -33,6 +33,7 @@ class ReportView extends ReportViewModel
     protected $availableToRun;
     protected $availableToChange;
     protected $preCalculateTable;
+    protected $calculatedMetrics;
 
     /**
      * @inheritdoc
