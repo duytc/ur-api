@@ -27,7 +27,7 @@ UR\Entity\Core\ReportView:
             groups: [report_view.detail]
         filters:
             expose: true
-            groups: [report_view.detail, report_view.share]
+            groups: [report_view.detail, report_view.summary, report_view.share]
         masterReportView:
             expose: true
             groups: [report_view.detail, report_view.summary, report_view.share]
