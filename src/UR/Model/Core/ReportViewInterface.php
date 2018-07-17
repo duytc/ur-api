@@ -312,4 +312,17 @@ interface ReportViewInterface extends ModelInterface
      * @return self
      */
     public function setSmallReport();
+
+    /**
+     * @return array
+     */
+    public function getCalculatedMetrics();
+
+    /**
+     * @param $calculatedMetrics
+     * @return $this
+     */
+
+    public function setCalculatedMetrics($calculatedMetrics);
+
 }
