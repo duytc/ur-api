@@ -359,10 +359,14 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
         /** @var ReportViewInterface $reportView */
         $reportView = $this->one($id);
 
-        $fieldsToBeShared = $request->request->get(ReportViewInterface::SHARE_FIELDS, '[]');
-        $filterToBeShared = $request->request->get('filters', '[]');
+        $fieldsToBeShared = $request->request->get(ReportViewInterface::SHARE_FIELDS, []);
         if (!is_array($fieldsToBeShared)) {
             throw new InvalidArgumentException('expect "fields" to be an array');
+        }
+
+        $filterToBeShared = $request->request->get(ReportViewInterface::REPORT_VIEW_FILTERS, []);
+        if (!is_array($filterToBeShared)) {
+            throw new InvalidArgumentException('expect "filters" to be an array');
         }
 
         $dateRange = $request->request->get(ReportViewInterface::SHARE_DATE_RANGE, null);
