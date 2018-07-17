@@ -70,6 +70,7 @@ class DataSet implements DataSetInterface
         $this->totalRow = 0;
         $this->numChanges = 0;
         $this->numConnectedDataSourceChanges = 0;
+        $this->autoReload = false;
     }
 
     /**
@@ -275,7 +276,7 @@ class DataSet implements DataSetInterface
      */
     public function setTotalRow($totalRow)
     {
-        $this->totalRow = (float) $totalRow;
+        $this->totalRow = (float)$totalRow;
         return $this;
     }
 

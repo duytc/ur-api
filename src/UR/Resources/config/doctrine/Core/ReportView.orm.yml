@@ -92,6 +92,11 @@ UR\Entity\Core\ReportView:
             type: string
             length: 30
             nullable: true
+        requireJoin:
+            type: boolean
+            options:
+                default: true
+            nullable: false
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

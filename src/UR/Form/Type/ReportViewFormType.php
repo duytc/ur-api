@@ -58,6 +58,7 @@ class ReportViewFormType extends AbstractRoleSpecificFormType
             ->add('availableToRun')
             ->add('availableToChange')
             ->add('preCalculateTable')
+            ->add('requireJoin')
         ;
 
         $builder

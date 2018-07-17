@@ -309,6 +309,17 @@ interface ReportViewInterface extends ModelInterface
     public function setPreCalculateTable($preCalculateTable);
 
     /**
+     * @return bool
+     */
+    public function isRequireJoin();
+
+    /**
+     * @param bool $requireJoin
+     * @return self
+     */
+    public function setRequireJoin($requireJoin);
+
+    /**
      * @return self
      */
     public function setSmallReport();

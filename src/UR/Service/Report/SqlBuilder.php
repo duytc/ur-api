@@ -849,9 +849,10 @@ class SqlBuilder implements SqlBuilderInterface
      * @param QueryBuilder $qb
      * @param array $dataSetIds
      * @param array $joinConfig
+     * @param boolean $requireJoin
      * @return string
      */
-    protected function buildJoinQueryForJoinConfig(QueryBuilder $qb, array $dataSetIds, array $joinConfig)
+    protected function buildJoinQueryForJoinConfig(QueryBuilder $qb, array $dataSetIds, array $joinConfig, $requireJoin)
     {
         $dataSetIndexes = array_flip($dataSetIds);
 
@@ -868,7 +869,9 @@ class SqlBuilder implements SqlBuilderInterface
         }
 
         $alias = $this->buildJoinAlias($dataSetIds, $fromDataSet, $dataSetIndexes);
-        $joinQuery = sprintf('INNER JOIN (%s) ON (%s)',
+        $relation = $requireJoin ? 'INNER' : 'LEFT';
+        $joinQuery = sprintf('%s JOIN (%s) ON (%s)',
+            $relation,
             implode(',', $alias),
             implode(' AND ', $onConditions)
         );
@@ -1323,6 +1326,7 @@ class SqlBuilder implements SqlBuilderInterface
 
         $dataSets = $params->getDataSets();
         $joinConfig = $params->getJoinConfigs();
+        $requireJoin = $params->isRequireJoin();
         $transforms = $params->getTransforms();
         $searches = $params->getSearches();
 
@@ -1449,7 +1453,7 @@ class SqlBuilder implements SqlBuilderInterface
             return $dataSet->getDataSetId();
         }, $dataSets);
 
-        $subQuery = $this->buildJoinQueryForJoinConfig($subQb, $dataSetIds, $joinConfig);
+        $subQuery = $this->buildJoinQueryForJoinConfig($subQb, $dataSetIds, $joinConfig, $requireJoin);
 
         $dataSetRepository = $this->em->getRepository(DataSet::class);
 

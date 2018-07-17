@@ -37,6 +37,17 @@ interface ParamsInterface
     public function setJoinConfigs(array $joinConfigs);
 
     /**
+     * @return bool
+     */
+    public function isRequireJoin();
+
+    /**
+     * @param bool $requireJoin
+     * @return self
+     */
+    public function setRequireJoin($requireJoin);
+
+    /**
      * @return WeightedCalculationInterface
      */
     public function getWeightedCalculations();

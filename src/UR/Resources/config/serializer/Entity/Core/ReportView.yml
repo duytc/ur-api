@@ -83,6 +83,9 @@ UR\Entity\Core\ReportView:
         preCalculateTable:
             expose: true
             groups: [report_view.detail, report_view.summary, report_view.share]
+        requireJoin:
+            expose: true
+            groups: [report_view.detail, report_view.summary, report_view.share]
         sharedKeysConfig:
             expose: true
             groups: [report_view.detail, report_view.summary, report_view.share]

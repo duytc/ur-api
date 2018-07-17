@@ -52,6 +52,11 @@ class Params implements ParamsInterface
     protected $joinConfigs;
 
     /**
+     * @var bool
+     */
+    protected $requireJoin;
+
+    /**
      * @var array
      */
     protected $filters;
@@ -121,7 +126,7 @@ class Params implements ParamsInterface
     /** @var  array */
     protected $metricCalculations;
 
-    /** @var array  */
+    /** @var array */
     protected $magicMaps = [];
 
     /** @var  string */
@@ -191,6 +196,24 @@ class Params implements ParamsInterface
     public function setJoinConfigs(array $joinConfigs)
     {
         $this->joinConfigs = $joinConfigs;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isRequireJoin()
+    {
+        return $this->requireJoin;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setRequireJoin($requireJoin)
+    {
+        $this->requireJoin = $requireJoin;
 
         return $this;
     }
@@ -704,7 +727,7 @@ class Params implements ParamsInterface
         if (empty($this->temporarySuffix)) {
             $this->temporarySuffix = mt_rand(0, 100000000);
         }
-        
+
         return $this->temporarySuffix;
     }
 
@@ -765,7 +788,7 @@ class Params implements ParamsInterface
     public function setOptimizationRule($optimizationRule)
     {
         $this->optimizationRule = $optimizationRule;
-        
+
         return $this;
     }
 

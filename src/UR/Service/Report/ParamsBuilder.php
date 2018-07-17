@@ -44,6 +44,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const FIELD_TYPES_KEY = 'fieldTypes';
     const TRANSFORM_KEY = 'transforms';
     const JOIN_BY_KEY = 'joinBy';
+    const REQUIRE_JOIN_KEY = 'requireJoin';
     const WEIGHTED_CALCULATION_KEY = 'weightedCalculations';
     const SUBVIEW_KEY = 'subView';
     const FILTERS_KEY = 'filters';
@@ -126,6 +127,10 @@ class ParamsBuilder implements ParamsBuilderInterface
             if (is_array($joinBy) && !empty($joinBy)) {
                 $param->setJoinConfigs($this->createJoinConfigs($joinBy, $param->getDataSets()));
             }
+        }
+
+        if (array_key_exists(self::REQUIRE_JOIN_KEY, $data)) {
+            $param->setRequireJoin($data[self::REQUIRE_JOIN_KEY]);
         }
 
         if (array_key_exists(self::TRANSFORM_KEY, $data) && !empty($data[self::TRANSFORM_KEY])) {
@@ -262,7 +267,7 @@ class ParamsBuilder implements ParamsBuilderInterface
                         $arrayFilter = $filter['filters'];
                         foreach ($arrayFilter as $item) {
 
-                            if (!is_array($item) || (array_key_exists('isAll', $item) && $item['isAll'] == true)){
+                            if (!is_array($item) || (array_key_exists('isAll', $item) && $item['isAll'] == true)) {
                                 continue;
                             }
 
@@ -280,9 +285,10 @@ class ParamsBuilder implements ParamsBuilderInterface
         return $dataSetObjects;
     }
 
-    private function checkFieldToApplyCustomFilter($currentFilter, $fieldName) {
+    private function checkFieldToApplyCustomFilter($currentFilter, $fieldName)
+    {
         foreach ($currentFilter as $key => $item) {
-            if ($item['field'] == $fieldName){
+            if ($item['field'] == $fieldName) {
                 unset($currentFilter[$key]);
             }
         }
@@ -645,7 +651,7 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         $param->setDataSets($this->createDataSets(
-            $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()), $paramsFilters  )
+            $this->reportViewDataSetObjectsToArray($reportView->getReportViewDataSets()), $paramsFilters)
         );
 
         $param->setJoinConfigs($this->createJoinConfigs($reportView->getJoinBy(), $param->getDataSets()));

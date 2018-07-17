@@ -154,6 +154,9 @@ class ReportView implements ReportViewInterface
     /** @var  string */
     protected $preCalculateTable;
 
+    /** @var bool */
+    protected $requireJoin;
+
     /**
      * @return mixed
      */
@@ -179,6 +182,7 @@ class ReportView implements ReportViewInterface
         $this->availableToRun = true;
         $this->availableToChange = true;
         $this->preCalculateTable = null;
+        $this->requireJoin = true;
     }
 
     /**
@@ -192,7 +196,8 @@ class ReportView implements ReportViewInterface
     /**
      * @inheritdoc
      */
-    public function setId($id) {
+    public function setId($id)
+    {
         $this->id = $id;
 
         return $this;
@@ -644,6 +649,23 @@ class ReportView implements ReportViewInterface
     {
         $this->preCalculateTable = $preCalculateTable;
 
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isRequireJoin()
+    {
+        return $this->requireJoin;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setRequireJoin($requireJoin)
+    {
+        $this->requireJoin = $requireJoin;
         return $this;
     }
 
