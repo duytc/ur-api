@@ -15,7 +15,7 @@ class RedLock
     function __construct(array $servers, $retryDelay = 200, $retryCount = 3)
     {
         $this->servers = $servers;
-        $this->retryDelay = $retryDelay;
+        $this->retryDelay = (int)$retryDelay;
         $this->retryCount = $retryCount;
         $this->quorum = min(count($servers), (count($servers) / 2 + 1));
     }
