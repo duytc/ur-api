@@ -13,6 +13,7 @@ class UpdateDataSetReloadCompleted implements JobInterface
     const JOB_NAME = 'updateDataSetReloadCompleted';
 
     const DATA_SET_ID = 'data_set_id';
+    const IS_FROM_PARSE_CHUNK_FILE = 'is_from_parse_chunk_file';
 
     /**
      * @var LoggerInterface
@@ -38,8 +39,9 @@ class UpdateDataSetReloadCompleted implements JobInterface
     public function run(JobParams $params)
     {
         $dataSetId = (int)$params->getRequiredParam(self::DATA_SET_ID);
+        $isFromParseChunkFile = (bool)$params->getParam(self::IS_FROM_PARSE_CHUNK_FILE);
 
         $this->logger->notice(sprintf('Updating for Data Set %d after reloading completed', $dataSetId));
-        $this->eventDispatcher->dispatch(DataSetReloadCompletedEvent::EVENT_NAME, new DataSetReloadCompletedEvent($dataSetId));
+        $this->eventDispatcher->dispatch(DataSetReloadCompletedEvent::EVENT_NAME, new DataSetReloadCompletedEvent($dataSetId, $isFromParseChunkFile));
     }
 }

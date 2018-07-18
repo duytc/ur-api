@@ -47,6 +47,10 @@ parameters:
 
     ur.redis.app_cache.host: 127.0.0.1
     ur.redis.app_cache.port: 6379 # default
+    ur.red_lock.retry_delay: 200 #milliseconds
+    ur.red_lock.retry_count: 3
+    ur.redis.auto_reload_augmentation_data_set_lock_key_ttl: 7200000 #milliseconds
+    ur.redis.auto_reload_augmentation_data_set_lock_key_prefix: 'ur:data-set:augmentation:auto-reload.lock_key_'
 
     ur.worker.process_linear_job_name: 'processLinearJob'
     ur.worker.concurrent_tube_name: 'ur-api-worker'

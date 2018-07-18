@@ -19,6 +19,7 @@ use UR\Repository\Core\LinkedMapDataSetRepositoryInterface;
 use UR\Service\DataSet\ReloadParams;
 use UR\Service\DataSet\ReloadParamsInterface;
 use UR\Service\DataSet\Synchronizer;
+use UR\Service\RedLock;
 use UR\Worker\Manager;
 
 class AutoReloadDataSetCommand extends ContainerAwareCommand
@@ -37,6 +38,9 @@ class AutoReloadDataSetCommand extends ContainerAwareCommand
     /** @var LinkedMapDataSetRepositoryInterface $linkedMapDataSetRepository */
     private $linkedMapDataSetRepository;
 
+    /** @var RedLock */
+    private $redLock;
+
     protected function configure()
     {
         $this
@@ -54,6 +58,9 @@ class AutoReloadDataSetCommand extends ContainerAwareCommand
 
         $this->workerManager = $container->get('ur.worker.manager');
         $this->dataSetManager = $container->get('ur.domain_manager.data_set');
+        $this->redLock = $container->get('ur.service.red_lock');
+        $expiry_time_for_lock = $container->getParameter('ur.redis.auto_reload_augmentation_data_set_lock_key_ttl');
+        $dataSetLockKeyPrefix = $container->getParameter('ur.redis.auto_reload_augmentation_data_set_lock_key_prefix');
 
         /** @var EntityManagerInterface $em */
         $em = $this->getContainer()->get('doctrine.orm.entity_manager');
@@ -72,27 +79,30 @@ class AutoReloadDataSetCommand extends ContainerAwareCommand
                 if ($linkedMapDataSet instanceof LinkedMapDataSetInterface) {
                     $mapDataSetId = $linkedMapDataSet->getMapDataSet()->getId();
                     if (!in_array($mapDataSetId, $mapDataSetProcessed)) {
-                        $this->processAutoReloadForAugmentation($linkedMapDataSet);
+                        $this->processAutoReloadForAugmentation($this->redLock, $dataSetLockKeyPrefix, $expiry_time_for_lock, $io, $linkedMapDataSet);
                     }
 
                     $mapDataSetProcessed[] = $mapDataSetId;
                 }
             }
-
             $io->section(sprintf('Reload all master data set successfully..!'));
         } catch (\Exception $e) {
             $io->warning(sprintf('Errors occurred when trying auto reload Master Data Set on Data Set Map data changed. Detail: %s', $e->getMessage()));
         }
-
         $conn->close();
     }
 
     /**
      * process Auto Reload For Augmentation: Reload master data set if map data set's data changed
      *
+     * @param RedLock $redLock
+     * @param $dataSetLockKeyPrefix
+     * @param $expiry_time_for_lock
+     * @param $io
      * @param LinkedMapDataSetInterface $linkedMapDataSet
+     * @throws \UR\Service\PublicSimpleException
      */
-    private function processAutoReloadForAugmentation(LinkedMapDataSetInterface $linkedMapDataSet = null)
+    private function processAutoReloadForAugmentation(RedLock $redLock, $dataSetLockKeyPrefix, $expiry_time_for_lock, SymfonyStyle $io, LinkedMapDataSetInterface $linkedMapDataSet = null)
     {
         if (!$linkedMapDataSet instanceof LinkedMapDataSetInterface) {
             return;
@@ -130,6 +140,18 @@ class AutoReloadDataSetCommand extends ContainerAwareCommand
 
                 if (!$masterDataSet instanceof DataSetInterface || !$masterDataSet->getAutoReload()) {
                     continue;
+                }
+
+                // create lock key on redis
+                $pid = getmypid();
+                $dataSetId = $masterDataSet->getId();
+                $lock = $redLock->lock($dataSetLockKeyPrefix . $dataSetId, $expiry_time_for_lock, [
+                    'pid' => $pid
+                ]);
+
+                if ($lock === false) {
+                    $io->section(sprintf('The master Data Set %s: The DataSet is already reloading in another process.', $dataSetId));
+                    return;
                 }
 
                 /* reload master data set by date range or reload all */

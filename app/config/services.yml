@@ -334,6 +334,7 @@ services:
             - '%data_source_entry_job_temp_file_dir%'
             - "%upload_file_dir%"
             - "@ur.pubvantage.worker.job_counter"
+            - '@ur.worker.scheduler.data_set_job_scheduler'
 
     ur.worker.job.concurrent.maintain_pre_calculate_table_for_large_report_view:
         class: UR\Worker\Job\Concurrent\MaintainPreCalculateTableForLargeReportView
@@ -623,6 +624,19 @@ services:
     ### end of concurrence worker pool
 
     # end of new worker design ---------------------------------------------------------------------------
+
+    ur.service.redis_cache:
+            class: Redis
+            calls:
+                - [connect, ["%ur.redis.app_cache.host%","%ur.redis.app_cache.port%"]]
+
+    ur.service.red_lock:
+            class: UR\Service\RedLock
+            arguments:
+                -
+                    - '@ur.service.redis_cache'
+                - '%ur.red_lock.retry_delay%'
+                - '%ur.red_lock.retry_count%'
 
     ur.service.alert.process_alert:
         class: UR\Service\Alert\ProcessAlert

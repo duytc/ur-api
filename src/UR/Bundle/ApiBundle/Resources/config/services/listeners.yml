@@ -126,6 +126,15 @@ services:
             - { name: kernel.event_listener, event: ur.event.data_set_reload_completed, method: onDataSetReloadCompleted }
             - { name: kernel.event_listener, event: ur.event.connected_data_source_reload_completed, method: onConnectedDataSourceReloadCompleted }
 
+    ur_api.event_listener.unlock_auto_reload_augmentation_data_set_lock_listener:
+        class: UR\Bundle\ApiBundle\EventListener\UnlockAutoReloadAugmentationDataSetLockListener
+        arguments:
+            - '@ur.repository.data_set'
+            - '@ur.service.red_lock'
+            - '%ur.redis.auto_reload_augmentation_data_set_lock_key_prefix%'
+        tags:
+            - { name: kernel.event_listener, event: ur.event.data_set_reload_completed, method: onDataSetReloadCompleted }
+
     ur_api.event_listener.update_next_alert_time_for_data_source_listener:
         class: UR\Bundle\ApiBundle\EventListener\UpdateNextAlertTimeForDataSourceListener
         arguments:

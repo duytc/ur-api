@@ -1400,7 +1400,6 @@ class SqlBuilder implements SqlBuilderInterface
 
         unset($metrics, $dimensions);
         $allFilters = $this->getFiltersForMultiDataSets($this->getSync(), $dataSets, $searches, $overridingFilters, $types, $joinConfig);
-
         // Add SELECT clause
         $selectedJoinFields = [];
         /** @var DataSetInterface $dataSet */

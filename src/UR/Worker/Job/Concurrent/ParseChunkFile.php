@@ -8,6 +8,7 @@ use Pubvantage\Worker\Job\JobInterface;
 use Pubvantage\Worker\JobCounterInterface;
 use Pubvantage\Worker\JobParams;
 use Pubvantage\Worker\Scheduler\DataSetJobScheduler;
+use Pubvantage\Worker\Scheduler\DataSetJobSchedulerInterface;
 use Redis;
 use Symfony\Component\Filesystem\Filesystem;
 use UR\DomainManager\ConnectedDataSourceManagerInterface;
@@ -23,6 +24,7 @@ use UR\Service\DataSource\MergeFiles;
 use UR\Service\Import\AutoImportDataInterface;
 use UR\Service\Import\ImportDataException;
 use UR\Worker\Job\Linear\LoadFileIntoDataSetSubJob;
+use UR\Worker\Job\Linear\UpdateDataSetReloadCompleted;
 use UR\Worker\Manager;
 
 class ParseChunkFile implements JobInterface
@@ -64,9 +66,12 @@ class ParseChunkFile implements JobInterface
     private $autoImportData;
     private $tempFileDirectory;
     private $uploadFileDirectory;
-    
+
     /** @var JobCounterInterface */
     private $jobCounter;
+
+    /** @var DataSetJobSchedulerInterface */
+    protected $scheduler;
 
     /**
      * ParseChunkFile constructor.
@@ -80,9 +85,10 @@ class ParseChunkFile implements JobInterface
      * @param $tempFileDirectory
      * @param $uploadFileDirectory
      * @param JobCounterInterface $jobCounter
+     * @param DataSetJobSchedulerInterface $scheduler
      */
     public function __construct(LoggerInterface $logger, Manager $manager, Redis $redis, DataSourceEntryManagerInterface $dataSourceEntryManager,
-                                ConnectedDataSourceManagerInterface $connectedDataSourceManager, AutoImportDataInterface $autoImportData, ImportHistoryManagerInterface $importHistoryManager, $tempFileDirectory, $uploadFileDirectory, JobCounterInterface $jobCounter)
+                                ConnectedDataSourceManagerInterface $connectedDataSourceManager, AutoImportDataInterface $autoImportData, ImportHistoryManagerInterface $importHistoryManager, $tempFileDirectory, $uploadFileDirectory, JobCounterInterface $jobCounter, DataSetJobSchedulerInterface $scheduler)
     {
         $this->logger = $logger;
         $this->manager = $manager;
@@ -95,6 +101,7 @@ class ParseChunkFile implements JobInterface
         $this->tempFileDirectory = $tempFileDirectory;
         $this->uploadFileDirectory = $uploadFileDirectory;
         $this->jobCounter = $jobCounter;
+        $this->scheduler = $scheduler;
     }
 
     public function getName(): string
@@ -104,10 +111,10 @@ class ParseChunkFile implements JobInterface
 
     public function run(JobParams $params)
     {
-        $importHistoryId = $params->getRequiredParam(self::IMPORT_HISTORY_ID);
+        $importHistoryId = (int)$params->getRequiredParam(self::IMPORT_HISTORY_ID);
         $chunkFailedKey = sprintf(LoadFileIntoDataSetSubJob::CHUNK_FAILED_KEY_TEMPLATE, $importHistoryId);
-        $connectedDataSourceId = $params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
-        $dataSourceEntryId = $params->getRequiredParam(self::DATA_SOURCE_ENTRY_ID);
+        $connectedDataSourceId = (int)$params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
+        $dataSourceEntryId = (int)$params->getRequiredParam(self::DATA_SOURCE_ENTRY_ID);
 
         $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
         if (!$connectedDataSource instanceof ConnectedDataSourceInterface) {
@@ -236,10 +243,24 @@ class ParseChunkFile implements JobInterface
             if ($alert instanceof ConnectedDataSourceAlertInterface && $alertProcessed == false) {
                 $this->manager->processAlert($alert->getAlertCode(), $connectedDataSource->getDataSource()->getPublisherId(), $alert->getDetails(), $alert->getDataSourceId());
             }
-         
-            //Decrease pending job count
+
+            // Decrease pending job count
             $linearTubeName = DataSetJobScheduler::getDataSetTubeName($dataSetId);
             $this->jobCounter->decrementPendingJobCount($linearTubeName);
+
+            // Data set now is really reloaded completely. Create job to notify again
+            // TODO: need review current jobs order where UpdateDataSetReloadCompleted job is early fired before all ParseChunkFile Jobs complete
+            // TODO: expected all ParseChunkFile Jobs completed then fire UpdateDataSetReloadCompleted job in order
+            $jobs = [
+                [
+                    'task' => UpdateDataSetReloadCompleted::JOB_NAME,
+                    UpdateDataSetReloadCompleted::IS_FROM_PARSE_CHUNK_FILE => true
+                ]
+            ];
+
+            // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once
+            // this will save a lot of execution time
+            $this->scheduler->addJob($jobs, $dataSetId, $params);
         }
     }
 
