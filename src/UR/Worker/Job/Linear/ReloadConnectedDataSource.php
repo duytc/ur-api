@@ -113,6 +113,13 @@ class ReloadConnectedDataSource implements SplittableJobInterface, ExpirableJobI
             // need update again because after overwriting total rows change
             $jobs[] = ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME];
             $jobs[] = ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME];
+            $jobs[] = [
+                'task' => UpdateChangedDateRangeForMapDataSetSubJob::JOB_NAME,
+                UpdateChangedDateRangeForMapDataSetSubJob::DATA_SET_ID => $dataSetId,
+                UpdateChangedDateRangeForMapDataSetSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId,
+                UpdateChangedDateRangeForMapDataSetSubJob::ACTION => UpdateChangedDateRangeForMapDataSetSubJob::ACTION_RELOAD_CONNECTED_DATA_SOURCE,
+                UpdateChangedDateRangeForMapDataSetSubJob::RELOAD_DATE_RANGE => ($reloadType == ReloadParamsInterface::DETECTED_DATE_RANGE_TYPE) ? [$reloadStartDate, $reloadEndDate] : [],
+            ];
         }
 
         // update connected data source that it is reload completed

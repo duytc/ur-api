@@ -2,6 +2,7 @@
 
 namespace UR\Model\Core;
 
+use DateTime;
 use Doctrine\Common\Collections\Collection;
 use UR\Model\User\Role\PublisherInterface;
 use UR\Model\User\UserEntityInterface;
@@ -23,10 +24,14 @@ class DataSet implements DataSetInterface
 
     /** auto reload data set*/
     protected $autoReload;
-    protected $startDate;
-    protected $endDate;
+    /** @var null|DateTime */
+    protected $changedStartDate;
+    /** @var null|DateTime */
+    protected $changedEndDate;
+    /** @var bool */
+    protected $isChangedDateRange;
+    /** @var string */
     protected $lastCheckSum;
-
 
     /**
      * @var int
@@ -70,7 +75,12 @@ class DataSet implements DataSetInterface
         $this->totalRow = 0;
         $this->numChanges = 0;
         $this->numConnectedDataSourceChanges = 0;
+
         $this->autoReload = false;
+        $this->changedStartDate = null;
+        $this->changedEndDate = null;
+        $this->isChangedDateRange = false;
+        $this->lastCheckSum = null;
     }
 
     /**
@@ -463,44 +473,60 @@ class DataSet implements DataSetInterface
     }
 
     /**
-     * @return string
+     * @inheritdoc
      */
-    public function getStartDate()
+    public function getChangedStartDate()
     {
-        return $this->startDate;
+        return $this->changedStartDate;
     }
 
     /**
-     * @param $startDate
-     * @return self
+     * @inheritdoc
      */
-    public function setStartDate($startDate)
+    public function setChangedStartDate($changedStartDate)
     {
-        $this->startDate = $startDate;
+        $this->changedStartDate = $changedStartDate;
         return $this;
     }
 
     /**
-     * @return string
+     * @inheritdoc
      */
-    public function getEndDate()
+    public function getChangedEndDate()
     {
-        return $this->endDate;
+        return $this->changedEndDate;
     }
 
     /**
-     * @param $endDate
-     * @return self
+     * @inheritdoc
      */
-    public function setEndDate($endDate)
+    public function setChangedEndDate($changedEndDate)
     {
-        $this->endDate = $endDate;
+        $this->changedEndDate = $changedEndDate;
 
         return $this;
     }
 
     /**
-     * @return string
+     * @inheritdoc
+     */
+    public function getIsChangedDateRange()
+    {
+        return $this->isChangedDateRange;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setIsChangedDateRange($isChangedDateRange)
+    {
+        $this->isChangedDateRange = $isChangedDateRange;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
      */
     public function getLastCheckSum()
     {
@@ -508,8 +534,7 @@ class DataSet implements DataSetInterface
     }
 
     /**
-     * @param $lastCheckSum
-     * @return self
+     * @inheritdoc
      */
     public function setLastCheckSum($lastCheckSum)
     {
@@ -519,16 +544,15 @@ class DataSet implements DataSetInterface
     }
 
     /**
-     * @return boolean
+     * @inheritdoc
      */
-    public function getAutoReload()
+    public function isAutoReload()
     {
         return $this->autoReload;
     }
 
     /**
-     * @param $autoReload
-     * @return self
+     * @inheritdoc
      */
     public function setAutoReload($autoReload = false)
     {

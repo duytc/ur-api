@@ -4,6 +4,8 @@
 namespace UR\Bundle\AppBundle\Command;
 
 
+use DateTime;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,6 +21,7 @@ use UR\Repository\Core\LinkedMapDataSetRepositoryInterface;
 use UR\Service\DataSet\ReloadParams;
 use UR\Service\DataSet\ReloadParamsInterface;
 use UR\Service\DataSet\Synchronizer;
+use UR\Service\Parser\Transformer\Column\DateFormat;
 use UR\Service\RedLock;
 use UR\Worker\Manager;
 
@@ -85,10 +88,12 @@ class AutoReloadDataSetCommand extends ContainerAwareCommand
                     $mapDataSetProcessed[] = $mapDataSetId;
                 }
             }
+
             $io->section(sprintf('Reload all master data set successfully..!'));
         } catch (\Exception $e) {
             $io->warning(sprintf('Errors occurred when trying auto reload Master Data Set on Data Set Map data changed. Detail: %s', $e->getMessage()));
         }
+
         $conn->close();
     }
 
@@ -114,9 +119,14 @@ class AutoReloadDataSetCommand extends ContainerAwareCommand
             return;
         }
 
+        /** @var LinkedMapDataSetInterface[]|Collection $linkedMapDataSets */
         $linkedMapDataSets = $this->linkedMapDataSetRepository->getByMapDataSet($mapDataSet);
 
-        /* we only reload master data set if map data set already up-to-date and map data set's data has changed */
+        /* we only reload master data set if:
+         * - map data set already up-to-date
+         * - and map data set's data has changed
+         * - and have changed date range
+         */
         // for checking data changed
         $currentCheckSum = $this->dataSetSynchronizer->getCheckSumOfDataImportTableByDataSetId($mapDataSet->getId());
         $lastCheckSum = $mapDataSet->getLastCheckSum();
@@ -126,19 +136,19 @@ class AutoReloadDataSetCommand extends ContainerAwareCommand
         $numConnectedDataSource = $mapDataSet->getNumConnectedDataSourceChanges();
 
         if ($currentCheckSum !== $lastCheckSum
-            && ($numChanges == 0 && $numConnectedDataSource == 0)
+            && ($numChanges == 0 && $numConnectedDataSource == 0 && $mapDataSet->getIsChangedDateRange())
         ) {
-            $startDate = $mapDataSet->getStartDate();
-            $endDate = $mapDataSet->getEndDate();
+            $startDate = $mapDataSet->getChangedStartDate();
+            $endDate = $mapDataSet->getChangedEndDate();
 
             unset($linkedMapDataSet);
+
             /* Need reload all master data set of this map data set */
             foreach ($linkedMapDataSets as $linkedMapDataSet) {
-
                 /** @var DataSetInterface $masterDataSet */
                 $masterDataSet = $linkedMapDataSet->getConnectedDataSource()->getDataSet();
 
-                if (!$masterDataSet instanceof DataSetInterface || !$masterDataSet->getAutoReload()) {
+                if (!$masterDataSet instanceof DataSetInterface || !$masterDataSet->isAutoReload()) {
                     continue;
                 }
 
@@ -156,22 +166,30 @@ class AutoReloadDataSetCommand extends ContainerAwareCommand
 
                 /* reload master data set by date range or reload all */
                 // TODO: check case either startDate or endDate is null, so which value will be used? ...
-                if (!is_null($startDate) || !is_null($endDate)) {
+                if ($startDate instanceof DateTime && $endDate instanceof DateTime) {
                     $reloadParams = new ReloadParams(
                         ReloadParamsInterface::DETECTED_DATE_RANGE_TYPE,
-                        $startDate,
-                        $endDate
+                        $startDate->format(DateFormat::DEFAULT_DATE_FORMAT),
+                        $endDate->format(DateFormat::DEFAULT_DATE_FORMAT)
                     );
 
                     $this->workerManager->reloadDataSetByDateRange($masterDataSet, $reloadParams);
                 } else {
+                    // known startDate = endDate = null => reload all for data set
                     $this->workerManager->reloadAllForDataSet($masterDataSet);
                 }
-
             }
 
-            /* do update last checksum for map data set */
-            $mapDataSet->setLastCheckSum($currentCheckSum);
+            /* update map data set */
+            $mapDataSet
+                // update last checksum
+                ->setLastCheckSum($currentCheckSum)
+                // reset date range
+                ->setChangedStartDate(null)
+                ->setChangedEndDate(null)
+                // reset changed date range
+                ->setIsChangedDateRange(false);
+
             $this->dataSetManager->save($mapDataSet);
         }
     }

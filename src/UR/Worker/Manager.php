@@ -201,11 +201,13 @@ class Manager
     /**
      * @param $connectedDataSourceId
      * @param $dataSetId
+     * @param array $deletedDateRange
      */
-    public function deleteConnectedDataSource($connectedDataSourceId, $dataSetId)
+    public function deleteConnectedDataSource($connectedDataSourceId, $dataSetId, array $deletedDateRange = [])
     {
         $deleteConnectedDataSource = [
             'task' => DeleteConnectedDataSource::JOB_NAME,
+            DeleteConnectedDataSource::DELETED_DATE_RANGE => $deletedDateRange,
             DeleteConnectedDataSource::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId
         ];
 
@@ -215,12 +217,14 @@ class Manager
     /**
      * @param array $importHistoryIds
      * @param int $dataSetId
+     * @param array $deletedDateRange
      */
-    public function undoImportHistories($importHistoryIds, $dataSetId)
+    public function undoImportHistories(array $importHistoryIds, $dataSetId, array $deletedDateRange = [])
     {
         $undoImportHistories = [
             'task' => UndoImportHistories::JOB_NAME,
-            UndoImportHistories::IMPORT_HISTORY_IDS => $importHistoryIds
+            UndoImportHistories::IMPORT_HISTORY_IDS => $importHistoryIds,
+            UndoImportHistories::DELETED_DATE_RANGE => $deletedDateRange
         ];
 
         $this->dataSetJobScheduler->addJob($undoImportHistories, $dataSetId);

@@ -12,6 +12,7 @@ class UndoImportHistories implements SplittableJobInterface
 
     const DATA_SET_ID = 'data_set_id';
     const IMPORT_HISTORY_IDS = 'import_history_ids';
+    const DELETED_DATE_RANGE = 'deleted_date_range';
 
     /**
      * @var DataSetJobSchedulerInterface
@@ -46,6 +47,7 @@ class UndoImportHistories implements SplittableJobInterface
         // do create all linear jobs for each files
         $dataSetId = (int)$params->getRequiredParam(self::DATA_SET_ID);
         $importHistoryIds = $params->getRequiredParam(self::IMPORT_HISTORY_IDS);
+        $deletedDateRange = $params->getParam(self::DELETED_DATE_RANGE, []);
 
         if (!is_array($importHistoryIds)) {
             return;
@@ -62,6 +64,13 @@ class UndoImportHistories implements SplittableJobInterface
             ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
             ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
+            [
+                'task' => UpdateChangedDateRangeForMapDataSetSubJob::JOB_NAME,
+                UpdateChangedDateRangeForMapDataSetSubJob::DATA_SET_ID => $dataSetId,
+                UpdateChangedDateRangeForMapDataSetSubJob::IMPORT_HISTORY_ID => $importHistoryIds,
+                UpdateChangedDateRangeForMapDataSetSubJob::DELETED_DATE_RANGE => $deletedDateRange,
+                UpdateChangedDateRangeForMapDataSetSubJob::ACTION => UpdateChangedDateRangeForMapDataSetSubJob::ACTION_UNDO_IMPORT,
+            ],
         ]);
 
         $this->scheduler->addJob($jobs, $dataSetId, $params);

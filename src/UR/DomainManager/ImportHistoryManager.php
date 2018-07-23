@@ -15,7 +15,6 @@ use UR\Model\Core\ImportHistoryInterface;
 use UR\Model\ModelInterface;
 use UR\Model\PagerParam;
 use UR\Repository\Core\ImportHistoryRepositoryInterface;
-use UR\Worker\Manager;
 
 class ImportHistoryManager implements ImportHistoryManagerInterface
 {
@@ -87,6 +86,14 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
     /**
      * @inheritdoc
      */
+    public function getImportedData(ImportHistoryInterface $importHistory, $limit = null)
+    {
+        return $this->repository->getImportedData($importHistory, $limit);
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getImportedHistoryByDataSet(DataSetInterface $dataSet)
     {
         return $this->repository->getImportedHistoryByDataSet($dataSet);
@@ -137,8 +144,7 @@ class ImportHistoryManager implements ImportHistoryManagerInterface
         return $this->repository->getImportHistoryByDataSourceEntryWithoutDataSet($dataSourceEntry);
     }
 
-
-    public function deleteImportHistoryByConnectedDataSourceAndEntry ($connectedDataSource, $dataSourceEntry)
+    public function deleteImportHistoryByConnectedDataSourceAndEntry($connectedDataSource, $dataSourceEntry)
     {
         $importHistories = $this->findImportHistoriesByDataSourceEntryAndConnectedDataSource($dataSourceEntry, $connectedDataSource);
         if ($importHistories instanceof Collection) {

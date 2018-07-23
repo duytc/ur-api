@@ -59,6 +59,11 @@ class RemoveAllDataFromDataSet implements JobInterface
             ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
             ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
+            [
+                'task' => UpdateChangedDateRangeForMapDataSetSubJob::JOB_NAME,
+                UpdateChangedDateRangeForMapDataSetSubJob::DATA_SET_ID => $dataSetId,
+                UpdateChangedDateRangeForMapDataSetSubJob::ACTION => UpdateChangedDateRangeForMapDataSetSubJob::ACTION_REMOVE_ALL_DATA_DATA_SET,
+            ],
         ], $dataSetId, $params);
     }
 }

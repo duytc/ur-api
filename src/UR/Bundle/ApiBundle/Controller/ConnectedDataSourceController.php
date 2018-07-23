@@ -11,6 +11,7 @@ use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UR\Bundle\ApiBundle\Behaviors\GetChangedDateRangeTrait;
 use UR\Domain\DTO\ConnectedDataSource\DryRunParamsInterface;
 use UR\Entity\Core\DataSourceEntry;
 use UR\Handler\HandlerInterface;
@@ -26,6 +27,8 @@ use UR\Service\Import\PublicImportDataException;
  */
 class ConnectedDataSourceController extends RestControllerAbstract implements ClassResourceInterface
 {
+    use GetChangedDateRangeTrait;
+
     /**
      * Get all connectedDataSource
      *
@@ -404,7 +407,9 @@ class ConnectedDataSourceController extends RestControllerAbstract implements Cl
         $connectedDataSourceId = $connectedDataSource->getId();
         $dataSetId = $connectedDataSource->getDataSet()->getId();
 
-        $this->get('ur.worker.manager')->deleteConnectedDataSource($connectedDataSourceId, $dataSetId);
+        $deletedDateRange = $this->getChangedDateRangeForConnectedDataSource($connectedDataSource);
+        $this->get('ur.worker.manager')->deleteConnectedDataSource($connectedDataSourceId, $dataSetId, $deletedDateRange);
+
         $this->delete($id);
 
         $view = $this->view(null, Codes::HTTP_NO_CONTENT);

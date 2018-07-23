@@ -20,8 +20,9 @@ class DataSet extends DataSetModel
     protected $lastActivity;
     protected $importHistories;
     protected $autoReload;
-    protected $startDate;
-    protected $endDate;
+    protected $changedStartDate;
+    protected $changedEndDate;
+    protected $isChangedDateRange;
     protected $lastCheckSum;
 
     /** @var UserEntityInterface */
@@ -47,6 +48,7 @@ class DataSet extends DataSetModel
     protected $mapBuilderConfigs;
 
     protected $customIndexConfig;
+
     /**
      * @inheritdoc
      *

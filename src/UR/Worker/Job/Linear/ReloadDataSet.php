@@ -163,6 +163,13 @@ class ReloadDataSet implements SplittableJobInterface, ExpirableJobInterface
 
             // also update connected data source total row similar above
             $jobs[] = ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME];
+
+            $jobs[] = [
+                'task' => UpdateChangedDateRangeForMapDataSetSubJob::JOB_NAME,
+                UpdateChangedDateRangeForMapDataSetSubJob::DATA_SET_ID => $dataSetId,
+                UpdateChangedDateRangeForMapDataSetSubJob::ACTION => UpdateChangedDateRangeForMapDataSetSubJob::ACTION_RELOAD_DATA_SET,
+                UpdateChangedDateRangeForMapDataSetSubJob::RELOAD_DATE_RANGE => ($reloadType == ReloadParamsInterface::DETECTED_DATE_RANGE_TYPE) ? [$reloadStartDate, $reloadEndDate] : [],
+            ];
         }
 
         $jobs[] = ['task' => UpdateDataSetReloadCompleted::JOB_NAME];

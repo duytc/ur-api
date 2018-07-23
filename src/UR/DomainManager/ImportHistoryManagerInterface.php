@@ -14,6 +14,13 @@ use UR\Model\PagerParam;
 interface ImportHistoryManagerInterface extends ManagerInterface
 {
     /**
+     * @param ImportHistoryInterface $importedHistory
+     * @param null|int $limit
+     * @return mixed
+     */
+    public function getImportedData(ImportHistoryInterface $importedHistory, $limit = null);
+
+    /**
      * @param DataSetInterface $dataSet
      * @return mixed
      */
@@ -66,7 +73,7 @@ interface ImportHistoryManagerInterface extends ManagerInterface
 
     public function deleteImportHistoriesByIds(array $importHistoryIds);
 
-    public function deleteImportHistoryByConnectedDataSourceAndEntry ($connectedDataSource, $dataSourceEntry);
+    public function deleteImportHistoryByConnectedDataSourceAndEntry($connectedDataSource, $dataSourceEntry);
 
     /**
      * @param DataSourceEntryInterface $dataSourceEntry

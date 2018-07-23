@@ -2,7 +2,6 @@
 
 namespace UR\Repository\Core;
 
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityRepository;
@@ -23,7 +22,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         'id' => 'id',
         'dataSet' => 'dataSet',
         'dataSource' => 'dataSource',
-        'dataSourceEntryFileName'=> 'dataSourceEntry.fileName',
+        'dataSourceEntryFileName' => 'dataSourceEntry.fileName',
         'createdDate' => 'createdDate',
         'dataSourceEntryDataSourceName' => 'dataSourceEntry.dataSource.name'
     ];
@@ -107,7 +106,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
                     $qb->addOrderBy('dse.fileName', $param->getSortDirection());
                     break;
                 case $this->SORT_FIELDS['createdDate']:
-                    $qb->addOrderBy('ih.'. $param->getSortField(), $param->getSortDirection());
+                    $qb->addOrderBy('ih.' . $param->getSortField(), $param->getSortDirection());
                     break;
                 case $this->SORT_FIELDS['dataSourceEntryDataSourceName']:
                     $qb->addOrderBy('ds.name', $param->getSortDirection());
@@ -189,9 +188,6 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
             $stmt->bindValue(1, $importHistory->getId());
             $stmt->execute();
             $this->_em->remove($importHistory);
-
-            //TODO UPDATE TOTAL ROW
-//            $this->updateDataSetTotalRow($importHistory->getDataSet()->getId());
         }
 
         $this->_em->flush();
@@ -254,9 +250,7 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         $qb = $conn->createQueryBuilder()
             ->select($selectedFields)
             ->from($dataSetSynchronizer->getDataSetImportTableName($dataSetId), 'd')
-            ->where('d.__import_id = ' . $importHistory->getId())
-        ;
-
+            ->where('d.__import_id = ' . $importHistory->getId());
 
         if ($limit === null) {
             $stmt = $qb->execute();
@@ -382,7 +376,6 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
         return $stmt->execute();
     }
 
-
     public function deletePreviousImports($importHistories, ConnectedDataSourceInterface $connectedDataSource)
     {
         $conn = $this->_em->getConnection();
@@ -394,9 +387,6 @@ class ImportHistoryRepository extends EntityRepository implements ImportHistoryR
             $stmt->bindValue(1, $importHistory->getId());
             $stmt->execute();
             $this->_em->remove($importHistory);
-
-            //TODO update total rows of data set
-//            $this->updateDataSetTotalRow($importHistory->getDataSet()->getId());
         }
 
         $this->_em->flush();

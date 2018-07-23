@@ -68,6 +68,12 @@ class LoadFilesIntoDataSet implements SplittableJobInterface
                 ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
                 ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
                 ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
+                [
+                    'task' => UpdateChangedDateRangeForMapDataSetSubJob::JOB_NAME,
+                    UpdateChangedDateRangeForMapDataSetSubJob::DATA_SET_ID => $dataSetId,
+                    UpdateChangedDateRangeForMapDataSetSubJob::ENTRY_IDS => $entryIds,
+                    UpdateChangedDateRangeForMapDataSetSubJob::ACTION => UpdateChangedDateRangeForMapDataSetSubJob::ACTION_NEW_ENTRY,
+                ],
             ]);
 
             // since we can guarantee order. We can batch load many files and then run 1 job to update overwrite date once

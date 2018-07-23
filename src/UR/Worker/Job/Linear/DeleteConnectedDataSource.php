@@ -15,6 +15,7 @@ class DeleteConnectedDataSource implements SplittableJobInterface
 
     const DATA_SET_ID = 'data_set_id';
     const CONNECTED_DATA_SOURCE_ID = 'connected_data_source_id';
+    const DELETED_DATE_RANGE = 'deleted_date_range';
 
     /**
      * @var DataSetJobSchedulerInterface
@@ -31,11 +32,10 @@ class DeleteConnectedDataSource implements SplittableJobInterface
      */
     protected $importHistoryManager;
 
-    /** @var ConnectedDataSourceManagerInterface  */
+    /** @var ConnectedDataSourceManagerInterface */
     private $connectedDataSourceManager;
 
-    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger,  ConnectedDataSourceManagerInterface $connectedDataSourceManager
-    )
+    public function __construct(DataSetJobSchedulerInterface $scheduler, LoggerInterface $logger, ConnectedDataSourceManagerInterface $connectedDataSourceManager)
     {
         $this->scheduler = $scheduler;
         $this->logger = $logger;
@@ -51,6 +51,7 @@ class DeleteConnectedDataSource implements SplittableJobInterface
     {
         // do create all linear jobs for each files
         $dataSetId = (int)$params->getRequiredParam(self::DATA_SET_ID);
+        $deletedDateRange = $params->getParam(self::DELETED_DATE_RANGE, []);
         $connectedDataSourceId = (int)$params->getRequiredParam(self::CONNECTED_DATA_SOURCE_ID);
         $connectedDataSource = $this->connectedDataSourceManager->find($connectedDataSourceId);
 
@@ -67,6 +68,13 @@ class DeleteConnectedDataSource implements SplittableJobInterface
             ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
             ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
+            [
+                'task' => UpdateChangedDateRangeForMapDataSetSubJob::JOB_NAME,
+                UpdateChangedDateRangeForMapDataSetSubJob::DATA_SET_ID => $dataSetId,
+                UpdateChangedDateRangeForMapDataSetSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId,
+                UpdateChangedDateRangeForMapDataSetSubJob::DELETED_DATE_RANGE => $deletedDateRange,
+                UpdateChangedDateRangeForMapDataSetSubJob::ACTION => UpdateChangedDateRangeForMapDataSetSubJob::ACTION_REMOVE_CONNECTED_DATA_SOURCE,
+            ],
         ], $dataSetId, $params);
     }
 }

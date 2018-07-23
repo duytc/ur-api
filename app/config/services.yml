@@ -476,6 +476,15 @@ services:
             - @monolog.logger
             - @ur.service.data_set.update_total_row
 
+    ur.worker.job.linear.update_changed_date_range_for_map_data_set_sub_job:
+        class: UR\Worker\Job\Linear\UpdateChangedDateRangeForMapDataSetSubJob
+        arguments:
+            - '@monolog.logger'
+            - '@ur.domain_manager.data_set'
+            - '@ur.domain_manager.connected_data_source'
+            - '@ur.domain_manager.data_source_entry'
+            - '@ur.domain_manager.import_history'
+
     ur.worker.job.linear.worker_pool:
         class: Pubvantage\Worker\JobWorkerPool
         arguments:
@@ -506,6 +515,7 @@ services:
                 - @ur.worker.job.concurrent.parse_chunk_file
                 - @ur.worker.job.linear.update_augmented_data_set_status
                 - @ur.worker.job.linear.update_augmented_data_set_status_sub_job
+                - @ur.worker.job.linear.update_changed_date_range_for_map_data_set_sub_job
 
     ### end of linear worker pool
 

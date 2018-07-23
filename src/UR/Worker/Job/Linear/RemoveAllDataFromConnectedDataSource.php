@@ -61,6 +61,12 @@ class RemoveAllDataFromConnectedDataSource implements SplittableJobInterface
             ['task' => UpdateDataSetTotalRowSubJob::JOB_NAME],
             ['task' => UpdateAllConnectedDataSourcesTotalRowForDataSetSubJob::JOB_NAME],
             ['task' => UpdateAugmentedDataSetStatus::JOB_NAME],
+            [
+                'task' => UpdateChangedDateRangeForMapDataSetSubJob::JOB_NAME,
+                UpdateChangedDateRangeForMapDataSetSubJob::DATA_SET_ID => $dataSetId,
+                UpdateChangedDateRangeForMapDataSetSubJob::CONNECTED_DATA_SOURCE_ID => $connectedDataSourceId,
+                UpdateChangedDateRangeForMapDataSetSubJob::ACTION => UpdateChangedDateRangeForMapDataSetSubJob::ACTION_REMOVE_ALL_DATA_CONNECTED_DATA_SOURCE,
+            ],
         ]);
 
         $this->scheduler->addJob($jobs, $dataSetId, $params);

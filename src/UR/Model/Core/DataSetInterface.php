@@ -25,7 +25,7 @@ interface DataSetInterface extends ModelInterface
     const DIMENSIONS_COLUMN = 'dimensions';
     const METRICS_COLUMN = 'metrics';
     const TOTAL_ROW = 'totalRow';
-    
+
     /**
      * @param mixed $id
      */
@@ -252,9 +252,9 @@ interface DataSetInterface extends ModelInterface
     public function setCustomIndexConfig($customIndexConfig);
 
     /**
-     * @return string
+     * @return bool
      */
-    public function getAutoReload();
+    public function isAutoReload();
 
     /**
      * @param $autoReload
@@ -263,26 +263,37 @@ interface DataSetInterface extends ModelInterface
     public function setAutoReload($autoReload = false);
 
     /**
-     * @return string
+     * @return \DateTime
      */
-    public function getStartDate();
+    public function getChangedStartDate();
 
     /**
      * @param $startDate
      * @return self
      */
-    public function setStartDate($startDate);
+    public function setChangedStartDate($startDate);
 
     /**
-     * @return string
+     * @return \DateTime
      */
-    public function getEndDate();
+    public function getChangedEndDate();
 
     /**
      * @param $endDate
      * @return self
      */
-    public function setEndDate($endDate);
+    public function setChangedEndDate($endDate);
+
+    /**
+     * @return bool
+     */
+    public function getIsChangedDateRange();
+
+    /**
+     * @param bool $isChangedDateRange
+     * @return self
+     */
+    public function setIsChangedDateRange($isChangedDateRange);
 
     /**
      * @return string
