@@ -97,6 +97,9 @@ UR\Entity\Core\ReportView:
             options:
                 default: true
             nullable: false
+        calculatedMetrics:
+            type: json_array
+            nullable: true
     manyToOne:
         publisher:
             targetEntity: UR\Bundle\UserSystem\PublisherBundle\Entity\User

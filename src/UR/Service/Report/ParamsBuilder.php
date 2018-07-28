@@ -2,10 +2,12 @@
 
 namespace UR\Service\Report;
 
+use DateTime;
 use Doctrine\ORM\PersistentCollection;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use UR\Behaviors\JoinConfigUtilTrait;
 use UR\Behaviors\ReportViewUtilTrait;
+use UR\Domain\DTO\Report\CalculatedMetrics\AddCalculatedMetrics;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Filters\DateFilter;
 use UR\Domain\DTO\Report\Formats\ColumnPositionFormat;
@@ -30,7 +32,6 @@ use UR\Domain\DTO\Report\Transforms\ReplaceTextTransform;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
 use UR\Exception\InvalidArgumentException;
-use UR\Model\Core\OptimizationRuleInterface;
 use UR\Model\Core\ReportViewDataSetInterface;
 use UR\Model\Core\ReportViewInterface;
 use UR\Service\DTO\Report\WeightedCalculation;
@@ -67,6 +68,7 @@ class ParamsBuilder implements ParamsBuilderInterface
     const DIMENSIONS_KEY = 'dimensions';
     const METRICS_KEY = 'metrics';
     const METRIC_CALCULATIONS = 'metricCalculations';
+    const CALCULATED_METRICS = 'calculatedMetrics';
 
     /**
      * @inheritdoc
@@ -185,10 +187,24 @@ class ParamsBuilder implements ParamsBuilderInterface
 
         if (array_key_exists(self::START_DATE, $data) && !empty($data[self::START_DATE])) {
             $param->setStartDate(new \DateTime($data[self::START_DATE]));
+        }else {
+            // set startDate automatically based on filter dateTime with userProvider = true
+            $startDate = $this->getStartAndEndDateBasedOnFilterDate($data[self::DATA_SET_KEY], 'startDate');
+
+            if (isset($startDate) && !empty($startDate)) {
+                $param->setStartDate($startDate);
+            }
         }
 
         if (array_key_exists(self::END_DATE, $data) && !empty($data[self::END_DATE])) {
             $param->setEndDate(new \DateTime($data[self::END_DATE]));
+        } else {
+            // set startDate automatically based on filter dateTime with userProvider = true
+            $endDate = $this->getStartAndEndDateBasedOnFilterDate($data[self::DATA_SET_KEY], 'endDate');
+
+            if (isset($endDate) && !empty($endDate)) {
+                $param->setEndDate($endDate);
+            }
         }
 
         if (array_key_exists(self::REPORT_VIEW_ID, $data) && !empty($data[self::REPORT_VIEW_ID])) {
@@ -218,7 +234,60 @@ class ParamsBuilder implements ParamsBuilderInterface
             $param->setSearches($searches);
         }
 
+        if (array_key_exists(self::CALCULATED_METRICS, $data) && !empty($data[self::CALCULATED_METRICS])) {
+            $calculatedMetrics = $this->createCalculatedMetrics($data[self::CALCULATED_METRICS]);
+            $param->setCalculatedMetrics($calculatedMetrics);
+        }
+
         return $param;
+    }
+
+    /**
+     * @param $dataSets
+     * @param $typeToReturn
+     * @return array|DateTime|mixed|null
+     */
+    private function getStartAndEndDateBasedOnFilterDate($dataSets, $typeToReturn) {
+        foreach ($dataSets as $dataSet) {
+            if (!is_array($dataSet)) {
+                throw new InvalidArgumentException(sprintf('expect array, got %s', gettype($dataSet)));
+            }
+
+            $currentFilters = $dataSet['filters'];
+
+            foreach ($currentFilters as $currentFilter) {
+                if (!is_array($currentFilter)) {
+                    continue;
+                }
+
+                if (!array_key_exists('type', $currentFilter) || $currentFilter['type'] != 'date') {
+                    continue;
+                }
+
+                $filterDate = new DateFilter($currentFilter);
+
+                switch ($typeToReturn) {
+                    case self::START_DATE:
+                        $date = $filterDate->getStartDate();
+                        break;
+                    case self::END_DATE:
+                        $date = $filterDate->getEndDate();
+                        break;
+                    default:
+                        break;
+                }
+
+                if (isset($date) && !$date instanceof DateTime) {
+                    $date = new DateTime($date);
+                }
+
+                break;
+            }
+
+
+        }
+
+        return isset($date) ? $date : null;
     }
 
     /**
@@ -502,6 +571,27 @@ class ParamsBuilder implements ParamsBuilderInterface
         }
 
         return $transformObjects;
+    }
+
+    /**
+     * @param $calculatedMetrics
+     * @return array
+     * @throws \Exception
+     */
+    public function createCalculatedMetrics($calculatedMetrics)
+    {
+        if (!is_array($calculatedMetrics)) {
+            return [];
+        }
+        $calculatedMetricsObjects = [];
+        foreach ($calculatedMetrics as $calculatedMetric) {
+
+            $expressionLanguage = new ExpressionLanguage();
+
+            $calculatedMetricsObjects[] = new AddCalculatedMetrics($expressionLanguage, $calculatedMetric);
+        }
+
+        return $calculatedMetricsObjects;
     }
 
     /**

@@ -530,19 +530,23 @@ class ReportViewController extends RestControllerAbstract implements ClassResour
     public function postAction(Request $request)
     {
         $view = $this->post($request);
-        $statusCode = $view->getStatusCode();
-        if (!in_array($statusCode, [200, 201])) {
-            return $view;
+        if ($view instanceof View) {
+            $statusCode = $view->getStatusCode();
+            if (!in_array($statusCode, [200, 201])) {
+                return $view;
+            }
+
+            $routeParameters = $view->getRouteParameters();
+            if (!array_key_exists('id', $routeParameters)) {
+                return $view;
+            }
+
+            $id = $routeParameters['id'];
+
+            return $this->getAction($id);
         }
 
-        $routeParameters = $view->getRouteParameters();
-        if (!array_key_exists('id', $routeParameters)) {
-            return $view;
-        }
-
-        $id = $routeParameters['id'];
-
-        return $this->getAction($id);
+        return $view;
     }
 
     /**

@@ -22,7 +22,8 @@ class ReportViewTemplateFormType extends AbstractRoleSpecificFormType
             ->add('showInTotal')
             ->add('showDataSetName')
             ->add('dimensions')
-            ->add('metrics');
+            ->add('metrics')
+            ->add('calculatedMetrics');
 
         $builder->add('reportViewTemplateTags', CollectionType::class, array(
             'mapped' => true,

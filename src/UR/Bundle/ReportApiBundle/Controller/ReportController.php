@@ -35,12 +35,13 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
      *  section = "admin",
      *  resource = true,
      *  statusCodes = {
-     *      200 = "Returned when successful"
+     *      200 = "Returned when successful",
+     *      400 = "Returned when the submitted data has errors"
      *  }
      * )
      *
      * @param Request $request
-     * @return array
+     * @return mixed
      */
     public function reportAction(Request $request)
     {
@@ -52,7 +53,17 @@ class ReportController extends RestControllerAbstract implements ClassResourceIn
             $reportViewRepository->updateLastRun($params->getReportViewId());
         }
 
-        $result = $this->getReport($params);
+        try {
+            $result = $this->getReport($params);
+        } catch (\Exception $exception) {
+            return $this->view(
+                [
+                    'message' => $exception->getMessage(),
+                    'code' => $exception->getCode()
+                ],
+                $exception->getCode()
+            );
+        }
 
         return $result;
     }

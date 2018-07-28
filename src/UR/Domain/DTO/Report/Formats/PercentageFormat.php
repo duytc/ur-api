@@ -62,6 +62,7 @@ class PercentageFormat extends AbstractFormat implements PercentageFormatInterfa
         $rows = $reportResult->getRows();
         $totals = $reportResult->getTotal();
         $averages = $reportResult->getAverage();
+        $calculatedMetricsResult = $reportResult->getCalculatedMetricsResult();
 
         $neededFormatFields = $this->getFields();
         if (!empty($neededFormatFields)) {
@@ -79,7 +80,7 @@ class PercentageFormat extends AbstractFormat implements PercentageFormatInterfa
                     $row[$neededFormatField] = $convertedString;
                 }
                 $newRows->push($row);
-                unset($row);
+                unset($row, $value);
             }
 
             unset($rows, $row);
@@ -101,8 +102,22 @@ class PercentageFormat extends AbstractFormat implements PercentageFormatInterfa
 
                 $averages[$neededFormatField] = $this->formatPercentage($averageValue, $this->getPrecision());
             }
+
+            /* format for calculated metrics */
+            foreach ($neededFormatFields as $neededFormatField) {
+                if (!array_key_exists($neededFormatField, $calculatedMetricsResult)) continue;
+
+                $valueCalculatedMetric = $calculatedMetricsResult[$neededFormatField];
+                if (!is_numeric($valueCalculatedMetric)) continue;
+
+                $calculatedMetricsResult[$neededFormatField] = $this->formatPercentage($valueCalculatedMetric, $this->getPrecision());
+            }
+
+            unset($totalValue, $averageValue, $valueCalculatedMetric);
+
             $reportResult->setTotal($totals);
             $reportResult->setAverage($averages);
+            $reportResult->setCalculatedMetricsResult($calculatedMetricsResult);
         }
 
         return $reportResult;

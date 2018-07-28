@@ -97,4 +97,12 @@ interface SqlBuilderInterface
      * @return mixed
      */
     public function buildIndexSQLForPreCalculateTable(ParamsInterface $params, $preCalculateTable);
+
+    /**
+     * @param $column
+     * @param $arraySubMetricMacroExpression
+     * @param ParamsInterface $params
+     * @return mixed
+     */
+    public function executeQueryGetMetricValue($column, $arraySubMetricMacroExpression, ParamsInterface $params);
 }

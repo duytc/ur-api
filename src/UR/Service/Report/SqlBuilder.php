@@ -368,7 +368,7 @@ class SqlBuilder implements SqlBuilderInterface
             }
         }
 
-        gc_collect_cycles();
+        //gc_collect_cycles();
 
         return array(
             self::STATEMENT_KEY => $stmt,
@@ -1836,5 +1836,57 @@ class SqlBuilder implements SqlBuilderInterface
         $this->isLargeReportView($reportView, $this->largeThreshold) &&
         !empty($reportView->getPreCalculateTable()) &&
         $this->getSync()->getTable($reportView->getPreCalculateTable()) instanceof Table;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function executeQueryGetMetricValue($column, $arraySubMetricMacroExpression, ParamsInterface $params)
+    {
+        $fieldTypes = $params->getFieldTypes();
+
+        $qb = $this->connection->createQueryBuilder();
+
+        $qb->addSelect(sprintf('%s', $this->connection->quoteIdentifier(trim($column))));
+
+        foreach ($arraySubMetricMacroExpression as $dimension => $value) {
+            $isDateType = $this->checkingDateTypeForDimension($fieldTypes, trim($dimension));
+
+            if ($isDateType == true) {
+                $qb->andWhere(sprintf('DATE(%s) = DATE("%s")', $this->connection->quoteIdentifier(trim($dimension)), $value));
+            } else {
+                $qb->andWhere(sprintf('%s = "%s"', $this->connection->quoteIdentifier(trim($dimension)), $value));
+            }
+        }
+
+        $qb->from($this->connection->quoteIdentifier(sprintf(self::TEMPORARY_TABLE_FOURTH_TEMPLATE, $params->getTemporarySuffix())));
+
+        $qb = $this->addSortQuery($qb, $params->getTransforms(), $params->getSortField(), $params->getOrderBy());
+
+        $value = $qb->execute()->fetch();
+
+        if (is_array($value) && array_key_exists($column, $value)) {
+
+            return $value[$column];
+        } else {
+
+            return 0;
+        }
+    }
+
+    private function checkingDateTypeForDimension($fieldTypes, $dimension)
+    {
+        if (!is_array($fieldTypes) || empty($fieldTypes)) {
+            return null;
+        }
+
+        foreach ($fieldTypes as $field => $fieldType) {
+
+            if ($field == $dimension && in_array($fieldType, ['date', 'datetime'])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

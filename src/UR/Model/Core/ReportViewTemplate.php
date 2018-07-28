@@ -38,6 +38,9 @@ class ReportViewTemplate implements ReportViewTemplateInterface
     /** @var  array */
     protected $metrics;
 
+    /** @var  array */
+    protected $calculatedMetrics;
+
     /** @var  ReportViewTemplateTagInterface[] */
     protected $reportViewTemplateTags;
 
@@ -258,6 +261,24 @@ class ReportViewTemplate implements ReportViewTemplateInterface
     public function setReportViewTemplateTags($reportViewTemplateTags)
     {
         $this->reportViewTemplateTags = $reportViewTemplateTags;
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCalculatedMetrics()
+    {
+        return $this->calculatedMetrics;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setCalculatedMetrics($calculatedMetrics)
+    {
+        $this->calculatedMetrics = $calculatedMetrics;
 
         return $this;
     }

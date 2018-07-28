@@ -4,6 +4,7 @@
 namespace UR\Domain\DTO\Report;
 
 
+use UR\Domain\DTO\Report\CalculatedMetrics\AddCalculatedMetricsInterface;
 use UR\Domain\DTO\Report\DataSets\DataSetInterface;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\Transforms\SortByTransform;
@@ -39,6 +40,12 @@ class Params implements ParamsInterface
      * @var TransformInterface[]
      */
     protected $transforms;
+
+    /**
+     * @var AddCalculatedMetricsInterface[]
+     */
+    protected $calculatedMetrics;
+
 
     /**
      * @var WeightedCalculationInterface[]
@@ -154,6 +161,7 @@ class Params implements ParamsInterface
         $this->transforms = [];
         $this->searches = [];
         $this->metricCalculations = [];
+        $this->calculatedMetrics = [];
         $this->needFormat = true;
         $this->isExport = false;
     }
@@ -806,6 +814,36 @@ class Params implements ParamsInterface
     public function setIsExport($isExport)
     {
         $this->isExport = $isExport;
+
+        return $this;
+    }
+
+    /**
+     * @return AddCalculatedMetricsInterface[]
+     */
+    public function getCalculatedMetrics()
+    {
+        if (empty($this->calculatedMetrics)) {
+            return [];
+        }
+
+        return $this->calculatedMetrics;
+    }
+
+    public function addCalculatedMetrics(AddCalculatedMetricsInterface $calculatedMetrics)
+    {
+        if (!is_array($this->calculatedMetrics)) {
+            $this->calculatedMetrics = [];
+        }
+
+        $this->calculatedMetrics [] = $calculatedMetrics;
+
+        return $this;
+    }
+
+    public function setCalculatedMetrics($calculatedMetrics)
+    {
+        $this->calculatedMetrics = $calculatedMetrics;
 
         return $this;
     }

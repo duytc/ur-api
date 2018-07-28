@@ -4,6 +4,7 @@
 namespace UR\Domain\DTO\Report;
 
 
+use UR\Domain\DTO\Report\CalculatedMetrics\AddCalculatedMetricsInterface;
 use UR\Domain\DTO\Report\DataSets\DataSet;
 use UR\Domain\DTO\Report\Formats\FormatInterface;
 use UR\Domain\DTO\Report\Transforms\TransformInterface;
@@ -19,6 +20,24 @@ interface ParamsInterface
     public function addTransform(TransformInterface $transform);
 
     public function setTransforms($transforms);
+
+    /**
+     * @return AddCalculatedMetricsInterface[]
+     */
+    public function getCalculatedMetrics();
+
+    /**
+     * @param AddCalculatedMetricsInterface $calculatedMetrics
+     * @return mixed
+     */
+    public function addCalculatedMetrics(AddCalculatedMetricsInterface $calculatedMetrics);
+
+    /**
+     * @param $calculatedMetrics
+     * @return mixed
+     */
+    public function setCalculatedMetrics($calculatedMetrics);
+
 
     /**
      * @return DataSet[]

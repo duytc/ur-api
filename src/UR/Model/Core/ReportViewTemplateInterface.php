@@ -138,4 +138,15 @@ interface ReportViewTemplateInterface extends ModelInterface
      * @return self
      */
     public function setReportViewTemplateTags($reportViewTemplateTags);
+
+    /**
+     * @return array
+     */
+    public function getCalculatedMetrics();
+
+    /**
+     * @param array $calculatedMetrics
+     * @return self
+     */
+    public function setCalculatedMetrics($calculatedMetrics);
 }

@@ -147,6 +147,7 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $reportView->setFormats($template->getFormats());
         $reportView->setJoinBy($template->getJoinConfig());
         $reportView->setShowInTotal($template->getShowInTotal());
+        $reportView->setCalculatedMetrics($template->getCalculatedMetrics());
 
         /** Convert report views multi views and report view data sets */
         $reportView->setReportViewDataSets($this->convertArrayToReportViewDataSets($template->getDataSets(), $publisher));
@@ -184,6 +185,7 @@ class ReportViewTemplateService implements ReportViewTemplateServiceInterface
         $template->setFormats($reportView->getFormats());
         $template->setJoinConfig($reportView->getJoinBy());
         $template->setShowInTotal($reportView->getShowInTotal());
+        $template->setCalculatedMetrics($reportView->getCalculatedMetrics());
 
         /** Convert sub report views and data sets to array in template */
         $template->setDataSets($this->convertReportViewDataSetsToArray($reportView->getReportViewDataSets()));

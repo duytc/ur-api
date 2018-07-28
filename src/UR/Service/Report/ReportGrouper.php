@@ -1,7 +1,6 @@
 <?php
 namespace UR\Service\Report;
 
-
 use Doctrine\DBAL\Driver\Statement;
 use UR\Domain\DTO\Report\ParamsInterface;
 use UR\DomainManager\DataSetManagerInterface;
@@ -33,17 +32,22 @@ class ReportGrouper implements ReportGrouperInterface
      */
     protected $sqlBuilder;
 
+    /** @var CalculatedMetricsExecutorInterface */
+    protected $calculatedMetricsExecutor;
+
     /**
      * ReportGrouper constructor.
      * @param DataSetManagerInterface $dataSetManager
      * @param DateUtilInterface $dateUtil
      * @param SqlBuilderInterface $sqlBuilder
+     * @param CalculatedMetricsExecutorInterface $calculatedMetricsExecutor
      */
-    public function __construct(DataSetManagerInterface $dataSetManager, DateUtilInterface $dateUtil, SqlBuilderInterface $sqlBuilder)
+    public function __construct(DataSetManagerInterface $dataSetManager, DateUtilInterface $dateUtil, SqlBuilderInterface $sqlBuilder, CalculatedMetricsExecutorInterface $calculatedMetricsExecutor)
     {
         $this->dataSetManager = $dataSetManager;
         $this->dateUtil = $dateUtil;
         $this->sqlBuilder = $sqlBuilder;
+        $this->calculatedMetricsExecutor = $calculatedMetricsExecutor;
     }
 
     public function groupForSingleView(Collection $collection, ParamsInterface $params, $overridingFilters = null)
@@ -93,11 +97,11 @@ class ReportGrouper implements ReportGrouperInterface
                 foreach ($rows as $row) {
                     foreach ($row as $key => $value) {
                         if (!array_key_exists($key, $total)) {
-                            $total[$key] = (float) $value;
+                            $total[$key] = (float)$value;
                             continue;
                         }
 
-                        $total[$key] += (float) $value;
+                        $total[$key] += (float)$value;
                     }
                 }
             } else {
@@ -109,7 +113,7 @@ class ReportGrouper implements ReportGrouperInterface
                 // calculate average for the fields in type avarage
                 if (isset($needToBeAverageFields)) {
                     if (in_array($key, $needToBeAverageFields)) {
-                        $value = (float) $value / $totalReport;
+                        $value = (float)$value / $totalReport;
                         continue;
                     }
                 }
@@ -121,11 +125,16 @@ class ReportGrouper implements ReportGrouperInterface
                 $value = $total[$key] / $totalReport;
             }
         }
-        
+
+        $calculatedMetricsObject = $params->getCalculatedMetrics();
+
+        //do calculated metrics
+        $calculatedMetrics = $this->calculatedMetricsExecutor->doCalculatedMetrics($calculatedMetricsObject, $showInTotals, $total, $params);
+
         $this->removeTemporaryTables($params);
         gc_collect_cycles();
-        
-        return new ReportResult($collection->getRows(), $total, $average, null, $headers, $collection->getTypes(), $totalReport);
+
+        return new ReportResult($collection->getRows(), $total, $average, null, $headers, $collection->getTypes(), $totalReport, $calculatedMetrics);
     }
 
     protected function getDataSetManager()

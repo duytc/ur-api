@@ -158,6 +158,11 @@ class ReportView implements ReportViewInterface
     protected $requireJoin;
 
     /**
+     * @var array
+     */
+    protected $calculatedMetrics;
+
+    /**
      * @return mixed
      */
     public function getShared()
@@ -679,6 +684,25 @@ class ReportView implements ReportViewInterface
 
         $this->setAvailableToChange(true);
         $this->setAvailableToRun(true);
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCalculatedMetrics()
+    {
+        return $this->calculatedMetrics;
+    }
+
+    /**
+     * @inheritdoc
+     */
+
+    public function setCalculatedMetrics($calculatedMetrics)
+    {
+        $this->calculatedMetrics = $calculatedMetrics;
 
         return $this;
     }

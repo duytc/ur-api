@@ -38,6 +38,9 @@ UR\Entity\Core\ReportViewTemplate:
         name:
             type: string
             nullable: true
+        calculatedMetrics:
+            type: json_array
+            nullable: true
 
     oneToMany:
         reportViewTemplateTags:

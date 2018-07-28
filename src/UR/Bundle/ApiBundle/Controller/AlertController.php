@@ -15,11 +15,9 @@ use UR\Model\AlertPagerParam;
 use UR\Model\Core\AlertInterface;
 use UR\Model\Core\DataSourceInterface;
 use UR\Model\Core\OptimizationIntegrationInterface;
-use UR\Model\Core\OptimizationRuleInterface;
 use UR\Model\PagerParam;
 use UR\Service\Alert\ActionRequire\ActionRequireHandlerInterface;
 use UR\Service\Alert\AlertParams;
-use UR\Service\Alert\ProcessAlertInterface;
 
 /**
  * @Rest\RouteResource("Alert")
@@ -97,6 +95,7 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     {
         $alertRepository = $this->get('ur.repository.alert');
         $dataSourceManager = $this->get('ur.domain_manager.data_source');
+        $dataSetManager = $this->get('ur.domain_manager.data_set');
         $optimizationIntegrationManager = $this->get('ur.domain_manager.optimization_integration');
 
         $params = array_merge($request->request->all(), $request->query->all());

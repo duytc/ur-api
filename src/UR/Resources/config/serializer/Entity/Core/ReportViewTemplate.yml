@@ -31,6 +31,9 @@ UR\Entity\Core\ReportViewTemplate:
         metrics:
             expose: true
             groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
+        calculatedMetrics:
+            expose: true
+            groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit]
         name:
             expose: true
             groups: [report_view_template.detail, report_view_template.summary, report_view_template.edit, report_view_template.minimum]

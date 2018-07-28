@@ -120,4 +120,15 @@ interface ReportResultInterface
      * @return mixed
      */
     public function generateReports();
+
+    /**
+     * @return array
+     */
+    public function getCalculatedMetricsResult();
+
+    /**
+     * @param array $calculatedMetricsResult
+     * @return self
+     */
+    public function setCalculatedMetricsResult($calculatedMetricsResult);
 }

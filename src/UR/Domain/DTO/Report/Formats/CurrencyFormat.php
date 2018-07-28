@@ -61,6 +61,7 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
         $rows = $reportResult->getRows();
         $totals = $reportResult->getTotal();
         $averages = $reportResult->getAverage();
+        $calculatedMetricsResult = $reportResult->getCalculatedMetricsResult();
 
         $fields = $this->getFields();
 
@@ -100,12 +101,23 @@ class CurrencyFormat extends AbstractFormat implements CurrencyFormatInterface
             $newAverages[$field] = $this->formatOneCurrency($averages[$field]);
         }
 
+        /* format for calculated metrics */
+        $newCalculatedMetricsResult = $calculatedMetricsResult;
+        foreach ($fields as $field) {
+            if (!array_key_exists($field, $calculatedMetricsResult)) {
+                continue;
+            }
+
+            $newCalculatedMetricsResult[$field] = $this->formatOneCurrency($calculatedMetricsResult[$field]);
+        }
+
         /* set value again */
         unset($rows, $row);
         gc_collect_cycles();
         $reportResult->setRows($newRows);
         $reportResult->setTotal($newTotals);
         $reportResult->setAverage($newAverages);
+        $reportResult->setCalculatedMetricsResult($newCalculatedMetricsResult);
     }
 
     /**

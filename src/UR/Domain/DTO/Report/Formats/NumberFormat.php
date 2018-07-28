@@ -97,6 +97,7 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
         $rows = $reportResult->getRows();
         $totals = $reportResult->getTotal();
         $averages = $reportResult->getAverage();
+        $calculatedMetricsResult = $reportResult->getCalculatedMetricsResult();
 
         $decimalSeparator = self::SEPARATOR_DOT;
         $fields = $this->getFields();
@@ -138,12 +139,23 @@ class NumberFormat extends AbstractFormat implements NumberFormatInterface
             $newAverages[$field] = $this->formatOneNumber($averages[$field], $decimalSeparator);
         }
 
+        /* format for calculated metrics */
+        $newCalculatedMetricsResult = $calculatedMetricsResult;
+        foreach ($fields as $field) {
+            if (!array_key_exists($field, $calculatedMetricsResult)) {
+                continue;
+            }
+
+            $newCalculatedMetricsResult[$field] = $this->formatOneNumber($calculatedMetricsResult[$field], $decimalSeparator);
+        }
+
         /* set value again */
         unset($rows, $row);
         gc_collect_cycles();
         $reportResult->setRows($newRows);
         $reportResult->setTotal($newTotals);
         $reportResult->setAverage($newAverages);
+        $reportResult->setCalculatedMetricsResult($newCalculatedMetricsResult);
     }
 
     /**

@@ -41,6 +41,9 @@ class ReportViewTemplate extends ReportViewTemplateModel
     /** @var  array */
     protected $metrics;
 
+    /** @var  array */
+    protected $calculatedMetrics;
+
     /** @var  ReportViewTemplateTagInterface[] */
     protected $reportViewTemplateTags;
 

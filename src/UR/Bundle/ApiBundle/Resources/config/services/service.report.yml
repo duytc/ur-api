@@ -8,6 +8,7 @@ services:
             - @ur.domain_manager.data_set
             - @ur.service.date_util
             - @ur.services.report.sql_builder
+            - @ur.service.report.calculated_metrics_executor
 
     ur.services.report.report_builder:
         class: UR\Service\Report\ReportBuilder
@@ -41,6 +42,11 @@ services:
         arguments:
             - '@ur.domain_manager.report_view'
             - '@ur.domain_manager.report_view_add_conditional_transform_value'
+
+    ur.service.report.calculated_metrics_executor:
+        class: UR\Service\Report\CalculatedMetricsExecutor
+        arguments:
+            - '@ur.services.report.sql_builder'
 
     ur.service.report.shareable_link_updater:
         class: UR\Service\Report\ShareableLinkUpdater

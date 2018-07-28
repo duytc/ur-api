@@ -16,7 +16,7 @@ class ReportResult implements ReportResultInterface
     const REPORT_RESULT_TYPES = 'types';
     const REPORT_RESULT_DATE_RANGE = 'dateRange';
     const REPORT_RESULT_TOTAL_REPORT = 'totalReport';
-
+    const REPORT_RESULT_CALCULATED_METRICS = 'calculatedMetricsResult';
 
     /**
      * @var array
@@ -56,6 +56,7 @@ class ReportResult implements ReportResultInterface
     protected $totalPage;
 
     protected $totalReport;
+    protected $calculatedMetricsResult;
 
     /**
      * ReportResult constructor.
@@ -66,8 +67,9 @@ class ReportResult implements ReportResultInterface
      * @param array $columns
      * @param array $types
      * @param int $totalReport
+     * @param array $calculatedMetricsResult
      */
-    public function __construct($rows, array $total, array $average, $dateRange, $columns = [], $types = [], $totalReport = 0)
+    public function __construct($rows, array $total, array $average, $dateRange, $columns = [], $types = [], $totalReport = 0, $calculatedMetricsResult = [])
     {
         $this->rows = $rows;
         $this->total = $total;
@@ -77,6 +79,7 @@ class ReportResult implements ReportResultInterface
         $this->dateRange = $dateRange;
         $this->totalReport = $totalReport;
         $this->reports = [];
+        $this->calculatedMetricsResult = $calculatedMetricsResult;
     }
 
     /**
@@ -261,7 +264,24 @@ class ReportResult implements ReportResultInterface
             self::REPORT_RESULT_COLUMNS => $this->columns,
             self::REPORT_RESULT_TYPES => $this->types,
             self::REPORT_RESULT_DATE_RANGE => is_array($this->dateRange) ? $this->dateRange : [],
-            self::REPORT_RESULT_TOTAL_REPORT => $this->totalReport
+            self::REPORT_RESULT_TOTAL_REPORT => $this->totalReport,
+            self::REPORT_RESULT_CALCULATED_METRICS => $this->calculatedMetricsResult
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCalculatedMetricsResult(){
+        return $this->calculatedMetricsResult;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setCalculatedMetricsResult($calculatedMetricsResult){
+        $this->calculatedMetricsResult = $calculatedMetricsResult;
+
+        return $this;
     }
 }

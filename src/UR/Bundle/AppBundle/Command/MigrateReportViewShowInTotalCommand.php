@@ -84,15 +84,15 @@ class MigrateReportViewShowInTotalCommand extends ContainerAwareCommand
                 continue;
             }
 
-            if (is_array(reset($showInTotal)) && array_key_exists('type', reset($showInTotal))) {
+            if (is_array(reset($showInTotal)) &&
+                array_key_exists('type', reset($showInTotal)) &&
+                array_key_exists('aliasName', reset($showInTotal))
+            ) {
                 $this->io->text(sprintf('<comment>This report view has already been migrated, no need to migrate report view id = %d</comment>', $reportView->getId()));
                 continue;
             }
-            $newShowInTotal[] = [
-                'type' => 'aggregate',
-                'fields' => $showInTotal
-            ];
 
+            $newShowInTotal = $this->addAliasNameToShowInTotal($showInTotal);
             $reportView->setShowInTotal($newShowInTotal);
             $this->reportViewManager->save($reportView);
             $migrateCount++;
@@ -105,5 +105,33 @@ class MigrateReportViewShowInTotalCommand extends ContainerAwareCommand
         }
 
         return $migrateCount;
+    }
+
+    /**
+     * @param $showInTotals
+     * @return mixed
+     */
+    private function addAliasNameToShowInTotal($showInTotals)
+    {
+        foreach ($showInTotals as $index => $showInTotal) {
+            $fields = [];
+            if (array_key_exists('fields', $showInTotal)) {
+                $fields = $showInTotal['fields'];
+            }
+
+            $aliasName = [];
+            $oneAlias = [];
+            foreach ($fields as $field) {
+                $oneAlias['originalName'] = $field;
+                $oneAlias['aliasName'] = sprintf("%s.%s", $field, $showInTotal['type']);
+                array_push($aliasName, json_encode($oneAlias));
+            }
+
+            $showInTotal['aliasName'] = $aliasName;
+
+            $showInTotals[$index] = $showInTotal;
+        }
+
+        return $showInTotals;
     }
 }
