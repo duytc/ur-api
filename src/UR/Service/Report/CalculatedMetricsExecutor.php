@@ -71,7 +71,7 @@ class CalculatedMetricsExecutor implements CalculatedMetricsExecutorInterface
 
                 // Step5: do expression
                 $expressionResult = $expressionLanguage->evaluate($expression);
-                $finalValue = isset($expressionResult) && !empty($expressionResult) ? $expressionResult : $defaultValue;
+                $finalValue = isset($expressionResult) && !is_null($expressionResult) ? $expressionResult : $defaultValue;
 
                 $calculatedMetrics[$fieldName] = $this->getTrueValueByType($dataType, $finalValue);
 
@@ -83,7 +83,8 @@ class CalculatedMetricsExecutor implements CalculatedMetricsExecutorInterface
 
             unset($calculatedMetricsObject, $calculatedMetric, $expressionLanguage);
         } catch (\Exception $ex) {
-            throw new PublicSimpleException(sprintf('Calculated Metrics error: %s.', $ex->getMessage()), $ex->getCode());
+            $code = !empty($ex->getCode()) ? $ex->getCode() : 400;
+            throw new PublicSimpleException(sprintf('Calculated Metrics error: %s.', $ex->getMessage()), $code);
         }
 
         return $calculatedMetrics;
