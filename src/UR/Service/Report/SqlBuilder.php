@@ -368,7 +368,7 @@ class SqlBuilder implements SqlBuilderInterface
             }
         }
 
-        //gc_collect_cycles();
+        gc_collect_cycles();
 
         return array(
             self::STATEMENT_KEY => $stmt,

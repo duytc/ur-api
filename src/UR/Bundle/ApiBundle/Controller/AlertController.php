@@ -95,7 +95,6 @@ class AlertController extends RestControllerAbstract implements ClassResourceInt
     {
         $alertRepository = $this->get('ur.repository.alert');
         $dataSourceManager = $this->get('ur.domain_manager.data_source');
-        $dataSetManager = $this->get('ur.domain_manager.data_set');
         $optimizationIntegrationManager = $this->get('ur.domain_manager.optimization_integration');
 
         $params = array_merge($request->request->all(), $request->query->all());
